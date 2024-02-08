@@ -23,7 +23,6 @@
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <filesystem>
 #include <set>
@@ -96,7 +95,7 @@ class Test : public vespalib::TestApp {
 
 public:
     Test();
-    ~Test();
+    ~Test() override;
     int Main() override;
 };
 
@@ -145,17 +144,15 @@ getSchema()
 
 void Test::setUp() {
     std::filesystem::remove_all(std::filesystem::path(base_dir));
-    _fusion_runner.reset(new FusionRunner(base_dir, getSchema(),
-                                 TuneFileAttributes(),
-                                 _fileHeaderContext));
+    _fusion_runner = std::make_unique<FusionRunner>(base_dir, getSchema(), TuneFileAttributes(), _fileHeaderContext);
     const string selector_base = base_dir + "/index.flush.0/selector";
-    _selector.reset(new FixedSourceSelector(0, selector_base));
+    _selector = std::make_unique<FixedSourceSelector>(0, selector_base);
     _fusion_spec = FusionSpec();
 }
 
 void Test::tearDown() {
     std::filesystem::remove_all(std::filesystem::path(base_dir));
-    _selector.reset(0);
+    _selector.reset(nullptr);
 }
 
 Document::UP buildDocument(DocBuilder & doc_builder, int id, const string &word) {
@@ -200,12 +197,14 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     addDocument(doc_builder, memory_index, *_selector, id, id + 3, "qux");
 
     const uint32_t docIdLimit = std::min(memory_index.getDocIdLimit(), _selector->getDocIdLimit());
-    IndexBuilder index_builder(schema, index_dir, docIdLimit);
-    TuneFileIndexing tuneFileIndexing;
     TuneFileAttributes tuneFileAttributes;
-    index_builder.open(memory_index.getNumWords(), MockFieldLengthInspector(), tuneFileIndexing, _fileHeaderContext);
-    memory_index.dump(index_builder);
-    index_builder.close();
+    {
+        TuneFileIndexing tuneFileIndexing;
+        MockFieldLengthInspector fieldLengthInspector;
+        IndexBuilder index_builder(schema, index_dir, docIdLimit, memory_index.getNumWords(), fieldLengthInspector,
+                                   tuneFileIndexing, _fileHeaderContext);
+        memory_index.dump(index_builder);
+    }
 
     _selector->extractSaveInfo(index_dir + "/selector")->save(tuneFileAttributes, _fileHeaderContext);
 }

@@ -6,13 +6,9 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace search {
@@ -46,9 +42,10 @@ void
 FieldIndexCollection::dump(search::index::IndexBuilder &indexBuilder)
 {
     for (uint32_t fieldId = 0; fieldId < _numFields; ++fieldId) {
-        indexBuilder.startField(fieldId);
-        _fieldIndexes[fieldId]->dump(indexBuilder);
-        indexBuilder.endField();
+        auto fieldIndexBuilder = indexBuilder.startField(fieldId);
+        if (fieldIndexBuilder) {
+            _fieldIndexes[fieldId]->dump(*fieldIndexBuilder);
+        }
     }
 }
 

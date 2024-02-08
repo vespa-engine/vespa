@@ -36,11 +36,10 @@ MemoryIndexWrapper::flushToDisk(const vespalib::string &flushDir, uint32_t docId
 {
     const uint64_t numWords = _index.getNumWords();
     _index.freeze(); // TODO(geirst): is this needed anymore?
-    IndexBuilder indexBuilder(_index.getSchema(), flushDir, docIdLimit);
     SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext, serialNum);
-    indexBuilder.open(numWords, *this, _tuneFileIndexing, fileHeaderContext);
+    IndexBuilder indexBuilder(_index.getSchema(), flushDir, docIdLimit,
+                              numWords, *this, _tuneFileIndexing, fileHeaderContext);
     _index.dump(indexBuilder);
-    indexBuilder.close();
 }
 
 search::SerialNum

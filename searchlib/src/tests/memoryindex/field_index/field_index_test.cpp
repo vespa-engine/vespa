@@ -6,10 +6,8 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
-#include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -69,76 +67,79 @@ using NormalFieldIndex = FieldIndex<false>;
 class MyBuilder : public IndexBuilder {
 private:
     std::stringstream _ss;
-    bool              _insideWord;
-    bool              _insideField;
-    bool              _firstWord;
     bool              _firstField;
-    bool              _firstDoc;
 
+    class FieldIndexBuilder : public index::FieldIndexBuilder {
+    public:
+        explicit FieldIndexBuilder(std::stringstream & ss)
+            : _ss(ss),
+              _insideWord(false),
+              _firstWord(true),
+              _firstDoc(true)
+        {}
+        ~FieldIndexBuilder() override {
+            assert(!_insideWord);
+            _ss << "]";
+        }
+        void startWord(vespalib::stringref word) override {
+            assert(!_insideWord);
+            if (!_firstWord)
+                _ss << ",";
+            _ss << "w=" << word << "[";
+            _firstDoc = true;
+            _insideWord = true;
+        }
+
+        void endWord() override {
+            assert(_insideWord);
+            _ss << "]";
+            _firstWord = false;
+            _insideWord = false;
+        }
+        void add_document(const DocIdAndFeatures &features) override {
+            assert(_insideWord);
+            if (!_firstDoc) {
+                _ss << ",";
+            }
+            _ss << "d=" << features.doc_id() << "[";
+            bool first_elem = true;
+            size_t word_pos_offset = 0;
+            for (const auto& elem : features.elements()) {
+                if (!first_elem) {
+                    _ss << ",";
+                }
+                _ss << "e=" << elem.getElementId() << ",w=" << elem.getWeight() << ",l=" << elem.getElementLen() << "[";
+                bool first_pos = true;
+                for (size_t i = 0; i < elem.getNumOccs(); ++i) {
+                    if (!first_pos) {
+                        _ss << ",";
+                    }
+                    _ss << features.word_positions()[i + word_pos_offset].getWordPos();
+                    first_pos = false;
+                }
+                word_pos_offset += elem.getNumOccs();
+                _ss << "]";
+                first_elem = false;
+            }
+            _ss << "]";
+            _firstDoc = false;
+        }
+    private:
+        std::stringstream & _ss;
+        bool                _insideWord;
+        bool                _firstWord;
+        bool                _firstDoc;
+    };
 public:
     explicit MyBuilder(const Schema &schema);
     ~MyBuilder() override;
 
-    void startWord(vespalib::stringref word) override {
-        assert(_insideField);
-        assert(!_insideWord);
-        if (!_firstWord)
-            _ss << ",";
-        _ss << "w=" << word << "[";
-        _firstDoc = true;
-        _insideWord = true;
-    }
-
-    void endWord() override {
-        assert(_insideWord);
-        _ss << "]";
-        _firstWord = false;
-        _insideWord = false;
-    }
-
-    void startField(uint32_t fieldId) override {
-        assert(!_insideField);
+    std::unique_ptr<index::FieldIndexBuilder>
+    startField(uint32_t fieldId) override {
         if (!_firstField) _ss << ",";
         _ss << "f=" << fieldId << "[";
-        _firstWord = true;
-        _insideField = true;
-    }
-
-    void endField() override {
-        assert(_insideField);
-        assert(!_insideWord);
-        _ss << "]";
         _firstField = false;
-        _insideField = false;
-    }
-
-    void add_document(const DocIdAndFeatures &features) override {
-        assert(_insideWord);
-        if (!_firstDoc) {
-            _ss << ",";
-        }
-        _ss << "d=" << features.doc_id() << "[";
-        bool first_elem = true;
-        size_t word_pos_offset = 0;
-        for (const auto& elem : features.elements()) {
-            if (!first_elem) {
-                _ss << ",";
-            }
-            _ss << "e=" << elem.getElementId() << ",w=" << elem.getWeight() << ",l=" << elem.getElementLen() << "[";
-            bool first_pos = true;
-            for (size_t i = 0; i < elem.getNumOccs(); ++i) {
-                if (!first_pos) {
-                    _ss << ",";
-                }
-                _ss << features.word_positions()[i + word_pos_offset].getWordPos();
-                first_pos = false;
-            }
-            word_pos_offset += elem.getNumOccs();
-            _ss << "]";
-            first_elem = false;
-        }
-        _ss << "]";
-        _firstDoc = false;
+        return std::make_unique<FieldIndexBuilder>(_ss);
     }
 
     std::string toStr() const {
@@ -149,11 +150,7 @@ public:
 MyBuilder::MyBuilder(const Schema &schema)
     : IndexBuilder(schema),
       _ss(),
-      _insideWord(false),
-      _insideField(false),
-      _firstWord(true),
-      _firstField(true),
-      _firstDoc(true)
+      _firstField(true)
 {}
 MyBuilder::~MyBuilder() = default;
 
@@ -826,18 +823,19 @@ TEST_F(FieldIndexCollectionTest, require_that_features_are_in_posting_lists)
 TEST_F(FieldIndexCollectionTest, require_that_basic_dumping_to_index_builder_is_working)
 {
     MyBuilder b(schema);
-    WordDocElementWordPosFeatures wpf;
-    b.startField(4);
-    b.startWord("a");
-    DocIdAndFeatures features;
-    features.set_doc_id(2);
-    features.elements().emplace_back(0, 10, 20);
-    features.elements().back().setNumOccs(2);
-    features.word_positions().emplace_back(1);
-    features.word_positions().emplace_back(3);
-    b.add_document(features);
-    b.endWord();
-    b.endField();
+    {
+        WordDocElementWordPosFeatures wpf;
+        auto fb = b.startField(4);
+        fb->startWord("a");
+        DocIdAndFeatures features;
+        features.set_doc_id(2);
+        features.elements().emplace_back(0, 10, 20);
+        features.elements().back().setNumOccs(2);
+        features.word_positions().emplace_back(1);
+        features.word_positions().emplace_back(3);
+        fb->add_document(features);
+        fb->endWord();
+    }
     EXPECT_EQ("f=4[w=a[d=2[e=0,w=10,l=20[1,3]]]]", b.toStr());
 }
 
@@ -887,12 +885,12 @@ TEST_F(FieldIndexCollectionTest, require_that_dumping_words_with_no_docs_to_inde
                   b.toStr());
     }
     {
-        search::diskindex::IndexBuilder b(schema, "dump", 5);
         TuneFileIndexing tuneFileIndexing;
         DummyFileHeaderContext fileHeaderContext;
-        b.open(2, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
+        MockFieldLengthInspector fieldLengthInspector;
+        search::diskindex::IndexBuilder b(schema, "dump", 5, 2, fieldLengthInspector,
+                                          tuneFileIndexing, fileHeaderContext);
         fic.dump(b);
-        b.close();
     }
 }
 
@@ -1235,12 +1233,12 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
         EXPECT_TRUE(itr->isAtEnd());
     }
     {
-        search::diskindex::IndexBuilder dib(_schema, "urldump", 11);
         TuneFileIndexing tuneFileIndexing;
         DummyFileHeaderContext fileHeaderContext;
-        dib.open(_fic.getNumUniqueWords(), MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
+        MockFieldLengthInspector fieldLengthInspector;
+        search::diskindex::IndexBuilder dib(_schema, "urldump", 11, _fic.getNumUniqueWords(),
+                                            fieldLengthInspector, tuneFileIndexing, fileHeaderContext);
         _fic.dump(dib);
-        dib.close();
     }
 }
 

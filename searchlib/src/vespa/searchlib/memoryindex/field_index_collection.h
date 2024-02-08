@@ -10,6 +10,7 @@
 namespace search::index {
     class IFieldLengthInspector;
     class Schema;
+    class IndexBuilder;
 }
 
 namespace search::memoryindex {

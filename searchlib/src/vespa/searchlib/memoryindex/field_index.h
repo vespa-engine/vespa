@@ -82,7 +82,7 @@ public:
 
     void compactFeatures() override;
 
-    void dump(search::index::IndexBuilder & indexBuilder) override;
+    void dump(search::index::FieldIndexBuilder & indexBuilder) override;
 
     vespalib::MemoryUsage getMemoryUsage() const override;
     PostingListStore &getPostingListStore() { return _postingListStore; }
@@ -98,8 +98,7 @@ public:
     /**
      * Should only by used by unit tests.
      */
-    queryeval::SearchIterator::UP make_search_iterator(const vespalib::string& term,
-                                                       uint32_t field_id,
+    queryeval::SearchIterator::UP make_search_iterator(const vespalib::string& term, uint32_t field_id,
                                                        fef::TermFieldMatchDataArray match_data) const;
 
     std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const vespalib::string& term,
