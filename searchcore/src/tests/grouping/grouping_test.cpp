@@ -45,7 +45,7 @@ struct MyWorld {
         bv.setInterval(0, NUM_DOCS);
         // attribute context
         {
-            auto *attr = new SingleInt32ExtAttribute("attr0");
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr0");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -55,7 +55,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            auto *attr = new SingleInt32ExtAttribute("attr1");
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr1");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -65,7 +65,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            auto *attr = new SingleInt32ExtAttribute("attr2");
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr2");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
@@ -75,7 +75,7 @@ struct MyWorld {
             attributeContext.add(attr);
         }
         {
-            auto *attr = new SingleInt32ExtAttribute("attr3");
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr3");
             AttributeVector::DocId docid;
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);

@@ -200,6 +200,7 @@ vespa_define_module(
     src/tests/queryeval/flow
     src/tests/queryeval/getnodeweight
     src/tests/queryeval/global_filter
+    src/tests/queryeval/iterator_benchmark
     src/tests/queryeval/matching_elements_search
     src/tests/queryeval/monitoring_search_iterator
     src/tests/queryeval/multibitvectoriterator

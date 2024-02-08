@@ -4,18 +4,19 @@
 
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <map>
+#include <memory>
 
 namespace search::attribute::test {
 
 class MockAttributeContext : public IAttributeContext
 {
 private:
-    using Map = std::map<string, IAttributeVector *>;
+    using Map = std::map<string, std::shared_ptr<IAttributeVector>>;
     Map _vectors;
 
 public:
     ~MockAttributeContext() override;
-    void add(IAttributeVector *attr);
+    void add(std::shared_ptr<IAttributeVector> attr);
 
     const IAttributeVector *get(const string &name) const;
     const IAttributeVector * getAttribute(const string &name) const override;
