@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Embeds a string in a tensor space using the configured Embedder component
@@ -196,17 +197,23 @@ public class EmbedExpression extends Expression  {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("embed");
-        if (this.embedderId != null && this.embedderId.length() > 0) {
+        if (this.embedderId != null && !this.embedderId.isEmpty())
             sb.append(" ").append(this.embedderId);
-        }
+        embedderArguments.forEach(arg -> sb.append(" ").append(arg));
         return sb.toString();
     }
 
     @Override
-    public int hashCode() { return 98857339; }
+    public int hashCode() { return Objects.hash(embedder.hashCode(), embedder, embedderArguments); }
 
     @Override
-    public boolean equals(Object o) { return o instanceof EmbedExpression; }
+    public boolean equals(Object o) {
+        if ( ! super.equals(o)) return false;
+        if ( ! (o instanceof EmbedExpression other)) return false;
+        if ( ! Objects.equals(embedder, other.embedder)) return false;
+        if ( ! Objects.equals(embedderArguments, other.embedderArguments)) return false;
+        return true;
+    }
 
     private static String validEmbedders(Map<String, Embedder> embedders) {
         List<String> embedderIds = new ArrayList<>();

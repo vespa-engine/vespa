@@ -358,6 +358,7 @@ public class ScriptTestCase {
         var expression = Expression.fromString("input myTextArray | embed emb1 passage | attribute 'mySparseTensor'",
                                                new SimpleLinguistics(),
                                                embedders);
+        assertEquals("input myTextArray | embed emb1 passage | attribute mySparseTensor", expression.toString());
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
