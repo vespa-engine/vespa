@@ -87,7 +87,7 @@ public:
      */
     class IDataReader {
     public:
-        virtual ~IDataReader() { /* empty */ }
+        virtual ~IDataReader() = default;
         virtual size_t getData(char *buf, size_t len) = 0;
     };
 
@@ -98,7 +98,7 @@ public:
      */
     class IDataWriter {
     public:
-        virtual ~IDataWriter() { /* empty */ }
+        virtual ~IDataWriter() = default;
         virtual size_t putData(const char *buf, size_t len) = 0;
     };
 
@@ -111,7 +111,7 @@ public:
         DataBuffer &_buf;
 
     public:
-        BufferReader(DataBuffer &buf);
+        explicit BufferReader(DataBuffer &buf);
         size_t getData(char *buf, size_t len) override;
     };
 
@@ -124,18 +124,16 @@ public:
         DataBuffer &_buf;
 
     public:
-        BufferWriter(DataBuffer &buf);
+        explicit BufferWriter(DataBuffer &buf);
         size_t putData(const char *buf, size_t len) override;
     };
 
     class MMapReader : public IDataReader
     {
         const char *_buf;
-        size_t _sz;
-
+        size_t      _sz;
     public:
         MMapReader(const char *buf, size_t sz);
-
         size_t getData(char *buf, size_t len) override;
     };
 
@@ -146,14 +144,7 @@ private:
     TagMap _tags;
 
 public:
-    /**
-     * Constructs a new instance of this class.
-     */
-    GenericHeader();
-
-    /**
-     * Virtual destructor required for inheritance.
-     */
+    GenericHeader() noexcept;
     virtual ~GenericHeader();
 
     /**
@@ -213,10 +204,9 @@ public:
      *
      * @return True if this header has no data.
      */
-    bool isEmpty() const { return _tags.empty(); }
+    bool isEmpty() const noexcept { return _tags.empty(); }
 
-    static size_t
-    getMinSize(void);
+    static size_t getMinSize();
 
     /**
      * Returns the number of bytes required to hold the content of this when calling write().
@@ -225,8 +215,7 @@ public:
      */
     virtual size_t getSize() const;
 
-    static size_t
-    readSize(IDataReader &reader);
+    static size_t readSize(IDataReader &reader);
 
     /**
      * Deserializes header content from the given provider into this.
@@ -260,7 +249,7 @@ public:
         FastOS_FileInterface &_file;
 
     public:
-        FileReader(FastOS_FileInterface &file);
+        explicit FileReader(FastOS_FileInterface &file);
         size_t getData(char *buf, size_t len) override;
     };
 
@@ -273,7 +262,7 @@ public:
         FastOS_FileInterface &_file;
 
     public:
-        FileWriter(FastOS_FileInterface &file);
+        explicit FileWriter(FastOS_FileInterface &file);
         size_t putData(const char *buf, size_t len) override;
     };
 
@@ -289,7 +278,9 @@ public:
      * @param alignTo The number of bytes to which the serialized size must be aligned to.
      * @param minSize The minimum number of bytes of the serialized size.
      */
-    FileHeader(size_t alignTo = 8u, size_t minSize = 0u);
+    FileHeader(size_t alignTo, size_t minSize) noexcept;
+    explicit FileHeader(size_t alignTo) noexcept : FileHeader(alignTo, 0) {}
+    FileHeader() noexcept : FileHeader(8u) {}
 
     /**
      * This function overrides GenericHeader::getSize() to align header size to the number of bytes supplied
