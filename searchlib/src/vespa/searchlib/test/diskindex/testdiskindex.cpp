@@ -79,27 +79,29 @@ TestDiskIndex::buildIndex(const std::string & dir, bool directio,
 {
     Builder b(dir, _schema, docEmpty ? 1 : 32, wordEmpty ? 0 : 2, directio);
 
-    // f1
-    auto fb = b._ib.startField(0);
-    if (!wordEmpty && !fieldEmpty && !docEmpty) {
-        fb->startWord("w1");
-        b.addDoc(*fb, 1);
-        b.addDoc(*fb, 3);
-        fb->endWord();
-    }
-    fb = b._ib.startField(1);
-    if (!wordEmpty && !fieldEmpty && !docEmpty) {
-        // f2
-        fb->startWord("w1");
-        b.addDoc(*fb, 2);
-        b.addDoc(*fb, 4);
-        b.addDoc(*fb, 6);
-        fb->endWord();
-        fb->startWord("w2");
-        for (uint32_t docId = 1; docId < 18; ++docId) {
-            b.addDoc(*fb, docId);
+    if (!fieldEmpty) {
+        // f1
+        auto fb = b._ib.startField(0);
+        if (!wordEmpty && !docEmpty) {
+            fb->startWord("w1");
+            b.addDoc(*fb, 1);
+            b.addDoc(*fb, 3);
+            fb->endWord();
         }
-        fb->endWord();
+        fb = b._ib.startField(1);
+        if (!wordEmpty && !docEmpty) {
+            // f2
+            fb->startWord("w1");
+            b.addDoc(*fb, 2);
+            b.addDoc(*fb, 4);
+            b.addDoc(*fb, 6);
+            fb->endWord();
+            fb->startWord("w2");
+            for (uint32_t docId = 1; docId < 18; ++docId) {
+                b.addDoc(*fb, docId);
+            }
+            fb->endWord();
+        }
     }
 }
 
