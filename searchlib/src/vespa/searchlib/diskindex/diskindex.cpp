@@ -121,26 +121,20 @@ DiskIndex::openField(const vespalib::string &fieldDir,
                    DiskPostingFileReal::getSubIdentifier()) {
             dynamicK = false;
         } else {
-            LOG(warning,
-                "Could not detect format for posocc file read %s",
-                postingName.c_str());
+            LOG(warning, "Could not detect format for posocc file read %s", postingName.c_str());
         }
     }
-    pFile.reset(dynamicK ?
-                new DiskPostingFileDynamicKReal() :
-                new DiskPostingFileReal());
+    pFile.reset(dynamicK
+                ? new DiskPostingFileDynamicKReal()
+                : new DiskPostingFileReal());
     if (!pFile->open(postingName, tuneFileSearch._read)) {
-        LOG(warning,
-            "Could not open posting list file '%s'",
-            postingName.c_str());
+        LOG(warning, "Could not open posting list file '%s'", postingName.c_str());
         return false;
     }
 
     bDict.reset(new BitVectorDictionary());
     if (!bDict->open(fieldDir, tuneFileSearch._read, BitVectorKeyScope::PERFIELD_WORDS)) {
-        LOG(warning,
-            "Could not open bit vector dictionary in '%s'",
-            fieldDir.c_str());
+        LOG(warning, "Could not open bit vector dictionary in '%s'", fieldDir.c_str());
         return false;
     }
     _postingFiles.push_back(pFile);
@@ -158,8 +152,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch)
         return false;
     }
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
-        vespalib::string fieldDir =
-            _indexDir + "/" + itr.getName() + "/";
+        vespalib::string fieldDir = _indexDir + "/" + itr.getName() + "/";
         if (!openField(fieldDir, tuneFileSearch)) {
             return false;
         }
@@ -169,8 +162,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch)
 }
 
 bool
-DiskIndex::setup(const TuneFileSearch &tuneFileSearch,
-                 const DiskIndex &old)
+DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
 {
     if (tuneFileSearch != old._tuneFileSearch) {
         return setup(tuneFileSearch);
@@ -180,8 +172,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch,
     }
     const Schema &oldSchema = old._schema;
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
-        vespalib::string fieldDir =
-            _indexDir + "/" + itr.getName() + "/";
+        vespalib::string fieldDir = _indexDir + "/" + itr.getName() + "/";
         SchemaUtil::IndexSettings settings = itr.getIndexSettings();
         if (settings.hasError()) {
             return false;
@@ -336,12 +327,11 @@ DiskIndex::LookupResult G_nothing;
 
 class LookupCache {
 public:
-    LookupCache(DiskIndex & diskIndex, const std::vector<uint32_t> & fieldIds) :
-        _diskIndex(diskIndex),
-        _fieldIds(fieldIds),
-        _cache()
-    {
-    }
+    LookupCache(DiskIndex & diskIndex, const std::vector<uint32_t> & fieldIds)
+        : _diskIndex(diskIndex),
+          _fieldIds(fieldIds),
+          _cache()
+    { }
     const DiskIndex::LookupResult &
     lookup(const vespalib::string & word, uint32_t fieldId) {
         auto it = _cache.find(word);
@@ -473,7 +463,7 @@ DiskIndex::get_field_length_info(const vespalib::string& field_name) const
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {
         return _postingFiles[fieldId]->get_field_length_info();
     } else {
-        return FieldLengthInfo();
+        return {};
     }
 }
 

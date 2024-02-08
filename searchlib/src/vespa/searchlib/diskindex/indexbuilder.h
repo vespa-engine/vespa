@@ -30,7 +30,6 @@ public:
     std::unique_ptr<index::FieldIndexBuilder> startField(uint32_t fieldId) override;
     vespalib::string appendToPrefix(vespalib::stringref name) const;
 private:
-    const index::Schema      &_schema;
     std::vector<int>          _fields;
     const vespalib::string    _prefix;
     const uint32_t            _docIdLimit;

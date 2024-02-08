@@ -49,7 +49,7 @@ BitVectorFileWrite::open(const vespalib::string &name, uint32_t docIdLimit,
 
     Parent::open(name, docIdLimit, tuneFileWrite, fileHeaderContext);
 
-    _datFile = std::make_unique<Fast_BufferedFile>(new FastOS_File);
+    _datFile = std::make_unique<Fast_BufferedFile>();
     if (tuneFileWrite.getWantSyncWrites()) {
         _datFile->EnableSyncWrites();
     }

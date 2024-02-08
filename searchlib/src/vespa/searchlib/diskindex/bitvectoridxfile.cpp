@@ -59,7 +59,7 @@ BitVectorIdxFileWrite::open(const vespalib::string &name, uint32_t docIdLimit,
     vespalib::string idxname = name + getBitVectorKeyScopeSuffix(_scope);
 
     assert( !_idxFile);
-    _idxFile = std::make_unique<Fast_BufferedFile>(new FastOS_File());
+    _idxFile = std::make_unique<Fast_BufferedFile>();
     if (tuneFileWrite.getWantSyncWrites()) {
         _idxFile->EnableSyncWrites();
     }

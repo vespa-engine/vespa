@@ -180,10 +180,10 @@ FileHandle::close()
 FieldHandle::FieldHandle(const Schema &schema, uint32_t fieldId, IndexBuilder &builder, uint32_t docIdLimit,
                          uint64_t numWordIds, const IFieldLengthInspector & field_length_inspector,
                          const TuneFileSeqWrite &tuneFileWrite, const FileHeaderContext &fileHeaderContext)
-        : _schema(schema),
-          _builder(builder),
-          _file(),
-          _fieldId(fieldId)
+    : _schema(schema),
+      _builder(builder),
+      _file(),
+      _fieldId(fieldId)
 {
     std::filesystem::create_directory(std::filesystem::path(getDir()));
     _file.open(getDir(), SchemaUtil::IndexIterator(_schema, getIndexId()), docIdLimit, numWordIds,
@@ -251,7 +251,6 @@ IndexBuilder::IndexBuilder(const Schema &schema, vespalib::stringref prefix, uin
                            uint64_t numWordIds, const index::IFieldLengthInspector &field_length_inspector,
                            const TuneFileIndexing &tuneFileIndexing, const search::common::FileHeaderContext &fileHeaderContext)
     : index::IndexBuilder(schema),
-      _schema(schema),
       _fields(extractFields(schema)),
       _prefix(prefix),
       _docIdLimit(docIdLimit),

@@ -328,7 +328,7 @@ bool
 AttributeVector::isEnumeratedSaveFormat() const
 {
     vespalib::string datName(fmt("%s.dat", getBaseFileName().c_str()));
-    Fast_BufferedFile   datFile;
+    Fast_BufferedFile   datFile(16_Ki);
     vespalib::FileHeader datHeader(FileSettings::DIRECTIO_ALIGNMENT);
     if ( ! datFile.OpenReadOnly(datName.c_str()) ) {
         LOG(error, "could not open %s: %s", datFile.GetFileName(), getLastErrorString().c_str());

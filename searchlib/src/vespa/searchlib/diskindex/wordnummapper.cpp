@@ -18,7 +18,7 @@ WordNumMapping::readMappingFile(const vespalib::string &name,
                                 const TuneFileSeqRead &tuneFileRead)
 {
     // Open word mapping file
-    Fast_BufferedFile old2newwordfile(new FastOS_File);
+    Fast_BufferedFile old2newwordfile;
     if (tuneFileRead.getWantDirectIO()) {
         old2newwordfile.EnableDirectIO();
     }
