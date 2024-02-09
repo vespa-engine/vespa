@@ -255,8 +255,7 @@ public class ProtobufSerialization {
                 g.deserialize(buf);
                 list.add(g);
             }
-            GroupingListHit hit = new GroupingListHit(list, documentDatabase.getDocsumDefinitionSet());
-            hit.setQuery(query);
+            GroupingListHit hit = new GroupingListHit(list, documentDatabase, query);
             result.getResult().hits().add(hit);
         }
         for (var replyHit : protobuf.getHitsList()) {

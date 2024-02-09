@@ -1,16 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
-import com.yahoo.search.schema.SchemaInfo;
-import com.yahoo.tensor.TensorType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Representation of a document database realizing a schema in a content cluster.

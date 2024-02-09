@@ -76,8 +76,8 @@ public class FlatteningSearcherTestCase {
         Execution execution = newExecution(new FlatteningSearcher(),
                 new GroupingExecutor(ComponentId.fromString("grouping")),
                 new ResultProvider(List.of(
-                        new GroupingListHit(List.of(group0), null),
-                        new GroupingListHit(List.of(group1), null))),
+                        new GroupingListHit(List.of(group0), null, query),
+                        new GroupingListHit(List.of(group1), null, query))),
                 new HitsProvider(List.of(
                         new DefaultErrorHit("source 1", ErrorMessage.createBackendCommunicationError("backend communication error 1")),
                         new DefaultErrorHit("source 2", ErrorMessage.createBackendCommunicationError("backend communication error 1")))));

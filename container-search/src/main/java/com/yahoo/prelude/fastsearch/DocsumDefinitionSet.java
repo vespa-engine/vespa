@@ -35,8 +35,8 @@ public final class DocsumDefinitionSet {
 
     public DocsumDefinitionSet(Collection<DocumentSummary> docsumDefinitions) {
         this.definitionsByName = docsumDefinitions.stream()
-                                                  .map(summary -> new DocsumDefinition(summary))
-                                                  .collect(Collectors.toUnmodifiableMap(summary -> summary.name(),
+                                                  .map(DocsumDefinition::new)
+                                                  .collect(Collectors.toUnmodifiableMap(DocsumDefinition::name,
                                                                                         summary -> summary));
     }
 
@@ -95,7 +95,7 @@ public final class DocsumDefinitionSet {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, DocsumDefinition> e : definitionsByName.entrySet() ) {
-            if (sb.length() != 0) {
+            if (!sb.isEmpty()) {
                 sb.append(",");
             }
             sb.append("[").append(e.getKey()).append(",").append(e.getValue().name()).append("]");

@@ -83,9 +83,7 @@ public class JuniperSearcher extends Searcher {
         List<Hit> hits = new ArrayList<>(worstCase);
         for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();) {
             Hit hit = i.next();
-            if ( ! (hit instanceof FastHit)) continue;
-
-            FastHit fastHit = (FastHit)hit;
+            if ( ! (hit instanceof FastHit fastHit)) continue;
             if (fastHit.isFilled(summaryClass)) continue;
 
             hits.add(fastHit);
@@ -99,9 +97,8 @@ public class JuniperSearcher extends Searcher {
                            String summaryClass, IndexFacts.Session indexFacts) {
         while (hitsToHighlight.hasNext()) {
             Hit hit = hitsToHighlight.next();
-            if ( ! (hit instanceof FastHit)) continue;
+            if ( ! (hit instanceof FastHit fastHit)) continue;
 
-            FastHit fastHit = (FastHit) hit;
             if (summaryClass != null &&  ! fastHit.isFilled(summaryClass)) continue;
 
             Object searchDefinitionField = fastHit.getField(Hit.SDDOCNAME_FIELD);
@@ -125,9 +122,9 @@ public class JuniperSearcher extends Searcher {
 
     private class StringArrayConverter implements ArrayTraverser {
 
-        private Index index;
-        private boolean bolding;
-        private Value.ArrayValue convertedField = new Value.ArrayValue();
+        private final Index index;
+        private final boolean bolding;
+        private final Value.ArrayValue convertedField = new Value.ArrayValue();
 
         /**
          * This converts the backend binary highlighting of each item in an array of string field,
@@ -189,8 +186,8 @@ public class JuniperSearcher extends Searcher {
             }
             if (newFieldParts != null) {
                 i.remove();
-                for (Iterator<FieldPart> j = newFieldParts.iterator(); j.hasNext();) {
-                    i.add(j.next());
+                for (FieldPart newFieldPart : newFieldParts) {
+                    i.add(newFieldPart);
                 }
             }
         }
@@ -220,7 +217,7 @@ public class JuniperSearcher extends Searcher {
             if (insideHighlight) {
                 newFieldParts.add(new BoldCloseFieldPart(boldCloseTag));
             } else {
-                if (newFieldParts.size() > 0
+                if (!newFieldParts.isEmpty()
                         && newFieldParts.get(newFieldParts.size() - 1) instanceof BoldCloseFieldPart) {
                     newFieldParts.remove(newFieldParts.size() - 1);
                 } else {
@@ -230,7 +227,7 @@ public class JuniperSearcher extends Searcher {
         }
     }
 
-    private List<FieldPart> initFieldParts(List<FieldPart> newFieldParts) {
+    private static List<FieldPart> initFieldParts(List<FieldPart> newFieldParts) {
         if (newFieldParts == null)
             newFieldParts = new ArrayList<>();
         return newFieldParts;

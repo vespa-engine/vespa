@@ -4,8 +4,8 @@ package com.yahoo.search.grouping.vespa;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
 import com.yahoo.net.URI;
+import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
-import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -19,7 +19,7 @@ import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.VdsHit;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,24 +34,24 @@ public class HitConverterTestCase {
 
     @Test
     void requireThatHitsAreConverted() {
-        HitConverter converter = new HitConverter(new MySearcher(), new Query());
-        Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(context()));
+        Query query = new Query();
+        HitConverter converter = new HitConverter(new MySearcher());
+        Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(context(query)));
         assertNotNull(hit);
         assertEquals(new URI("index:null/1/" + asHexString(createGlobalId(2))), hit.getId());
 
-        hit = converter.toSearchHit("default", new FS4Hit(4, createGlobalId(5), 6).setContext(context()));
+        hit = converter.toSearchHit("default", new FS4Hit(4, createGlobalId(5), 6).setContext(context(query)));
         assertNotNull(hit);
         assertEquals(new URI("index:null/4/" + asHexString(createGlobalId(5))), hit.getId());
     }
 
     @Test
     void requireThatContextDataIsCopied() {
-        Hit ctxHit = context();
-        ctxHit.setSource("69");
         Query ctxQuery = new Query();
-        ctxHit.setQuery(ctxQuery);
+        Hit ctxHit = context(ctxQuery);
+        ctxHit.setSource("69");
 
-        HitConverter converter = new HitConverter(new MySearcher(), new Query());
+        HitConverter converter = new HitConverter(new MySearcher());
         Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(ctxHit));
         assertNotNull(hit);
         assertTrue(hit instanceof FastHit);
@@ -63,9 +63,10 @@ public class HitConverterTestCase {
 
     @Test
     void requireThatSummaryClassIsSet() {
+        Query query = new Query();
         Searcher searcher = new MySearcher();
-        HitConverter converter = new HitConverter(searcher, new Query());
-        Hit hit = converter.toSearchHit("69", new FS4Hit(1, createGlobalId(2), 3).setContext(context()));
+        HitConverter converter = new HitConverter(searcher);
+        Hit hit = converter.toSearchHit("69", new FS4Hit(1, createGlobalId(2), 3).setContext(context(query)));
         assertNotNull(hit);
         assertTrue(hit instanceof FastHit);
         assertEquals("69", hit.getSearcherSpecificMetaData(searcher));
@@ -73,7 +74,7 @@ public class HitConverterTestCase {
 
     @Test
     void requireThatHitHasContext() {
-        HitConverter converter = new HitConverter(new MySearcher(), new Query());
+        HitConverter converter = new HitConverter(new MySearcher());
         try {
             converter.toSearchHit("69", new FS4Hit(1, createGlobalId(2), 3));
             fail();
@@ -84,7 +85,7 @@ public class HitConverterTestCase {
 
     @Test
     void requireThatUnsupportedHitClassThrows() {
-        HitConverter converter = new HitConverter(new MySearcher(), new Query());
+        HitConverter converter = new HitConverter(new MySearcher());
         try {
             converter.toSearchHit("69", new com.yahoo.searchlib.aggregation.Hit() {
 
@@ -95,21 +96,22 @@ public class HitConverterTestCase {
         }
     }
 
-    private static GroupingListHit context() {
-        return new GroupingListHit(Collections.emptyList(), null);
+    private static GroupingListHit context(Query query) {
+        return new GroupingListHit(List.of(), null, query);
     }
 
-    private static DocsumDefinitionSet sixtynine() {
+    private static DocumentDatabase sixtynine() {
         var schema = new Schema.Builder("none");
         var summary = new DocumentSummary.Builder("69");
         schema.add(summary.build());
-        return new DocsumDefinitionSet(schema.build());
+        return new DocumentDatabase(schema.build());
     }
 
     @Test
     void requireThatVdsHitCanBeConverted() {
-        HitConverter converter = new HitConverter(new MySearcher(), new Query());
-        GroupingListHit context = new GroupingListHit(null, sixtynine());
+        Query query = new Query();
+        HitConverter converter = new HitConverter(new MySearcher());
+        GroupingListHit context = new GroupingListHit(null, sixtynine(), query);
         VdsHit lowHit = new VdsHit("id:ns:type::", new byte[]{0x55, 0x55, 0x55, 0x55}, 1);
         lowHit.setContext(context);
         Hit hit = converter.toSearchHit("69", lowHit);
