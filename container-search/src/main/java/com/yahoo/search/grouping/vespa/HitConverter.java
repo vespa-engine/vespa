@@ -64,6 +64,7 @@ class HitConverter implements ResultBuilder.HitConverter {
             }
             DocsumDefinitionSet defs = hitContext.getDocsumDefinitionSet();
             defs.lazyDecode(summaryClass, grpHit.getSummary().getData(), hit);
+            hit.setField(Hit.SDDOCNAME_FIELD, hitContext.getSchema().name());
             hit.setFilled(summaryClass);
             hit.setFilled(hitContext.getQuery().getPresentation().getSummary());
             hit.setQuery(hitContext.getQuery());

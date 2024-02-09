@@ -119,6 +119,8 @@ public class HitConverterTestCase {
         assertTrue(hit instanceof FastHit);
         assertEquals(new Relevance(1), hit.getRelevance());
         assertTrue(hit.isFilled("69"));
+        assertEquals("none", hit.getField(Hit.SDDOCNAME_FIELD));
+        assertSame(query, hit.getQuery());
     }
 
     private static String asHexString(GlobalId gid) {
