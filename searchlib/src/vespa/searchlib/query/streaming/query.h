@@ -103,20 +103,6 @@ public:
     bool evaluate() const override;
 };
 
-
-/**
-   N-ary "EQUIV" operator that merges terms from nodes below.
-*/
-class EquivQueryNode : public OrQueryNode
-{
-public:
-    EquivQueryNode() noexcept : OrQueryNode("EQUIV") { }
-    bool evaluate() const override;
-    bool isFlattenable(ParseItem::ItemType type) const override {
-        return (type == ParseItem::ITEM_EQUIV);
-    }
-};
-
 /**
    Query packages the query tree. The usage pattern is like this.
    Construct the tree with the correct tree description.

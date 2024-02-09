@@ -5,6 +5,7 @@
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/storagedocument.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/array.h>
 #include <utility>
 
@@ -122,6 +123,7 @@ using FieldIdTSearcherMapT = std::vector<FieldSearcherContainer>;
 
 class FieldIdTSearcherMap : public FieldIdTSearcherMapT
 {
+    void prepare_term(const DocumentTypeIndexFieldMapT& difm, search::streaming::QueryTerm* qt, FieldIdT fid, vespalib::hash_set<const void*>& seen, search::streaming::QueryTermList& onlyInIndex);
 public:
     void prepare(const DocumentTypeIndexFieldMapT& difm, const SharedSearcherBuf& searcherBuf,
                  search::streaming::Query& query, const vsm::FieldPathMapT& field_paths,

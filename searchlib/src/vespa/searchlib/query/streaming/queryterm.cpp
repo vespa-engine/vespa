@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "queryterm.h"
+#include "queryterm.hpp"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/objects/visit.h>
@@ -113,89 +113,12 @@ QueryTerm::set_element_length(uint32_t hitlist_idx, uint32_t element_length)
     _hitList[hitlist_idx].set_element_length(element_length);
 }
 
-namespace {
-
-uint16_t
-cap_16_bits(uint32_t value)
-{
-    return std::min(value, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max()));
-}
-
-uint32_t
-extract_field_length(const QueryTerm& term, uint32_t field_id)
-{
-    return (field_id < term.getFieldInfoSize()) ? term.getFieldInfo(field_id).getFieldLength() : search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
-}
-
-void
-set_interleaved_features(TermFieldMatchData& tmd, uint32_t field_length, uint32_t num_occs)
-{
-    tmd.setFieldLength(cap_16_bits(field_length));
-    tmd.setNumOccs(cap_16_bits(num_occs));
-}
-
-}
-
-void
-QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const QueryTerm& fl_term) const
-{
-    HitList list;
-    const HitList & hitList = evaluateHits(list);
-
-    if (!hitList.empty()) { // only unpack if we have a hit
-        LOG(debug, "Unpack match data for query term '%s:%s'",
-            index().c_str(), getTerm());
-
-        uint32_t lastFieldId = -1;
-        TermFieldMatchData *tmd = nullptr;
-        uint32_t num_occs = 0;
-
-        // optimize for hitlist giving all hits for a single field in one chunk
-        for (const Hit & hit : hitList) {
-            uint32_t fieldId = hit.field_id();
-            if (fieldId != lastFieldId) {
-                if (tmd != nullptr) {
-                    if (tmd->needs_interleaved_features()) {
-                        set_interleaved_features(*tmd, extract_field_length(fl_term, lastFieldId), num_occs);
-                    }
-                    // reset to notfound/unknown values
-                    tmd = nullptr;
-                }
-                num_occs = 0;
-
-                // setup for new field that had a hit
-                const ITermFieldData *tfd = td.lookupField(fieldId);
-                if (tfd != nullptr) {
-                    tmd = match_data.resolveTermField(tfd->getHandle());
-                    tmd->setFieldId(fieldId);
-                    // reset field match data, but only once per docId
-                    if (tmd->getDocId() != docid) {
-                        tmd->reset(docid);
-                    }
-                }
-                lastFieldId = fieldId;
-            }
-            ++num_occs;
-            if (tmd != nullptr) {
-                TermFieldMatchDataPosition pos(hit.element_id(), hit.position(),
-                                               hit.element_weight(), hit.element_length());
-                tmd->appendPosition(pos);
-                LOG(debug, "Append elemId(%u),position(%u), weight(%d), tfmd.weight(%d)",
-                    pos.getElementId(), pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
-            }
-        }
-        if (tmd != nullptr) {
-            if (tmd->needs_interleaved_features()) {
-                set_interleaved_features(*tmd, extract_field_length(fl_term, lastFieldId), num_occs);
-            }
-        }
-    }
-}
-
 void
 QueryTerm::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data)
 {
-    unpack_match_data_helper(docid, td, match_data, *this);
+    HitList list;
+    const HitList & hit_list = evaluateHits(list);
+    unpack_match_data_helper(docid, td, match_data, hit_list, *this);
 }
 
 NearestNeighborQueryNode*
@@ -218,6 +141,18 @@ QueryTerm::as_regexp_term() noexcept
 
 FuzzyTerm*
 QueryTerm::as_fuzzy_term() noexcept
+{
+    return nullptr;
+}
+
+EquivQueryNode*
+QueryTerm::as_equiv_query_node() noexcept
+{
+    return nullptr;
+}
+
+const EquivQueryNode*
+QueryTerm::as_equiv_query_node() const noexcept
 {
     return nullptr;
 }

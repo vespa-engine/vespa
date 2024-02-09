@@ -4,7 +4,7 @@
 #include "rankprocessor.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/simpletermfielddata.h>
-#include <vespa/searchlib/query/streaming/multi_term.h>
+#include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <algorithm>
@@ -56,6 +56,51 @@ getFeature(const RankProgram &rankProgram) {
 }
 
 void
+RankProcessor::resolve_fields_from_children(QueryTermData& qtd, MultiTerm& mt)
+{
+    vespalib::hash_set<uint32_t> field_ids;
+    for (auto& subterm : mt.get_terms()) {
+        vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(subterm->index());
+        const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
+        if (view != nullptr) {
+            for (auto field_id : *view) {
+                field_ids.insert(field_id);
+            }
+        } else {
+            LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",
+                getIndexName(subterm->index(), expandedIndexName).c_str());
+        }
+    }
+    std::vector<uint32_t> sorted_field_ids;
+    sorted_field_ids.reserve(field_ids.size());
+    for (auto field_id : field_ids) {
+        sorted_field_ids.emplace_back(field_id);
+    }
+    std::sort(sorted_field_ids.begin(), sorted_field_ids.end());
+    for (auto field_id : sorted_field_ids) {
+        qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
+    }
+}
+
+void
+RankProcessor::resolve_fields_from_term(QueryTermData& qtd, search::streaming::QueryTerm& term)
+{
+    vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term.index());
+    const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
+    if (view != nullptr) {
+        for (auto field_id : *view) {
+            qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
+        }
+    } else {
+        LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",
+            getIndexName(term.index(), expandedIndexName).c_str());
+    }
+    LOG(debug, "Setup query term '%s:%s'",
+        getIndexName(term.index(), expandedIndexName).c_str(),
+        term.getTerm());
+}
+
+void
 RankProcessor::initQueryEnvironment()
 {
     QueryWrapper::TermList & terms = _query.getTermList();
@@ -75,21 +120,12 @@ RankProcessor::initQueryEnvironment()
         if (nn_term != nullptr) {
             qtd.getTermData().set_query_tensor_name(nn_term->get_query_tensor_name());
         }
-
-        vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term->index());
-        const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
-        if (view != nullptr) {
-            for (auto field_id : *view) {
-                qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
-            }
+        auto* eqn = term->as_equiv_query_node();
+        if (eqn != nullptr) {
+            resolve_fields_from_children(qtd, *eqn);
         } else {
-            LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",
-                getIndexName(term->index(), expandedIndexName).c_str());
+            resolve_fields_from_term(qtd, *term);
         }
-
-        LOG(debug, "Setup query term '%s:%s'",
-            getIndexName(term->index(), expandedIndexName).c_str(),
-            term->getTerm());
         _queryEnv.addTerm(&qtd.getTermData());
     }
     _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());

@@ -2,7 +2,9 @@
 vespa_add_library(searchlib_query_streaming OBJECT
     SOURCES
     dot_product_term.cpp
+    equiv_query_node.cpp
     fuzzy_term.cpp
+    hit.cpp
     hit_iterator_pack.cpp
     in_term.cpp
     multi_term.cpp

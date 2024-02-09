@@ -3,6 +3,7 @@
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
+#include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/streaming/phrase_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
@@ -352,17 +353,17 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     const QueryNode & root = q.getRoot();
     EXPECT_TRUE(dynamic_cast<const EquivQueryNode *>(&root) != nullptr);
     const auto & equiv = static_cast<const EquivQueryNode &>(root);
-    EXPECT_EQ(2u, equiv.size());
-    EXPECT_TRUE(dynamic_cast<const QueryTerm *>(equiv[0].get()) != nullptr);
+    EXPECT_EQ(2u, equiv.get_terms().size());
+    EXPECT_TRUE(dynamic_cast<const QueryTerm *>(equiv.get_terms()[0].get()) != nullptr);
     {
-        const auto & qt = static_cast<const QueryTerm &>(*equiv[0]);
+        const auto & qt = static_cast<const QueryTerm &>(*equiv.get_terms()[0]);
         EXPECT_EQ("c", qt.index());
         EXPECT_EQ(vespalib::stringref("1.0e"), qt.getTerm());
         EXPECT_EQ(3u, qt.uniqueId());
     }
-    EXPECT_TRUE(dynamic_cast<const PhraseQueryNode *>(equiv[1].get()) != nullptr);
+    EXPECT_TRUE(dynamic_cast<const PhraseQueryNode *>(equiv.get_terms()[1].get()) != nullptr);
     {
-        const auto & phrase = static_cast<const PhraseQueryNode &>(*equiv[1]);
+        const auto & phrase = static_cast<const PhraseQueryNode &>(*equiv.get_terms()[1]);
         EXPECT_EQ(2u, phrase.get_terms().size());
          {
             const auto & qt = *phrase.get_terms()[0];
