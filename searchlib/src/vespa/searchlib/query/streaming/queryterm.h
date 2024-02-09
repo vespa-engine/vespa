@@ -105,7 +105,8 @@ public:
     virtual const EquivQueryNode* as_equiv_query_node() const noexcept;
     virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data);
 protected:
-    void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const QueryTerm& fl_term) const;
+    template <typename HitListType>
+    static void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const HitListType& hit_list, const QueryTerm& fl_term);
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;
     EncodingBitMap               _encoding;

@@ -69,7 +69,9 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
 void
 PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data)
 {
-    unpack_match_data_helper(docid, td, match_data, *get_terms().front());
+    HitList list;
+    const HitList & hit_list = evaluateHits(list);
+    unpack_match_data_helper(docid, td, match_data, hit_list, *get_terms().front());
 }
 
 }

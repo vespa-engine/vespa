@@ -2,10 +2,7 @@
 
 #include "equiv_query_node.h"
 #include "phrase_query_node.h"
-#include <vespa/searchlib/fef/itermdata.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <algorithm>
-#include <cassert>
+#include "queryterm.hpp"
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
@@ -26,25 +23,6 @@ public:
     }
     uint32_t get_field_length() const noexcept { return _field_length; }
 };
-
-uint16_t
-cap_16_bits(uint32_t value)
-{
-    return std::min(value, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max()));
-}
-
-uint32_t
-extract_field_length(const QueryTerm& term, uint32_t field_id)
-{
-    return (field_id < term.getFieldInfoSize()) ? term.getFieldInfo(field_id).getFieldLength() : search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
-}
-
-void
-set_interleaved_features(TermFieldMatchData& tmd, uint32_t field_length, uint32_t num_occs)
-{
-    tmd.setFieldLength(cap_16_bits(field_length));
-    tmd.setNumOccs(cap_16_bits(num_occs));
-}
 
 template <typename HitType>
 void merge_hits_from_children(std::vector<HitType>& hl, const MultiTerm& mt)
@@ -98,54 +76,9 @@ EquivQueryNode::evaluateHits(HitList & hl) const
 void
 EquivQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data)
 {
-    std::vector<HitWithFieldLength> hitList;
-    merge_hits_from_children(hitList, *this);
-
-    if (!hitList.empty()) { // only unpack if we have a hit
-        uint32_t lastFieldId = -1;
-        uint32_t last_field_length = 0;
-        TermFieldMatchData *tmd = nullptr;
-        uint32_t num_occs = 0;
-
-        // optimize for hitlist giving all hits for a single field in one chunk
-        for (auto& hit : hitList) {
-            uint32_t fieldId = hit.field_id();
-            if (fieldId != lastFieldId) {
-                if (tmd != nullptr) {
-                    if (tmd->needs_interleaved_features()) {
-                        set_interleaved_features(*tmd, last_field_length, num_occs);
-                    }
-                    // reset to notfound/unknown values
-                    tmd = nullptr;
-                }
-                num_occs = 0;
-
-                // setup for new field that had a hit
-                const ITermFieldData *tfd = td.lookupField(fieldId);
-                if (tfd != nullptr) {
-                    tmd = match_data.resolveTermField(tfd->getHandle());
-                    tmd->setFieldId(fieldId);
-                    // reset field match data, but only once per docId
-                    if (tmd->getDocId() != docid) {
-                        tmd->reset(docid);
-                    }
-                }
-                lastFieldId = fieldId;
-                last_field_length = hit.get_field_length();
-            }
-            ++num_occs;
-            if (tmd != nullptr) {
-                TermFieldMatchDataPosition pos(hit.element_id(), hit.position(),
-                                               hit.element_weight(), hit.element_length());
-                tmd->appendPosition(pos);
-            }
-        }
-        if (tmd != nullptr) {
-            if (tmd->needs_interleaved_features()) {
-                set_interleaved_features(*tmd, last_field_length, num_occs);
-            }
-        }
-    }
+    std::vector<HitWithFieldLength> hit_list;
+    merge_hits_from_children(hit_list, *this);
+    unpack_match_data_helper(docid, td, match_data, hit_list, *this);
 }
 
 EquivQueryNode*
