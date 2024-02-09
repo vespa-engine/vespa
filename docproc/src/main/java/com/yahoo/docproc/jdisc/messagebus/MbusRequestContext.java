@@ -122,7 +122,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         if (exception instanceof HandledProcessingException) {
             errorMsg.append(" Error message: ").append(exception.getMessage());
         } else if (exception != null) {
-            errorMsg.append(" Error message: ").append(exception.toString());
+            errorMsg.append(" Error message: ").append(exception);
         }
         errorMsg.append(" -- See Vespa log for details.");
         processingFailed(errorCode, errorMsg.toString());

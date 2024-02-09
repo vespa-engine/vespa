@@ -204,15 +204,11 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(embedder.hashCode(), embedder, embedderArguments); }
+    public int hashCode() { return EmbedExpression.class.hashCode(); }
 
     @Override
     public boolean equals(Object o) {
-        if ( ! super.equals(o)) return false;
-        if ( ! (o instanceof EmbedExpression other)) return false;
-        if ( ! Objects.equals(embedder, other.embedder)) return false;
-        if ( ! Objects.equals(embedderArguments, other.embedderArguments)) return false;
-        return true;
+        return o instanceof EmbedExpression;
     }
 
     private static String validEmbedders(Map<String, Embedder> embedders) {

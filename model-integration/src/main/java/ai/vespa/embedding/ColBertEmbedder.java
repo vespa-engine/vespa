@@ -242,8 +242,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         int wantedDimensionality = type.indexedSubtype().dimensions().get(0).size().get().intValue();
         int resultDimensionality = (int)result.shape()[2];
         if (resultDimensionality != wantedDimensionality) {
-            throw new IllegalArgumentException("Not possible to map token vector embedding with " + resultDimensionality
-                    + " + dimensions into tensor with " + wantedDimensionality);
+            throw new IllegalArgumentException("Not possible to map token vector embedding with " + resultDimensionality +
+                                               " dimensions into tensor with " + wantedDimensionality);
         }
         Tensor.Builder builder = Tensor.Builder.of(type);
         for (int token = 0; token < nTokens; token++) {
