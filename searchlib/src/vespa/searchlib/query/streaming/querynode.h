@@ -34,6 +34,7 @@ class QueryNode
     static std::unique_ptr<QueryNode> build_wand_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep);
     static std::unique_ptr<QueryNode> build_weighted_set_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep);
     static std::unique_ptr<QueryNode> build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep);
+    static std::unique_ptr<QueryNode> build_equiv_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep, bool allow_rewrite);
     static void skip_unknown(SimpleQueryStackDumpIterator& queryRep);
  public:
   using UP = std::unique_ptr<QueryNode>;

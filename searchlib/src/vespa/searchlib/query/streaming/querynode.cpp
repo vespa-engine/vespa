@@ -9,6 +9,7 @@
 #include "same_element_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
+#include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
 #include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
@@ -44,7 +45,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_AND:
     case ParseItem::ITEM_OR:
     case ParseItem::ITEM_WEAK_AND:
-    case ParseItem::ITEM_EQUIV:
     case ParseItem::ITEM_NOT:
     case ParseItem::ITEM_SAME_ELEMENT:
     case ParseItem::ITEM_NEAR:
@@ -142,10 +142,10 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 auto dotPos = ssTerm.find('.');
                 phrase->add_term(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, dotPos), ssIndex, TermType::WORD, normalize_mode));
                 phrase->add_term(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(dotPos + 1), ssIndex, TermType::WORD, normalize_mode));
-                auto orqn = std::make_unique<EquivQueryNode>();
-                orqn->addChild(std::move(qt));
-                orqn->addChild(std::move(phrase));
-                qn = std::move(orqn);
+                auto eqn = std::make_unique<EquivQueryNode>(factory.create(), 2);
+                eqn->add_term(std::move(qt));
+                eqn->add_term(std::move(phrase));
+                qn = std::move(eqn);
             } else {
                 qn = std::move(qt);
             }
@@ -170,6 +170,9 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         break;
     case ParseItem::ITEM_PHRASE:
         qn = build_phrase_term(factory, queryRep);
+        break;
+    case ParseItem::ITEM_EQUIV:
+        qn = build_equiv_term(factory, queryRep, allowRewrite);
         break;
     default:
         skip_unknown(queryRep);
@@ -280,6 +283,33 @@ QueryNode::build_phrase_term(const QueryNodeResultFactory& factory, SimpleQueryS
         phrase->add_term(std::move(qt));
     }
     return phrase;
+}
+
+std::unique_ptr<QueryNode>
+QueryNode::build_equiv_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep, bool allow_rewrite)
+{
+    auto eqn = std::make_unique<EquivQueryNode>(factory.create(), queryRep.getArity());
+    auto arity = queryRep.getArity();
+    eqn->setWeight(queryRep.GetWeight());
+    eqn->setUniqueId(queryRep.getUniqueId());
+    for (size_t i = 0; i < arity; ++i) {
+        queryRep.next();
+        auto qn = Build(eqn.get(), factory, queryRep, allow_rewrite);
+        auto nested_eqn = dynamic_cast<EquivQueryNode*>(qn.get());
+        if (nested_eqn != nullptr) {
+            auto stolen_terms = nested_eqn->steal_terms();
+            for (auto& term : stolen_terms) {
+                eqn->add_term(std::move(term));
+            }
+            continue;
+        }
+        auto qtp = dynamic_cast<QueryTerm*>(qn.get());
+        assert(qtp != nullptr);
+        qn.release();
+        std::unique_ptr<QueryTerm> qt(qtp);
+        eqn->add_term(std::move(qt));
+    }
+    return eqn;
 }
 
 void

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldsearchspec.h"
+#include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
@@ -222,7 +223,14 @@ FieldSearchSpecMap::buildFieldsInQuery(const Query & query) const
     query.getLeaves(qtl);
 
     for (const auto & term : qtl) {
-        addFieldsFromIndex(term->index(), fieldsInQuery);
+        auto equiv = term->as_equiv_query_node();
+        if (equiv != nullptr) {
+            for (const auto& subterm : equiv->get_terms()) {
+                addFieldsFromIndex(subterm->index(), fieldsInQuery);
+            }
+        } else {
+            addFieldsFromIndex(term->index(), fieldsInQuery);
+        }
     }
     return fieldsInQuery;
 }

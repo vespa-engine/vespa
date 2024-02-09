@@ -17,6 +17,7 @@ class MatchData;
 }
 namespace search::streaming {
 
+class EquivQueryNode;
 class FuzzyTerm;
 class NearestNeighborQueryNode;
 class MultiTerm;
@@ -100,6 +101,8 @@ public:
     virtual MultiTerm* as_multi_term() noexcept;
     virtual RegexpTerm* as_regexp_term() noexcept;
     virtual FuzzyTerm* as_fuzzy_term() noexcept;
+    virtual EquivQueryNode* as_equiv_query_node() noexcept;
+    virtual const EquivQueryNode* as_equiv_query_node() const noexcept;
     virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data);
 protected:
     void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const QueryTerm& fl_term) const;

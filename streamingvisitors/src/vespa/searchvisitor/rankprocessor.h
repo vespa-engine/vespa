@@ -16,6 +16,8 @@
 
 namespace streaming {
 
+class QueryTermData;
+
 /**
  * This class is associated with a query and a rank profile and
  * is used to calculate rank and feature set for matched documents.
@@ -43,6 +45,8 @@ private:
     HitCollector::UP                     _hitCollector;
     std::unique_ptr<RankProgram>         _match_features_program;
 
+    void resolve_fields_from_children(QueryTermData& qtd, search::streaming::MultiTerm& mt);
+    void resolve_fields_from_term(QueryTermData& qtd, search::streaming::QueryTerm& term);
     void initQueryEnvironment();
     void initHitCollector(size_t wantedHitCount);
     void setupRankProgram(search::fef::RankProgram &program);

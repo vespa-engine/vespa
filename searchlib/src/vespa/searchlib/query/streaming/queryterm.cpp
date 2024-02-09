@@ -222,4 +222,16 @@ QueryTerm::as_fuzzy_term() noexcept
     return nullptr;
 }
 
+EquivQueryNode*
+QueryTerm::as_equiv_query_node() noexcept
+{
+    return nullptr;
+}
+
+const EquivQueryNode*
+QueryTerm::as_equiv_query_node() const noexcept
+{
+    return nullptr;
+}
+
 }

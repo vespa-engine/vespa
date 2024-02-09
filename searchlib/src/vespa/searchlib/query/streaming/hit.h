@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iosfwd>
 #include <vector>
 
 namespace search::streaming {
@@ -27,7 +28,36 @@ public:
     uint32_t element_length() const { return _element_length; }
     uint32_t position() const { return _position; }
     void set_element_length(uint32_t value) { _element_length = value; }
+    bool operator<(const Hit& rhs) const noexcept {
+        if (_field_id != rhs._field_id) {
+            return _field_id < rhs._field_id;
+        }
+        if (_element_id != rhs._element_id) {
+            return _element_id < rhs._element_id;
+        }
+        if (_position != rhs._position) {
+                return _position < rhs._position;
+        }
+        if (_element_weight != rhs._element_weight) {
+            return _element_weight > rhs._element_weight;
+        }
+        return _element_length < rhs._element_length;
+    }
+    bool at_same_pos(const Hit& rhs) const noexcept {
+        return (_field_id == rhs._field_id) &&
+            (_element_id == rhs._element_id) &&
+            (_position == rhs._position);
+    }
+    bool operator==(const Hit& rhs) const noexcept {
+        return (_field_id == rhs._field_id) &&
+            (_element_id == rhs._element_id) &&
+            (_position == rhs._position) &&
+            (_element_weight == rhs._element_weight) &&
+            (_element_length == rhs._element_length);
+    }
 };
+
+std::ostream& operator<<(std::ostream& os, const Hit& hit);
 
 using HitList = std::vector<Hit>;
 
