@@ -35,6 +35,9 @@ public enum Dimension {
     /** Machine architecture: either arm64 or x86_64. */
     ARCHITECTURE("architecture"),
 
+    /** A provider of TLS certificates. */
+    CERTIFICATE_PROVIDER("certificate-provider"),
+
     /** Whether "enclave" (or "inclave" or "exclave"), or not ("noclave"). */
     CLAVE("clave"),
 
