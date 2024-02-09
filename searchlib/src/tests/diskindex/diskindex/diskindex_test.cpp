@@ -382,7 +382,8 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
     if (empty_settings._empty_word) {
         name << "we";
     }
-    openIndex(name.str(), io_settings._use_directio, io_settings._use_mmap, empty_settings._empty_field, empty_settings._empty_doc, empty_settings._empty_word);
+    openIndex(name.str(), io_settings._use_directio, io_settings._use_mmap, empty_settings._empty_field,
+              empty_settings._empty_doc, empty_settings._empty_word);
 }
 
 void

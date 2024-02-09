@@ -35,39 +35,30 @@ class MockFieldLengthInspector : public IFieldLengthInspector {
 
 struct Builder
 {
-    search::diskindex::IndexBuilder _ib;
     MockFieldLengthInspector        _mock_field_length_inspector;
     TuneFileIndexing                _tuneFileIndexing;
     DummyFileHeaderContext          _fileHeaderContext;
+    search::diskindex::IndexBuilder _ib;
     DocIdAndFeatures                _features;
 
-    Builder(const std::string &dir,
-            const Schema &s,
-            uint32_t docIdLimit,
-            uint64_t numWordIds,
-            bool directio)
-        : _ib(s, dir, docIdLimit),
-          _tuneFileIndexing(),
+    Builder(const std::string &dir, const Schema &s, uint32_t docIdLimit, uint64_t numWordIds, bool directio)
+        : _tuneFileIndexing(),
           _fileHeaderContext(),
+          _ib(s, dir, docIdLimit,numWordIds, _mock_field_length_inspector, _tuneFileIndexing, _fileHeaderContext),
           _features()
     {
         if (directio) {
             _tuneFileIndexing._read.setWantDirectIO();
             _tuneFileIndexing._write.setWantDirectIO();
         }
-        _ib.open(numWordIds, _mock_field_length_inspector, _tuneFileIndexing, _fileHeaderContext);
     }
 
-    void addDoc(uint32_t docId) {
+    void addDoc(index::FieldIndexBuilder & fb, uint32_t docId) {
         _features.clear(docId);
         _features.elements().emplace_back(0, 1, 1);
         _features.elements().back().setNumOccs(1);
         _features.word_positions().emplace_back(0);
-        _ib.add_document(_features);
-    }
-
-    void close() {
-        _ib.close();
+        fb.add_document(_features);
     }
 };
 
@@ -84,37 +75,39 @@ TestDiskIndex::buildSchema()
 
 void
 TestDiskIndex::buildIndex(const std::string & dir, bool directio,
-                 bool fieldEmpty, bool docEmpty, bool wordEmpty)
+                          bool fieldEmpty, bool docEmpty, bool wordEmpty)
 {
     Builder b(dir, _schema, docEmpty ? 1 : 32, wordEmpty ? 0 : 2, directio);
-    if (!wordEmpty && !fieldEmpty && !docEmpty) {
+
+    if (!fieldEmpty) {
         // f1
-        b._ib.startField(0);
-        b._ib.startWord("w1");
-        b.addDoc(1);
-        b.addDoc(3);
-        b._ib.endWord();
-        b._ib.endField();
-        // f2
-        b._ib.startField(1);
-        b._ib.startWord("w1");
-        b.addDoc(2);
-        b.addDoc(4);
-        b.addDoc(6);
-        b._ib.endWord();
-        b._ib.startWord("w2");
-        for (uint32_t docId = 1; docId < 18; ++docId) {
-            b.addDoc(docId);
+        auto fb = b._ib.startField(0);
+        if (!wordEmpty && !docEmpty) {
+            fb->startWord("w1");
+            b.addDoc(*fb, 1);
+            b.addDoc(*fb, 3);
+            fb->endWord();
         }
-        b._ib.endWord();
-        b._ib.endField();
+        fb = b._ib.startField(1);
+        if (!wordEmpty && !docEmpty) {
+            // f2
+            fb->startWord("w1");
+            b.addDoc(*fb, 2);
+            b.addDoc(*fb, 4);
+            b.addDoc(*fb, 6);
+            fb->endWord();
+            fb->startWord("w2");
+            for (uint32_t docId = 1; docId < 18; ++docId) {
+                b.addDoc(*fb, docId);
+            }
+            fb->endWord();
+        }
     }
-    b.close();
 }
 
 void
 TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap,
-                bool fieldEmpty, bool docEmpty, bool wordEmpty)
+                         bool fieldEmpty, bool docEmpty, bool wordEmpty)
 {
     buildIndex(dir, directio, fieldEmpty, docEmpty, wordEmpty);
     TuneFileRandRead    tuneFileRead;

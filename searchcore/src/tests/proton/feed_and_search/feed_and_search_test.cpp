@@ -176,12 +176,14 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     const string index_dir = "test_index";
     const uint32_t docIdLimit = memory_index.getDocIdLimit();
     const uint64_t num_words = memory_index.getNumWords();
-    IndexBuilder index_builder(schema, index_dir, docIdLimit);
     search::TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
-    index_builder.open(num_words, MockFieldLengthInspector(), tuneFileIndexing, fileHeaderContext);
-    memory_index.dump(index_builder);
-    index_builder.close();
+    {
+        MockFieldLengthInspector fieldLengthInspector;
+        IndexBuilder index_builder(schema, index_dir, docIdLimit, num_words,
+                                   fieldLengthInspector, tuneFileIndexing, fileHeaderContext);
+        memory_index.dump(index_builder);
+    }
 
     // Fusion test.  Keep all documents to get an "indentical" copy.
     const string index_dir2 = "test_index2";

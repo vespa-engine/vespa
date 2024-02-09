@@ -81,8 +81,7 @@ bool
 DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
 {
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
-        vespalib::string dictName =
-            _indexDir + "/" + itr.getName() + "/dictionary";
+        vespalib::string dictName = _indexDir + "/" + itr.getName() + "/dictionary";
         auto dict = std::make_unique<PageDict4RandRead>();
         if (!dict->open(dictName, tuneFileSearch._read)) {
             LOG(warning, "Could not open disk dictionary '%s'", dictName.c_str());
@@ -152,7 +151,10 @@ DiskIndex::openField(const vespalib::string &fieldDir,
 bool
 DiskIndex::setup(const TuneFileSearch &tuneFileSearch)
 {
-    if (!loadSchema() || !openDictionaries(tuneFileSearch)) {
+    if (!loadSchema() ) {
+        return false;
+    }
+    if (!openDictionaries(tuneFileSearch)) {
         return false;
     }
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {

@@ -149,7 +149,7 @@ FieldIndex<interleaved_features>::compactFeatures()
 
 template <bool interleaved_features>
 void
-FieldIndex<interleaved_features>::dump(search::index::IndexBuilder & indexBuilder)
+FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder & indexBuilder)
 {
     vespalib::stringref word;
     FeatureStore::DecodeContextCooked decoder(nullptr);

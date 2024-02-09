@@ -22,43 +22,26 @@ class BitVectorCandidate;
 class IndexBuilder : public index::IndexBuilder {
 public:
     // Schema argument must live until IndexBuilder has been deleted.
-    IndexBuilder(const index::Schema &schema, vespalib::stringref prefix, uint32_t docIdLimit);
+    IndexBuilder(const index::Schema &schema, vespalib::stringref prefix, uint32_t docIdLimit,
+                 uint64_t numWordIds, const index::IFieldLengthInspector &field_length_inspector,
+                 const TuneFileIndexing &tuneFileIndexing, const search::common::FileHeaderContext &fileHeaderContext);
     ~IndexBuilder() override;
 
-    void startField(uint32_t fieldId) override;
-    void endField() override;
-    void startWord(vespalib::stringref word) override;
-    void endWord() override;
-    void add_document(const index::DocIdAndFeatures &features) override;
+    std::unique_ptr<index::FieldIndexBuilder> startField(uint32_t fieldId) override;
     vespalib::string appendToPrefix(vespalib::stringref name) const;
-
-    void open(uint64_t numWordIds, const index::IFieldLengthInspector &field_length_inspector,
-              const TuneFileIndexing &tuneFileIndexing,
-              const common::FileHeaderContext &fileHandleContext);
-
-    void close();
 private:
-    class FieldHandle;
     const index::Schema      &_schema;
-    std::vector<FieldHandle>  _fields;
+    std::vector<int>          _fields;
     const vespalib::string    _prefix;
-    vespalib::string          _curWord;
     const uint32_t            _docIdLimit;
-    int32_t                   _curFieldId;
-    uint32_t                  _lowestOKFieldId;
-    uint32_t                  _curDocId;
-    bool                      _inWord;
-
-    static std::vector<IndexBuilder::FieldHandle> extractFields(const index::Schema &schema, IndexBuilder & builder);
-
-    static uint32_t noDocId() {
-        return std::numeric_limits<uint32_t>::max();
-    }
+    const uint32_t            _numWordIds;
+    const index::IFieldLengthInspector       &_field_length_inspector;
+    const TuneFileIndexing                   &_tuneFileIndexing;
+    const search::common::FileHeaderContext  &_fileHeaderContext;
 
     static uint64_t noWordNumHigh() {
         return std::numeric_limits<uint64_t>::max();
     }
-    FieldHandle & currentField();
 };
 
 }
