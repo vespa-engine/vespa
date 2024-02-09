@@ -245,7 +245,7 @@ public class StreamingSearcher extends VespaBackEndSearcher {
         List<Grouping> groupingList = visitor.getGroupings();
         lazyTrace(query, 8, "Grouping list=", groupingList);
         if ( ! groupingList.isEmpty() ) {
-            GroupingListHit groupHit = new GroupingListHit(groupingList, getDocsumDefinitionSet(query));
+            GroupingListHit groupHit = new GroupingListHit(groupingList, getDocumentDatabase(query), query);
             result.hits().add(groupHit);
         }
 

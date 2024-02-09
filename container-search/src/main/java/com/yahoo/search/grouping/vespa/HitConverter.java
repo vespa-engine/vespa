@@ -4,7 +4,6 @@ package com.yahoo.search.grouping.vespa;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
-import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
@@ -19,17 +18,14 @@ import com.yahoo.searchlib.aggregation.VdsHit;
 class HitConverter implements ResultBuilder.HitConverter {
 
     private final Searcher searcher;
-    private final Query query;
 
     /**
      * Creates a new instance of this class.
      *
      * @param searcher The searcher that owns this converter.
-     * @param query    The query that returned the hits.
      */
-    public HitConverter(Searcher searcher, Query query) {
+    public HitConverter(Searcher searcher) {
         this.searcher = searcher;
-        this.query = query;
     }
 
     @Override
@@ -59,19 +55,20 @@ class HitConverter implements ResultBuilder.HitConverter {
     }
 
     private Hit convertVdsHit(String summaryClass, VdsHit grpHit) {
-        FastHit ret = new FastHit();
-        ret.setRelevance(grpHit.getRank());
+        FastHit hit = new FastHit();
+        hit.setRelevance(grpHit.getRank());
         if (grpHit.getSummary().getData().length > 0) {
-            GroupingListHit ctxHit = (GroupingListHit)grpHit.getContext();
-            if (ctxHit == null) {
+            GroupingListHit hitContext = (GroupingListHit)grpHit.getContext();
+            if (hitContext == null) {
                 throw new NullPointerException("Hit has no context.");
             }
-            DocsumDefinitionSet defs = ctxHit.getDocsumDefinitionSet();
-            defs.lazyDecode(summaryClass, grpHit.getSummary().getData(), ret);
-            ret.setFilled(summaryClass);
-            ret.setFilled(query.getPresentation().getSummary());
+            DocsumDefinitionSet defs = hitContext.getDocsumDefinitionSet();
+            defs.lazyDecode(summaryClass, grpHit.getSummary().getData(), hit);
+            hit.setFilled(summaryClass);
+            hit.setFilled(hitContext.getQuery().getPresentation().getSummary());
+            hit.setQuery(hitContext.getQuery());
         }
-        return ret;
+        return hit;
     }
 
 }
