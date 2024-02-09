@@ -97,43 +97,71 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
         qt->resizeFieldId(1);
     }
 
+    /*
+     * Populate hit lists in query terms, emulating the result of
+     * having performed a streaming search.
+     */
+    constexpr uint32_t field0 = 0;
+    constexpr uint32_t field1 = 1;
+    constexpr uint32_t elem0 = 0;
+    constexpr uint32_t elem1 = 1;
+    constexpr int32_t weight1 = 1;
+    constexpr int32_t weight2 = 2;
+    constexpr uint32_t pos5 = 5;
+    constexpr uint32_t pos6 = 6;
+    constexpr uint32_t pos3 = 3;
+    constexpr uint32_t pos4 = 4;
+    constexpr uint32_t field0_len = 100;
+    constexpr uint32_t field1_len = 200;
+    constexpr uint32_t field0_element0_len = 10;
+    constexpr uint32_t field0_element1_len = 30;
+    constexpr uint32_t field1_element0_len = 31;
     // field 0
-    terms[0]->add(0, 0, 1, 0);
-    terms[1]->add(0, 0, 1, 1);
-    terms[2]->add(0, 1, 1, 0);
+    terms[0]->add(field0, elem0, weight1, pos5);
+    terms[1]->add(field0, elem0, weight1, pos6);
+    terms[2]->add(field0, elem1, weight1, pos3);
     // field 1
-    terms[1]->add(1, 0, 1, 4);
-    terms[2]->add(1, 0, 2, 4);
+    terms[1]->add(field1, elem0, weight1, pos4);
+    terms[2]->add(field1, elem0, weight2, pos4);
 
-    terms[0]->set_element_length(0, 10);
-    terms[1]->set_element_length(0, 10);
-    terms[1]->set_element_length(1, 31);
-    terms[2]->set_element_length(0, 30);
-    terms[2]->set_element_length(1, 31);
+    terms[0]->set_element_length(0, field0_element0_len);
+    terms[1]->set_element_length(0, field0_element0_len);
+    terms[1]->set_element_length(1, field1_element0_len);
+    terms[2]->set_element_length(0, field0_element1_len);
+    terms[2]->set_element_length(1, field1_element0_len);
+
+    /*
+     * evaluateHits() should get the union of the hits for each query term
+     * but without duplicates.
+     */
     HitList hits;
     eqn.evaluateHits(hits);
-    auto exp_hits = HitList{{0,0,1,0},{0,0,1,1},{0,1,1,0},{1,0,2,4}};
-    exp_hits[0].set_element_length(10);
-    exp_hits[1].set_element_length(10);
-    exp_hits[2].set_element_length(30);
-    exp_hits[3].set_element_length(31);
+    auto exp_hits = HitList{{field0,elem0,weight1,pos5},{field0,elem0,weight1,pos6},{field0,elem1,weight1,pos3},{field1,elem0,weight2,pos4}};
+    exp_hits[0].set_element_length(field0_element0_len);
+    exp_hits[1].set_element_length(field0_element0_len);
+    exp_hits[2].set_element_length(field0_element1_len);
+    exp_hits[3].set_element_length(field1_element0_len);
     ASSERT_EQ(exp_hits, hits);
     EXPECT_TRUE(eqn.evaluate());
 
+    /*
+     * Verify that unpack_match_data() gives the expected term field
+     * match data information.
+     */
     SimpleTermData td;
     constexpr TermFieldHandle handle0 = 27;
     constexpr TermFieldHandle handle1 = 29;
     constexpr TermFieldHandle handle_max = std::max(handle0, handle1);
     td.addField(0).setHandle(handle0);
     td.addField(1).setHandle(handle1);
-    terms[0]->resizeFieldId(0);
-    terms[0]->getFieldInfo(0).setFieldLength(100);
-    terms[1]->resizeFieldId(1);
-    terms[1]->getFieldInfo(0).setFieldLength(100);
-    terms[1]->getFieldInfo(1).setFieldLength(200);
-    terms[2]->resizeFieldId(1);
-    terms[2]->getFieldInfo(0).setFieldLength(100);
-    terms[2]->getFieldInfo(1).setFieldLength(200);
+    terms[0]->resizeFieldId(field0);
+    terms[0]->getFieldInfo(field0).setFieldLength(field0_len);
+    terms[1]->resizeFieldId(field1);
+    terms[1]->getFieldInfo(field0).setFieldLength(field0_len);
+    terms[1]->getFieldInfo(field1).setFieldLength(field1_len);
+    terms[2]->resizeFieldId(field1);
+    terms[2]->getFieldInfo(field0).setFieldLength(field0_len);
+    terms[2]->getFieldInfo(field1).setFieldLength(field1_len);
     auto md = MatchData::makeTestInstance(handle_max + 1, handle_max + 1);
     auto tfmd0 = md->resolveTermField(handle0);
     auto tfmd1 = md->resolveTermField(handle1);
@@ -144,18 +172,18 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
     EXPECT_EQ(3, tfmd0->getNumOccs());
     EXPECT_EQ(3, tfmd0->end() - tfmd0->begin());
     auto itr = tfmd0->begin();
-    assert_tfmd_pos("tmfd0[0]", *itr, 0, 0, 1, 10);
+    assert_tfmd_pos("tmfd0[0]", *itr, elem0, pos5, weight1, field0_element0_len);
     ++itr;
-    assert_tfmd_pos("tmfd0[1]", *itr, 0, 1, 1, 10);
+    assert_tfmd_pos("tmfd0[1]", *itr, elem0, pos6, weight1, field0_element0_len);
     ++itr;
-    assert_tfmd_pos("tmfd0[2]", *itr, 1, 0, 1, 30);
-    EXPECT_EQ(100, tfmd0->getFieldLength());
+    assert_tfmd_pos("tmfd0[2]", *itr, elem1, pos3, weight1, field0_element1_len);
+    EXPECT_EQ(field0_len, tfmd0->getFieldLength());
     EXPECT_EQ(2, tfmd1->getDocId());
     EXPECT_EQ(1, tfmd1->getNumOccs());
     EXPECT_EQ(1, tfmd1->end() - tfmd1->begin());
     itr = tfmd1->begin();
-    assert_tfmd_pos("tmfd1[0]", *itr, 0, 4, 2, 31);
-    EXPECT_EQ(200, tfmd1->getFieldLength());
+    assert_tfmd_pos("tmfd1[0]", *itr, elem0, pos4, weight2, field1_element0_len);
+    EXPECT_EQ(field1_len, tfmd1->getFieldLength());
 }
 
 TEST_F(EquivQueryNodeTest, test_equiv_flattening)
