@@ -16,129 +16,105 @@ const uint32_t           GenericHeader::VERSION(1);
 const GenericHeader::Tag GenericHeader::EMPTY;
 const size_t             ALIGNMENT=0x1000;
 
-GenericHeader::Tag::~Tag()  = default;
+GenericHeader::Tag::~Tag() = default;
 GenericHeader::Tag::Tag(const Tag &) = default;
 GenericHeader::Tag & GenericHeader::Tag::operator=(const Tag &) = default;
 
-GenericHeader::Tag::Tag() :
-    _type(TYPE_EMPTY),
-    _name(""),
-    _fVal(0),
-    _iVal(0),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag()
+    : _type(TYPE_EMPTY),
+      _name(),
+      _fVal(0),
+      _iVal(0),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, float val) :
-    _type(TYPE_FLOAT),
-    _name(name),
-    _fVal(val),
-    _iVal(0),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, float val)
+    : _type(TYPE_FLOAT),
+      _name(name),
+      _fVal(val),
+      _iVal(0),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, double val) :
-    _type(TYPE_FLOAT),
-    _name(name),
-    _fVal(val),
-    _iVal(0),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, double val)
+    : _type(TYPE_FLOAT),
+      _name(name),
+      _fVal(val),
+      _iVal(0),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int8_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, int8_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint8_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, uint8_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int16_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, int16_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint16_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, uint16_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int32_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, int32_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint32_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, uint32_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, int64_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, int64_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, uint64_t val) :
-    _type(TYPE_INTEGER),
-    _name(name),
-    _fVal(0),
-    _iVal(val),
-    _sVal("")
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, uint64_t val)
+    : _type(TYPE_INTEGER),
+      _name(name),
+      _fVal(0),
+      _iVal(val),
+      _sVal()
+{ }
 
 GenericHeader::Tag::Tag(const vespalib::string &name, bool val)
     : _type(TYPE_INTEGER),
       _name(name),
       _fVal(0),
       _iVal(val ? 1 : 0),
-      _sVal("")
-{
-    // empty
-}
+      _sVal()
+{ }
 
 GenericHeader::Tag::Tag(const vespalib::string &name, const char *val)
     : _type(TYPE_STRING),
@@ -146,19 +122,15 @@ GenericHeader::Tag::Tag(const vespalib::string &name, const char *val)
       _fVal(0),
       _iVal(0),
       _sVal(val)
-{
-    // empty
-}
+{ }
 
-GenericHeader::Tag::Tag(const vespalib::string &name, const vespalib::string &val) :
-    _type(TYPE_STRING),
-    _name(name),
-    _fVal(0),
-    _iVal(0),
-    _sVal(val)
-{
-    // empty
-}
+GenericHeader::Tag::Tag(const vespalib::string &name, const vespalib::string &val)
+    : _type(TYPE_STRING),
+      _name(name),
+      _fVal(0),
+      _iVal(0),
+      _sVal(val)
+{ }
 
 size_t
 GenericHeader::Tag::getSize() const
@@ -226,11 +198,9 @@ GenericHeader::Tag::write(DataBuffer &buf) const
     return buf.getDataLen() - pos;
 }
 
-GenericHeader::BufferReader::BufferReader(DataBuffer &buf) :
-    _buf(buf)
-{
-    // empty
-}
+GenericHeader::BufferReader::BufferReader(DataBuffer &buf)
+    : _buf(buf)
+{ }
 
 size_t
 GenericHeader::BufferReader::getData(char *buf, size_t len)
@@ -242,11 +212,9 @@ GenericHeader::BufferReader::getData(char *buf, size_t len)
     return len;
 }
 
-GenericHeader::BufferWriter::BufferWriter(DataBuffer &buf) :
-    _buf(buf)
-{
-    // empty
-}
+GenericHeader::BufferWriter::BufferWriter(DataBuffer &buf)
+    : _buf(buf)
+{ }
 
 size_t
 GenericHeader::BufferWriter::putData(const char *buf, size_t len)
@@ -258,13 +226,10 @@ GenericHeader::BufferWriter::putData(const char *buf, size_t len)
     return len;
 }
 
-
 GenericHeader::MMapReader::MMapReader(const char *buf, size_t sz)
     : _buf(buf),
       _sz(sz)
-{
-}
-
+{ }
 
 size_t
 GenericHeader::MMapReader::getData(char *buf, size_t len)
@@ -276,14 +241,8 @@ GenericHeader::MMapReader::getData(char *buf, size_t len)
     return clen;
 }
 
-
-GenericHeader::GenericHeader() :
-    _tags()
-{
-    // empty
-}
-
-GenericHeader::~GenericHeader() { }
+GenericHeader::GenericHeader() noexcept = default;
+GenericHeader::~GenericHeader() = default;
 
 const GenericHeader::Tag &
 GenericHeader::getTag(size_t idx) const
@@ -291,7 +250,7 @@ GenericHeader::getTag(size_t idx) const
     if (idx >= _tags.size()) {
         return EMPTY;
     }
-    TagMap::const_iterator it = _tags.begin();
+    auto it = _tags.begin();
     std::advance(it, idx);
     return it->second;
 }
@@ -299,7 +258,7 @@ GenericHeader::getTag(size_t idx) const
 const GenericHeader::Tag &
 GenericHeader::getTag(const vespalib::string &key) const
 {
-    TagMap::const_iterator it = _tags.find(key);
+    auto it = _tags.find(key);
     if (it == _tags.end()) {
         return EMPTY;
     }
@@ -316,7 +275,7 @@ bool
 GenericHeader::putTag(const GenericHeader::Tag &tag)
 {
     const vespalib::string &key = tag.getName();
-    TagMap::iterator it = _tags.find(key);
+    auto it = _tags.find(key);
     if (it != _tags.end()) {
         it->second = tag;
         return false;
@@ -327,7 +286,7 @@ GenericHeader::putTag(const GenericHeader::Tag &tag)
 bool
 GenericHeader::removeTag(const vespalib::string &key)
 {
-    TagMap::iterator it = _tags.find(key);
+    auto it = _tags.find(key);
     if (it == _tags.end()) {
         return false;
     }
@@ -337,7 +296,7 @@ GenericHeader::removeTag(const vespalib::string &key)
 
 
 size_t
-GenericHeader::getMinSize(void)
+GenericHeader::getMinSize()
 {
     return 4 /* magic */ + 4 /* size */ + 4 /* version */ + 4 /* num tags */;
 }
@@ -347,10 +306,8 @@ size_t
 GenericHeader::getSize() const
 {
     size_t ret = getMinSize();
-    for (TagMap::const_iterator it = _tags.begin();
-         it != _tags.end(); ++it)
-    {
-        ret += it->second.getSize();
+    for (const auto & tag : _tags) {
+        ret += tag.second.getSize();
     }
     return ret;
 }
@@ -389,7 +346,7 @@ GenericHeader::readSize(IDataReader &reader)
 size_t
 GenericHeader::read(IDataReader &reader)
 {
-    size_t bufLen = 1024 * 32;
+    size_t bufLen = 4_Ki;
     DataBuffer buf(bufLen, ALIGNMENT);
     size_t numBytesRead = reader.getData(buf.getFree(), bufLen);
     buf.moveFreeToData(numBytesRead);
@@ -448,10 +405,8 @@ GenericHeader::write(IDataWriter &writer) const
     buf.writeInt32(VERSION);
     buf.writeInt32((uint32_t)_tags.size());
     uint32_t numBytesInBuf = 16;
-    for (TagMap::const_iterator it = _tags.begin();
-         it != _tags.end(); ++it)
-    {
-        numBytesInBuf += it->second.write(buf);
+    for (const auto & tag : _tags) {
+        numBytesInBuf += tag.second.write(buf);
     }
     if (numBytesInBuf < numBytesTotal) {
         buf.zeroFill(numBytesTotal - numBytesInBuf);
@@ -463,11 +418,9 @@ GenericHeader::write(IDataWriter &writer) const
     return numBytesWritten;
 }
 
-FileHeader::FileReader::FileReader(FastOS_FileInterface &file) :
-    _file(file)
-{
-    // empty
-}
+FileHeader::FileReader::FileReader(FastOS_FileInterface &file)
+    : _file(file)
+{ }
 
 size_t
 FileHeader::FileReader::getData(char *buf, size_t len)
@@ -478,11 +431,9 @@ FileHeader::FileReader::getData(char *buf, size_t len)
     return _file.Read(buf, len);
 }
 
-FileHeader::FileWriter::FileWriter(FastOS_FileInterface &file) :
-    _file(file)
-{
-    // empty
-}
+FileHeader::FileWriter::FileWriter(FastOS_FileInterface &file)
+    : _file(file)
+{ }
 
 size_t
 FileHeader::FileWriter::putData(const char *buf, size_t len)
@@ -493,13 +444,12 @@ FileHeader::FileWriter::putData(const char *buf, size_t len)
     return _file.Write2(buf, len);
 }
 
-FileHeader::FileHeader(size_t alignTo, size_t minSize) :
-    _alignTo(alignTo),
-    _minSize(minSize),
-    _fileSize(0)
-{
-    // empty
-}
+FileHeader::FileHeader(size_t alignTo, size_t minSize) noexcept
+    : GenericHeader(),
+      _alignTo(alignTo),
+      _minSize(minSize),
+      _fileSize(0)
+{ }
 
 size_t
 FileHeader::getSize() const
