@@ -202,7 +202,7 @@ Fast_BufferedFile::ReadLine(char *line, size_t buflen)
 
     p = line;
     ep = line + buflen - 1;
-    while (1) {
+    while (true) {
         while (_bufi < _bufe && *_bufi != '\n' && p < ep)
             *p++ = *_bufi++;
         if (p >= ep) {
@@ -258,7 +258,7 @@ Fast_BufferedFile::Read(void *dst, size_t dstlen)
 {
     char * p = static_cast<char *>(dst);
     char * pe = p + dstlen;
-    while (1) {
+    while (true) {
         int64_t sz = std::min(_bufe - _bufi, pe - p);
         memcpy(p, _bufi, sz);
         p += sz;
@@ -332,11 +332,6 @@ Fast_BufferedFile::WriteOpen(const char *name)
     ResetBuf();
     if (_file->IsOpened())
         _openFlags = FASTOS_FILE_OPEN_WRITE;
-}
-
-Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface *file) :
-    Fast_BufferedFile(file, DEFAULT_BUF_SIZE)
-{
 }
 
 Fast_BufferedFile::Fast_BufferedFile() :

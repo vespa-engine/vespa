@@ -40,7 +40,7 @@ bool
 DocumentSummary::writeDocIdLimit(const vespalib::string &dir, uint32_t count)
 {
     vespalib::string qcntname = dir + "/docsum.qcnt";
-    Fast_BufferedFile qcntfile(new FastOS_File);
+    Fast_BufferedFile qcntfile(4_Ki);
 
     qcntfile.WriteOpen(qcntname.c_str());
     if (!qcntfile.IsOpened()) {

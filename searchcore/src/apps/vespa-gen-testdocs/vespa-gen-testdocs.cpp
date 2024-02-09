@@ -14,7 +14,6 @@
 #include <getopt.h>
 #include <vector>
 #include <limits>
-#include <unistd.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -552,7 +551,7 @@ DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
 {
     string fullName(prependBaseDir(baseDir, feedFileName));
     std::filesystem::remove(std::filesystem::path(fullName));
-    Fast_BufferedFile f(new FastOS_File);
+    Fast_BufferedFile f;
     f.WriteOpen(fullName.c_str());
     if (json) {
         bool first = true;

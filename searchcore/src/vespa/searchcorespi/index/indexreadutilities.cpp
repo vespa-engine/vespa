@@ -36,8 +36,7 @@ scanForIndexes(const vespalib::string &baseDir,
             if (name.find(IndexDiskLayout::FusionDirPrefix) == 0) {
                 if (!fusionDir.empty()) {
                     // Should never happen, since we run cleanup before load.
-                    LOG(warning, "Base directory '%s' contains multiple fusion indexes",
-                        baseDir.c_str());
+                    LOG(warning, "Base directory '%s' contains multiple fusion indexes", baseDir.c_str());
                 }
                 fusionDir = name;
             }
@@ -59,8 +58,8 @@ IndexReadUtilities::readFusionSpec(const vespalib::string &baseDir)
         fusionId = atoi(fusionDir.substr(IndexDiskLayout::FusionDirPrefix.size()).c_str());
     }
     std::set<uint32_t> flushIds;
-    for (size_t i = 0; i < flushDirs.size(); ++i) {
-        uint32_t id = atoi(flushDirs[i].substr(IndexDiskLayout::FlushDirPrefix.size()).c_str());
+    for (const auto & flushDir : flushDirs) {
+        uint32_t id = atoi(flushDir.substr(IndexDiskLayout::FlushDirPrefix.size()).c_str());
         flushIds.insert(id);
     }
 
@@ -74,7 +73,7 @@ SerialNum
 IndexReadUtilities::readSerialNum(const vespalib::string &dir)
 {
     const vespalib::string fileName = IndexDiskLayout::getSerialNumFileName(dir);
-    Fast_BufferedFile file;
+    Fast_BufferedFile file(16_Ki);
     file.ReadOpen(fileName.c_str());
 
     FileHeader fileHeader;

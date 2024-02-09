@@ -75,7 +75,7 @@ PtrAndSize
 MmapFileAllocator::alloc(size_t sz) const
 {
     if (sz == 0) {
-        return PtrAndSize(); // empty allocation
+        return {}; // empty allocation
     }
     static constexpr size_t alignment = 128;
     sz = (sz + alignment - 1) & -alignment; // round sz to a multiple of alignment
@@ -107,7 +107,7 @@ MmapFileAllocator::alloc_large(size_t sz) const
     retval = madvise(buf, sz, MADV_DONTDUMP);
     assert(retval == 0);
 #endif
-    return PtrAndSize(buf, sz);
+    return {buf, sz};
 }
 
 void*

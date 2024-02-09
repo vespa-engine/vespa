@@ -81,7 +81,7 @@ void
 SourceSelector::LoadInfo::load()
 {
     const vespalib::string fileName = _header._baseFileName + ".dat";
-    Fast_BufferedFile file;
+    Fast_BufferedFile file(16_Ki);
     // XXX no checking for success
     file.ReadOpen(fileName.c_str());
 

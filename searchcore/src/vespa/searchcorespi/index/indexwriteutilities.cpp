@@ -40,12 +40,11 @@ IndexWriteUtilities::writeSerialNum(SerialNum serialNum,
                                     const vespalib::string &dir,
                                     const FileHeaderContext &fileHeaderContext)
 {
-    const vespalib::string fileName =
-        IndexDiskLayout::getSerialNumFileName(dir);
+    const vespalib::string fileName = IndexDiskLayout::getSerialNumFileName(dir);
     const vespalib::string tmpFileName = fileName + ".tmp";
 
     SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext, serialNum);
-    Fast_BufferedFile file;
+    Fast_BufferedFile file(16_Ki);
     file.WriteOpen(tmpFileName.c_str());
     FileHeader fileHeader;
     snFileHeaderContext.addTags(fileHeader, fileName);
@@ -103,17 +102,13 @@ IndexWriteUtilities::copySerialNumFile(const vespalib::string &sourceDir,
 }
 
 void
-IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo &
-                                         saveInfo,
+IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo & saveInfo,
                                          uint32_t sourceId,
-                                         const TuneFileAttributes &
-                                         tuneFileAttributes,
-                                         const FileHeaderContext &
-                                         fileHeaderContext,
+                                         const TuneFileAttributes & tuneFileAttributes,
+                                         const FileHeaderContext & fileHeaderContext,
                                          SerialNum serialNum)
 {
-    SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext,
-                                                   serialNum);
+    SerialNumFileHeaderContext snFileHeaderContext(fileHeaderContext, serialNum);
     if (!saveInfo.save(tuneFileAttributes, snFileHeaderContext)) {
         std::ostringstream msg;
         msg << "Flush of sourceselector failed. Source id = " << sourceId;
@@ -122,20 +117,16 @@ IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo &
 }
 
 void
-IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
-                                           const Schema &schema,
-                                           SerialNum serialNum)
+IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir, const Schema &schema, SerialNum serialNum)
 {
     vespalib::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
     Schema oldSchema;
     if (!oldSchema.loadFromFile(schemaName)) {
-        LOG(error, "Could not open schema '%s'",
-            schemaName.c_str());
+        LOG(error, "Could not open schema '%s'", schemaName.c_str());
         return;
     }
     if (!SchemaUtil::validateSchema(oldSchema)) {
-        LOG(error, "Could not validate schema loaded from '%s'",
-            schemaName.c_str());
+        LOG(error, "Could not validate schema loaded from '%s'", schemaName.c_str());
         return;
     }
     Schema::UP newSchema = Schema::intersect(oldSchema, schema);
@@ -152,8 +143,7 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
     vespalib::string schemaOrigName = schemaName + ".orig";
     fs::remove(fs::path(schemaTmpName));
     if (!newSchema->saveToFile(schemaTmpName)) {
-        LOG(error, "Could not save schema to '%s'",
-            schemaTmpName.c_str());
+        LOG(error, "Could not save schema to '%s'", schemaTmpName.c_str());
     }
     FastOS_StatInfo statInfo;
     bool statres;
@@ -161,15 +151,12 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
     if (!statres) {
         if (statInfo._error != FastOS_StatInfo::FileNotFound) {
             LOG(error, "Failed to stat orig schema '%s': %s",
-                schemaOrigName.c_str(),
-                FastOS_File::getLastErrorString().c_str());
+                schemaOrigName.c_str(), FastOS_File::getLastErrorString().c_str());
         }
         int linkres = ::link(schemaName.c_str(), schemaOrigName.c_str());
         if (linkres != 0) {
             LOG(error, "Could not link '%s' to '%s': %s",
-                schemaOrigName.c_str(),
-                schemaName.c_str(),
-                FastOS_File::getLastErrorString().c_str());
+                schemaOrigName.c_str(), schemaName.c_str(), FastOS_File::getLastErrorString().c_str());
         }
         vespalib::File::sync(indexDir);
     }
@@ -178,9 +165,7 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
         int error = errno;
         std::string errString = FastOS_File::getErrorString(error);
         LOG(error, "Could not rename '%s' to '%s': %s",
-            schemaTmpName.c_str(),
-            schemaName.c_str(),
-            errString.c_str());
+            schemaTmpName.c_str(), schemaName.c_str(), errString.c_str());
     }
     vespalib::File::sync(indexDir);
 }

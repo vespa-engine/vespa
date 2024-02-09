@@ -6,6 +6,8 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 
 #include <vespa/log/log.h>
+
+#include <memory>
 LOG_SETUP(".diskindex.dictionarywordreader");
 
 namespace search::diskindex {
@@ -21,17 +23,15 @@ DictionaryWordReader::DictionaryWordReader()
 {
 }
 
-
 DictionaryWordReader::~DictionaryWordReader() = default;
-
 
 bool
 DictionaryWordReader::open(const vespalib::string & dictionaryName,
                            const vespalib::string & wordMapName,
                            const TuneFileSeqRead &tuneFileRead)
 {
-    _old2newwordfile.reset(new Fast_BufferedFile(new FastOS_File));
-    _dictFile.reset(new PageDict4FileSeqRead);
+    _old2newwordfile = std::make_unique<Fast_BufferedFile>();
+    _dictFile = std::make_unique<PageDict4FileSeqRead>();
     if (!_dictFile->open(dictionaryName, tuneFileRead)) {
         LOG(error, "Could not open dictionary %s: %s",
             dictionaryName.c_str(), getLastErrorString().c_str());

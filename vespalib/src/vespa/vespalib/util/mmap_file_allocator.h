@@ -24,15 +24,11 @@ class MmapFileAllocator : public MemoryAllocator {
     struct SizeAndOffset {
         size_t   size;
         uint64_t offset;
-        SizeAndOffset()
-            : SizeAndOffset(0u, 0u)
-        {
-        }
-        SizeAndOffset(size_t size_in, uint64_t offset_in)
+        SizeAndOffset() noexcept : SizeAndOffset(0u, 0u) { }
+        SizeAndOffset(size_t size_in, uint64_t offset_in) noexcept
             : size(size_in),
               offset(offset_in)
-        {
-        }
+        { }
     };
     using Allocations = hash_map<void *, SizeAndOffset>;
     const vespalib::string _dir_name;
@@ -55,9 +51,9 @@ class MmapFileAllocator : public MemoryAllocator {
 public:
     static constexpr uint32_t default_small_limit =  128_Ki;
     static constexpr uint32_t default_premmap_size = 1_Mi;
-    MmapFileAllocator(const vespalib::string& dir_name);
+    explicit MmapFileAllocator(const vespalib::string& dir_name);
     MmapFileAllocator(const vespalib::string& dir_name, uint32_t small_limit, uint32_t premmap_size);
-    ~MmapFileAllocator();
+    ~MmapFileAllocator() override;
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const noexcept override;
     size_t resize_inplace(PtrAndSize, size_t) const override;

@@ -28,49 +28,10 @@ private:
 
     char * buf() { return static_cast<char *>(_buf.get()); }
     const char * buf() const { return static_cast<const char *>(_buf.get()); }
-protected:
     /** The file instance used for low-level file access. */
     std::unique_ptr<FastOS_FileInterface> _file;
 
-public:
-    /**
-     * Create buffered file.
-     * @param file file instance that should be used for low-level
-     *             file access. If this is NULL, an instance of
-     *             FastOS_File will be created. NOTE: the file
-     *             instance given here will be deleted by
-     *             the destructor.
-     **/
     Fast_BufferedFile(FastOS_FileInterface *file, size_t bufferSize);
-    Fast_BufferedFile(FastOS_FileInterface *file);
-    Fast_BufferedFile();
-    Fast_BufferedFile(size_t bufferSize);
-    Fast_BufferedFile(const Fast_BufferedFile &) = delete;
-    Fast_BufferedFile & operator = (const Fast_BufferedFile &) = delete;
-
-    /**
-     * Delete the file instance used for low-level file access.
-     **/
-    virtual ~Fast_BufferedFile();
-    /**
-     * Open an existing file for reading.
-     *
-     * @param name The name of the file to open.
-     */
-    void ReadOpenExisting(const char *name);
-    /**
-     * Open a file for reading.
-     *
-     * @param name The name of the file to open.
-     */
-    void ReadOpen(const char *name);
-
-    /**
-     * Open file for writing.
-     *
-     * @param name The name of the file to open.
-     */
-    void WriteOpen(const char *name);
     /**
      * Reset the internal start and end pointers to the
      * head of the buffer, thus "emptying" it.
@@ -91,6 +52,36 @@ public:
      * amount, the method will abort.
      */
     void fillReadBuf();
+public:
+    Fast_BufferedFile();
+    explicit Fast_BufferedFile(size_t bufferSize);
+    Fast_BufferedFile(const Fast_BufferedFile &) = delete;
+    Fast_BufferedFile & operator = (const Fast_BufferedFile &) = delete;
+
+    /**
+     * Delete the file instance used for low-level file access.
+     **/
+    ~Fast_BufferedFile() override;
+    /**
+     * Open an existing file for reading.
+     *
+     * @param name The name of the file to open.
+     */
+    void ReadOpenExisting(const char *name);
+    /**
+     * Open a file for reading.
+     *
+     * @param name The name of the file to open.
+     */
+    void ReadOpen(const char *name);
+
+    /**
+     * Open file for writing.
+     *
+     * @param name The name of the file to open.
+     */
+    void WriteOpen(const char *name);
+
     /**
      * Read the next line of the buffered file into a buffer,
      * reading from the file as necessary.
