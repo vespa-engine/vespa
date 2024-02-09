@@ -91,8 +91,11 @@ template <typename ADAPTER, typename T, typename F>
 double ordered_cost_of(ADAPTER adapter, const T &children, F flow) {
     double cost = 0.0;
     for (const auto &child: children) {
-        double child_cost = flow.strict() ? adapter.strict_cost(child) : adapter.cost(child);
-        cost += flow.flow() * child_cost;
+        if (flow.strict()) {
+            cost += adapter.strict_cost(child);
+        } else {
+            cost += flow.flow() * adapter.cost(child);
+        }
         flow.add(adapter.estimate(child));
     }
     return cost;

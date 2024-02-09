@@ -265,12 +265,12 @@ public:
     // seen by optimize. When the calculate_flow_stats function is
     // called on a complex leaf, it can call the update_flow_stats
     // function directly (the function that is normally called by
-    // optimize) on interal blueprints to make these values available
+    // optimize) on internal blueprints to make these values available
     // before using them to calculate its own flow stats.
     //
     //    'estimate': relative estimate in the range [0,1]
-    //        'cost': per-document cost of non-strict evaluation
-    // 'strict_cost': per-document cost of strict evaluation
+    //        'cost': cost of non-strict evaluation: multiply by non-strict in-flow
+    // 'strict_cost': cost of strict evaluation: assuming strict in-flow of 1.0
     double estimate() const noexcept { return _flow_stats.estimate; }
     double cost() const noexcept { return _flow_stats.cost; }
     double strict_cost() const noexcept { return _flow_stats.strict_cost; }

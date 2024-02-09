@@ -120,9 +120,11 @@ struct OrSetup {
     std::vector<std::unique_ptr<TMD>> match_data;
     std::vector<BitVector::UP>        child_hits;
     std::vector<bool>                 use_array;
+    bool                              strict_bm = true;
     bool                              strict_or = true;
     bool                              strict_children = true;
     bool                              unwrap_single_child = true;
+    uint32_t                          docid_skip = 1;
     OrSetup(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
     size_t per_child(double target, size_t child_cnt) {
         size_t result = (docid_limit * target) / child_cnt;
@@ -182,9 +184,9 @@ struct OrSetup {
         }
         return result;
     }
-    OrSetup &prepare_bm(size_t child_cnt, size_t hits_per_child) {
+    OrSetup &prepare_bm(size_t child_cnt, size_t hits_per_child, bool use_array_in) {
         for (size_t i = 0; i < child_cnt; ++i) {
-            add(hits_per_child, should_use_array(hits_per_child), false);
+            add(hits_per_child, use_array_in, false);
         }
         return *this;
     }
@@ -213,10 +215,11 @@ struct OrSetup {
         size_t seeks = 0;
         BenchmarkTimer timer(budget);
         while (timer.has_budget()) {
+            uint32_t delta = docid_skip;
             timer.before();
             seeks = 0;
             search.initRange(1, docid_limit);
-            for (uint32_t docid = 1; docid < docid_limit; ++docid) {
+            for (uint32_t docid = 1; docid < docid_limit; docid += delta) {
                 ++seeks;
                 search.seek(docid);
             }
@@ -225,7 +228,7 @@ struct OrSetup {
         return std::make_pair(seeks, timer.min_time() * 1000.0);
     }
     std::pair<size_t,double> bm_search_ms(Impl impl, bool optimized) {
-        if (strict_or) {
+        if (strict_bm) {
             return bm_strict(impl, optimized);
         } else {
             return bm_non_strict(impl, optimized);
@@ -378,6 +381,7 @@ TEST(OrSpeed, bm_array_vs_bitvector) {
         for (bool wrapped: {false, true}) {
             setup.unwrap_single_child = !wrapped;
             for (bool strict: {false, true}) {
+                setup.strict_bm = strict;
                 setup.strict_or = strict;
                 setup.strict_children = strict;
                 for (bool use_array: {false, true}) {
@@ -388,6 +392,46 @@ TEST(OrSpeed, bm_array_vs_bitvector) {
                     fprintf(stderr, "%s(%s) %s: (one of %4zu) seeks: %8zu, time: %10.3f ms, ns per seek: %10.3f, ms per cost: %10.3f\n",
                             wrapped_str(wrapped), leaf_str(use_array), strict_str(strict), one_of,
                             result.first, result.second, ns_per(result), ms_per_cost);
+                }
+            }
+        }
+    }
+}
+
+TEST(OrSpeed, bm_strict_when_not_needed) {
+    if (!bench_mode) {
+        fprintf(stdout, "[ SKIPPING ] run with 'bench' parameter to activate\n");
+        return;
+    }
+    double target = 0.05;
+    size_t child_cnt = 200;
+    auto impl = Impl::HEAP;
+    bool optimize = false;
+    OrSetup setup(bench_docs);
+    size_t part = setup.per_child(target, child_cnt);
+    bool use_array = false;
+    setup.prepare_bm(child_cnt, part, use_array);
+    fprintf(stderr, "OR bench(%s, %s, children: %4zu, hits_per_child: %8zu %s)\n",
+            impl_str(impl), opt_str(optimize), child_cnt, part, leaf_str(use_array));
+    for (bool strict_bm: {false, true}) {
+        setup.strict_bm = strict_bm;
+        for (bool strict_or: {false, true}) {
+            setup.strict_or = strict_or;
+            for (bool strict_children: {false, true}) {
+                setup.strict_children = strict_children;
+                for (uint32_t skip = 1; skip < 500'000; skip *= 4) {
+                    setup.docid_skip = skip;
+                    bool conflict = (strict_bm && !strict_or) || (strict_or && !strict_children) || (strict_bm && skip > 1);
+                    if (!conflict) {
+                        auto result = setup.bm_search_ms(impl, optimize);
+                        auto flow_stats = FlowAdapter::stats(setup);
+                        double in_flow = 1.0 / double(skip); // NOTE: not multiplied with strict cost
+                        double ms_per_cost = result.second / (strict_or ? flow_stats.strict_cost : (in_flow * flow_stats.cost));
+                        fprintf(stderr, "loop: %s, skip: %8u, OR: %s, children: %s, "
+                                "seeks: %8zu, time: %10.3f ms, ns per seek: %10.3f, ms per cost: %10.3f\n",
+                                strict_str(strict_bm), skip, strict_str(strict_or), strict_str(strict_children), 
+                                result.first, result.second, ns_per(result), ms_per_cost);
+                    }
                 }
             }
         }
@@ -406,9 +450,10 @@ TEST(OrSpeed, bm_strict_or) {
                 size_t part = setup.per_child(target, child_cnt);
                 bool use_array = setup.should_use_array(part);
                 if (part > 0 && (!use_array || !optimize)) {
-                    setup.prepare_bm(child_cnt, part);
+                    setup.prepare_bm(child_cnt, part, use_array);
                     for (auto impl: {Impl::PLAIN, Impl::HEAP}) {
                         for (bool strict: {false, true}) {
+                            setup.strict_bm = strict;
                             setup.strict_or = strict;
                             setup.strict_children = strict;
                             auto result = setup.bm_search_ms(impl, optimize);
