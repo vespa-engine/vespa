@@ -5,13 +5,10 @@
 #include <vespa/searchlib/fef/utils.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
-#include <vespa/eval/eval/value_codec.h>
-#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.hitcollector");
 
-using search::fef::MatchData;
 using vespalib::FeatureSet;
 using vespalib::FeatureValues;
 using vdslib::SearchResult;
@@ -20,7 +17,7 @@ using FefUtils = search::fef::Utils;
 
 namespace streaming {
 
-HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const search::fef::MatchData & matchData,
+HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const MatchData & matchData,
                        double score, const void * sortData, size_t sortDataLen) :
     _docid(docId),
     _score(score),
@@ -34,7 +31,7 @@ HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const 
     }
 }
 
-HitCollector::Hit::~Hit() { }
+HitCollector::Hit::~Hit() = default;
 
 HitCollector::HitCollector(size_t wantedHits) :
     _hits(),
@@ -55,13 +52,13 @@ HitCollector::getDocSum(const search::DocumentIdT & docId) const
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data, double score)
+HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data, double score)
 {
     return addHit(Hit(doc, docId, data, score));
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data,
+HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data,
                      double score, const void * sortData, size_t sortDataLen)
 {
     return addHit(Hit(doc, docId, data, score, sortData, sortDataLen));
@@ -154,7 +151,7 @@ HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
 
 FeatureSet::SP
 HitCollector::getFeatureSet(IRankProgram &rankProgram,
-                            const search::fef::FeatureResolver &resolver,
+                            const FeatureResolver &resolver,
                             const search::StringStringMap &feature_rename_map)
 {
     if (resolver.num_features() == 0 || _hits.empty()) {
@@ -174,7 +171,7 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
 
 FeatureValues
 HitCollector::get_match_features(IRankProgram& rank_program,
-                                 const search::fef::FeatureResolver& resolver,
+                                 const FeatureResolver& resolver,
                                  const search::StringStringMap& feature_rename_map)
 {
     FeatureValues match_features;
