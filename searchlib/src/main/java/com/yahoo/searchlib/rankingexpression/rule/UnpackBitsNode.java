@@ -121,7 +121,7 @@ public class UnpackBitsNode extends CompositeNode {
                         long newIdx = oldAddr.numericLabel(i) * 8 + bitIdx;
                         addrBuilder.add(dim.name(), newIdx);
                     } else {
-                        addrBuilder.add(dim.name(), (int) oldAddr.numericLabel(i));
+                        addrBuilder.add(dim.name(), oldAddr.numericLabel(i));
                     }
                 }
                 var newAddr = addrBuilder.build();
