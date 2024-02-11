@@ -77,6 +77,9 @@ private:
     void sortByDocId();
     bool addHitToHeap(const Hit & hit) const;
     bool addHit(Hit && hit);
+    void make_heap(bool useSortBlob);
+    void pop_heap(bool useSortBlob);
+    void push_heap(bool useSortBlob);
 
 public:
     using UP = std::unique_ptr<HitCollector>;

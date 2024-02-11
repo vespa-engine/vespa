@@ -85,11 +85,38 @@ HitCollector::addHitToHeap(const Hit & hit) const
         : (hit.cmpSort(_hits[0]) < 0);
 }
 
+void
+HitCollector::make_heap(bool useSortBlob) {
+    if (useSortBlob) {
+        std::make_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
+    } else {
+        std::make_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
+    }
+}
+
+void
+HitCollector::pop_heap(bool useSortBlob) {
+    if (useSortBlob) {
+        std::pop_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
+    } else {
+        std::pop_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
+    }
+}
+
+void
+HitCollector::push_heap(bool useSortBlob) {
+    if (useSortBlob) {
+        std::push_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
+    } else {
+        std::push_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
+    }
+}
+
 bool
 HitCollector::addHit(Hit && hit)
 {
     bool amongTheBest(false);
-    ssize_t avail = (_hits.capacity() - _hits.size());
+    size_t avail = (_hits.capacity() - _hits.size());
     bool useSortBlob( ! hit.getSortBlob().empty() );
     if (avail > 1) {
         // No heap yet.
@@ -99,28 +126,14 @@ HitCollector::addHit(Hit && hit)
         // this happens when wantedHitCount = 0
         // in this case we shall not put anything on the heap (which is empty)
     } else if ( avail == 0 && addHitToHeap(hit)) { // already a heap
-        if (useSortBlob) {
-            std::pop_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
-        } else {
-            std::pop_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
-        }
-
+        pop_heap(useSortBlob);
         _hits.back() = std::move(hit);
         amongTheBest = true;
-
-        if (useSortBlob) {
-            std::push_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
-        } else {
-            std::push_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
-        }
+        push_heap(useSortBlob);
     } else if (avail == 1) { // make a heap of the hit vector
         _hits.emplace_back(std::move(hit));
         amongTheBest = true;
-        if (useSortBlob) {
-            std::make_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
-        } else {
-            std::make_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
-        }
+        make_heap(useSortBlob);
         _sortedByDocId = false; // the hit vector is no longer sorted by docId
     }
     return amongTheBest;
