@@ -119,7 +119,7 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
         for (int i = 0; i < type.dimensions().size(); ++i) {
             var dim = type.dimensions().get(i);
             if (dim.isMapped()) {
-                builder.add(dim.name(), (int) address.numericLabel(i));
+                builder.add(dim.name(), address.numericLabel(i));
             }
         }
         return builder.build();
