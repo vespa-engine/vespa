@@ -153,6 +153,11 @@ public:
                                            const FeatureResolver &resolver,
                                            const search::StringStringMap &feature_rename_map) const;
 
+    vespalib::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
+                                           search::DocumentIdT docId,
+                                           const FeatureResolver &resolver,
+                                           const search::StringStringMap &feature_rename_map);
+
     vespalib::FeatureValues get_match_features(IRankProgram& rank_program,
                                                const FeatureResolver& resolver,
                                                const search::StringStringMap& feature_rename_map) const;

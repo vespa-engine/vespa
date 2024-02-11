@@ -37,8 +37,8 @@ public:
     void fillSummaryFeatures(GetDocsumsState& state) override;
     void fillRankFeatures(GetDocsumsState& state) override;
     std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields& fields) override;
-    void setSummaryFeatures(const vespalib::FeatureSet::SP & sf) { _summaryFeatures = sf; }
-    void setRankFeatures(const vespalib::FeatureSet::SP & rf) { _rankFeatures = rf; }
+    void setSummaryFeatures(vespalib::FeatureSet::SP sf) { _summaryFeatures = std::move(sf); }
+    void setRankFeatures(vespalib::FeatureSet::SP rf) { _rankFeatures = std::move(rf); }
     void set_matching_elements_filler(std::unique_ptr<IMatchingElementsFiller> matching_elements_filler);
     ~GetDocsumsStateCallback() override;
 };

@@ -288,6 +288,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
       _env(get_search_environment_snapshot(vEnv, params)),
       _params(params),
       _init_called(false),
+      _collectGroupingHits(false),
       _docSearchedCount(0),
       _hitCount(0),
       _hitsRejectedCount(0),
@@ -753,6 +754,14 @@ SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
     }
 }
 
+vespalib::FeatureSet::SP
+SearchVisitor::RankController::getFeatureSet(search::DocumentIdT docId) {
+    if (_hasRanking && !_rankSetup->getSummaryFeatures().empty()) {
+        return _rankProcessor->calculateFeatureSet(docId);
+    }
+    return {};
+}
+
 void
 SearchVisitor::RankController::onCompletedVisiting(vsm::GetDocsumsStateCallback & docsumsStateCallback, vdslib::SearchResult & searchResult)
 {
@@ -763,15 +772,13 @@ SearchVisitor::RankController::onCompletedVisiting(vsm::GetDocsumsStateCallback 
         // calculate summary features and set them on the callback object
         if (!_rankSetup->getSummaryFeatures().empty()) {
             LOG(debug, "Calculate summary features");
-            vespalib::FeatureSet::SP sf = _rankProcessor->calculateFeatureSet();
-            docsumsStateCallback.setSummaryFeatures(sf);
+            docsumsStateCallback.setSummaryFeatures(_rankProcessor->calculateFeatureSet());
         }
 
         // calculate rank features and set them on the callback object
         if (_dumpFeatures) {
             LOG(debug, "Calculate rank features");
-            vespalib::FeatureSet::SP rf = _dumpProcessor->calculateFeatureSet();
-            docsumsStateCallback.setRankFeatures(rf);
+            docsumsStateCallback.setRankFeatures(_dumpProcessor->calculateFeatureSet());
         }
     }
 }
@@ -996,6 +1003,9 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
             grouping.configureStaticStuff(stuff);
             HitsResultPreparator preparator(_summaryGenerator);
             grouping.select(preparator, preparator);
+            if (preparator.getNumHitsAggregators() > 0) {
+                _collectGroupingHits = true;
+            }
             grouping.preAggregate(false);
             if (!grouping.getAll() || (preparator.getNumHitsAggregators() == 0)) {
                 _groupingList.push_back(groupingPtr);
@@ -1082,6 +1092,9 @@ SearchVisitor::handleDocument(StorageDocument::SP documentSP)
             _syntheticFieldsController.onDocumentMatch(document, documentId);
             SingleDocumentStore single(document);
             _summaryGenerator.setDocsumCache(single);
+            if (_collectGroupingHits) {
+                _summaryGenerator.getDocsumCallback().setSummaryFeatures(_rankController.getFeatureSet(document.getDocId()));
+            }
             group(document.docDoc(), rp.getRankScore(), false);
         } else {
             _hitsRejectedCount++;
