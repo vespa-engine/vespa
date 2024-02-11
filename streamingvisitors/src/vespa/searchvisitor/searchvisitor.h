@@ -131,8 +131,8 @@ private:
         search::fef::Properties        _queryProperties;
         search::fef::Properties        _featureOverrides;
         bool                           _hasRanking;
-        RankProcessor::UP              _rankProcessor;
         bool                           _dumpFeatures;
+        RankProcessor::UP              _rankProcessor;
         RankProcessor::UP              _dumpProcessor;
 
         /**

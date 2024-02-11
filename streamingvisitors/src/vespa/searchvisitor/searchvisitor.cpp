@@ -668,8 +668,8 @@ SearchVisitor::RankController::RankController() :
     _queryProperties(),
     _featureOverrides(),
     _hasRanking(false),
-    _rankProcessor(),
     _dumpFeatures(false),
+    _rankProcessor(),
     _dumpProcessor()
 {
 }

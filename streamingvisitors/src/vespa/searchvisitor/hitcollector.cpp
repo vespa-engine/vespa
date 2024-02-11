@@ -130,7 +130,9 @@ void
 HitCollector::fillSearchResult(vdslib::SearchResult & searchResult, FeatureValues&& match_features)
 {
     sortByDocId();
-    for (const Hit & hit : _hits) {
+    size_t count = std::min(_hits.size(), searchResult.getWantedHitCount());
+    for (size_t i(0); i < count; i++) {
+        const Hit & hit = _hits[i];
         vespalib::string documentId(hit.getDocument().docDoc().getId().toString());
         search::DocumentIdT docId = hit.getDocId();
         SearchResult::RankType rank = hit.getRankScore();
@@ -164,8 +166,8 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     auto names = FefUtils::extract_feature_names(resolver, feature_rename_map);
     FeatureSet::SP retval = std::make_shared<FeatureSet>(names, _hits.size());
     for (const Hit & hit : _hits) {
-        rankProgram.run(hit.getDocId(), hit.getMatchData());
         uint32_t docId = hit.getDocId();
+        rankProgram.run(docId, hit.getMatchData());
         auto * f = retval->getFeaturesByIndex(retval->addDocId(docId));
         FefUtils::extract_feature_values(resolver, docId, f);
     }
