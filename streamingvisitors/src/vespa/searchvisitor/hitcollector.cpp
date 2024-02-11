@@ -36,8 +36,9 @@ HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const 
 
 HitCollector::Hit::~Hit() { }
 
-HitCollector::HitCollector(size_t wantedHits) :
+HitCollector::HitCollector(size_t wantedHits, bool use_sort_blob) :
     _hits(),
+    _use_sort_blob(use_sort_blob),
     _sortedByDocId(true)
 {
     _hits.reserve(wantedHits);
@@ -80,14 +81,14 @@ bool
 HitCollector::addHitToHeap(const Hit & hit) const
 {
     // return true if the given hit is better than the current worst one.
-    return (hit.getSortBlob().empty())
-        ? (hit.cmpRank(_hits[0]) < 0)
-        : (hit.cmpSort(_hits[0]) < 0);
+    return (_use_sort_blob)
+        ? (hit.cmpSort(_hits[0]) < 0)
+        : (hit.cmpRank(_hits[0]) < 0);
 }
 
 void
-HitCollector::make_heap(bool useSortBlob) {
-    if (useSortBlob) {
+HitCollector::make_heap() {
+    if (_use_sort_blob) {
         std::make_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
     } else {
         std::make_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
@@ -95,8 +96,8 @@ HitCollector::make_heap(bool useSortBlob) {
 }
 
 void
-HitCollector::pop_heap(bool useSortBlob) {
-    if (useSortBlob) {
+HitCollector::pop_heap() {
+    if (_use_sort_blob) {
         std::pop_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
     } else {
         std::pop_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
@@ -104,8 +105,8 @@ HitCollector::pop_heap(bool useSortBlob) {
 }
 
 void
-HitCollector::push_heap(bool useSortBlob) {
-    if (useSortBlob) {
+HitCollector::push_heap() {
+    if (_use_sort_blob) {
         std::push_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
     } else {
         std::push_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
@@ -117,7 +118,7 @@ HitCollector::addHit(Hit && hit)
 {
     bool amongTheBest(false);
     size_t avail = (_hits.capacity() - _hits.size());
-    bool useSortBlob( ! hit.getSortBlob().empty() );
+    assert(_use_sort_blob != hit.getSortBlob().empty() );
     if (avail > 1) {
         // No heap yet.
         _hits.emplace_back(std::move(hit));
@@ -126,14 +127,14 @@ HitCollector::addHit(Hit && hit)
         // this happens when wantedHitCount = 0
         // in this case we shall not put anything on the heap (which is empty)
     } else if ( avail == 0 && addHitToHeap(hit)) { // already a heap
-        pop_heap(useSortBlob);
+        pop_heap();
         _hits.back() = std::move(hit);
         amongTheBest = true;
-        push_heap(useSortBlob);
+        push_heap();
     } else if (avail == 1) { // make a heap of the hit vector
         _hits.emplace_back(std::move(hit));
         amongTheBest = true;
-        make_heap(useSortBlob);
+        make_heap();
         _sortedByDocId = false; // the hit vector is no longer sorted by docId
     }
     return amongTheBest;

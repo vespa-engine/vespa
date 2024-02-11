@@ -118,7 +118,7 @@ HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const c
 
 TEST_F(HitCollectorTest, simple)
 {
-    HitCollector hc(5);
+    HitCollector hc(5, false);
 
     // add hits to hit collector
     for (uint32_t i = 0; i < 5; ++i) {
@@ -139,7 +139,7 @@ TEST_F(HitCollectorTest, simple)
 
 TEST_F(HitCollectorTest, gaps_in_docid)
 {
-    HitCollector hc(5);
+    HitCollector hc(5, false);
 
     // add hits to hit collector
     for (uint32_t i = 0; i < 5; ++i) {
@@ -161,7 +161,7 @@ TEST_F(HitCollectorTest, gaps_in_docid)
 TEST_F(HitCollectorTest, heap_property)
 {
     {
-        HitCollector hc(3);
+        HitCollector hc(3, false);
         // add hits (low to high)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, i + 10);
@@ -174,7 +174,7 @@ TEST_F(HitCollectorTest, heap_property)
         assertHit(15, 5, 2, sr);
     }
     {
-        HitCollector hc(3);
+        HitCollector hc(3, false);
         // add hits (high to low)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, 10 - i);
@@ -187,7 +187,7 @@ TEST_F(HitCollectorTest, heap_property)
         assertHit(8,  2, 2, sr);
     }
     {
-        HitCollector hc(3);
+        HitCollector hc(3, false);
         // add hits (same rank score)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, 10);
@@ -211,7 +211,7 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
     sortData.push_back('e');
     sortData.push_back('f');
     {
-        HitCollector hc(3);
+        HitCollector hc(3, true);
         // add hits ('a' is sorted/ranked better than 'b')
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, i + 10, &sortData[i], 1);
@@ -224,7 +224,7 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
         assertHit(12, 2, 2, sr);
     }
     {
-        HitCollector hc(3);
+        HitCollector hc(3, true);
         // add hits ('a' is sorted/ranked better than 'b')
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, i + 10, &sortData[5 - i], 1);
@@ -237,7 +237,7 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
         assertHit(15, 5, 2, sr);
     }
     {
-        HitCollector hc(3);
+        HitCollector hc(3, true);
         // add hits (same sort blob)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, 10, &sortData[0], 1);
@@ -253,7 +253,7 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
 
 TEST_F(HitCollectorTest, empty)
 {
-    HitCollector hc(0);
+    HitCollector hc(0, false);
     addHit(hc, 0, 0);
     SearchResult rs;
     hc.fillSearchResult(rs);
@@ -298,7 +298,7 @@ MyRankProgram::~MyRankProgram() = default;
 
 TEST_F(HitCollectorTest, feature_set)
 {
-    HitCollector hc(3);
+    HitCollector hc(3, false);
 
     addHit(hc, 0, 10);
     addHit(hc, 1, 50); // on heap
@@ -361,7 +361,7 @@ TEST_F(HitCollectorTest, feature_set)
 
 TEST_F(HitCollectorTest, match_features)
 {
-    HitCollector hc(3);
+    HitCollector hc(3, false);
 
     addHit(hc, 0, 10);
     addHit(hc, 1, 50); // on heap

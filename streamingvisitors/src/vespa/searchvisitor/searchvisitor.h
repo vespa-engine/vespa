@@ -168,7 +168,7 @@ private:
          **/
         void setupRankProcessors(search::streaming::Query & query,
                                  const vespalib::string & location,
-                                 size_t wantedHitCount,
+                                 size_t wantedHitCount, bool use_sort_blob,
                                  const search::IAttributeManager & attrMan,
                                  std::vector<AttrInfo> & attributeFields);
         /**
