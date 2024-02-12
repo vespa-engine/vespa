@@ -133,9 +133,9 @@ RankProcessor::initQueryEnvironment()
 }
 
 void
-RankProcessor::initHitCollector(size_t wantedHitCount, bool use_sort_blob)
+RankProcessor::initHitCollector(size_t wantedHitCount)
 {
-    _hitCollector = std::make_unique<HitCollector>(wantedHitCount, use_sort_blob);
+    _hitCollector = std::make_unique<HitCollector>(wantedHitCount);
 }
 
 void
@@ -145,7 +145,7 @@ RankProcessor::setupRankProgram(RankProgram &program)
 }
 
 void
-RankProcessor::init(bool forRanking, size_t wantedHitCount, bool use_sort_blob)
+RankProcessor::init(bool forRanking, size_t wantedHitCount)
 {
     initQueryEnvironment();
     if (forRanking) {
@@ -167,7 +167,7 @@ RankProcessor::init(bool forRanking, size_t wantedHitCount, bool use_sort_blob)
         _rankProgram = _rankSetup.create_dump_program();
         setupRankProgram(*_rankProgram);
     }
-    initHitCollector(wantedHitCount, use_sort_blob);
+    initHitCollector(wantedHitCount);
 }
 
 RankProcessor::RankProcessor(std::shared_ptr<const RankManager::Snapshot> snapshot,
@@ -197,15 +197,15 @@ RankProcessor::RankProcessor(std::shared_ptr<const RankManager::Snapshot> snapsh
 }
 
 void
-RankProcessor::initForRanking(size_t wantedHitCount, bool use_sort_blob)
+RankProcessor::initForRanking(size_t wantedHitCount)
 {
-    return init(true, wantedHitCount, use_sort_blob);
+    return init(true, wantedHitCount);
 }
 
 void
 RankProcessor::initForDumping(size_t wantedHitCount)
 {
-    return init(false, wantedHitCount, false);
+    return init(false, wantedHitCount);
 }
 
 void
