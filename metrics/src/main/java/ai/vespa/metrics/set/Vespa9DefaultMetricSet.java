@@ -164,6 +164,8 @@ public class Vespa9DefaultMetricSet {
     private static MetricSet getOtherMetrics() {
         // Metrics needed for alerting
         return new MetricSet.Builder("default-other")
+                .metric(LogdMetrics.LOGD_PROCESSED_LINES.count())
+        
                 .metric(NodeAdminMetrics.ENDPOINT_CERTIFICATE_EXPIRY_SECONDS.baseName())
                 .metric(NodeAdminMetrics.NODE_CERTIFICATE_EXPIRY_SECONDS.baseName())
                 .build();
