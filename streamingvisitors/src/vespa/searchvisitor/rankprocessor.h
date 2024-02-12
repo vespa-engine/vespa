@@ -72,7 +72,7 @@ public:
                   const search::IAttributeManager * attrMgr);
 
     void initForRanking(size_t wantedHitCount, bool use_sort_blob);
-    void initForDumping(size_t wantedHitCount);
+    void initForDumping(size_t wantedHitCount, bool use_sort_blob);
     void unpackMatchData(uint32_t docId);
     static void unpack_match_data(uint32_t docid, search::fef::MatchData& matchData, QueryWrapper& query);
     void runRankProgram(uint32_t docId);

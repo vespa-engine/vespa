@@ -692,7 +692,7 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
     if (_dumpFeatures) {
         _dumpProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, _featureOverrides, &attrMan);
         LOG(debug, "Initialize dump processor");
-        _dumpProcessor->initForDumping(wantedHitCount);
+        _dumpProcessor->initForDumping(wantedHitCount, use_sort_blob);
         // register attribute vectors needed for dumping
         processAccessedAttributes(_dumpProcessor->get_real_query_env(), false, attrMan, attributeFields);
     }

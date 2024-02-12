@@ -203,9 +203,9 @@ RankProcessor::initForRanking(size_t wantedHitCount, bool use_sort_blob)
 }
 
 void
-RankProcessor::initForDumping(size_t wantedHitCount)
+RankProcessor::initForDumping(size_t wantedHitCount, bool use_sort_blob)
 {
-    return init(false, wantedHitCount, false);
+    return init(false, wantedHitCount, use_sort_blob);
 }
 
 void
