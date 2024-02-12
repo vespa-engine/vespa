@@ -178,13 +178,12 @@ MatchingElementsFiller::fill_matching_elements(const MatchingElementsFields& fie
         return result;
     }
     // Scan documents that will be returned as hits
-    size_t count = std::min(_search_result.getHitCount(), _search_result.getWantedHitCount());
-    for (size_t i(0); i < count; i++ ) {
+    for (size_t i(0), m(_search_result.getHitCount()); (i < m) && (i < _search_result.getWantedHitCount()); i++ ) {
         const char* doc_id(nullptr);
         SearchResult::RankType rank(0);
         uint32_t lid = _search_result.getHit(i, doc_id, rank);
         const vsm::Document& vsm_doc = _hit_collector.getDocSum(lid);
-        const auto& doc = dynamic_cast<const StorageDocument&>(vsm_doc);
+        const StorageDocument& doc = dynamic_cast<const StorageDocument&>(vsm_doc);
         matcher.find_matching_elements(doc, lid, *result);
         _query.reset();
     }

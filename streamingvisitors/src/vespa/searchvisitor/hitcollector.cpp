@@ -33,9 +33,8 @@ HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const 
 
 HitCollector::Hit::~Hit() = default;
 
-HitCollector::HitCollector(size_t wantedHits, bool use_sort_blob) :
+HitCollector::HitCollector(size_t wantedHits) :
     _hits(),
-    _use_sort_blob(use_sort_blob),
     _sortedByDocId(true)
 {
     _hits.reserve(wantedHits);
@@ -78,44 +77,17 @@ bool
 HitCollector::addHitToHeap(const Hit & hit) const
 {
     // return true if the given hit is better than the current worst one.
-    return (_use_sort_blob)
-        ? (hit.cmpSort(_hits[0]) < 0)
-        : (hit.cmpRank(_hits[0]) < 0);
-}
-
-void
-HitCollector::make_heap() {
-    if (_use_sort_blob) {
-        std::make_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
-    } else {
-        std::make_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
-    }
-}
-
-void
-HitCollector::pop_heap() {
-    if (_use_sort_blob) {
-        std::pop_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
-    } else {
-        std::pop_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
-    }
-}
-
-void
-HitCollector::push_heap() {
-    if (_use_sort_blob) {
-        std::push_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
-    } else {
-        std::push_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
-    }
+    return (hit.getSortBlob().empty())
+        ? (hit.cmpRank(_hits[0]) < 0)
+        : (hit.cmpSort(_hits[0]) < 0);
 }
 
 bool
 HitCollector::addHit(Hit && hit)
 {
     bool amongTheBest(false);
-    size_t avail = (_hits.capacity() - _hits.size());
-    assert(_use_sort_blob != hit.getSortBlob().empty() );
+    ssize_t avail = (_hits.capacity() - _hits.size());
+    bool useSortBlob( ! hit.getSortBlob().empty() );
     if (avail > 1) {
         // No heap yet.
         _hits.emplace_back(std::move(hit));
@@ -124,14 +96,28 @@ HitCollector::addHit(Hit && hit)
         // this happens when wantedHitCount = 0
         // in this case we shall not put anything on the heap (which is empty)
     } else if ( avail == 0 && addHitToHeap(hit)) { // already a heap
-        pop_heap();
+        if (useSortBlob) {
+            std::pop_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
+        } else {
+            std::pop_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
+        }
+
         _hits.back() = std::move(hit);
         amongTheBest = true;
-        push_heap();
+
+        if (useSortBlob) {
+            std::push_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
+        } else {
+            std::push_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
+        }
     } else if (avail == 1) { // make a heap of the hit vector
         _hits.emplace_back(std::move(hit));
         amongTheBest = true;
-        make_heap();
+        if (useSortBlob) {
+            std::make_heap(_hits.begin(), _hits.end(), Hit::SortComparator());
+        } else {
+            std::make_heap(_hits.begin(), _hits.end(), Hit::RankComparator());
+        }
         _sortedByDocId = false; // the hit vector is no longer sorted by docId
     }
     return amongTheBest;
@@ -141,9 +127,7 @@ void
 HitCollector::fillSearchResult(vdslib::SearchResult & searchResult, FeatureValues&& match_features)
 {
     sortByDocId();
-    size_t count = std::min(_hits.size(), searchResult.getWantedHitCount());
-    for (size_t i(0); i < count; i++) {
-        const Hit & hit = _hits[i];
+    for (const Hit & hit : _hits) {
         vespalib::string documentId(hit.getDocument().docDoc().getId().toString());
         search::DocumentIdT docId = hit.getDocId();
         SearchResult::RankType rank = hit.getRankScore();
@@ -177,8 +161,8 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     auto names = FefUtils::extract_feature_names(resolver, feature_rename_map);
     FeatureSet::SP retval = std::make_shared<FeatureSet>(names, _hits.size());
     for (const Hit & hit : _hits) {
+        rankProgram.run(hit.getDocId(), hit.getMatchData());
         uint32_t docId = hit.getDocId();
-        rankProgram.run(docId, hit.getMatchData());
         auto * f = retval->getFeaturesByIndex(retval->addDocId(docId));
         FefUtils::extract_feature_values(resolver, docId, f);
     }
