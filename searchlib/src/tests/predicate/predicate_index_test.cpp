@@ -292,7 +292,8 @@ TEST("require that PredicateIndex can be (de)serialized") {
     index.commit();
 
     vespalib::DataBuffer buffer;
-    index.serialize(buffer);
+    PredicateIndex::SerializeStats dummy_stats;
+    index.serialize(buffer, dummy_stats);
     uint32_t doc_id_limit;
     DocIdLimitFinder finder(doc_id_limit);
     PredicateIndex index2(generation_holder, dummy_provider, simple_index_config,
@@ -336,7 +337,8 @@ TEST("require that DocumentFeaturesStore is restored on deserialization") {
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
     vespalib::DataBuffer buffer;
-    index.serialize(buffer);
+    PredicateIndex::SerializeStats dummy_stats;
+    index.serialize(buffer, dummy_stats);
     uint32_t doc_id_limit;
     DocIdLimitFinder finder(doc_id_limit);
     PredicateIndex index2(generation_holder, dummy_provider, simple_index_config,

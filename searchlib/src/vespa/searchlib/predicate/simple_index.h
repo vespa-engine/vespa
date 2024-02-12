@@ -136,6 +136,17 @@ public:
     using PostingVector = vespalib::RcuVectorBase<Posting>;
     using VectorStore = vespalib::btree::BTree<Key, std::shared_ptr<PostingVector>, vespalib::btree::NoAggregated>;
     using VectorIterator = PostingVectorIterator<Posting, Key, DocId>;
+    struct SerializeStats {
+        size_t _dictionary_size;
+        size_t _btree_count;
+        size_t _bytes;
+        SerializeStats()
+            : _dictionary_size(0),
+              _btree_count(0),
+              _bytes(0)
+        {
+        }
+    };
 
 private:
     using GenerationHolder = vespalib::GenerationHolder;
@@ -176,7 +187,7 @@ public:
     ~SimpleIndex();
 
     void serialize(vespalib::DataBuffer &buffer,
-                   const PostingSerializer<Posting> &serializer) const;
+                   const PostingSerializer<Posting> &serializer, SerializeStats& stats) const;
     void deserialize(vespalib::DataBuffer &buffer,
                      PostingDeserializer<Posting> &deserializer,
                      SimpleIndexDeserializeObserver<Key, DocId> &observer, uint32_t version);

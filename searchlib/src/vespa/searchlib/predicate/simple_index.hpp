@@ -69,9 +69,12 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::serialize(vespalib::DataBuffer &buffer, const PostingSerializer<Posting> &serializer) const {
+SimpleIndex<Posting, Key, DocId>::serialize(vespalib::DataBuffer &buffer, const PostingSerializer<Posting> &serializer, SerializeStats& stats) const {
     assert(sizeof(Key) <= sizeof(uint64_t));
     assert(sizeof(DocId) <= sizeof(uint32_t));
+    stats = SerializeStats();
+    stats._dictionary_size = _dictionary.size();
+    auto old_size = buffer.getDataLen();
     buffer.writeInt32(_dictionary.size());
     for (auto it = _dictionary.begin(); it.valid(); ++it) {
         vespalib::datastore::EntryRef ref = it.getData();
@@ -79,12 +82,16 @@ SimpleIndex<Posting, Key, DocId>::serialize(vespalib::DataBuffer &buffer, const 
         auto posting_it = _btree_posting_lists.begin(ref);
         if (!posting_it.valid())
             continue;
+        if (posting_it.size() > 8u) {
+            ++stats._btree_count;
+        }
         buffer.writeInt64(it.getKey());  // Key
         for (; posting_it.valid(); ++posting_it) {
             buffer.writeInt32(posting_it.getKey());  // DocId
             serializer.serialize(posting_it.getData(), buffer);
         }
     }
+    stats._bytes = buffer.getDataLen() - old_size;
 }
 
 template <typename Posting, typename Key, typename DocId>

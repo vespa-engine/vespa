@@ -126,17 +126,20 @@ PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
 PredicateIndex::~PredicateIndex() = default;
 
 void
-PredicateIndex::serialize(DataBuffer &buffer) const {
+PredicateIndex::serialize(DataBuffer &buffer, SerializeStats& stats) const {
     _features_store.serialize(buffer);
+    stats._features_len = buffer.getDataLen();
+    auto old_len = buffer.getDataLen();
     buffer.writeInt16(_arity);
     buffer.writeInt32(_zero_constraint_docs.size());
     for (auto it = _zero_constraint_docs.begin(); it.valid(); ++it) {
         buffer.writeInt32(it.getKey());
     }
+    stats._zeroes_len = buffer.getDataLen() - old_len;
     IntervalSerializer<Interval> interval_serializer(_interval_store);
-    _interval_index.serialize(buffer, interval_serializer);
+    _interval_index.serialize(buffer, interval_serializer, stats._interval);
     IntervalSerializer<IntervalWithBounds> bounds_serializer(_interval_store);
-    _bounds_index.serialize(buffer, bounds_serializer);
+    _bounds_index.serialize(buffer, bounds_serializer, stats._interval_with_bounds);
 }
 
 void
