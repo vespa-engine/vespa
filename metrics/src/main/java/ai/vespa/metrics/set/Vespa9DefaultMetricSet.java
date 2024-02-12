@@ -7,6 +7,7 @@ package ai.vespa.metrics.set;
 import ai.vespa.metrics.ClusterControllerMetrics;
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.metrics.DistributorMetrics;
+import ai.vespa.metrics.LogdMetrics;
 import ai.vespa.metrics.NodeAdminMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
 import ai.vespa.metrics.SentinelMetrics;
