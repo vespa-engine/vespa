@@ -17,11 +17,11 @@ using FefUtils = search::fef::Utils;
 
 namespace streaming {
 
-HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const MatchData & matchData,
+HitCollector::Hit::Hit(vsm::StorageDocument::SP doc, uint32_t docId, const MatchData & matchData,
                        double score, const void * sortData, size_t sortDataLen)
    : _docid(docId),
      _score(score),
-     _document(doc),
+     _document(std::move(doc)),
      _matchData(),
      _sortBlob(sortData, sortDataLen)
 {
@@ -33,10 +33,10 @@ HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const 
 
 HitCollector::Hit::~Hit() = default;
 
-HitCollector::HitCollector(size_t wantedHits, bool use_sort_blob) :
-    _hits(),
-    _heap(),
-    _use_sort_blob(use_sort_blob)
+HitCollector::HitCollector(size_t wantedHits, bool use_sort_blob)
+    : _hits(),
+      _heap(),
+      _use_sort_blob(use_sort_blob)
 {
     _hits.reserve(16);
     _heap.reserve(wantedHits);
@@ -56,16 +56,16 @@ HitCollector::getDocSum(const search::DocumentIdT & docId) const
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data, double score)
+HitCollector::addHit(vsm::StorageDocument::SP doc, uint32_t docId, const MatchData & data, double score)
 {
-    return addHit(Hit(doc, docId, data, score));
+    return addHit(Hit(std::move(doc), docId, data, score));
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data,
+HitCollector::addHit(vsm::StorageDocument::SP doc, uint32_t docId, const MatchData & data,
                      double score, const void * sortData, size_t sortDataLen)
 {
-    return addHit(Hit(doc, docId, data, score, sortData, sortDataLen));
+    return addHit(Hit(std::move(doc), docId, data, score, sortData, sortDataLen));
 }
 
 bool

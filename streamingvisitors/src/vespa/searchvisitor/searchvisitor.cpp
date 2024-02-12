@@ -725,31 +725,32 @@ SearchVisitor::RankController::keepMatchedDocument()
     return (!(_rankProcessor->getRankScore() <= _rankSetup->getRankScoreDropLimit()));
 }
 
-bool
+void
 SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
                                                       SearchVisitor & visitor,
                                                       const std::vector<char> & tmpSortBuffer,
-                                                      const StorageDocument * document)
+                                                      StorageDocument::SP document)
 {
-    bool amongTheBest(false);
     uint32_t docId = _rankProcessor->getDocId();
     if (!hasSorting) {
-        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(),
-                                                                _rankProcessor->getRankScore());
+        bool amongTheBest = _rankProcessor->getHitCollector().addHit(std::move(document), docId,
+                                                                     _rankProcessor->getMatchData(),
+                                                                     _rankProcessor->getRankScore());
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(nullptr, docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
+            _dumpProcessor->getHitCollector().addHit({}, docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
         }
     } else {
         size_t pos = visitor.fillSortBuffer();
         LOG(spam, "SortBlob is %ld bytes", pos);
-        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(),
-                                                                _rankProcessor->getRankScore(), &tmpSortBuffer[0], pos);
+        bool amongTheBest = _rankProcessor->getHitCollector().addHit(std::move(document), docId,
+                                                                     _rankProcessor->getMatchData(),
+                                                                     _rankProcessor->getRankScore(),
+                                                                     &tmpSortBuffer[0], pos);
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(nullptr, docId, _dumpProcessor->getMatchData(),
+            _dumpProcessor->getHitCollector().addHit({}, docId, _dumpProcessor->getMatchData(),
                                                      _dumpProcessor->getRankScore(), &tmpSortBuffer[0], pos);
         }
     }
-    return amongTheBest;
 }
 
 void
@@ -1042,7 +1043,7 @@ SearchVisitor::handleDocuments(const document::BucketId&, DocEntryList & entries
     const document::DocumentType* defaultDocType = _docTypeMapping.getDefaultDocumentType();
     assert(defaultDocType);
     for (const auto & entry : entries) {
-        auto document = std::make_unique<StorageDocument>(entry->releaseDocument(), _fieldPathMap, highestFieldNo);
+        auto document = std::make_shared<StorageDocument>(entry->releaseDocument(), _fieldPathMap, highestFieldNo);
 
         try {
             if (defaultDocType != nullptr
@@ -1051,9 +1052,7 @@ SearchVisitor::handleDocuments(const document::BucketId&, DocEntryList & entries
                 LOG(debug, "Skipping document of type '%s' when handling only documents of type '%s'",
                     document->docDoc().getType().getName().c_str(), defaultDocType->getName().c_str());
             } else {
-                if (handleDocument(*document)) {
-                    _backingDocuments.push_back(std::move(document));
-                }
+                handleDocument(document);
             }
         } catch (const std::exception & e) {
             LOG(warning, "Caught exception handling document '%s'. Exception='%s'",
@@ -1062,10 +1061,10 @@ SearchVisitor::handleDocuments(const document::BucketId&, DocEntryList & entries
     }
 }
 
-bool
-SearchVisitor::handleDocument(StorageDocument & document)
+void
+SearchVisitor::handleDocument(StorageDocument::SP documentSP)
 {
-    bool needToKeepDocument(false);
+    StorageDocument & document = *documentSP;
     _syntheticFieldsController.onDocument(document);
     group(document.docDoc(), 0, true);
     if (match(document)) {
@@ -1079,14 +1078,11 @@ SearchVisitor::handleDocument(StorageDocument & document)
             _rankAttribute.add(rp.getRankScore());
         }
         if (_rankController.keepMatchedDocument()) {
-            bool amongTheBest = _rankController.collectMatchedDocument(!_sortList.empty(), *this, _tmpSortBuffer, &document);
+            _rankController.collectMatchedDocument(!_sortList.empty(), *this, _tmpSortBuffer, std::move(documentSP));
             _syntheticFieldsController.onDocumentMatch(document, documentId);
             SingleDocumentStore single(document);
             _summaryGenerator.setDocsumCache(single);
             group(document.docDoc(), rp.getRankScore(), false);
-            if (amongTheBest) {
-                needToKeepDocument = true;
-            }
         } else {
             _hitsRejectedCount++;
             LOG(debug, "Do not keep document with id '%s' because rank score (%f) <= rank score drop limit (%f)",
@@ -1095,7 +1091,6 @@ SearchVisitor::handleDocument(StorageDocument & document)
     } else {
         LOG(debug, "Did not match document with id '%s'", document.docDoc().getId().getScheme().toString().c_str());
     }
-    return needToKeepDocument;
 }
 
 void
@@ -1228,10 +1223,7 @@ SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)
     }
 
     generateGroupingResults();
-
     generateDocumentSummaries();
-    _backingDocuments.clear();
-
     documentSummary.sort();
     LOG(debug, "Docsum count: %lu", documentSummary.getSummaryCount());
 }

@@ -74,7 +74,6 @@ protected:
     void testFeatureSet();
 
     DocumentType _docType;
-    std::vector<vsm::StorageDocument::UP> _backedHits;
 
     HitCollectorTest();
     ~HitCollectorTest() override;
@@ -85,7 +84,7 @@ HitCollectorTest::HitCollectorTest()
 {
 }
 
-HitCollectorTest::~HitCollectorTest() {}
+HitCollectorTest::~HitCollectorTest() = default;
 
 void
 HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t hitNo, SearchResult & rs)
@@ -109,11 +108,10 @@ void
 HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const char *sortData, size_t sortDataSize)
 {
     auto doc = document::Document::make_without_repo(_docType, DocumentId("id:ns:testdoc::"));
-    auto sdoc = std::make_unique<StorageDocument>(std::move(doc), SharedFieldPathMap(), 0);
+    auto sdoc = std::make_shared<StorageDocument>(std::move(doc), SharedFieldPathMap(), 0);
     ASSERT_TRUE(sdoc->valid());
     MatchData md(MatchData::params());
-    hc.addHit(sdoc.get(), docId, md, score, sortData, sortDataSize);
-    _backedHits.push_back(std::move(sdoc));
+    hc.addHit(std::move(sdoc), docId, md, score, sortData, sortDataSize);
 }
 
 TEST_F(HitCollectorTest, simple)
