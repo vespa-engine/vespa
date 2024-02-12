@@ -17,13 +17,11 @@ class DatWriter
 {
     std::unique_ptr<search::BufferWriter> _datWriter;
 public:
-    DatWriter(IAttributeSaveTarget &saveTarget)
+    explicit DatWriter(IAttributeSaveTarget &saveTarget)
         : _datWriter(saveTarget.datWriter().allocBufferWriter())
-    {
-    }
+    { }
 
-    ~DatWriter()
-    {
+    ~DatWriter() {
         _datWriter->flush();
     }
 
@@ -53,15 +51,11 @@ MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
 
 
 template <typename MultiValueT>
-MultiValueNumericAttributeSaver<MultiValueT>::
-~MultiValueNumericAttributeSaver()
-{
-}
+MultiValueNumericAttributeSaver<MultiValueT>::~MultiValueNumericAttributeSaver() = default;
 
 template <typename MultiValueT>
 bool
-MultiValueNumericAttributeSaver<MultiValueT>::
-onSave(IAttributeSaveTarget &saveTarget)
+MultiValueNumericAttributeSaver<MultiValueT>::onSave(IAttributeSaveTarget &saveTarget)
 {
     CountWriter countWriter(saveTarget);
     WeightWriter<multivalue::is_WeightedValue_v<MultiValueType>> weightWriter(saveTarget);

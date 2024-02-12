@@ -12,7 +12,6 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
-import com.yahoo.tensor.impl.Convert;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.ArrayList;
@@ -377,7 +376,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
 
     private static TensorAddress joinAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                                TensorType joinedType) {
-        int[] joinedLabels = new int[joinedType.dimensions().size()];
+        long[] joinedLabels = new long[joinedType.dimensions().size()];
         Arrays.fill(joinedLabels, Tensor.invalidIndex);
         mapContent(a, joinedLabels, aToIndexes);
         boolean compatible = mapContent(b, joinedLabels, bToIndexes);
@@ -391,10 +390,10 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
      * @return true if the mapping was successful, false if one of the destination positions was
      *         occupied by a different value
      */
-    private static boolean mapContent(TensorAddress from, int[] to, int[] indexMap) {
+    private static boolean mapContent(TensorAddress from, long[] to, int[] indexMap) {
         for (int i = 0, size = from.size(); i < size; i++) {
             int toIndex = indexMap[i];
-            int label = Convert.safe2Int(from.numericLabel(i));
+            long label = from.numericLabel(i);
             if (to[toIndex] != Tensor.invalidIndex && to[toIndex] != label)
                 return false;
             to[toIndex] = label;

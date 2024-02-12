@@ -26,12 +26,12 @@ class MultiValueNumericAttributeSaver : public MultiValueAttributeSaver
 
     const MultiValueMapping &_mvMapping;
 public:
-    virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
+    bool onSave(IAttributeSaveTarget &saveTarget) override;
     MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
                                     const attribute::AttributeHeader &header,
                                     const MultiValueMapping &mvMapping);
 
-    virtual ~MultiValueNumericAttributeSaver();
+    ~MultiValueNumericAttributeSaver() override;
 };
 
 

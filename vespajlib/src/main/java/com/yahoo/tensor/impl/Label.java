@@ -18,7 +18,7 @@ public class Label {
 
     private static final String[] SMALL_INDEXES = createSmallIndexesAsStrings(1000);
 
-    private final static Map<String, Integer> string2Enum = new ConcurrentHashMap<>();
+    private final static Map<String, Long> string2Enum = new ConcurrentHashMap<>();
 
     // Index 0 is unused, that is a valid positive number
     // 1(-1) is reserved for the Tensor.INVALID_INDEX
@@ -33,7 +33,7 @@ public class Label {
         return asStrings;
     }
 
-    private static int addNewUniqueString(String s) {
+    private static long addNewUniqueString(String s) {
         synchronized (string2Enum) {
             if (numUniqeStrings >= uniqueStrings.length) {
                 uniqueStrings = Arrays.copyOf(uniqueStrings, uniqueStrings.length*2);
@@ -56,28 +56,25 @@ public class Label {
         return true;
     }
 
-    public static int toNumber(String s) {
+    public static long toNumber(String s) {
         if (s == null) { return Tensor.invalidIndex; }
         try {
             if (validNumericIndex(s)) {
-                return Integer.parseInt(s);
+                return Long.parseLong(s, 10);
             }
         } catch (NumberFormatException e) {
         }
         return string2Enum.computeIfAbsent(s, Label::addNewUniqueString);
     }
 
-    public static String fromNumber(int v) {
+    public static String fromNumber(long v) {
         if (v >= 0) {
             return asNumericString(v);
         } else {
             if (v == Tensor.invalidIndex) { return null; }
-            return uniqueStrings[-v];
+            int index = -Convert.safe2Int(v);
+            return uniqueStrings[index];
         }
-    }
-
-    public static String fromNumber(long v) {
-        return fromNumber(Convert.safe2Int(v));
     }
 
 }

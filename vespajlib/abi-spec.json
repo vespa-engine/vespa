@@ -1281,8 +1281,8 @@
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, java.lang.String)",
-      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, long)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, int)",
+      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, long)",
       "public com.yahoo.tensor.TensorAddress$Builder copy()",
       "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.TensorAddress build()"

@@ -11,9 +11,9 @@ import com.yahoo.tensor.TensorAddress;
  */
 final class TensorAddressAny1 extends TensorAddressAny {
 
-    private final int label;
+    private final long label;
 
-    TensorAddressAny1(int label) { this.label = label; }
+    TensorAddressAny1(long label) { this.label = label; }
 
     @Override public int size() { return 1; }
 
@@ -27,11 +27,11 @@ final class TensorAddressAny1 extends TensorAddressAny {
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
-        if (labelIndex == 0) return new TensorAddressAny1(Convert.safe2Int(label));
+        if (labelIndex == 0) return new TensorAddressAny1(label);
         throw new IllegalArgumentException("No label " + labelIndex);
     }
 
-    @Override public int hashCode() { return Math.abs(label); }
+    @Override public int hashCode() { return (int)Math.abs(label); }
 
     @Override
     public boolean equals(Object o) {

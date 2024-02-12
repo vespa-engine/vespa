@@ -247,7 +247,7 @@ FeatureSet::SP
 RankProcessor::calculateFeatureSet()
 {
     LOG(debug, "Calculate feature set");
-    RankProgram &rankProgram = *(_summaryProgram.get() != nullptr ? _summaryProgram : _rankProgram);
+    RankProgram &rankProgram = *(_summaryProgram ? _summaryProgram : _rankProgram);
     search::fef::FeatureResolver resolver(rankProgram.get_seeds(false));
     LOG(debug, "Feature handles: numNames(%ld)", resolver.num_features());
     RankProgramWrapper wrapper(*_match_data);
@@ -260,7 +260,7 @@ FeatureValues
 RankProcessor::calculate_match_features()
 {
     if (!_match_features_program) {
-        return FeatureValues();
+        return {};
     }
     RankProgramWrapper wrapper(*_match_data);
     search::fef::FeatureResolver resolver(_match_features_program->get_seeds(false));
@@ -284,7 +284,7 @@ void
 RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query)
 {
     for (auto& term : query.getTermList()) {
-        QueryTermData & qtd = static_cast<QueryTermData &>(term->getQueryItem());
+        auto & qtd = static_cast<QueryTermData &>(term->getQueryItem());
         const ITermData &td = qtd.getTermData();
         term->unpack_match_data(docid, td, matchData);
     }

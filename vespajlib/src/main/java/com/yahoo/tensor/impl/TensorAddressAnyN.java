@@ -15,9 +15,9 @@ import static java.lang.Math.abs;
  */
 final class TensorAddressAnyN extends TensorAddressAny {
 
-    private final int[] labels;
+    private final long[] labels;
 
-    TensorAddressAnyN(int[] labels) {
+    TensorAddressAnyN(long[] labels) {
         if (labels.length < 1) throw new IllegalArgumentException("Need at least 1 label");
         this.labels = labels;
     }
@@ -28,17 +28,17 @@ final class TensorAddressAnyN extends TensorAddressAny {
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
-        int[] copy = Arrays.copyOf(labels, labels.length);
-        copy[labelIndex] = Convert.safe2Int(label);
+        long[] copy = Arrays.copyOf(labels, labels.length);
+        copy[labelIndex] = label;
         return new TensorAddressAnyN(copy);
     }
 
     @Override public int hashCode() {
-        int hash = abs(labels[0]);
+        long hash = abs(labels[0]);
         for (int i = 0; i < size(); i++) {
-            hash = hash | (abs(labels[i]) << (32 - Integer.numberOfLeadingZeros(hash)));
+            hash = hash | (abs(labels[i]) << (32 - Long.numberOfLeadingZeros(hash)));
         }
-        return hash;
+        return (int) hash;
     }
 
     @Override

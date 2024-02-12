@@ -7,6 +7,7 @@ package ai.vespa.metrics;
 
 // TODO: Move to hosted repo.
 public enum HostedNodeAdminMetrics implements VespaMetrics {
+    COREDUMPS_PROCESSED("coredumps.processed", Unit.OPERATION, "Number of coredumps processed"),
 
     // System metrics
     CPU_UTIL("cpu.util", Unit.PERCENTAGE, "CPU utilisation"),
