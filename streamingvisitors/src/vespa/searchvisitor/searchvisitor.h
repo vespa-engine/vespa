@@ -131,8 +131,8 @@ private:
         search::fef::Properties        _queryProperties;
         search::fef::Properties        _featureOverrides;
         bool                           _hasRanking;
-        RankProcessor::UP              _rankProcessor;
         bool                           _dumpFeatures;
+        RankProcessor::UP              _rankProcessor;
         RankProcessor::UP              _dumpProcessor;
 
         /**
@@ -168,7 +168,7 @@ private:
          **/
         void setupRankProcessors(search::streaming::Query & query,
                                  const vespalib::string & location,
-                                 size_t wantedHitCount,
+                                 size_t wantedHitCount, bool use_sort_blob,
                                  const search::IAttributeManager & attrMan,
                                  std::vector<AttrInfo> & attributeFields);
         /**

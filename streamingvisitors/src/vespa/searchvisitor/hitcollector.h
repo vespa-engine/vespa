@@ -73,11 +73,15 @@ private:
     };
     using HitVector = std::vector<Hit>;
     HitVector _hits;
+    bool      _use_sort_blob;
     bool      _sortedByDocId; // flag for whether the hit vector is sorted on docId
 
     void sortByDocId();
     bool addHitToHeap(const Hit & hit) const;
     bool addHit(Hit && hit);
+    void make_heap();
+    void pop_heap();
+    void push_heap();
 
 public:
     using UP = std::unique_ptr<HitCollector>;
@@ -87,7 +91,7 @@ public:
         virtual void run(uint32_t docid, const std::vector<TermFieldMatchData> &matchData) = 0;
     };
 
-    explicit HitCollector(size_t wantedHits);
+    HitCollector(size_t wantedHits, bool use_sort_blob);
 
     virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override;
 
