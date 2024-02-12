@@ -256,10 +256,10 @@ SearchVisitor::HitsResultPreparator::check(const vespalib::Identifiable & obj) c
     return obj.getClass().inherits(HitsAggregationResult::classId);
 }
 
-SearchVisitor::GroupingEntry::GroupingEntry(Grouping * grouping) :
-    _grouping(grouping),
-    _count(0),
-    _limit(grouping->getMaxN(std::numeric_limits<size_t>::max()))
+SearchVisitor::GroupingEntry::GroupingEntry(Grouping * grouping)
+    : _grouping(grouping),
+      _count(0),
+      _limit(grouping->getMaxN(std::numeric_limits<size_t>::max()))
 {
 }
 
@@ -283,36 +283,36 @@ SearchVisitor::~SearchVisitor() {
 
 SearchVisitor::SearchVisitor(StorageComponent& component,
                              VisitorEnvironment& vEnv,
-                             const Parameters& params) :
-    Visitor(component),
-    _env(get_search_environment_snapshot(vEnv, params)),
-    _params(params),
-    _init_called(false),
-    _docSearchedCount(0),
-    _hitCount(0),
-    _hitsRejectedCount(0),
-    _query(),
-    _queryResult(std::make_unique<documentapi::QueryResultMessage>()),
-    _fieldSearcherMap(),
-    _docTypeMapping(),
-    _fieldSearchSpecMap(),
-    _snippetModifierManager(),
-    _summaryClass("default"),
-    _attrMan(),
-    _attrCtx(_attrMan.createContext()),
-    _summaryGenerator(_attrMan, *this),
-    _groupingList(),
-    _attributeFields(),
-    _sortList(),
-    _searchBuffer(std::make_shared<vsm::SearcherBuf>()),
-    _tmpSortBuffer(256),
-    _documentIdAttributeBacking(std::make_shared<search::SingleStringExtAttribute>("[docid]") ),
-    _rankAttributeBacking(std::make_shared<search::SingleFloatExtAttribute>("[rank]") ),
-    _documentIdAttribute(dynamic_cast<search::SingleStringExtAttribute &>(*_documentIdAttributeBacking)),
-    _rankAttribute(dynamic_cast<search::SingleFloatExtAttribute &>(*_rankAttributeBacking)),
-    _shouldFillRankAttribute(false),
-    _syntheticFieldsController(),
-    _rankController()
+                             const Parameters& params)
+    : Visitor(component),
+      _env(get_search_environment_snapshot(vEnv, params)),
+      _params(params),
+      _init_called(false),
+      _docSearchedCount(0),
+      _hitCount(0),
+      _hitsRejectedCount(0),
+      _query(),
+      _queryResult(std::make_unique<documentapi::QueryResultMessage>()),
+      _fieldSearcherMap(),
+      _docTypeMapping(),
+      _fieldSearchSpecMap(),
+      _snippetModifierManager(),
+      _summaryClass("default"),
+      _attrMan(),
+      _attrCtx(_attrMan.createContext()),
+      _summaryGenerator(_attrMan, *this),
+      _groupingList(),
+      _attributeFields(),
+      _sortList(),
+      _searchBuffer(std::make_shared<vsm::SearcherBuf>()),
+      _tmpSortBuffer(256),
+      _documentIdAttributeBacking(std::make_shared<search::SingleStringExtAttribute>("[docid]") ),
+      _rankAttributeBacking(std::make_shared<search::SingleFloatExtAttribute>("[rank]") ),
+      _documentIdAttribute(dynamic_cast<search::SingleStringExtAttribute &>(*_documentIdAttributeBacking)),
+      _rankAttribute(dynamic_cast<search::SingleFloatExtAttribute &>(*_rankAttributeBacking)),
+      _shouldFillRankAttribute(false),
+      _syntheticFieldsController(),
+      _rankController()
 {
     LOG(debug, "Created SearchVisitor");
 }
@@ -321,13 +321,10 @@ bool
 SearchVisitor::is_text_matching(vespalib::stringref index) const noexcept {
     StringFieldIdTMap fieldIdMap;
     _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
-    for (const auto & fieldId : fieldIdMap.map()) {
-        auto found = _fieldSearchSpecMap.specMap().find(fieldId.second);
-        if ((found != _fieldSearchSpecMap.specMap().end()) && found->second.uses_string_search_method()) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(fieldIdMap.map().begin(), fieldIdMap.map().end(),[&specMap=_fieldSearchSpecMap.specMap()](const auto & fieldId) {
+        auto found = specMap.find(fieldId.second);
+        return (found != specMap.end() && found->second.uses_string_search_method());
+    });
 }
 
 namespace {
@@ -540,8 +537,7 @@ SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri, 
     : VisitorFactory(),
       _configUri(configUri),
       _env(std::make_shared<SearchEnvironment>(_configUri, transport, file_distributor_connection_spec))
-{
-}
+{ }
 
 SearchVisitorFactory::~SearchVisitorFactory() = default;
 
@@ -595,18 +591,16 @@ SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
     }
 }
 
-SearchVisitor::AttributeInserter::AttributeInserter(AttributeVector & attribute, AttributeVector::DocId docId) :
-    _attribute(attribute),
-    _docId(docId)
-{
-}
+SearchVisitor::AttributeInserter::AttributeInserter(AttributeVector & attribute, AttributeVector::DocId docId)
+    : _attribute(attribute),
+      _docId(docId)
+{ }
 
-SearchVisitor::PositionInserter::PositionInserter(AttributeVector & attribute, AttributeVector::DocId docId) :
-    AttributeInserter(attribute, docId),
-    _fieldX(PositionDataType::getInstance().getField(PositionDataType::FIELD_X)),
-    _fieldY(PositionDataType::getInstance().getField(PositionDataType::FIELD_Y))
-{
-}
+SearchVisitor::PositionInserter::PositionInserter(AttributeVector & attribute, AttributeVector::DocId docId)
+    : AttributeInserter(attribute, docId),
+      _fieldX(PositionDataType::getInstance().getField(PositionDataType::FIELD_X)),
+      _fieldY(PositionDataType::getInstance().getField(PositionDataType::FIELD_Y))
+{ }
 
 SearchVisitor::PositionInserter::~PositionInserter() = default;
 
@@ -661,18 +655,17 @@ SearchVisitor::RankController::processAccessedAttributes(const QueryEnvironment 
     }
 }
 
-SearchVisitor::RankController::RankController() :
-    _rankProfile("default"),
-    _rankManagerSnapshot(nullptr),
-    _rankSetup(nullptr),
-    _queryProperties(),
-    _featureOverrides(),
-    _hasRanking(false),
-    _dumpFeatures(false),
-    _rankProcessor(),
-    _dumpProcessor()
-{
-}
+SearchVisitor::RankController::RankController()
+    : _rankProfile("default"),
+      _rankManagerSnapshot(nullptr),
+      _rankSetup(nullptr),
+      _queryProperties(),
+      _featureOverrides(),
+      _hasRanking(false),
+      _dumpFeatures(false),
+      _rankProcessor(),
+      _dumpProcessor()
+{ }
 
 SearchVisitor::RankController::~RankController() = default;
 
@@ -782,10 +775,9 @@ SearchVisitor::RankController::onCompletedVisiting(vsm::GetDocsumsStateCallback 
     }
 }
 
-SearchVisitor::SyntheticFieldsController::SyntheticFieldsController() :
-    _documentIdFId(StringFieldIdTMap::npos)
-{
-}
+SearchVisitor::SyntheticFieldsController::SyntheticFieldsController()
+    : _documentIdFId(StringFieldIdTMap::npos)
+{ }
 
 void
 SearchVisitor::SyntheticFieldsController::setup(const StringFieldIdTMap & fieldRegistry,
@@ -870,7 +862,7 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
             _fieldSearchSpecMap.documentTypeMap().size());
     }
     _fieldsUnion = fieldsInQuery.map();
-    for(const auto & entry :_fieldSearchSpecMap.nameIdMap().map()) {
+    for(const auto & entry : _fieldSearchSpecMap.nameIdMap().map()) {
         if (_fieldsUnion.find(entry.first) == _fieldsUnion.end()) {
             LOG(debug, "Adding field '%s' from _fieldSearchSpecMap", entry.first.c_str());
             _fieldsUnion[entry.first] = entry.second;
@@ -1018,7 +1010,7 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
 class SingleDocumentStore : public vsm::IDocSumCache
 {
 public:
-    explicit SingleDocumentStore(const StorageDocument & doc) : _doc(doc) { }
+    explicit SingleDocumentStore(const StorageDocument & doc) noexcept : _doc(doc) { }
     const vsm::Document & getDocSum(const search::DocumentIdT &) const override {
         return _doc;
     }
