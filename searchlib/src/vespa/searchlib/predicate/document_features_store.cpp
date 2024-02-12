@@ -16,19 +16,11 @@ using std::vector;
 
 namespace search::predicate {
 
-void
-DocumentFeaturesStore::setCurrent(uint32_t docId, FeatureVector *features) {
-    _currDocId = docId;
-    _currFeatures = features;
-}
-
 DocumentFeaturesStore::DocumentFeaturesStore(uint32_t arity)
     : _docs(),
       _ranges(),
       _word_store(),
       _word_index(),
-      _currDocId(0),
-      _currFeatures(),
       _numFeatures(0),
       _numRanges(0),
       _arity(arity) {
@@ -108,20 +100,6 @@ DocumentFeaturesStore::~DocumentFeaturesStore() {
 }
 
 void
-DocumentFeaturesStore::insert(uint64_t featureId, uint32_t docId) {
-    assert(docId != 0);
-    if (_currDocId != docId) {
-        auto docsItr = _docs.find(docId);
-        if (docsItr == _docs.end()) {
-            docsItr = _docs.insert(std::make_pair(docId, FeatureVector())).first;
-        }
-        setCurrent(docId, &docsItr->second);
-    }
-    _currFeatures->push_back(featureId);
-    ++_numFeatures;
-}
-
-void
 DocumentFeaturesStore::insert(const PredicateTreeAnnotations &annotations, uint32_t doc_id) {
     assert(doc_id != 0);
     if (!annotations.features.empty()) {
@@ -188,9 +166,6 @@ DocumentFeaturesStore::remove(uint32_t doc_id) {
         _numRanges = _numRanges >= range_itr->second.size() ?
                      (_numRanges - range_itr->second.size()) : 0;
         _ranges.erase(range_itr);
-    }
-    if (_currDocId == doc_id) {
-        setCurrent(0, nullptr);
     }
 }
 

@@ -57,13 +57,9 @@ class DocumentFeaturesStore {
     RangeFeaturesMap    _ranges;
     WordStore           _word_store;
     WordIndex           _word_index;
-    uint32_t            _currDocId;
-    FeatureVector      *_currFeatures;
     size_t              _numFeatures;
     size_t              _numRanges;
     uint32_t            _arity;
-
-    void setCurrent(uint32_t docId, FeatureVector *features);
 
 public:
     using FeatureSet = std::unordered_set<uint64_t>;
@@ -72,7 +68,6 @@ public:
     DocumentFeaturesStore(vespalib::DataBuffer &buffer);
     ~DocumentFeaturesStore();
 
-    void insert(uint64_t featureId, uint32_t docId);
     void insert(const PredicateTreeAnnotations &annotations, uint32_t docId);
     FeatureSet get(uint32_t docId) const;
     void remove(uint32_t docId);
