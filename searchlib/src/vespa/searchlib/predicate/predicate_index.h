@@ -37,6 +37,19 @@ public:
     using GenerationHolder = vespalib::GenerationHolder;
     using BTreeIterator = SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
     using VectorIterator = SimpleIndex<vespalib::datastore::EntryRef>::VectorIterator;
+    struct SerializeStats {
+        size_t _features_len;
+        size_t _zeroes_len;
+        IntervalIndex::SerializeStats _interval;
+        BoundsIndex::SerializeStats _interval_with_bounds;
+        SerializeStats()
+            : _features_len(0),
+              _zeroes_len(0),
+              _interval(),
+              _interval_with_bounds()
+        {
+        }
+    };
 private:
     uint32_t                  _arity;
     const DocIdLimitProvider &_limit_provider;
@@ -66,7 +79,7 @@ public:
                    SimpleIndexDeserializeObserver<> & observer, uint32_t version);
 
     ~PredicateIndex() override;
-    void serialize(vespalib::DataBuffer &buffer) const;
+    void serialize(vespalib::DataBuffer &buffer, SerializeStats& stats) const;
     void onDeserializationCompleted();
 
     void indexEmptyDocument(uint32_t doc_id);

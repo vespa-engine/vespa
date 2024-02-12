@@ -141,8 +141,11 @@ PredicateAttribute::before_inc_generation(generation_t current_gen)
 void
 PredicateAttribute::onSave(IAttributeSaveTarget &saveTarget) {
     LOG(info, "Saving predicate attribute version %d", getVersion());
+    vespalib::string name(getBaseFileName());
+    PredicateIndex::SerializeStats stats;
     IAttributeSaveTarget::Buffer buffer(saveTarget.datWriter().allocBuf(4_Ki));
-    _index->serialize(*buffer);
+    _index->serialize(*buffer, stats);
+    size_t predicate_index_len = buffer->getDataLen();
     uint32_t  highest_doc_id = static_cast<uint32_t>(_min_feature.size() - 1);
     buffer->writeInt32(highest_doc_id);
     for (size_t i = 1; i <= highest_doc_id; ++i) {
@@ -152,6 +155,21 @@ PredicateAttribute::onSave(IAttributeSaveTarget &saveTarget) {
         buffer->writeInt16(_interval_range_vector[i]);
     }
     buffer->writeInt16(_max_interval_range);
+    auto min_feature_and_interval_range_vector_len = buffer->getDataLen() - predicate_index_len;
+    auto total_len = buffer->getDataLen();
+    LOG(info, "Serialized predicate attribute %s: "
+        "{features=%zu, zeros=%zu, "
+        "interval={dictionary=%zu, btrees=%zu, bytes=%zu}, "
+        "interval_with_bounds={dictionary %zu, btrees=%zu, bytes=%zu}, "
+        "predicate-index_len=%zu, "
+        "min_feature and interval_range_vector=%zu, total=%zu}",
+        name.c_str(),
+        stats._features_len, stats._zeroes_len,
+        stats._interval._dictionary_size, stats._interval._btree_count, stats._interval._bytes,
+        stats._interval_with_bounds._dictionary_size, stats._interval_with_bounds._btree_count, stats._interval_with_bounds._bytes,
+        predicate_index_len,
+        min_feature_and_interval_range_vector_len,
+        total_len);
     saveTarget.datWriter().writeBuf(std::move(buffer));
 }
 

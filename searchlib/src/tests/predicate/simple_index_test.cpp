@@ -176,7 +176,8 @@ TEST_FF("require that SimpleIndex can be serialized and deserialized.", Fixture,
     }
     f1.commit();
     vespalib::DataBuffer buffer;
-    f1.index().serialize(buffer, MyDataSerializer());
+    SimpleIndex<MyData>::SerializeStats dummy_stats;
+    f1.index().serialize(buffer, MyDataSerializer(), dummy_stats);
     MyObserver observer;
     MyDataDeserializer deserializer;
     f2.index().deserialize(buffer, deserializer, observer, PredicateAttribute::PREDICATE_ATTRIBUTE_VERSION);
