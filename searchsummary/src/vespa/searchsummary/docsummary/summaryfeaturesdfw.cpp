@@ -41,7 +41,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib
             obj.setDouble(name, values[i].as_double());
         }
     }
-    obj.setDouble(_M_cached, 0.0); // TODO Remove, has not been cahed for many years
+    obj.setDouble(_M_cached, 0.0); // TODO Remove, has not been cached for many years
 }
 
 }
