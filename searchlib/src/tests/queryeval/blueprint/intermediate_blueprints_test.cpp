@@ -5,6 +5,7 @@
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
@@ -1332,26 +1333,20 @@ void verify_cost(make &&mk, double expect, double expect_strict) {
     EXPECT_EQUAL(bp->strict_cost(), expect_strict);
 }
 
-double calc_cost(std::vector<std::pair<double,double>> list) {
-    double flow = 1.0;
-    double cost = 0.0;
-    for (auto [sub_cost,pass_through]: list) {
-        cost += flow * sub_cost;
-        flow *= pass_through;
-    }
-    return cost;
-}
+std::vector<FlowStats> child_stats({{0.2, 1.1, 0.2*1.1},
+                                    {0.3, 1.2, 0.3*1.2},
+                                    {0.5, 1.3, 1.3}});
 
 TEST("cost for OR") {
     verify_cost(make::OR(),
-                calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}),
-                0.2*1.1 + 0.3*1.2 + 1.3);
+                OrFlow::cost_of(child_stats, false),
+                OrFlow::cost_of(child_stats, true) + flow::heap_cost(OrFlow::estimate_of(child_stats), 3));
 }
 
 TEST("cost for AND") {
     verify_cost(make::AND(),
-                calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}),
-                calc_cost({{0.2*1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+                AndFlow::cost_of(child_stats, false),
+                AndFlow::cost_of(child_stats, true));
 }
 
 TEST("cost for RANK") {
@@ -1360,8 +1355,8 @@ TEST("cost for RANK") {
 
 TEST("cost for ANDNOT") {
     verify_cost(make::ANDNOT(),
-                calc_cost({{1.1, 0.2},{1.3, 0.5},{1.2, 0.7}}),
-                calc_cost({{0.2*1.1, 0.2},{1.3, 0.5},{1.2, 0.7}}));
+                AndNotFlow::cost_of(child_stats, false),
+                AndNotFlow::cost_of(child_stats, true));
 }
 
 TEST("cost for SB") {
@@ -1371,20 +1366,20 @@ TEST("cost for SB") {
 
 TEST("cost for NEAR") {
     verify_cost(make::NEAR(1),
-                0.2*0.3*0.5 * 3 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}),
-                0.2*0.3*0.5 * 3 + calc_cost({{0.2*1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+                AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
+                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
 }
 
 TEST("cost for ONEAR") {
     verify_cost(make::ONEAR(1),
-                0.2*0.3*0.5 * 3 + calc_cost({{1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}),
-                0.2*0.3*0.5 * 3 + calc_cost({{0.2*1.1, 0.2},{1.2, 0.3},{1.3, 0.5}}));
+                AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
+                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
 }
 
 TEST("cost for WEAKAND") {
     verify_cost(make::WEAKAND(1000),
-                calc_cost({{1.3, 0.5},{1.2, 0.7},{1.1, 0.8}}),
-                0.2*1.1 + 0.3*1.2 + 1.3);
+                OrFlow::cost_of(child_stats, false),
+                OrFlow::cost_of(child_stats, true));
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }

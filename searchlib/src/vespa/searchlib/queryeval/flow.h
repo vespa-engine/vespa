@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include <vespa/vespalib/util/small_vector.h>
 #include <cstddef>
 #include <algorithm>
-#include <vespa/vespalib/util/small_vector.h>
+#include <cmath>
 
 // Model how boolean result decisions flow through intermediate nodes
 // of different types based on relative estimates for sub-expressions
@@ -16,6 +17,7 @@ struct FlowStats {
     double strict_cost;
     constexpr FlowStats(double estimate_in, double cost_in, double strict_cost_in) noexcept
       : estimate(estimate_in), cost(cost_in), strict_cost(strict_cost_in) {}
+    auto operator <=>(const FlowStats &rhs) const noexcept = default;
 };
 
 namespace flow {
@@ -27,6 +29,38 @@ struct DefaultAdapter {
     double cost(const auto &child) const noexcept { return child->cost(); }
     double strict_cost(const auto &child) const noexcept { return child->strict_cost(); }
 };
+
+template <typename T>
+concept DefaultAdaptable = requires(const T &t) {
+    { t->estimate() } -> std::same_as<double>;
+    { t->cost() } -> std::same_as<double>;
+    { t->strict_cost() } -> std::same_as<double>;
+};
+
+// adapter making it possible to use FlowStats directly for testing
+struct DirectAdapter {
+    double estimate(const auto &child) const noexcept { return child.estimate; }
+    double cost(const auto &child) const noexcept { return child.cost; }
+    double strict_cost(const auto &child) const noexcept { return child.strict_cost; }
+};
+
+template <typename T>
+concept DirectAdaptable = requires(const T &t) {
+    { t.estimate } -> std::same_as<const double &>;
+    { t.cost } -> std::same_as<const double &>;
+    { t.strict_cost } -> std::same_as<const double &>;
+};
+
+auto make_adapter(const auto &children) {
+    using type = std::remove_cvref_t<decltype(children)>::value_type;
+    if constexpr (DefaultAdaptable<type>) {
+        return DefaultAdapter();
+    } else if constexpr (DirectAdaptable<type>) {
+        return DirectAdapter();
+    } else {
+        static_assert(false, "unable to resolve children adapter");
+    }
+}
 
 template <typename ADAPTER, typename T>
 struct IndirectAdapter {
@@ -133,19 +167,19 @@ size_t select_strict_and_child(ADAPTER adapter, const T &children) {
 template <typename FLOW>
 struct FlowMixin {
     static double estimate_of(auto adapter, const auto &children) {
-        return flow::estimate_of(adapter, children, FLOW(1.0, false));
+        return flow::estimate_of(adapter, children, FLOW(false));
     }
     static double estimate_of(const auto &children) {
-        return estimate_of(flow::DefaultAdapter(), children);
+        return estimate_of(flow::make_adapter(children), children);
     }
     static double cost_of(auto adapter, const auto &children, bool strict) {
         auto my_adapter = flow::IndirectAdapter(adapter, children);
         auto order = flow::make_index(children.size());
         FLOW::sort(my_adapter, order, strict);
-        return flow::ordered_cost_of(my_adapter, order, FLOW(1.0, strict));
+        return flow::ordered_cost_of(my_adapter, order, FLOW(strict));
     }
     static double cost_of(const auto &children, bool strict) {
-        return cost_of(flow::DefaultAdapter(), children, strict);
+        return cost_of(flow::make_adapter(children), children, strict);
     }
 };
 
@@ -155,8 +189,8 @@ private:
     bool _strict;
     bool _first;
 public:
-    AndFlow(double in, bool strict) noexcept
-      : _flow(in), _strict(strict), _first(true) {}
+    AndFlow(bool strict) noexcept : _flow(1.0), _strict(strict), _first(true) {}
+    AndFlow(double in) noexcept : _flow(in), _strict(false), _first(true) {}
     void add(double est) noexcept {
         _flow *= est;
         _first = false;
@@ -182,25 +216,24 @@ public:
         }
     }
     static void sort(auto &children, bool strict) {
-        sort(flow::DefaultAdapter(), children, strict);
+        sort(flow::make_adapter(children), children, strict);
     }
 };
 
 class OrFlow : public FlowMixin<OrFlow>{
 private:
-    double _full;
     double _flow;
     bool _strict;
     bool _first;
 public:
-    OrFlow(double in, bool strict) noexcept
-      : _full(in), _flow(in), _strict(strict), _first(true) {}
+    OrFlow(bool strict) noexcept : _flow(1.0), _strict(strict), _first(true) {}
+    OrFlow(double in) noexcept : _flow(in), _strict(false), _first(true) {}
     void add(double est) noexcept {
         _flow *= (1.0 - est);
         _first = false;
     }
     double flow() const noexcept {
-        return _strict ? _full : _flow;
+        return _strict ? 1.0 : _flow;
     }
     bool strict() const noexcept {
         return _strict;
@@ -214,7 +247,7 @@ public:
         }
     }
     static void sort(auto &children, bool strict) {
-        sort(flow::DefaultAdapter(), children, strict);
+        sort(flow::make_adapter(children), children, strict);
     }
 };
 
@@ -224,8 +257,8 @@ private:
     bool _strict;
     bool _first;
 public:
-    AndNotFlow(double in, bool strict) noexcept
-      : _flow(in), _strict(strict), _first(true) {}
+    AndNotFlow(bool strict) noexcept : _flow(1.0), _strict(strict), _first(true) {}
+    AndNotFlow(double in) noexcept : _flow(in), _strict(false), _first(true) {}
     void add(double est) noexcept {
         _flow *= _first ? est : (1.0 - est);
         _first = false;
@@ -243,7 +276,7 @@ public:
         flow::sort_partial<flow::MinOrCost>(adapter, children, 1);
     }
     static void sort(auto &children, bool strict) {
-        sort(flow::DefaultAdapter(), children, strict);
+        sort(flow::make_adapter(children), children, strict);
     }
 };
 
