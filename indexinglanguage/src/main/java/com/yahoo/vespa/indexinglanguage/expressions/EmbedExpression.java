@@ -125,7 +125,7 @@ public class EmbedExpression extends Expression  {
         String innerMappedDimension = targetType.mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
         String indexedDimension = targetType.indexedSubtype().dimensions().get(0).name();
         long indexedDimensionSize = targetType.indexedSubtype().dimensions().get(0).size().get();
-        var innerType = new TensorType.Builder().mapped(innerMappedDimension).indexed(indexedDimension,indexedDimensionSize).build();
+        var innerType = new TensorType.Builder(targetType.valueType()).mapped(innerMappedDimension).indexed(indexedDimension,indexedDimensionSize).build();
         int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
         int indexedDimensionIndex = innerType.indexOfDimensionAsInt(indexedDimension);
         for (int i = 0; i < input.size(); i++) {
