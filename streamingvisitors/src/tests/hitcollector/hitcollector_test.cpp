@@ -139,7 +139,9 @@ TEST_F(HitCollectorTest, simple)
 
 TEST_F(HitCollectorTest, gaps_in_docid)
 {
-    HitCollector hc(5, false);
+    SearchResult sr;
+    sr.setWantedHitCount(5);
+    HitCollector hc(sr.getWantedHitCount(), false);
 
     // add hits to hit collector
     for (uint32_t i = 0; i < 5; ++i) {
@@ -147,7 +149,6 @@ TEST_F(HitCollectorTest, gaps_in_docid)
     }
 
     // merge from heap into search result
-    SearchResult sr;
     hc.fillSearchResult(sr);
 
     ASSERT_TRUE(sr.getHitCount() == 5);
@@ -161,12 +162,13 @@ TEST_F(HitCollectorTest, gaps_in_docid)
 TEST_F(HitCollectorTest, heap_property)
 {
     {
-        HitCollector hc(3, false);
+        SearchResult sr;
+        sr.setWantedHitCount(3);
+        HitCollector hc(sr.getWantedHitCount(), false);
         // add hits (low to high)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, i + 10);
         }
-        SearchResult sr;
         hc.fillSearchResult(sr);
         ASSERT_TRUE(sr.getHitCount() == 3);
         assertHit(13, 3, 0, sr);
@@ -174,12 +176,13 @@ TEST_F(HitCollectorTest, heap_property)
         assertHit(15, 5, 2, sr);
     }
     {
-        HitCollector hc(3, false);
+        SearchResult sr;
+        sr.setWantedHitCount(3);
+        HitCollector hc(sr.getWantedHitCount(), false);
         // add hits (high to low)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, 10 - i);
         }
-        SearchResult sr;
         hc.fillSearchResult(sr);
         ASSERT_TRUE(sr.getHitCount() == 3);
         assertHit(10, 0, 0, sr);
@@ -187,12 +190,13 @@ TEST_F(HitCollectorTest, heap_property)
         assertHit(8,  2, 2, sr);
     }
     {
-        HitCollector hc(3, false);
+        SearchResult sr;
+        sr.setWantedHitCount(3);
+        HitCollector hc(sr.getWantedHitCount(), false);
         // add hits (same rank score)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, 10);
         }
-        SearchResult sr;
         hc.fillSearchResult(sr);
         ASSERT_TRUE(sr.getHitCount() == 3);
         assertHit(10, 0, 0, sr);
@@ -211,12 +215,13 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
     sortData.push_back('e');
     sortData.push_back('f');
     {
-        HitCollector hc(3, true);
+        SearchResult sr;
+        sr.setWantedHitCount(3);
+        HitCollector hc(sr.getWantedHitCount(), true);
         // add hits ('a' is sorted/ranked better than 'b')
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, i + 10, &sortData[i], 1);
         }
-        SearchResult sr;
         hc.fillSearchResult(sr);
         ASSERT_TRUE(sr.getHitCount() == 3);
         assertHit(10, 0, 0, sr);
@@ -224,12 +229,13 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
         assertHit(12, 2, 2, sr);
     }
     {
-        HitCollector hc(3, true);
+        SearchResult sr;
+        sr.setWantedHitCount(3);
+        HitCollector hc(sr.getWantedHitCount(), true);
         // add hits ('a' is sorted/ranked better than 'b')
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, i + 10, &sortData[5 - i], 1);
         }
-        SearchResult sr;
         hc.fillSearchResult(sr);
         ASSERT_TRUE(sr.getHitCount() == 3);
         assertHit(13, 3, 0, sr);
@@ -237,12 +243,13 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
         assertHit(15, 5, 2, sr);
     }
     {
-        HitCollector hc(3, true);
+        SearchResult sr;
+        sr.setWantedHitCount(3);
+        HitCollector hc(sr.getWantedHitCount(), true);
         // add hits (same sort blob)
         for (uint32_t i = 0; i < 6; ++i) {
             addHit(hc, i, 10, &sortData[0], 1);
         }
-        SearchResult sr;
         hc.fillSearchResult(sr);
         ASSERT_TRUE(sr.getHitCount() == 3);
         assertHit(10, 0, 0, sr);
