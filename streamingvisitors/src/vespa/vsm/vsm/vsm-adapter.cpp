@@ -29,7 +29,6 @@ void GetDocsumsStateCallback::fillSummaryFeatures(GetDocsumsState& state)
 {
     if (_summaryFeatures) { // set the summary features to write to the docsum
         state._summaryFeatures = _summaryFeatures;
-        state._summaryFeaturesCached = true;
     }
 }
 

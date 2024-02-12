@@ -80,7 +80,6 @@ public:
 
     // used by SummaryFeaturesDFW
     std::shared_ptr<FeatureSet> _summaryFeatures;
-    bool           _summaryFeaturesCached;
     bool           _omit_summary_features;
 
     // used by RankFeaturesDFW
