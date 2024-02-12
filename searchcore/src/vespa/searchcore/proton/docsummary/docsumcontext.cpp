@@ -120,7 +120,6 @@ DocsumContext::fillSummaryFeatures(search::docsummary::GetDocsumsState& state)
     if (_matcher->canProduceSummaryFeatures()) {
         state._summaryFeatures = _matcher->getSummaryFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
     }
-    state._summaryFeaturesCached = false;
 }
 
 void

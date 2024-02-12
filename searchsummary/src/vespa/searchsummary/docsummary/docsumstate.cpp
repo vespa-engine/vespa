@@ -47,7 +47,6 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _fieldWriterStates(),
       _parsedLocations(),
       _summaryFeatures(nullptr),
-      _summaryFeaturesCached(false),
       _omit_summary_features(false),
       _rankFeatures(nullptr),
       _matching_elements()
