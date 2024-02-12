@@ -22,7 +22,7 @@ constexpr uint32_t MIN_INTERVAL = 0x0001;
 constexpr uint32_t MAX_INTERVAL = 0xffff;
 
 struct PredicateTreeAnnotations {
-    PredicateTreeAnnotations(uint32_t mf=0, uint16_t ir=MAX_INTERVAL);
+    explicit PredicateTreeAnnotations(uint32_t mf=0, uint16_t ir=MAX_INTERVAL);
     ~PredicateTreeAnnotations();
     uint32_t min_feature;
     uint16_t interval_range;
