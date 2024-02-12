@@ -10,7 +10,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/featureset.h>
 
-namespace search { namespace fef { class FeatureResolver; } }
+namespace search::fef { class FeatureResolver; }
 
 namespace streaming {
 
@@ -20,54 +20,55 @@ namespace streaming {
 class HitCollector : public vsm::IDocSumCache
 {
 private:
+    using TermFieldMatchData = search::fef::TermFieldMatchData;
+    using MatchData = search::fef::MatchData;
+    using FeatureResolver = search::fef::FeatureResolver;
     class Hit
     {
     public:
-        Hit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & matchData,
+        Hit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & matchData,
             double score, const void * sortData, size_t sortDataLen);
-        Hit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & matchData, double score)
+        Hit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & matchData, double score)
             : Hit(doc, docId, matchData, score, nullptr, 0)
         { }
         ~Hit();
         Hit(const Hit &) = delete;
         Hit & operator = (const Hit &) = delete;
-        Hit(Hit && rhs) = default;
-        Hit & operator = (Hit && rhs) = default;
-        search::DocumentIdT getDocId() const { return _docid; }
-        const vsm::StorageDocument & getDocument() const { return *_document; }
-        const std::vector<search::fef::TermFieldMatchData> &getMatchData() const { return _matchData; }
-        search::feature_t getRankScore() const { return _score; }
-        const vespalib::string & getSortBlob() const { return _sortBlob; }
-        bool operator < (const Hit & b) const { return getDocId() < b.getDocId(); }
-        int cmpDocId(const Hit & b) const { return getDocId() - b.getDocId(); }
-        int cmpRank(const Hit & b) const {
+        Hit(Hit && rhs) noexcept = default;
+        Hit & operator = (Hit && rhs) noexcept = default;
+        search::DocumentIdT getDocId() const noexcept { return _docid; }
+        const vsm::StorageDocument & getDocument() const noexcept { return *_document; }
+        const std::vector<TermFieldMatchData> &getMatchData() const noexcept { return _matchData; }
+        search::feature_t getRankScore() const noexcept { return _score; }
+        const vespalib::string & getSortBlob() const noexcept { return _sortBlob; }
+        bool operator < (const Hit & b) const noexcept { return getDocId() < b.getDocId(); }
+        int cmpDocId(const Hit & b) const noexcept { return getDocId() - b.getDocId(); }
+        int cmpRank(const Hit & b) const noexcept {
             return (getRankScore() > b.getRankScore()) ?
                 -1 : ((getRankScore() < b.getRankScore()) ? 1 : cmpDocId(b));
         }
-        int cmpSort(const Hit & b) const {
+        int cmpSort(const Hit & b) const noexcept {
             int diff = _sortBlob.compare(b._sortBlob.c_str(), b._sortBlob.size());
             return (diff == 0) ? cmpDocId(b) : diff;
         }
         class RankComparator {
         public:
-            RankComparator() {}
-            bool operator() (const Hit & lhs, const Hit & rhs) const {
+            bool operator() (const Hit & lhs, const Hit & rhs) const noexcept {
                 return lhs.cmpRank(rhs) < 0;
             }
         };
         class SortComparator {
         public:
-            SortComparator() {}
-            bool operator() (const Hit & lhs, const Hit & rhs) const {
+            bool operator() (const Hit & lhs, const Hit & rhs) const noexcept {
                 return lhs.cmpSort(rhs) < 0;
             }
         };
 
     private:
         uint32_t _docid;
-        double _score;
+        double   _score;
         const vsm::StorageDocument * _document;
-        std::vector<search::fef::TermFieldMatchData> _matchData;
+        std::vector<TermFieldMatchData> _matchData;
         vespalib::string _sortBlob;
     };
     using HitVector = std::vector<Hit>;
@@ -82,11 +83,11 @@ public:
     using UP = std::unique_ptr<HitCollector>;
 
     struct IRankProgram {
-        virtual ~IRankProgram() {}
-        virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) = 0;
+        virtual ~IRankProgram() = default;
+        virtual void run(uint32_t docid, const std::vector<TermFieldMatchData> &matchData) = 0;
     };
 
-    HitCollector(size_t wantedHits);
+    explicit HitCollector(size_t wantedHits);
 
     virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override;
 
@@ -100,7 +101,7 @@ public:
      * @param data  The match data for the hit.
      * @return true if the document was added to the heap
      **/
-    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data, double score);
+    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data, double score);
 
     /**
      * Adds a hit to this hit collector.
@@ -114,7 +115,7 @@ public:
      * @param sortDataLen The length of the sortdata.
      * @return true if the document was added to the heap
      **/
-    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const search::fef::MatchData & data,
+    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data,
                 double score, const void * sortData, size_t sortDataLen);
 
     /**
@@ -134,13 +135,12 @@ public:
      * @param resolver   feature resolver, gives feature names and values
      **/
     vespalib::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
-                                           const search::fef::FeatureResolver &resolver,
+                                           const FeatureResolver &resolver,
                                            const search::StringStringMap &feature_rename_map);
 
     vespalib::FeatureValues get_match_features(IRankProgram& rank_program,
-                                               const search::fef::FeatureResolver& resolver,
+                                               const FeatureResolver& resolver,
                                                const search::StringStringMap& feature_rename_map);
 };
 
 } // namespace streaming
-

@@ -194,7 +194,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManage
 SearchVisitor::SummaryGenerator::~SummaryGenerator() = default;
 
 SearchVisitor::StreamingDocsumsState&
-SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::string& summary_class) {
+SearchVisitor::SummaryGenerator::get_streaming_docsums_state(vespalib::stringref summary_class) {
     auto itr = _docsum_states.find(summary_class);
     if (itr != _docsum_states.end()) {
         return *itr->second;
@@ -224,7 +224,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(const vespalib::str
 }
 
 vespalib::ConstBufferRef
-SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, const HitsAggregationResult::SummaryClassType & summaryClass)
+SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, vespalib::stringref summaryClass)
 {
     if (_docsumWriter != nullptr) {
         vespalib::Slime slime;
