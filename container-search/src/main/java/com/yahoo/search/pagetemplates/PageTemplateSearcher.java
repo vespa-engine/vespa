@@ -138,7 +138,7 @@ public class PageTemplateSearcher extends Searcher {
         List<String> pageIds = (List<String>) query.properties().get(pageIdListName);
         if (pageIds == null) {
             String pageIdString = query.properties().getString(pageIdName,"").trim();
-            if (pageIdString.length() > 0)
+            if (!pageIdString.isEmpty())
                 pageIds = Arrays.asList(pageIdString.split(" "));
         }
 
@@ -179,7 +179,7 @@ public class PageTemplateSearcher extends Searcher {
 
         addErrorIfSameSourceMultipleTimes(pages,pageSources,query);
 
-        if (query.getModel().getSources().size() > 0) {
+        if (!query.getModel().getSources().isEmpty()) {
             // Add properties if the source list is set explicitly, but do not modify otherwise
             addParametersForIncludedSources(pageSources, query);
             return;
@@ -208,7 +208,7 @@ public class PageTemplateSearcher extends Searcher {
 
     private void addParametersForIncludedSources(Set<Source> sources, Query query) {
         for (Source source : sources) {
-            if (source.parameters().size() > 0 && query.getModel().getSources().contains(source.getName()))
+            if (!source.parameters().isEmpty() && query.getModel().getSources().contains(source.getName()))
                 addParameters(source,query);
         }
     }
