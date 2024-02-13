@@ -76,8 +76,10 @@ public interface HostProvisioner {
      * Therefore, this method should probably only be called for hosts that have no children.
      *
      * @param host host to deprovision.
+     * @return true if the was successfully deprovisioned, false if the deprovisioning is still in progress. This method
+     *         should be called again later until it returns true.
      */
-    void deprovision(Node host);
+    boolean deprovision(Node host);
 
     /** Replace the root (OS) disk of hosts. Implementations of this are expected to be idempotent.
      *

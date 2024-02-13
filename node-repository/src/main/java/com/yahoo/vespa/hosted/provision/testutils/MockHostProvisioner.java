@@ -119,10 +119,11 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public void deprovision(Node host) {
+    public boolean deprovision(Node host) {
         if (behaviour(Behaviour.failDeprovisioning)) throw new FatalProvisioningException("Failed to deprovision node");
         provisionedHosts.removeIf(provisionedHost -> provisionedHost.hostHostname().equals(host.hostname()));
         deprovisionedHosts++;
+        return true;
     }
 
     @Override
