@@ -8,7 +8,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastSearcher;
@@ -22,6 +21,7 @@ import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.ranking.GlobalPhaseRanker;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.streamingvisitors.StreamingSearcher;
@@ -29,7 +29,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.stream.Collectors;
 
 import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.STREAMING;
 
@@ -59,6 +59,7 @@ public class ClusterSearcher extends Searcher {
 
     // The set of document types contained in this search cluster
     private final Set<String> schemas;
+    private final SchemaInfo schemaInfo;
 
     private final long maxQueryTimeout; // in milliseconds
     private final long maxQueryCacheTimeout; // in milliseconds
@@ -80,6 +81,7 @@ public class ClusterSearcher extends Searcher {
                            VespaDocumentAccess access) {
         super(id);
         this.executor = executor;
+        this.schemaInfo = schemaInfo;
         int searchClusterIndex = clusterConfig.clusterId();
         searchClusterName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, searchClusterName);
@@ -156,19 +158,20 @@ public class ClusterSearcher extends Searcher {
     }
 
     /** Do not use, for internal testing purposes only. **/
-    ClusterSearcher(Set<String> schemas, VespaBackEndSearcher searcher, Executor executor) {
-        this.schemas = schemas;
+    ClusterSearcher(SchemaInfo schemaInfo, Set<String> schemas, VespaBackEndSearcher searcher, Executor executor) {
+        this.schemaInfo = schemaInfo;
         searchClusterName = "testScenario";
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
         server = searcher;
         this.executor = executor;
         this.globalPhaseRanker = null;
+        this.schemas = schemas;
     }
 
     /** Do not use, for internal testing purposes only. **/
-    ClusterSearcher(Set<String> schemas) {
-        this(schemas, null, null);
+    ClusterSearcher(SchemaInfo schemaInfo, Set<String> schemas) {
+        this(schemaInfo, schemas, null, null);
     }
 
     @Override
@@ -283,7 +286,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     private Result searchMultipleDocumentTypes(Searcher searcher, Query query, Execution execution) {
-        Set<String> schemas = resolveSchemas(query, execution.context().getIndexFacts());
+        Set<String> schemas = resolveSchemas(query);
         List<Query> queries = createQueries(query, schemas);
         if (queries.size() == 1) {
             return perSchemaSearch(searcher, queries.get(0), execution);
@@ -316,13 +319,24 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    Set<String> resolveSchemas(Query query, IndexFacts indexFacts) {
+    private Set<String> resolveSourceSubset(Set<String> sources) {
+        Set<String> candidates = new HashSet<>();
+        for (String source : sources) {
+            Cluster cluster = schemaInfo.clusters().get(source);
+            if (cluster != null)
+                candidates.addAll(cluster.schemas());
+        }
+        return (candidates.isEmpty() ? sources : candidates).stream()
+                .filter(schemas::contains).collect(Collectors.toUnmodifiableSet());
+    }
+
+    Set<String> resolveSchemas(Query query) {
         Set<String> restrict = query.getModel().getRestrict();
         if (restrict == null || restrict.isEmpty()) {
             Set<String> sources = query.getModel().getSources();
             return (sources == null || sources.isEmpty())
                     ? schemas
-                    : new HashSet<>(indexFacts.newSession(sources, Collections.emptyList(), schemas).documentTypes());
+                    : resolveSourceSubset(sources);
         } else {
             return filterValidDocumentTypes(restrict);
         }

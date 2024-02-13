@@ -16,7 +16,7 @@ import java.util.List;
 class SchemaInfoConfigurer {
 
     static List<Schema> toSchemas(SchemaInfoConfig schemaInfoConfig) {
-        return schemaInfoConfig.schema().stream().map(config -> toSchema(config)).toList();
+        return schemaInfoConfig.schema().stream().map(SchemaInfoConfigurer::toSchema).toList();
     }
 
     static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {

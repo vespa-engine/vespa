@@ -9,7 +9,6 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.prelude.querytransform.QueryRewrite;
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -223,7 +222,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (result.isFilled(summaryClass)) return; // TODO: Checked in the superclass - remove
 
         List<Result> parts = partitionHits(result, summaryClass);
-        if (parts.size() > 0) { // anything to fill at all?
+        if (!parts.isEmpty()) { // anything to fill at all?
             for (Result r : parts) {
                 doPartialFill(r, summaryClass);
                 mergeErrorsInto(result, r);
@@ -377,11 +376,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
         result.hits().setSorted(false);
         return new FillHitsResult(skippedHits, lastError);
-    }
-
-    protected DocsumDefinitionSet getDocsumDefinitionSet(Query query) {
-        DocumentDatabase db = getDocumentDatabase(query);
-        return db.getDocsumDefinitionSet();
     }
 
     private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata) {
