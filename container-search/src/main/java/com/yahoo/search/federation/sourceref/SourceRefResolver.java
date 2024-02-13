@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.request.Properties;
 
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;

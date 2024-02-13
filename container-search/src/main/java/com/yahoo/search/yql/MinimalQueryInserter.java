@@ -121,7 +121,7 @@ public class MinimalQueryInserter extends Searcher {
         for (VespaGroupingStep step : parser.getGroupingSteps())
             GroupingQueryParser.createGroupingRequestIn(query, step.getOperation(), step.continuations());
 
-        if (parser.getYqlSources().isEmpty()) {
+        if (parser.getYqlSources().size() == 0) {
             query.getModel().getSources().clear();
         } else {
             query.getModel().getSources().addAll(parser.getYqlSources());

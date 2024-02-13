@@ -46,11 +46,11 @@ class SchemaInfoConfigurer {
 
     static List<Cluster> toClusters(QrSearchersConfig config) {
         List<Cluster> clusters = new ArrayList<>();
-        for (var searchCluster : config.searchcluster()) {
-            String clusterName = searchCluster.name();
+        for (int i = 0; i < config.searchcluster().size(); ++i) {
+            String clusterName = config.searchcluster(i).name();
             var clusterInfo = new Cluster.Builder(clusterName);
-            clusterInfo.setStreaming(searchCluster.indexingmode() == QrSearchersConfig.Searchcluster.Indexingmode.Enum.STREAMING);
-            for (var schemaDef : searchCluster.searchdef())
+            clusterInfo.setStreaming(config.searchcluster(i).indexingmode() == QrSearchersConfig.Searchcluster.Indexingmode.Enum.STREAMING);
+            for (var schemaDef : config.searchcluster(i).searchdef())
                 clusterInfo.addSchema(schemaDef);
             clusters.add(clusterInfo.build());
         }
