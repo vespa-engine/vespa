@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "intermediate_blueprints.h"
+#include "flow_tuning.h"
 #include "andnotsearch.h"
 #include "andsearch.h"
 #include "orsearch.h"
@@ -315,9 +316,10 @@ OrBlueprint::~OrBlueprint() = default;
 
 FlowStats
 OrBlueprint::calculate_flow_stats(uint32_t) const {
-    return {OrFlow::estimate_of(get_children()),
+    double est = OrFlow::estimate_of(get_children());
+    return {est,
             OrFlow::cost_of(get_children(), false),
-            OrFlow::cost_of(get_children(), true)};
+            OrFlow::cost_of(get_children(), true) + flow::heap_cost(est, get_children().size())};
 }
 
 Blueprint::HitEstimate
