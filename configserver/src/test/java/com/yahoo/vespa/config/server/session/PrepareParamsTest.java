@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.OptionalInt;
 
+import static com.yahoo.config.model.api.EndpointCertificateMetadata.Provider.digicert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -119,7 +120,7 @@ public class PrepareParamsTest {
 
     @Test
     public void testEndpointCertificateParsing() throws IOException {
-        var certMeta = new EndpointCertificateMetadata("key", "cert", 3);
+        var certMeta = new EndpointCertificateMetadata("key", "cert", 3, digicert);
         var slime = new Slime();
         EndpointCertificateMetadataSerializer.toSlime(certMeta, slime.setObject());
         String encoded = URLEncoder.encode(new String(SlimeUtils.toJsonBytes(slime), StandardCharsets.UTF_8), StandardCharsets.UTF_8);

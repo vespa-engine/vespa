@@ -23,7 +23,9 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
+import static com.yahoo.config.model.api.EndpointCertificateMetadata.Provider.digicert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -46,7 +48,7 @@ public class EndpointCertificateMetadataStoreTest {
     public void setUp() {
         curator = new MockCurator();
         endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
-        endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
+        endpointCertificateRetriever = new EndpointCertificateRetriever(List.of(new DefaultEndpointCertificateSecretStore(secretStore)));
 
         secretStore.put("vespa.tlskeys.tenant1--app1-cert", X509CertificateUtils.toPem(certificate));
         secretStore.put("vespa.tlskeys.tenant1--app1-key", KeyUtils.toPem(keyPair.getPrivate()));
@@ -68,11 +70,11 @@ public class EndpointCertificateMetadataStoreTest {
 
     @Test
     public void can_write_object_format() {
-        var endpointCertificateMetadata = new EndpointCertificateMetadata("key-name", "cert-name", 1);
+        var endpointCertificateMetadata = new EndpointCertificateMetadata("key-name", "cert-name", 1, digicert);
 
         endpointCertificateMetadataStore.writeEndpointCertificateMetadata(applicationId, endpointCertificateMetadata);
 
-        assertEquals("{\"keyName\":\"key-name\",\"certName\":\"cert-name\",\"version\":1}",
+        assertEquals("{\"keyName\":\"key-name\",\"certName\":\"cert-name\",\"version\":1,\"issuer\":\"digicert\"}",
                 new String(curator.getData(endpointCertificateMetadataPath).orElseThrow()));
     }
 }
