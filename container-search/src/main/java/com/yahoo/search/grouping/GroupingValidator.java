@@ -52,9 +52,10 @@ public class GroupingValidator extends Searcher {
     public GroupingValidator(QrSearchersConfig qrsConfig, ClusterConfig clusterConfig,
                              AttributesConfig attributesConfig) {
         int clusterId = clusterConfig.clusterId();
-        QrSearchersConfig.Searchcluster.Indexingmode.Enum indexingMode = qrsConfig.searchcluster(clusterId).indexingmode();
+        var searchCluster = qrsConfig.searchcluster(clusterId);
+        QrSearchersConfig.Searchcluster.Indexingmode.Enum indexingMode = searchCluster.indexingmode();
         enabled = (indexingMode != QrSearchersConfig.Searchcluster.Indexingmode.STREAMING);
-        clusterName = enabled ? qrsConfig.searchcluster(clusterId).name() : null;
+        clusterName = enabled ? searchCluster.name() : null;
         for (AttributesConfig.Attribute attr : attributesConfig.attribute()) {
             attributes.put(attr.name(), attr);
         }

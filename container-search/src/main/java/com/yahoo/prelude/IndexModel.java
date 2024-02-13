@@ -1,16 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.container.QrSearchersConfig;
@@ -31,7 +27,7 @@ public final class IndexModel {
 
     /** Create an index model for a single search definition */
     public IndexModel(SearchDefinition searchDefinition) {
-        this(Collections.emptyMap(), Collections.singleton(searchDefinition));
+        this(Map.of(), List.of(searchDefinition));
     }
 
     public IndexModel(Map<String, List<String>> masterClusters, Collection<SearchDefinition> searchDefinitions) {
@@ -52,23 +48,18 @@ public final class IndexModel {
             searchDefinitions = toSearchDefinitions(indexInfo);
             unionSearchDefinition = unionOf(searchDefinitions.values());
         } else {
-            searchDefinitions = null;
+            searchDefinitions = Map.of();
             unionSearchDefinition = null;
         }
         this.masterClusters = clusters;
     }
 
     private static Map<String, List<String>> toClusters(QrSearchersConfig config) {
-        if (config == null) return new HashMap<>();
+        if (config == null) return Map.of();
 
         Map<String, List<String>> clusters = new HashMap<>();
-        for (int i = 0; i < config.searchcluster().size(); ++i) {
-            List<String> docTypes = new ArrayList<>();
-            String clusterName = config.searchcluster(i).name();
-            for (int j = 0; j < config.searchcluster(i).searchdef().size(); ++j) {
-                docTypes.add(config.searchcluster(i).searchdef(j));
-            }
-            clusters.put(clusterName, docTypes);
+        for (var searchCluster : config.searchcluster()) {
+            clusters.put(searchCluster.name(), searchCluster.searchdef());
         }
         return clusters;
     }
@@ -76,12 +67,10 @@ public final class IndexModel {
     private static Map<String, SearchDefinition> toSearchDefinitions(IndexInfoConfig c) {
         Map<String, SearchDefinition> searchDefinitions = new HashMap<>();
 
-        for (Iterator<IndexInfoConfig.Indexinfo> i = c.indexinfo().iterator(); i.hasNext();) {
-            IndexInfoConfig.Indexinfo info = i.next();
+        for (IndexInfoConfig.Indexinfo info : c.indexinfo()) {
             SearchDefinition sd = new SearchDefinition(info.name());
-            for (Iterator<IndexInfoConfig.Indexinfo.Command> j = info.command().iterator(); j.hasNext();) {
-                IndexInfoConfig.Indexinfo.Command command = j.next();
-                sd.addCommand(command.indexname(),command.command());
+            for (IndexInfoConfig.Indexinfo.Command command : info.command()) {
+                sd.addCommand(command.indexname(), command.command());
             }
             searchDefinitions.put(info.name(), sd);
         }

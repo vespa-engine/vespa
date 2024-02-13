@@ -37,8 +37,9 @@ public class ValidateSortingSearcher extends Searcher {
     public ValidateSortingSearcher(QrSearchersConfig qrsConfig, ClusterConfig clusterConfig,
                                    AttributesConfig attributesConfig) {
         initAttributeNames(attributesConfig);
-        setClusterName(qrsConfig.searchcluster(clusterConfig.clusterId()).name());
-        indexingMode = qrsConfig.searchcluster(clusterConfig.clusterId()).indexingmode();
+        var searchCluster = qrsConfig.searchcluster(clusterConfig.clusterId());
+        setClusterName(searchCluster.name());
+        indexingMode = searchCluster.indexingmode();
     }
 
     public String getClusterName() {
