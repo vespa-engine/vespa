@@ -38,19 +38,23 @@ const vespalib::string field = "myfield";
 double budget_sec = 1.0;
 using DocidVector = std::vector<uint32_t>;
 
-DocidVector
+BitVector::UP
 random_docids(uint32_t docid_limit, uint32_t count)
 {
-    std::uniform_int_distribution<uint32_t> distr(1, docid_limit - 1);
-    vespalib::hash_set<uint32_t> unique_docids;
-    while (unique_docids.size() < count) {
-        unique_docids.insert(distr(gen));
+    auto res = BitVector::create(docid_limit);
+    uint32_t docids_left = count;
+    // Bit 0 is never set since it is reserved as docid 0.
+    // All other docids have equal probability to be set.
+    for (uint32_t docid = 1; docid < docid_limit; ++docid) {
+        std::uniform_int_distribution<uint32_t> distr(0, docid_limit - docid - 1);
+        if (distr(gen) < docids_left) {
+            res->setBit(docid);
+            --docids_left;
+        }
     }
-    DocidVector result;
-    result.reserve(count);
-    std::copy_n(unique_docids.begin(), count, std::back_inserter(result));
-    std::sort(result.begin(), result.end());
-    return result;
+    res->invalidateCachedCount();
+    assert(res->countTrueBits() == count);
+    return res;
 }
 
 struct HitSpec {
@@ -75,10 +79,9 @@ template <typename AttributeType, bool is_string, bool is_multivalue>
 void
 populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hit_specs)
 {
-    size_t updated = 0;
-    constexpr uint32_t commit_freq = 10000;
     for (auto spec : hit_specs) {
-        for (uint32_t docid : random_docids(docid_limit, spec.num_hits)) {
+        auto docids = random_docids(docid_limit, spec.num_hits);
+        docids->foreach_truebit([&](uint32_t docid) {
             if constexpr (is_string) {
                 if constexpr (is_multivalue) {
                     attr.append(docid, std::to_string(spec.term_value), 1);
@@ -92,13 +95,9 @@ populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hi
                     attr.update(docid, spec.term_value);
                 }
             }
-            ++updated;
-            if (updated % commit_freq == 0) {
-                attr.commit(true);
-            }
-        }
+        });
+        attr.commit(true);
     }
-    attr.commit(true);
 }
 
 AttributeVector::SP
@@ -143,9 +142,10 @@ struct BenchmarkResult {
     uint32_t hits;
     double estimate;
     double cost;
-    BenchmarkResult() : BenchmarkResult(0, 0, 0, 0, 0) {}
-    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, double estimate_in, double cost_in)
-        : time_ms(time_ms_in), seeks(seeks_in), hits(hits_in), estimate(estimate_in), cost(cost_in) {}
+    vespalib::string iterator_name;
+    BenchmarkResult() : BenchmarkResult(0, 0, 0, 0, 0, "") {}
+    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, double estimate_in, double cost_in, const vespalib::string& iterator_name_in)
+        : time_ms(time_ms_in), seeks(seeks_in), hits(hits_in), estimate(estimate_in), cost(cost_in), iterator_name(iterator_name_in) {}
     double time_per_seek_ns() const { return (time_ms / seeks) * 1000.0 * 1000.0; }
     double time_per_cost_ms() const { return (time_ms / cost); }
 };
@@ -166,7 +166,7 @@ strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, double
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, hits + 1, hits, estimate, strict_cost};
+    return {timer.min_time() * 1000.0, hits + 1, hits, estimate, strict_cost, itr.getClassName()};
 }
 
 BenchmarkResult
@@ -188,7 +188,7 @@ non_strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, do
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, seeks, hits, estimate, non_strict_cost};
+    return {timer.min_time() * 1000.0, seeks, hits, estimate, non_strict_cost, itr.getClassName()};
 }
 
 BenchmarkResult
@@ -211,7 +211,7 @@ benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict)
 }
 
 Blueprint::UP
-make_blueprint(const Node& node, IAttributeContext& attr_ctx, uint32_t docid_limit)
+make_leaf_blueprint(const Node& node, IAttributeContext& attr_ctx, uint32_t docid_limit)
 {
     FakeRequestContext request_ctx(&attr_ctx);
     AttributeBlueprintFactory source;
@@ -227,6 +227,7 @@ enum class QueryOperator {
     In,
     WeightedSet,
     DotProduct,
+    And,
     Or
 };
 
@@ -238,6 +239,7 @@ to_string(QueryOperator query_op)
         case QueryOperator::In: return "In";
         case QueryOperator::WeightedSet: return "WeightedSet";
         case QueryOperator::DotProduct: return "DotProduct";
+        case QueryOperator::And: return "And";
         case QueryOperator::Or: return "Or";
     }
     return "unknown";
@@ -251,19 +253,19 @@ make_query_node(QueryOperator query_op, const HitSpecs& hit_specs)
         return std::make_unique<SimpleNumberTerm>(std::to_string(hit_specs[0].term_value), field, 0, Weight(1));
     } else if (query_op == QueryOperator::In) {
         auto terms = std::make_unique<IntegerTermVector>(hit_specs.size());
-        for (auto spec: hit_specs) {
+        for (auto spec : hit_specs) {
             terms->addTerm(spec.term_value);
         }
         return std::make_unique<SimpleInTerm>(std::move(terms), MultiTerm::Type::INTEGER, field, 0, Weight(1));
     } else if (query_op == QueryOperator::WeightedSet) {
         auto res = std::make_unique<SimpleWeightedSetTerm>(hit_specs.size(), field, 0, Weight(1));
-        for (auto spec: hit_specs) {
+        for (auto spec : hit_specs) {
             res->addTerm(spec.term_value, Weight(1));
         }
         return res;
     } else if (query_op == QueryOperator::DotProduct) {
         auto res = std::make_unique<SimpleDotProduct>(hit_specs.size(), field, 0, Weight(1));
-        for (auto spec: hit_specs) {
+        for (auto spec : hit_specs) {
             res->addTerm(spec.term_value, Weight(1));
         }
         return res;
@@ -271,22 +273,31 @@ make_query_node(QueryOperator query_op, const HitSpecs& hit_specs)
     return {};
 }
 
+template <typename BlueprintType>
+Blueprint::UP
+make_intermediate_blueprint(IAttributeContext& attr_ctx, const HitSpecs& hit_specs, uint32_t docid_limit)
+{
+    auto blueprint = std::make_unique<BlueprintType>();
+    for (auto spec : hit_specs) {
+        SimpleNumberTerm term(std::to_string(spec.term_value), field, 0, Weight(1));
+        auto child = make_leaf_blueprint(term, attr_ctx, docid_limit);
+        blueprint->addChild(std::move(child));
+    }
+    blueprint->setDocIdLimit(docid_limit);
+    blueprint->update_flow_stats(docid_limit);
+    return blueprint;
+}
+
 BenchmarkResult
 run_benchmark(IAttributeContext& attr_ctx, QueryOperator query_op, const HitSpecs& hit_specs, uint32_t docid_limit, bool strict)
 {
-    if (query_op == QueryOperator::Or) {
-        auto blueprint = std::make_unique<OrBlueprint>();
-        for (auto spec: hit_specs) {
-            SimpleNumberTerm term(std::to_string(spec.term_value), field, 0, Weight(1));
-            auto child = make_blueprint(term, attr_ctx, docid_limit);
-            blueprint->addChild(std::move(child));
-        }
-        blueprint->setDocIdLimit(docid_limit);
-        blueprint->update_flow_stats(docid_limit);
-        return benchmark_search(std::move(blueprint), docid_limit, strict);
+    if (query_op == QueryOperator::And) {
+        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(attr_ctx, hit_specs, docid_limit), docid_limit, strict);
+    } else if (query_op == QueryOperator::Or) {
+        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(attr_ctx, hit_specs, docid_limit), docid_limit, strict);
     } else {
         auto query_node = make_query_node(query_op, hit_specs);
-        auto blueprint = make_blueprint(*query_node, attr_ctx, docid_limit);
+        auto blueprint = make_leaf_blueprint(*query_node, attr_ctx, docid_limit);
         return benchmark_search(std::move(blueprint), docid_limit, strict);
     }
 }
@@ -305,10 +316,14 @@ run_benchmark(const Config& cfg, uint32_t num_docs, const HitSpecs& hit_specs, d
         << ", est=" << std::setw(5) << res.estimate
         << ", hits=" << std::setw(7) << res.hits
         << ", seeks=" << std::setw(8) << res.seeks
-        << ", time_ms:" << std::setw(9) << res.time_ms
+        << std::setprecision(2)
+        << ", time_ms:" << std::setw(8) << res.time_ms
+        << std::setprecision(3)
         << ", cost=" << std::setw(8) << res.cost
+        << std::setprecision(2)
         << ", ns_per_seek=" << std::setw(8) << res.time_per_seek_ns()
-        << ", ms_per_cost=" << std::setw(8) << res.time_per_cost_ms() << std::endl;
+        << ", ms_per_cost=" << std::setw(7) << res.time_per_cost_ms()
+        << ", itr=" << res.iterator_name << std::endl;
 }
 
 struct BenchmarkSetup {
@@ -334,15 +349,26 @@ struct BenchmarkSetup {
     ~BenchmarkSetup() {}
 };
 
+uint32_t
+calc_hits_per_term(uint32_t num_docs, double target_hit_ratio, uint32_t children, QueryOperator query_op)
+{
+    if (query_op == QueryOperator::And) {
+        double child_hit_ratio = std::pow(target_hit_ratio, (1.0/(double)children));
+        return num_docs * child_hit_ratio;
+    } else {
+        uint32_t target_num_hits = num_docs * target_hit_ratio;
+        return target_num_hits / children;
+    }
+}
+
 void
 run_benchmarks(const BenchmarkSetup& setup)
 {
     std::cout << "-------- run_benchmarks: " << to_string(setup.query_op) << " --------" << std::endl;
     for (bool strict : setup.strictness) {
         for (double hit_ratio : setup.hit_ratios) {
-            uint32_t num_hits = setup.num_docs * hit_ratio;
             for (uint32_t children : setup.child_counts) {
-                uint32_t hits_per_term = num_hits / children;
+                uint32_t hits_per_term = calc_hits_per_term(setup.num_docs, hit_ratio, children, setup.query_op);
                 run_benchmark(setup.attr_cfg, setup.num_docs, make_hit_specs(children, hits_per_term, 55555), hit_ratio, setup.query_op, strict);
             }
         }
@@ -361,6 +387,7 @@ constexpr uint32_t num_docs = 10'000'000;
 const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5};
 const std::vector<uint32_t> child_counts = {1, 10, 100, 1000};
 const Config int32_fs = make_config(BasicType::INT32, CollectionType::SINGLE, true);
+const Config int32_array_fs = make_config(BasicType::INT32, CollectionType::ARRAY, true);
 const Config int32_wset_fs = make_config(BasicType::INT32, CollectionType::WSET, true);
 
 TEST(IteratorBenchmark, term_benchmark)
@@ -371,13 +398,13 @@ TEST(IteratorBenchmark, term_benchmark)
 
 TEST(IteratorBenchmark, in_benchmark)
 {
-    BenchmarkSetup setup(num_docs, int32_fs, QueryOperator::In, hit_ratios, child_counts, {true, false});
+    BenchmarkSetup setup(num_docs, int32_array_fs, QueryOperator::In, hit_ratios, child_counts, {true, false});
     run_benchmarks(setup);
 }
 
 TEST(IteratorBenchmark, weighted_set_benchmark)
 {
-    BenchmarkSetup setup(num_docs, int32_fs, QueryOperator::WeightedSet, hit_ratios, child_counts, {true, false});
+    BenchmarkSetup setup(num_docs, int32_array_fs, QueryOperator::WeightedSet, hit_ratios, child_counts, {true, false});
     run_benchmarks(setup);
 }
 
@@ -387,9 +414,15 @@ TEST(IteratorBenchmark, dot_product_benchmark)
     run_benchmarks(setup);
 }
 
+TEST(IteratorBenchmark, and_benchmark)
+{
+    BenchmarkSetup setup(num_docs, int32_array_fs, QueryOperator::And, hit_ratios, {1, 2, 4, 8}, {true, false});
+    run_benchmarks(setup);
+}
+
 TEST(IteratorBenchmark, or_benchmark)
 {
-    BenchmarkSetup setup(num_docs, int32_fs, QueryOperator::Or, hit_ratios, child_counts, {true, false});
+    BenchmarkSetup setup(num_docs, int32_array_fs, QueryOperator::Or, hit_ratios, child_counts, {true, false});
     run_benchmarks(setup);
 }
 
