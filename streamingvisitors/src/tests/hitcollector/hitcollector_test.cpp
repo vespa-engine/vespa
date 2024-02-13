@@ -124,6 +124,8 @@ TEST_F(HitCollectorTest, simple)
     for (uint32_t i = 0; i < 5; ++i) {
         addHit(hc, i, 10 + i);
     }
+    EXPECT_EQ(5, hc.numHits());
+    EXPECT_EQ(5, hc.numHitsOnHeap());
     // merge from match data heap and fill search result
     for (size_t i = 0; i < 2; ++i) { // try it twice
         SearchResult sr;
@@ -135,6 +137,8 @@ TEST_F(HitCollectorTest, simple)
         assertHit(13, 3, sr);
         assertHit(14, 4, sr);
     }
+    EXPECT_EQ(5, hc.numHits());
+    EXPECT_EQ(5, hc.numHitsOnHeap());
 }
 
 TEST_F(HitCollectorTest, gaps_in_docid)
@@ -262,6 +266,19 @@ TEST_F(HitCollectorTest, empty)
 {
     HitCollector hc(0, false);
     addHit(hc, 0, 0);
+    SearchResult rs;
+    hc.fillSearchResult(rs);
+    ASSERT_TRUE(rs.getHitCount() == 0);
+}
+
+TEST_F(HitCollectorTest, all_hits_are_kept)
+{
+    HitCollector hc(0, false);
+    EXPECT_EQ(0, hc.numHits());
+    EXPECT_EQ(0, hc.numHitsOnHeap());
+    addHit(hc, 0, 0);
+    EXPECT_EQ(1, hc.numHits());
+    EXPECT_EQ(0, hc.numHitsOnHeap());
     SearchResult rs;
     hc.fillSearchResult(rs);
     ASSERT_TRUE(rs.getHitCount() == 0);

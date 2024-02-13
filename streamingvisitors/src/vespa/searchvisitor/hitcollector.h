@@ -103,6 +103,9 @@ public:
     HitCollector(size_t wantedHits, bool use_sort_blob);
     ~HitCollector() override;
 
+    size_t numHits() const noexcept { return _hits.size(); }
+    size_t numHitsOnHeap() const noexcept { return _heap.size(); }
+
     const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override;
 
     /**
