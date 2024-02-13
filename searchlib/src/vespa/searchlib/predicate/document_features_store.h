@@ -6,7 +6,6 @@
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
 #include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
@@ -50,10 +49,6 @@ class DocumentFeaturesStore {
             return strcmp(getWord(lhs), getWord(rhs)) < 0;
         }
     };
-    using FeatureVector = vespalib::Array<uint64_t>;
-    using DocumentFeaturesMap = vespalib::hash_map<uint32_t, FeatureVector>;
-    using RangeVector = vespalib::Array<Range>;
-    using RangeFeaturesMap = vespalib::hash_map<uint32_t, RangeVector>;
     using WordIndex = vespalib::btree::BTree<vespalib::datastore::EntryRef, vespalib::btree::BTreeNoLeafData,
                          vespalib::btree::NoAggregated, const KeyComp &>;
     // Array store for features

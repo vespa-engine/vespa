@@ -2,7 +2,6 @@
 
 #include "document_features_store.h"
 #include "predicate_range_expander.h"
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
