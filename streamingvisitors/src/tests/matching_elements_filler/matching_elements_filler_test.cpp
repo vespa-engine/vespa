@@ -299,7 +299,7 @@ MatchingElementsFillerTest::MatchingElementsFillerTest()
       _env(),
       _field_searcher_map(make_field_searcher_map()),
       _index_to_field_ids(make_index_to_field_ids()),
-      _hit_collector(10),
+      _hit_collector(10, false),
       _search_result(),
       _query(),
       _matching_elements_filler(),

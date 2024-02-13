@@ -48,7 +48,7 @@ private:
     void resolve_fields_from_children(QueryTermData& qtd, search::streaming::MultiTerm& mt);
     void resolve_fields_from_term(QueryTermData& qtd, search::streaming::QueryTerm& term);
     void initQueryEnvironment();
-    void initHitCollector(size_t wantedHitCount);
+    void initHitCollector(size_t wantedHitCount, bool use_sort_blob);
     void setupRankProgram(search::fef::RankProgram &program);
     FeatureValues calculate_match_features();
 
@@ -58,7 +58,7 @@ private:
      * @param wantedHitCount the number of hits we want to return from the hit collector.
      * @return whether the rank processor was initialized or not.
      **/
-    void init(bool forRanking, size_t wantedHitCount);
+    void init(bool forRanking, size_t wantedHitCount, bool use_sort_blob);
 
 public:
     using UP = std::unique_ptr<RankProcessor>;
@@ -71,8 +71,8 @@ public:
                   const search::fef::Properties & featureOverrides,
                   const search::IAttributeManager * attrMgr);
 
-    void initForRanking(size_t wantedHitCount);
-    void initForDumping(size_t wantedHitCount);
+    void initForRanking(size_t wantedHitCount, bool use_sort_blob);
+    void initForDumping(size_t wantedHitCount, bool use_sort_blob);
     void unpackMatchData(uint32_t docId);
     static void unpack_match_data(uint32_t docid, search::fef::MatchData& matchData, QueryWrapper& query);
     void runRankProgram(uint32_t docId);

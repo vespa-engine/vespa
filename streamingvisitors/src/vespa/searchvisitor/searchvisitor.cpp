@@ -500,7 +500,7 @@ SearchVisitor::init(const Parameters & params)
             setupAttributeVectorsForSorting(_sortSpec);
 
             _rankController.setRankManagerSnapshot(_env->get_rank_manager_snapshot());
-            _rankController.setupRankProcessors(_query, location, wantedSummaryCount, _attrMan, _attributeFields);
+            _rankController.setupRankProcessors(_query, location, wantedSummaryCount, ! _sortSpec.empty(), _attrMan, _attributeFields);
 
             // This depends on _fieldPathMap (from setupScratchDocument),
             // and IQueryEnvironment (from setupRankProcessors).
@@ -668,8 +668,8 @@ SearchVisitor::RankController::RankController() :
     _queryProperties(),
     _featureOverrides(),
     _hasRanking(false),
-    _rankProcessor(),
     _dumpFeatures(false),
+    _rankProcessor(),
     _dumpProcessor()
 {
 }
@@ -679,20 +679,20 @@ SearchVisitor::RankController::~RankController() = default;
 void
 SearchVisitor::RankController::setupRankProcessors(Query & query,
                                                    const vespalib::string & location,
-                                                   size_t wantedHitCount,
+                                                   size_t wantedHitCount, bool use_sort_blob,
                                                    const search::IAttributeManager & attrMan,
                                                    std::vector<AttrInfo> & attributeFields)
 {
     _rankSetup = &_rankManagerSnapshot->getRankSetup(_rankProfile);
     _rankProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, _featureOverrides, &attrMan);
-    _rankProcessor->initForRanking(wantedHitCount);
+    _rankProcessor->initForRanking(wantedHitCount, use_sort_blob);
     // register attribute vectors needed for ranking
     processAccessedAttributes(_rankProcessor->get_real_query_env(), true, attrMan, attributeFields);
 
     if (_dumpFeatures) {
         _dumpProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, _featureOverrides, &attrMan);
         LOG(debug, "Initialize dump processor");
-        _dumpProcessor->initForDumping(wantedHitCount);
+        _dumpProcessor->initForDumping(wantedHitCount, use_sort_blob);
         // register attribute vectors needed for dumping
         processAccessedAttributes(_dumpProcessor->get_real_query_env(), false, attrMan, attributeFields);
     }
