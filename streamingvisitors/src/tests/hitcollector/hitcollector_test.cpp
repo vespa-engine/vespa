@@ -178,6 +178,8 @@ TEST_F(HitCollectorTest, heap_property)
         assertHit(13, 3, 0, sr);
         assertHit(14, 4, 1, sr);
         assertHit(15, 5, 2, sr);
+        EXPECT_EQ(6, hc.numHits());
+        EXPECT_EQ(3, hc.numHitsOnHeap());
     }
     {
         SearchResult sr;
@@ -192,6 +194,8 @@ TEST_F(HitCollectorTest, heap_property)
         assertHit(10, 0, 0, sr);
         assertHit(9,  1, 1, sr);
         assertHit(8,  2, 2, sr);
+        EXPECT_EQ(6, hc.numHits());
+        EXPECT_EQ(3, hc.numHitsOnHeap());
     }
     {
         SearchResult sr;
@@ -206,6 +210,8 @@ TEST_F(HitCollectorTest, heap_property)
         assertHit(10, 0, 0, sr);
         assertHit(10, 1, 1, sr);
         assertHit(10, 2, 2, sr);
+        EXPECT_EQ(6, hc.numHits());
+        EXPECT_EQ(3, hc.numHitsOnHeap());
     }
 }
 
