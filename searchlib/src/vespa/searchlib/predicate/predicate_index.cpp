@@ -213,6 +213,7 @@ PredicateIndex::commit() {
     _interval_index.commit();
     _bounds_index.commit();
     _zero_constraint_docs.getAllocator().freeze();
+    _features_store.commit();
 }
 
 void
@@ -221,6 +222,7 @@ PredicateIndex::reclaim_memory(generation_t oldest_used_gen) {
     _bounds_index.reclaim_memory(oldest_used_gen);
     _interval_store.reclaim_memory(oldest_used_gen);
     _zero_constraint_docs.getAllocator().reclaim_memory(oldest_used_gen);
+    _features_store.reclaim_memory(oldest_used_gen);
 }
 
 void
@@ -229,6 +231,7 @@ PredicateIndex::assign_generation(generation_t current_gen) {
     _bounds_index.assign_generation(current_gen);
     _interval_store.assign_generation(current_gen);
     _zero_constraint_docs.getAllocator().assign_generation(current_gen);
+    _features_store.assign_generation(current_gen);
 }
 
 vespalib::MemoryUsage

@@ -6,7 +6,10 @@
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/datastore/array_store.h>
+#include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
+#include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <unordered_set>
 
 namespace search::predicate {
@@ -46,21 +49,34 @@ class DocumentFeaturesStore {
             return strcmp(getWord(lhs), getWord(rhs)) < 0;
         }
     };
-    using FeatureVector = vespalib::Array<uint64_t>;
-    using DocumentFeaturesMap = vespalib::hash_map<uint32_t, FeatureVector>;
-    using RangeVector = vespalib::Array<Range>;
-    using RangeFeaturesMap = vespalib::hash_map<uint32_t, RangeVector>;
     using WordIndex = vespalib::btree::BTree<vespalib::datastore::EntryRef, vespalib::btree::BTreeNoLeafData,
                          vespalib::btree::NoAggregated, const KeyComp &>;
+    // Array store for features
+    using FeaturesRefType = vespalib::datastore::EntryRefT<19>;
+    using FeaturesStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<uint64_t>;
+    using FeaturesStore = vespalib::datastore::ArrayStore<uint64_t, FeaturesRefType, FeaturesStoreTypeMapper>;
+    // Array store for ranges
+    using RangesRefType = vespalib::datastore::EntryRefT<19>;
+    using RangesStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<Range>;
+    using RangesStore = vespalib::datastore::ArrayStore<Range, RangesRefType, RangesStoreTypeMapper>;
+    struct Refs {
+        vespalib::datastore::EntryRef _features;
+        vespalib::datastore::EntryRef _ranges;
+    };
+    using RefsVector = std::vector<Refs, vespalib::allocator_large<Refs>>;
+    using generation_t = vespalib::GenerationHandler::generation_t;
 
-    DocumentFeaturesMap _docs;
-    RangeFeaturesMap    _ranges;
+    RefsVector          _refs;
+    FeaturesStore       _features;
+    RangesStore         _ranges;
     WordStore           _word_store;
     WordIndex           _word_index;
-    size_t              _numFeatures;
-    size_t              _numRanges;
     uint32_t            _arity;
 
+    static FeaturesStoreTypeMapper make_features_store_type_mapper();
+    static RangesStoreTypeMapper make_ranges_store_type_mapper();
+    static vespalib::datastore::ArrayStoreConfig make_features_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_ranges_store_config();
 public:
     using FeatureSet = std::unordered_set<uint64_t>;
 
@@ -71,6 +87,9 @@ public:
     void insert(const PredicateTreeAnnotations &annotations, uint32_t docId);
     FeatureSet get(uint32_t docId) const;
     void remove(uint32_t docId);
+    void commit() { }
+    void reclaim_memory(generation_t oldest_used_gen);
+    void assign_generation(generation_t current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
 
     void serialize(vespalib::DataBuffer &buffer) const;
