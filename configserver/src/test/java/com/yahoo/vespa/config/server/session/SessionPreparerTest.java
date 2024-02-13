@@ -41,6 +41,7 @@ import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
+import com.yahoo.vespa.config.server.tenant.DefaultEndpointCertificateSecretStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
@@ -134,7 +135,8 @@ public class SessionPreparerTest {
                 zone,
                 flagSource,
                 secretStore,
-                OnnxModelCost.disabled());
+                OnnxModelCost.disabled(),
+                List.of(new DefaultEndpointCertificateSecretStore(secretStore)));
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -312,7 +314,7 @@ public class SessionPreparerTest {
         Path tenantPath = TenantRepository.getTenantPath(applicationId.tenant());
         Optional<EndpointCertificateSecrets> endpointCertificateSecrets = new EndpointCertificateMetadataStore(curator, tenantPath)
                 .readEndpointCertificateMetadata(applicationId)
-                .flatMap(p -> new EndpointCertificateRetriever(secretStore).readEndpointCertificateSecrets(p));
+                .flatMap(p -> new EndpointCertificateRetriever(List.of(new DefaultEndpointCertificateSecretStore(secretStore))).readEndpointCertificateSecrets(p));
 
         assertTrue(endpointCertificateSecrets.isPresent());
         assertTrue(endpointCertificateSecrets.get().key().startsWith("-----BEGIN EC PRIVATE KEY"));

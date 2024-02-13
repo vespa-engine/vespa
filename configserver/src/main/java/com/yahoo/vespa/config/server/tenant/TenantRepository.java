@@ -5,12 +5,14 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.Lock;
 import com.yahoo.concurrent.Locks;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.EndpointCertificateSecretStore;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -120,6 +122,7 @@ public class TenantRepository {
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
     private final Curator.DirectoryCache directoryCache;
     private final ZookeeperServerConfig zookeeperServerConfig;
+    private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
     private final OnnxModelCost onnxModelCost;
 
     /**
@@ -141,7 +144,8 @@ public class TenantRepository {
                             TenantListener tenantListener,
                             ZookeeperServerConfig zookeeperServerConfig,
                             FileDirectory fileDirectory,
-                            OnnxModelCost onnxModelCost) {
+                            OnnxModelCost onnxModelCost,
+                            ComponentRegistry<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
         this(hostRegistry,
              curator,
              metrics,
@@ -161,7 +165,8 @@ public class TenantRepository {
              configActivationListener,
              tenantListener,
              zookeeperServerConfig,
-             onnxModelCost);
+             onnxModelCost,
+             endpointCertificateSecretStores.allComponents());
     }
 
     public TenantRepository(HostRegistry hostRegistry,
@@ -183,7 +188,8 @@ public class TenantRepository {
                             ConfigActivationListener configActivationListener,
                             TenantListener tenantListener,
                             ZookeeperServerConfig zookeeperServerConfig,
-                            OnnxModelCost onnxModelCost) {
+                            OnnxModelCost onnxModelCost,
+                            List<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.curator = curator;
@@ -204,6 +210,7 @@ public class TenantRepository {
         this.configActivationListener = configActivationListener;
         this.tenantListener = tenantListener;
         this.zookeeperServerConfig = zookeeperServerConfig;
+        this.endpointCertificateSecretStores = endpointCertificateSecretStores;
         // This we should control with a feature flag.
         this.deployHelperExecutor = createModelBuilderExecutor();
         this.onnxModelCost = onnxModelCost;
@@ -360,7 +367,8 @@ public class TenantRepository {
                                                               zone,
                                                               flagSource,
                                                               secretStore,
-                                                              onnxModelCost);
+                                                              onnxModelCost,
+                                                              endpointCertificateSecretStores);
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     applicationRepo,
                                                                     sessionPreparer,
@@ -379,7 +387,8 @@ public class TenantRepository {
                                                                     modelFactoryRegistry,
                                                                     configDefinitionRepo,
                                                                     zookeeperServerConfig.juteMaxBuffer(),
-                                                                    onnxModelCost);
+                                                                    onnxModelCost,
+                                                                    endpointCertificateSecretStores);
         log.log(Level.FINE, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, clock.instant()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);

@@ -16,6 +16,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
+import com.yahoo.config.model.api.EndpointCertificateSecretStore;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.OnnxModelCost;
@@ -95,6 +96,7 @@ public class SessionPreparer {
     private final ExecutorService executor;
     private final BooleanFlag writeSessionData;
     private final OnnxModelCost onnxModelCost;
+    private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
 
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
@@ -106,7 +108,8 @@ public class SessionPreparer {
                            Zone zone,
                            FlagSource flagSource,
                            SecretStore secretStore,
-                           OnnxModelCost onnxModelCost) {
+                           OnnxModelCost onnxModelCost,
+                           List<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
@@ -119,6 +122,7 @@ public class SessionPreparer {
         this.executor = executor;
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
         this.onnxModelCost = onnxModelCost;
+        this.endpointCertificateSecretStores = endpointCertificateSecretStores;
     }
 
     ExecutorService getExecutor() { return executor; }
@@ -139,7 +143,7 @@ public class SessionPreparer {
         Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationVersions,
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
                                                   serverDbSessionDir, applicationPackage, sessionZooKeeperClient,
-                                                  onnxModelCost);
+                                                  onnxModelCost, endpointCertificateSecretStores);
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
@@ -191,7 +195,8 @@ public class SessionPreparer {
         Preparation(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationVersions> activeApplicationVersions, Path tenantPath,
                     File serverDbSessionDir, ApplicationPackage applicationPackage,
-                    SessionZooKeeperClient sessionZooKeeperClient, OnnxModelCost onnxModelCost) {
+                    SessionZooKeeperClient sessionZooKeeperClient, OnnxModelCost onnxModelCost,
+                    List<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
             this.logger = logger;
             this.params = params;
             this.applicationPackage = applicationPackage;
@@ -201,7 +206,7 @@ public class SessionPreparer {
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
-            EndpointCertificateRetriever endpointCertificateRetriever = new EndpointCertificateRetriever(secretStore);
+            EndpointCertificateRetriever endpointCertificateRetriever = new EndpointCertificateRetriever(endpointCertificateSecretStores);
             this.endpointCertificateMetadata = params.endpointCertificateMetadata();
             Optional<EndpointCertificateSecrets> endpointCertificateSecrets = endpointCertificateMetadata
                     .or(() -> endpointCertificateMetadataStore.readEndpointCertificateMetadata(applicationId))
