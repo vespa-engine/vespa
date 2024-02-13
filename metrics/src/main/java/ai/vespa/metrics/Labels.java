@@ -54,7 +54,7 @@ public enum Labels {
     Labels(String name, String description) {
         this.name = name;
         this.description = description;
-        this.legacyNames = null;
+        this.legacyNames = Set.of();
     }
     Labels(String name, String description, Set<String> legacyNames) {
         this.name = name;
