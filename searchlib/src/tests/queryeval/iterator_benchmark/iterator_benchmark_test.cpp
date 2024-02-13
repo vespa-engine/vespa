@@ -142,12 +142,24 @@ struct BenchmarkResult {
     uint32_t hits;
     double estimate;
     double cost;
-    BenchmarkResult() : BenchmarkResult(0, 0, 0, 0, 0) {}
-    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, double estimate_in, double cost_in)
-        : time_ms(time_ms_in), seeks(seeks_in), hits(hits_in), estimate(estimate_in), cost(cost_in) {}
+    vespalib::string iterator_name;
+    BenchmarkResult() : BenchmarkResult(0, 0, 0, 0, 0, "") {}
+    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, double estimate_in, double cost_in, const vespalib::string& iterator_name_in)
+        : time_ms(time_ms_in), seeks(seeks_in), hits(hits_in), estimate(estimate_in), cost(cost_in), iterator_name(iterator_name_in) {}
     double time_per_seek_ns() const { return (time_ms / seeks) * 1000.0 * 1000.0; }
     double time_per_cost_ms() const { return (time_ms / cost); }
 };
+
+vespalib::string
+iterator_name(SearchIterator& itr)
+{
+    auto full = itr.asString();
+    auto brace_pos = full.find("{");
+    if (brace_pos != vespalib::string::npos) {
+        return full.substr(0, brace_pos);
+    }
+    return full;
+}
 
 BenchmarkResult
 strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, double strict_cost)
@@ -165,7 +177,7 @@ strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, double
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, hits + 1, hits, estimate, strict_cost};
+    return {timer.min_time() * 1000.0, hits + 1, hits, estimate, strict_cost, iterator_name(itr)};
 }
 
 BenchmarkResult
@@ -187,7 +199,7 @@ non_strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, do
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, seeks, hits, estimate, non_strict_cost};
+    return {timer.min_time() * 1000.0, seeks, hits, estimate, non_strict_cost, iterator_name(itr)};
 }
 
 BenchmarkResult
@@ -321,7 +333,8 @@ run_benchmark(const Config& cfg, uint32_t num_docs, const HitSpecs& hit_specs, d
         << ", cost=" << std::setw(8) << res.cost
         << std::setprecision(2)
         << ", ns_per_seek=" << std::setw(8) << res.time_per_seek_ns()
-        << ", ms_per_cost=" << std::setw(7) << res.time_per_cost_ms() << std::endl;
+        << ", ms_per_cost=" << std::setw(7) << res.time_per_cost_ms()
+        << ", itr=" << res.iterator_name << std::endl;
 }
 
 struct BenchmarkSetup {
