@@ -8517,6 +8517,7 @@
     ],
     "methods" : [
       "public boolean isStreaming()",
+      "public java.util.Collection schemas()",
       "public java.util.Optional fieldInfo(java.lang.String)",
       "public com.yahoo.tensor.TensorType rankProfileInput(java.lang.String, java.lang.String)"
     ],
