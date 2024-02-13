@@ -5,11 +5,9 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
-import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -65,7 +63,7 @@ public class SchemaInfo {
     /** Returns all schemas configured in this application, indexed by schema name. */
     public Map<String, Schema> schemas() { return schemas; }
 
-    /** Returns information about all clusters available for searching in this applications, indexed by cluyster name. */
+    /** Returns information about all clusters available for searching in this application, indexed by cluster name. */
     public Map<String, Cluster> clusters() { return clusters; }
 
     public Session newSession(Query query) {
@@ -102,6 +100,8 @@ public class SchemaInfo {
 
         /** Returns true if this only searches streaming clusters. */
         public boolean isStreaming() { return isStreaming; }
+
+        public Collection<Schema> schemas() { return schemas; }
 
         /**
          * Looks up a field or field set by the given name or alias
