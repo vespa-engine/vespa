@@ -150,17 +150,6 @@ struct BenchmarkResult {
     double time_per_cost_ms() const { return (time_ms / cost); }
 };
 
-vespalib::string
-iterator_name(SearchIterator& itr)
-{
-    auto full = itr.asString();
-    auto brace_pos = full.find("{");
-    if (brace_pos != vespalib::string::npos) {
-        return full.substr(0, brace_pos);
-    }
-    return full;
-}
-
 BenchmarkResult
 strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, double strict_cost)
 {
@@ -177,7 +166,7 @@ strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, double
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, hits + 1, hits, estimate, strict_cost, iterator_name(itr)};
+    return {timer.min_time() * 1000.0, hits + 1, hits, estimate, strict_cost, itr.getClassName()};
 }
 
 BenchmarkResult
@@ -199,7 +188,7 @@ non_strict_search(SearchIterator& itr, uint32_t docid_limit, double estimate, do
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, seeks, hits, estimate, non_strict_cost, iterator_name(itr)};
+    return {timer.min_time() * 1000.0, seeks, hits, estimate, non_strict_cost, itr.getClassName()};
 }
 
 BenchmarkResult
