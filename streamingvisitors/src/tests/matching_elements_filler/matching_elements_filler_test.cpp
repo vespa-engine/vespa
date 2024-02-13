@@ -282,7 +282,6 @@ class MatchingElementsFillerTest : public ::testing::Test {
     Query                                   _query;
     std::unique_ptr<MatchingElementsFiller> _matching_elements_filler;
     std::unique_ptr<MatchingElements>       _matching_elements;
-    std::unique_ptr<StorageDocument>        _sdoc;
 public:
     MatchingElementsFillerTest();
     ~MatchingElementsFillerTest();
@@ -303,15 +302,14 @@ MatchingElementsFillerTest::MatchingElementsFillerTest()
       _search_result(),
       _query(),
       _matching_elements_filler(),
-      _matching_elements(),
-      _sdoc()
+      _matching_elements()
 {
     _env.field_paths = make_field_path_map(_doc_type);
     _search_result.addHit(1, "id::test::1", 0.0, nullptr, 0);
-    _sdoc = std::make_unique<StorageDocument>(_doc_type.make_test_doc(), _env.field_paths, _env.field_paths->size());
-    EXPECT_TRUE(_sdoc->valid());
+    auto sdoc = std::make_shared<StorageDocument>(_doc_type.make_test_doc(), _env.field_paths, _env.field_paths->size());
+    EXPECT_TRUE(sdoc->valid());
     MatchData md(MatchData::params());
-    _hit_collector.addHit(_sdoc.get(), 1, md, 0.0, nullptr, 0);
+    _hit_collector.addHit(std::move(sdoc), 1, md, 0.0, nullptr, 0);
 }
 
 MatchingElementsFillerTest::~MatchingElementsFillerTest() = default;

@@ -26,10 +26,10 @@ private:
     class Hit
     {
     public:
-        Hit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & matchData,
+        Hit(vsm::StorageDocument::SP doc, uint32_t docId, const MatchData & matchData,
             double score, const void * sortData, size_t sortDataLen);
-        Hit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & matchData, double score)
-            : Hit(doc, docId, matchData, score, nullptr, 0)
+        Hit(vsm::StorageDocument::SP doc, uint32_t docId, const MatchData & matchData, double score)
+            : Hit(std::move(doc), docId, matchData, score, nullptr, 0)
         { }
         ~Hit();
         Hit(const Hit &) = delete;
@@ -52,14 +52,14 @@ private:
             return (diff == 0) ? cmpDocId(b) : diff;
         }
 
-        void dropDocument() noexcept { _document = nullptr; }
+        void dropDocument() noexcept { _document.reset(); }
 
     private:
         uint32_t _docid;
         double   _score;
-        const vsm::StorageDocument * _document;
+        vsm::StorageDocument::SP        _document;
         std::vector<TermFieldMatchData> _matchData;
-        vespalib::string _sortBlob;
+        vespalib::string                _sortBlob;
     };
     using HitVector = std::vector<Hit>;
     using Lids = std::vector<uint32_t>;
@@ -118,7 +118,7 @@ public:
      * @param data  The match data for the hit.
      * @return true if the document was added to the heap
      **/
-    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data, double score);
+    bool addHit(vsm::StorageDocument::SP doc, uint32_t docId, const MatchData & data, double score);
 
     /**
      * Adds a hit to this hit collector.
@@ -126,13 +126,13 @@ public:
      * If you add a nullptr document you should not use getDocSum() or fillSearchResult(),
      * as these functions expect valid documents.
      *
-     * @param doc   The document that is a hit. Must be kept alive on the outside.
+     * @param doc   The document that is a hit.
      * @param data  The match data for the hit.
      * @param sortData The buffer of the sortdata.
      * @param sortDataLen The length of the sortdata.
      * @return true if the document was added to the heap
      **/
-    bool addHit(const vsm::StorageDocument * doc, uint32_t docId, const MatchData & data,
+    bool addHit(vsm::StorageDocument::SP doc, uint32_t docId, const MatchData & data,
                 double score, const void * sortData, size_t sortDataLen);
 
     /**

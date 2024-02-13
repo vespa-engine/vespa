@@ -198,12 +198,11 @@ private:
          * @param visitor the search visitor.
          * @param tmpSortBuffer the sort buffer containing the sort data.
          * @param document the document to collect. Must be kept alive on the outside.
-         * @return true if the document was added to the heap
          **/
-        bool collectMatchedDocument(bool hasSorting,
+        void collectMatchedDocument(bool hasSorting,
                                     SearchVisitor & visitor,
                                     const std::vector<char> & tmpSortBuffer,
-                                    const vsm::StorageDocument * document);
+                                    vsm::StorageDocument::SP document);
         /**
          * Callback function that is called when visiting is completed.
          * Perform second phase ranking and calculate summary features / rank features if asked for.
@@ -323,9 +322,8 @@ private:
     /**
      * Process one document
      * @param document Document to process.
-     * @return true if the underlying buffer is needed later on, then it must be kept.
      */
-    bool handleDocument(vsm::StorageDocument & document);
+    void handleDocument(vsm::StorageDocument::SP document);
 
     /**
      * Collect the given document for grouping.
@@ -397,7 +395,6 @@ private:
         size_t _limit;
     };
     using GroupingList = std::vector< GroupingEntry >;
-    using DocumentVector = std::vector<vsm::StorageDocument::UP>;
 
     class StreamingDocsumsState {
         using ResolveClassInfo = search::docsummary::IDocsumWriter::ResolveClassInfo;
@@ -485,7 +482,6 @@ private:
     bool                                    _shouldFillRankAttribute;
     SyntheticFieldsController               _syntheticFieldsController;
     RankController                          _rankController;
-    DocumentVector                          _backingDocuments;
     vsm::StringFieldIdTMapT                 _fieldsUnion;
 
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
