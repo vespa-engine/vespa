@@ -4,6 +4,7 @@
 #include "weighted_set_term_search.h"
 #include "orsearch.h"
 #include "matching_elements_search.h"
+#include "flow_tuning.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -95,7 +96,12 @@ WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimat
 FlowStats
 WeightedSetTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
-    return default_flow_stats(docid_limit, getState().estimate().estHits, _terms.size());
+    for (auto &term: _terms) {
+        term->update_flow_stats(docid_limit);
+    }
+    double est = OrFlow::estimate_of(_terms);
+    return {est, OrFlow::cost_of(_terms, false),
+            OrFlow::cost_of(_terms, true) + flow::heap_cost(est, _terms.size())};
 }
 
 SearchIterator::UP

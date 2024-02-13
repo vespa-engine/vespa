@@ -10,4 +10,8 @@ inline double heap_cost(double my_est, size_t num_children) {
     return my_est * std::log2(std::max(size_t(1),num_children));
 }
 
+inline double array_cost(double my_est, size_t num_children) {
+    return my_est * num_children;
+}
+
 }

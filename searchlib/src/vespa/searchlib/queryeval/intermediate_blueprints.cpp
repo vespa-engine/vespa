@@ -421,9 +421,10 @@ FlowStats
 WeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
     double child_est = OrFlow::estimate_of(get_children());
     double my_est = abs_to_rel_est(_n, docid_limit);
-    return {std::min(my_est, child_est),
+    double est = (child_est + my_est) / 2.0;
+    return {est,
             OrFlow::cost_of(get_children(), false),
-            OrFlow::cost_of(get_children(), true)};
+            OrFlow::cost_of(get_children(), true) + flow::heap_cost(est, get_children().size())};
 }
 
 Blueprint::HitEstimate

@@ -1278,6 +1278,10 @@ TEST("require that OR blueprint use saturated sum as estimate") {
     TEST_DO(verify_or_est({{100, false},{300, false},{200, false}}, {300, false}));
 }
 
+std::vector<FlowStats> child_stats({{0.2, 1.1, 0.2*1.1},
+                                    {0.3, 1.2, 0.3*1.2},
+                                    {0.5, 1.3, 1.3}});
+
 void verify_relative_estimate(make &&mk, double expect) {
     EXPECT_EQUAL(mk.making->estimate(), 0.0);
     Blueprint::UP bp = std::move(mk).leafs({200,300,950});
@@ -1316,8 +1320,10 @@ TEST("relative estimate for ONEAR") {
 }
 
 TEST("relative estimate for WEAKAND") {
-    verify_relative_estimate(make::WEAKAND(1000), 1.0-0.8*0.7*0.5);
-    verify_relative_estimate(make::WEAKAND(50), 0.05);
+    double est1 = (Blueprint::abs_to_rel_est(1000, 1000) + OrFlow::estimate_of(child_stats)) / 2.0;
+    double est2 = (Blueprint::abs_to_rel_est(50, 1000) + OrFlow::estimate_of(child_stats)) / 2.0;
+    verify_relative_estimate(make::WEAKAND(1000), est1);
+    verify_relative_estimate(make::WEAKAND(50), est2);
 }
 
 void verify_cost(make &&mk, double expect, double expect_strict) {
@@ -1332,10 +1338,6 @@ void verify_cost(make &&mk, double expect, double expect_strict) {
     EXPECT_EQUAL(bp->cost(), expect);
     EXPECT_EQUAL(bp->strict_cost(), expect_strict);
 }
-
-std::vector<FlowStats> child_stats({{0.2, 1.1, 0.2*1.1},
-                                    {0.3, 1.2, 0.3*1.2},
-                                    {0.5, 1.3, 1.3}});
 
 TEST("cost for OR") {
     verify_cost(make::OR(),
@@ -1377,9 +1379,10 @@ TEST("cost for ONEAR") {
 }
 
 TEST("cost for WEAKAND") {
+    double est = (Blueprint::abs_to_rel_est(1000, 1000) + OrFlow::estimate_of(child_stats)) / 2.0;
     verify_cost(make::WEAKAND(1000),
                 OrFlow::cost_of(child_stats, false),
-                OrFlow::cost_of(child_stats, true));
+                OrFlow::cost_of(child_stats, true) + flow::heap_cost(est, 3));
 }
 
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }

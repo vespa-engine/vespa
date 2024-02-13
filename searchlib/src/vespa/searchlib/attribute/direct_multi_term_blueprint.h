@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/matching_elements_search.h>
 #include <variant>
@@ -72,7 +73,21 @@ public:
     }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
-        return default_flow_stats(docid_limit, getState().estimate().estHits, _terms.size());
+        using OrFlow = search::queryeval::OrFlow;
+        struct MyAdapter {
+            uint32_t docid_limit;
+            MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+            double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
+                return abs_to_rel_est(term.posting_size, docid_limit);
+            }
+            double cost(const IDirectPostingStore::LookupResult &) const noexcept { return 1.0; }
+            double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
+                return abs_to_rel_est(term.posting_size, docid_limit);
+            }
+        };
+        double est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
+        return {est, OrFlow::cost_of(MyAdapter(docid_limit), _terms, false),
+                OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
     }
 
     std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const override;

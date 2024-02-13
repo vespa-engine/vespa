@@ -31,6 +31,7 @@
 #include <vespa/searchlib/queryeval/matching_elements_search.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
@@ -229,8 +230,10 @@ struct LocationPreFilterIterator : public OrLikeSearch<is_strict, NoUnpack>
 class LocationPreFilterBlueprint : public ComplexLeafBlueprint
 {
 private:
+    using AttrHitEstimate = attribute::HitEstimate;
     const IAttributeVector &_attribute;
     std::vector<ISearchContext::UP> _rangeSearches;
+    std::vector<AttrHitEstimate> _estimates;
     bool _should_use;
 
 public:
@@ -238,6 +241,7 @@ public:
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
           _rangeSearches(),
+          _estimates(),
           _should_use(false)
     {
         uint64_t estHits(0);
@@ -247,7 +251,8 @@ public:
             query::SimpleRangeTerm rt(qr, "", 0, query::Weight(0));
             string stack(StackDumpCreator::create(rt));
             _rangeSearches.push_back(attr.createSearchContext(QueryTermDecoder::decodeTerm(stack), scParams));
-            estHits += _rangeSearches.back()->calc_hit_estimate().est_hits();
+            _estimates.push_back(_rangeSearches.back()->calc_hit_estimate());
+            estHits += _estimates.back().est_hits();
             LOG(debug, "Range '%s' estHits %" PRId64, qr.getRangeString().c_str(), estHits);
         }
         if (estHits > attr.getNumDocs()) {
@@ -266,9 +271,23 @@ public:
     bool should_use() const { return _should_use; }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
-        return default_flow_stats(docid_limit, getState().estimate().estHits, _rangeSearches.size());
+        using OrFlow = search::queryeval::OrFlow;
+        struct MyAdapter {
+            uint32_t docid_limit;
+            MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+            double estimate(const AttrHitEstimate &est) const noexcept {
+                return est.is_unknown() ? 0.5 : abs_to_rel_est(est.est_hits(), docid_limit);
+            }
+            double cost(const AttrHitEstimate &) const noexcept { return 1.0; }
+            double strict_cost(const AttrHitEstimate &est) const noexcept {
+                return est.is_unknown() ? 1.0 : abs_to_rel_est(est.est_hits(), docid_limit);
+            }
+        };
+        double est = OrFlow::estimate_of(MyAdapter(docid_limit), _estimates);
+        return {est, OrFlow::cost_of(MyAdapter(docid_limit), _estimates, false),
+                OrFlow::cost_of(MyAdapter(docid_limit), _estimates, true) + queryeval::flow::array_cost(est, _estimates.size())};
     }
-    
+
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
@@ -458,7 +477,23 @@ public:
     }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
-        return default_flow_stats(docid_limit, getState().estimate().estHits, _terms.size());
+        using OrFlow = search::queryeval::OrFlow;
+        struct MyAdapter {
+            uint32_t docid_limit;
+            MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+            double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
+                return abs_to_rel_est(term.posting_size, docid_limit);
+            }
+            double cost(const IDirectPostingStore::LookupResult &) const noexcept { return 1.0; }
+            double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
+                return abs_to_rel_est(term.posting_size, docid_limit);
+            }
+        };
+        double child_est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
+        double my_est = abs_to_rel_est(_scores.getScoresToTrack(), docid_limit);
+        double est = (child_est + my_est) / 2.0;
+        return {est, OrFlow::cost_of(MyAdapter(docid_limit), _terms, false),
+                OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
