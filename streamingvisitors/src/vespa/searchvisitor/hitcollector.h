@@ -51,18 +51,8 @@ private:
             int diff = _sortBlob.compare(b._sortBlob.c_str(), b._sortBlob.size());
             return (diff == 0) ? cmpDocId(b) : diff;
         }
-        class RankComparator {
-        public:
-            bool operator() (const Hit & lhs, const Hit & rhs) const noexcept {
-                return lhs.cmpRank(rhs) < 0;
-            }
-        };
-        class SortComparator {
-        public:
-            bool operator() (const Hit & lhs, const Hit & rhs) const noexcept {
-                return lhs.cmpSort(rhs) < 0;
-            }
-        };
+
+        void dropDocument() noexcept { _document = nullptr; }
 
     private:
         uint32_t _docid;
@@ -72,16 +62,35 @@ private:
         vespalib::string _sortBlob;
     };
     using HitVector = std::vector<Hit>;
+    using Lids = std::vector<uint32_t>;
     HitVector _hits;
+    Lids      _heap;
     bool      _use_sort_blob;
-    bool      _sortedByDocId; // flag for whether the hit vector is sorted on docId
 
-    void sortByDocId();
-    bool addHitToHeap(const Hit & hit) const;
+    Lids bestLids() const;
+    bool addHitToHeap(uint32_t index) const;
     bool addHit(Hit && hit);
     void make_heap();
     void pop_heap();
     void push_heap();
+    class RankComparator {
+    public:
+        explicit RankComparator(const HitVector & hits) noexcept : _hits(hits) {}
+        bool operator() (uint32_t lhs, uint32_t rhs) const noexcept {
+            return _hits[lhs].cmpRank(_hits[rhs]) < 0;
+        }
+    private:
+        const HitVector & _hits;
+    };
+    class SortComparator {
+    public:
+        explicit SortComparator(const HitVector & hits) noexcept : _hits(hits) {}
+        bool operator() (uint32_t lhs, uint32_t rhs) const noexcept {
+            return _hits[lhs].cmpSort(_hits[rhs]) < 0;
+        }
+    private:
+        const HitVector & _hits;
+    };
 
 public:
     using UP = std::unique_ptr<HitCollector>;
@@ -92,8 +101,12 @@ public:
     };
 
     HitCollector(size_t wantedHits, bool use_sort_blob);
+    ~HitCollector() override;
 
-    virtual const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override;
+    size_t numHits() const noexcept { return _hits.size(); }
+    size_t numHitsOnHeap() const noexcept { return _heap.size(); }
+
+    const vsm::Document & getDocSum(const search::DocumentIdT & docId) const override;
 
     /**
      * Adds a hit to this hit collector.
@@ -124,14 +137,12 @@ public:
 
     /**
      * Fills the given search result with the m best hits from the hit heap.
-     * Invoking this method will destroy the heap property of the hit heap.
      **/
-    void fillSearchResult(vdslib::SearchResult & searchResult, vespalib::FeatureValues&& match_features);
-    void fillSearchResult(vdslib::SearchResult & searchResult);
+    void fillSearchResult(vdslib::SearchResult & searchResult, vespalib::FeatureValues&& match_features) const;
+    void fillSearchResult(vdslib::SearchResult & searchResult) const;
 
     /**
      * Extract features from the hits stored in the hit heap.
-     * Invoking this method will destroy the heap property of the hit heap.
      * Note that this method will calculate any additional features.
      *
      * @return features for all hits on the heap.
@@ -140,11 +151,11 @@ public:
      **/
     vespalib::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
                                            const FeatureResolver &resolver,
-                                           const search::StringStringMap &feature_rename_map);
+                                           const search::StringStringMap &feature_rename_map) const;
 
     vespalib::FeatureValues get_match_features(IRankProgram& rank_program,
                                                const FeatureResolver& resolver,
-                                               const search::StringStringMap& feature_rename_map);
+                                               const search::StringStringMap& feature_rename_map) const;
 };
 
 } // namespace streaming
