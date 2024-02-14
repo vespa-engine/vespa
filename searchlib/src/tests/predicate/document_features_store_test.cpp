@@ -1,15 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for document_features_store.
 
-#include <vespa/log/log.h>
-LOG_SETUP("document_features_store_test");
-
 #include <vespa/searchlib/predicate/document_features_store.h>
+#include <vespa/searchlib/util/data_buffer_writer.h>
+#include <vespa/searchlib/predicate/document_features_store_saver.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <string>
+
+#include <vespa/log/log.h>
+LOG_SETUP("document_features_store_test");
 
 using namespace search;
 using namespace search::predicate;
@@ -20,6 +22,14 @@ namespace {
 const uint64_t hash1 = 0x12345678;
 const uint64_t hash2 = 0x123456789a;
 const uint32_t doc_id = 42;
+
+void
+save_document_features_store(DocumentFeaturesStore& store, vespalib::DataBuffer& buffer)
+{
+    DataBufferWriter writer(buffer);
+    store.make_saver()->save(writer);
+    writer.flush();
+}
 
 TEST("require that DocumentFeaturesStore can store features.") {
     DocumentFeaturesStore features_store(10);
@@ -191,7 +201,7 @@ TEST("require that DocumentFeaturesStore can be serialized") {
     expectHash("foo=100-199", features);
 
     vespalib::DataBuffer buffer;
-    features_store.serialize(buffer);
+    save_document_features_store(features_store, buffer);
 
     DocumentFeaturesStore features_store2(buffer);
     features = features_store2.get(doc_id);
@@ -213,7 +223,7 @@ TEST("require that serialization cleans up wordstore") {
     EXPECT_EQUAL(562524u, features_store.getMemoryUsage().usedBytes());
 
     vespalib::DataBuffer buffer;
-    features_store.serialize(buffer);
+    save_document_features_store(features_store, buffer);
     DocumentFeaturesStore features_store2(buffer);
     EXPECT_EQUAL(562464u, features_store2.getMemoryUsage().usedBytes());
 }

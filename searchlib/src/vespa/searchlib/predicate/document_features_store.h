@@ -14,6 +14,8 @@
 
 namespace search::predicate {
 
+class DocumentFeaturesStoreSaver;
+
 /**
  * Class used to track the {featureId, docId} pairs that are inserted
  * into the btree memory index dictionary. These pairs are later used
@@ -21,6 +23,7 @@ namespace search::predicate {
  * lists of the dictionary.
  */
 class DocumentFeaturesStore {
+    friend class DocumentFeaturesStoreSaver;
     using WordStore = memoryindex::WordStore;
     struct Range {
         vespalib::datastore::EntryRef label_ref;
@@ -92,7 +95,7 @@ public:
     void assign_generation(generation_t current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
 
-    void serialize(vespalib::DataBuffer &buffer) const;
+    std::unique_ptr<DocumentFeaturesStoreSaver> make_saver() const;
 };
 
 }
