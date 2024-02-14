@@ -9,8 +9,8 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -29,35 +29,20 @@ public class SourceRefResolverTestCase {
     private static final String cluster1 = "cluster1";
     private static final String cluster2 = "cluster2";
     private static final String cluster3 = "cluster3";
-    private static IndexFacts indexFacts;
+    private static final String schema1 = "document1";
+    private static final String schema2 = "document2";
+    private static final String schema3 = "document3";
 
     private static final SourceRefResolver sourceRefResolver = createSourceRefResolver();
 
-    static {
-        setupIndexFacts();
-    }
-
     private static SourceRefResolver createSourceRefResolver() {
         SearchChainResolver.Builder builder = new SearchChainResolver.Builder();
-        builder.addSearchChain(ComponentId.fromString(cluster1), new FederationOptions().setUseByDefault(true),
-                Collections.emptyList());
-        builder.addSearchChain(ComponentId.fromString(cluster2), new FederationOptions().setUseByDefault(true),
-                Collections.emptyList());
+        builder.addSearchChain(ComponentId.fromString(cluster1), new FederationOptions().setUseByDefault(true), List.of());
+        builder.addSearchChain(ComponentId.fromString(cluster2), new FederationOptions().setUseByDefault(true), List.of());
 
-        return new SourceRefResolver(builder.build());
-    }
-
-    private static void setupIndexFacts() {
-        TreeMap<String, List<String>> masterClusters = new TreeMap<>();
-        masterClusters.put(cluster1, List.of("document1", "document2"));
-        masterClusters.put(cluster2, List.of("document1"));
-        masterClusters.put(cluster3, List.of("document3"));
-        indexFacts = new IndexFacts(new IndexModel(masterClusters, Collections.emptyList()));
-    }
-
-    @Test
-    void check_test_assumptions() {
-        assertTrue(indexFacts.clustersHavingSearchDefinition("document1").containsAll(List.of("cluster1", "cluster2")));
+        return new SourceRefResolver(builder.build(), Map.of(schema1, List.of(cluster1, cluster2),
+                                                             schema2, List.of(cluster1),
+                                                             schema3, List.of(cluster3)));
     }
 
     @Test
@@ -105,7 +90,7 @@ public class SourceRefResolverTestCase {
     }
 
     private Set<SearchChainInvocationSpec> resolve(String documentName) throws UnresolvedSearchChainException {
-        return sourceRefResolver.resolve(ComponentSpecification.fromString(documentName), emptySourceToProviderMap(), indexFacts);
+        return sourceRefResolver.resolve(ComponentSpecification.fromString(documentName), emptySourceToProviderMap());
     }
 
 }

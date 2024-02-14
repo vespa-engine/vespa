@@ -2,11 +2,11 @@
 package com.yahoo.search.federation.sourceref;
 
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.request.Properties;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -17,30 +17,30 @@ import java.util.Set;
 public class SourceRefResolver {
 
     private final SearchChainResolver searchChainResolver;
+    private final Map<String, List<String>> schema2Clusters;
 
-    public SourceRefResolver(SearchChainResolver searchChainResolver) {
+    public SourceRefResolver(SearchChainResolver searchChainResolver, Map<String, List<String>> schema2Clusters) {
         this.searchChainResolver = searchChainResolver;
+        this.schema2Clusters = schema2Clusters;
     }
 
     public Set<SearchChainInvocationSpec> resolve(ComponentSpecification sourceRef,
-                                                  Properties sourceToProviderMap,
-                                                  IndexFacts indexFacts) throws UnresolvedSearchChainException {
+                                                  Properties sourceToProviderMap) throws UnresolvedSearchChainException {
         try {
             return Set.of(searchChainResolver.resolve(sourceRef, sourceToProviderMap));
         } catch (UnresolvedSourceRefException e) {
-            return resolveClustersWithDocument(sourceRef, sourceToProviderMap, indexFacts);
+            return resolveClustersWithDocument(sourceRef, sourceToProviderMap);
         }
     }
 
     private Set<SearchChainInvocationSpec> resolveClustersWithDocument(ComponentSpecification sourceRef,
-                                                                       Properties sourceToProviderMap,
-                                                                       IndexFacts indexFacts)
+                                                                       Properties sourceToProviderMap)
             throws UnresolvedSearchChainException {
 
         if (hasOnlyName(sourceRef)) {
             Set<SearchChainInvocationSpec> clusterSearchChains = new LinkedHashSet<>();
 
-            List<String> clusters = indexFacts.clustersHavingSearchDefinition(sourceRef.getName());
+            List<String> clusters = schema2Clusters.getOrDefault(sourceRef.getName(), List.of());
             for (String cluster : clusters) {
                 clusterSearchChains.add(resolveClusterSearchChain(cluster, sourceRef, sourceToProviderMap));
             }
@@ -48,9 +48,7 @@ public class SourceRefResolver {
             if ( ! clusterSearchChains.isEmpty())
                 return clusterSearchChains;
         }
-
         throw UnresolvedSourceRefException.createForMissingSourceRef(sourceRef);
-
     }
 
     private SearchChainInvocationSpec resolveClusterSearchChain(String cluster,

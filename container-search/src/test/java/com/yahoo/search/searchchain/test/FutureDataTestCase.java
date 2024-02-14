@@ -17,6 +17,7 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -42,7 +43,7 @@ public class FutureDataTestCase {
                 new SearchChainResolver.Builder().addSearchChain(new ComponentId("sync"), new FederationOptions().setUseByDefault(true)).
                         addSearchChain(new ComponentId("async"), new FederationOptions().setUseByDefault(true)).
                         build();
-        Chain<Searcher> main = new Chain<>(new FederationSearcher(new ComponentId("federator"), searchChainResolver));
+        Chain<Searcher> main = new Chain<>(new FederationSearcher(new ComponentId("federator"), searchChainResolver, Map.of()));
         SearchChainRegistry searchChainRegistry = new SearchChainRegistry();
         searchChainRegistry.register(main);
         searchChainRegistry.register(syncSource);
