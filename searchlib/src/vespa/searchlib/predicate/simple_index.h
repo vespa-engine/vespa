@@ -8,7 +8,11 @@
 #include <vespa/vespalib/util/rcuvector.h>
 #include <optional>
 
+namespace search { class BufferWriter; }
+
 namespace search::predicate {
+
+template <typename, typename, typename> class SimpleIndexSaver;
 
 template <typename Key = uint64_t, typename DocId = uint32_t>
 struct SimpleIndexDeserializeObserver {
@@ -17,9 +21,9 @@ struct SimpleIndexDeserializeObserver {
 };
 
 template <typename Posting>
-struct PostingSerializer {
-    virtual ~PostingSerializer() {}
-    virtual void serialize(const Posting &posting, vespalib::DataBuffer &buffer) const = 0;
+struct PostingSaver {
+    virtual ~PostingSaver() {}
+    virtual void save(const Posting &posting, BufferWriter& writer) const = 0;
 };
 
 template <typename Posting>
@@ -136,17 +140,6 @@ public:
     using PostingVector = vespalib::RcuVectorBase<Posting>;
     using VectorStore = vespalib::btree::BTree<Key, std::shared_ptr<PostingVector>, vespalib::btree::NoAggregated>;
     using VectorIterator = PostingVectorIterator<Posting, Key, DocId>;
-    struct SerializeStats {
-        size_t _dictionary_size;
-        size_t _btree_count;
-        size_t _bytes;
-        SerializeStats()
-            : _dictionary_size(0),
-              _btree_count(0),
-              _bytes(0)
-        {
-        }
-    };
 
 private:
     using GenerationHolder = vespalib::GenerationHolder;
@@ -186,8 +179,6 @@ public:
         : _generation_holder(generation_holder), _config(config), _limit_provider(provider) {}
     ~SimpleIndex();
 
-    void serialize(vespalib::DataBuffer &buffer,
-                   const PostingSerializer<Posting> &serializer, SerializeStats& stats) const;
     void deserialize(vespalib::DataBuffer &buffer,
                      PostingDeserializer<Posting> &deserializer,
                      SimpleIndexDeserializeObserver<Key, DocId> &observer, uint32_t version);
@@ -226,6 +217,8 @@ public:
         return optional<VectorIterator>();
 
     }
+
+    std::unique_ptr<SimpleIndexSaver<Posting, Key, DocId>> make_saver(std::unique_ptr<PostingSaver<Posting>> subsaver) const;
 };
 
 template<typename Posting, typename Key, typename DocId>

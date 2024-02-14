@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "nbo_write.h"
 #include <vespa/vespalib/data/databuffer.h>
 
 namespace search::predicate {
@@ -15,8 +16,8 @@ struct Interval {
     Interval() : interval(0) {}
     Interval(uint32_t interval_) : interval(interval_) {}
 
-    void serialize(vespalib::DataBuffer &buffer) const {
-        buffer.writeInt32(interval);
+    void save(BufferWriter& writer) const {
+        nbo_write<uint32_t>(writer, interval);
     }
     static Interval deserialize(vespalib::DataBuffer &buffer) {
         return Interval{buffer.readInt32()};
@@ -41,9 +42,9 @@ struct IntervalWithBounds {
     IntervalWithBounds() : interval(0), bounds(0) {}
     IntervalWithBounds(uint32_t interval_, uint32_t bounds_) : interval(interval_), bounds(bounds_) {}
 
-    void serialize(vespalib::DataBuffer &buffer) const {
-        buffer.writeInt32(interval);
-        buffer.writeInt32(bounds);
+    void save(BufferWriter& writer) const {
+        nbo_write<uint32_t>(writer, interval);
+        nbo_write<uint32_t>(writer, bounds);
     }
     static IntervalWithBounds deserialize(vespalib::DataBuffer &buffer) {
         uint32_t interval = buffer.readInt32();
