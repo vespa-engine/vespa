@@ -1,14 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.sourceref.test;
+package com.yahoo.search.federation.sourceref;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.processing.request.properties.PropertyMap;
 import com.yahoo.processing.request.Properties;
-import com.yahoo.search.federation.sourceref.SearchChainInvocationSpec;
-import com.yahoo.search.federation.sourceref.SearchChainResolver;
-import com.yahoo.search.federation.sourceref.Target;
-import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +12,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.SortedSet;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Tony Vaagenes

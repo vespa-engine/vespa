@@ -1,14 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.federation.sourceref.test;
+package com.yahoo.search.federation.sourceref;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
-import com.yahoo.search.federation.sourceref.SearchChainInvocationSpec;
-import com.yahoo.search.federation.sourceref.SearchChainResolver;
-import com.yahoo.search.federation.sourceref.SourceRefResolver;
-import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +14,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.yahoo.search.federation.sourceref.test.SearchChainResolverTestCase.emptySourceToProviderMap;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.yahoo.search.federation.sourceref.SearchChainResolverTestCase.emptySourceToProviderMap;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for SourceRefResolver.
