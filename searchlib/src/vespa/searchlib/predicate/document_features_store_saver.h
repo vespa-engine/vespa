@@ -8,6 +8,10 @@ namespace search { class BufferWriter; }
 
 namespace search::predicate {
 
+/*
+ * Class used to save a DocumentFeaturesStore instance, streaming the
+ * serialized data via a BufferWriter.
+ */
 class DocumentFeaturesStoreSaver {
     using RefsVector = DocumentFeaturesStore::RefsVector;
     using FeaturesStore = DocumentFeaturesStore::FeaturesStore;
