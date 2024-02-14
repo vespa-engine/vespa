@@ -8,6 +8,8 @@
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
+#include <vespa/searchlib/queryeval/flow.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -20,6 +22,7 @@ namespace {
 
 using attribute::ISearchContext;
 using attribute::IAttributeVector;
+using queryeval::OrFlow;
 
 class AttrWrapper
 {
@@ -94,7 +97,8 @@ AttributeWeightedSetBlueprint::AttributeWeightedSetBlueprint(const queryeval::Fi
       _estHits(0),
       _weights(),
       _attr(attr),
-      _contexts()
+      _contexts(),
+      _estimates()
 {
     set_allow_termwise_eval(true);
 }
@@ -110,7 +114,8 @@ AttributeWeightedSetBlueprint::~AttributeWeightedSetBlueprint()
 void
 AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context, int32_t weight)
 {
-    _estHits = std::min(_estHits + context->calc_hit_estimate().est_hits(), _numDocs);
+    _estimates.push_back(context->calc_hit_estimate());
+    _estHits = std::min(_estHits + _estimates.back().est_hits(), _numDocs);
     setEstimate(HitEstimate(_estHits, (_estHits == 0)));
     _weights.push_back(weight);
     _contexts.push_back(context.release());
@@ -119,7 +124,20 @@ AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context,
 queryeval::FlowStats
 AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
-    return default_flow_stats(docid_limit, _estHits, _weights.size());
+    struct MyAdapter {
+        uint32_t docid_limit;
+        MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+        double estimate(const AttrHitEstimate &est) const noexcept {
+            return est.is_unknown() ? 0.5 : abs_to_rel_est(est.est_hits(), docid_limit);
+        }
+        double cost(const AttrHitEstimate &) const noexcept { return 1.0; }
+        double strict_cost(const AttrHitEstimate &est) const noexcept {
+            return est.is_unknown() ? 1.0 : abs_to_rel_est(est.est_hits(), docid_limit);
+        }
+    };
+    double est = OrFlow::estimate_of(MyAdapter(docid_limit), _estimates);
+    return {est, OrFlow::cost_of(MyAdapter(docid_limit), _estimates, false),
+            OrFlow::cost_of(MyAdapter(docid_limit), _estimates, true) + queryeval::flow::heap_cost(est, _estimates.size())};
 }
 
 queryeval::SearchIterator::UP

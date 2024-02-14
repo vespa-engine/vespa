@@ -3,6 +3,7 @@
 #include "equiv_blueprint.h"
 #include "equivsearch.h"
 #include "field_spec.hpp"
+#include "flow_tuning.h"
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -55,7 +56,12 @@ EquivBlueprint::~EquivBlueprint() = default;
 FlowStats
 EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
-    return default_flow_stats(docid_limit, _estimate.estHits, _terms.size());
+    for (auto &term: _terms) {
+        term->update_flow_stats(docid_limit);
+    }
+    double est = OrFlow::estimate_of(_terms);
+    return {est, OrFlow::cost_of(_terms, false),
+            OrFlow::cost_of(_terms, true) + flow::array_cost(est, _terms.size())};
 }
 
 SearchIterator::UP

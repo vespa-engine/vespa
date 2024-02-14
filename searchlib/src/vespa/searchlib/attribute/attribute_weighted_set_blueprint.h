@@ -5,6 +5,7 @@
 #include "attributeguard.h"
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchcommon/attribute/hit_estimate.h>
 #include <vector>
 
 namespace search {
@@ -16,12 +17,14 @@ class AttributeWeightedSetBlueprint : public queryeval::ComplexLeafBlueprint
 private:
     using ISearchContext = attribute::ISearchContext;
     using IAttributeVector = attribute::IAttributeVector;
+    using AttrHitEstimate = attribute::HitEstimate;
     size_t                         _numDocs;
     size_t                         _estHits;
     std::vector<int32_t>           _weights;
     const IAttributeVector       & _attr;
     std::vector<ISearchContext*>   _contexts;
-
+    std::vector<AttrHitEstimate>   _estimates;
+    
 public:
     AttributeWeightedSetBlueprint(const AttributeWeightedSetBlueprint &) = delete;
     AttributeWeightedSetBlueprint &operator=(const AttributeWeightedSetBlueprint &) = delete;
