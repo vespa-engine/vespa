@@ -256,6 +256,19 @@ RankProcessor::calculateFeatureSet()
     return sf;
 }
 
+FeatureSet::SP
+RankProcessor::calculateFeatureSet(search::DocumentIdT docId)
+{
+    LOG(debug, "Calculate feature set for docId = %d", docId);
+    RankProgram &rankProgram = *(_summaryProgram ? _summaryProgram : _rankProgram);
+    search::fef::FeatureResolver resolver(rankProgram.get_seeds(false));
+    LOG(debug, "Feature handles: numNames(%ld)", resolver.num_features());
+    RankProgramWrapper wrapper(*_match_data);
+    FeatureSet::SP sf = _hitCollector->getFeatureSet(wrapper, docId, resolver, _rankSetup.get_feature_rename_map());
+    LOG(debug, "Feature set: numFeatures(%u), numDocs(%u)", sf->numFeatures(), sf->numDocs());
+    return sf;
+}
+
 FeatureValues
 RankProcessor::calculate_match_features()
 {

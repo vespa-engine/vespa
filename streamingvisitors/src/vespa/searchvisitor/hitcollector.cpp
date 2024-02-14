@@ -190,6 +190,30 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     return retval;
 }
 
+FeatureSet::SP
+HitCollector::getFeatureSet(IRankProgram &rankProgram,
+                            search::DocumentIdT docId,
+                            const FeatureResolver &resolver,
+                            const search::StringStringMap &feature_rename_map)
+{
+    LOG(debug, "docId = %d, _hits.size = %zu", docId, _hits.size());
+    if (resolver.num_features() == 0 || _hits.empty()) {
+        return std::make_shared<FeatureSet>();
+    }
+    auto names = FefUtils::extract_feature_names(resolver, feature_rename_map);
+    FeatureSet::SP retval = std::make_shared<FeatureSet>(names, _hits.size());
+    for (const Hit & hit : _hits) {
+        LOG(debug, "Checking docId=%d", hit.getDocId());
+        if (docId == hit.getDocId()) {
+            rankProgram.run(docId, hit.getMatchData());
+            auto *f = retval->getFeaturesByIndex(retval->addDocId(docId));
+            FefUtils::extract_feature_values(resolver, docId, f);
+            return retval;
+        }
+    }
+    return retval;
+}
+
 FeatureValues
 HitCollector::get_match_features(IRankProgram& rank_program,
                                  const FeatureResolver& resolver,

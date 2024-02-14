@@ -77,6 +77,7 @@ public:
     static void unpack_match_data(uint32_t docid, search::fef::MatchData& matchData, QueryWrapper& query);
     void runRankProgram(uint32_t docId);
     vespalib::FeatureSet::SP calculateFeatureSet();
+    vespalib::FeatureSet::SP calculateFeatureSet(search::DocumentIdT docId);
     void fillSearchResult(vdslib::SearchResult & searchResult);
     const search::fef::MatchData &getMatchData() const { return *_match_data; }
     void setRankScore(double score) { _score = score; } 

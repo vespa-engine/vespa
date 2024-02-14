@@ -210,6 +210,7 @@ private:
          * @param docsumsStateCallback state object to store summary features and rank features.
          **/
         void onCompletedVisiting(vsm::GetDocsumsStateCallback & docsumsStateCallback, vdslib::SearchResult & searchResult);
+        vespalib::FeatureSet::SP getFeatureSet(search::DocumentIdT docId);
     };
 
     /**
@@ -455,6 +456,7 @@ private:
     std::shared_ptr<const SearchEnvironmentSnapshot> _env;
     vdslib::Parameters                      _params;
     bool                                    _init_called;
+    bool                                    _collectGroupingHits;
     size_t                                  _docSearchedCount;
     size_t                                  _hitCount;
     size_t                                  _hitsRejectedCount;
