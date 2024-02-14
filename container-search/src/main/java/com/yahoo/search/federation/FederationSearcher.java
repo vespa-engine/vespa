@@ -25,6 +25,7 @@ import com.yahoo.search.federation.sourceref.SingleTarget;
 import com.yahoo.search.federation.sourceref.SourceRefResolver;
 import com.yahoo.search.federation.sourceref.SourcesTarget;
 import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
+import com.yahoo.search.federation.sourceref.VirtualSourceResolver;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -77,25 +78,28 @@ public class FederationSearcher extends ForkingSearcher {
 
     private final SearchChainResolver searchChainResolver;
     private final SourceRefResolver sourceRefResolver;
+    private final VirtualSourceResolver virtualSourceResolver;
 
     private final TargetSelector<?> targetSelector;
     private final Clock clock = Clock.systemUTC();
 
     @Inject
     public FederationSearcher(FederationConfig config, ComponentRegistry<TargetSelector> targetSelectors) {
-        this(createResolver(config), resolveSelector(config.targetSelector(), targetSelectors));
+        this(createResolver(config), VirtualSourceResolver.of(config), resolveSelector(config.targetSelector(), targetSelectors));
     }
 
     // for testing
     public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver) {
-        this(searchChainResolver, null);
+        this(searchChainResolver, VirtualSourceResolver.of(), null);
     }
 
     private FederationSearcher(SearchChainResolver searchChainResolver,
+                               VirtualSourceResolver virtualSourceResolver,
                                TargetSelector targetSelector) {
         this.searchChainResolver = searchChainResolver;
         sourceRefResolver = new SourceRefResolver(searchChainResolver);
         this.targetSelector = targetSelector;
+        this.virtualSourceResolver = virtualSourceResolver;
     }
 
     private static TargetSelector resolveSelector(String selectorId,
@@ -370,9 +374,9 @@ public class FederationSearcher extends ForkingSearcher {
             else { // fill timed out: Remove these hits as they are incomplete and may cause a race when accessed later
                 result.hits().addError(futureFilledResult.getSecond().createTimeoutError());
                 for (Iterator<Hit> i = futureFilledResult.getFirst().hits().unorderedDeepIterator(); i.hasNext(); ) {
-                    // Note that some of these hits may be filled, but as the fill thread may still be working on them
-                    // and we do not synchronize with it we need to discard all
-                    Hit removed = result.hits().remove(i.next().getId());
+                    // Note that some of these hits may be filled, but as the fill thread may still be working on them,
+                    // and we do not synchronize with it, we need to discard all.
+                    result.hits().remove(i.next().getId());
                 }
             }
         }
@@ -427,8 +431,10 @@ public class FederationSearcher extends ForkingSearcher {
                 resolveSources(sources, properties, indexFacts);
     }
 
-    private Results<SearchChainInvocationSpec, UnresolvedSearchChainException> resolveSources(Set<String> sources, Properties properties, IndexFacts indexFacts) {
+
+    private Results<SearchChainInvocationSpec, UnresolvedSearchChainException> resolveSources(Set<String> sourcesInQuery, Properties properties, IndexFacts indexFacts) {
         Results.Builder<SearchChainInvocationSpec, UnresolvedSearchChainException> result = new Builder<>();
+        Set<String> sources = virtualSourceResolver.resolve(sourcesInQuery);
 
         for (String source : sources) {
             try {
