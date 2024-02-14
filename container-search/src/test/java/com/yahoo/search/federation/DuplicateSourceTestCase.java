@@ -3,8 +3,6 @@ package com.yahoo.search.federation;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.IndexModel;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -13,7 +11,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,20 +28,20 @@ public class DuplicateSourceTestCase {
 
     @Test
     void testDuplicateSource() {
+        String chain1 = "chain1";
+        String schema1 = "doc1", schema2 = "doc2";
         // Set up a single cluster and chain (chain1), containing a MockBackendSearcher and having 2 doc types (doc1, doc2)
         MockBackendSearcher mockBackendSearcher = new MockBackendSearcher();
         SearchChainRegistry searchChains = new SearchChainRegistry();
-        searchChains.register(new Chain<>("chain1", mockBackendSearcher));
-        Map<String, List<String>> clusters = new HashMap<>();
-        clusters.put("chain1", List.of("doc1", "doc2"));
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(clusters, List.of()));
+        searchChains.register(new Chain<>(chain1, mockBackendSearcher));
         SearchChainResolver resolver = new SearchChainResolver.Builder()
-                .addSearchChain(new ComponentId("chain1"), List.of("doc1", "doc2"))
+                .addSearchChain(new ComponentId(chain1), List.of(schema1, schema2))
                 .build();
-        FederationSearcher searcher = new FederationSearcher(new ComponentId("test"), resolver);
+        FederationSearcher searcher = new FederationSearcher(new ComponentId("test"), resolver,
+                                                             Map.of(schema1, List.of(chain1), schema2, List.of(chain1)));
 
         Result result = searcher.search(new Query("?query=test&sources=doc1%2cdoc2"),
-                new Execution(Execution.Context.createContextStub(searchChains, indexFacts)));
+                new Execution(Execution.Context.createContextStub(searchChains)));
 
         assertNull(result.hits().getError());
         assertEquals(1, mockBackendSearcher.getInvocationCount());

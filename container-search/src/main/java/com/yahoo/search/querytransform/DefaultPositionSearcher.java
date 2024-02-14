@@ -33,10 +33,6 @@ public class DefaultPositionSearcher extends Searcher {
         this.useV8GeoPositions = cfg.usev8geopositions();
     }
 
-    DefaultPositionSearcher() {
-        this.useV8GeoPositions = false;
-    }
-
     @Override
     public com.yahoo.search.Result search(Query query, Execution execution) {
         Location location = query.getRanking().getLocation();

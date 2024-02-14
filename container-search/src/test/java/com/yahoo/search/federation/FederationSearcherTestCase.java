@@ -11,6 +11,7 @@ import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -81,7 +83,7 @@ public class FederationSearcherTestCase {
     }
 
     private Searcher createFederationSearcher() {
-        return new FederationSearcher(new FederationConfig(builder), new ComponentRegistry<>());
+        return new FederationSearcher(new FederationConfig(builder), SchemaInfo.empty(), new ComponentRegistry<>());
     }
 
     private SearchChain createSearchChain(ComponentId chainId,Searcher searcher) {
@@ -107,7 +109,7 @@ public class FederationSearcherTestCase {
 
     @Test
     void testTraceTwoSources() {
-        Chain<Searcher> mainChain = twoTracingSources(false);
+        Chain<Searcher> mainChain = twoTracingSources();
 
         Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1"));
 
@@ -120,7 +122,7 @@ public class FederationSearcherTestCase {
         assertTrue(lookForTraces.traceFromSource2);
     }
 
-    private Chain<Searcher> twoTracingSources(boolean strictContracts) {
+    private Chain<Searcher> twoTracingSources() {
         addChained(new Searcher() {
             @Override
             public Result search(Query query, Execution execution) {
@@ -140,12 +142,12 @@ public class FederationSearcherTestCase {
         }, SOURCE2);
 
         return new Chain<>("default",
-                           new FederationSearcher(new FederationConfig(builder), new ComponentRegistry<>()));
+                           new FederationSearcher(new FederationConfig(builder), SchemaInfo.empty(), new ComponentRegistry<>()));
     }
 
     @Test
     void testTraceOneSourceNoCloning() {
-        Chain<Searcher> mainChain = twoTracingSources(true);
+        Chain<Searcher> mainChain = twoTracingSources();
 
         Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1&sources=source1"));
 
@@ -160,7 +162,7 @@ public class FederationSearcherTestCase {
 
     @Test
     void testTraceOneSourceWithCloning() {
-        Chain<Searcher> mainChain = twoTracingSources(false);
+        Chain<Searcher> mainChain = twoTracingSources();
 
         Query q = new Query(com.yahoo.search.test.QueryTestCase.httpEncode("?query=test&traceLevel=1&sources=source1"));
 
@@ -282,7 +284,7 @@ public class FederationSearcherTestCase {
         builder.addSourceForProvider(news, provider1, provider1, true, options, List.of());
         builder.addSourceForProvider(news, provider2, provider2, false, options, List.of());
 
-        return new FederationSearcher(new ComponentId("federation"), builder.build());
+        return new FederationSearcher(new ComponentId("federation"), builder.build(), Map.of());
     }
 
     private static class MockProvider extends Searcher {

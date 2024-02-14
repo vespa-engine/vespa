@@ -3,9 +3,7 @@ package com.yahoo.prelude;
 
 import com.yahoo.search.Query;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,8 +26,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 // TODO: Complete migration to SchemaInfo
 public class IndexFacts {
-
-    private final Map<String, List<String>> clusterByDocument;
 
     private record DocumentTypeListOffset(int offset, SearchDefinition searchDefinition) { }
 
@@ -56,7 +52,6 @@ public class IndexFacts {
     public IndexFacts() {
         searchDefinitions = Map.of();
         clusters = Map.of();
-        clusterByDocument = Map.of();
     }
 
     public IndexFacts(IndexModel indexModel) {
@@ -65,28 +60,6 @@ public class IndexFacts {
             this.unionSearchDefinition = indexModel.getUnionSearchDefinition();
         }
         this.clusters = indexModel.getMasterClusters();
-        clusterByDocument = invert(clusters);
-    }
-
-    private static Map<String, List<String>> invert(Map<String, List<String>> clusters) {
-        Map<String, List<String>> result = new HashMap<>();
-        for (Map.Entry<String,List<String>> entry : clusters.entrySet()) {
-            for (String value : entry.getValue()) {
-                addEntry(result, value, entry.getKey());
-            }
-        }
-        return result;
-    }
-
-    private static void addEntry(Map<String, List<String>> result, String key, String value) {
-        List<String> values = result.computeIfAbsent(key, k -> new ArrayList<>());
-        values.add(value);
-    }
-
-    // Assumes that document names are equal to the search definition that contain them.
-    public List<String> clustersHavingSearchDefinition(String searchDefinitionName) {
-        List<String> clusters = clusterByDocument.get(searchDefinitionName);
-        return clusters != null ? clusters : List.of();
     }
 
     private boolean notInitialized() {

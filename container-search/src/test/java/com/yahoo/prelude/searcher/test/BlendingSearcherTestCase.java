@@ -23,17 +23,21 @@ import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.RootGroup;
 import com.yahoo.search.grouping.result.StringBucketId;
 import com.yahoo.search.grouping.result.StringId;
-import com.yahoo.search.grouping.result.ValueGroupId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 /**
  * Tests the BlendingSearcher class
@@ -46,12 +50,12 @@ public class BlendingSearcherTestCase {
 
     private static final double delta = 0.00000001;
 
-    public class BlendingSearcherWrapper extends Searcher {
+    public static class BlendingSearcherWrapper extends Searcher {
 
         private SearchChain blendingChain;
         private final FederationConfig.Builder builder = new FederationConfig.Builder();
         private final Map<String, Searcher> searchers = new HashMap<>();
-        private SearchChainRegistry chainRegistry = new SearchChainRegistry();
+        private final SearchChainRegistry chainRegistry = new SearchChainRegistry();
 
         private final String blendingField;
 
@@ -61,12 +65,6 @@ public class BlendingSearcherTestCase {
 
         public BlendingSearcherWrapper(String blendingField) {
             this.blendingField = blendingField;
-        }
-
-        @SuppressWarnings("serial")
-        public BlendingSearcherWrapper(QrSearchersConfig cfg) {
-            QrSearchersConfig.Com.Yahoo.Prelude.Searcher.BlendingSearcher s = cfg.com().yahoo().prelude().searcher().BlendingSearcher();
-            blendingField = s.docid().length() > 0 ? s.docid() : null;
         }
 
         /** Adds a source implemented as a single searcher */
@@ -110,7 +108,7 @@ public class BlendingSearcherTestCase {
             }
 
             FederationSearcher fedSearcher =
-                    new FederationSearcher(new FederationConfig(builder), new ComponentRegistry<>());
+                    new FederationSearcher(new FederationConfig(builder), SchemaInfo.empty(), new ComponentRegistry<>());
             BlendingSearcher blendingSearcher = new BlendingSearcher(blendingField);
             blendingChain = new SearchChain(ComponentId.createAnonymousComponentId("blendingChain"), blendingSearcher, fedSearcher);
             return true;
