@@ -98,7 +98,7 @@ public class SearchChains extends Chains<SearchChain> {
         return allChains;
     }
 
-    private void addSources(ComponentRegistry<SearchChain> chains, Provider provider) {
+    private static void addSources(ComponentRegistry<SearchChain> chains, Provider provider) {
          for (Source source : provider.getSources()) {
              chains.register(source.getId(), source);
          }

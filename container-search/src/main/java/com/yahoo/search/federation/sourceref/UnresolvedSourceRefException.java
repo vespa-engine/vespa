@@ -6,7 +6,6 @@ import com.yahoo.component.ComponentSpecification;
 /**
  * @author Tony Vaagenes
  */
-@SuppressWarnings("serial")
 class UnresolvedSourceRefException extends UnresolvedSearchChainException {
     UnresolvedSourceRefException(String msg) {
         super(msg);

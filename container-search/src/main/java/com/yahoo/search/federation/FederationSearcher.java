@@ -277,7 +277,7 @@ public class FederationSearcher extends ForkingSearcher {
         return descriptions;
     }
 
-    private Set<String> getMessagesSet(List<UnresolvedSearchChainException> unresolvedSearchChainExceptions) {
+    private static Set<String> getMessagesSet(List<UnresolvedSearchChainException> unresolvedSearchChainExceptions) {
         Set<String> messages = new LinkedHashSet<>();
         for (UnresolvedSearchChainException exception : unresolvedSearchChainExceptions) {
             messages.add(exception.getMessage());
@@ -578,11 +578,7 @@ public class FederationSearcher extends ForkingSearcher {
 
         /** Returns a result to fill for a query and chain, by creating it if necessary */
         public Result get(Chain<Searcher> chain, Query query) {
-            Map<Query,Result> resultsToFillForAChain = resultsToFill.get(chain);
-            if (resultsToFillForAChain == null) {
-                resultsToFillForAChain = new IdentityHashMap<>();
-                resultsToFill.put(chain,resultsToFillForAChain);
-            }
+            Map<Query, Result> resultsToFillForAChain = resultsToFill.computeIfAbsent(chain, k -> new IdentityHashMap<>());
 
             Result resultsToFillForAChainAndQuery = resultsToFillForAChain.get(query);
             if (resultsToFillForAChainAndQuery == null) {
@@ -686,26 +682,17 @@ public class FederationSearcher extends ForkingSearcher {
 
     }
 
-    private static class Window {
-        
-        private final int hits;
-        private final int offset;
-        
-        public Window(int hits, int offset) {
-            this.hits = hits;
-            this.offset = offset;
-        }
+    private record Window(int hits, int offset) {
 
         public Integer get(CompoundName parameterName) {
             if (parameterName.equals(Query.HITS)) return hits;
             if (parameterName.equals(Query.OFFSET)) return offset;
             return null;
         }
-        
+
         public static Window from(Query query) {
             return new Window(query.getHits(), query.getOffset());
         }
-
 
         public static Window from(Collection<Target> targets, Query query) {
             if (targets.size() == 1) // preserve requested top-level offsets
