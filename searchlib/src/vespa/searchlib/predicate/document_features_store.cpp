@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_features_store.h"
+#include "document_features_store_saver.h"
 #include "predicate_range_expander.h"
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
@@ -273,112 +274,10 @@ DocumentFeaturesStore::getMemoryUsage() const {
     return usage;
 }
 
-namespace {
-
-template <typename RefsVector, typename RangesStore>
-void
-findUsedWords(const RefsVector& refs, const RangesStore& ranges,
-              unordered_map<uint32_t, uint32_t> &word_map,
-              vector<EntryRef> &word_list)
+std::unique_ptr<DocumentFeaturesStoreSaver>
+DocumentFeaturesStore::make_saver() const
 {
-    for (auto& cur_refs : refs) {
-        auto ranges_ref = cur_refs._ranges;
-        if (ranges_ref.valid()) {
-            auto range_vector = ranges.get(ranges_ref);
-            for (const auto& range : range_vector) {
-                if (!word_map.count(range.label_ref.ref())) {
-                    word_map[range.label_ref.ref()] = word_list.size();
-                    word_list.push_back(range.label_ref);
-                }
-            }
-        }
-    }
-}
-
-void
-serializeWords(DataBuffer &buffer, const vector<EntryRef> &word_list,
-               const memoryindex::WordStore &word_store)
-{
-    buffer.writeInt32(word_list.size());
-    for (const auto &word_ref : word_list) {
-        const char *word = word_store.getWord(word_ref);
-        uint32_t len = strlen(word);
-        buffer.writeInt32(len);
-        buffer.writeBytes(word, len);
-    }
-}
-
-template <typename RefsVector, typename RangesStore>
-void
-serialize_ranges(DataBuffer &buffer, const RefsVector& refs, const RangesStore &ranges,
-                unordered_map<uint32_t, uint32_t> &word_map)
-{
-    uint32_t ranges_size = 0;
-    if (!refs.empty()) {
-        assert(!refs.front()._ranges.valid());
-        for (auto& cur_refs : refs) {
-            if (cur_refs._ranges.valid()) {
-                ++ranges_size;
-            }
-        }
-    }
-    buffer.writeInt32(ranges_size);
-    for (uint32_t doc_id = 0; doc_id < refs.size(); ++doc_id) {
-        auto ranges_ref = refs[doc_id]._ranges;
-        if (ranges_ref.valid()) {
-            buffer.writeInt32(doc_id);
-            auto range_vector = ranges.get(ranges_ref);
-            buffer.writeInt32(range_vector.size());
-            for (const auto &range : range_vector) {
-                buffer.writeInt32(word_map[range.label_ref.ref()]);
-                buffer.writeInt64(range.from);
-                buffer.writeInt64(range.to);
-            }
-        }
-    }
-}
-
-template <typename RefsVector, typename FeaturesStore>
-void
-serialize_features(DataBuffer &buffer, const RefsVector& refs, const FeaturesStore& features)
-{
-    uint32_t features_size = 0;
-    if (!refs.empty()) {
-        assert(!refs.front()._features.valid());
-        for (auto& cur_refs : refs) {
-            if (cur_refs._features.valid()) {
-                ++features_size;
-            }
-        }
-    }
-    buffer.writeInt32(features_size);
-    for (uint32_t doc_id = 0; doc_id < refs.size(); ++doc_id) {
-        auto features_ref = refs[doc_id]._features;
-        if (features_ref.valid()) {
-            buffer.writeInt32(doc_id);
-            auto feature_vector = features.get(features_ref);
-            buffer.writeInt32(feature_vector.size());
-            for (const auto &feature : feature_vector) {
-                buffer.writeInt64(feature);
-            }
-        }
-    }
-}
-
-}  // namespace
-
-void
-DocumentFeaturesStore::serialize(DataBuffer &buffer) const
-{
-    vector<EntryRef> word_list;
-    unordered_map<uint32_t, uint32_t> word_map;
-
-    findUsedWords(_refs, _ranges, word_map, word_list);
-
-    buffer.writeInt16(_arity);
-    serializeWords(buffer, word_list, _word_store);
-    serialize_ranges(buffer, _refs, _ranges, word_map);
-    serialize_features(buffer, _refs, _features);
+    return std::make_unique<DocumentFeaturesStoreSaver>(*this);
 }
 
 }

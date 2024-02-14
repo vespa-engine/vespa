@@ -4,6 +4,7 @@ vespa_add_library(searchlib_util OBJECT
     bufferwriter.cpp
     comprbuffer.cpp
     comprfile.cpp
+    data_buffer_writer.cpp
     dirtraverse.cpp
     drainingbufferwriter.cpp
     file_with_header.cpp

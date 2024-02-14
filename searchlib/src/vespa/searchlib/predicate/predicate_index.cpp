@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicate_index.h"
+#include "document_features_store_saver.h"
 #include "predicate_hash.h"
+#include <vespa/searchlib/util/data_buffer_writer.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
@@ -127,7 +129,12 @@ PredicateIndex::~PredicateIndex() = default;
 
 void
 PredicateIndex::serialize(DataBuffer &buffer, SerializeStats& stats) const {
-    _features_store.serialize(buffer);
+    {
+        auto saver = _features_store.make_saver();
+        DataBufferWriter writer(buffer);
+        saver->save(writer);
+        writer.flush();
+    }
     stats._features_len = buffer.getDataLen();
     auto old_len = buffer.getDataLen();
     buffer.writeInt16(_arity);
