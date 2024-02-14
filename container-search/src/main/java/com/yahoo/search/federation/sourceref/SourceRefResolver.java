@@ -26,7 +26,7 @@ public class SourceRefResolver {
                                                   Properties sourceToProviderMap,
                                                   IndexFacts indexFacts) throws UnresolvedSearchChainException {
         try {
-            return new LinkedHashSet<>(List.of(searchChainResolver.resolve(sourceRef, sourceToProviderMap)));
+            return Set.of(searchChainResolver.resolve(sourceRef, sourceToProviderMap));
         } catch (UnresolvedSourceRefException e) {
             return resolveClustersWithDocument(sourceRef, sourceToProviderMap, indexFacts);
         }
