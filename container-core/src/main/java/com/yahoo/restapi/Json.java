@@ -1,5 +1,6 @@
 package com.yahoo.restapi;
 
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
@@ -17,6 +18,8 @@ import java.util.OptionalLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.yahoo.slime.Type.ARRAY;
 import static com.yahoo.slime.Type.STRING;
@@ -91,6 +94,8 @@ public class Json implements Iterable<Json> {
         forEachEntry(json -> list.add(json));
         return List.copyOf(list);
     }
+
+    public Stream<Json> stream() { return StreamSupport.stream(this.spliterator(), false); }
 
     public String toJson(boolean pretty) { return SlimeUtils.toJson(inspector, !pretty); }
 
@@ -170,5 +175,63 @@ public class Json implements Iterable<Json> {
                 "inspector=" + inspector +
                 ", path='" + path + '\'' +
                 '}';
+    }
+
+    /** Provides a fluent API for building a {@link Slime} instance. */
+    public static class Builder {
+        protected final Cursor cursor;
+
+        public static Builder.Array newArray() { return new Builder.Array(new Slime().setArray()); }
+        public static Builder.Object newObject() { return new Builder.Object(new Slime().setObject()); }
+
+        private Builder(Cursor cursor) { this.cursor = cursor; }
+
+        public static class Array extends Builder {
+            private Array(Cursor cursor) { super(cursor); }
+
+            public Builder.Array add(Builder.Array array) {
+                SlimeUtils.copyArray(array.cursor, cursor.addArray()); return this;
+            }
+            public Builder.Array add(Builder.Object object) {
+                SlimeUtils.copyObject(object.cursor, cursor.addObject()); return this;
+            }
+            public Builder.Array add(Json json) {
+                SlimeUtils.addValue(json.inspector, cursor.addObject()); return this;
+            }
+            /** Note: does not return {@code this}! */
+            public Builder.Array addArray() { return new Array(cursor.addArray()); }
+            /** Note: does not return {@code this}! */
+            public Builder.Object addObject() { return new Object(cursor.addObject()); }
+
+            public Builder.Array add(String value) { cursor.addString(value); return this; }
+            public Builder.Array add(long value) { cursor.addLong(value); return this; }
+            public Builder.Array add(double value) { cursor.addDouble(value); return this; }
+            public Builder.Array add(boolean value) { cursor.addBool(value); return this; }
+        }
+
+        public static class Object extends Builder {
+            private Object(Cursor cursor) { super(cursor); }
+
+            public Builder.Object set(String field, Builder.Array array) {
+                SlimeUtils.copyArray(array.cursor, cursor.setArray(field)); return this;
+            }
+            public Builder.Object set(String field, Builder.Object object) {
+                SlimeUtils.copyObject(object.cursor, cursor.setObject(field)); return this;
+            }
+            public Builder.Object set(String field, Json json) {
+                SlimeUtils.setObjectEntry(json.inspector, field, cursor); return this;
+            }
+            /** Note: does not return {@code this}! */
+            public Builder.Array setArray(String field) { return new Array(cursor.setArray(field)); }
+            /** Note: does not return {@code this}! */
+            public Builder.Object setObject(String field) { return new Object(cursor.setObject(field)); }
+
+            public Builder.Object set(String field, String value) { cursor.setString(field, value); return this; }
+            public Builder.Object set(String field, long value) { cursor.setLong(field, value); return this; }
+            public Builder.Object set(String field, double value) { cursor.setDouble(field, value); return this; }
+            public Builder.Object set(String field, boolean value) { cursor.setBool(field, value); return this; }
+        }
+
+        public Json build() { return Json.of(cursor); }
     }
 }
