@@ -186,12 +186,34 @@ struct Stats {
     }
 };
 
+double
+calc_median(const std::vector<double>& values)
+{
+    size_t middle = values.size() / 2;
+    if (values.size() % 2 == 0) {
+        return (values[middle - 1] + values[middle]) / 2;
+    } else {
+        return values[middle];
+    }
+}
+
+double
+calc_standard_deviation(const std::vector<double>& values, double average)
+{
+    double deviations = 0.0;
+    for (double val : values) {
+        double diff = val - average;
+        deviations += (diff * diff);
+    }
+    double variance = deviations / values.size();
+    return std::sqrt(variance);
+}
+
 class BenchmarkResults {
 private:
     std::vector<BenchmarkResult> _results;
 
-    template <typename F>
-    std::vector<double> extract_sorted_values(F func) const {
+    std::vector<double> extract_sorted_values(auto func) const {
         std::vector<double> values;
         for (const auto& res: _results) {
             values.push_back(func(res));
@@ -200,27 +222,7 @@ private:
         return values;
     }
 
-    double calc_median(const std::vector<double>& values) const {
-        size_t middle = values.size() / 2;
-        if (values.size() % 2 == 0) {
-            return (values[middle - 1] + values[middle]) / 2;
-        } else {
-            return values[middle];
-        }
-    }
-
-    double calc_standard_deviation(const std::vector<double>& values, double average) const {
-        double deviations = 0.0;
-        for (double val : values) {
-            double diff = val - average;
-            deviations += (diff * diff);
-        }
-        double variance = deviations / values.size();
-        return std::sqrt(variance);
-    }
-
-    template <typename F>
-    Stats calc_stats(F func) const {
+    Stats calc_stats(auto func) const {
         auto values = extract_sorted_values(func);
         double average = std::accumulate(values.begin(), values.end(), 0.0) / values.size();
         double median = calc_median(values);
