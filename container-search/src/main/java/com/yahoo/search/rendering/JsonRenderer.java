@@ -515,7 +515,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return null;
     }
 
-    private void setGenerator(JsonGenerator generator, FieldConsumerSettings settings) {
+    void setGenerator(JsonGenerator generator, FieldConsumerSettings settings) {
         this.generator = generator;
         this.fieldConsumer = generator == null ? null : createFieldConsumer(generator, settings);
     }

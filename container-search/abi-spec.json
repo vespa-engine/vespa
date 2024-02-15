@@ -7554,6 +7554,7 @@
       "public static final com.yahoo.component.ComponentId xmlRendererId",
       "public static final com.yahoo.component.ComponentId pageRendererId",
       "public static final com.yahoo.component.ComponentId jsonRendererId",
+      "public static final com.yahoo.component.ComponentId tokenRendererId",
       "public static final com.yahoo.component.ComponentId defaultRendererId"
     ]
   },
@@ -7626,6 +7627,25 @@
       "public static final java.lang.String DEFAULT_MIMETYPE",
       "public static final java.lang.String DEFAULT_ENCODING"
     ]
+  },
+  "com.yahoo.search.rendering.TokenRenderer" : {
+    "superClass" : "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.util.concurrent.Executor)",
+      "public void beginResponse(java.io.OutputStream)",
+      "public void beginList(com.yahoo.processing.response.DataList)",
+      "public void data(com.yahoo.processing.response.Data)",
+      "public void endList(com.yahoo.processing.response.DataList)",
+      "public void endResponse()",
+      "public java.lang.String getEncoding()",
+      "public java.lang.String getMimeType()"
+    ],
+    "fields" : [ ]
   },
   "com.yahoo.search.rendering.XmlRenderer$RenderingVisitor" : {
     "superClass" : "com.yahoo.yolean.trace.TraceVisitor",
@@ -9062,6 +9082,223 @@
       "public java.util.List getSubSpans()",
       "public int getFrom()",
       "public int getTo()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.LLMQuerySearcher" : {
+    "superClass" : "ai.vespa.search.llm.LLMSearcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.LLMSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [ ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.LlmInterfaceConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.search.llm.LlmInterfaceConfig)",
+      "public ai.vespa.search.llm.LlmInterfaceConfig$Builder apiKey(java.lang.String)",
+      "public ai.vespa.search.llm.LlmInterfaceConfig$Builder endpoint(java.lang.String)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public ai.vespa.search.llm.LlmInterfaceConfig build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.LlmInterfaceConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void getConfig(ai.vespa.search.llm.LlmInterfaceConfig$Builder)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.LlmInterfaceConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(ai.vespa.search.llm.LlmInterfaceConfig$Builder)",
+      "public java.lang.String apiKey()",
+      "public java.lang.String endpoint()"
+    ],
+    "fields" : [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "ai.vespa.search.llm.LlmSearcherConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.search.llm.LlmSearcherConfig)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder propertyPrefix(java.lang.String)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder stream(boolean)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder providerId(java.lang.String)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public ai.vespa.search.llm.LlmSearcherConfig build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.LlmSearcherConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void getConfig(ai.vespa.search.llm.LlmSearcherConfig$Builder)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.LlmSearcherConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(ai.vespa.search.llm.LlmSearcherConfig$Builder)",
+      "public java.lang.String propertyPrefix()",
+      "public boolean stream()",
+      "public java.lang.String providerId()"
+    ],
+    "fields" : [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "ai.vespa.search.llm.RAGSearcher" : {
+    "superClass" : "ai.vespa.search.llm.LLMSearcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.search.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "protected ai.vespa.llm.completion.Prompt buildPrompt(com.yahoo.search.Query, com.yahoo.search.Result)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.TokenStream$Token" : {
+    "superClass" : "com.yahoo.search.result.Hit",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.TokenStream" : {
+    "superClass" : "com.yahoo.search.result.HitGroup",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public static ai.vespa.search.llm.TokenStream create(java.lang.String)",
+      "public static com.yahoo.search.result.HitGroup createAsync(java.lang.String)",
+      "public void add(java.lang.String)",
+      "public void error(java.lang.String, com.yahoo.search.result.ErrorMessage)",
+      "public void markComplete()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.interfaces.LLMInterface" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.search.llm.LlmInterfaceConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
+      "public abstract java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public abstract java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)",
+      "protected java.lang.String getApiKey(ai.vespa.llm.InferenceParameters)",
+      "protected java.lang.String getEndpoint()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.search.llm.interfaces.OpenAIInterface" : {
+    "superClass" : "ai.vespa.search.llm.interfaces.LLMInterface",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.search.llm.LlmInterfaceConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   }

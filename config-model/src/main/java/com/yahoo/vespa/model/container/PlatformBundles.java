@@ -154,7 +154,9 @@ public class PlatformBundles {
             "com.yahoo.search.searchers.CacheControlSearcher",
             "com.yahoo.search.searchers.RateLimitingSearcher",
             "com.yahoo.vespa.streamingvisitors.MetricsSearcher",
-            "com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher"
+            "com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher",
+            "ai.vespa.search.llm.RAGSearcher",
+            "ai.vespa.search.llm.interfaces.OpenAIInterface"
     );
 
 }

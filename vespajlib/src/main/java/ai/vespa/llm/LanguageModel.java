@@ -17,8 +17,12 @@ import java.util.function.Consumer;
 @Beta
 public interface LanguageModel {
 
-    List<Completion> complete(Prompt prompt);
+    // Revert this, options are optional, prompt is not.
 
-    CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, Consumer<Completion> action);
+    List<Completion> complete(Prompt prompt, InferenceParameters options);
+
+    CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
+                                                             InferenceParameters options,
+                                                             Consumer<Completion> consumer);
 
 }

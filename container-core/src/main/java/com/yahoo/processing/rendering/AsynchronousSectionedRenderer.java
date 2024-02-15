@@ -220,11 +220,27 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
         return startRender(stream, response, execution, request);
     }
 
+    public AsynchronousSectionedRenderer<RESPONSE> setStream(OutputStream stream) {
+        this.stream = stream;
+        return this;
+    }
+
+    public AsynchronousSectionedRenderer<RESPONSE> setResponse(RESPONSE response) {
+        this.response = response;
+        return this;
+    }
+
+    public AsynchronousSectionedRenderer<RESPONSE> setExecution(Execution execution) {
+        this.execution = execution;
+        return this;
+    }
+
     private CompletableFuture<Boolean> startRender(OutputStream stream, RESPONSE response,
                                                   Execution execution, Request request) {
-        this.response = response;
-        this.stream = stream;
-        this.execution = execution;
+//        this.stream = stream;
+        setStream(stream).setResponse(response).setExecution(execution);
+//        this.response = response;
+//        this.execution = execution;
         DataListListener parentOfTopLevelListener = new DataListListener(new ParentOfTopLevel(request, response.data()), null);
         dataListListenerStack.addFirst(parentOfTopLevelListener);
         success = new CompletableFuture<>();

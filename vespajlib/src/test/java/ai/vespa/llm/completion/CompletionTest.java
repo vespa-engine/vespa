@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.completion;
 
+import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.test.MockLanguageModel;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +28,9 @@ public class CompletionTest {
 
         String input = "Complete this: ";
         StringPrompt prompt = StringPrompt.from(input);
+        InferenceParameters options = new InferenceParameters(s -> "");
         for (int i = 0; i < 10; i++) {
-            var completion = llm.complete(prompt).get(0);
+            var completion = llm.complete(prompt, options).get(0);
             prompt = prompt.append(completion);
             if (completion.finishReason() == Completion.FinishReason.stop) break;
         }
