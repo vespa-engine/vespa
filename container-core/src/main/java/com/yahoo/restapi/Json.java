@@ -18,6 +18,8 @@ import java.util.OptionalLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.yahoo.slime.Type.ARRAY;
 import static com.yahoo.slime.Type.STRING;
@@ -92,6 +94,8 @@ public class Json implements Iterable<Json> {
         forEachEntry(json -> list.add(json));
         return List.copyOf(list);
     }
+
+    public Stream<Json> stream() { return StreamSupport.stream(this.spliterator(), false); }
 
     public String toJson(boolean pretty) { return SlimeUtils.toJson(inspector, !pretty); }
 
