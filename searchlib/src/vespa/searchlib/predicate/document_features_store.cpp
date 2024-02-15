@@ -274,7 +274,7 @@ DocumentFeaturesStore::getMemoryUsage() const {
     return usage;
 }
 
-std::unique_ptr<DocumentFeaturesStoreSaver>
+std::unique_ptr<ISaver>
 DocumentFeaturesStore::make_saver() const
 {
     return std::make_unique<DocumentFeaturesStoreSaver>(*this);

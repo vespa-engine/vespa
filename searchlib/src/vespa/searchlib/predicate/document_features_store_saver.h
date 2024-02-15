@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_saver.h"
 #include "document_features_store.h"
 
 namespace search { class BufferWriter; }
@@ -12,7 +13,7 @@ namespace search::predicate {
  * Class used to save a DocumentFeaturesStore instance, streaming the
  * serialized data via a BufferWriter.
  */
-class DocumentFeaturesStoreSaver {
+class DocumentFeaturesStoreSaver : public ISaver {
     using RefsVector = DocumentFeaturesStore::RefsVector;
     using FeaturesStore = DocumentFeaturesStore::FeaturesStore;
     using RangesStore = DocumentFeaturesStore::RangesStore;
@@ -26,8 +27,8 @@ class DocumentFeaturesStoreSaver {
 
 public:
     DocumentFeaturesStoreSaver(const DocumentFeaturesStore& store);
-    ~DocumentFeaturesStoreSaver();
-    void save(BufferWriter& writer) const;
+    ~DocumentFeaturesStoreSaver() override;
+    void save(BufferWriter& writer) const override;
 };
 
 }

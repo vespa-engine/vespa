@@ -12,7 +12,7 @@ namespace search { class BufferWriter; }
 
 namespace search::predicate {
 
-template <typename, typename, typename> class SimpleIndexSaver;
+class ISaver;
 
 template <typename Key = uint64_t, typename DocId = uint32_t>
 struct SimpleIndexDeserializeObserver {
@@ -218,7 +218,7 @@ public:
 
     }
 
-    std::unique_ptr<SimpleIndexSaver<Posting, Key, DocId>> make_saver(std::unique_ptr<PostingSaver<Posting>> subsaver) const;
+    std::unique_ptr<ISaver> make_saver(std::unique_ptr<PostingSaver<Posting>> subsaver) const;
 };
 
 template<typename Posting, typename Key, typename DocId>

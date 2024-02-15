@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_saver.h"
 #include "simple_index.h"
 
 namespace search::predicate {
@@ -12,7 +13,7 @@ namespace search::predicate {
  */
 template <typename Posting,
           typename Key = uint64_t, typename DocId = uint32_t>
-class SimpleIndexSaver
+class SimpleIndexSaver : public ISaver
 {
     using Source = SimpleIndex<Posting,Key,DocId>;
     using Dictionary = Source::Dictionary;
@@ -23,8 +24,8 @@ class SimpleIndexSaver
     std::unique_ptr<PostingSaver<Posting>> _subsaver;
 public:
     SimpleIndexSaver(const Dictionary& dictionary, const BTreeStore& btree_posting_lists, std::unique_ptr<PostingSaver<Posting>> _subsaver);
-    ~SimpleIndexSaver();
-    void save(BufferWriter& writer) const;
+    ~SimpleIndexSaver() override;
+    void save(BufferWriter& writer) const override;
 };
 
 }
