@@ -1,8 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_features_store_saver.h"
-#include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/vespalib/objects/nbo.h>
+#include "nbo_write.h"
 
 using vespalib::datastore::EntryRef;
 using search::BufferWriter;
@@ -21,13 +20,6 @@ DocumentFeaturesStoreSaver::DocumentFeaturesStoreSaver(const DocumentFeaturesSto
 DocumentFeaturesStoreSaver::~DocumentFeaturesStoreSaver() = default;
 
 namespace {
-
-template <typename T>
-void nbo_write(BufferWriter& writer, T value)
-{
-    auto value_nbo = vespalib::nbo::n2h(value);
-    writer.write(&value_nbo, sizeof(value_nbo));
-}
 
 template <typename RefsVector, typename RangesStore>
 void

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "simple_index.h"
+#include "simple_index_saver.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace search::predicate {
@@ -65,33 +66,6 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
     _btree_posting_lists.clearBuilder();
     _btree_posting_lists.freeze();
     _btree_posting_lists.reclaim_all_memory();
-}
-
-template <typename Posting, typename Key, typename DocId>
-void
-SimpleIndex<Posting, Key, DocId>::serialize(vespalib::DataBuffer &buffer, const PostingSerializer<Posting> &serializer, SerializeStats& stats) const {
-    assert(sizeof(Key) <= sizeof(uint64_t));
-    assert(sizeof(DocId) <= sizeof(uint32_t));
-    stats = SerializeStats();
-    stats._dictionary_size = _dictionary.size();
-    auto old_size = buffer.getDataLen();
-    buffer.writeInt32(_dictionary.size());
-    for (auto it = _dictionary.begin(); it.valid(); ++it) {
-        vespalib::datastore::EntryRef ref = it.getData();
-        buffer.writeInt32(_btree_posting_lists.size(ref));  // 0 if !valid()
-        auto posting_it = _btree_posting_lists.begin(ref);
-        if (!posting_it.valid())
-            continue;
-        if (posting_it.size() > 8u) {
-            ++stats._btree_count;
-        }
-        buffer.writeInt64(it.getKey());  // Key
-        for (; posting_it.valid(); ++posting_it) {
-            buffer.writeInt32(posting_it.getKey());  // DocId
-            serializer.serialize(posting_it.getData(), buffer);
-        }
-    }
-    stats._bytes = buffer.getDataLen() - old_size;
 }
 
 template <typename Posting, typename Key, typename DocId>
@@ -325,5 +299,12 @@ SimpleIndex<Posting, Key, DocId>::getMemoryUsage() const {
     }
     return combined;
 };
+
+template <typename Posting, typename Key, typename DocId>
+std::unique_ptr<SimpleIndexSaver<Posting, Key, DocId>>
+SimpleIndex<Posting, Key, DocId>::make_saver(std::unique_ptr<PostingSaver<Posting>> subsaver) const
+{
+    return std::make_unique<SimpleIndexSaver<Posting, Key, DocId>>(_dictionary, _btree_posting_lists, std::move(subsaver));
+}
 
 }
