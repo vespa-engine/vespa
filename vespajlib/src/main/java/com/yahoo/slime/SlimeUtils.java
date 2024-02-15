@@ -54,7 +54,7 @@ public class SlimeUtils {
         from.traverse((ArrayTraverser) (i, inspector) -> addValue(inspector, to));
     }
 
-    private static void addValue(Inspector from, Cursor to) {
+    public static void addValue(Inspector from, Cursor to) {
         switch (from.type()) {
             case NIX -> to.addNix();
             case BOOL -> to.addBool(from.asBool());

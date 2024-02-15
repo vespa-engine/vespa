@@ -92,4 +92,35 @@ class JsonTest {
         assertEquals("bar", json.f("string").asString("foo"));
         assertEquals("bar", json.f("string").asOptionalString().orElse("foo"));
     }
+
+    @Test
+    void builds_expected_json() {
+        var expected =
+                """
+                {
+                  "string": "bar",
+                  "integer": 42,
+                  "floaty": 8.25,
+                  "bool": true,
+                  "array": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "quux": {
+                    "corge": "grault"
+                  }
+                }
+                """;
+        var json = Json.Builder.newObject()
+                .set("string", "bar")
+                .set("integer", 42)
+                .set("floaty", 8.25)
+                .set("bool", true)
+                .set("array", Json.Builder.newArray().add(1).add(2).add(3))
+                .set("quux", Json.Builder.newObject().set("corge", "grault"))
+                .build()
+                .toJson(true);
+        assertEquals(expected, json);
+    }
 }
