@@ -127,11 +127,12 @@ private:
     private:
         vespalib::string               _rankProfile;
         std::shared_ptr<const RankManager::Snapshot>  _rankManagerSnapshot;
-        const search::fef::RankSetup * _rankSetup;
+        search::feature_t              _rank_score_drop_limit;
+        bool                           _hasRanking;
+        bool                           _hasSummaryFeatures;
+        bool                           _dumpFeatures;
         search::fef::Properties        _queryProperties;
         search::fef::Properties        _featureOverrides;
-        bool                           _hasRanking;
-        bool                           _dumpFeatures;
         RankProcessor::UP              _rankProcessor;
         RankProcessor::UP              _dumpProcessor;
 
@@ -147,7 +148,7 @@ private:
     public:
         RankController();
         ~RankController();
-        bool valid() const { return _rankProcessor.get() != nullptr; }
+        bool valid() const { return bool(_rankProcessor); }
         void setRankProfile(const vespalib::string &rankProfile) { _rankProfile = rankProfile; }
         const vespalib::string &getRankProfile() const { return _rankProfile; }
         void setRankManagerSnapshot(const std::shared_ptr<const RankManager::Snapshot>& snapshot) { _rankManagerSnapshot = snapshot; }
@@ -156,7 +157,7 @@ private:
         RankProcessor * getRankProcessor() { return _rankProcessor.get(); }
         void setDumpFeatures(bool dumpFeatures) { _dumpFeatures = dumpFeatures; }
         bool getDumpFeatures() const { return _dumpFeatures; }
-        const search::fef::RankSetup * getRankSetup() const { return _rankSetup; }
+        search::feature_t rank_score_drop_limit() const noexcept { return _rank_score_drop_limit; }
 
         /**
          * Setup rank processors used for ranking and dumping.
