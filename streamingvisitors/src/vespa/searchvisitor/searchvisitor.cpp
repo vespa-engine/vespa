@@ -659,11 +659,12 @@ SearchVisitor::RankController::processAccessedAttributes(const QueryEnvironment 
 SearchVisitor::RankController::RankController()
     : _rankProfile("default"),
       _rankManagerSnapshot(nullptr),
-      _rankSetup(nullptr),
+      _rank_score_drop_limit(std::numeric_limits<search::feature_t>::min()),
+      _hasRanking(false),
+      _hasSummaryFeatures(false),
+      _dumpFeatures(false),
       _queryProperties(),
       _featureOverrides(),
-      _hasRanking(false),
-      _dumpFeatures(false),
       _rankProcessor(),
       _dumpProcessor()
 { }
@@ -677,7 +678,9 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
                                                    const search::IAttributeManager & attrMan,
                                                    std::vector<AttrInfo> & attributeFields)
 {
-    _rankSetup = &_rankManagerSnapshot->getRankSetup(_rankProfile);
+    using RankScoreDropLimit = search::fef::indexproperties::hitcollector::RankScoreDropLimit;
+    const search::fef::RankSetup & rankSetup = _rankManagerSnapshot->getRankSetup(_rankProfile);
+    _rank_score_drop_limit = RankScoreDropLimit::lookup(_queryProperties, rankSetup.getRankScoreDropLimit());
     _rankProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, _featureOverrides, &attrMan);
     _rankProcessor->initForRanking(wantedHitCount, use_sort_blob);
     // register attribute vectors needed for ranking
@@ -692,6 +695,7 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
     }
 
     _hasRanking = true;
+    _hasSummaryFeatures = ! rankSetup.getSummaryFeatures().empty();
 }
 
 
@@ -723,7 +727,7 @@ bool
 SearchVisitor::RankController::keepMatchedDocument()
 {
     // also make sure that NaN scores are added
-    return (!(_rankProcessor->getRankScore() <= _rankSetup->getRankScoreDropLimit()));
+    return (!(_rankProcessor->getRankScore() <= _rank_score_drop_limit));
 }
 
 void
@@ -756,7 +760,7 @@ SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
 
 vespalib::FeatureSet::SP
 SearchVisitor::RankController::getFeatureSet(search::DocumentIdT docId) {
-    if (_hasRanking && !_rankSetup->getSummaryFeatures().empty()) {
+    if (_hasRanking && _hasSummaryFeatures) {
         return _rankProcessor->calculateFeatureSet(docId);
     }
     return {};
@@ -770,7 +774,7 @@ SearchVisitor::RankController::onCompletedVisiting(vsm::GetDocsumsStateCallback 
         _rankProcessor->fillSearchResult(searchResult);
 
         // calculate summary features and set them on the callback object
-        if (!_rankSetup->getSummaryFeatures().empty()) {
+        if (_hasSummaryFeatures) {
             LOG(debug, "Calculate summary features");
             docsumsStateCallback.setSummaryFeatures(_rankProcessor->calculateFeatureSet());
         }
@@ -1099,7 +1103,7 @@ SearchVisitor::handleDocument(StorageDocument::SP documentSP)
         } else {
             _hitsRejectedCount++;
             LOG(debug, "Do not keep document with id '%s' because rank score (%f) <= rank score drop limit (%f)",
-                documentId.c_str(), rp.getRankScore(), _rankController.getRankSetup()->getRankScoreDropLimit());
+                documentId.c_str(), rp.getRankScore(), _rankController.rank_score_drop_limit());
         }
     } else {
         LOG(debug, "Did not match document with id '%s'", document.docDoc().getId().getScheme().toString().c_str());
