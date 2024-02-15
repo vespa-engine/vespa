@@ -156,7 +156,7 @@ Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.4-1
 Requires: vespa-libzstd >= 1.5.4-1
 %if 0%{?el8}
-Requires: vespa-openblas >= 0.3.25
+Requires: vespa-openblas >= 0.3.26
 %else
 Requires: openblas-serial
 %endif
@@ -196,7 +196,7 @@ Requires: vespa-protobuf = 3.21.12
 Requires: protobuf
 Requires: llvm-libs
 %endif
-Requires: vespa-onnxruntime = 1.16.3
+Requires: vespa-onnxruntime = 1.17.0
 
 %description libs
 
