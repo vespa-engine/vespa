@@ -33,8 +33,14 @@ public class ConversionContext {
         this.destination = destination;
         this.registry = registry;
         this.embedders = embedders;
-        this.language = context.containsKey("language") ? Language.fromLanguageTag(context.get("language"))
-                                                        : Language.UNKNOWN;
+
+        // If this was set in the request it may not be in this properties instance, which may be just the query profile
+        // properties, which are below the queryProperties in the chain ...
+        Object language = context.get("language"); // set in the request
+        if (language == null)
+            language = properties.get("language", context);
+        this.language = language != null ? Language.fromLanguageTag(language.toString()) : Language.UNKNOWN;
+
         this.contextValues = context;
         this.properties = properties;
     }
