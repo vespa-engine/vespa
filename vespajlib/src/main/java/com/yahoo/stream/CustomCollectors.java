@@ -3,6 +3,7 @@ package com.yahoo.stream;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -70,6 +71,22 @@ public class CustomCollectors {
         return Collectors.toMap(keyMapper, valueMapper, throwingMerger(), mapSupplier);
     }
 
+    /**
+     * Returns a {@code Collector} that returns a singleton, or throws an {@code IllegalArgumentException} if there are more than one item.
+     *
+     * @return A collector returning an optional element
+     * @param <T> Type of the input elements.
+     * @throws IllegalArgumentException if there are more than one element
+     */
+    public static <T> Collector<T, ?, Optional<T>> singleton() {
+        return Collectors.collectingAndThen(
+                Collectors.toList(),
+                list -> {
+                    if (list.size() > 1) throw new IllegalArgumentException("More than one element");
+                    return list.stream().findAny();
+                }
+        );
+    }
 
     private static <T> BinaryOperator<T> throwingMerger() {
         return (u,v) -> { throw new DuplicateKeyException(u); };

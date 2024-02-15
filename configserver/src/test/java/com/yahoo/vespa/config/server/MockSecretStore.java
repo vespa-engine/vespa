@@ -19,7 +19,9 @@ public class MockSecretStore implements SecretStore {
 
     @Override
     public String getSecret(String key, int version) {
-        return secrets.get(key).get(version);
+        if(secrets.containsKey(key))
+            return secrets.get(key).get(version);
+        throw new SecretNotFoundException("Key not found: " + key);
     }
 
     public void put(String key, int version, String value) {

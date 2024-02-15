@@ -7,12 +7,14 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static com.yahoo.stream.CustomCollectors.toCustomMap;
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.function.Function.identity;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 /**
@@ -49,6 +51,21 @@ public class CustomCollectorsTest {
         } catch (DuplicateKeyException e) {
 
         }
+    }
+
+    @Test
+    public void singleton_collector_throws_when_multiple() {
+        List<String> items = List.of("foo1", "bar", "foo2");
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> items.stream().filter(s -> s.startsWith("foo")).collect(CustomCollectors.singleton()));
+        assertEquals("More than one element", exception.getMessage());
+    }
+
+    @Test
+    public void collector_returns_singleton() {
+        List<String> items = List.of("foo1", "bar", "foo2");
+        Optional<String> bar = items.stream().filter(s -> s.startsWith("bar")).collect(CustomCollectors.singleton());
+        assertEquals(Optional.of("bar"), bar);
     }
 
     private static List<String> numberList() {

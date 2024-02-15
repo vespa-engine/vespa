@@ -13,6 +13,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
@@ -41,6 +42,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mock;
 import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.time.Clock;
@@ -211,6 +213,7 @@ public class TenantRepositoryTest {
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
         private static final FlagSource flagSource = new InMemoryFlagSource();
+        private static final SecretStore mockSecretStore = new MockSecretStore();
 
         public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig) {
             super(new HostRegistry(),
@@ -221,7 +224,7 @@ public class TenantRepositoryTest {
                   new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)),
                   flagSource,
                   new InThreadExecutorService(),
-                  new MockSecretStore(),
+                  mockSecretStore,
                   HostProvisionerProvider.empty(),
                   configserverConfig,
                   new ConfigServerDB(configserverConfig),
@@ -232,7 +235,8 @@ public class TenantRepositoryTest {
                   new TenantApplicationsTest.MockConfigActivationListener(),
                   new MockTenantListener(),
                   new ZookeeperServerConfig.Builder().myid(0).build(),
-                  OnnxModelCost.disabled());
+                  OnnxModelCost.disabled(),
+                  List.of(new DefaultEndpointCertificateSecretStore(mockSecretStore)));
         }
 
         @Override

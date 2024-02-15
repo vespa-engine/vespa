@@ -2,14 +2,17 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
+import com.yahoo.config.model.api.EndpointCertificateSecretStore;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.stream.CustomCollectors;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,7 +22,13 @@ import java.util.logging.Logger;
  *
  * @author andreer
  */
-public record EndpointCertificateRetriever(SecretStore secretStore) {
+public class EndpointCertificateRetriever {
+
+    private final List<EndpointCertificateSecretStore> secretStores;
+
+    public EndpointCertificateRetriever(List<EndpointCertificateSecretStore> secretStores) {
+        this.secretStores = List.copyOf(secretStores);
+    }
 
     private static final Logger log = Logger.getLogger(EndpointCertificateRetriever.class.getName());
 
@@ -29,12 +38,17 @@ public record EndpointCertificateRetriever(SecretStore secretStore) {
 
     private EndpointCertificateSecrets readFromSecretStore(EndpointCertificateMetadata endpointCertificateMetadata) {
         try {
-            String cert = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
-            String key = secretStore.getSecret(endpointCertificateMetadata.keyName(), endpointCertificateMetadata.version());
+            EndpointCertificateSecrets endpointCertificateSecrets = secretStores.stream()
+                    .filter(store -> store.supports(endpointCertificateMetadata.issuer()))
+                    .collect(CustomCollectors.singleton())
+                    .orElseThrow(() -> new RuntimeException("No provider of secrets for issuer " + endpointCertificateMetadata.issuer()))
+                    .getSecret(endpointCertificateMetadata);
 
-            verifyKeyMatchesCertificate(endpointCertificateMetadata, cert, key);
+            if (endpointCertificateSecrets.isMissing())
+                return endpointCertificateSecrets;
 
-            return new EndpointCertificateSecrets(cert, key, endpointCertificateMetadata.version());
+            verifyKeyMatchesCertificate(endpointCertificateMetadata, endpointCertificateSecrets);
+            return endpointCertificateSecrets;
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Exception thrown during certificate retrieval", e);
             // Assume not ready yet
@@ -42,10 +56,10 @@ public record EndpointCertificateRetriever(SecretStore secretStore) {
         }
     }
 
-    private void verifyKeyMatchesCertificate(EndpointCertificateMetadata endpointCertificateMetadata, String cert, String key) {
-        X509Certificate x509Certificate = X509CertificateUtils.fromPem(cert);
+    private void verifyKeyMatchesCertificate(EndpointCertificateMetadata endpointCertificateMetadata, EndpointCertificateSecrets endpointCertificateSecrets) {
+        X509Certificate x509Certificate = X509CertificateUtils.fromPem(endpointCertificateSecrets.certificate());
 
-        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(key);
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(endpointCertificateSecrets.key());
         PublicKey publicKey = x509Certificate.getPublicKey();
 
         if(!X509CertificateUtils.privateKeyMatchesPublicKey(privateKey, publicKey)) {

@@ -1135,6 +1135,24 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.EndpointCertificateMetadata$Provider" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider[] values()",
+      "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider digicert",
+      "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider globalsign",
+      "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider zerossl"
+    ]
+  },
   "com.yahoo.config.model.api.EndpointCertificateMetadata" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -1142,13 +1160,30 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, java.lang.String, int)",
+      "public void <init>(java.lang.String, java.lang.String, int, com.yahoo.config.model.api.EndpointCertificateMetadata$Provider)",
       "public java.lang.String keyName()",
       "public java.lang.String certName()",
       "public int version()",
+      "public com.yahoo.config.model.api.EndpointCertificateMetadata$Provider issuer()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.EndpointCertificateSecretStore" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public final com.yahoo.config.model.api.EndpointCertificateSecrets getSecret(com.yahoo.config.model.api.EndpointCertificateMetadata)",
+      "public abstract java.util.Optional getPrivateKey(com.yahoo.config.model.api.EndpointCertificateMetadata)",
+      "public abstract java.util.Optional getCertificate(com.yahoo.config.model.api.EndpointCertificateMetadata)",
+      "public abstract boolean supports(com.yahoo.config.model.api.EndpointCertificateMetadata$Provider)"
     ],
     "fields" : [ ]
   },
