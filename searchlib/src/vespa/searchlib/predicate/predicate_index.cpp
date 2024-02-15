@@ -3,6 +3,7 @@
 #include "predicate_index.h"
 #include "document_features_store_saver.h"
 #include "predicate_hash.h"
+#include "predicate_index_saver.h"
 #include "simple_index_saver.h"
 #include <vespa/searchlib/util/data_buffer_writer.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
@@ -127,27 +128,14 @@ PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
 
 PredicateIndex::~PredicateIndex() = default;
 
-void
-PredicateIndex::serialize(DataBuffer &buffer) const {
-    {
-        auto saver = _features_store.make_saver();
-        DataBufferWriter writer(buffer);
-        saver->save(writer);
-        writer.flush();
-    }
-    buffer.writeInt16(_arity);
-    buffer.writeInt32(_zero_constraint_docs.size());
-    for (auto it = _zero_constraint_docs.begin(); it.valid(); ++it) {
-        buffer.writeInt32(it.getKey());
-    }
-    {
-        DataBufferWriter writer(buffer);
-        auto interval_saver = _interval_index.make_saver(std::make_unique<IntervalSaver<Interval>>(_interval_store));
-        interval_saver->save(writer);
-        auto bounds_saver = _bounds_index.make_saver(std::make_unique<IntervalSaver<IntervalWithBounds>>(_interval_store));
-        bounds_saver->save(writer);
-        writer.flush();
-    }
+std::unique_ptr<ISaver>
+PredicateIndex::make_saver() const
+{
+    return std::make_unique<PredicateIndexSaver>(_features_store.make_saver(),
+                                                 _arity,
+                                                 _zero_constraint_docs.getFrozenView(),
+                                                 _interval_index.make_saver(std::make_unique<IntervalSaver<Interval>>(_interval_store)),
+                                                 _bounds_index.make_saver(std::make_unique<IntervalSaver<IntervalWithBounds>>(_interval_store)));
 }
 
 void

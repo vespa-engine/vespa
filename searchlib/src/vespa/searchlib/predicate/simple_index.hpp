@@ -301,7 +301,7 @@ SimpleIndex<Posting, Key, DocId>::getMemoryUsage() const {
 };
 
 template <typename Posting, typename Key, typename DocId>
-std::unique_ptr<SimpleIndexSaver<Posting, Key, DocId>>
+std::unique_ptr<ISaver>
 SimpleIndex<Posting, Key, DocId>::make_saver(std::unique_ptr<PostingSaver<Posting>> subsaver) const
 {
     return std::make_unique<SimpleIndexSaver<Posting, Key, DocId>>(_dictionary, _btree_posting_lists, std::move(subsaver));

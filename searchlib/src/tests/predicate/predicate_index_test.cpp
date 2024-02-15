@@ -4,6 +4,7 @@
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/simple_index.hpp>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
+#include <vespa/searchlib/util/data_buffer_writer.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -31,6 +32,15 @@ vespalib::GenerationHandler generation_handler;
 vespalib::GenerationHolder generation_holder;
 DummyDocIdLimitProvider dummy_provider;
 SimpleIndexConfig simple_index_config;
+
+void
+save_predicate_index(PredicateIndex& index, vespalib::DataBuffer& buffer)
+{
+    index.commit();
+    DataBufferWriter writer(buffer);
+    index.make_saver()->save(writer);
+    writer.flush();
+}
 
 TEST("require that PredicateIndex can index empty documents") {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
@@ -292,7 +302,7 @@ TEST("require that PredicateIndex can be (de)serialized") {
     index.commit();
 
     vespalib::DataBuffer buffer;
-    index.serialize(buffer);
+    save_predicate_index(index, buffer);
     uint32_t doc_id_limit;
     DocIdLimitFinder finder(doc_id_limit);
     PredicateIndex index2(generation_holder, dummy_provider, simple_index_config,
@@ -336,7 +346,7 @@ TEST("require that DocumentFeaturesStore is restored on deserialization") {
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
     vespalib::DataBuffer buffer;
-    index.serialize(buffer);
+    save_predicate_index(index, buffer);
     uint32_t doc_id_limit;
     DocIdLimitFinder finder(doc_id_limit);
     PredicateIndex index2(generation_holder, dummy_provider, simple_index_config,

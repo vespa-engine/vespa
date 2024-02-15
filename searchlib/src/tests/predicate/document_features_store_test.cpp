@@ -26,6 +26,7 @@ const uint32_t doc_id = 42;
 void
 save_document_features_store(DocumentFeaturesStore& store, vespalib::DataBuffer& buffer)
 {
+    store.commit();
     DataBufferWriter writer(buffer);
     store.make_saver()->save(writer);
     writer.flush();

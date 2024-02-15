@@ -6,7 +6,9 @@
 #include "load_utils.h"
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
+#include <vespa/searchlib/predicate/i_saver.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/util/data_buffer_writer.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -140,9 +142,14 @@ PredicateAttribute::before_inc_generation(generation_t current_gen)
 
 void
 PredicateAttribute::onSave(IAttributeSaveTarget &saveTarget) {
-    LOG(info, "Saving predicate attribute version %d", getVersion());
+    LOG(info, "Saving predicate attribute version %d name '%s'", getVersion(), getName().c_str());
     IAttributeSaveTarget::Buffer buffer(saveTarget.datWriter().allocBuf(4_Ki));
-    _index->serialize(*buffer);
+    {
+        DataBufferWriter writer(*buffer);
+        auto saver = _index->make_saver();
+        saver->save(writer);
+        writer.flush();
+    }
     uint32_t  highest_doc_id = static_cast<uint32_t>(_min_feature.size() - 1);
     buffer->writeInt32(highest_doc_id);
     for (size_t i = 1; i <= highest_doc_id; ++i) {

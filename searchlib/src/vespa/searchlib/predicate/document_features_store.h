@@ -15,6 +15,7 @@
 namespace search::predicate {
 
 class DocumentFeaturesStoreSaver;
+class ISaver;
 
 /**
  * Class used to track the {featureId, docId} pairs that are inserted
@@ -95,7 +96,7 @@ public:
     void assign_generation(generation_t current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
 
-    std::unique_ptr<DocumentFeaturesStoreSaver> make_saver() const;
+    std::unique_ptr<ISaver> make_saver() const;
 };
 
 }
