@@ -165,10 +165,20 @@ TEST("test Or propagates updated histestimate") {
     bp->addChild(ap(MyLeafSpec(800).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->setDocIdLimit(5000);
-    // sort OR as non-strict to get expected order. With strict OR,
-    // the order would be irrelevant since we use the relative
-    // estimate as strict_cost for leafs.
+    // NOTE: use non-strict OR ordering since strict OR ordering is non-deterministic
     optimize(bp, false);
+    //--- execute info when non-strict:
+    bp->fetchPostings(ExecuteInfo::FALSE);
+    EXPECT_EQUAL(4u, bp->childCnt());
+    for (uint32_t i = 0; i < bp->childCnt(); i++) {
+        const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
+        EXPECT_FALSE(child.is_strict);
+    }
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).hit_rate);
+    EXPECT_APPROX(0.5, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate, 1e-6);
+    EXPECT_APPROX(0.5*3.0/5.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).hit_rate, 1e-6);
+    EXPECT_APPROX(0.5*3.0*42.0/(5.0*50.0), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).hit_rate, 1e-6);
+    //--- execute info when strict:
     bp->fetchPostings(ExecuteInfo::TRUE);
     EXPECT_EQUAL(4u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
@@ -176,9 +186,9 @@ TEST("test Or propagates updated histestimate") {
         EXPECT_TRUE(child.is_strict);
     }
     EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).hit_rate);
-    EXPECT_APPROX(0.5, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate, 1e-6);
-    EXPECT_APPROX(0.5*3.0/5.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).hit_rate, 1e-6);
-    EXPECT_APPROX(0.5*3.0*42.0/(5.0*50.0), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).hit_rate, 1e-6);
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate);
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).hit_rate);
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).hit_rate);
 }
 
 TEST("test And Blueprint") {

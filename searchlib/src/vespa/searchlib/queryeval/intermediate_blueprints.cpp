@@ -300,14 +300,10 @@ AndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
     return create_and_filter(get_children(), strict, constraint);
 }
 
-double
-AndBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate) const {
-    return hit_rate * child.estimate();
-}
-
-double
-OrBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate) const {
-    return hit_rate * (1.0 - child.estimate());
+FlowCalc
+AndBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return flow_calc<AndFlow>(strict, flow);
 }
 
 //-----------------------------------------------------------------------------
@@ -402,6 +398,12 @@ SearchIterator::UP
 OrBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
     return create_or_filter(get_children(), strict, constraint);
+}
+
+FlowCalc
+OrBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return flow_calc<OrFlow>(strict, flow);
 }
 
 uint8_t

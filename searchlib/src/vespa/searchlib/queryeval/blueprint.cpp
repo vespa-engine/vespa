@@ -481,6 +481,12 @@ IntermediateBlueprint::count_termwise_nodes(const UnpackInfo &unpack) const
     return termwise_nodes;
 }
 
+FlowCalc
+IntermediateBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return full_flow_calc(strict, flow);
+}
+
 IntermediateBlueprint::IndexList
 IntermediateBlueprint::find(const IPredicate & pred) const
 {
@@ -536,13 +542,6 @@ IntermediateBlueprint::calculateState() const
     state.want_global_filter(infer_want_global_filter());
     state.tree_size(calculate_tree_size());
     return state;
-}
-
-double
-IntermediateBlueprint::computeNextHitRate(const Blueprint & child, double hit_rate) const
-{
-    (void) child;
-    return hit_rate;
 }
 
 bool
@@ -648,11 +647,11 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    double nextHitRate = execInfo.hit_rate();
+    FlowCalc flow_calc = make_flow_calc(execInfo.is_strict(), execInfo.hit_rate());
     for (size_t i = 0; i < _children.size(); ++i) {
         Blueprint & child = *_children[i];
+        double nextHitRate = flow_calc(child.estimate());
         child.fetchPostings(ExecuteInfo::create(execInfo.is_strict() && inheritStrict(i), nextHitRate, execInfo));
-        nextHitRate = computeNextHitRate(child, nextHitRate);
     }
 }
 

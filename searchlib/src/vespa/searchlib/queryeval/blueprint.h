@@ -362,7 +362,7 @@ private:
     bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
-    virtual double computeNextHitRate(const Blueprint & child, double hit_rate) const;
+    virtual FlowCalc make_flow_calc(bool strict, double flow) const;
 
 protected:
     // returns an empty collection if children have empty or

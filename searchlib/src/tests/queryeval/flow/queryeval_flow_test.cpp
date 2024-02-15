@@ -126,6 +126,14 @@ void verify_flow(auto flow, const std::vector<double> &est_list, const std::vect
     }
 }
 
+void verify_flow_calc(FlowCalc flow_calc, const std::vector<double> &est_list, const std::vector<double> &expect) {
+    ASSERT_EQ(est_list.size() + 1, expect.size());
+    for (size_t i = 0; i < est_list.size(); ++i) {
+        EXPECT_DOUBLE_EQ(flow_calc(est_list[i]), expect[i]);
+    }
+    EXPECT_DOUBLE_EQ(flow_calc(0.5), expect.back());
+}
+
 TEST(FlowTest, full_and_flow) {
     for (bool strict: {false, true}) {
         verify_flow(AndFlow(strict), {0.4, 0.7, 0.2},
@@ -133,6 +141,8 @@ TEST(FlowTest, full_and_flow) {
                      {0.4, 0.4, false},
                      {0.4*0.7, 0.4*0.7, false},
                      {0.4*0.7*0.2, 0.4*0.7*0.2, false}});
+        verify_flow_calc(flow_calc<AndFlow>(strict, 1.0),
+                         {0.4, 0.7, 0.2}, {1.0, 0.4, 0.4*0.7, 0.4*0.7*0.2});
     }
 }
 
@@ -143,6 +153,8 @@ TEST(FlowTest, partial_and_flow) {
                      {in*0.4, in*0.4, false},
                      {in*0.4*0.7, in*0.4*0.7, false},
                      {in*0.4*0.7*0.2, in*0.4*0.7*0.2, false}});
+        verify_flow_calc(flow_calc<AndFlow>(false, in),
+                         {0.4, 0.7, 0.2}, {in*1.0, in*0.4, in*0.4*0.7, in*0.4*0.7*0.2});
     }
 }
 
@@ -152,11 +164,15 @@ TEST(FlowTest, full_or_flow) {
                  {0.6, 1.0-0.6, false},
                  {0.6*0.3, 1.0-0.6*0.3, false},
                  {0.6*0.3*0.8, 1.0-0.6*0.3*0.8, false}});
+    verify_flow_calc(flow_calc<OrFlow>(false, 1.0),
+                     {0.4, 0.7, 0.2}, {1.0, 0.6, 0.6*0.3, 0.6*0.3*0.8});
     verify_flow(OrFlow(true), {0.4, 0.7, 0.2},
                 {{1.0, 0.0, true},
                  {1.0, 1.0-0.6, true},
                  {1.0, 1.0-0.6*0.3, true},
                  {1.0, 1.0-0.6*0.3*0.8, true}});
+    verify_flow_calc(flow_calc<OrFlow>(true, 1.0),
+                     {0.4, 0.7, 0.2}, {1.0, 1.0, 1.0, 1.0});
 }
 
 TEST(FlowTest, partial_or_flow) {
@@ -166,6 +182,8 @@ TEST(FlowTest, partial_or_flow) {
                      {in*0.6, 1.0-in*0.6, false},
                      {in*0.6*0.3, 1.0-in*0.6*0.3, false},
                      {in*0.6*0.3*0.8, 1.0-in*0.6*0.3*0.8, false}});
+        verify_flow_calc(flow_calc<OrFlow>(false, in),
+                         {0.4, 0.7, 0.2}, {in, in*0.6, in*0.6*0.3, in*0.6*0.3*0.8});
     }
 }
 
@@ -176,6 +194,8 @@ TEST(FlowTest, full_and_not_flow) {
                      {0.4, 0.4, false},
                      {0.4*0.3, 0.4*0.3, false},
                      {0.4*0.3*0.8, 0.4*0.3*0.8, false}});
+        verify_flow_calc(flow_calc<AndNotFlow>(strict, 1.0),
+                         {0.4, 0.7, 0.2}, {1.0, 0.4, 0.4*0.3, 0.4*0.3*0.8});
     }
 }
 
@@ -186,7 +206,45 @@ TEST(FlowTest, partial_and_not_flow) {
                      {in*0.4, in*0.4, false},
                      {in*0.4*0.3, in*0.4*0.3, false},
                      {in*0.4*0.3*0.8, in*0.4*0.3*0.8, false}});
+        verify_flow_calc(flow_calc<AndNotFlow>(false, in),
+                         {0.4, 0.7, 0.2}, {in, in*0.4, in*0.4*0.3, in*0.4*0.3*0.8});
     }
+}
+
+TEST(FlowTest, full_first_flow_calc) {
+    for (bool strict: {false, true}) {
+        verify_flow_calc(first_flow_calc(strict, 1.0),
+                         {0.4, 0.7, 0.2}, {1.0, 0.4, 0.4, 0.4});
+    }
+}
+
+TEST(FlowTest, partial_first_flow_calc) {
+    for (double in: {1.0, 0.5, 0.25}) {
+        verify_flow_calc(first_flow_calc(false, in),
+                         {0.4, 0.7, 0.2}, {in, in*0.4, in*0.4, in*0.4});
+    }
+}
+
+TEST(FlowTest, full_full_flow_calc) {
+    for (bool strict: {false, true}) {
+        verify_flow_calc(full_flow_calc(strict, 1.0),
+                         {0.4, 0.7, 0.2}, {1.0, 1.0, 1.0, 1.0});
+    }
+}
+
+TEST(FlowTest, partial_full_flow_calc) {
+    for (double in: {1.0, 0.5, 0.25}) {
+        verify_flow_calc(full_flow_calc(false, in),
+                         {0.4, 0.7, 0.2}, {in, in, in, in});
+    }
+}
+
+TEST(FlowTest, flow_calc_strictness_overrides_rate) {
+    EXPECT_EQ(flow_calc<AndFlow>(true, 0.5)(0.5), 1.0);
+    EXPECT_EQ(flow_calc<OrFlow>(true, 0.5)(0.5), 1.0);
+    EXPECT_EQ(flow_calc<AndNotFlow>(true, 0.5)(0.5), 1.0);
+    EXPECT_EQ(first_flow_calc(true, 0.5)(0.5), 1.0);
+    EXPECT_EQ(full_flow_calc(true, 0.5)(0.5), 1.0);
 }
 
 TEST(FlowTest, flow_cost) {
