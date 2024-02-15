@@ -25,12 +25,7 @@ public class Dns {
 
     /** Returns the set of DNS record types for a host and its children and the given version (ipv6), host type, etc. */
     public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave) {
-        if (cloudName == CloudName.AWS)
-            return enclave ?
-                   EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
-                   EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD, RecordType.REVERSE);
-
-        if (cloudName == CloudName.GCP) {
+        if (cloudName == CloudName.AWS || cloudName == CloudName.GCP) {
             if (enclave) {
                 return ipVersion.is6() ?
                        EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
@@ -40,6 +35,14 @@ public class Dns {
                        EnumSet.of(RecordType.FORWARD, RecordType.REVERSE, RecordType.PUBLIC_FORWARD) :
                        EnumSet.of(RecordType.FORWARD, RecordType.REVERSE);
             }
+        }
+
+        if (cloudName == CloudName.AZURE) {
+            return ipVersion.is6() ?
+                    EnumSet.noneOf(RecordType.class) :
+                    enclave || hostType == confighost ?
+                            EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
+                            EnumSet.of(RecordType.FORWARD);
         }
 
         throw new IllegalArgumentException("Does not manage DNS for cloud " + cloudName);
