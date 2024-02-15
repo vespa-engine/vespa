@@ -31,6 +31,7 @@ public class RestApiMappers {
 
     static List<RequestMapperHolder<?>> DEFAULT_REQUEST_MAPPERS = List.of(
             new RequestMapperHolder<>(Slime.class, RestApiMappers::toSlime),
+            new RequestMapperHolder<>(Json.class, ctx -> toSlime(ctx).map(Json::of)),
             new RequestMapperHolder<>(JsonNode.class, ctx -> toJsonNode(ctx, ctx.jacksonJsonMapper())),
             new RequestMapperHolder<>(String.class, RestApiMappers::toString),
             new RequestMapperHolder<>(byte[].class, RestApiMappers::toByteArray),
