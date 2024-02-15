@@ -108,18 +108,18 @@ SimpleIndex<Posting, Key, DocId>::deserialize(vespalib::DataBuffer &buffer, Post
 template <typename Posting, typename Key, typename DocId>
 void
 SimpleIndex<Posting, Key, DocId>::addPosting(Key key, DocId doc_id, const Posting &posting) {
-    auto iter = _dictionary.find(key);
+    auto iter = _dictionary.lowerBound(key);
     vespalib::datastore::EntryRef ref;
-    if (iter.valid()) {
+    if (iter.valid() && key == iter.getKey()) {
         ref = iter.getData();
         insertIntoPosting(ref, key, doc_id, posting);
         if (ref != iter.getData()) {
-            std::atomic_thread_fence(std::memory_order_release);
+            _dictionary.thaw(iter);
             iter.writeData(ref);
         }
     } else {
         insertIntoPosting(ref, key, doc_id, posting);
-        _dictionary.insert(key, ref);
+        _dictionary.insert(iter, key, ref);
     }
 }
 
@@ -147,9 +147,9 @@ SimpleIndex<Posting, Key, DocId>::removeFromPostingList(Key key, DocId doc_id) {
     _btree_posting_lists.remove(ref, doc_id);
     removeFromVectorPostingList(ref, key, doc_id);
     if (!ref.valid()) { // last posting was removed
-        _dictionary.remove(key);
+        _dictionary.remove(dict_it);
     } else if (ref != original_ref) {  // ref changed. update dictionary.
-        std::atomic_thread_fence(std::memory_order_release);
+        _dictionary.thaw(dict_it);
         dict_it.writeData(ref);
     }
     return std::make_pair(posting, true);
@@ -304,7 +304,7 @@ template <typename Posting, typename Key, typename DocId>
 std::unique_ptr<ISaver>
 SimpleIndex<Posting, Key, DocId>::make_saver(std::unique_ptr<PostingSaver<Posting>> subsaver) const
 {
-    return std::make_unique<SimpleIndexSaver<Posting, Key, DocId>>(_dictionary, _btree_posting_lists, std::move(subsaver));
+    return std::make_unique<SimpleIndexSaver<Posting, Key, DocId>>(_dictionary.getFrozenView(), _btree_posting_lists, std::move(subsaver));
 }
 
 }

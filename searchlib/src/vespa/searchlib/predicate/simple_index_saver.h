@@ -4,6 +4,7 @@
 
 #include "i_saver.h"
 #include "simple_index.h"
+#include <vespa/vespalib/stllike/allocator.h>
 
 namespace search::predicate {
 
@@ -15,15 +16,20 @@ template <typename Posting,
           typename Key = uint64_t, typename DocId = uint32_t>
 class SimpleIndexSaver : public ISaver
 {
+    using EntryRef = vespalib::datastore::EntryRef;
     using Source = SimpleIndex<Posting,Key,DocId>;
-    using Dictionary = Source::Dictionary;
+    using Dictionary = Source::Dictionary::FrozenView;
+    using FrozenRoots = std::vector<EntryRef, vespalib::allocator_large<EntryRef>>;
     using BTreeStore = Source::BTreeStore;
 
-    const Dictionary& _dictionary;
+    const Dictionary  _dictionary;
+    FrozenRoots       _frozen_roots;
     const BTreeStore& _btree_posting_lists;
     std::unique_ptr<PostingSaver<Posting>> _subsaver;
+
+    void make_frozen_roots();
 public:
-    SimpleIndexSaver(const Dictionary& dictionary, const BTreeStore& btree_posting_lists, std::unique_ptr<PostingSaver<Posting>> _subsaver);
+    SimpleIndexSaver(Dictionary dictionary, const BTreeStore& btree_posting_lists, std::unique_ptr<PostingSaver<Posting>> _subsaver);
     ~SimpleIndexSaver() override;
     void save(BufferWriter& writer) const override;
 };
