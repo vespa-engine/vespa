@@ -206,7 +206,8 @@ public class RankProfileInputTest {
 
         var registry = new QueryProfileRegistry();
         var profile = new QueryProfile("test");
-        profile.set("param1", text, registry);
+        profile.set("param1", "text to %{param2}", registry);
+        profile.set("param2", "embed into a tensor", registry);
         registry.register(profile);
         var cProfile = registry.compile().findQueryProfile("test");
 
