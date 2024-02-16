@@ -19,7 +19,7 @@ class DocumentFeaturesStoreSaver : public ISaver {
     using RangesStore = DocumentFeaturesStore::RangesStore;
     using WordStore = DocumentFeaturesStore::WordStore;
 
-    const RefsVector&     _refs;  // TODO: Use copy when saving in flush thread
+    const RefsVector      _refs;
     const FeaturesStore&  _features;
     const RangesStore&    _ranges;
     const WordStore&      _word_store;
