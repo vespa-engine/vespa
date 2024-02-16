@@ -210,7 +210,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
      * @throws IllegalStateException if i is out of range.
      */
     public int getRelativePort(int i) {
-        if (ports.size() < 1) {
+        if (ports.isEmpty()) {
             throw new IllegalStateException("Requested port with offset " + i + " for service that " +
                                             "has not reserved any ports: " + this);
         }
@@ -355,7 +355,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         jvmOptions = (args == null) ? "" : args;
     }
     public final void appendJvmOptions(String args) {
-        if ((args != null) && ! "".equals(args)) {
+        if ((args != null) && !args.isEmpty()) {
             setJvmOptions(jvmOptions + getSeparator(jvmOptions) + args);
         }
     }
@@ -363,7 +363,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         return ("".equals(current)) ? "" : " ";
     }
     public final void prependJvmOptions(String args) {
-        if ((args != null) && ! "".equals(args)) {
+        if ((args != null) && !args.isEmpty()) {
             setJvmOptions(args + getSeparator(jvmOptions) + jvmOptions);
         }
     }

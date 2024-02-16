@@ -38,6 +38,7 @@ public class SearchChains extends Chains<SearchChain> {
         initializeComponents();
     }
 
+
     private void setSearchClusterForLocalProvider(Map<String, ? extends SearchCluster> clusterIndexByName) {
         for (LocalProvider provider : localProviders()) {
             SearchCluster cluster = clusterIndexByName.get(provider.getClusterName());

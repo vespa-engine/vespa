@@ -66,9 +66,9 @@ public final class ApplicationContainer extends Container implements
         StringBuilder b = new StringBuilder();
         if (isHostedVespa) {
             b.append("-Djdk.tls.server.enableStatusRequestExtension=true ")
-                    .append("-Djdk.tls.stapling.responseTimeout=2000 ")
-                    .append("-Djdk.tls.stapling.cacheSize=256 ")
-                    .append("-Djdk.tls.stapling.cacheLifetime=3600 ");
+             .append("-Djdk.tls.stapling.responseTimeout=2000 ")
+             .append("-Djdk.tls.stapling.cacheSize=256 ")
+             .append("-Djdk.tls.stapling.cacheLifetime=3600 ");
         }
         String jvmArgs = super.getJvmOptions();
         if (!jvmArgs.isBlank()) {

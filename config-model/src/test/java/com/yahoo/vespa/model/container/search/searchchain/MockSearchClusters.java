@@ -35,11 +35,6 @@ public class MockSearchClusters {
         }
 
         @Override
-        public int getRowBits() {
-            return 0;
-        }
-
-        @Override
         public void defaultDocumentsConfig() {}
 
         @Override
