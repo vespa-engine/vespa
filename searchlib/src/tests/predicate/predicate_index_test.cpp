@@ -418,17 +418,39 @@ TEST("require that hold lists are attempted emptied on destruction") {
     // No assert on index destruction.
 }
 
-TEST("require that predicate index saver protected by a generation guard observes a snapshot of the predicate index")
+void verify_snapshot_property(uint32_t num_docs)
 {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
-    indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
+    for (uint32_t i = 0; i < num_docs; ++i) {
+        indexFeature(index, doc_id + i, min_feature, {{hash, interval}}, {{hash2, bounds}});
+    }
     auto saver1 = make_guarded_saver(index);
     auto buf1 = saver1.save();
-    index.removeDocument(doc_id);
+    for (uint32_t i = 0; i < num_docs; ++i) {
+        index.removeDocument(doc_id + i);
+    }
     index.commit();
     auto saver2 = make_guarded_saver(index);
     EXPECT_TRUE(equal_buffers(buf1, saver1.save()));
     EXPECT_FALSE(equal_buffers(buf1, saver2.save()));
+}
+
+TEST("require that predicate index saver protected by a generation guard observes a snapshot of the predicate index")
+{
+    /*
+     * short array in simple index btree posting list
+     */
+    TEST_DO(verify_snapshot_property(1));
+    /*
+     * short array in simple index btree posting list
+     */
+    TEST_DO(verify_snapshot_property(8));
+    /*
+     * BTree in simple index btree posting list.
+     * Needs copy of frozen roots in simple index saver to observe snapshot
+     * of predicate index.
+     */
+    TEST_DO(verify_snapshot_property(9));
 }
 
 }  // namespace
