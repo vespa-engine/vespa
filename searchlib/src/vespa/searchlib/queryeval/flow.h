@@ -53,12 +53,11 @@ concept DirectAdaptable = requires(const T &t) {
 
 auto make_adapter(const auto &children) {
     using type = std::remove_cvref_t<decltype(children)>::value_type;
+    static_assert(DefaultAdaptable<type> || DirectAdaptable<type>, "unable to resolve children adapter");
     if constexpr (DefaultAdaptable<type>) {
         return DefaultAdapter();
-    } else if constexpr (DirectAdaptable<type>) {
-        return DirectAdapter();
     } else {
-        static_assert(false, "unable to resolve children adapter");
+        return DirectAdapter();
     }
 }
 
