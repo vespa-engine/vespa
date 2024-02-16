@@ -302,6 +302,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                                            flavorFromSlime(inspector),
                                            nodeTypeFromSlime(inspector.field("type")))
                                    .cloudAccount(nodeRepository.zone().cloud().account());
+        optionalString(inspector.field("extraId")).ifPresent(builder::extraId);
         optionalString(inspector.field("parentHostname")).ifPresent(builder::parentHostname);
         optionalString(inspector.field("modelName")).ifPresent(builder::modelName);
         optionalString(inspector.field("reservedTo")).map(TenantName::from).ifPresent(builder::reservedTo);
