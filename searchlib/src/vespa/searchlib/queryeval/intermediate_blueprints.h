@@ -56,7 +56,7 @@ public:
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
-    double computeNextHitRate(const Blueprint & child, double hit_rate) const override;
+    virtual FlowCalc make_flow_calc(bool strict, double flow) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ public:
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
-    double computeNextHitRate(const Blueprint & child, double hit_rate) const override;
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
     uint8_t calculate_cost_tier() const override;
 };
 

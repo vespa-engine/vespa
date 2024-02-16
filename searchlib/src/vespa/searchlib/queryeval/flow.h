@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/small_vector.h>
 #include <cstddef>
 #include <algorithm>
-#include <cmath>
+#include <functional>
 
 // Model how boolean result decisions flow through intermediate nodes
 // of different types based on relative estimates for sub-expressions
@@ -278,5 +278,39 @@ public:
         sort(flow::make_adapter(children), children, strict);
     }
 };
+
+using FlowCalc = std::function<double(double)>;
+
+template <typename FLOW>
+FlowCalc flow_calc(bool strict, double non_strict_rate) {
+    FLOW flow = strict ? FLOW(true) : FLOW(non_strict_rate);
+    return [flow](double est) mutable noexcept {
+               double next_flow = flow.flow();
+               flow.add(est);
+               return next_flow;
+           };
+}
+
+inline FlowCalc first_flow_calc(bool strict, double flow) {
+    if (strict) {
+        flow = 1.0;
+    }
+    bool first = true;
+    return [flow,first](double est) mutable noexcept {
+               double next_flow = flow;
+               if (first) {
+                   flow *= est;
+                   first = false;
+               }
+               return next_flow;
+           };
+}
+
+inline FlowCalc full_flow_calc(bool strict, double flow) {
+    if (strict) {
+        flow = 1.0;
+    }
+    return [flow](double) noexcept { return flow; };
+}
 
 }
