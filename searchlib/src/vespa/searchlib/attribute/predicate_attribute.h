@@ -45,7 +45,7 @@ public:
 
     predicate::PredicateIndex &getIndex() { return *_index; }
 
-    void onSave(IAttributeSaveTarget & saveTarget) override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     bool onLoad(vespalib::Executor *executor) override;
     void onCommit() override;
     void reclaim_memory(generation_t oldest_used_gen) override;

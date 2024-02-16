@@ -4,6 +4,7 @@
 #include "attribute_header.h"
 #include "iattributesavetarget.h"
 #include "load_utils.h"
+#include "predicate_attribute_saver.h"
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/searchlib/predicate/i_saver.h>
@@ -143,28 +144,22 @@ PredicateAttribute::before_inc_generation(generation_t current_gen)
     _index->assign_generation(current_gen);
 }
 
-void
-PredicateAttribute::onSave(IAttributeSaveTarget &saveTarget) {
-    LOG(info, "Saving predicate attribute version %d name '%s'", getVersion(), getName().c_str());
-    IAttributeSaveTarget::Buffer buffer(saveTarget.datWriter().allocBuf(4_Ki));
-    {
-        DataBufferWriter writer(*buffer);
-        auto saver = _index->make_saver();
-        saver->save(writer);
-        writer.flush();
-    }
-    uint32_t  highest_doc_id = static_cast<uint32_t>(_min_feature.size() - 1);
-    buffer->writeInt32(highest_doc_id);
-    for (size_t i = 1; i <= highest_doc_id; ++i) {
-        buffer->writeInt8(_min_feature[i]);
-    }
-    for (size_t i = 1; i <= highest_doc_id; ++i) {
-        buffer->writeInt16(_interval_range_vector[i]);
-    }
-    buffer->writeInt16(_max_interval_range);
-    saveTarget.datWriter().writeBuf(std::move(buffer));
+std::unique_ptr<AttributeSaver>
+PredicateAttribute::onInitSave(vespalib::stringref fileName)
+{
+    auto guard(getGenerationHandler().takeGuard());
+    auto header = this->createAttributeHeader(fileName);
+    auto min_feature_view = _min_feature.make_read_view(_min_feature.size());
+    auto interval_range_vector_view = _interval_range_vector.make_read_view(_interval_range_vector.size());
+    return std::make_unique<PredicateAttributeSaver>
+        (std::move(guard),
+         std::move(header),
+         getVersion(),
+         _index->make_saver(),
+         PredicateAttributeSaver::MinFeatureVector{ min_feature_view.begin(), min_feature_view.end() },
+         PredicateAttributeSaver::IntervalRangeVector{ interval_range_vector_view.begin(), interval_range_vector_view.end() },
+         _max_interval_range);
 }
-
 
 uint32_t
 PredicateAttribute::getVersion() const {
