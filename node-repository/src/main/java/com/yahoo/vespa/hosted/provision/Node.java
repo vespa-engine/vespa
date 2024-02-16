@@ -732,6 +732,7 @@ public final class Node implements Nodelike {
         private final State state;
         private final NodeType type;
 
+        private String extraId;
         private String parentHostname;
         private String modelName;
         private TenantName reservedTo;
@@ -756,6 +757,11 @@ public final class Node implements Nodelike {
             this.flavor = flavor;
             this.state = state;
             this.type = type;
+        }
+
+        public Builder extraId(String extraId) {
+            this.extraId = extraId;
+            return this;
         }
 
         public Builder parentHostname(String parentHostname) {
@@ -849,7 +855,7 @@ public final class Node implements Nodelike {
         }
 
         public Node build() {
-            return new Node(id, Optional.empty(), Optional.ofNullable(ipConfig).orElse(IP.Config.EMPTY), hostname, Optional.ofNullable(parentHostname),
+            return new Node(id, Optional.ofNullable(extraId), Optional.ofNullable(ipConfig).orElse(IP.Config.EMPTY), hostname, Optional.ofNullable(parentHostname),
                             flavor, Optional.ofNullable(status).orElseGet(Status::initial), state, Optional.ofNullable(allocation),
                             Optional.ofNullable(history).orElseGet(History::empty), type, Optional.ofNullable(reports).orElseGet(Reports::new),
                             Optional.ofNullable(modelName), Optional.ofNullable(reservedTo), Optional.ofNullable(exclusiveToApplicationId),
