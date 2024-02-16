@@ -249,9 +249,6 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    public int getRowBits() { return 8; }
-
-    @Override
     public String toString() {
         return "Indexing cluster '" + getClusterName() + "'";
     }

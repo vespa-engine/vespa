@@ -67,9 +67,6 @@ public class StreamingSearchCluster extends SearchCluster implements
     public DerivedConfiguration derived() { return derivedConfig; }
 
     @Override
-    public int getRowBits() { return 0; }
-
-    @Override
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
         DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
         docDb.name(derivedConfig.getSchema().getName());

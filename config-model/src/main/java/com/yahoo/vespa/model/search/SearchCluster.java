@@ -76,7 +76,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     protected abstract IndexingMode getIndexingMode();
     public final Double getVisibilityDelay() { return visibilityDelay; }
     public final Double getQueryTimeout() { return queryTimeout; }
-    public abstract int getRowBits();
     public final void setClusterIndex(int index) { this.index = index; }
     public final int getClusterIndex() { return index; }
 
