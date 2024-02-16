@@ -12,6 +12,7 @@
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
@@ -20,6 +21,8 @@ LOG_SETUP(".searchlib.attribute.predicate_attribute");
 using document::Predicate;
 using document::PredicateFieldValue;
 using vespalib::DataBuffer;
+using vespalib::IllegalStateException;
+using vespalib::make_string;
 using namespace search::predicate;
 
 namespace search {
@@ -236,6 +239,9 @@ PredicateAttribute::onLoad(vespalib::Executor *)
         _interval_range_vector[docId] = version < 2 ? MAX_INTERVAL_RANGE : buffer.readInt16();
     }
     _max_interval_range = version < 2 ? MAX_INTERVAL_RANGE : buffer.readInt16();
+    if (buffer.getDataLen() != 0) {
+        throw IllegalStateException(make_string("Deserialize error when loading predicate attribute '%s', %" PRId64 " bytes remaining in buffer", getName().c_str(), (int64_t) buffer.getDataLen()));
+    }
     _index->adjustDocIdLimit(highest_doc_id);
     setNumDocs(highest_doc_id + 1);
     setCommittedDocIdLimit(highest_doc_id + 1);
