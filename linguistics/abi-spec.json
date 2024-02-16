@@ -344,9 +344,7 @@
       "public java.lang.String getDestination()",
       "public com.yahoo.language.process.Embedder$Context setDestination(java.lang.String)",
       "public java.lang.String getEmbedderId()",
-      "public com.yahoo.language.process.Embedder$Context setEmbedderId(java.lang.String)",
-      "public java.util.Map getContextValues()",
-      "public com.yahoo.language.process.Embedder$Context setContextValues(java.util.Map)"
+      "public com.yahoo.language.process.Embedder$Context setEmbedderId(java.lang.String)"
     ],
     "fields" : [ ]
   },

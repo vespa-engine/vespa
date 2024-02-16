@@ -250,7 +250,7 @@ public class QueryProperties extends Properties {
         if (type == null) return value; // no type info -> keep as string
         FieldDescription field = type.getField(key);
         if (field == null) return value; // ditto
-        return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedders, context));
+        return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedders, context, this));
     }
 
     private void throwIllegalParameter(String key, String namespace) {

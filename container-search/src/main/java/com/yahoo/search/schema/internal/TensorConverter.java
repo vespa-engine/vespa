@@ -3,6 +3,7 @@ package com.yahoo.search.schema.internal;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.processing.request.Properties;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -29,18 +30,19 @@ public class TensorConverter {
     }
 
     public Tensor convertTo(TensorType type, String key, Object value, Language language,
-                            Map<String, String> contextValues) {
-        var context = new Embedder.Context(key).setLanguage(language).setContextValues(contextValues);
-        Tensor tensor = toTensor(type, value, context);
+                            Map<String, String> contextValues, Properties properties) {
+        var context = new Embedder.Context(key).setLanguage(language);
+        Tensor tensor = toTensor(type, value, context, contextValues, properties);
         if (tensor == null) return null;
         if (! tensor.type().isAssignableTo(type))
             throw new IllegalArgumentException("Require a tensor of type " + type);
         return tensor;
     }
 
-    private Tensor toTensor(TensorType type, Object value, Embedder.Context context) {
+    private Tensor toTensor(TensorType type, Object value, Embedder.Context context, Map<String, String> contextValues,
+                            Properties properties) {
         if (value instanceof Tensor) return (Tensor)value;
-        if (value instanceof String && isEmbed((String)value)) return embed((String)value, type, context);
+        if (value instanceof String && isEmbed((String)value)) return embed((String)value, type, context, contextValues, properties);
         if (value instanceof String) return Tensor.from(type, (String)value);
         return null;
     }
@@ -49,7 +51,8 @@ public class TensorConverter {
         return value.startsWith("embed(");
     }
 
-    private Tensor embed(String s, TensorType type, Embedder.Context embedderContext) {
+    private Tensor embed(String s, TensorType type, Embedder.Context embedderContext, Map<String, String> contextValues,
+                         Properties properties) {
         if ( ! s.endsWith(")"))
             throw new IllegalArgumentException("Expected any string enclosed in embed(), but the argument does not end by ')'");
         String argument = s.substring("embed(".length(), s.length() - 1);
@@ -76,7 +79,7 @@ public class TensorConverter {
             embedderId = entry.getKey();
             embedder = entry.getValue();
         }
-        return embedder.embed(resolve(argument, embedderContext), embedderContext.copy().setEmbedderId(embedderId), type);
+        return embedder.embed(resolve(argument, contextValues, properties), embedderContext.copy().setEmbedderId(embedderId), type);
     }
 
     private Embedder requireEmbedder(String embedderId) {
@@ -86,23 +89,23 @@ public class TensorConverter {
         return embedders.get(embedderId);
     }
 
-    private static String resolve(String s, Embedder.Context embedderContext) {
+    private static String resolve(String s, Map<String, String> contextValues, Properties properties) {
         if (s.startsWith("'") && s.endsWith("'"))
             return s.substring(1, s.length() - 1);
         if (s.startsWith("\"") && s.endsWith("\""))
             return s.substring(1, s.length() - 1);
         if (s.startsWith("@"))
-            return resolveReference(s, embedderContext);
+            return resolveReference(s, contextValues, properties);
         return s;
     }
 
-    private static String resolveReference(String s, Embedder.Context embedderContext) {
+    private static String resolveReference(String s, Map<String, String> contextValues, Properties properties) {
         String referenceKey = s.substring(1);
-        String referencedValue = embedderContext.getContextValues().get(referenceKey);
+        Object referencedValue = properties.get(referenceKey, contextValues);
         if (referencedValue == null)
             throw new IllegalArgumentException("Could not resolve query parameter reference '" + referenceKey +
                                                "' used in an embed() argument");
-        return referencedValue;
+        return referencedValue.toString();
     }
 
     private static String validEmbedders(Map<String, Embedder> embedders) {

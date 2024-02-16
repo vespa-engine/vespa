@@ -200,6 +200,28 @@ public class RankProfileInputTest {
                               "used in an embed() argument");
     }
 
+    @Test
+    void testUnembeddedTensorRankFeatureInRequestReferencedFromAParameterSuppliedByQueryProfile() {
+        String text = "text to embed into a tensor";
+
+        var registry = new QueryProfileRegistry();
+        var profile = new QueryProfile("test");
+        profile.set("param2", "text to %{param1}", registry);
+        registry.register(profile);
+        var cProfile = registry.compile().findQueryProfile("test");
+
+        Tensor embedding1 = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
+
+        Map<String, Embedder> embedders = Map.of(
+                "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1)
+                                                );
+        assertEmbedQuery("embed(@param2)", embedding1, embedders, null, "embed into a tensor", cProfile);
+        assertEmbedQuery("embed(emb1, @param2)", embedding1, embedders, null, "embed into a tensor", cProfile);
+        assertEmbedQueryFails("embed(emb1, @noSuchParam)", embedding1, embedders,
+                              "Could not resolve query parameter reference 'noSuchParam' " +
+                              "used in an embed() argument");
+    }
+
     private Query createTensor1Query(String tensorString, String profile, String additionalParams) {
         return new Query.Builder()
                 .setSchemaInfo(createSchemaInfo())
@@ -223,7 +245,19 @@ public class RankProfileInputTest {
     private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders, String language) {
         assertEmbedQuery(embed, expected, embedders, language, null);
     }
-    private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders, String language, String param1Value) {
+    private void assertEmbedQuery(String embed,
+                                  Tensor expected,
+                                  Map<String, Embedder> embedders,
+                                  String language,
+                                  String param1Value) {
+        assertEmbedQuery(embed, expected, embedders, language, param1Value, null);
+    }
+    private void assertEmbedQuery(String embed,
+                                  Tensor expected,
+                                  Map<String, Embedder> embedders,
+                                  String language,
+                                  String param1Value,
+                                  CompiledQueryProfile queryProfile) {
         String languageParam = language == null ? "" : "&language=" + language;
         String param1 = param1Value == null ? "" : "&param1=" + urlEncode(param1Value);
 
@@ -239,6 +273,7 @@ public class RankProfileInputTest {
                                          .setSchemaInfo(createSchemaInfo())
                                          .setQueryProfile(createQueryProfile())
                                          .setEmbedders(embedders)
+                                         .setQueryProfile(queryProfile)
                                          .build();
         assertEquals(0, query.errors().size());
         assertEquals(expected, query.properties().get("ranking.features." + destination));

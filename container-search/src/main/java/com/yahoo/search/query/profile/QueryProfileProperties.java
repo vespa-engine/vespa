@@ -192,7 +192,7 @@ public class QueryProfileProperties extends Properties {
 
             if (fieldDescription != null) {
                 if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                    var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedders, context);
+                    var conversionContext = new ConversionContext(localName, profile.getRegistry(), embedders, context, this);
                     var convertedValue = fieldDescription.getType().convertFrom(value, conversionContext);
                     if (convertedValue == null
                         && fieldDescription.getType() instanceof QueryProfileFieldType
