@@ -53,7 +53,7 @@ public:
     using AttributePtr = AttributeVector::SP;
 
     BitVectorTest();
-    ~BitVectorTest();
+    ~BitVectorTest() override;
 
     template <typename VectorType>
     VectorType & as(AttributePtr &v);
