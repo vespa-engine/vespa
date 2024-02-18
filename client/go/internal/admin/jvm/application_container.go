@@ -118,6 +118,7 @@ func (a *ApplicationContainer) configureMemory(qc *QrStartConfig) {
 	opts.AddOption(fmt.Sprintf("-Xmx%dm", jvm_heapsize))
 	opts.AddOption(fmt.Sprintf("-XX:ThreadStackSize=%d", jvm_stacksize))
 	opts.AddOption(fmt.Sprintf("-XX:MaxDirectMemorySize=%dm", maxDirectMemorySize))
+	opts.AddOption(fmt.Sprintf("-XX:Tier4CompileThreshold=1000000"))
 	opts.MaybeAddHugepages(MegaBytesOfMemory(jvm_heapsize))
 	if jvm_compressedClassSpaceSize > 0 {
 		opts.AddOption(fmt.Sprintf("-XX:CompressedClassSpaceSize=%dm", jvm_compressedClassSpaceSize))

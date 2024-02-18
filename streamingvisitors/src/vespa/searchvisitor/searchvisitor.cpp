@@ -51,6 +51,7 @@ using vsm::DocsumFilter;
 using vsm::FieldPath;
 using vsm::StorageDocument;
 using vsm::StringFieldIdTMap;
+using vespalib::string;
 
 namespace {
 
@@ -429,21 +430,18 @@ SearchVisitor::init(const Parameters & params)
             if (!prop.decode(src, len)) {
                 LOG(warning, "Could not decode rank properties");
             } else {
-                LOG(debug, "Properties[%u]: name '%s', size '%u'", i, prop.getName(), prop.size());
-                if (strcmp(prop.getName(), "rank") == 0) { // pick up rank properties
+                LOG(debug, "Properties[%u]: name '%s', size '%u'", i, prop.name().c_str(), prop.size());
+                if (prop.name() == "rank") { // pick up rank properties
                     for (uint32_t j = 0; j < prop.size(); ++j) {
-                        vespalib::string k{prop.getKey(j), prop.getKeyLen(j)};
-                        vespalib::string v{prop.getValue(j), prop.getValueLen(j)};
-                        LOG(debug, "Properties[%u][%u]: key '%s' -> value '%s'", i, j, k.c_str(), v.c_str());
-                        _rankController.getQueryProperties().add(k, v);
+                        LOG(debug, "Properties[%u][%u]: key '%s' -> value '%s'",
+                            i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
+                        _rankController.getQueryProperties().add(prop.key(j), prop.value(j));
                     }
-                }
-                if (strcmp(prop.getName(), "feature") == 0) { // pick up feature overrides
+                } else if (prop.name() == "feature") { // pick up feature overrides
                     for (uint32_t j = 0; j < prop.size(); ++j) {
-                        vespalib::string k{prop.getKey(j), prop.getKeyLen(j)};
-                        vespalib::string v{prop.getValue(j), prop.getValueLen(j)};
-                        LOG(debug, "Feature override[%u][%u]: key '%s' -> value '%s'", i, j, k.c_str(), v.c_str());
-                        _rankController.getFeatureOverrides().add(k, v);
+                        LOG(debug, "Feature override[%u][%u]: key '%s' -> value '%s'",
+                            i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
+                        _rankController.getFeatureOverrides().add(prop.key(j), prop.value(j));
                     }
                 }
             }
