@@ -1,15 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/sourceblendersearch.h>
 #include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::queryeval;
 using namespace search::fef;
@@ -52,7 +53,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-TEST("test strictness") {
+TEST(SourceBlenderTest, test_strictness)
+{
     MatchData::UP md(MatchData::makeTestInstance(100, 10));
     for (uint32_t i = 0; i < 2; ++i) {
         bool strict = (i == 0);
@@ -81,23 +83,24 @@ TEST("test strictness") {
 
         EXPECT_TRUE(!blend.seek(1u));
         if (strict) {
-            EXPECT_EQUAL(2u, blend.getDocId());
+            EXPECT_EQ(2u, blend.getDocId());
         } else {
-            EXPECT_EQUAL(blend.beginId(), blend.getDocId());
+            EXPECT_EQ(blend.beginId(), blend.getDocId());
         }
         EXPECT_TRUE(blend.seek(5));
-        EXPECT_EQUAL(5u, blend.getDocId());
+        EXPECT_EQ(5u, blend.getDocId());
         EXPECT_TRUE(!blend.seek(6));
         if (strict) {
             EXPECT_TRUE(blend.isAtEnd());
         } else {
-            EXPECT_EQUAL(5u, blend.getDocId());
+            EXPECT_EQ(5u, blend.getDocId());
         }
         delete sel;
     }
 }
 
-TEST("test full sourceblender search") {
+TEST(SourceBlenderTest, test_full_sourceblender_search)
+{
     SimpleResult a;
     SimpleResult b;
     SimpleResult c;
@@ -134,10 +137,10 @@ TEST("test full sourceblender search") {
     SimpleResult expect_unpacked_c;
     expect_unpacked_c.addHit(21);
 
-    EXPECT_EQUAL(expect_result, result);
-    EXPECT_EQUAL(expect_unpacked_a, ua->getUnpacked());
-    EXPECT_EQUAL(expect_unpacked_b, ub->getUnpacked());
-    EXPECT_EQUAL(expect_unpacked_c, uc->getUnpacked());
+    EXPECT_EQ(expect_result, result);
+    EXPECT_EQ(expect_unpacked_a, ua->getUnpacked());
+    EXPECT_EQ(expect_unpacked_b, ub->getUnpacked());
+    EXPECT_EQ(expect_unpacked_c, uc->getUnpacked());
 }
 
 using search::test::SearchIteratorVerifier;
@@ -176,9 +179,10 @@ Verifier::Verifier() :
 }
 Verifier::~Verifier() {}
 
-TEST("Test that source blender iterator adheres to SearchIterator requirements") {
+TEST(SourceBlenderTest, test_that_source_blender_iterator_adheres_to_search_terator_requirements)
+{
     Verifier searchIteratorVerifier;
     searchIteratorVerifier.verify();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
