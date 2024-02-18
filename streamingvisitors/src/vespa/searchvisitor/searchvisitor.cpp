@@ -449,7 +449,10 @@ SearchVisitor::init(const Parameters & params)
                     for (uint32_t j = 0; j < prop.size(); ++j) {
                         LOG(debug, "Hightligthterms[%u][%u]: key '%s' -> value '%s'",
                             i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
-                        _summaryGenerator.highlightTerms().add(prop.key(j), prop.value(j));
+                        vespalib::stringref index = prop.key(j);
+                        vespalib::stringref term = prop.value(j);
+                        vespalib::string norm_term = QueryNormalization::optional_fold(term, search::TermType::WORD, normalizing_mode(index));
+                        _summaryGenerator.highlightTerms().add(index, norm_term);
                     }
                 }
             }
