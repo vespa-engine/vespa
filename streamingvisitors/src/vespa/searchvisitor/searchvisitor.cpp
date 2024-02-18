@@ -187,6 +187,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManage
       _dump_features(),
       _location(),
       _stack_dump(),
+      _highlight_terms(),
       _attr_manager(attr_manager),
       _query_normalization(query_normalization)
 {
@@ -219,6 +220,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(vespalib::stringref
     if (_stack_dump.has_value()) {
         ds._args.setStackDump(_stack_dump.value().size(), _stack_dump.value().data());
     }
+    ds._args.highlightTerms(_highlight_terms);
     _docsumWriter->initState(_attr_manager, ds, state->get_resolve_class_info());
     auto insres = _docsum_states.insert(std::make_pair(summary_class, std::move(state)));
     return *insres.first->second;
@@ -442,6 +444,12 @@ SearchVisitor::init(const Parameters & params)
                         LOG(debug, "Feature override[%u][%u]: key '%s' -> value '%s'",
                             i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
                         _rankController.getFeatureOverrides().add(prop.key(j), prop.value(j));
+                    }
+                } else if (prop.name() == "highlightterms") { // pick up feature overrides
+                    for (uint32_t j = 0; j < prop.size(); ++j) {
+                        LOG(debug, "Hightligthterms[%u][%u]: key '%s' -> value '%s'",
+                            i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
+                        _summaryGenerator.highlightTerms().add(prop.key(j), prop.value(j));
                     }
                 }
             }

@@ -423,6 +423,7 @@ private:
         void set_location(const vespalib::string& location) { _location = location; }
         void set_stack_dump(std::vector<char> stack_dump) { _stack_dump = std::move(stack_dump); }
         void add_summary_field(vespalib::stringref field) { _summaryFields.emplace_back(field); }
+        search::fef::Properties & highlightTerms() { return _highlight_terms;}
     private:
         StreamingDocsumsState& get_streaming_docsums_state(vespalib::stringref summary_class);
         vsm::GetDocsumsStateCallback            _callback;
@@ -434,6 +435,7 @@ private:
         std::optional<bool>                     _dump_features;
         std::optional<vespalib::string>         _location;
         std::optional<std::vector<char>>        _stack_dump;
+        search::fef::Properties                 _highlight_terms;
         const search::IAttributeManager&        _attr_manager;
         const search::QueryNormalization &      _query_normalization;
     };

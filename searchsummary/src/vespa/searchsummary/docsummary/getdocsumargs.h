@@ -46,6 +46,7 @@ public:
     bool dumpFeatures() const { return _dumpFeatures; }
 
     const fef::Properties &highlightTerms() const { return _highlightTerms; }
+    void highlightTerms(fef::Properties & terms) { _highlightTerms = terms; }
     void set_fields(const FieldSet& fields_in) { _fields = fields_in; }
     const FieldSet& get_fields() const { return _fields; }
     bool need_field(vespalib::stringref field) const;
