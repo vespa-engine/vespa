@@ -29,6 +29,7 @@ public:
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
     uint8_t calculate_cost_tier() const override {
         return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
     }
@@ -56,7 +57,7 @@ public:
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
 private:
-    virtual FlowCalc make_flow_calc(bool strict, double flow) const override;
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -93,6 +94,7 @@ private:
     uint32_t              _n;
     std::vector<uint32_t> _weights;
 
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
 public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
@@ -123,6 +125,7 @@ class NearBlueprint : public IntermediateBlueprint
 private:
     uint32_t _window;
 
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
 public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
@@ -145,6 +148,7 @@ class ONearBlueprint  : public IntermediateBlueprint
 private:
     uint32_t _window;
 
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
 public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
@@ -181,6 +185,8 @@ public:
     uint8_t calculate_cost_tier() const override {
         return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
     }
+private:
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -190,6 +196,7 @@ class SourceBlenderBlueprint final : public IntermediateBlueprint
 private:
     const ISourceSelector &_selector;
 
+    FlowCalc make_flow_calc(bool strict, double flow) const override;
 public:
     explicit SourceBlenderBlueprint(const ISourceSelector &selector) noexcept;
     ~SourceBlenderBlueprint() override;

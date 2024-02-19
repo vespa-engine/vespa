@@ -206,6 +206,13 @@ AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) co
     return create_andnot_filter(get_children(), strict, constraint);
 }
 
+
+FlowCalc
+AndNotBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return flow_calc<AndNotFlow>(strict, flow);
+}
+
 //-----------------------------------------------------------------------------
 
 FlowStats
@@ -417,6 +424,13 @@ OrBlueprint::calculate_cost_tier() const
 }
 
 //-----------------------------------------------------------------------------
+
+FlowCalc
+WeakAndBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return flow_calc<OrFlow>(strict, flow);
+}
+
 WeakAndBlueprint::~WeakAndBlueprint() = default;
 
 FlowStats
@@ -488,6 +502,12 @@ WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) c
 
 //-----------------------------------------------------------------------------
 
+FlowCalc
+NearBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return flow_calc<AndFlow>(strict, flow);
+}
+
 FlowStats
 NearBlueprint::calculate_flow_stats(uint32_t) const {
     double est = AndFlow::estimate_of(get_children()); 
@@ -552,6 +572,12 @@ NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
 }
 
 //-----------------------------------------------------------------------------
+
+FlowCalc
+ONearBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return flow_calc<AndFlow>(strict, flow);
+}
 
 FlowStats
 ONearBlueprint::calculate_flow_stats(uint32_t) const {
@@ -708,7 +734,19 @@ RankBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
     return create_first_child_filter(get_children(), strict, constraint);
 }
 
+FlowCalc
+RankBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return first_flow_calc(strict, flow);
+}
+
 //-----------------------------------------------------------------------------
+
+FlowCalc
+SourceBlenderBlueprint::make_flow_calc(bool strict, double flow) const
+{
+    return full_flow_calc(strict, flow);
+}
 
 SourceBlenderBlueprint::SourceBlenderBlueprint(const ISourceSelector &selector) noexcept
     : _selector(selector)

@@ -22,6 +22,9 @@ namespace {
 class MyOr : public IntermediateBlueprint
 {
 private:
+    FlowCalc make_flow_calc(bool strict, double flow) const override {
+        return flow_calc<OrFlow>(strict, flow);
+    }
 public:
     FlowStats calculate_flow_stats(uint32_t) const final {
         return {OrFlow::estimate_of(get_children()),
