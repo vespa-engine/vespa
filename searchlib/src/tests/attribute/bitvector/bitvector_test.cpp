@@ -35,6 +35,18 @@ using search::queryeval::SearchIterator;
 using SearchContextPtr = std::unique_ptr<SearchContext>;
 using SearchBasePtr = std::unique_ptr<search::queryeval::SearchIterator>;
 
+namespace search::attribute {
+
+void PrintTo(const BasicType& bt, std::ostream* os) {
+    *os << bt.asString();
+}
+
+void PrintTo(const CollectionType& ct, std::ostream* os) {
+    *os << ct.asString();
+}
+
+}
+
 std::string
 param_as_string(const testing::TestParamInfo<std::tuple<BasicType, CollectionType, bool, bool>>& info)
 {
