@@ -146,7 +146,9 @@ AttributeVector::SP
 createAttribute(const vespalib::string & name, const document::FieldValue & fv, search::attribute::DistanceMetric dm)
 {
     LOG(debug, "Create single value attribute '%s' with value type '%s'", name.c_str(), fv.className());
-    if (fv.isA(document::FieldValue::Type::BYTE) || fv.isA(document::FieldValue::Type::INT) || fv.isA(document::FieldValue::Type::LONG)) {
+    if (fv.isA(document::FieldValue::Type::BOOL) || fv.isA(document::FieldValue::Type::BYTE) ||
+        fv.isA(document::FieldValue::Type::INT) || fv.isA(document::FieldValue::Type::LONG))
+    {
         return std::make_shared<search::SingleIntegerExtAttribute>(name);
     } else if (fv.isA(document::FieldValue::Type::DOUBLE) || fv.isA(document::FieldValue::Type::FLOAT)) {
         return std::make_shared<search::SingleFloatExtAttribute>(name);
