@@ -450,24 +450,30 @@ run_benchmark(IAttributeContext& attr_ctx, QueryOperator query_op, const benchma
 }
 
 void
+print_result_header()
+{
+    std::cout << "| children | t_ratio | a_ratio |   est |     hits |    seeks |  time_ms |     cost | ns_per_seek | ms_per_cost | iterator | blueprint |" << std::endl;
+}
+
+void
 print_result(const BenchmarkResult& res, const benchmark::TermVector& terms, double hit_ratio, uint32_t num_docs)
 {
     std::cout << std::fixed << std::setprecision(3)
-              << "children=" << std::setw(4) << terms.size()
-              << ", t_ratio=" << std::setw(5) << hit_ratio
-              << ", a_ratio=" << std::setw(5) << ((double) res.hits / (double) num_docs)
-              << ", est=" << std::setw(5) << res.estimate
-              << ", hits=" << std::setw(7) << res.hits
-              << ", seeks=" << std::setw(9) << res.seeks
+              << "| " << std::setw(8) << terms.size()
+              << " | " << std::setw(7) << hit_ratio
+              << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
+              << " | " << std::setw(5) << res.estimate
+              << " | " << std::setw(8) << res.hits
+              << " | " << std::setw(8) << res.seeks
               << std::setprecision(2)
-              << ", time_ms=" << std::setw(8) << res.time_ms
+              << " | " << std::setw(8) << res.time_ms
               << std::setprecision(3)
-              << ", cost=" << std::setw(8) << res.cost
+              << " | " << std::setw(8) << res.cost
               << std::setprecision(2)
-              << ", ns_per_seek=" << std::setw(8) << res.ns_per_seek()
-              << ", ms_per_cost=" << std::setw(7) << res.ms_per_cost()
-              << ", itr= " << res.iterator_name
-              << ", blueprint= " << res.blueprint_name << std::endl;
+              << " | " << std::setw(11) << res.ns_per_seek()
+              << " | " << std::setw(11) << res.ms_per_cost()
+              << " | " << res.iterator_name
+              << " | " << res.blueprint_name << " |" << std::endl;
 }
 
 void
@@ -622,6 +628,7 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
 {
     BenchmarkCaseResult result;
     std::cout << "-------- run_benchmark_case: " << setup.bcase.to_string() << " --------" << std::endl;
+    print_result_header();
     for (double hit_ratio : setup.hit_ratios) {
         for (uint32_t children : setup.child_counts) {
             uint32_t hits_per_term = calc_hits_per_term(setup.num_docs, hit_ratio, children, setup.bcase.query_op);
