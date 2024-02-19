@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/monitoring_search_iterator.h>
 #include <vespa/searchlib/queryeval/monitoring_dump_iterator.h>
@@ -7,9 +6,11 @@
 #include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/test/searchhistory.h>
 #include <vespa/vespalib/objects/objectdumper.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::queryeval;
 using namespace search::queryeval::test;
@@ -92,71 +93,81 @@ struct TreeFixture
                                                 false));
         _res.search(*_itr);
     }
+    ~TreeFixture();
 };
 
-TEST_F("require that number of seeks is collected", SimpleFixture)
+TreeFixture::~TreeFixture() = default;
+
+TEST(MonitoringSearchIteratorTest, require_that_number_of_seeks_is_collected)
 {
-    EXPECT_EQUAL(4u, f._itr.getStats().getNumSeeks());
-    EXPECT_EQUAL(4.0 / 3.0, f._itr.getStats().getNumSeeksPerUnpack());
+    SimpleFixture f;
+    EXPECT_EQ(4u, f._itr.getStats().getNumSeeks());
+    EXPECT_EQ(4.0 / 3.0, f._itr.getStats().getNumSeeksPerUnpack());
 }
 
-TEST_F("require that number of unpacks is collected", SimpleFixture)
+TEST(MonitoringSearchIteratorTest, require_that_number_of_unpacks_is_collected)
 {
-    EXPECT_EQUAL(3u, f._itr.getStats().getNumUnpacks());
+    SimpleFixture f;
+    EXPECT_EQ(3u, f._itr.getStats().getNumUnpacks());
 }
 
-TEST_F("require that docId stepping is collected (root iterator)", SimpleFixture)
+TEST(MonitoringSearchIteratorTest, require_that_docid_stepping_is_collected_for_root_iterator)
 {
-    EXPECT_EQUAL(4u, f._itr.getStats().getNumDocIdSteps());
-    EXPECT_EQUAL(1, f._itr.getStats().getAvgDocIdSteps());
+    SimpleFixture f;
+    EXPECT_EQ(4u, f._itr.getStats().getNumDocIdSteps());
+    EXPECT_EQ(1, f._itr.getStats().getAvgDocIdSteps());
 }
 
-TEST_F("require that docId stepping is collected (child iterator)", AdvancedFixture)
+TEST(MonitoringSearchIteratorTest, require_that_docid_stepping_is_collected_for_child_iterator)
 {
+    AdvancedFixture f;
     f._itr.seek(1); // 2 - 1
-    EXPECT_EQUAL(1u, f._itr.getStats().getNumDocIdSteps());
+    EXPECT_EQ(1u, f._itr.getStats().getNumDocIdSteps());
     f._itr.seek(19); // 19 - 2
-    EXPECT_EQUAL(18u, f._itr.getStats().getNumDocIdSteps());
+    EXPECT_EQ(18u, f._itr.getStats().getNumDocIdSteps());
     f._itr.seek(64); // 64 - 32
-    EXPECT_EQUAL(50u, f._itr.getStats().getNumDocIdSteps());
+    EXPECT_EQ(50u, f._itr.getStats().getNumDocIdSteps());
     f._itr.seek(74); // 74 - 64
-    EXPECT_EQUAL(60u, f._itr.getStats().getNumDocIdSteps());
-    EXPECT_EQUAL(60 / 4, f._itr.getStats().getAvgDocIdSteps());
+    EXPECT_EQ(60u, f._itr.getStats().getNumDocIdSteps());
+    EXPECT_EQ(60 / 4, f._itr.getStats().getAvgDocIdSteps());
 }
 
-TEST_F("require that hit skipping is collected ", AdvancedFixture)
+TEST(MonitoringSearchIteratorTest, require_that_hit_skipping_is_collected)
 {
+    AdvancedFixture f;
     f._itr.seek(1);
-    EXPECT_EQUAL(0u, f._itr.getStats().getNumHitSkips());
+    EXPECT_EQ(0u, f._itr.getStats().getNumHitSkips());
     f._itr.seek(4);
-    EXPECT_EQUAL(0u, f._itr.getStats().getNumHitSkips());
+    EXPECT_EQ(0u, f._itr.getStats().getNumHitSkips());
     f._itr.seek(16);
-    EXPECT_EQUAL(1u, f._itr.getStats().getNumHitSkips());
+    EXPECT_EQ(1u, f._itr.getStats().getNumHitSkips());
     f._itr.seek(120);
-    EXPECT_EQUAL(3u, f._itr.getStats().getNumHitSkips());
-    EXPECT_EQUAL(3.0 / 4.0, f._itr.getStats().getAvgHitSkips());
+    EXPECT_EQ(3u, f._itr.getStats().getNumHitSkips());
+    EXPECT_EQ(3.0 / 4.0, f._itr.getStats().getAvgHitSkips());
 }
 
-TEST_F("require that results from underlying iterator is exposed through monitoring iterator", SimpleFixture)
+TEST(MonitoringSearchIteratorTest, require_that_results_from_underlying_iterator_is_exposed_through_monitoring_iterator)
 {
-    EXPECT_EQUAL(SimpleResult().addHit(2).addHit(4).addHit(8), f._res);
+    SimpleFixture f;
+    EXPECT_EQ(SimpleResult().addHit(2).addHit(4).addHit(8), f._res);
 }
 
-TEST_F("require that calls are forwarded to underlying iterator", HistoryFixture)
+TEST(MonitoringSearchIteratorTest, require_that_calls_are_forwarded_to_underlying_iterator)
 {
+    HistoryFixture f;
     f._itr.seek(2);
-    EXPECT_EQUAL(2u, f._itr.getDocId());
+    EXPECT_EQ(2u, f._itr.getDocId());
     f._itr.unpack(2);
     f._itr.seek(4);
-    EXPECT_EQUAL(4u, f._itr.getDocId());
+    EXPECT_EQ(4u, f._itr.getDocId());
     f._itr.unpack(4);
     f._itr.seek(8);
-    EXPECT_EQUAL(8u, f._itr.getDocId());
+    EXPECT_EQ(8u, f._itr.getDocId());
     f._itr.unpack(8);
     f._itr.getPostingInfo();
     const HistorySearchIterator &hsi = dynamic_cast<const HistorySearchIterator &>(f._itr.getIterator());
-    EXPECT_EQUAL(SearchHistory().seek("x", 2).unpack("x", 2).seek("x", 4).unpack("x", 4).seek("x", 8).unpack("x", 8),
-                 hsi._history);
+    EXPECT_EQ(SearchHistory().seek("x", 2).unpack("x", 2).seek("x", 4).unpack("x", 4).seek("x", 8).unpack("x", 8),
+              hsi._history);
     EXPECT_TRUE(hsi._getPostingInfoCalled);
 }
 
@@ -183,7 +194,7 @@ addIterator(MonitoringSearchIterator::Dumper &d,
     d.closeStruct();
 }
 
-TEST("require that dumper can handle formatting on several levels")
+TEST(MonitoringSearchIteratorTest, require_that_dumper_can_handle_formatting_on_several_levels)
 {
     MonitoringSearchIterator::Dumper d(2, 6, 6, 10, 3);
     addIterator(d, "root", 1, 1.1, 11.22, 11, 111.3);
@@ -205,7 +216,7 @@ TEST("require that dumper can handle formatting on several levels")
         }
         d.closeStruct();
     }
-    EXPECT_EQUAL(
+    EXPECT_EQ(
     "root:        1 seeks,      1.100 steps/seek,     11.220 skips/seek,     11 unpacks,    111.300 seeks/unpack\n"
     "  c.1:    222222 seeks,      2.111 steps/seek,     22.222 skips/seek, 222000 unpacks,    222.444 seeks/unpack\n"
     "    c.1.1:  333333 seeks,      3.111 steps/seek,     33.222 skips/seek, 333000 unpacks, 333333.444 seeks/unpack\n"
@@ -216,99 +227,103 @@ TEST("require that dumper can handle formatting on several levels")
     d.toString());
 }
 
-TEST_F("require that single iterator can be dumped compact", AdvancedFixture)
+TEST(MonitoringSearchIteratorTest, require_that_single_iterator_can_be_dumped_compact)
 {
+    AdvancedFixture f;
     f._itr.seek(6);
     f._itr.seek(16);
     f._itr.unpack(16);
     MonitoringSearchIterator::Dumper dumper;
     visit(dumper, "", f._itr);
-    EXPECT_EQUAL("AdvancedIterator: 2 seeks, 7.00 steps/seek, 1.00 skips/seek, 1 unpacks, 2.00 seeks/unpack\n",
-                 dumper.toString());
+    EXPECT_EQ("AdvancedIterator: 2 seeks, 7.00 steps/seek, 1.00 skips/seek, 1 unpacks, 2.00 seeks/unpack\n",
+              dumper.toString());
 }
 
-TEST_F("require that iterator tree can be dumped compact", TreeFixture)
+TEST(MonitoringSearchIteratorTest, require_that_iterator_tree_can_be_dumped_compact)
 {
+    TreeFixture f;
     MonitoringSearchIterator::Dumper dumper;
     visit(dumper, "", f._itr.get());
-    EXPECT_EQUAL("and: 2 seeks, 1.00 steps/seek, 0.00 skips/seek, 1 unpacks, 2.00 seeks/unpack\n"
-                 "    child1: 3 seeks, 1.00 steps/seek, 0.00 skips/seek, 1 unpacks, 3.00 seeks/unpack\n"
-                 "    child2: 3 seeks, 1.67 steps/seek, 0.00 skips/seek, 1 unpacks, 3.00 seeks/unpack\n",
-                 dumper.toString());
+    EXPECT_EQ("and: 2 seeks, 1.00 steps/seek, 0.00 skips/seek, 1 unpacks, 2.00 seeks/unpack\n"
+              "    child1: 3 seeks, 1.00 steps/seek, 0.00 skips/seek, 1 unpacks, 3.00 seeks/unpack\n"
+              "    child2: 3 seeks, 1.67 steps/seek, 0.00 skips/seek, 1 unpacks, 3.00 seeks/unpack\n",
+              dumper.toString());
 }
 
-TEST_F("require that single iterator can be dumped verbosely", AdvancedFixture)
+TEST(MonitoringSearchIteratorTest, require_that_single_iterator_can_be_dumped_verbosely)
 {
+    AdvancedFixture f;
     f._itr.seek(6);
     f._itr.seek(16);
     f._itr.unpack(16);
     vespalib::ObjectDumper dumper;
     visit(dumper, "", &f._itr);
-    EXPECT_EQUAL("search::queryeval::MonitoringSearchIterator {\n"
-                 "    iteratorName: 'AdvancedIterator'\n"
-                 "    iteratorType: 'search::queryeval::SimpleSearch'\n"
-                 "    stats: MonitoringSearchIterator::Stats {\n"
-                 "        numSeeks: 2\n"
-                 "        numDocIdSteps: 14\n"
-                 "        avgDocIdSteps: 7\n"
-                 "        numHitSkips: 2\n"
-                 "        avgHitSkips: 1\n"
-                 "        numUnpacks: 1\n"
-                 "        numSeeksPerUnpack: 2\n"
-                 "    }\n"
-                 "    tag: '<null>'\n"
-                 "}\n",
-                 dumper.toString());
+    EXPECT_EQ("search::queryeval::MonitoringSearchIterator {\n"
+              "    iteratorName: 'AdvancedIterator'\n"
+              "    iteratorType: 'search::queryeval::SimpleSearch'\n"
+              "    stats: MonitoringSearchIterator::Stats {\n"
+              "        numSeeks: 2\n"
+              "        numDocIdSteps: 14\n"
+              "        avgDocIdSteps: 7\n"
+              "        numHitSkips: 2\n"
+              "        avgHitSkips: 1\n"
+              "        numUnpacks: 1\n"
+              "        numSeeksPerUnpack: 2\n"
+              "    }\n"
+              "    tag: '<null>'\n"
+              "}\n",
+              dumper.toString());
 }
 
-TEST_F("require that iterator tree can be dumped verbosely", TreeFixture)
+TEST(MonitoringSearchIteratorTest, require_that_iterator_tree_can_be_dumped_verbosely)
 {
+    TreeFixture f;
     vespalib::ObjectDumper dumper;
     visit(dumper, "", f._itr.get());
-    EXPECT_EQUAL("search::queryeval::MonitoringSearchIterator {\n"
-                 "    iteratorName: 'and'\n"
-                 "    iteratorType: 'search::queryeval::AndSearchStrict<search::queryeval::(anonymous namespace)::FullUnpack>'\n"
-                 "    stats: MonitoringSearchIterator::Stats {\n"
-                 "        numSeeks: 2\n"
-                 "        numDocIdSteps: 2\n"
-                 "        avgDocIdSteps: 1\n"
-                 "        numHitSkips: 0\n"
-                 "        avgHitSkips: 0\n"
-                 "        numUnpacks: 1\n"
-                 "        numSeeksPerUnpack: 2\n"
-                 "    }\n"
-                 "    children: std::vector {\n"
-                 "        [0]: search::queryeval::MonitoringSearchIterator {\n"
-                 "            iteratorName: 'child1'\n"
-                 "            iteratorType: 'search::queryeval::SimpleSearch'\n"
-                 "            stats: MonitoringSearchIterator::Stats {\n"
-                 "                numSeeks: 3\n"
-                 "                numDocIdSteps: 3\n"
-                 "                avgDocIdSteps: 1\n"
-                 "                numHitSkips: 0\n"
-                 "                avgHitSkips: 0\n"
-                 "                numUnpacks: 1\n"
-                 "                numSeeksPerUnpack: 3\n"
-                 "            }\n"
-                 "            tag: '<null>'\n"
-                 "        }\n"
-                 "        [1]: search::queryeval::MonitoringSearchIterator {\n"
-                 "            iteratorName: 'child2'\n"
-                 "            iteratorType: 'search::queryeval::SimpleSearch'\n"
-                 "            stats: MonitoringSearchIterator::Stats {\n"
-                 "                numSeeks: 3\n"
-                 "                numDocIdSteps: 5\n"
-                 "                avgDocIdSteps: 1.66667\n"
-                 "                numHitSkips: 0\n"
-                 "                avgHitSkips: 0\n"
-                 "                numUnpacks: 1\n"
-                 "                numSeeksPerUnpack: 3\n"
-                 "            }\n"
-                 "            tag: '<null>'\n"
-                 "        }\n"
-                 "    }\n"
-                 "}\n",
-        dumper.toString());
+    EXPECT_EQ("search::queryeval::MonitoringSearchIterator {\n"
+              "    iteratorName: 'and'\n"
+              "    iteratorType: 'search::queryeval::AndSearchStrict<search::queryeval::(anonymous namespace)::FullUnpack>'\n"
+              "    stats: MonitoringSearchIterator::Stats {\n"
+              "        numSeeks: 2\n"
+              "        numDocIdSteps: 2\n"
+              "        avgDocIdSteps: 1\n"
+              "        numHitSkips: 0\n"
+              "        avgHitSkips: 0\n"
+              "        numUnpacks: 1\n"
+              "        numSeeksPerUnpack: 2\n"
+              "    }\n"
+              "    children: std::vector {\n"
+              "        [0]: search::queryeval::MonitoringSearchIterator {\n"
+              "            iteratorName: 'child1'\n"
+              "            iteratorType: 'search::queryeval::SimpleSearch'\n"
+              "            stats: MonitoringSearchIterator::Stats {\n"
+              "                numSeeks: 3\n"
+              "                numDocIdSteps: 3\n"
+              "                avgDocIdSteps: 1\n"
+              "                numHitSkips: 0\n"
+              "                avgHitSkips: 0\n"
+              "                numUnpacks: 1\n"
+              "                numSeeksPerUnpack: 3\n"
+              "            }\n"
+              "            tag: '<null>'\n"
+              "        }\n"
+              "        [1]: search::queryeval::MonitoringSearchIterator {\n"
+              "            iteratorName: 'child2'\n"
+              "            iteratorType: 'search::queryeval::SimpleSearch'\n"
+              "            stats: MonitoringSearchIterator::Stats {\n"
+              "                numSeeks: 3\n"
+              "                numDocIdSteps: 5\n"
+              "                avgDocIdSteps: 1.66667\n"
+              "                numHitSkips: 0\n"
+              "                avgHitSkips: 0\n"
+              "                numUnpacks: 1\n"
+              "                numSeeksPerUnpack: 3\n"
+              "            }\n"
+              "            tag: '<null>'\n"
+              "        }\n"
+              "    }\n"
+              "}\n",
+              dumper.toString());
 }
 
 class MonitoringSearchIteratorVerifier : public search::test::SearchIteratorVerifier {
@@ -331,7 +346,8 @@ public:
     }
 };
 
-TEST("test monitoring search iterator adheres to search iterator requirements") {
+TEST(MonitoringSearchIteratorTest, test_monitoring_search_iterator_adheres_to_search_iterator_requirements)
+{
     MonitoringSearchIteratorVerifier searchVerifier;
     searchVerifier.verify();
     MonitoringDumpIteratorVerifier dumpVerifier;
@@ -339,4 +355,4 @@ TEST("test monitoring search iterator adheres to search iterator requirements") 
 }
 
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
