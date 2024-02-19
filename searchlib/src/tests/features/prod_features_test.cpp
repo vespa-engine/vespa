@@ -79,103 +79,65 @@ using DataType = FieldInfo::DataType;
 const double EPS = 10e-6;
 
 
-TEST_APPHOOK(Test);
-
-int
-Test::Main()
+Test::Test()
 {
-    TEST_INIT("prod_features_test");
-
     // Configure factory with all known blueprints.
     setup_fef_test_plugin(_factory);
     setup_search_features(_factory);
-
-    // Test all features.
-    TEST_DO(testFramework());           TEST_FLUSH();
-    TEST_DO(testFtLib());               TEST_FLUSH();
-    TEST_DO(testAge());                 TEST_FLUSH();
-    TEST_DO(testAttribute());           TEST_FLUSH();
-    TEST_DO(testAttributeMatch());      TEST_FLUSH();
-    TEST_DO(testCloseness());           TEST_FLUSH();
-    TEST_DO(testMatchCount());          TEST_FLUSH();
-    TEST_DO(testGreatCircleDistance()); TEST_FLUSH();
-    TEST_DO(testDistance());            TEST_FLUSH();
-    TEST_DO(testDistanceToPath());      TEST_FLUSH();
-    TEST_DO(testDotProduct());          TEST_FLUSH();
-    TEST_DO(testFieldLength());         TEST_FLUSH();
-    TEST_DO(testFieldMatch());          TEST_FLUSH();
-    TEST_DO(testFieldTermMatch());      TEST_FLUSH();
-    TEST_DO(testFirstPhase());          TEST_FLUSH();
-    TEST_DO(testForeach());             TEST_FLUSH();
-    TEST_DO(testFreshness());           TEST_FLUSH();
-    TEST_DO(testMatch());               TEST_FLUSH();
-    TEST_DO(testMatches());             TEST_FLUSH();
-    TEST_DO(testNow());                 TEST_FLUSH();
-    TEST_DO(testQuery());               TEST_FLUSH();
-    TEST_DO(testQueryTermCount());      TEST_FLUSH();
-    TEST_DO(testRandom());              TEST_FLUSH();
-    TEST_DO(testRandomNormal());        TEST_FLUSH();
-    TEST_DO(testRandomNormalStable());  TEST_FLUSH();
-    TEST_DO(testRankingExpression());   TEST_FLUSH();
-    TEST_DO(testTerm());                TEST_FLUSH();
-    TEST_DO(testTermDistance());        TEST_FLUSH();
-    TEST_DO(testUtils());               TEST_FLUSH();
-    TEST_DO(testUnique());              TEST_FLUSH();
-
-    TEST_DONE();
-    return 0;
 }
 
+Test::~Test() = default;
 
-void
-Test::testFtLib()
+ProdFeaturesTest::ProdFeaturesTest() = default;
+ProdFeaturesTest::~ProdFeaturesTest() = default;
+
+TEST_F(ProdFeaturesTest, test_ft_lib)
 {
     { // toQuery
         FtQuery q = FtUtil::toQuery("a b!50 0.5:c!200%0.5  d%0.3   e!300 0.3:f ");
         ASSERT_TRUE(q.size() == 6);
-        EXPECT_EQUAL(q[0].term, vespalib::string("a"));
-        EXPECT_EQUAL(q[0].termWeight.percent(), 100);
-        EXPECT_APPROX(q[0].connexity, 0.1f, EPS);
-        EXPECT_APPROX(q[0].significance, 0.1f, EPS);
-        EXPECT_EQUAL(q[1].term, vespalib::string("b"));
-        EXPECT_EQUAL(q[1].termWeight.percent(), 50);
-        EXPECT_APPROX(q[1].connexity, 0.1f, EPS);
-        EXPECT_APPROX(q[1].significance, 0.1f, EPS);
-        EXPECT_EQUAL(q[2].term, vespalib::string("c"));
-        EXPECT_EQUAL(q[2].termWeight.percent(), 200);
-        EXPECT_APPROX(q[2].connexity, 0.5f, EPS);
-        EXPECT_APPROX(q[2].significance, 0.5f, EPS);
-        EXPECT_EQUAL(q[3].term, vespalib::string("d"));
-        EXPECT_EQUAL(q[3].termWeight.percent(), 100);
-        EXPECT_APPROX(q[3].connexity, 0.1f, EPS);
-        EXPECT_APPROX(q[3].significance, 0.3f, EPS);
-        EXPECT_EQUAL(q[4].term, vespalib::string("e"));
-        EXPECT_EQUAL(q[4].termWeight.percent(), 300);
-        EXPECT_APPROX(q[4].connexity, 0.1f, EPS);
-        EXPECT_APPROX(q[4].significance, 0.1f, EPS);
-        EXPECT_EQUAL(q[5].term, vespalib::string("f"));
-        EXPECT_EQUAL(q[5].termWeight.percent(), 100);
-        EXPECT_APPROX(q[5].connexity, 0.3f, EPS);
-        EXPECT_APPROX(q[5].significance, 0.1f, EPS);
+        EXPECT_EQ(q[0].term, vespalib::string("a"));
+        EXPECT_EQ(q[0].termWeight.percent(), 100);
+        EXPECT_NEAR(q[0].connexity, 0.1f, EPS);
+        EXPECT_NEAR(q[0].significance, 0.1f, EPS);
+        EXPECT_EQ(q[1].term, vespalib::string("b"));
+        EXPECT_EQ(q[1].termWeight.percent(), 50);
+        EXPECT_NEAR(q[1].connexity, 0.1f, EPS);
+        EXPECT_NEAR(q[1].significance, 0.1f, EPS);
+        EXPECT_EQ(q[2].term, vespalib::string("c"));
+        EXPECT_EQ(q[2].termWeight.percent(), 200);
+        EXPECT_NEAR(q[2].connexity, 0.5f, EPS);
+        EXPECT_NEAR(q[2].significance, 0.5f, EPS);
+        EXPECT_EQ(q[3].term, vespalib::string("d"));
+        EXPECT_EQ(q[3].termWeight.percent(), 100);
+        EXPECT_NEAR(q[3].connexity, 0.1f, EPS);
+        EXPECT_NEAR(q[3].significance, 0.3f, EPS);
+        EXPECT_EQ(q[4].term, vespalib::string("e"));
+        EXPECT_EQ(q[4].termWeight.percent(), 300);
+        EXPECT_NEAR(q[4].connexity, 0.1f, EPS);
+        EXPECT_NEAR(q[4].significance, 0.1f, EPS);
+        EXPECT_EQ(q[5].term, vespalib::string("f"));
+        EXPECT_EQ(q[5].termWeight.percent(), 100);
+        EXPECT_NEAR(q[5].connexity, 0.3f, EPS);
+        EXPECT_NEAR(q[5].significance, 0.1f, EPS);
     }
     { // toRankResult
         RankResult rr = toRankResult("foo", "a:0.5 b:-0.5  c:2   d:3 ");
         std::vector<vespalib::string> keys = rr.getKeys();
         ASSERT_TRUE(keys.size() == 4);
-        EXPECT_EQUAL(keys[0], vespalib::string("foo.a"));
-        EXPECT_EQUAL(keys[1], vespalib::string("foo.b"));
-        EXPECT_EQUAL(keys[2], vespalib::string("foo.c"));
-        EXPECT_EQUAL(keys[3], vespalib::string("foo.d"));
-        EXPECT_APPROX(rr.getScore("foo.a"), 0.5f, EPS);
-        EXPECT_APPROX(rr.getScore("foo.b"), -0.5f, EPS);
-        EXPECT_APPROX(rr.getScore("foo.c"), 2.0f, EPS);
-        EXPECT_APPROX(rr.getScore("foo.d"), 3.0f, EPS);
+        EXPECT_EQ(keys[0], vespalib::string("foo.a"));
+        EXPECT_EQ(keys[1], vespalib::string("foo.b"));
+        EXPECT_EQ(keys[2], vespalib::string("foo.c"));
+        EXPECT_EQ(keys[3], vespalib::string("foo.d"));
+        EXPECT_NEAR(rr.getScore("foo.a"), 0.5f, EPS);
+        EXPECT_NEAR(rr.getScore("foo.b"), -0.5f, EPS);
+        EXPECT_NEAR(rr.getScore("foo.c"), 2.0f, EPS);
+        EXPECT_NEAR(rr.getScore("foo.d"), 3.0f, EPS);
     }
 }
 
 
-void
-Test::testAge()
+TEST_F(ProdFeaturesTest, test_age)
 {
     { // Test blueprint
         FtIndexEnvironment idx_env;
@@ -222,8 +184,7 @@ Test::setupForAgeTest(FtFeatureTest & ft, int64_t docTime)
     ft.getIndexEnv().getAttributeMap().add(doctime);
 }
 
-void
-Test::testAttribute()
+TEST_F(ProdFeaturesTest, test_attribute)
 {
     AttributeBlueprint prototype;
     {
@@ -476,8 +437,7 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     ASSERT_TRUE(avs[9]->load());
 }
 
-void
-Test::testCloseness()
+TEST_F(ProdFeaturesTest, test_closeness)
 {
     { // Test blueprint.
         ClosenessBlueprint pt;
@@ -492,11 +452,11 @@ Test::testCloseness()
     }
 
     { // Test executor.
-        TEST_DO(assertCloseness(1,   "pos", 0));
+        assertCloseness(1,   "pos", 0);
         assertCloseness(0.8, "pos", 1802661);
         assertCloseness(0,   "pos", 9013306);
         // two-argument version
-        TEST_DO(assertCloseness(0.8, "field,pos", 1802661));
+        assertCloseness(0.8, "field,pos", 1802661);
 
         // use non-default maxDistance
         assertCloseness(1,   "pos", 0,   100);
@@ -536,8 +496,7 @@ Test::assertCloseness(feature_t exp, const vespalib::string & attr, double dista
     ASSERT_TRUE(ft.execute(RankResult().addScore(feature, exp)));
 }
 
-void
-Test::testFieldLength()
+TEST_F(ProdFeaturesTest, test_field_length)
 {
     FieldLengthBlueprint pt;
 
@@ -629,8 +588,7 @@ Test::assertFieldMatchTS(const vespalib::string & spec,
 }
 
 
-void
-Test::testFirstPhase()
+TEST_F(ProdFeaturesTest, test_first_phase)
 {
     { // Test blueprint.
         FirstPhaseBlueprint pt;
@@ -656,8 +614,7 @@ Test::testFirstPhase()
     }
 }
 
-void
-Test::testForeach()
+TEST_F(ProdFeaturesTest, test_foreach)
 {
     { // Test blueprint.
         ForeachBlueprint pt;
@@ -764,8 +721,7 @@ Test::assertForeachOperation(feature_t exp, const vespalib::string & cond, const
 }
 
 
-void
-Test::testFreshness()
+TEST_F(ProdFeaturesTest, test_freshness)
 {
     { // Test blueprint.
         FtIndexEnvironment idx_env;
@@ -853,8 +809,7 @@ GeoLocation toGL(const AirPort &p) {
 
 }
 
-void
-Test::testGreatCircleDistance()
+TEST_F(ProdFeaturesTest, test_great_circle_distance)
 {
     { // Test blueprint.
         GreatCircleDistanceBlueprint pt;
@@ -892,8 +847,7 @@ Test::testGreatCircleDistance()
     }
 }
 
-void
-Test::testDistance()
+TEST_F(ProdFeaturesTest, test_distance)
 {
     { // Test blueprint.
         DistanceBlueprint pt;
@@ -924,34 +878,34 @@ Test::testDistance()
         { // test 2D multi location (zcurve)
             // note: "aspect" is ignored now, computed from "y", and cos(60 degrees) = 0.5
             vespalib::string positions = "5:59999995," "35:60000000," "5:60000040," "35:59999960";
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 59999995, 0, 0));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 60000000, 0x10000000, 1));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 60000040, 0x20000000, 2));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 59999960, 0x30000000, 3));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0x40000000, 0));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  -5, 59999980, 0x50000000, 0));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 59999985, 0x60000000, 1));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 60000015, 0x70000000, 1));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  15, 60000020, 0x80000000, 2));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  -5, 60000020, 0x90000000, 2));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999955, 0xa0000000, 3));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999965, 0xb0000000, 3));
+            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 59999995, 0, 0);
+            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 60000000, 0x10000000, 1);
+            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 60000040, 0x20000000, 2);
+            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 59999960, 0x30000000, 3);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0x40000000, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  -5, 59999980, 0x50000000, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 59999985, 0x60000000, 1);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 60000015, 0x70000000, 1);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  15, 60000020, 0x80000000, 2);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  -5, 60000020, 0x90000000, 2);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999955, 0xa0000000, 3);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999965, 0xb0000000, 3);
 
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -25, 59999980, 0xc0000000, 0));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -25, 60000060, 0xd0000000, 2));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0xe0000000, 0));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, 59999980, 0xf0000000, 1));
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -25, 59999980, 0xc0000000, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -25, 60000060, 0xd0000000, 2);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0xe0000000, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, 59999980, 0xf0000000, 1);
         }
 
         { // test geo multi location (zcurve)
             // note: cos(70.528779 degrees) = 1/3
             vespalib::string positions = "0:70528779," "100:70528879," "-200:70528979," "-300:70528479," "400:70528379";
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),  positions,    0, 70528779 +   0, 0, 0));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(1.0f),  positions,  100, 70528779 + 101, 0x20000000, 1));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(0.0f),  positions, -200, 70528779 + 200, 0x40000000, 2));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(13.0f), positions, -315, 70528779  -312, 0x80000000, 3));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  412, 70528779  -403, 0xB0000000, 4));
-            TEST_DO(assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  109, 70528779 + 104, 0xF0000000, 1));
+            assert2DZDistance(static_cast<feature_t>(0.0f),  positions,    0, 70528779 +   0, 0, 0);
+            assert2DZDistance(static_cast<feature_t>(1.0f),  positions,  100, 70528779 + 101, 0x20000000, 1);
+            assert2DZDistance(static_cast<feature_t>(0.0f),  positions, -200, 70528779 + 200, 0x40000000, 2);
+            assert2DZDistance(static_cast<feature_t>(13.0f), positions, -315, 70528779  -312, 0x80000000, 3);
+            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  412, 70528779  -403, 0xB0000000, 4);
+            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  109, 70528779 + 104, 0xF0000000, 1);
         }
 
         { // test default distance
@@ -1056,8 +1010,7 @@ Test::assert2DZDistance(feature_t exp, const vespalib::string & positions,
                            addScore("distance(pos).longitude", pos[hit_index].first * 1e-6)));
 }
 
-void
-Test::testDistanceToPath()
+TEST_F(ProdFeaturesTest, test_distance_to_path)
 {
     {
         // Test blueprint.
@@ -1197,8 +1150,8 @@ verifyCorrectDotProductExecutor(BlueprintFactory & factory, vespalib::stringref 
     vespalib::Stash stash;
     FeatureExecutor &exc = bp.createExecutor(ft.getQueryEnv(), stash);
     // check that we have the optimized enum version
-    EXPECT_EQUAL(expected, exc.getClassName());
-    EXPECT_EQUAL(1u, deps.output.size());
+    EXPECT_EQ(expected, exc.getClassName());
+    EXPECT_EQ(1u, deps.output.size());
 }
 
 template<typename T>
@@ -1208,22 +1161,21 @@ void verifyArrayParser()
     for(const vespalib::string & s : v) {
         std::vector<T> out;
         ArrayParser::parse(s, out);
-        EXPECT_EQUAL(8u, out.size());
-        EXPECT_EQUAL(2,  out[0]);
-        EXPECT_EQUAL(-3, out[1]);
-        EXPECT_EQUAL(0,  out[2]);
-        EXPECT_EQUAL(0,  out[3]);
-        EXPECT_EQUAL(0,  out[4]);
-        EXPECT_EQUAL(0,  out[5]);
-        EXPECT_EQUAL(0,  out[6]);
-        EXPECT_EQUAL(-3, out[7]);
+        EXPECT_EQ(8u, out.size());
+        EXPECT_EQ(2,  out[0]);
+        EXPECT_EQ(-3, out[1]);
+        EXPECT_EQ(0,  out[2]);
+        EXPECT_EQ(0,  out[3]);
+        EXPECT_EQ(0,  out[4]);
+        EXPECT_EQ(0,  out[5]);
+        EXPECT_EQ(0,  out[6]);
+        EXPECT_EQ(-3, out[7]);
     }
 }
 
 }
 
-void
-Test::testDotProduct()
+TEST_F(ProdFeaturesTest, test_dot_product)
 {
     { // Test blueprint.
         FtIndexEnvironment idx_env;
@@ -1252,69 +1204,69 @@ Test::testDotProduct()
             {
                 dotproduct::wset::EnumVector out(sv);
                 WeightedSetParser::parse("", out);
-                EXPECT_EQUAL(out.getVector().size(), 0u);
+                EXPECT_EQ(out.getVector().size(), 0u);
                 WeightedSetParser::parse("()", out);
-                EXPECT_EQUAL(out.getVector().size(), 0u);
+                EXPECT_EQ(out.getVector().size(), 0u);
                 WeightedSetParser::parse("(a;1)", out);
-                EXPECT_EQUAL(out.getVector().size(), 0u);
+                EXPECT_EQ(out.getVector().size(), 0u);
                 WeightedSetParser::parse("(a:1)", out);
-                EXPECT_EQUAL(out.getVector().size(), 1u);
+                EXPECT_EQ(out.getVector().size(), 1u);
                 EXPECT_TRUE(sv->findEnum("a", e));
-                EXPECT_EQUAL(out.getVector()[0].first, e);
-                EXPECT_EQUAL(out.getVector()[0].second, 1.0);
+                EXPECT_EQ(out.getVector()[0].first, e);
+                EXPECT_EQ(out.getVector()[0].second, 1.0);
             }
             std::vector<vespalib::string> v = {"(b:2.5,c:-3.5)", "{b:2.5,c:-3.5}"};
             for(const vespalib::string & s : v) {
                 dotproduct::wset::EnumVector out(sv);
                 WeightedSetParser::parse(s, out);
-                EXPECT_EQUAL(out.getVector().size(), 2u);
+                EXPECT_EQ(out.getVector().size(), 2u);
                 EXPECT_TRUE(sv->findEnum("b", e));
-                EXPECT_EQUAL(out.getVector()[0].first, e);
-                EXPECT_EQUAL(out.getVector()[0].second, 2.5);
+                EXPECT_EQ(out.getVector()[0].first, e);
+                EXPECT_EQ(out.getVector()[0].second, 2.5);
                 EXPECT_TRUE(sv->findEnum("c", e));
-                EXPECT_EQUAL(out.getVector()[1].first, e);
-                EXPECT_EQUAL(out.getVector()[1].second, -3.5);
+                EXPECT_EQ(out.getVector()[1].first, e);
+                EXPECT_EQ(out.getVector()[1].second, -3.5);
             }
             { // test funky syntax
                 dotproduct::wset::EnumVector out(sv);
                 WeightedSetParser::parse("( a: 1,  b:2 ,c: , :3)", out);
-                EXPECT_EQUAL(out.getVector().size(), 4u);
+                EXPECT_EQ(out.getVector().size(), 4u);
                 EXPECT_TRUE(sv->findEnum("a", e));
-                EXPECT_EQUAL(out.getVector()[0].first, e);
-                EXPECT_EQUAL(out.getVector()[0].second, 1);
+                EXPECT_EQ(out.getVector()[0].first, e);
+                EXPECT_EQ(out.getVector()[0].second, 1);
                 EXPECT_TRUE(sv->findEnum("b", e));
-                EXPECT_EQUAL(out.getVector()[1].first, e);
-                EXPECT_EQUAL(out.getVector()[1].second, 2);
+                EXPECT_EQ(out.getVector()[1].first, e);
+                EXPECT_EQ(out.getVector()[1].second, 2);
                 EXPECT_TRUE(sv->findEnum("c", e));
-                EXPECT_EQUAL(out.getVector()[2].first, e);
-                EXPECT_EQUAL(out.getVector()[2].second, 0);
+                EXPECT_EQ(out.getVector()[2].first, e);
+                EXPECT_EQ(out.getVector()[2].second, 0);
                 EXPECT_TRUE(sv->findEnum("", e));
-                EXPECT_EQUAL(out.getVector()[3].first, e);
-                EXPECT_EQUAL(out.getVector()[3].second, 3);
+                EXPECT_EQ(out.getVector()[3].first, e);
+                EXPECT_EQ(out.getVector()[3].second, 3);
             }
             { // strings not in attribute vector
                 dotproduct::wset::EnumVector out(sv);
                 WeightedSetParser::parse("(not:1)", out);
-                EXPECT_EQUAL(out.getVector().size(), 0u);
+                EXPECT_EQ(out.getVector().size(), 0u);
             }
         }
         { // string vector
             dotproduct::wset::StringVector out;
             WeightedSetParser::parse("(b:2.5,c:-3.5)", out);
-            EXPECT_EQUAL(out.getVector().size(), 2u);
-            EXPECT_EQUAL(out.getVector()[0].first, "b");
-            EXPECT_EQUAL(out.getVector()[0].second, 2.5);
-            EXPECT_EQUAL(out.getVector()[1].first, "c");
-            EXPECT_EQUAL(out.getVector()[1].second, -3.5);
+            EXPECT_EQ(out.getVector().size(), 2u);
+            EXPECT_EQ(out.getVector()[0].first, "b");
+            EXPECT_EQ(out.getVector()[0].second, 2.5);
+            EXPECT_EQ(out.getVector()[1].first, "c");
+            EXPECT_EQ(out.getVector()[1].second, -3.5);
         }
         { // integer vector
             dotproduct::wset::IntegerVector out;
             WeightedSetParser::parse("(20:2.5,30:-3.5)", out);
-            EXPECT_EQUAL(out.getVector().size(), 2u);
-            EXPECT_EQUAL(out.getVector()[0].first, 20);
-            EXPECT_EQUAL(out.getVector()[0].second, 2.5);
-            EXPECT_EQUAL(out.getVector()[1].first, 30);
-            EXPECT_EQUAL(out.getVector()[1].second, -3.5);
+            EXPECT_EQ(out.getVector().size(), 2u);
+            EXPECT_EQ(out.getVector()[0].first, 20);
+            EXPECT_EQ(out.getVector()[0].second, 2.5);
+            EXPECT_EQ(out.getVector()[1].first, 30);
+            EXPECT_EQ(out.getVector()[1].second, -3.5);
         }
     }
     verifyArrayParser<int8_t>();
@@ -1327,7 +1279,7 @@ Test::testDotProduct()
         vespalib::string s = "[[1:3]]";
         std::vector<int32_t> out;
         ArrayParser::parse(s, out);
-        EXPECT_EQUAL(0u, out.size());
+        EXPECT_EQ(0u, out.size());
     }
 
     { // Test executor.
@@ -1351,10 +1303,10 @@ Test::testDotProduct()
             assertDotProduct(550, "(a:1,b:2,c:3,d:4,e:5)", 1, "wsextstr");
         }
         for (const char * name : {"wsbyte", "wsint", "wsint_fast"}) {
-            TEST_DO(assertDotProduct(0,  "()",                    1, name));
-            TEST_DO(assertDotProduct(0,  "(6:5,7:5)",             1, name));
-            TEST_DO(assertDotProduct(18, "(4:4.5)", 1, name));
-            TEST_DO(assertDotProduct(57, "(1:1,2:2,3:3,4:4.5,5:5)", 1, name));
+            assertDotProduct(0,  "()",                    1, name);
+            assertDotProduct(0,  "(6:5,7:5)",             1, name);
+            assertDotProduct(18, "(4:4.5)", 1, name);
+            assertDotProduct(57, "(1:1,2:2,3:3,4:4.5,5:5)", 1, name);
         }
         for (const char * name : {"arrbyte", "arrint", "arrfloat", "arrint_fast", "arrfloat_fast"}) {
             assertDotProduct(0,  "()",                    1, name);
@@ -1375,12 +1327,12 @@ Test::testDotProduct()
         assertDotProduct(17, "(0:1,3:4,50:97)", 1, "sint", "arrfloat"); // attribute override
         assertDotProduct(0, "(0:1,3:4,50:97)", 1, "sint", "arrfloat_non_existing"); // incorrect attribute override
     }
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1,b:2}", "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum"));
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByEnum"));
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{unknown:1}", "search::features::SingleZeroValueExecutor"));
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1, 2:3}", "search::features::dotproduct::wset::DotProductByWeightedSetReadViewExecutor<int>"));
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductByWeightedValueExecutor<int>"));
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{}", "search::features::SingleZeroValueExecutor"));
+    verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1,b:2}", "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum");
+    verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByEnum");
+    verifyCorrectDotProductExecutor(_factory, "wsstr", "{unknown:1}", "search::features::SingleZeroValueExecutor");
+    verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1, 2:3}", "search::features::dotproduct::wset::DotProductByWeightedSetReadViewExecutor<int>");
+    verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductByWeightedValueExecutor<int>");
+    verifyCorrectDotProductExecutor(_factory, "wsint", "{}", "search::features::SingleZeroValueExecutor");
 
 }
 
@@ -1463,8 +1415,7 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
     d->addDoc(docId);
 }
 
-void
-Test::testNow()
+TEST_F(ProdFeaturesTest, test_now)
 {
     {
         // Test blueprint.
@@ -1503,13 +1454,12 @@ Test::testNow()
         RankResult res;
         ASSERT_TRUE(ft.executeOnly(res, 1));
         feature_t now = 15000000000;
-        ASSERT_EQUAL(now, res.getScore("now"));
+        ASSERT_EQ(now, res.getScore("now"));
     }
 }
 
 
-void
-Test::testMatch()
+TEST_F(ProdFeaturesTest, test_match)
 {
     { // Test blueprint.
         MatchBlueprint pt;
@@ -1617,8 +1567,7 @@ Test::testMatch()
     }
 }
 
-void
-Test::testMatchCount()
+TEST_F(ProdFeaturesTest, test_match_count)
 {
     { // Test blueprint.
         MatchCountBlueprint pt;
@@ -1666,12 +1615,11 @@ Test::testMatchCount()
 }
 
 void verifySequence(uint64_t first, uint64_t second) {
-    ASSERT_GREATER(first, second);
-    ASSERT_GREATER(double(first), double(second));
+    ASSERT_GT(first, second);
+    ASSERT_GT(double(first), double(second));
 }
 
-void
-Test::testUnique()
+TEST_F(ProdFeaturesTest, test_unique)
 {
     {
         GlobalSequenceBlueprint bp;
@@ -1683,19 +1631,18 @@ Test::testUnique()
     }
     FtFeatureTest ft(_factory, "globalSequence");
     ASSERT_TRUE(ft.setup());
-    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 0), GlobalSequenceBlueprint::globalSequence(1,1)));
-    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(1,2)));
-    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(2,1)));
-    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 1), GlobalSequenceBlueprint::globalSequence(2,2)));
-    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(2,3)));
-    TEST_DO(verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(3,0)));
-    ASSERT_EQUAL(0xfffffffefffdul, (1ul << 48) - 0x10003l);
+    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 0), GlobalSequenceBlueprint::globalSequence(1,1));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(1,2));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(2,1));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 1), GlobalSequenceBlueprint::globalSequence(2,2));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(2,3));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(3,0));
+    ASSERT_EQ(0xfffffffefffdul, (1ul << 48) - 0x10003l);
     EXPECT_TRUE(ft.execute(0xfffffffefffdul, 0, 1));
     EXPECT_TRUE(ft.execute(0xfffffff8fffdul, 0, 7));
 }
 
-void
-Test::testMatches()
+TEST_F(ProdFeaturesTest, test_matches)
 {
     { // Test blueprint.
         MatchesBlueprint pt;
@@ -1784,13 +1731,14 @@ Test::assertMatches(uint32_t output,
     index["foo"] = FtUtil::tokenize(field);
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
 
-    ASSERT_TRUE(ft.execute(output, EPS, docId));
+    EXPECT_TRUE(ft.execute(output, EPS, docId));
     // Execute and compare results.
-    return EXPECT_TRUE(ft.execute(output, EPS, docId));
+    bool failed = false;
+    EXPECT_TRUE(ft.execute(output, EPS, docId)) << (failed = true, "");
+    return !failed;
 }
 
-void
-Test::testQuery()
+TEST_F(ProdFeaturesTest, test_query)
 {
     { // Test blueprint.
         QueryBlueprint pt;
@@ -1831,8 +1779,7 @@ Test::testQuery()
     }
 }
 
-void
-Test::testQueryTermCount()
+TEST_F(ProdFeaturesTest, test_query_term_count)
 {
     { // Test blueprint.
         QueryTermCountBlueprint pt;
@@ -1869,8 +1816,7 @@ Test::testQueryTermCount()
     }
 }
 
-void
-Test::testRandom()
+TEST_F(ProdFeaturesTest, test_random)
 {
     { // Test blueprint.
         RandomBlueprint pt;
@@ -1921,8 +1867,8 @@ Test::testRandom()
     }
 }
 
-void
-Test::testRandomNormal() {
+TEST_F(ProdFeaturesTest, test_random_normal)
+{
     { // Test blueprint.
         RandomNormalBlueprint pt;
 
@@ -1965,8 +1911,8 @@ Test::testRandomNormal() {
     }
 }
 
-void
-Test::testRandomNormalStable() {
+TEST_F(ProdFeaturesTest, test_random_normal_stable)
+{
     { // Test blueprint.
         RandomNormalStableBlueprint pt;
 
@@ -2008,8 +1954,7 @@ Test::testRandomNormalStable() {
     }
 }
 
-void
-Test::testRankingExpression()
+TEST_F(ProdFeaturesTest, test_ranking_expression)
 {
     { // Test blueprint.
         RankingExpressionBlueprint prototype;
@@ -2090,8 +2035,7 @@ Test::getExpression(const vespalib::string &parameter) const
     return FNB().baseName("rankingExpression").parameter(parameter).buildName();
 }
 
-void
-Test::testTerm()
+TEST_F(ProdFeaturesTest, test_term)
 {
     {
         // Test blueprint.
@@ -2171,8 +2115,7 @@ Test::testTerm()
     }
 }
 
-void
-Test::testTermDistance()
+TEST_F(ProdFeaturesTest, test_term_distance)
 {
     { // test blueprint
         TermDistanceBlueprint pt;
@@ -2238,32 +2181,34 @@ Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
     rr.addScore(feature + ".forwardTermPosition", exp.forwardTermPos);
     rr.addScore(feature + ".reverse",             exp.reverseDist);
     rr.addScore(feature + ".reverseTermPosition", exp.reverseTermPos);
-    return EXPECT_TRUE(ft.execute(rr, docId));
+    bool failed = false;
+    EXPECT_TRUE(ft.execute(rr, docId)) << (failed = true, "");
+    return !failed;
 }
 
-void
-Test::testUtils()
+TEST_F(ProdFeaturesTest, test_utils)
 {
     { // getSignificance
-        EXPECT_APPROX(util::getSignificance(0.0), 1, EPS);
-        EXPECT_APPROX(util::getSignificance(0.0 + 1.0e-7), 1, EPS);
-        EXPECT_APPROX(util::getSignificance(1.0), 0.5, EPS);
-        EXPECT_APPROX(util::getSignificance(1.0 + 1.0e-7), 0.5, EPS);
+        EXPECT_NEAR(util::getSignificance(0.0), 1, EPS);
+        EXPECT_NEAR(util::getSignificance(0.0 + 1.0e-7), 1, EPS);
+        EXPECT_NEAR(util::getSignificance(1.0), 0.5, EPS);
+        EXPECT_NEAR(util::getSignificance(1.0 + 1.0e-7), 0.5, EPS);
         feature_t last = 1;
         for (uint32_t i = 2; i <= 100; i = i + 1) {
             feature_t s = util::getSignificance(i * 1.0e-6);
-            EXPECT_GREATER(s, 0);
-            EXPECT_LESS(s, 1);
-            EXPECT_LESS(s, last);
+            EXPECT_GT(s, 0);
+            EXPECT_LT(s, 1);
+            EXPECT_LT(s, last);
             last = s;
         }
         for (uint32_t i = 999900; i <= 1000000; i = i + 1) {
             feature_t s = util::getSignificance(i * 1.0e-6);
-            EXPECT_GREATER(s, 0);
-            EXPECT_LESS(s, 1);
-            EXPECT_LESS(s, last);
+            EXPECT_GT(s, 0);
+            EXPECT_LT(s, 1);
+            EXPECT_LT(s, last);
             last = s;
         }
     }
 }
 
+GTEST_MAIN_RUN_ALL_TESTS()

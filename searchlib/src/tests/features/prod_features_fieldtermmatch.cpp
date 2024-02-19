@@ -3,16 +3,13 @@
 #include "prod_features_test.h"
 #include <vespa/searchlib/features/fieldtermmatchfeature.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".prod_features_fieldtermmatch");
 
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
 
-void
-Test::testFieldTermMatch()
+TEST_F(ProdFeaturesTest, test_field_term_match)
 {
     {
         // Test blueprint.

@@ -1,6 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP(".prod_features_framework");
 
 #include "prod_features_test.h"
 #include <vespa/searchlib/features/valuefeature.h>
@@ -10,10 +8,8 @@ using namespace search::fef;
 using namespace search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
 
-void
-Test::testFramework()
+TEST_F(ProdFeaturesTest, test_framework)
 {
-    LOG(info, "testFramework()");
     IndexEnvironment indexEnv;
     { // test index environment builder
         IndexEnvironmentBuilder ieb(indexEnv);
@@ -23,21 +19,21 @@ Test::testFramework()
         {
             const FieldInfo * info = indexEnv.getFieldByName("foo");
             ASSERT_TRUE(info != NULL);
-            EXPECT_EQUAL(info->id(), 0u);
+            EXPECT_EQ(info->id(), 0u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
             EXPECT_TRUE(info->collection() == CollectionType::SINGLE);
         }
         {
             const FieldInfo * info = indexEnv.getFieldByName("bar");
             ASSERT_TRUE(info != NULL);
-            EXPECT_EQUAL(info->id(), 1u);
+            EXPECT_EQ(info->id(), 1u);
             EXPECT_TRUE(info->type() == FieldType::ATTRIBUTE);
             EXPECT_TRUE(info->collection() == CollectionType::WEIGHTEDSET);
         }
         {
             const FieldInfo * info = indexEnv.getFieldByName("baz");
             ASSERT_TRUE(info != NULL);
-            EXPECT_EQUAL(info->id(), 2u);
+            EXPECT_EQ(info->id(), 2u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
             EXPECT_TRUE(info->collection() == CollectionType::ARRAY);
         }
@@ -59,7 +55,7 @@ Test::testFramework()
             EXPECT_TRUE(tr.lookupField(2)->getHandle() == 2u);
             const ITermData *tp = queryEnv.getTerm(0);
             ASSERT_TRUE(tp != NULL);
-            EXPECT_EQUAL(tp, &tr);
+            EXPECT_EQ(tp, &tr);
         }
         {
             SimpleTermData *tr = qeb.addAttributeNode("bar");
@@ -71,12 +67,12 @@ Test::testFramework()
             EXPECT_TRUE(tr->lookupField(1)->getHandle() == 3u);
             const ITermData *tp = queryEnv.getTerm(1);
             ASSERT_TRUE(tp != NULL);
-            EXPECT_EQUAL(tp, tr);
+            EXPECT_EQ(tp, tr);
         }
     }
 
     MatchData::UP data = layout.createMatchData();
-    EXPECT_EQUAL(data->getNumTermFields(), 4u);
+    EXPECT_EQ(data->getNumTermFields(), 4u);
 
     { // check match data access
         MatchDataBuilder mdb(queryEnv, *data);
@@ -97,11 +93,11 @@ Test::testFramework()
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // foo (index)
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(itr.getFieldLength(), 50u);
-                EXPECT_EQUAL(itr.getPosition(), 10u);
+                EXPECT_EQ(itr.getFieldLength(), 50u);
+                EXPECT_EQ(itr.getPosition(), 10u);
                 itr.next();
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(itr.getPosition(), 20u);
+                EXPECT_EQ(itr.getPosition(), 20u);
                 itr.next();
                 ASSERT_TRUE(!itr.valid());
             }
@@ -118,11 +114,11 @@ Test::testFramework()
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // baz (index)
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(itr.getFieldLength(), 100u);
-                EXPECT_EQUAL(itr.getPosition(), 5u);
+                EXPECT_EQ(itr.getFieldLength(), 100u);
+                EXPECT_EQ(itr.getPosition(), 5u);
                 itr.next();
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(itr.getPosition(), 15u);
+                EXPECT_EQ(itr.getPosition(), 15u);
                 itr.next();
                 ASSERT_TRUE(!itr.valid());
             }
@@ -137,10 +133,10 @@ Test::testFramework()
     }
     { // check that data is cleared
         MatchDataBuilder mdb(queryEnv, *data);
-        EXPECT_EQUAL(mdb.getTermFieldMatchData(0, 0)->getDocId(), TermFieldMatchData::invalidId());
-        EXPECT_EQUAL(mdb.getTermFieldMatchData(0, 1)->getDocId(), TermFieldMatchData::invalidId());
-        EXPECT_EQUAL(mdb.getTermFieldMatchData(0, 2)->getDocId(), TermFieldMatchData::invalidId());
-        EXPECT_EQUAL(mdb.getTermFieldMatchData(1, 1)->getDocId(), TermFieldMatchData::invalidId());
+        EXPECT_EQ(mdb.getTermFieldMatchData(0, 0)->getDocId(), TermFieldMatchData::invalidId());
+        EXPECT_EQ(mdb.getTermFieldMatchData(0, 1)->getDocId(), TermFieldMatchData::invalidId());
+        EXPECT_EQ(mdb.getTermFieldMatchData(0, 2)->getDocId(), TermFieldMatchData::invalidId());
+        EXPECT_EQ(mdb.getTermFieldMatchData(1, 1)->getDocId(), TermFieldMatchData::invalidId());
 
         // test illegal things
         ASSERT_TRUE(!mdb.addOccurence("foo", 1, 10)); // invalid term/field combination

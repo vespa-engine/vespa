@@ -6,9 +6,6 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchcommon/attribute/config.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".prod_features_attributematch");
-
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
@@ -23,8 +20,7 @@ using AVCT = search::attribute::CollectionType;
 using CollectionType = FieldInfo::CollectionType;
 using DataType = FieldInfo::DataType;
 
-void
-Test::testAttributeMatch()
+TEST_F(ProdFeaturesTest, test_attribute_match)
 {
     AttributeMatchBlueprint pt;
     {
