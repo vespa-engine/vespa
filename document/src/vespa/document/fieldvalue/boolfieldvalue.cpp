@@ -29,7 +29,7 @@ int
 BoolFieldValue::compare(const FieldValue&rhs) const {
     int diff = FieldValue::compare(rhs);
     if (diff != 0) return diff;
-    const BoolFieldValue &o = static_cast<const BoolFieldValue &>(rhs);
+    const auto &o = static_cast<const BoolFieldValue &>(rhs);
     return (_value == o._value) ? 0 : _value ? 1 : -1;
 }
 

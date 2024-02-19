@@ -26,7 +26,7 @@ std::condition_variable baseDirCond;
 using BaseDirSet = std::set<string>;
 BaseDirSet baseDirSet;
 
-static void
+void
 waitBaseDir(const string &baseDir)
 {
     if (baseDir.empty()) { return; }
@@ -49,8 +49,7 @@ waitBaseDir(const string &baseDir)
     }
 }
 
-
-static void
+void
 dropBaseDir(const string &baseDir)
 {
     if (baseDir.empty())
@@ -165,7 +164,7 @@ AttributeManager::getAttributeReadGuard(const string &name, bool stableEnumGuard
     if (vh != nullptr) {
         return (*vh)->makeReadGuard(stableEnumGuard);
     } else {
-        return std::unique_ptr<attribute::AttributeReadGuard>();
+        return {};
     }
 }
 
@@ -187,7 +186,7 @@ AttributeManager::getAttributeList(AttributeList & list) const
 {
     list.reserve(_attributes.size());
     for (const auto& elem : _attributes) {
-        list.push_back(AttributeGuard(elem.second));
+        list.emplace_back(elem.second);
     }
 }
 
