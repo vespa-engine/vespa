@@ -3,7 +3,7 @@
 #include "featuretest.h"
 #include <vespa/searchlib/fef/utils.h>
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.featuretest");
