@@ -9,9 +9,11 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-#include <vespa/searchlib/test/ft_test_app.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/ft_test_app_base.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("nativerank_test");
@@ -22,12 +24,15 @@ using CollectionType = FieldInfo::CollectionType;
 
 const double EPS = 10e-4;
 
-namespace search {
-namespace features {
+namespace search::features {
 
-class Test : public FtTestApp {
-private:
+class NativeRankTest : public ::testing::Test,
+                       public FtTestAppBase {
+protected:
     BlueprintFactory _factory;
+
+    NativeRankTest();
+    ~NativeRankTest() override;
 
     struct ANAM {
         int32_t  attributeWeight;
@@ -49,21 +54,20 @@ private:
     bool assertNativeProximity(feature_t score, const vespalib::string & query, const vespalib::string & field,
                                const Properties & props = Properties(), uint32_t docId = 1);
     bool assertNativeRank(feature_t score, feature_t fieldMatchWeight, feature_t attributeMatchWeight, feature_t proximityWeight);
-
-    void testNativeFieldMatch();
-    void testNativeAttributeMatch();
-    void testNativeProximity();
-    void testNativeRank();
-
-public:
-    ~Test();
-    int Main() override;
 };
 
-Test::~Test() {}
+NativeRankTest::NativeRankTest()
+    : ::testing::Test(),
+      FtTestAppBase()
+{
+    // Configure factory with all known blueprints.
+    setup_fef_test_plugin(_factory);
+    setup_search_features(_factory);
+}
 
-void
-Test::testNativeFieldMatch()
+NativeRankTest::~NativeRankTest() = default;
+
+TEST_F(NativeRankTest, test_native_field_match)
 {
     { // test blueprint
         NativeFieldMatchBlueprint pt;
@@ -100,18 +104,18 @@ Test::testNativeFieldMatch()
             EXPECT_TRUE(pas.vector[1].firstOccTable == tm.getTable("expdecay(8000,12.50)"));
             EXPECT_TRUE(pas.vector[0].numOccTable == tm.getTable("loggrowth(1500,4000,19)"));
             EXPECT_TRUE(pas.vector[1].numOccTable == tm.getTable("loggrowth(1500,4000,19)"));
-            EXPECT_EQUAL(pas.vector[0].maxTableSum, 1);
-            EXPECT_EQUAL(pas.vector[1].maxTableSum, 1);
-            EXPECT_EQUAL(pas.vector[0].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[0].field, true);
-            EXPECT_EQUAL(pas.vector[1].field, true);
-            EXPECT_EQUAL(pas.vector[2].field, false);
-            EXPECT_EQUAL(pas.vector[0].averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
-            EXPECT_EQUAL(pas.vector[1].averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
-            EXPECT_EQUAL(pas.minFieldLength, 6u);
-            EXPECT_EQUAL(pas.vector[0].firstOccImportance, 0.5);
-            EXPECT_EQUAL(pas.vector[1].firstOccImportance, 0.5);
+            EXPECT_EQ(pas.vector[0].maxTableSum, 1);
+            EXPECT_EQ(pas.vector[1].maxTableSum, 1);
+            EXPECT_EQ(pas.vector[0].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[0].field, true);
+            EXPECT_EQ(pas.vector[1].field, true);
+            EXPECT_EQ(pas.vector[2].field, false);
+            EXPECT_EQ(pas.vector[0].averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
+            EXPECT_EQ(pas.vector[1].averageFieldLength, NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH);
+            EXPECT_EQ(pas.minFieldLength, 6u);
+            EXPECT_EQ(pas.vector[0].firstOccImportance, 0.5);
+            EXPECT_EQ(pas.vector[1].firstOccImportance, 0.5);
         }
         {
             p.clear();
@@ -139,21 +143,21 @@ Test::testNativeFieldMatch()
             EXPECT_TRUE(pas.vector[3].firstOccTable == tm.getTable("linear(0,1)"));
             EXPECT_TRUE(pas.vector[0].numOccTable == tm.getTable("linear(0,3)"));
             EXPECT_TRUE(pas.vector[3].numOccTable == tm.getTable("linear(0,4)"));
-            EXPECT_APPROX(pas.vector[0].maxTableSum, 2.4, 10e-6);
-            EXPECT_APPROX(pas.vector[3].maxTableSum, 1.6, 10e-6);
-            EXPECT_EQUAL(pas.vector[0].fieldWeight, 200u);
-            EXPECT_EQUAL(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[3].fieldWeight, 0u);
-            EXPECT_EQUAL(pas.vector[0].field, true);
-            EXPECT_EQUAL(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
-            EXPECT_EQUAL(pas.vector[2].field, false); // 'qux' is an attribute
-            EXPECT_EQUAL(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
-            EXPECT_EQUAL(pas.vector[4].field, false);  // filter field
-            EXPECT_EQUAL(pas.vector[0].averageFieldLength, 400u);
-            EXPECT_EQUAL(pas.vector[3].averageFieldLength, 500u);
-            EXPECT_EQUAL(pas.minFieldLength, 12u);
-            EXPECT_EQUAL(pas.vector[0].firstOccImportance, 0.6);
-            EXPECT_EQUAL(pas.vector[3].firstOccImportance, 0.8);
+            EXPECT_NEAR(pas.vector[0].maxTableSum, 2.4, 10e-6);
+            EXPECT_NEAR(pas.vector[3].maxTableSum, 1.6, 10e-6);
+            EXPECT_EQ(pas.vector[0].fieldWeight, 200u);
+            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[3].fieldWeight, 0u);
+            EXPECT_EQ(pas.vector[0].field, true);
+            EXPECT_EQ(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
+            EXPECT_EQ(pas.vector[2].field, false); // 'qux' is an attribute
+            EXPECT_EQ(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
+            EXPECT_EQ(pas.vector[4].field, false);  // filter field
+            EXPECT_EQ(pas.vector[0].averageFieldLength, 400u);
+            EXPECT_EQ(pas.vector[3].averageFieldLength, 500u);
+            EXPECT_EQ(pas.minFieldLength, 12u);
+            EXPECT_EQ(pas.vector[0].firstOccImportance, 0.6);
+            EXPECT_EQ(pas.vector[3].firstOccImportance, 0.8);
         }
         {
             FtIndexEnvironment ie;
@@ -172,32 +176,32 @@ Test::testNativeFieldMatch()
         p.vector.push_back(f);
         NativeFieldMatchExecutorSharedState nfmess(ft.getQueryEnv(), p);
         NativeFieldMatchExecutor nfme(nfmess);
-        EXPECT_EQUAL(p.minFieldLength, 6u);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 0, 4), 0);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 1, 4), 1);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 2, 4), 2);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 3, 4), 4);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 3, 6), 4);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 4, 6), 5);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 5, 6), 7);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 0, 12), 0);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 4, 12), 2);
-        EXPECT_EQUAL(nfme.getFirstOccBoost(0, 11, 12), 7);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 0, 4), 0);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 2, 4), 2);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 4, 4), 4);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 4, 6), 4);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 5, 6), 5);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 6, 6), 7);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 0, 12), 0);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 6, 12), 3);
-        EXPECT_EQUAL(nfme.getNumOccBoost(0, 12, 12), 7);
+        EXPECT_EQ(p.minFieldLength, 6u);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 0, 4), 0);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 1, 4), 1);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 2, 4), 2);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 3, 4), 4);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 3, 6), 4);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 4, 6), 5);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 5, 6), 7);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 0, 12), 0);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 4, 12), 2);
+        EXPECT_EQ(nfme.getFirstOccBoost(0, 11, 12), 7);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 0, 4), 0);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 2, 4), 2);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 4, 4), 4);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 4, 6), 4);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 5, 6), 5);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 6, 6), 7);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 0, 12), 0);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 6, 12), 3);
+        EXPECT_EQ(nfme.getNumOccBoost(0, 12, 12), 7);
     }
     { // test params object
         NativeFieldMatchParams p;
         p.resize(1);
         p.setMaxTableSums(0, 0); // test reset to 1
-        EXPECT_EQUAL(p.vector[0].maxTableSum, 1);
+        EXPECT_EQ(p.vector[0].maxTableSum, 1);
     }
 
     { // test executor
@@ -259,11 +263,11 @@ Test::testNativeFieldMatch()
 }
 
 bool
-Test::assertNativeFieldMatch(feature_t score,
-                             const vespalib::string & query,
-                             const vespalib::string & field,
-                             const Properties & props,
-                             uint32_t docId)
+NativeRankTest::assertNativeFieldMatch(feature_t score,
+                                       const vespalib::string & query,
+                                       const vespalib::string & field,
+                                       const Properties & props,
+                                       uint32_t docId)
 {
     LOG(info, "assertNativeFieldMatch(%f, '%s', '%s')", score, query.c_str(), field.c_str());
 
@@ -284,14 +288,12 @@ Test::assertNativeFieldMatch(feature_t score,
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
 
     // Execute and compare results.
-    if (!EXPECT_TRUE(ft.execute(score, EPS, docId))) {
-        return false;
-    }
-    return true;
+    bool failure = false;
+    EXPECT_TRUE(ft.execute(score, EPS, docId)) << (failure = true, "");
+    return !failure;
 }
 
-void
-Test::testNativeAttributeMatch()
+TEST_F(NativeRankTest, test_native_attribute_match)
 {
     { // test blueprint
         NativeAttributeMatchBlueprint pt;
@@ -324,13 +326,13 @@ Test::testNativeAttributeMatch()
             ASSERT_TRUE(pas.vector.size() == 3);
 //            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(1,0)"));
 //            EXPECT_TRUE(pas.vector[1].weightBoostTable == tm.getTable("linear(1,0)"));
-            EXPECT_EQUAL(pas.vector[0].maxTableSum, 1);
-            EXPECT_EQUAL(pas.vector[1].maxTableSum, 1);
-            EXPECT_EQUAL(pas.vector[0].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[0].field, true);
-            EXPECT_EQUAL(pas.vector[1].field, true);
-            EXPECT_EQUAL(pas.vector[2].field, false);
+            EXPECT_EQ(pas.vector[0].maxTableSum, 1);
+            EXPECT_EQ(pas.vector[1].maxTableSum, 1);
+            EXPECT_EQ(pas.vector[0].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[0].field, true);
+            EXPECT_EQ(pas.vector[1].field, true);
+            EXPECT_EQ(pas.vector[2].field, false);
         }
         {
             p.clear();
@@ -347,15 +349,15 @@ Test::testNativeAttributeMatch()
             ASSERT_TRUE(pas.vector.size() == 4);
 //            EXPECT_TRUE(pas.vector[0].weightBoostTable == tm.getTable("linear(0,2)"));
 //            EXPECT_TRUE(pas.vector[3].weightBoostTable == tm.getTable("linear(0,3)"));
-            EXPECT_EQUAL(pas.vector[0].maxTableSum, 2);
-            EXPECT_EQUAL(pas.vector[3].maxTableSum, 3);
-            EXPECT_EQUAL(pas.vector[0].fieldWeight, 200u);
-            EXPECT_EQUAL(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[3].fieldWeight, 0u);
-            EXPECT_EQUAL(pas.vector[0].field, true);
-            EXPECT_EQUAL(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
-            EXPECT_EQUAL(pas.vector[2].field, false); // 'qux' is an index
-            EXPECT_EQUAL(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
+            EXPECT_EQ(pas.vector[0].maxTableSum, 2);
+            EXPECT_EQ(pas.vector[3].maxTableSum, 3);
+            EXPECT_EQ(pas.vector[0].fieldWeight, 200u);
+            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[3].fieldWeight, 0u);
+            EXPECT_EQ(pas.vector[0].field, true);
+            EXPECT_EQ(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
+            EXPECT_EQ(pas.vector[2].field, false); // 'qux' is an index
+            EXPECT_EQ(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
         }
 
         {
@@ -388,7 +390,7 @@ Test::testNativeAttributeMatch()
 }
 
 bool
-Test::assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & t2, const Properties & props)
+NativeRankTest::assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & t2, const Properties & props)
 {
     LOG(info, "assertNativeAttributeMatch(%f, '%s', '%s')", score, t1.toString().c_str(), t2.toString().c_str());
     vespalib::string feature = "nativeAttributeMatch";
@@ -402,15 +404,21 @@ Test::assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & 
     ft.getIndexEnv().getProperties().add("vespa.fieldweight.bar", vespalib::make_string("%u", t2.fieldWeight));
     ft.getIndexEnv().getProperties().add("nativeRank.useTableNormalization", "false"); // make it easier to test
     ft.getIndexEnv().getProperties().import(props);
-    if (!EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != NULL)) { // t1
+    bool failure = false;
+    EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != NULL) << (failure = true, "");
+    if (failure) {
         return false;
     }
-    if (!EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != NULL)) { // t2
+    EXPECT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != NULL) << (failure = true, "");
+    if (failure) {
         return false;
     }
     ft.getQueryEnv().getTerms()[0].setWeight(t1.termWeight);
     ft.getQueryEnv().getTerms()[1].setWeight(t2.termWeight);
-    ASSERT_TRUE(ft.setup());
+    EXPECT_TRUE(ft.setup()) << (failure = true, "");
+    if (failure) {
+        return false;
+    }
 
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
     {
@@ -427,14 +435,14 @@ Test::assertNativeAttributeMatch(feature_t score, const ANAM & t1, const ANAM & 
         pos.setElementWeight(t2.attributeWeight);
         tfmd->appendPosition(pos);
     }
-    if (!EXPECT_TRUE(ft.execute(score, EPS))) {
+    EXPECT_TRUE(ft.execute(score, EPS)) << (failure = true, "");
+    if (failure) {
         return false;
     }
     return true;
 }
 
-void
-Test::testNativeProximity()
+TEST_F(NativeRankTest, test_native_proximity)
 {
     { // test blueprint
         NativeProximityBlueprint pt;
@@ -471,16 +479,16 @@ Test::testNativeProximity()
             EXPECT_TRUE(pas.vector[1].proximityTable == tm.getTable("expdecay(500,3)"));
             EXPECT_TRUE(pas.vector[0].revProximityTable == tm.getTable("expdecay(400,3)"));
             EXPECT_TRUE(pas.vector[1].revProximityTable == tm.getTable("expdecay(400,3)"));
-            EXPECT_EQUAL(pas.vector[0].maxTableSum, 1);
-            EXPECT_EQUAL(pas.vector[1].maxTableSum, 1);
-            EXPECT_EQUAL(pas.vector[0].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[0].field, true);
-            EXPECT_EQUAL(pas.vector[1].field, true);
-            EXPECT_EQUAL(pas.vector[2].field, false);
-            EXPECT_EQUAL(pas.slidingWindow, 4u);
-            EXPECT_EQUAL(pas.vector[0].proximityImportance, 0.5);
-            EXPECT_EQUAL(pas.vector[1].proximityImportance, 0.5);
+            EXPECT_EQ(pas.vector[0].maxTableSum, 1);
+            EXPECT_EQ(pas.vector[1].maxTableSum, 1);
+            EXPECT_EQ(pas.vector[0].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[0].field, true);
+            EXPECT_EQ(pas.vector[1].field, true);
+            EXPECT_EQ(pas.vector[2].field, false);
+            EXPECT_EQ(pas.slidingWindow, 4u);
+            EXPECT_EQ(pas.vector[0].proximityImportance, 0.5);
+            EXPECT_EQ(pas.vector[1].proximityImportance, 0.5);
         }
         {
             p.clear();
@@ -506,19 +514,19 @@ Test::testNativeProximity()
             EXPECT_TRUE(pas.vector[3].proximityTable == tm.getTable("linear(0,1)"));
             EXPECT_TRUE(pas.vector[0].revProximityTable == tm.getTable("linear(0,3)"));
             EXPECT_TRUE(pas.vector[3].revProximityTable == tm.getTable("linear(0,4)"));
-            EXPECT_APPROX(pas.vector[0].maxTableSum, 2.4, 10e-6);
-            EXPECT_APPROX(pas.vector[3].maxTableSum, 1.6, 10e-6);
-            EXPECT_EQUAL(pas.vector[0].fieldWeight, 200u);
-            EXPECT_EQUAL(pas.vector[1].fieldWeight, 100u);
-            EXPECT_EQUAL(pas.vector[3].fieldWeight, 0u);
-            EXPECT_EQUAL(pas.vector[0].field, true);
-            EXPECT_EQUAL(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
-            EXPECT_EQUAL(pas.vector[2].field, false); // 'qux' is an attribute
-            EXPECT_EQUAL(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
-            EXPECT_EQUAL(pas.vector[4].field, false); // filter field
-            EXPECT_EQUAL(pas.slidingWindow, 2u);
-            EXPECT_EQUAL(pas.vector[0].proximityImportance, 0.6);
-            EXPECT_EQUAL(pas.vector[3].proximityImportance, 0.8);
+            EXPECT_NEAR(pas.vector[0].maxTableSum, 2.4, 10e-6);
+            EXPECT_NEAR(pas.vector[3].maxTableSum, 1.6, 10e-6);
+            EXPECT_EQ(pas.vector[0].fieldWeight, 200u);
+            EXPECT_EQ(pas.vector[1].fieldWeight, 100u);
+            EXPECT_EQ(pas.vector[3].fieldWeight, 0u);
+            EXPECT_EQ(pas.vector[0].field, true);
+            EXPECT_EQ(pas.vector[1].field, false); // only 'foo' and 'baz' are specified explicit
+            EXPECT_EQ(pas.vector[2].field, false); // 'qux' is an attribute
+            EXPECT_EQ(pas.vector[3].field, false); // fieldWeight == 0 -> do not consider this field
+            EXPECT_EQ(pas.vector[4].field, false); // filter field
+            EXPECT_EQ(pas.slidingWindow, 2u);
+            EXPECT_EQ(pas.vector[0].proximityImportance, 0.6);
+            EXPECT_EQ(pas.vector[3].proximityImportance, 0.8);
         }
 
         {
@@ -549,34 +557,34 @@ Test::testNativeProximity()
             NativeProximityExecutor::FieldSetup setup(0);
             NativeProximityExecutorSharedState::TermPairVector & pairs = setup.pairs;
             NativeProximityExecutorSharedState::generateTermPairs(env, terms, 0, setup);
-            EXPECT_EQUAL(pairs.size(), 0u);
+            EXPECT_EQ(pairs.size(), 0u);
             NativeProximityExecutorSharedState::generateTermPairs(env, terms, 1, setup);
-            EXPECT_EQUAL(pairs.size(), 0u);
+            EXPECT_EQ(pairs.size(), 0u);
             NativeProximityExecutorSharedState::generateTermPairs(env, terms, 2, setup);
-            EXPECT_EQUAL(pairs.size(), 2u);
+            EXPECT_EQ(pairs.size(), 2u);
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
-            EXPECT_EQUAL(pairs[0].connectedness, 0.8);
+            EXPECT_EQ(pairs[0].connectedness, 0.8);
             EXPECT_TRUE(pairs[1].first.termData() == &b);
             EXPECT_TRUE(pairs[1].second.termData() == &c);
-            EXPECT_EQUAL(pairs[1].connectedness, 0.6);
-            EXPECT_EQUAL(setup.divisor, 118); // (10 + 40)*0.8 + (40 + 90)*0.6
+            EXPECT_EQ(pairs[1].connectedness, 0.6);
+            EXPECT_EQ(setup.divisor, 118); // (10 + 40)*0.8 + (40 + 90)*0.6
 
             pairs.clear();
             setup.divisor = 0;
 
             NativeProximityExecutorSharedState::generateTermPairs(env, terms, 3, setup);
-            EXPECT_EQUAL(pairs.size(), 3u);
+            EXPECT_EQ(pairs.size(), 3u);
             EXPECT_TRUE(pairs[0].first.termData() == &a);
             EXPECT_TRUE(pairs[0].second.termData() == &b);
-            EXPECT_EQUAL(pairs[0].connectedness, 0.8);
+            EXPECT_EQ(pairs[0].connectedness, 0.8);
             EXPECT_TRUE(pairs[1].first.termData() == &a);
             EXPECT_TRUE(pairs[1].second.termData() == &c);
-            EXPECT_EQUAL(pairs[1].connectedness, 0.3);
+            EXPECT_EQ(pairs[1].connectedness, 0.3);
             EXPECT_TRUE(pairs[2].first.termData() == &b);
             EXPECT_TRUE(pairs[2].second.termData() == &c);
-            EXPECT_EQUAL(pairs[2].connectedness, 0.6);
-            EXPECT_EQUAL(setup.divisor, 148); // (10 + 40)*0.8 + (10 + 90)*0.3 + (40 + 90)*0.6
+            EXPECT_EQ(pairs[2].connectedness, 0.6);
+            EXPECT_EQ(setup.divisor, 148); // (10 + 40)*0.8 + (10 + 90)*0.3 + (40 + 90)*0.6
 
             pairs.clear();
             setup.divisor = 0;
@@ -585,10 +593,10 @@ Test::testNativeProximity()
 
             // test that (ab) is filtered away
             NativeProximityExecutorSharedState::generateTermPairs(env, terms, 2, setup);
-            EXPECT_EQUAL(pairs.size(), 1u);
+            EXPECT_EQ(pairs.size(), 1u);
             EXPECT_TRUE(pairs[0].first.termData() == &b);
             EXPECT_TRUE(pairs[0].second.termData() == &c);
-            EXPECT_EQUAL(pairs[0].connectedness, 0.6);
+            EXPECT_EQ(pairs[0].connectedness, 0.6);
         }
     }
 
@@ -659,11 +667,11 @@ Test::testNativeProximity()
 }
 
 bool
-Test::assertNativeProximity(feature_t score,
-                            const vespalib::string & query,
-                            const vespalib::string & field,
-                            const Properties & props,
-                            uint32_t docId)
+NativeRankTest::assertNativeProximity(feature_t score,
+                                      const vespalib::string & query,
+                                      const vespalib::string & field,
+                                      const Properties & props,
+                                      uint32_t docId)
 {
     LOG(info, "assertNativeProximity(%f, '%s', '%s')", score, query.c_str(), field.c_str());
 
@@ -683,14 +691,15 @@ Test::assertNativeProximity(feature_t score,
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
 
     // Execute and compare results.
-    if (!EXPECT_TRUE(ft.execute(score, EPS, docId))) {
+    bool failure = false;
+    EXPECT_TRUE(ft.execute(score, EPS, docId)) << (failure = true, "");
+    if (failure) {
         return false;
     }
     return true;
 }
 
-void
-Test::testNativeRank()
+TEST_F(NativeRankTest, test_native_rank)
 {
     { // test blueprint
         NativeRankBlueprint pt;
@@ -710,9 +719,9 @@ Test::testNativeRank()
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
             const NativeRankParams & pas = (dynamic_cast<NativeRankBlueprint *>(bp.get()))->getParams();
-            EXPECT_EQUAL(pas.fieldMatchWeight,     100u);
-            EXPECT_EQUAL(pas.attributeMatchWeight, 100u);
-            EXPECT_EQUAL(pas.proximityWeight,      25u);
+            EXPECT_EQ(pas.fieldMatchWeight,     100u);
+            EXPECT_EQ(pas.attributeMatchWeight, 100u);
+            EXPECT_EQ(pas.proximityWeight,      25u);
         }
         {
             Properties & p = ft.getIndexEnv().getProperties();
@@ -721,7 +730,7 @@ Test::testNativeRank()
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
             const NativeRankParams & pas = (dynamic_cast<NativeRankBlueprint *>(bp.get()))->getParams();
-            EXPECT_EQUAL(pas.proximityWeight, 100u);
+            EXPECT_EQ(pas.proximityWeight, 100u);
             p.clear();
         }
         {
@@ -734,9 +743,9 @@ Test::testNativeRank()
             DummyDependencyHandler deps(*bp);
             bp->setup(ft.getIndexEnv(), params);
             const NativeRankParams & pas = (dynamic_cast<NativeRankBlueprint *>(bp.get()))->getParams();
-            EXPECT_EQUAL(pas.fieldMatchWeight,     200u);
-            EXPECT_EQUAL(pas.attributeMatchWeight, 300u);
-            EXPECT_EQUAL(pas.proximityWeight,      400u);
+            EXPECT_EQ(pas.fieldMatchWeight,     200u);
+            EXPECT_EQ(pas.attributeMatchWeight, 300u);
+            EXPECT_EQ(pas.proximityWeight,      400u);
         }
 
         FT_DUMP(_factory, "nativeRank", ft.getIndexEnv(), StringList().add("nativeRank"));
@@ -776,10 +785,10 @@ Test::testNativeRank()
 }
 
 bool
-Test::assertNativeRank(feature_t score,
-                       feature_t fieldMatchWeight,
-                       feature_t attributeMatchWeight,
-                       feature_t proximityWeight)
+NativeRankTest::assertNativeRank(feature_t score,
+                                 feature_t fieldMatchWeight,
+                                 feature_t attributeMatchWeight,
+                                 feature_t proximityWeight)
 {
     LOG(info, "assertNativeRank(%f, %f, %f, %f)", score, fieldMatchWeight, attributeMatchWeight, proximityWeight);
 
@@ -798,39 +807,20 @@ Test::assertNativeRank(feature_t score,
     ft.getOverrides().add("nativeAttributeMatch", "60");
     ft.getOverrides().add("nativeProximity",      "30");
 
-    if (!EXPECT_TRUE(ft.setup())) {
+    bool failure = false;
+    EXPECT_TRUE(ft.setup()) << (failure = true, "");
+    if (failure) {
         return false;
     }
 
     // Execute and compare results.
-    if (!EXPECT_TRUE(ft.execute(score, EPS))) {
+    EXPECT_TRUE(ft.execute(score, EPS)) << (failure = true, "");
+    if (failure) {
         return false;
     }
     return true;
 }
 
-
-
-int
-Test::Main()
-{
-    TEST_INIT("nativerank_test");
-
-    // Configure factory with all known blueprints.
-    setup_fef_test_plugin(_factory);
-    setup_search_features(_factory);
-
-    testNativeFieldMatch();
-    testNativeAttributeMatch();
-    testNativeProximity();
-    testNativeRank();
-
-    TEST_DONE();
-    return 0;
 }
 
-}
-}
-
-TEST_APPHOOK(search::features::Test);
-
+GTEST_MAIN_RUN_ALL_TESTS()
