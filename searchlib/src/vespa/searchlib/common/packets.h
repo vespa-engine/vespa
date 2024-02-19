@@ -50,8 +50,10 @@ private:
     void set(StringRef & e, vespalib::stringref s);
     void allocEntries(uint32_t cnt);
 public:
-    FS4Properties(FS4Properties &&);
-    FS4Properties &operator=(FS4Properties &&);
+    FS4Properties(FS4Properties &&) noexcept;
+    FS4Properties &operator=(FS4Properties &&) noexcept;
+    FS4Properties(const FS4Properties &) = delete;
+    FS4Properties &operator=(const FS4Properties &) = delete;
 
     FS4Properties();
     ~FS4Properties();
@@ -67,16 +69,13 @@ public:
     void setValue(uint32_t entry, vespalib::stringref val) {
         setValue(entry, val.data(), val.size());
     }
-    uint32_t size() const { return _entries.size(); }
-    const char *getName() const { return _name.c_str(); }
-    uint32_t getNameLen() const { return _name.size(); }
-    const char *getKey(uint32_t entry) const { return c_str(_entries[entry].first.first); }
-    uint32_t getKeyLen(uint32_t entry) const { return _entries[entry].first.second; }
-    const char *getValue(uint32_t entry) const { return c_str(_entries[entry].second.first); }
-    uint32_t getValueLen(uint32_t entry) const { return _entries[entry].second.second; }
+    uint32_t size() const noexcept { return _entries.size(); }
+    const vespalib::string & name() const noexcept { return _name; }
+    vespalib::stringref key(uint32_t entry) const noexcept;
+    vespalib::stringref value(uint32_t entry) const noexcept;
 
     // sub-packet methods below
-    uint32_t getLength();
+    uint32_t getLength() const noexcept;
 
     void encode(FNET_DataBuffer &dst);
     bool decode(FNET_DataBuffer &src, uint32_t &len);

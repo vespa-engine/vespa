@@ -35,14 +35,14 @@ FS4Properties::FS4Properties()
       _backing()
 { }
 
-FS4Properties::FS4Properties(FS4Properties && rhs)
+FS4Properties::FS4Properties(FS4Properties && rhs) noexcept
     : _entries(std::move(rhs._entries)),
       _name(std::move(rhs._name)),
       _backing(std::move(rhs._backing))
 { }
 
 FS4Properties &
-FS4Properties::operator=(FS4Properties && rhs)
+FS4Properties::operator=(FS4Properties && rhs) noexcept
 {
     _entries = std::move(rhs._entries);
     _name = std::move(rhs._name);
@@ -72,12 +72,23 @@ FS4Properties::setValue(uint32_t entry, const char *value, uint32_t valueSize)
 }
 
 uint32_t
-FS4Properties::getLength()
+FS4Properties::getLength() const noexcept
 {
-    uint32_t len = sizeof(uint32_t) * 2 + getNameLen();
+    uint32_t len = sizeof(uint32_t) * 2 + name().size();
     len += _backing.size();
     len += _entries.size() * sizeof(uint32_t) * 2;
     return len;
+}
+
+vespalib::stringref
+FS4Properties::key(uint32_t entry) const noexcept {
+    auto pair = _entries[entry].first;
+    return {c_str(pair.first), pair.second};
+}
+vespalib::stringref
+FS4Properties::value(uint32_t entry) const noexcept {
+    auto pair = _entries[entry].second;
+    return {c_str(pair.first), pair.second};
 }
 
 vespalib::string
@@ -90,8 +101,8 @@ FS4Properties::toString(uint32_t indent) const
     s += "\n";
     for (uint32_t i = 0; i < size(); ++i) {
         s += make_string("%*s  Entry[%d] {\n", indent, "", i);
-        s += make_string("%*s    key  : %s\n", indent, "", vespalib::string(getKey(i), getKeyLen(i)).c_str());
-        s += make_string("%*s    value: %s\n", indent, "", vespalib::string(getValue(i), getValueLen(i)).c_str());
+        s += make_string("%*s    key  : %s\n", indent, "", string(key(i)).c_str());
+        s += make_string("%*s    value: %s\n", indent, "", string(value(i)).c_str());
         s += make_string("%*s  }\n", indent, "");
     }
     s += make_string("%*s}\n", indent, "");
