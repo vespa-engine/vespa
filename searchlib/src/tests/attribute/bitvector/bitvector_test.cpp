@@ -9,12 +9,14 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("bitvector_test");
 
 using search::AttributeFactory;
 using search::AttributeVector;
@@ -35,25 +37,12 @@ using search::queryeval::SearchIterator;
 using SearchContextPtr = std::unique_ptr<SearchContext>;
 using SearchBasePtr = std::unique_ptr<search::queryeval::SearchIterator>;
 
-std::string
-param_as_string(const testing::TestParamInfo<std::tuple<BasicType, CollectionType, bool, bool>>& info)
+struct BitVectorTest
 {
-    std::ostringstream os;
-    auto& param = info.param;
-    os << std::get<0>(param).asString() << "_";
-    os << std::get<1>(param).asString();
-    os << (std::get<2>(param) ? "_fs" : "");
-    os << (std::get<3>(param) ? "_filter" : "");
-    return os.str();
-}
-
-class BitVectorTest : public ::testing::TestWithParam<std::tuple<BasicType, CollectionType, bool, bool>>
-{
-public:
     using AttributePtr = AttributeVector::SP;
 
     BitVectorTest();
-    ~BitVectorTest() override;
+    ~BitVectorTest();
 
     template <typename VectorType>
     VectorType & as(AttributePtr &v);
@@ -101,9 +90,13 @@ public:
                 bool weights,
                 bool checkStride);
 
-    template <typename VectorType>
+    template <typename VectorType, typename BufferType>
     void
     test(BasicType bt, CollectionType ct, const vespalib::string &pref, bool fastSearch, bool filter);
+
+    template <typename VectorType, typename BufferType>
+    void
+    test(BasicType bt, CollectionType ct, const vespalib::string &pref);
 };
 
 BitVectorTest::BitVectorTest() = default;
@@ -378,29 +371,29 @@ BitVectorTest::checkSearch(AttributePtr v,
     uint32_t docId = sb->getDocId();
     uint32_t lastDocId = 0;
     uint32_t docFreq = 0;
-    EXPECT_EQ(expFirstDocId, docId);
+    EXPECT_EQUAL(expFirstDocId, docId);
     while (docId != search::endDocId) {
         lastDocId = docId;
         ++docFreq,
         assert(!checkStride || (docId % 5) == 2u);
         sb->unpack(docId);
-        EXPECT_EQ(md.getDocId(), docId);
+        EXPECT_EQUAL(md.getDocId(), docId);
         if (v->getCollectionType() == CollectionType::SINGLE || !weights) {
-            EXPECT_EQ(1, md.getWeight());
+            EXPECT_EQUAL(1, md.getWeight());
         } else if (v->getCollectionType() == CollectionType::ARRAY) {
-            EXPECT_EQ(2, md.getWeight());
+            EXPECT_EQUAL(2, md.getWeight());
         } else {
             if (v->getBasicType() == BasicType::STRING) {
-                EXPECT_EQ(24, md.getWeight());
+                EXPECT_EQUAL(24, md.getWeight());
             } else {
-                EXPECT_EQ(-3, md.getWeight());
+                EXPECT_EQUAL(-3, md.getWeight());
             }
         }
         sb->seek(docId + 1);
         docId = sb->getDocId();
     }
-    EXPECT_EQ(expLastDocId, lastDocId);
-    EXPECT_EQ(expDocFreq, docFreq);
+    EXPECT_EQUAL(expLastDocId, lastDocId);
+    EXPECT_EQUAL(expDocFreq, docFreq);
 }
 
 
@@ -422,7 +415,7 @@ BitVectorTest::checkSearch(AttributePtr v,
 }
 
 
-template <typename VectorType>
+template <typename VectorType, typename BufferType>
 void
 BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pref, bool fastSearch, bool filter)
 {
@@ -444,8 +437,7 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pre
         TermFieldMatchData md;
         auto dwsi = std::make_unique<DWSI>(md, *dww, lres);
         if (!filter) {
-            SCOPED_TRACE("dww without filter");
-            checkSearch(v, std::move(dwsi), md, 2, 1022, 205, !filter, true);
+            TEST_DO(checkSearch(v, std::move(dwsi), md, 2, 1022, 205, !filter, true));
         } else {
             dwsi->initRange(1, v->getCommittedDocIdLimit());
             EXPECT_TRUE(dwsi->isAtEnd());
@@ -465,33 +457,73 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pre
     checkSearch(v, std::move(sc), 2, 14999, 14992, !fastSearch && !filter, false);
 }
 
-TEST_P(BitVectorTest, test_bitvectors)
+
+template <typename VectorType, typename BufferType>
+void
+BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pref)
 {
-    const auto& param = GetParam();
-    auto bt = std::get<0>(param);
-    auto ct = std::get<1>(param);
-    auto fast_search = std::get<2>(param);
-    auto filter = std::get<3>(param);
-    vespalib::asciistream pref;
-    pref << bt.asString() << "_" << ct.asString();
-    switch (bt.type()) {
-    case BasicType::INT32:
-        test<IntegerAttribute>(bt, ct, pref.str(), fast_search, filter);
-        break;
-    case BasicType::DOUBLE:
-        test<FloatingPointAttribute>(bt, ct, pref.str(), fast_search, filter);
-        break;
-    case BasicType::STRING:
-        test<StringAttribute>(bt, ct, pref.str(), fast_search, filter);
-        break;
-    default:
-        FAIL() << "Cannot handle basic type " << bt.asString();
-    }
+    LOG(info, "test run, pref is %s", pref.c_str());
+    test<VectorType, BufferType>(bt, ct, pref, false, false);
+    test<VectorType, BufferType>(bt, ct, pref, false, true);
+    test<VectorType, BufferType>(bt, ct, pref, true, false);
+    test<VectorType, BufferType>(bt, ct, pref, true, true);
 }
 
-auto test_values = testing::Combine(testing::Values(BasicType::INT32, BasicType::DOUBLE, BasicType::STRING), testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET),testing::Bool(), testing::Bool());
 
-INSTANTIATE_TEST_SUITE_P(Attributes, BitVectorTest, test_values, param_as_string);
+TEST_F("Test bitvectors with single value int32", BitVectorTest)
+{
+    f.template test<IntegerAttribute,
+        IntegerAttribute::largeint_t>(BasicType::INT32, CollectionType::SINGLE, "int32_sv");
+}
+
+TEST_F("Test bitvectors with array value int32", BitVectorTest)
+{
+    f.template test<IntegerAttribute,
+        IntegerAttribute::largeint_t>(BasicType::INT32, CollectionType::ARRAY, "int32_a");
+}
+
+TEST_F("Test bitvectors with weighted set value int32", BitVectorTest)
+{
+    f.template test<IntegerAttribute,
+        IntegerAttribute::WeightedInt>(BasicType::INT32, CollectionType::WSET, "int32_sv");
+}
+
+TEST_F("Test bitvectors with single value double", BitVectorTest)
+{
+    f.template test<FloatingPointAttribute,
+        double>(BasicType::DOUBLE, CollectionType::SINGLE, "double_sv");
+}
+
+TEST_F("Test bitvectors with array value double", BitVectorTest)
+{
+    f.template test<FloatingPointAttribute,
+        double>(BasicType::DOUBLE, CollectionType::ARRAY, "double_a");
+}
+
+TEST_F("Test bitvectors with weighted set value double", BitVectorTest)
+{
+    f.template test<FloatingPointAttribute,
+        FloatingPointAttribute::WeightedFloat>(BasicType::DOUBLE, CollectionType::WSET, "double_ws");
+}
+
+TEST_F("Test bitvectors with single value string", BitVectorTest)
+{
+    f.template test<StringAttribute,
+        vespalib::string>(BasicType::STRING, CollectionType::SINGLE, "string_sv");
+}
+
+TEST_F("Test bitvectors with array value string", BitVectorTest)
+{
+    f.template test<StringAttribute,
+        vespalib::string>(BasicType::STRING, CollectionType::ARRAY, "string_a");
+}
+
+TEST_F("Test bitvectors with weighted set value string", BitVectorTest)
+{
+    f.template test<StringAttribute,
+        StringAttribute::WeightedString>(BasicType::STRING, CollectionType::WSET, "string_ws");
+}
+
 
 class Verifier : public search::test::SearchIteratorVerifier {
 public:
@@ -525,8 +557,7 @@ Verifier::Verifier(bool inverted)
 }
 Verifier::~Verifier() = default;
 
-TEST(BitVectorVerifierTest, test_that_bitvector_iterators_adheres_to_SearchIterator_requirements)
-{
+TEST("Test that bitvector iterators adheres to SearchIterator requirements") {
     {
         Verifier searchIteratorVerifier(false);
         searchIteratorVerifier.verify();
@@ -537,4 +568,4 @@ TEST(BitVectorVerifierTest, test_that_bitvector_iterators_adheres_to_SearchItera
     }
 }
 
-GTEST_MAIN_RUN_ALL_TESTS()
+TEST_MAIN() { TEST_RUN_ALL(); }
