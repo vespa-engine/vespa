@@ -445,7 +445,7 @@ SearchVisitor::init(const Parameters & params)
                             i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
                         _rankController.getFeatureOverrides().add(prop.key(j), prop.value(j));
                     }
-                } else if (prop.name() == "highlightterms") { // pick up feature overrides
+                } else if (prop.name() == "highlightterms") {
                     for (uint32_t j = 0; j < prop.size(); ++j) {
                         LOG(debug, "Hightligthterms[%u][%u]: key '%s' -> value '%s'",
                             i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
