@@ -11,8 +11,10 @@
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/test/ft_test_app.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <fstream>
 #include <iomanip>
@@ -37,7 +39,8 @@ using AttributePtr = AttributeVector::SP;
 
 using CollectionType = FieldInfo::CollectionType;
 
-class Benchmark : public FtTestApp {
+class Benchmark : public ::testing::Test,
+                  public FtTestAppBase {
 public:
     using KeyValueVector = std::vector<std::pair<vespalib::string, vespalib::string> >;
 
@@ -106,6 +109,8 @@ public:
     };
 
 private:
+    int _argc;
+    char **_argv;
     search::fef::BlueprintFactory _factory;
     vespalib::Timer _timer;
     vespalib::duration _sample;
@@ -130,16 +135,24 @@ private:
     void runNativeProximity(Config & cfg);
 
 public:
-    Benchmark();
-    ~Benchmark();
-    int Main() override;
+    Benchmark(int argc, char **argv);
+    ~Benchmark() override;
+    void TestBody() override;
 
 };
 
-TEST_APPHOOK(Benchmark);
+Benchmark::Benchmark(int argc, char **argv)
+    : ::testing::Test(),
+      FtTestAppBase(),
+      _argc(argc),
+      _argv(argv),
+      _factory(),
+      _timer(),
+      _sample()
+{
+}
 
-Benchmark::Benchmark() : _factory(), _timer(), _sample() {}
-Benchmark::~Benchmark() {}
+Benchmark::~Benchmark() = default;
 
 bool
 Benchmark::Config::isKnown(const vespalib::string & key) const
@@ -589,11 +602,9 @@ Benchmark::runNativeProximity(Config & cfg)
     sample();
 }
 
-int
-Benchmark::Main()
+void
+Benchmark::TestBody()
 {
-    TEST_INIT("featurebenchmark");
-
     // Configure factory with all known blueprints.
     setup_fef_test_plugin(_factory);
     setup_search_features(_factory);
@@ -617,8 +628,8 @@ Benchmark::Main()
     }
 
     if (_argc != optind || optError) {
-        //usage();
-        return -1;
+        FAIL() << "Bad options";
+        return;
     }
 
     Config cfg;
@@ -651,8 +662,12 @@ Benchmark::Main()
     std::cout << "TET:  " << vespalib::count_ms(_sample) << " (ms)" << std::endl;
     std::cout << "ETPD: " << std::fixed << std::setprecision(10) << double(vespalib::count_ms(_sample)) / cfg.getNumRuns() << " (ms)" << std::endl;
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
-
-    TEST_DONE();
-    return 0;
 }
 
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    ::testing::RegisterTest("Benchmark", "benchmark", nullptr, "",
+                            __FILE__, __LINE__,
+                            [=]() -> Benchmark* { return new Benchmark(argc, argv); });
+    return RUN_ALL_TESTS();
+}
