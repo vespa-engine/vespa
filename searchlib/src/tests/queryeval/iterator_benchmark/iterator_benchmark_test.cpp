@@ -195,13 +195,13 @@ struct Stats {
 };
 
 double
-calc_median(const std::vector<double>& values)
+calc_median(const std::vector<double>& sorted_values)
 {
-    size_t middle = values.size() / 2;
-    if (values.size() % 2 == 0) {
-        return (values[middle - 1] + values[middle]) / 2;
+    size_t middle = sorted_values.size() / 2;
+    if (sorted_values.size() % 2 == 0) {
+        return (sorted_values[middle - 1] + sorted_values[middle]) / 2;
     } else {
-        return values[middle];
+        return sorted_values[middle];
     }
 }
 
@@ -213,7 +213,8 @@ calc_standard_deviation(const std::vector<double>& values, double average)
         double diff = val - average;
         deviations += (diff * diff);
     }
-    double variance = deviations / values.size();
+    // Bessel's correction (dividing by N-1, instead of N).
+    double variance = deviations / (values.size() - 1);
     return std::sqrt(variance);
 }
 
@@ -266,9 +267,8 @@ delete_substr_from(const std::string& source, const std::string& substr)
     return res;
 }
 
-template <typename T>
 vespalib::string
-get_class_name(const T& obj)
+get_class_name(const auto& obj)
 {
     auto res = obj.getClassName();
     res = delete_substr_from(res, "search::attribute::");
