@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -10,7 +9,9 @@
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search;
 using namespace search::query;
@@ -83,7 +84,7 @@ struct DP {
                 sb->unpack(docId);
                 result.doc(docId);
                 double score = md->resolveTermField(handle)->getRawScore();
-                EXPECT_EQUAL((int)score, score);
+                EXPECT_EQ((int)score, score);
                 result.score(score);
             }
         }
@@ -113,6 +114,7 @@ struct MockFixture {
     MockFixture(uint32_t initial) :
             MockFixture(initial, {new EmptySearch()})
     { }
+    ~MockFixture();
     MockFixture(uint32_t initial, std::vector<SearchIterator *> children) : mock(0), tfmd(), search() {
         std::vector<TermFieldMatchData*> childMatch;
         std::vector<int32_t> weights;
@@ -130,13 +132,15 @@ struct MockFixture {
     }
 };
 
+MockFixture::~MockFixture() = default;
+
     void verifySimple(const FakeResult & expect, DP & ws) {
         FakeSearchable index;
         setupFakeSearchable(index);
-        EXPECT_EQUAL(expect, ws.search(index, "field", true));
-        EXPECT_EQUAL(expect, ws.search(index, "field", false));
-        EXPECT_EQUAL(expect, ws.search(index, "multi-field", true));
-        EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
+        EXPECT_EQ(expect, ws.search(index, "field", true));
+        EXPECT_EQ(expect, ws.search(index, "field", false));
+        EXPECT_EQ(expect, ws.search(index, "multi-field", true));
+        EXPECT_EQ(expect, ws.search(index, "multi-field", false));
     }
 
 } // namespace <unnamed>
@@ -162,27 +166,31 @@ void run_simple(bool field_is_filter, bool term_is_not_needed)
             .set_field_is_filter(field_is_filter)
             .set_term_is_not_needed(term_is_not_needed);
 
-    TEST_DO(verifySimple(expect, ws));
+    verifySimple(expect, ws);
 }
 
-TEST("test Simple") {
-    TEST_DO(run_simple(false, false));
+TEST(DotProductTest, test_simple)
+{
+    run_simple(false, false);
 }
 
-TEST("test Simple filter field") {
-    TEST_DO(run_simple(true, false));
+TEST(DotProductTest, test_simple_filter_field)
+{
+    run_simple(true, false);
 }
 
-TEST("test Simple unranked") {
-    TEST_DO(run_simple(false, true));
+TEST(DotProductTest, test_simple_unranked)
+{
+    run_simple(false, true);
 }
 
-TEST("test Simple Single") {
+TEST(DotProductTest, test_simple_single)
+{
     FakeResult expect = FakeResult()
             .doc(7).score(70 * 7);
     DP ws = DP().add("7", 70);
 
-    TEST_DO(verifySimple(expect, ws));
+    verifySimple(expect, ws);
 }
 
 void run_multi(bool field_is_filter, bool term_is_not_needed)
@@ -200,65 +208,77 @@ void run_multi(bool field_is_filter, bool term_is_not_needed)
             .set_field_is_filter(field_is_filter)
             .set_term_is_not_needed(term_is_not_needed);
 
-    EXPECT_EQUAL(expect, ws.search(index, "multi-field", true));
-    EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
+    EXPECT_EQ(expect, ws.search(index, "multi-field", true));
+    EXPECT_EQ(expect, ws.search(index, "multi-field", false));
 }
 
 
-TEST("test Multi") {
-    TEST_DO(run_multi(false, false));
+TEST(DotProductTest, test_multi)
+{
+    run_multi(false, false);
 }
 
-TEST("test Multi filter field") {
-    TEST_DO(run_multi(true, false));
-}
-TEST("test Multi unranked") {
-    TEST_DO(run_multi(false, true));
+TEST(DotProductTest, test_multi_filter_field)
+{
+    run_multi(true, false);
 }
 
-TEST_F("test Eager Empty Child", MockFixture(search::endDocId, {})) {
+TEST(DotProductTest, test_multi_unranked)
+{
+    run_multi(false, true);
+}
+
+TEST(DotProductTest, test_eager_empty_child)
+{
+    MockFixture f1(search::endDocId, {});
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
     EXPECT_TRUE(search.isAtEnd());
-    EXPECT_EQUAL(0, mock->seekCnt);
+    EXPECT_EQ(0, mock->seekCnt);
 }
 
-TEST_F("test Eager Empty Children", MockFixture(search::endDocId)) {
+TEST(DotProductTest, test_eager_empty_cildren)
+{
+    MockFixture f1(search::endDocId);
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
-    EXPECT_EQUAL(search.beginId(), search.getDocId());
+    EXPECT_EQ(search.beginId(), search.getDocId());
     EXPECT_TRUE(!search.seek(1));
     EXPECT_TRUE(search.isAtEnd());
-    EXPECT_EQUAL(0, mock->seekCnt);
+    EXPECT_EQ(0, mock->seekCnt);
 }
 
 void verifyEagerMatching(SearchIterator & search, MockSearch * mock) {
     EXPECT_TRUE(!search.seek(3));
-    EXPECT_EQUAL(5u, search.getDocId());
-    EXPECT_EQUAL(0, mock->seekCnt);
+    EXPECT_EQ(5u, search.getDocId());
+    EXPECT_EQ(0, mock->seekCnt);
     EXPECT_TRUE(search.seek(5));
-    EXPECT_EQUAL(5u, search.getDocId());
-    EXPECT_EQUAL(0, mock->seekCnt);
+    EXPECT_EQ(5u, search.getDocId());
+    EXPECT_EQ(0, mock->seekCnt);
     EXPECT_TRUE(!search.seek(7));
     EXPECT_TRUE(search.isAtEnd());
-    EXPECT_EQUAL(1, mock->seekCnt);
+    EXPECT_EQ(1, mock->seekCnt);
 }
 
-TEST_F("test Eager Matching Child", MockFixture(5, {})) {
+TEST(DotProductTest, test_eager_matching_child)
+{
+    MockFixture f1(5, {});
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
-    EXPECT_EQUAL(5u, search.getDocId());
+    EXPECT_EQ(5u, search.getDocId());
     verifyEagerMatching(search, mock);
 }
 
-TEST_F("test Eager Matching Children", MockFixture(5)) {
+TEST(DotProductTest, test_eager_matching_children)
+{
+    MockFixture f1(5);
     MockSearch *mock = f1.mock;
     SearchIterator &search = *f1.search;
     search.initFullRange();
-    EXPECT_EQUAL(search.beginId(), search.getDocId());
+    EXPECT_EQ(search.beginId(), search.getDocId());
     verifyEagerMatching(search, mock);
 }
 
@@ -282,14 +302,16 @@ private:
     }
 };
 
-TEST("verify search iterator conformance with search iterator children") {
+TEST(DotProductTest, verify_search_iterator_conformance_with_search_iterator_children)
+{
     IteratorChildrenVerifier verifier;
     verifier.verify();
 }
 
-TEST("verify search iterator conformance with document weight iterator children") {
+TEST(DotProductTest, verify_search_iterator_conformance_with_document_weight_iterator_children)
+{
     WeightIteratorChildrenVerifier verifier;
     verifier.verify();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
