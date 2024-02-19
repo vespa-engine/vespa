@@ -3,12 +3,10 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/memoryindex/field_index.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
+#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/vespalib/testkit/testapp.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("field_index_iterator_test");
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 using namespace search::index;
@@ -65,15 +63,16 @@ struct Fixture {
     }
 };
 
-TEST_F("require that normal posting iterator conforms", Fixture<FieldIndex<false>>)
+TEST(FieldIndexIteratorTest, require_that_normal_posting_iterator_conforms)
 {
+    Fixture<FieldIndex<false>> f;
     f.verifier.verify();
 }
 
-TEST_F("require that interleaved posting iterator conforms", Fixture<FieldIndex<true>>)
+TEST(FieldIndexIteratorTest, require_that_interleaved_posting_iterator_conforms)
 {
+    Fixture<FieldIndex<true>> f;
     f.verifier.verify();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
-
+GTEST_MAIN_RUN_ALL_TESTS()
