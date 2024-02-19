@@ -27,6 +27,7 @@ vespa_add_library(searchlib_test
 
 vespa_add_library(searchlib_test_gtest_migration OBJECT
     SOURCES
+    ft_test_app_base.cpp
     initrange.cpp
     searchiteratorverifier.cpp
 )

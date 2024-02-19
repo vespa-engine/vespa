@@ -1,11 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "ft_test_app.h"
+#include "ft_test_app_base.h"
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".ft_test_app_base");
+
+#ifdef ENABLE_GTEST_MIGRATION
+#define EXPECT_EQUAL EXPECT_EQ
+#endif
 
 namespace fieldmatch = search::features::fieldmatch;
 using search::fef::test::DummyDependencyHandler;

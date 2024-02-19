@@ -4,7 +4,15 @@
 
 #include <vespa/searchlib/features/fieldmatch/params.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
+#ifdef ENABLE_GTEST_MIGRATION
+#include <vespa/vespalib/gtest/gtest.h>
+#else
 #include <vespa/vespalib/testkit/test_macros.h>
+#endif
+
+#ifdef ENABLE_GTEST_MIGRATION
+#define FtTestAppBase FtTestAppBaseForGTest
+#endif
 
 /*
  * Base class for test application used by feature unit tests.
@@ -54,8 +62,20 @@ struct FtTestAppBase {
     template <typename T>
     static bool assertCreateInstance(const T & prototype, const vespalib::string & baseName) {
         search::fef::Blueprint::UP bp = prototype.createInstance();
+#ifdef ENABLE_GTEST_MIGRATION
+        bool failed = false;
+        EXPECT_TRUE(dynamic_cast<T*>(bp.get()) != NULL) << (failed = true, "");
+        if (failed) {
+            return false;
+        }
+        EXPECT_EQ(bp->getBaseName(), baseName) << (failed = true, "");
+        if (failed) {
+            return false;
+        }
+#else
         if (!EXPECT_TRUE(dynamic_cast<T*>(bp.get()) != NULL)) return false;
         if (!EXPECT_EQUAL(bp->getBaseName(), baseName)) return false;
+#endif
         return true;
     }
 };

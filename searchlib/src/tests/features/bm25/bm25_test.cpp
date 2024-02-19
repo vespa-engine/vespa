@@ -6,8 +6,10 @@
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#include <vespa/searchlib/test/ft_test_app.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <cmath>
 
 using namespace search::features;
 using namespace search::fef;
@@ -102,8 +104,8 @@ TEST_F(Bm25BlueprintTest, blueprint_can_prepare_shared_state_with_average_field_
 
 TEST_F(Bm25BlueprintTest, dump_features_for_all_index_fields)
 {
-    FtTestApp::FT_DUMP(factory, "bm25", index_env,
-                       StringList().add("bm25(is)").add("bm25(ia)").add("bm25(iws)"));
+    FtTestAppBase::FT_DUMP(factory, "bm25", index_env,
+                           StringList().add("bm25(is)").add("bm25(ia)").add("bm25(iws)"));
 }
 
 struct Scorer {
