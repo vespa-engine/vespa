@@ -12,11 +12,7 @@ using namespace search::fef::test;
 using search::AttributeVector;
 using CollectionType = FieldInfo::CollectionType;
 
-Test::Test() {}
-Test::~Test() {}
-
-void
-Test::testFieldMatch()
+TEST_F(ProdFeaturesTest, test_field_match)
 {
     testFieldMatchBluePrint();
     testFieldMatchExecutor();

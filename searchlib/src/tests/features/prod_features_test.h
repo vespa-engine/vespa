@@ -4,48 +4,18 @@
 
 #include <vespa/searchlib/features/distancetopathfeature.h>
 #include <vespa/searchlib/features/termdistancefeature.h>
-#include <vespa/searchlib/test/ft_test_app.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/ft_test_app_base.h>
 
-class Test : public FtTestApp
+class Test : public FtTestAppBase
 {
 public:
     Test();
-    ~Test() override;
-    int Main() override;
-    void testFramework();
-    static void testFtLib();
-    void testAge();
-    void testAttribute();
-    void testAttributeMatch();
-    void testCloseness();
-    void testMatchCount();
-    void testGreatCircleDistance();
-    void testDistance();
-    void testDistanceToPath();
-    void testDotProduct();
-    void testFieldLength();
-    void testFieldMatch();
-    void testFieldTermMatch();
-    void testFirstPhase();
-    void testForeach();
-    void testFreshness();
-    void testMatch();
-    void testMatches();
-    void testNow();
-    void testQuery();
-    void testQueryTermCount();
-    void testRandom();
-    void testRandomNormal();
-    void testRandomNormalStable();
-    void testRankingExpression();
-    void testTerm();
-    void testTermDistance();
-    void testUnique();
-    static void testUtils();
+    ~Test();
 
     static void setupForDotProductTest(FtFeatureTest & ft);
 
-private:
+protected:
     void testFieldMatchBluePrint();
     void testFieldMatchExecutor();
     void testFieldMatchExecutorOutOfOrder();
@@ -109,7 +79,13 @@ private:
     bool assertMatches(uint32_t output, const vespalib::string & query, const vespalib::string & field,
                        const vespalib::string & feature = "matches(foo)", uint32_t docId = 1);
 
-private:
     search::fef::BlueprintFactory _factory;
 };
 
+class ProdFeaturesTest : public ::testing::Test,
+                         public Test
+{
+protected:
+    ProdFeaturesTest();
+    ~ProdFeaturesTest();
+};
