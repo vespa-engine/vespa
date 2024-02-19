@@ -69,10 +69,11 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
 QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, stringref termS, const string & indexS,
                      Type type, Normalizing normalizing)
     : QueryTermUCS4(QueryNormalization::optional_fold(termS, type, normalizing), type),
-      _index(indexS),
-      _encoding(0x01),
-      _result(org.release()),
       _hitList(),
+      _index(indexS),
+      _result(org.release()),
+      _encoding(0x01),
+      _isRanked(true),
       _weight(100),
       _uniqueId(0),
       _fieldInfo()

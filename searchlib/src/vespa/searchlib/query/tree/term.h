@@ -23,16 +23,16 @@ public:
     virtual ~Term() = 0;
 
     void setView(const vespalib::string & view) { _view = view; }
-    void setRanked(bool ranked) { _ranked = ranked; }
-    void setPositionData(bool position_data) { _position_data = position_data; }
+    void setRanked(bool ranked) noexcept { _ranked = ranked; }
+    void setPositionData(bool position_data) noexcept { _position_data = position_data; }
 
     void setStateFrom(const Term& other);
 
-    const vespalib::string & getView() const { return _view; }
-    Weight getWeight() const { return _weight; }
-    int32_t getId() const { return _id; }
-    bool isRanked() const { return _ranked; }
-    bool usePositionData() const { return _position_data; }
+    const vespalib::string & getView() const noexcept { return _view; }
+    Weight getWeight() const noexcept { return _weight; }
+    int32_t getId() const noexcept { return _id; }
+    bool isRanked() const noexcept { return _ranked; }
+    bool usePositionData() const noexcept { return _position_data; }
 
     static bool isPossibleRangeTerm(vespalib::stringref term) noexcept {
         return (term[0] == '[' || term[0] == '<' || term[0] == '>');

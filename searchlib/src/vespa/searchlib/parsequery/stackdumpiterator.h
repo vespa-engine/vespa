@@ -77,7 +77,7 @@ public:
     ~SimpleQueryStackDumpIterator();
 
     vespalib::stringref getStack() const noexcept { return vespalib::stringref(_buf, _bufEnd - _buf); }
-    size_t getPosition() const { return _currPos; }
+    size_t getPosition() const noexcept { return _currPos; }
 
     /**
      * Moves to the next item in the buffer.
@@ -91,7 +91,7 @@ public:
      * Get the type of the current item.
      * @return the type.
      */
-    ParseItem::ItemType getType() const { return _currType; }
+    ParseItem::ItemType getType() const noexcept { return _currType; }
     /**
      * Get the type of the current item.
      * @return the type.
@@ -103,40 +103,40 @@ public:
      *
      * @return rank weight.
      **/
-    query::Weight GetWeight() const { return _currWeight; }
+    query::Weight GetWeight() const noexcept { return _currWeight; }
 
     /**
      * Get the unique id of the current item.
      *
      * @return unique id of current item
      **/
-    uint32_t getUniqueId() const { return _currUniqueId; }
+    uint32_t getUniqueId() const noexcept { return _currUniqueId; }
 
     // Get the flags of the current item.
-    bool hasNoRankFlag() const { return (_currFlags & ParseItem::IFLAG_NORANK) != 0; }
-    bool hasSpecialTokenFlag() const { return (_currFlags & ParseItem::IFLAG_SPECIALTOKEN) != 0; }
-    bool hasNoPositionDataFlag() const { return (_currFlags & ParseItem::IFLAG_NOPOSITIONDATA) != 0; }
+    bool hasNoRankFlag() const noexcept { return (_currFlags & ParseItem::IFLAG_NORANK) != 0; }
+    bool hasSpecialTokenFlag() const noexcept { return (_currFlags & ParseItem::IFLAG_SPECIALTOKEN) != 0; }
+    bool hasNoPositionDataFlag() const noexcept { return (_currFlags & ParseItem::IFLAG_NOPOSITIONDATA) != 0; }
 
-    uint32_t getArity() const { return _currArity; }
+    uint32_t getArity() const noexcept { return _currArity; }
 
-    uint32_t getNearDistance() const { return _extraIntArg1; }
-    uint32_t getTargetHits() const { return _extraIntArg1; }
-    double getDistanceThreshold() const { return _extraDoubleArg4; }
-    double getScoreThreshold() const { return _extraDoubleArg4; }
-    double getThresholdBoostFactor() const { return _extraDoubleArg5; }
-    bool getAllowApproximate() const { return (_extraIntArg2 != 0); }
-    uint32_t getExploreAdditionalHits() const { return _extraIntArg3; }
+    uint32_t getNearDistance() const noexcept { return _extraIntArg1; }
+    uint32_t getTargetHits() const noexcept { return _extraIntArg1; }
+    double getDistanceThreshold() const noexcept { return _extraDoubleArg4; }
+    double getScoreThreshold() const noexcept { return _extraDoubleArg4; }
+    double getThresholdBoostFactor() const noexcept { return _extraDoubleArg5; }
+    bool getAllowApproximate() const noexcept { return (_extraIntArg2 != 0); }
+    uint32_t getExploreAdditionalHits() const noexcept { return _extraIntArg3; }
 
     // fuzzy match arguments
-    uint32_t getFuzzyMaxEditDistance() const { return _extraIntArg1; }
-    uint32_t getFuzzyPrefixLength() const { return _extraIntArg2; }
+    uint32_t getFuzzyMaxEditDistance() const noexcept { return _extraIntArg1; }
+    uint32_t getFuzzyPrefixLength() const noexcept { return _extraIntArg2; }
 
     std::unique_ptr<query::PredicateQueryTerm> getPredicateQueryTerm();
     std::unique_ptr<query::TermVector> get_terms();
 
-    vespalib::stringref getIndexName() const { return _curr_index_name; }
-    vespalib::stringref getTerm() const { return _curr_term; }
-    int64_t getIntergerTerm() const { return _curr_integer_term; }
+    vespalib::stringref getIndexName() const noexcept { return _curr_index_name; }
+    vespalib::stringref getTerm() const noexcept { return _curr_term; }
+    int64_t getIntergerTerm() const noexcept { return _curr_integer_term; }
 
     static vespalib::stringref DEFAULT_INDEX;
 };

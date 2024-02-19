@@ -106,6 +106,8 @@ RankProcessor::initQueryEnvironment()
     QueryWrapper::TermList & terms = _query.getTermList();
 
     for (auto& term : terms) {
+        if (!term->isRanked()) continue;
+
         if (term->isGeoLoc()) {
             const vespalib::string & fieldName = term->index();
             const vespalib::string & locStr = term->getTermString();
