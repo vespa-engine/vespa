@@ -18,7 +18,7 @@ class TermDataExtractorVisitor
     vector<const ITermData *> &_term_data;
 
 public:
-    TermDataExtractorVisitor(vector<const ITermData *> &term_data)
+    explicit TermDataExtractorVisitor(vector<const ITermData *> &term_data) noexcept
         : _term_data(term_data) {
     }
 
@@ -29,12 +29,12 @@ public:
         }
     }
 
-    virtual void visit(ProtonNodeTypes::AndNot &n) override {
+    void visit(ProtonNodeTypes::AndNot &n) override {
         assert(n.getChildren().size() > 0);
         n.getChildren()[0]->accept(*this);
     }
 
-    virtual void visit(ProtonNodeTypes::Equiv &n) override {
+    void visit(ProtonNodeTypes::Equiv &n) override {
         // XXX: unranked equiv not supported
         _term_data.push_back(&n);
     }

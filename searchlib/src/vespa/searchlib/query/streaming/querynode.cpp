@@ -137,6 +137,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             }
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
+            qt->setRanked( ! queryRep.hasNoRankFlag());
             if (allowRewrite && possibleFloat(*qt, ssTerm) && factory.allow_float_terms_rewrite(ssIndex)) {
                 auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), ssIndex, arity);
                 auto dotPos = ssTerm.find('.');

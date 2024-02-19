@@ -83,6 +83,8 @@ public:
     size_t              termLen()                  const { return getTermLen(); }
     const string      & index()                    const { return _index; }
     void                setWeight(query::Weight v)       { _weight = v; }
+    void                setRanked(bool ranked)           { _isRanked = ranked; }
+    bool                isRanked()                 const { return _isRanked; }
     void                setUniqueId(uint32_t u)          { _uniqueId = u; }
     query::Weight       weight()                   const { return _weight; }
     uint32_t            uniqueId()                 const { return _uniqueId; }
@@ -108,11 +110,12 @@ protected:
     template <typename HitListType>
     static void unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const HitListType& hit_list, const QueryTerm& fl_term);
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
-    string                       _index;
-    EncodingBitMap               _encoding;
-    QueryNodeResultBaseContainer _result;
     HitList                      _hitList;
 private:
+    string                       _index;
+    QueryNodeResultBaseContainer _result;
+    EncodingBitMap               _encoding;
+    bool                         _isRanked;
     query::Weight                _weight;
     uint32_t                     _uniqueId;
     std::vector<FieldInfo>       _fieldInfo;
