@@ -23,15 +23,7 @@ public:
         : _child(std::move(child)), _lambda(std::move(lambda)) {}
     const Node &child() const { return *_child; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "map(";
-        str += _child->dump(ctx);
-        str += ",";
-        str += _lambda->dump_as_lambda();
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -53,15 +45,7 @@ public:
         : _child(std::move(child)), _lambda(std::move(lambda)) {}
     const Node &child() const { return *_child; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "map_subspaces(";
-        str += _child->dump(ctx);
-        str += ",";
-        str += _lambda->dump_as_lambda();
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -85,17 +69,7 @@ public:
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "join(";
-        str += _lhs->dump(ctx);
-        str += ",";
-        str += _rhs->dump(ctx);
-        str += ",";
-        str += _lambda->dump_as_lambda();
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
@@ -119,17 +93,7 @@ public:
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "join(";
-        str += _lhs->dump(ctx);
-        str += ",";
-        str += _rhs->dump(ctx);
-        str += ",";
-        str += _lambda->dump_as_lambda();
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
@@ -153,19 +117,7 @@ public:
     const Node &child() const { return *_child; }
     Aggr aggr() const { return _aggr; }
     const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "reduce(";
-        str += _child->dump(ctx);
-        str += ",";
-        str += *AggrNames::name_of(_aggr);
-        for (const auto &dimension: _dimensions) {
-            str += ",";
-            str += dimension;
-        }
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -188,17 +140,7 @@ public:
     const Node &child() const { return *_child; }
     const std::vector<vespalib::string> &from() const { return _from; }
     const std::vector<vespalib::string> &to() const { return _to; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "rename(";
-        str += _child->dump(ctx);
-        str += ",";
-        str += flatten(_from);
-        str += ",";
-        str += flatten(_to);
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -208,20 +150,7 @@ public:
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
-    static vespalib::string flatten(const std::vector<vespalib::string> &list) {
-        if (list.size() == 1) {
-            return list[0];
-        }
-        vespalib::string str = "(";
-        for (size_t i = 0; i < list.size(); ++i) {
-            if (i > 0) {
-                str += ",";
-            }
-            str += list[i];
-        }
-        str += ")";
-        return str;
-    }
+    static vespalib::string flatten(const std::vector<vespalib::string> &list);
 };
 
 class TensorConcat : public Node {
@@ -235,17 +164,7 @@ public:
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
     const vespalib::string &dimension() const { return _dimension; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "concat(";
-        str += _lhs->dump(ctx);
-        str += ",";
-        str += _rhs->dump(ctx);
-        str += ",";
-        str += _dimension;
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
@@ -267,15 +186,7 @@ public:
         : _child(std::move(child)), _cell_type(cell_type) {}
     const Node &child() const { return *_child; }
     CellType cell_type() const { return _cell_type; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "cell_cast(";
-        str += _child->dump(ctx);
-        str += ",";
-        str += value_type::cell_type_to_name(_cell_type);
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
     const Node &get_child(size_t idx) const override {
@@ -305,19 +216,7 @@ public:
         }
     }
     const ValueType &type() const { return _type; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str = _type.to_spec();
-        str += ":{";
-        CommaTracker child_list;
-        for (const Child &child: _cells) {
-            child_list.maybe_add_comma(str);
-            str += as_string(child.first);
-            str += ":";
-            str += child.second->dump(ctx);
-        }
-        str += "}";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return _cells.size(); }
     const Node &get_child(size_t idx) const override {
@@ -350,18 +249,7 @@ public:
     const ValueType &type() const { return _type; }
     const std::vector<size_t> &bindings() const { return _bindings; }
     const Function &lambda() const { return *_lambda; }
-    vespalib::string dump(DumpContext &) const override {
-        vespalib::string str = _type.to_spec();
-        vespalib::string expr = _lambda->dump();
-        if (starts_with(expr, "(")) {
-            str += expr;
-        } else {
-            str += "(";
-            str += expr;
-            str += ")";
-        }
-        return str;
-    }
+    vespalib::string dump(DumpContext &) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 0; }
     const Node &get_child(size_t) const override { abort(); }
@@ -400,30 +288,7 @@ public:
     }
     const Node &param() const { return *_param; }
     const DimList &dim_list() const { return _dim_list; }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str = _param->dump(ctx);
-        str += "{";
-        CommaTracker dim_list;
-        for (const auto &dim: _dim_list) {
-            dim_list.maybe_add_comma(str);
-            str += dim.first;
-            str += ":";
-            if (dim.second.is_expr()) {
-                vespalib::string expr = dim.second.expr->dump(ctx);
-                if (starts_with(expr, "(")) {
-                    str += expr;
-                } else {
-                    str += "(";
-                    str += expr;
-                    str += ")";
-                }
-            } else {
-                str += as_quoted_string(dim.second.label);
-            }
-        }
-        str += "}";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return (1 + _expr_dims.size()); }
     const Node &get_child(size_t idx) const override {

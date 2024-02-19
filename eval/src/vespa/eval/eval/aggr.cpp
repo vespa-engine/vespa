@@ -12,12 +12,12 @@ namespace eval {
 namespace {
 
 template <typename T>
-struct Wrapper : Aggregator {
+struct Wrapper final : Aggregator {
     T aggr;
-    virtual void first(double value) final override { aggr = T{value}; }
-    virtual void next(double value) final override { aggr.sample(value); }
-    virtual double result() const final override { return aggr.result(); }
-    virtual Aggr enum_value() const final override { return T::enum_value(); }
+    void first(double value) override { aggr = T{value}; }
+    void next(double value) override { aggr.sample(value); }
+    double result() const override { return aggr.result(); }
+    Aggr enum_value() const override { return T::enum_value(); }
 };
 
 } // namespace vespalib::eval::<unnamed>
@@ -66,9 +66,7 @@ AggrNames::from_name(const vespalib::string &name)
     return &(result->second);
 }
 
-Aggregator::~Aggregator()
-{
-}
+Aggregator::~Aggregator() = default;
 
 Aggregator &
 Aggregator::create(Aggr aggr, Stash &stash)

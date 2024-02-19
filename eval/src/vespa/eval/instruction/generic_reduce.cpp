@@ -8,7 +8,6 @@
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-#include <algorithm>
 #include <cassert>
 #include <array>
 
@@ -51,7 +50,7 @@ struct SparseReduceState {
     SmallVector<string_id*> keep_address;
     size_t                  subspace;
 
-    SparseReduceState(const SparseReducePlan &plan)
+    explicit SparseReduceState(const SparseReducePlan &plan)
         : full_address(plan.keep_dims.size() + plan.num_reduce_dims),
           fetch_address(full_address.size(), nullptr),
           keep_address(plan.keep_dims.size(), nullptr),
@@ -97,7 +96,8 @@ generic_reduce(const Value &value, const ReduceParam &param) {
         auto zero = builder->add_subspace();
         std::fill(zero.begin(), zero.end(), OCT{});
     }
-    return builder->build(std::move(builder));
+    auto & builder_ref = *builder;
+    return builder_ref.build(std::move(builder));
 }
 
 template <typename ICT, typename OCT, typename AGGR>
@@ -311,7 +311,7 @@ GenericReduce::make_instruction(const ValueType &result_type,
     assert(result_type == param.res_type);
     assert(result_type.cell_meta().eq(input_type.cell_meta().reduce(result_type.is_double())));
     auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(input_type.cell_meta(), result_type.cell_meta().is_scalar, aggr, param);
-    return Instruction(fun, wrap_param<ReduceParam>(param));
+    return {fun, wrap_param<ReduceParam>(param)};
 }
 
 } // namespace
