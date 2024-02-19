@@ -13,8 +13,10 @@
 #include <vespa/searchlib/features/termeditdistancefeature.h>
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/ft_test_app_base.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/searchlib/test/ft_test_app.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace search::features;
@@ -25,56 +27,33 @@ using CollectionType = FieldInfo::CollectionType;
 //---------------------------------------------------------------------------------------------------------------------
 // Test
 //---------------------------------------------------------------------------------------------------------------------
-class Test : public FtTestApp {
-public:
-    Test();
-    ~Test() override;
-    int Main() override;
-    void testJaroWinklerDistance();
-    void testProximity();
-    void testFlowCompleteness();
-    void testQueryCompleteness();
-    void testReverseProximity();
-    void testTermEditDistance();
+class BetaFeaturesTest : public ::testing::Test,
+                         public FtTestAppBase
+{
+protected:
+    search::fef::BlueprintFactory _factory;
 
-private:
+    BetaFeaturesTest();
+    ~BetaFeaturesTest() override;
+
     void assertJaroWinklerDistance(const vespalib::string &query, const vespalib::string &field, feature_t expected);
     void assertQueryCompleteness(FtFeatureTest & ft, uint32_t firstOcc, uint32_t hits, uint32_t miss);
     void assertTermEditDistance(const vespalib::string &query, const vespalib::string &field,
                                 uint32_t expectedDel, uint32_t expectedIns, uint32_t expectedSub);
-
-private:
-    search::fef::BlueprintFactory _factory;
 };
 
-TEST_APPHOOK(Test);
-
-Test::Test() = default;
-Test::~Test() = default;
-
-int
-Test::Main()
+BetaFeaturesTest::BetaFeaturesTest()
+    : Test(),
+      _factory()
 {
-    TEST_INIT("beta_features_test");
-
     // Configure factory with all known blueprints.
     setup_fef_test_plugin(_factory);
     setup_search_features(_factory);
-
-    // Test all features.
-    testJaroWinklerDistance(); TEST_FLUSH();
-    testProximity();           TEST_FLUSH();
-    testFlowCompleteness();    TEST_FLUSH();
-    testQueryCompleteness();   TEST_FLUSH();
-    testReverseProximity();    TEST_FLUSH();
-    testTermEditDistance();    TEST_FLUSH();
-
-    TEST_DONE();
-    return 0;
 }
 
-void
-Test::testJaroWinklerDistance()
+BetaFeaturesTest::~BetaFeaturesTest() = default;
+
+TEST_F(BetaFeaturesTest, test_jaro_winkler_distance)
 {
     {
         // Test blueprint.
@@ -141,7 +120,7 @@ Test::testJaroWinklerDistance()
 }
 
 void
-Test::assertJaroWinklerDistance(const vespalib::string &query, const vespalib::string &field, feature_t expected)
+BetaFeaturesTest::assertJaroWinklerDistance(const vespalib::string &query, const vespalib::string &field, feature_t expected)
 {
     FtFeatureTest ft(_factory, "jaroWinklerDistance(foo)");
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -151,8 +130,7 @@ Test::assertJaroWinklerDistance(const vespalib::string &query, const vespalib::s
     ASSERT_TRUE(ft.execute(res.setEpsilon(0.001).addScore("jaroWinklerDistance(foo).out", expected)));
 }
 
-void
-Test::testProximity()
+TEST_F(BetaFeaturesTest, test_proximity)
 {
 
     { // Test blueprint.
@@ -260,7 +238,7 @@ Test::testProximity()
                 exp .addScore("proximity(foo,0,1).out",  a < b ? b - a : util::FEATURE_MAX)
                     .addScore("proximity(foo,0,1).posA", a < b ? a     : util::FEATURE_MAX)
                     .addScore("proximity(foo,0,1).posB", a < b ? b     : util::FEATURE_MIN);
-                TEST_STATE(vespalib::make_string("a=%u, b=%u", a, b).c_str());
+                SCOPED_TRACE(vespalib::make_string("a=%u, b=%u", a, b).c_str());
                 { // reset lazy evaluation
                     RankResult dummy;
                     ft.executeOnly(dummy, 0);
@@ -271,8 +249,7 @@ Test::testProximity()
     }
 }
 
-void
-Test::testQueryCompleteness()
+TEST_F(BetaFeaturesTest, test_query_completeness)
 {
     { // Test blueprint.
         QueryCompletenessBlueprint prototype;
@@ -342,7 +319,7 @@ Test::testQueryCompleteness()
 }
 
 void
-Test::assertQueryCompleteness(FtFeatureTest & ft, uint32_t firstOcc, uint32_t hits, uint32_t miss)
+BetaFeaturesTest::assertQueryCompleteness(FtFeatureTest & ft, uint32_t firstOcc, uint32_t hits, uint32_t miss)
 {
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
     mdb->setFieldLength("foo", 20);
@@ -385,19 +362,18 @@ int cntFlow(int m1, int m2, int m3, int m4)
     return flow;
 }
 
-void
-Test::testFlowCompleteness()
+TEST_F(BetaFeaturesTest, test_flow_completeness)
 {
     { // Test blueprint.
-        TEST_STATE("test flow completeness blueprint");
+        SCOPED_TRACE("test flow completeness blueprint");
         FlowCompletenessBlueprint prototype;
 
         EXPECT_TRUE(assertCreateInstance(prototype, "flowCompleteness"));
 
         StringList params, in, out;
-        TEST_DO(FT_SETUP_FAIL(prototype, params));
-        TEST_DO(FT_SETUP_FAIL(prototype, params.add("foo")));
-        TEST_DO(FT_SETUP_FAIL(prototype, params.add("0")));
+        FT_SETUP_FAIL(prototype, params);
+        FT_SETUP_FAIL(prototype, params.add("foo"));
+        FT_SETUP_FAIL(prototype, params.add("0"));
 
         FtIndexEnvironment ie;
         ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -416,16 +392,16 @@ Test::testFlowCompleteness()
             expDump.push_back(fn);
         }
 
-        TEST_DO(FT_SETUP_OK(prototype, ie, params, in, out));
-        TEST_DO(FT_SETUP_FAIL(prototype, ie, params.add("2")));
-        TEST_DO(FT_DUMP_EMPTY(_factory, "flowCompleteness"));
+        FT_SETUP_OK(prototype, ie, params, in, out);
+        FT_SETUP_FAIL(prototype, ie, params.add("2"));
+        FT_DUMP_EMPTY(_factory, "flowCompleteness");
 #ifdef notyet
-        TEST_DO(FT_DUMP(_factory, "flowCompleteness", ie, expDump));
+        FT_DUMP(_factory, "flowCompleteness", ie, expDump);
 #endif
     }
 
     { // Test executor.
-        TEST_STATE("test flow completeness executor");
+        SCOPED_TRACE("test flow completeness executor");
 
         FtFeatureTest ft(_factory, "flowCompleteness(foo)");
         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -453,7 +429,7 @@ Test::testFlowCompleteness()
             exp.addScore("flowCompleteness(foo).elementWeight", i > 0 ? 1 : 0);
             exp.addScore("flowCompleteness(foo).weight", 100.0);
             exp.addScore("flowCompleteness(foo).flow", i);
-            TEST_STATE("run execute");
+            SCOPED_TRACE("run execute");
             { // reset lazy evaluation
                 RankResult dummy;
                 ft.executeOnly(dummy, 0);
@@ -464,7 +440,7 @@ Test::testFlowCompleteness()
 
 
     { // Test executor, pass 2
-        TEST_STATE("test flow completeness executor (pass 2)");
+        SCOPED_TRACE("test flow completeness executor (pass 2)");
 
         FtFeatureTest ft(_factory, "flowCompleteness(foo)");
         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
@@ -507,7 +483,7 @@ Test::testFlowCompleteness()
                         exp.addScore("flowCompleteness(foo).elementWeight", 1);
                         exp.addScore("flowCompleteness(foo).weight", 100.0);
                         exp.addScore("flowCompleteness(foo).flow", flow);
-                        TEST_STATE(vespalib::make_string("execute t0m=%u t1m=%u t2m=%u t3m=%u flow=%u",
+                        SCOPED_TRACE(vespalib::make_string("execute t0m=%u t1m=%u t2m=%u t3m=%u flow=%u",
                                         t0m, t1m, t2m, t3m, flow).c_str());
                         { // reset lazy evaluation
                             RankResult dummy;
@@ -522,8 +498,7 @@ Test::testFlowCompleteness()
 }
 
 
-void
-Test::testReverseProximity()
+TEST_F(BetaFeaturesTest, test_reverse_proximity)
 {
     { // Test blueprint.
         ReverseProximityBlueprint prototype;
@@ -632,8 +607,7 @@ Test::testReverseProximity()
     }
 }
 
-void
-Test::testTermEditDistance()
+TEST_F(BetaFeaturesTest, test_term_edit_distance)
 {
     { // Test blueprint.
         TermEditDistanceBlueprint prototype;
@@ -691,7 +665,7 @@ Test::testTermEditDistance()
 }
 
 void
-Test::assertTermEditDistance(const vespalib::string &query, const vespalib::string &field,
+BetaFeaturesTest::assertTermEditDistance(const vespalib::string &query, const vespalib::string &field,
                              uint32_t expectedDel, uint32_t expectedIns, uint32_t expectedSub)
 {
     // Setup feature test.
@@ -710,3 +684,5 @@ Test::assertTermEditDistance(const vespalib::string &query, const vespalib::stri
         .addScore(feature + ".sub", (feature_t)expectedSub);
     ASSERT_TRUE(ft.execute(exp));
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
