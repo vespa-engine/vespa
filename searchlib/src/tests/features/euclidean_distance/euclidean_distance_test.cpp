@@ -10,7 +10,9 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/features/euclidean_distance_feature.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/test/ft_test_app.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/ft_test_app_base.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 
 using search::feature_t;
@@ -25,7 +27,7 @@ using AVC = search::attribute::Config;
 using AVBT = search::attribute::BasicType;
 using AVCT = search::attribute::CollectionType;
 using AttributePtr = search::AttributeVector::SP;
-using FTA = FtTestApp;
+using FTA = FtTestAppBase;
 using CollectionType = FieldInfo::CollectionType;
 
 struct SetupFixture
@@ -41,13 +43,15 @@ struct SetupFixture
     }
 };
 
-TEST_F("require that blueprint can be created from factory", SetupFixture)
+TEST(EuclideanDistanceTest, require_that_blueprint_can_be_created_from_factory)
 {
+    SetupFixture f;
     EXPECT_TRUE(FTA::assertCreateInstance(f.blueprint, "euclideanDistance"));
 }
 
-TEST_F("require that setup succeeds with attribute source", SetupFixture)
+TEST(EuclideanDistanceTest, require_that_setup_succeeds_with_attribute_source)
 {
+    SetupFixture f;
     FTA::FT_SETUP_OK(f.blueprint, f.indexEnv, StringList().add("myAttribute").add("myVector"),
             StringList(), StringList().add("distance"));
 }
@@ -63,7 +67,7 @@ struct ExecFixture
         setup_search_features(factory);
         setupAttributeVectors();
         setupQueryEnvironment();
-        ASSERT_TRUE(test.setup());
+        EXPECT_TRUE(test.setup());
     }
     void setupAttributeVectors() {
         std::vector<AttributePtr> attrs;
@@ -100,16 +104,16 @@ struct ExecFixture
 
 };
 
-TEST_F("require that distance is calculated for integer vectors",
-        ExecFixture("euclideanDistance(aint,intquery)"))
+TEST(EuclideanDistanceTest, require_that_distance_is_calculated_for_integer_vectors)
 {
+    ExecFixture f("euclideanDistance(aint,intquery)");
     EXPECT_TRUE(f.test.execute(11.789826, 0.000001));
 }
 
-TEST_F("require that distance is calculated for floating point vectors",
-        ExecFixture("euclideanDistance(afloat,floatquery)"))
+TEST(EuclideanDistanceTest, require_that_distance_is_calculated_for_floating_point_vectors)
 {
+    ExecFixture f("euclideanDistance(afloat,floatquery)");
     EXPECT_TRUE(f.test.execute(13.891846, 0.000001));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
