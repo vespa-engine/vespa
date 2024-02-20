@@ -11,6 +11,10 @@
 #include <vespa/documentapi/messagebus/docapi_visiting.pb.h>
 #include <vespa/documentapi/messagebus/docapi_inspect.pb.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/log/bufferedlogger.h>
+LOG_SETUP(".documentapi.messagebus.routable_factories_8");
 
 namespace documentapi::messagebus {
 
@@ -70,8 +74,10 @@ void set_global_id(protobuf::GlobalId& dest, const document::GlobalId& src) {
 }
 
 document::GlobalId get_global_id(const protobuf::GlobalId& src) {
-    if (src.raw_gid().size() != document::GlobalId::LENGTH) {
-        throw document::DeserializeException("Unexpected serialized protobuf GlobalId size");
+    if (src.raw_gid().size() != document::GlobalId::LENGTH) [[unlikely]] {
+        throw document::DeserializeException(
+                vespalib::make_string("Unexpected serialized protobuf GlobalId size (expected %u, was %zu)",
+                                      document::GlobalId::LENGTH, src.raw_gid().size()));
     }
     return document::GlobalId(src.raw_gid().data()); // By copy
 }
@@ -136,6 +142,11 @@ std::shared_ptr<document::DocumentUpdate> get_update_or_throw(const protobuf::Do
     return upd;
 }
 
+void log_codec_error(const char* op, const char* type, const char* msg) noexcept __attribute__((noinline));
+void log_codec_error(const char* op, const char* type, const char* msg) noexcept {
+    LOGBM(error, "Error during Protobuf %s for message type %s: %s", op, type, msg);
+}
+
 template <typename DocApiType, typename ProtobufType, typename EncodeFn, typename DecodeFn>
 requires std::is_invocable_r_v<void, EncodeFn, const DocApiType&, ProtobufType&> &&
          std::is_invocable_r_v<std::unique_ptr<DocApiType>, DecodeFn, const ProtobufType&>
@@ -154,7 +165,12 @@ public:
         ::google::protobuf::Arena arena;
         auto* proto_obj = ::google::protobuf::Arena::Create<ProtobufType>(&arena);
 
-        _encode_fn(dynamic_cast<const DocApiType&>(obj), *proto_obj);
+        try {
+            _encode_fn(dynamic_cast<const DocApiType&>(obj), *proto_obj);
+        } catch (std::exception& e) {
+            log_codec_error("encode", ProtobufType::descriptor()->name().c_str(), e.what());
+            return false;
+        }
 
         const auto sz = proto_obj->ByteSizeLong();
         assert(sz <= INT32_MAX);
@@ -168,14 +184,19 @@ public:
         const auto buf_size = in.getRemaining();
         assert(buf_size <= INT_MAX);
         bool ok = proto_obj->ParseFromArray(in.getBufferAtPos(), buf_size);
-        if (!ok) {
-            return {}; // Malformed protobuf payload
+        if (!ok) [[unlikely]] {
+            return {}; // Malformed protobuf payload. Caller is expected to log an error.
         }
-        auto msg = _decode_fn(*proto_obj);
-        if constexpr (std::is_base_of_v<DocumentMessage, DocApiType>) {
-            msg->setApproxSize(buf_size); // Wire size is a proxy for in-memory size
+        try {
+            auto msg = _decode_fn(*proto_obj);
+            if constexpr (std::is_base_of_v<DocumentMessage, DocApiType>) {
+                msg->setApproxSize(buf_size); // Wire size is a proxy for in-memory size
+            }
+            return msg;
+        } catch (std::exception& e) {
+            log_codec_error("decode", ProtobufType::descriptor()->name().c_str(), e.what());
+            return {};
         }
-        return msg;
     }
 };
 
@@ -235,7 +256,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::put_document_message_fact
             if (src.getCondition().isPresent()) {
                 set_tas_condition(*dest.mutable_condition(), src.getCondition());
             }
-            if (src.getDocumentSP()) { // This should always be present in practice
+            if (src.getDocumentSP()) [[likely]] { // This should always be present in practice
                 set_document(*dest.mutable_document(), src.getDocument());
             }
             dest.set_create_if_missing(src.get_create_if_non_existent());
@@ -594,7 +615,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::query_result_message_fact
             auto msg = std::make_unique<QueryResultMessage>();
             // Explicitly enforce presence of result/summary fields, as our object is not necessarily
             // well-defined if these have not been initialized.
-            if (!src.has_search_result() || !src.has_document_summary()) {
+            if (!src.has_search_result() || !src.has_document_summary()) [[unlikely]] {
                 throw document::DeserializeException("Query result does not have all required fields set", VESPA_STRLOC);
             }
             {

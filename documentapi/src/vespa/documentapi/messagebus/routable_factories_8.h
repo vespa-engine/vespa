@@ -7,6 +7,9 @@ namespace document { class DocumentTypeRepo; }
 
 namespace documentapi::messagebus {
 
+/**
+ * Implementation of MessageBus message request/response serialization built around Protocol Buffers.
+ */
 class RoutableFactories80 {
 public:
     RoutableFactories80() = delete;
