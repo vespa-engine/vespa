@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/features/internal_max_reduce_prod_join_feature.h>
-#include <vespa/searchlib/test/ft_test_app.h>
+#define ENABLE_GTEST_MIGRATION
+#include <vespa/searchlib/test/ft_test_app_base.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -22,7 +22,7 @@ using AVC = search::attribute::Config;
 using AVBT = search::attribute::BasicType;
 using AVCT = search::attribute::CollectionType;
 using AttributePtr = search::AttributeVector::SP;
-using FTA = FtTestApp;
+using FTA = FtTestAppBase;
 
 struct SetupFixture
 {
@@ -45,36 +45,42 @@ struct SetupFixture
     }
 };
 
-TEST_F("require that blueprint can be created", SetupFixture())
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_blueprint_can_be_created)
 {
+    SetupFixture f;
     EXPECT_TRUE(FTA::assertCreateInstance(f.blueprint, "internalMaxReduceProdJoin"));
 }
 
-TEST_F("require that setup fails if attribute does not exist", SetupFixture())
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_setup_fails_if_attribute_does_not_exist)
 {
+    SetupFixture f;
     FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("foo").add("bar"));
 }
 
-TEST_F("require that setup fails if attribute is of wrong type", SetupFixture())
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_setup_fails_if_attribute_is_of_wrong_type)
 {
+    SetupFixture f;
     FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("long").add("bar"));
 }
 
-TEST_F("require that setup fails if attribute is of wrong array type", SetupFixture())
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_setup_fails_if_attribute_is_of_wrong_array_type)
 {
+    SetupFixture f;
     FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("doublearray").add("bar"));
 }
 
-TEST_F("require that setup succeeds with long array attribute", SetupFixture())
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_setup_succeeds_with_long_array_attribute)
 {
+    SetupFixture f;
     FTA::FT_SETUP_OK(f.blueprint, f.indexEnv,
                     StringList().add("longarray").add("query"),
                     StringList(),
                     StringList().add("scalar"));
 }
 
-TEST_F("require that setup succeeds with int array attribute", SetupFixture())
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_setup_succeeds_with_int_array_attribute)
 {
+    SetupFixture f;
     FTA::FT_SETUP_OK(f.blueprint, f.indexEnv,
                      StringList().add("intarray").add("query"),
                      StringList(),
@@ -92,7 +98,7 @@ struct ExecFixture
         factory.addPrototype(std::make_shared<InternalMaxReduceProdJoinBlueprint>());
         setupAttributeVectors();
         setupQueryEnvironment();
-        ASSERT_TRUE(test.setup());
+        EXPECT_TRUE(test.setup());
     }
 
     void setupAttributeVectors() {
@@ -138,37 +144,37 @@ struct ExecFixture
 
 };
 
-TEST_F("require that executor returns correct result for long array",
-       ExecFixture("internalMaxReduceProdJoin(longarray,wset)"))
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_executor_returns_correct_result_for_long_array)
 {
+    ExecFixture f("internalMaxReduceProdJoin(longarray,wset)");
     EXPECT_FALSE(f.evaluatesTo(1234));
     EXPECT_TRUE(f.evaluatesTo(2245));
 }
 
-TEST_F("require that executor returns correct result for int array",
-       ExecFixture("internalMaxReduceProdJoin(intarray,wset)"))
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_executor_returns_correct_result_for_int_array)
 {
+    ExecFixture f("internalMaxReduceProdJoin(intarray,wset)");
     EXPECT_TRUE(f.evaluatesTo(1234));
     EXPECT_FALSE(f.evaluatesTo(2245));
 }
 
-TEST_F("require that executor returns 0 if no items match",
-       ExecFixture("internalMaxReduceProdJoin(longarray,wsetnomatch)"))
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_executor_returns_0_if_no_items_match)
 {
+    ExecFixture f("internalMaxReduceProdJoin(longarray,wsetnomatch)");
     EXPECT_TRUE(f.evaluatesTo(0.0));
 }
 
-TEST_F("require that executor return 0 if query is not a weighted set",
-       ExecFixture("internalMaxReduceProdJoin(longarray,array)"))
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_executor_return_0_if_query_is_not_a_weighted_set)
 {
+    ExecFixture f("internalMaxReduceProdJoin(longarray,array)");
     EXPECT_TRUE(f.evaluatesTo(0.0));
 }
 
-TEST_F("require that executor supports negative numbers",
-       ExecFixture("internalMaxReduceProdJoin(intarray,negativewset)"))
+TEST(InternalMaxReduceProdJoinFeatureTest, require_that_executor_supports_negative_numbers)
 {
+    ExecFixture f("internalMaxReduceProdJoin(intarray,negativewset)");
     EXPECT_FALSE(f.evaluatesTo(-1000));
     EXPECT_TRUE(f.evaluatesTo(-42));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
