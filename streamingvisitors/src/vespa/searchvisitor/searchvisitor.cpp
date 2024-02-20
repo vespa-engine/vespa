@@ -210,6 +210,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(vespalib::stringref
     auto rci = _docsumWriter->resolveClassInfo(summary_class, fields);
     auto state = std::make_unique<StreamingDocsumsState>(_callback, rci);
     auto &ds = state->get_state();
+    ds._omit_summary_features = (rci.res_class == nullptr) || rci.res_class->omit_summary_features();
     ds._args.setResultClassName(summary_class);
     ds._args.set_fields(fields);
     ds.query_normalization(&_query_normalization);
