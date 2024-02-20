@@ -2,7 +2,7 @@
 namespace=vespa.configdefinition
 
 ## The maximum number of occurrences of a given term to index per field
-maxtermoccurrences int default=1000
+maxtermoccurrences int default=10000
 fieldmatchmaxlength int default=1000000
 
 ilscript[].doctype    string
