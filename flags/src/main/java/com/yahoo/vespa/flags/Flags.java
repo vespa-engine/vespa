@@ -421,6 +421,12 @@ public class Flags {
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
+    public static UnboundBooleanFlag CALYPSO_ENABLED = defineFeatureFlag(
+            "calypso-enabled", false,
+            List.of("mortent"), "2024-02-19", "2024-05-01",
+            "Whether to enable calypso for host",
+            "Takes effect immediately", HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
