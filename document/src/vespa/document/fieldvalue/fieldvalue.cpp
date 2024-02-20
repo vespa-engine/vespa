@@ -185,7 +185,7 @@ FieldValue::UP
 FieldValue::onGetNestedFieldValue(PathRange nested) const
 {
     (void) nested;
-    return FieldValue::UP();
+    return {};
 }
 
 ModificationStatus
@@ -221,7 +221,7 @@ namespace {
 class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory
 {
 public:
-    FieldValueFactory(const DataType & dataType) : _dataType(&dataType) { }
+    explicit FieldValueFactory(const DataType & dataType) noexcept : _dataType(&dataType) { }
     FieldValue * create() override { return _dataType->createFieldValue().release(); }
     FieldValueFactory * clone() const override { return new FieldValueFactory(*this); }
 private:
