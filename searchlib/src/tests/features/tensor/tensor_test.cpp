@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -12,10 +11,11 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
-#include <vespa/searchlib/test/ft_test_app.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using search::feature_t;
@@ -38,7 +38,6 @@ using AVC = search::attribute::Config;
 using AVBT = search::attribute::BasicType;
 using AVCT = search::attribute::CollectionType;
 using AttributePtr = search::AttributeVector::SP;
-using FTA = FtTestApp;
 using CollectionType = FieldInfo::CollectionType;
 
 namespace
@@ -61,7 +60,7 @@ struct ExecFixture
         setup_search_features(factory);
         setupAttributeVectors();
         setupQueryEnvironment();
-        ASSERT_TRUE(test.setup());
+        EXPECT_TRUE(test.setup());
     }
     void addAttributeField(const vespalib::string &attrName) {
         test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, attrName);
@@ -157,7 +156,7 @@ struct ExecFixture
     }
     const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().type().has_dimensions());
+        EXPECT_TRUE(value.get().type().has_dimensions());
         return value.get();
     }
     const Value &execute(uint32_t docId = 1) {
@@ -165,75 +164,78 @@ struct ExecFixture
     }
 };
 
-TEST_F("require that tensor attribute can be extracted as tensor in attribute feature",
-       ExecFixture("attribute(tensorattr)"))
+TEST(TensorTest, require_that_tensor_attribute_can_be_extracted_as_tensor_in_attribute_feature)
 {
-    EXPECT_EQUAL(TensorSpec("tensor(x{})")
-                 .add({{"x", "b"}}, 5)
-                 .add({{"x", "c"}}, 7)
-                 .add({{"x", "a"}}, 3), spec_from_value(f.execute()));
+    ExecFixture f("attribute(tensorattr)");
+    EXPECT_EQ(TensorSpec("tensor(x{})")
+              .add({{"x", "b"}}, 5)
+              .add({{"x", "c"}}, 7)
+              .add({{"x", "a"}}, 3), spec_from_value(f.execute()));
 }
 
-TEST_F("require that direct tensor attribute can be extracted in attribute feature",
-       ExecFixture("attribute(directattr)"))
+TEST(TensorTest, require_that_direct_tensor_attribute_can_be_extracted_in_attribute_feature)
 {
-    EXPECT_EQUAL(TensorSpec("tensor(x{})")
-                 .add({{"x", "b"}}, 5)
-                 .add({{"x", "c"}}, 7)
-                 .add({{"x", "a"}}, 3), spec_from_value(f.execute()));
+    ExecFixture f("attribute(directattr)");
+    EXPECT_EQ(TensorSpec("tensor(x{})")
+              .add({{"x", "b"}}, 5)
+              .add({{"x", "c"}}, 7)
+              .add({{"x", "a"}}, 3), spec_from_value(f.execute()));
 }
 
-TEST_F("require that tensor from query can be extracted as tensor in query feature",
-       ExecFixture("query(tensorquery)"))
+TEST(TensorTest, require_that_tensor_from_query_can_be_extracted_as_tensor_in_query_feature)
 {
-    EXPECT_EQUAL(TensorSpec("tensor(q{})")
-                 .add({{"q", "f"}}, 17)
-                 .add({{"q", "d"}}, 11)
-                 .add({{"q", "e"}}, 13), spec_from_value(f.execute()));
+    ExecFixture f("query(tensorquery)");
+    EXPECT_EQ(TensorSpec("tensor(q{})")
+              .add({{"q", "f"}}, 17)
+              .add({{"q", "d"}}, 11)
+              .add({{"q", "e"}}, 13), spec_from_value(f.execute()));
 }
 
-TEST_F("require that tensor from query can have default value",
-       ExecFixture("query(with_default)"))
+TEST(TensorTest, require_that_tensor_from_query_can_have_default_value)
 {
-    EXPECT_EQUAL(TensorSpec("tensor(x[3])")
-                 .add({{"x", 0}}, 1)
-                 .add({{"x", 1}}, 2)
-                 .add({{"x", 2}}, 3), spec_from_value(f.execute()));
+    ExecFixture f("query(with_default)");
+    EXPECT_EQ(TensorSpec("tensor(x[3])")
+              .add({{"x", 0}}, 1)
+              .add({{"x", 1}}, 2)
+              .add({{"x", 2}}, 3), spec_from_value(f.execute()));
 }
 
-TEST_F("require that empty tensor is created if attribute does not exists",
-       ExecFixture("attribute(null)"))
+TEST(TensorTest, require_that_empty_tensor_is_created_if_attribute_does_not_exists)
 {
-    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute());
+    ExecFixture f("attribute(null)");
+    EXPECT_EQ(*make_empty("tensor(x{})"), f.execute());
 }
 
-TEST_F("require that empty tensor is created if tensor type is wrong",
-       ExecFixture("attribute(wrongtype)"))
+TEST(TensorTest, require_that_empty_tensor_is_created_if_tensor_type_is_wrong)
 {
-    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute());
+    ExecFixture f("attribute(wrongtype)");
+    EXPECT_EQ(*make_empty("tensor(x{})"), f.execute());
 }
 
-TEST_F("require that empty tensor is created if query parameter is not found",
-       ExecFixture("query(null)"))
+TEST(TensorTest, require_that_empty_tensor_is_created_if_query_parameter_is_not_found)
 {
-    EXPECT_EQUAL(*make_empty("tensor(q{})"), f.execute());
+    ExecFixture f("query(null)");
+    EXPECT_EQ(*make_empty("tensor(q{})"), f.execute());
 }
 
-TEST_F("require that empty tensor with correct type is created if document has no tensor",
-       ExecFixture("attribute(tensorattr)")) {
-    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute(2));
+TEST(TensorTest, require_that_empty_tensor_with_correct_type_is_created_if_document_has_no_tensor)
+{
+    ExecFixture f("attribute(tensorattr)");
+    EXPECT_EQ(*make_empty("tensor(x{})"), f.execute(2));
 }
 
-TEST_F("require that empty tensor with correct type is returned by direct tensor attribute",
-       ExecFixture("attribute(directattr)")) {
-    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute(2));
+TEST(TensorTest, require_that_empty_tensor_with_correct_type_is_returned_by_direct_tensor_attribute)
+{
+    ExecFixture f("attribute(directattr)");
+    EXPECT_EQ(*make_empty("tensor(x{})"), f.execute(2));
 }
 
-TEST_F("require that wrong tensor type from query tensor gives empty tensor",
-       ExecFixture("query(mappedtensorquery)")) {
-    EXPECT_EQUAL(TensorSpec("tensor(x[2])")
-                 .add({{"x", 0}}, 0)
-                 .add({{"x", 1}}, 0), spec_from_value(f.execute()));
+TEST(TensorTest, require_that_wrong_tensor_type_from_query_tensor_gives_empty_tensor)
+{
+    ExecFixture f("query(mappedtensorquery)");
+    EXPECT_EQ(TensorSpec("tensor(x[2])")
+              .add({{"x", 0}}, 0)
+              .add({{"x", 1}}, 0), spec_from_value(f.execute()));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
