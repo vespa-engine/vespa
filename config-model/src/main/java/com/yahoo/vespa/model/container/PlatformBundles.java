@@ -109,7 +109,6 @@ public class PlatformBundles {
             com.yahoo.prelude.searcher.JuniperSearcher.class.getName(),
             com.yahoo.prelude.searcher.MultipleResultsSearcher.class.getName(),
             com.yahoo.prelude.searcher.PosSearcher.class.getName(),
-            com.yahoo.prelude.searcher.PosSearcher.class.getName(),
             com.yahoo.prelude.searcher.QuotingSearcher.class.getName(),
             com.yahoo.prelude.searcher.ValidateSortingSearcher.class.getName(),
             com.yahoo.prelude.semantics.SemanticSearcher.class.getName(),
