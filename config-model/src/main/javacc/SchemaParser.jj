@@ -2005,8 +2005,7 @@ void inputs(ParsedRankProfile profile) :
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-    (input(profile))?
-    (<NL> (input(profile))?)*
+      ( input(profile) (<NL>)*) *
     <RBRACE>
 }
 
@@ -2038,6 +2037,7 @@ Reference inputName() :
 TensorType valueType(Reference reference) :
 {
     TensorType type;
+
 }
 {
     (
