@@ -35,6 +35,12 @@ public class DataTypeRecognizer {
     DataTypeRecognizer() {
     }
 
+    DataTypeRecognizer(DataTypeCollection dtc) {
+        for (var type : dtc.getTypes()) {
+            System.err.println("added: "+nameOf(type));
+        }
+    }
+
     String nameOf(Object type) {
         return toUniqueNames.computeIfAbsent(type, t -> makeUniqueName(t));
     }
