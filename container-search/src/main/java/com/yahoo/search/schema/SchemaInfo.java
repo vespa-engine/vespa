@@ -6,7 +6,6 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.tensor.TensorType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -184,16 +183,16 @@ public class SchemaInfo {
          *         feature is declared in this rank profile in multiple schemas
          *         of this session with conflicting types
          */
-        public TensorType rankProfileInput(String rankFeature, String rankProfile) {
+        public RankProfile.InputType rankProfileInput(String rankFeature, String rankProfile) {
             if (schemas.isEmpty()) return null; // no matching schemas - validated elsewhere
             List<RankProfile> profiles = profilesNamed(rankProfile);
             if (profiles.isEmpty())
                 throw new IllegalArgumentException("No profile named '" + rankProfile + "' exists in schemas [" +
                                                    schemas.stream().map(Schema::name).collect(Collectors.joining(", ")) + "]");
-            TensorType foundType = null;
+            RankProfile.InputType foundType = null;
             RankProfile declaringProfile = null;
             for (RankProfile profile : profiles) {
-                TensorType newlyFoundType = profile.inputs().get(rankFeature);
+                RankProfile.InputType newlyFoundType = profile.inputs().get(rankFeature);
                 if (newlyFoundType == null) continue;
                 if (foundType != null && ! newlyFoundType.equals(foundType))
                     throw new IllegalArgumentException("Conflicting input type declarations for '" + rankFeature + "': " +

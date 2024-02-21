@@ -18,10 +18,25 @@ import java.util.Objects;
 @Beta
 public class RankProfile {
 
+    public record InputType(TensorType tensorType, boolean declaredString) {
+        public String toString() {
+            return declaredString ? "string" : tensorType.toString();
+        }
+        public static InputType fromSpec(String spec) {
+            if ("string".equals(spec)) {
+                return new InputType(TensorType.empty, true);
+            }
+            if ("double".equals(spec)) {
+                return new InputType(TensorType.empty, false);
+            }
+            return new InputType(TensorType.fromSpec(spec), false);
+        }
+    }
+
     private final String name;
     private final boolean hasSummaryFeatures;
     private final boolean hasRankFeatures;
-    private final Map<String, TensorType> inputs;
+    private final Map<String, InputType> inputs;
 
     // Assigned when this is added to a schema
     private Schema schema = null;
@@ -52,7 +67,7 @@ public class RankProfile {
     public boolean hasRankFeatures() { return hasRankFeatures; }
 
     /** Returns the inputs explicitly declared in this rank profile. */
-    public Map<String, TensorType> inputs() { return inputs; }
+    public Map<String, InputType> inputs() { return inputs; }
 
     @Override
     public boolean equals(Object o) {
@@ -80,7 +95,7 @@ public class RankProfile {
         private final String name;
         private boolean hasSummaryFeatures = true;
         private boolean hasRankFeatures = true;
-        private final Map<String, TensorType> inputs = new LinkedHashMap<>();
+        private final Map<String, InputType> inputs = new LinkedHashMap<>();
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);
@@ -96,7 +111,7 @@ public class RankProfile {
             return this;
         }
 
-        public Builder addInput(String name, TensorType type) {
+        public Builder addInput(String name, InputType type) {
             inputs.put(name, type);
             return this;
         }

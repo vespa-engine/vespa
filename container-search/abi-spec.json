@@ -8452,8 +8452,27 @@
       "public void <init>(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile$Builder setHasSummaryFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
-      "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.search.schema.RankProfile$InputType)",
       "public com.yahoo.search.schema.RankProfile build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.RankProfile$InputType" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.TensorType, boolean)",
+      "public java.lang.String toString()",
+      "public static com.yahoo.search.schema.RankProfile$InputType fromSpec(java.lang.String)",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.tensor.TensorType tensorType()",
+      "public boolean declaredString()"
     ],
     "fields" : [ ]
   },
@@ -8519,7 +8538,7 @@
       "public boolean isStreaming()",
       "public java.util.Collection schemas()",
       "public java.util.Optional fieldInfo(java.lang.String)",
-      "public com.yahoo.tensor.TensorType rankProfileInput(java.lang.String, java.lang.String)"
+      "public com.yahoo.search.schema.RankProfile$InputType rankProfileInput(java.lang.String, java.lang.String)"
     ],
     "fields" : [ ]
   },

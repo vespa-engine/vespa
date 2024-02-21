@@ -7,6 +7,7 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.search.Query;
 import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.query.profile.QueryProfile;
@@ -298,23 +299,23 @@ public class RankProfileInputTest {
     private SchemaInfo createSchemaInfo() {
         List<Schema> schemas = new ArrayList<>();
         RankProfile.Builder common = new RankProfile.Builder("commonProfile")
-                .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
-                .addInput("query(myTensor2)", TensorType.fromSpec("tensor(x[2],y[2])"))
-                .addInput("query(myTensor3)", TensorType.fromSpec("tensor(x[2],y[2])"))
-                .addInput("query(myTensor4)", TensorType.fromSpec("tensor<float>(x[5])"));
+                .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
+                .addInput("query(myTensor2)", InputType.fromSpec("tensor(x[2],y[2])"))
+                .addInput("query(myTensor3)", InputType.fromSpec("tensor(x[2],y[2])"))
+                .addInput("query(myTensor4)", InputType.fromSpec("tensor<float>(x[5])"));
         schemas.add(new Schema.Builder("a")
                             .add(common.build())
                             .add(new RankProfile.Builder("inconsistent")
-                                         .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
+                                         .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .build());
         schemas.add(new Schema.Builder("b")
                             .add(common.build())
                             .add(new RankProfile.Builder("inconsistent")
-                                         .addInput("query(myTensor1)", TensorType.fromSpec("tensor(x[10])"))
+                                         .addInput("query(myTensor1)", InputType.fromSpec("tensor(x[10])"))
                                          .build())
                             .add(new RankProfile.Builder("bOnly")
-                                         .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
+                                         .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .build());
         List<Cluster> clusters = new ArrayList<>();

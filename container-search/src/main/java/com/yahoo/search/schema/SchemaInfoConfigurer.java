@@ -27,7 +27,7 @@ class SchemaInfoConfigurer {
             profileBuilder.setHasSummaryFeatures(profileConfig.hasSummaryFeatures());
             profileBuilder.setHasRankFeatures(profileConfig.hasRankFeatures());
             for (var inputConfig : profileConfig.input())
-                profileBuilder.addInput(inputConfig.name(), TensorType.fromSpec(inputConfig.type()));
+                profileBuilder.addInput(inputConfig.name(), RankProfile.InputType.fromSpec(inputConfig.type()));
             builder.add(profileBuilder.build());
         }
 
