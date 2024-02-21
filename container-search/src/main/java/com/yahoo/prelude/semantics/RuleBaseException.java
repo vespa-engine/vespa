@@ -6,7 +6,7 @@ package com.yahoo.prelude.semantics;
  *
  * @author bratseth
  */
-public class RuleBaseException extends RuntimeException {
+public class RuleBaseException extends IllegalArgumentException {
 
     public RuleBaseException(String message) {
         super(message);
