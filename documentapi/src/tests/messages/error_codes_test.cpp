@@ -1,36 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <iostream>
+#include <vespa/vespalib/testkit/test_path.h>
+#include <gtest/gtest.h>
 #include <fstream>
+#include <filesystem>
+#include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
-#include <exception>
-#include <map>
 
 using NamedErrorCodes = std::map<std::string, uint32_t>;
 
-// DocumentAPI C++ module uses Ye Olde Test Framework.
-class ErrorCodesTest : public vespalib::TestApp {
-    int Main() override;
-
-    void error_codes_match_java_definitions();
-    void stringification_is_defined_for_all_error_codes();
-
-    NamedErrorCodes all_document_protocol_error_codes();
-    std::string path_prefixed(const std::string& file_name) const;
-};
-
-TEST_APPHOOK(ErrorCodesTest);
+namespace {
 
 // ERROR_CODE_KV(FOO) -> {"FOO", DocumentProtocol::FOO}
 #define ERROR_CODE_KV(code_name) \
     {#code_name, DocumentProtocol::code_name}
 
-NamedErrorCodes
-ErrorCodesTest::all_document_protocol_error_codes()
-{
+NamedErrorCodes all_document_protocol_error_codes() {
     using documentapi::DocumentProtocol;
     return {
         ERROR_CODE_KV(ERROR_MESSAGE_IGNORED),
@@ -66,19 +54,17 @@ ErrorCodesTest::all_document_protocol_error_codes()
 
 #undef ERROR_CODE_KV
 
-namespace {
-
-std::string read_file(const std::string& file_name) {
+std::string read_file(const std::filesystem::path& file_name) {
     std::ifstream ifs(file_name);
     if (!ifs.is_open()) {
-        throw std::runtime_error("file '" + file_name + "' does not exist");
+        throw std::runtime_error("file '" + file_name.native() + "' does not exist");
     }
     std::ostringstream oss;
     oss << ifs.rdbuf();
     return oss.str();
 }
 
-void write_file(const std::string& file_name,
+void write_file(const std::filesystem::path& file_name,
                 const std::string& content)
 {
     std::ofstream ofs(file_name, std::ios_base::trunc);
@@ -98,16 +84,15 @@ std::string to_sorted_key_value_string(const NamedErrorCodes& codes) {
     return os.str();
 }
 
-} // anon ns
-
-std::string
-ErrorCodesTest::path_prefixed(const std::string& file_name) const {
-    return TEST_PATH("../../../test/crosslanguagefiles/" + file_name);
+std::filesystem::path path_prefixed(const std::string& file_name) {
+    return {TEST_PATH("../../../test/crosslanguagefiles/" + file_name)};
 }
 
-void
-ErrorCodesTest::error_codes_match_java_definitions()
-{
+} // anon ns
+
+namespace documentapi {
+
+TEST(ErrorCodesTest, error_codes_match_java_definitions) {
     NamedErrorCodes codes(all_document_protocol_error_codes());
     auto cpp_golden_file = path_prefixed("HEAD-cpp-golden-error-codes.txt");
     auto cpp_golden_data = to_sorted_key_value_string(codes);
@@ -115,34 +100,21 @@ ErrorCodesTest::error_codes_match_java_definitions()
 
     auto java_golden_file = path_prefixed("HEAD-java-golden-error-codes.txt");
     auto java_golden_data = read_file(java_golden_file);
-    EXPECT_EQUAL(cpp_golden_data, java_golden_data);
+    EXPECT_EQ(cpp_golden_data, java_golden_data);
 }
 
-void
-ErrorCodesTest::stringification_is_defined_for_all_error_codes()
-{
+TEST(ErrorCodesTest, stringification_is_defined_for_all_error_codes) {
     using documentapi::DocumentProtocol;
     NamedErrorCodes codes(all_document_protocol_error_codes());
-    for (auto& kv : codes) {
+    for (const auto& kv : codes) {
         // Ugh, special casing due to divergence between Java and C++ naming.
         // Can we fix this without breaking anything in exciting ways?
         if (kv.second != DocumentProtocol::ERROR_EXISTS) {
-            EXPECT_EQUAL(kv.first, "ERROR_" +
-                    DocumentProtocol::getErrorName(kv.second));
+            EXPECT_EQ(kv.first, "ERROR_" + DocumentProtocol::getErrorName(kv.second));
         } else {
-            EXPECT_EQUAL("EXISTS", DocumentProtocol::getErrorName(kv.second));
+            EXPECT_EQ("EXISTS", DocumentProtocol::getErrorName(kv.second));
         }
     }
 }
 
-int
-ErrorCodesTest::Main()
-{
-    TEST_INIT("error_codes_test");
-    error_codes_match_java_definitions();
-    TEST_FLUSH();
-    stringification_is_defined_for_all_error_codes();
-    TEST_FLUSH();
-    TEST_DONE();
-}
-
+} // documentapi
