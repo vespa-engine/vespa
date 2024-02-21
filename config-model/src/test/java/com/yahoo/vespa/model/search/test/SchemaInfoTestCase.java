@@ -130,16 +130,16 @@ public class SchemaInfoTestCase {
         String inputs =
                 "  rank-profile inputs {" +
                         "    inputs {" +
-                        "      query(foo) tensor<float>(x[10])" +
-                        "      query(bar) tensor(key{},x[1000])" +
-                        "      query(myDouble1) double: 0.5" +
-                        "      query(myDouble2) tensor()" +
-                        "      query(myMap) tensor(key{}): { label1:1.0,\n \"label2\": 2.0, 'label3': 3.0 }" +
-                        "      query(myVector1) tensor(x[3]):\n\n[1 ,2.0,3]" +
-                        "      query(myVector2) tensor(x[3]):{{x:0}:1,{x: 1}: 2 , { x:2}:3.0 }" +
-                        "      query(myMatrix) tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]" +
-                        "      query(myMixed1) tensor(key{},x[2]): { key1:[-1.0, 1.1], key2: [1,2]}" +
-                        "      query(myMixed2) tensor(k1{},k2{},x[2]): { {k1:l1,k2:l1}:[-1.0, 1.1], {k1:l1,k2:l2}: [1,2]}" +
+                        "      query(foo) tensor<float>(x[10])\n"+
+                        "      query(bar) tensor(key{},x[1000])\n"+
+                        "      query(myDouble1) double: 0.5\n"+
+                        "      query(myDouble2) tensor()\n"+
+                        "      query(myMap) tensor(key{}): { label1:1.0,\n \"label2\": 2.0, 'label3': 3.0 }\n"+
+                        "      query(myVector1) tensor(x[3]):\n\n[1 ,2.0,3]\n"+
+                        "      query(myVector2) tensor(x[3]):{{x:0}:1,{x: 1}: 2 , { x:2}:3.0 }\n"+
+                        "      query(myMatrix) tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]\n"+
+                        "      query(myMixed1) tensor(key{},x[2]): { key1:[-1.0, 1.1], key2: [1,2]}\n"+
+                        "      query(myMixed2) tensor(k1{},k2{},x[2]): { {k1:l1,k2:l1}:[-1.0, 1.1], {k1:l1,k2:l2}: [1,2]}\n"+
                         "    }" +
                         "  }";
         List<String> schemas = List.of("type1", "type2");

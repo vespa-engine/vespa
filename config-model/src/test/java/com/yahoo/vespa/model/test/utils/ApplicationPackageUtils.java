@@ -42,7 +42,7 @@ public class ApplicationPackageUtils {
                "  }" +
                "  rank-profile inputs {" +
                "    inputs {" +
-               "      query(foo) tensor<float>(x[10])" +
+               "      query(foo) tensor<float>(x[10])\n" +
                "      query(bar) tensor(key{},x[1000])" +
                "    }" +
                "  }" +
