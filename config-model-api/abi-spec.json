@@ -1322,7 +1322,6 @@
       "public java.lang.String unknownConfigDefinition()",
       "public int searchHandlerThreadpool()",
       "public boolean alwaysMarkPhraseExpensive()",
-      "public boolean restartOnDeployWhenOnnxModelChanges()",
       "public boolean sortBlueprintsByCost()"
     ],
     "fields" : [ ]
