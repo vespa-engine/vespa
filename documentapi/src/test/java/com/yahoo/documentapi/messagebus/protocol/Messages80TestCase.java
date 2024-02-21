@@ -65,7 +65,7 @@ public class Messages80TestCase extends MessagesTestBase {
 
     @Override
     protected Version version() {
-        return new Version(8, 305);
+        return new Version(8, 310);
     }
 
     @Override

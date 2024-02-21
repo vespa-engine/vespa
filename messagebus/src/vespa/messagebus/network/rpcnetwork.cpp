@@ -159,9 +159,9 @@ namespace {
     // and the exact same as that used in Java for the same purposes. Or else!
     const char* maybe_env_val = getenv("VESPA_MBUS_DOCUMENTAPI_USE_PROTOBUF");
     if (maybe_env_val && (("true"sv == maybe_env_val) || ("yes"sv == maybe_env_val))) {
-        return {8, 304}; // _Allows_ new protobuf protocol
+        return {8, 310}; // _Allows_ new protobuf protocol
     }
-    return {8, 303}; // _Disallows_ new protobuf protocol
+    return {8, 309}; // _Disallows_ new protobuf protocol
 }
 
 }

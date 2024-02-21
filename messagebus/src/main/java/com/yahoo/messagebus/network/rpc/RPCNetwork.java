@@ -309,9 +309,9 @@ public class RPCNetwork implements Network, MethodHandler {
         // TODO remove this glorious hack once protobuf protocol is enabled by default
         var maybeEnvVal = System.getenv("VESPA_MBUS_DOCUMENTAPI_USE_PROTOBUF");
         if ("true".equals(maybeEnvVal) || "yes".equals(maybeEnvVal)) {
-            return new Version(8, 304); // _Allows_ new protobuf protocol
+            return new Version(8, 310); // _Allows_ new protobuf protocol
         }
-        return new Version(8, 303); // _Disallows_ new protobuf protocol
+        return new Version(8, 309); // _Disallows_ new protobuf protocol
     }
 
     private static final Version REPORTED_VERSION = deriveSupportedProtocolVersion();

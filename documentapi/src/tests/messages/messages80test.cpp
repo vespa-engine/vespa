@@ -22,7 +22,7 @@ protected:
     vespalib::Version getVersion() const override {
         // Must be as high--or higher--than the v8 protocol version specified in documentprocotol.cpp
         // (and equal to its corresponding value in the Java implementation).
-        return {8, 305};
+        return {8, 310};
     }
     bool shouldTestCoverage() const override { return true; }
 

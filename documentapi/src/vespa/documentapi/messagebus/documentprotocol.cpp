@@ -92,7 +92,7 @@ DocumentProtocol::add_legacy_v6_factories()
 void
 DocumentProtocol::add_v8_factories()
 {
-    vespalib::VersionSpecification version8(8, 304);
+    vespalib::VersionSpecification version8(8, 310);
     std::vector<vespalib::VersionSpecification> from8 = { version8 };
 
     using RF8 = messagebus::RoutableFactories80;

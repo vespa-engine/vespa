@@ -321,7 +321,7 @@ public class DocumentProtocol implements Protocol {
     }
 
     private void registerV8Factories() {
-        var version8 = new VersionSpecification(8, 304); // Must be same as in C++ impl
+        var version8 = new VersionSpecification(8, 310); // Must be same as in C++ impl
         var from8 = Collections.singletonList(version8);
 
         putRoutableFactory(MESSAGE_CREATEVISITOR,   RoutableFactories80.createCreateVisitorMessageFactory(),   from8);
