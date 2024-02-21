@@ -2,3 +2,5 @@
 Makefile
 config-*.cpp
 config-*.h
+*.pb.cc
+*.pb.h

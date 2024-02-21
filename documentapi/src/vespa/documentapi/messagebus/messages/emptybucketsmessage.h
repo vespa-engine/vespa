@@ -27,7 +27,7 @@ public:
     std::vector<document::BucketId> &getBucketIds() { return _bucketIds; }
     const std::vector<document::BucketId> &getBucketIds() const { return _bucketIds; }
 
-    void setBucketIds(const std::vector<document::BucketId> &bucketIds);
+    void setBucketIds(std::vector<document::BucketId> bucketIds);
     void resize(uint32_t size);
     uint32_t getType() const override;
     string toString() const override { return "emptybucketsmessage"; }

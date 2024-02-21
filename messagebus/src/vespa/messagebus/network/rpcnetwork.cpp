@@ -18,6 +18,8 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cstdlib>
+#include <string_view>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -25,6 +27,7 @@ LOG_SETUP(".rpcnetwork");
 
 using vespalib::make_string;
 using namespace std::chrono_literals;
+using namespace std::string_view_literals;
 
 namespace mbus {
 
@@ -148,10 +151,26 @@ RPCNetwork::flushTargetPool()
     _targetPool->flushTargets(true);
 }
 
+namespace {
+
+[[nodiscard]] vespalib::Version derive_supported_protocol_version() {
+    // TODO remove this hilariously leaky abstraction once protobuf protocol is the default :D
+    // Disallow-version MUST be lower than that used as a protocol lower bound in documentprotocol.cpp
+    // and the exact same as that used in Java for the same purposes. Or else!
+    const char* maybe_env_val = getenv("VESPA_MBUS_DOCUMENTAPI_USE_PROTOBUF");
+    if (maybe_env_val && (("true"sv == maybe_env_val) || ("yes"sv == maybe_env_val))) {
+        return {8, 310}; // _Allows_ new protobuf protocol
+    }
+    return {8, 309}; // _Disallows_ new protobuf protocol
+}
+
+}
+
 const vespalib::Version &
 RPCNetwork::getVersion() const
 {
-    return vespalib::Vtag::currentVersion;
+    static vespalib::Version reported_version = derive_supported_protocol_version();
+    return reported_version;
 }
 
 void

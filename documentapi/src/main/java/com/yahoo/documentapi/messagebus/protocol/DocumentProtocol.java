@@ -256,9 +256,9 @@ public class DocumentProtocol implements Protocol {
 
     private DocumentProtocol(DocumentTypeManager docMan, String configId,
                              DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
-        if (docMan != null)
+        if (docMan != null) {
             this.docMan = docMan;
-        else {
+        } else {
             this.docMan = new DocumentTypeManager();
             DocumentTypeManagerConfigurer.configure(this.docMan, configId);
         }
@@ -275,6 +275,11 @@ public class DocumentProtocol implements Protocol {
         putRoutingPolicyFactory("LoadBalancer", new RoutingPolicyFactories.LoadBalancerPolicyFactory());
         putRoutingPolicyFactory("SubsetService", new RoutingPolicyFactories.SubsetServicePolicyFactory());
 
+        registerLegacyV6Factories();
+        registerV8Factories();
+    }
+
+    private void registerLegacyV6Factories() {
         // Prepare version specifications to use when adding routable factories.
         VersionSpecification version6 = new VersionSpecification(6, 221);
 
@@ -311,9 +316,46 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(REPLY_REMOVELOCATION, new RoutableFactories60.RemoveLocationReplyFactory(), from6);
         putRoutableFactory(REPLY_STATBUCKET, new RoutableFactories60.StatBucketReplyFactory(), from6);
         putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories60.UpdateDocumentReplyFactory(), from6);
-        putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories60.UpdateDocumentReplyFactory(), from6);
         putRoutableFactory(REPLY_VISITORINFO, new RoutableFactories60.VisitorInfoReplyFactory(), from6);
         putRoutableFactory(REPLY_WRONGDISTRIBUTION, new RoutableFactories60.WrongDistributionReplyFactory(), from6);
+    }
+
+    private void registerV8Factories() {
+        var version8 = new VersionSpecification(8, 310); // Must be same as in C++ impl
+        var from8 = Collections.singletonList(version8);
+
+        putRoutableFactory(MESSAGE_CREATEVISITOR,   RoutableFactories80.createCreateVisitorMessageFactory(),   from8);
+        putRoutableFactory(MESSAGE_DESTROYVISITOR,  RoutableFactories80.createDestroyVisitorMessageFactory(),  from8);
+        putRoutableFactory(MESSAGE_DOCUMENTLIST,    RoutableFactories80.createDocumentListMessageFactory(),    from8);
+        putRoutableFactory(MESSAGE_EMPTYBUCKETS,    RoutableFactories80.createEmptyBucketsMessageFactory(),    from8);
+        putRoutableFactory(MESSAGE_GETBUCKETLIST,   RoutableFactories80.createGetBucketListMessageFactory(),   from8);
+        putRoutableFactory(MESSAGE_GETBUCKETSTATE,  RoutableFactories80.createGetBucketStateMessageFactory(),  from8);
+        putRoutableFactory(MESSAGE_GETDOCUMENT,     RoutableFactories80.createGetDocumentMessageFactory(),     from8);
+        putRoutableFactory(MESSAGE_MAPVISITOR,      RoutableFactories80.createMapVisitorMessageFactory(),      from8);
+        putRoutableFactory(MESSAGE_PUTDOCUMENT,     RoutableFactories80.createPutDocumentMessageFactory(),     from8);
+        putRoutableFactory(MESSAGE_QUERYRESULT,     RoutableFactories80.createQueryResultMessageFactory(),     from8);
+        putRoutableFactory(MESSAGE_REMOVEDOCUMENT,  RoutableFactories80.createRemoveDocumentMessageFactory(),  from8);
+        putRoutableFactory(MESSAGE_REMOVELOCATION,  RoutableFactories80.createRemoveLocationMessageFactory(),  from8);
+        putRoutableFactory(MESSAGE_STATBUCKET,      RoutableFactories80.createStatBucketMessageFactory(),      from8);
+        putRoutableFactory(MESSAGE_UPDATEDOCUMENT,  RoutableFactories80.createUpdateDocumentMessageFactory(),  from8);
+        putRoutableFactory(MESSAGE_VISITORINFO,     RoutableFactories80.createVisitorInfoMessageFactory(),     from8);
+        putRoutableFactory(REPLY_CREATEVISITOR,     RoutableFactories80.createCreateVisitorReplyFactory(),     from8);
+        putRoutableFactory(REPLY_DESTROYVISITOR,    RoutableFactories80.createDestroyVisitorReplyFactory(),    from8);
+        putRoutableFactory(REPLY_DOCUMENTIGNORED,   RoutableFactories80.createDocumentIgnoredReplyFactory(),   from8);
+        putRoutableFactory(REPLY_DOCUMENTLIST,      RoutableFactories80.createDocumentListReplyFactory(),      from8);
+        putRoutableFactory(REPLY_EMPTYBUCKETS,      RoutableFactories80.createEmptyBucketsReplyFactory(),      from8);
+        putRoutableFactory(REPLY_GETBUCKETLIST,     RoutableFactories80.createGetBucketListReplyFactory(),     from8);
+        putRoutableFactory(REPLY_GETBUCKETSTATE,    RoutableFactories80.createGetBucketStateReplyFactory(),    from8);
+        putRoutableFactory(REPLY_GETDOCUMENT,       RoutableFactories80.createGetDocumentReplyFactory(),       from8);
+        putRoutableFactory(REPLY_MAPVISITOR,        RoutableFactories80.createMapVisitorReplyFactory(),        from8);
+        putRoutableFactory(REPLY_PUTDOCUMENT,       RoutableFactories80.createPutDocumentReplyFactory(),       from8);
+        putRoutableFactory(REPLY_QUERYRESULT,       RoutableFactories80.createQueryResultReplyFactory(),       from8);
+        putRoutableFactory(REPLY_REMOVEDOCUMENT,    RoutableFactories80.createRemoveDocumentReplyFactory(),    from8);
+        putRoutableFactory(REPLY_REMOVELOCATION,    RoutableFactories80.createRemoveLocationReplyFactory(),    from8);
+        putRoutableFactory(REPLY_STATBUCKET,        RoutableFactories80.createStatBucketReplyFactory(),        from8);
+        putRoutableFactory(REPLY_UPDATEDOCUMENT,    RoutableFactories80.createUpdateDocumentReplyFactory(),    from8);
+        putRoutableFactory(REPLY_VISITORINFO,       RoutableFactories80.createVisitorInfoReplyFactory(),       from8);
+        putRoutableFactory(REPLY_WRONGDISTRIBUTION, RoutableFactories80.createWrongDistributionReplyFactory(), from8);
     }
 
     /**

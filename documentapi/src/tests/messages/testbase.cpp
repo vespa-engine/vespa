@@ -25,6 +25,8 @@ TestBase::TestBase() :
 {
 }
 
+TestBase::~TestBase() = default;
+
 int
 TestBase::Main()
 {
@@ -34,16 +36,15 @@ TestBase::Main()
     LOG(info, "Running tests for version %s.", getVersion().toString().c_str());
 
     // Run registered tests.
-    for (std::map<uint32_t, TEST_METHOD_PT>::iterator it = _tests.begin();
-         it != _tests.end(); ++it)
-    {
-        LOG(info, "Running test for routable type %d.", it->first);
-        EXPECT_TRUE( (this->*(it->second))() );
+    for (const auto& test : _tests) {
+        LOG(info, "Running test for routable type %d.", test.first);
+        EXPECT_TRUE( (this->*(test.second))() );
         TEST_FLUSH();
     }
 
     // Test routable type coverage.
-    std::vector<uint32_t> expected, actual;
+    std::vector<uint32_t> expected;
+    std::vector<uint32_t> actual;
     EXPECT_TRUE(testCoverage(expected, actual));
     expected.push_back(0);
     EXPECT_TRUE(!testCoverage(expected, actual));
@@ -58,10 +59,8 @@ TestBase::Main()
     _protocol.getRoutableTypes(getVersion(), expected);
 
     actual.clear();
-    for (std::map<uint32_t, TEST_METHOD_PT>::iterator it = _tests.begin();
-         it != _tests.end(); ++it)
-    {
-        actual.push_back(it->first);
+    for (const auto& test : _tests) {
+        actual.push_back(test.first);
     }
     if (shouldTestCoverage()) {
         EXPECT_TRUE(testCoverage(expected, actual, true));
@@ -100,13 +99,11 @@ TestBase::testCoverage(const std::vector<uint32_t> &expected, const std::vector<
     bool ret = true;
 
     std::vector<uint32_t> lst(actual);
-    for (std::vector<uint32_t>::const_iterator it = expected.begin();
-         it != expected.end(); ++it)
-    {
-        std::vector<uint32_t>::iterator occ = std::find(lst.begin(), lst.end(), *it);
+    for (uint32_t wanted : expected) {
+        auto occ = std::find(lst.begin(), lst.end(), wanted);
         if (occ == lst.end()) {
             if (report) {
-                LOG(error, "Routable type %d is registered in DocumentProtocol but not tested.", *it);
+                LOG(error, "Routable type %d is registered in DocumentProtocol but not tested.", wanted);
             }
             ret = false;
         } else {
@@ -115,10 +112,8 @@ TestBase::testCoverage(const std::vector<uint32_t> &expected, const std::vector<
     }
     if (!lst.empty()) {
         if (report) {
-            for (std::vector<uint32_t>::iterator it = lst.begin();
-                 it != lst.end(); ++it)
-            {
-                LOG(error, "Routable type %d is tested but not registered in DocumentProtocol.", *it);
+            for (uint32_t missing : lst) {
+                LOG(error, "Routable type %d is tested but not registered in DocumentProtocol.", missing);
             }
         }
         ret = false;
@@ -151,7 +146,7 @@ TestBase::serialize(const string &filename, const mbus::Routable &routable, Tamp
         return 0;
     }
     mbus::Routable::UP obj = _protocol.decode(version, blob);
-    if (!EXPECT_TRUE(obj.get() != NULL)) {
+    if (!EXPECT_TRUE(obj.get() != nullptr)) {
         LOG(error, "Protocol failed to decode serialized data.");
         return 0;
     }
@@ -172,7 +167,7 @@ TestBase::deserialize(const string &filename, uint32_t classId, uint32_t lang)
     mbus::Blob blob = readFile(path);
     if (!EXPECT_TRUE(blob.size() != 0)) {
         LOG(error, "Could not open file '%s' for reading.", path.c_str());
-        return mbus::Routable::UP();
+        return {};
     }
     mbus::Routable::UP ret = _protocol.decode(version, blob);
 
@@ -180,7 +175,7 @@ TestBase::deserialize(const string &filename, uint32_t classId, uint32_t lang)
         LOG(error, "Unable to decode class %d", classId);
     } else if (!EXPECT_TRUE(classId == ret->getType())) {
         LOG(error, "Expected class %d, got %d.", classId, ret->getType());
-        return mbus::Routable::UP();
+        return {};
     }
     return ret;
 }

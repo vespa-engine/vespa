@@ -2724,7 +2724,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract com.yahoo.io.GrowableByteBuffer getBuf()"
+      "public abstract com.yahoo.io.GrowableByteBuffer getBuf()",
+      "public abstract com.yahoo.document.DocumentTypeManager getTypeRepo()"
     ],
     "fields" : [ ]
   },
@@ -3015,6 +3016,7 @@
     ],
     "methods" : [
       "public final com.yahoo.document.DocumentTypeManager getDocumentTypeManager()",
+      "public com.yahoo.document.DocumentTypeManager getTypeRepo()",
       "public void read(com.yahoo.document.Document)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.Document)",
       "public void read(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FieldValue)",

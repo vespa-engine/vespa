@@ -1,16 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "routablefactories60.h"
-#include "routingpolicyfactories.h"
-#include "routablerepository.h"
-#include "routingpolicyrepository.h"
 #include "replymerger.h"
+#include "routable_factories_8.h"
+#include "routablefactories60.h"
+#include "routablerepository.h"
+#include "routingpolicyfactories.h"
+#include "routingpolicyrepository.h"
 #include <vespa/document/util/stringutil.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/messagebus/error.h>
-#include <sstream>
+#include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documentprotocol");
@@ -40,47 +41,98 @@ DocumentProtocol::DocumentProtocol(std::shared_ptr<const DocumentTypeRepo> repo,
     putRoutingPolicyFactory("RoundRobin", std::make_shared<RoutingPolicyFactories::RoundRobinPolicyFactory>());
     putRoutingPolicyFactory("SubsetService", std::make_shared<RoutingPolicyFactories::SubsetServicePolicyFactory>());
 
-    // Prepare version specifications to use when adding routable factories.
-    vespalib::VersionSpecification version6(6, 221);
-
-    std::vector<vespalib::VersionSpecification> from6  = { version6 };
-
-    // Add 6.x serialization
-    putRoutableFactory(MESSAGE_CREATEVISITOR, std::make_shared<RoutableFactories60::CreateVisitorMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_DESTROYVISITOR, std::make_shared<RoutableFactories60::DestroyVisitorMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_DOCUMENTLIST, std::make_shared<RoutableFactories60::DocumentListMessageFactory>(*_repo), from6);
-    putRoutableFactory(MESSAGE_EMPTYBUCKETS, std::make_shared<RoutableFactories60::EmptyBucketsMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_GETBUCKETLIST, std::make_shared<RoutableFactories60::GetBucketListMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_GETBUCKETSTATE, std::make_shared<RoutableFactories60::GetBucketStateMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_GETDOCUMENT, std::make_shared<RoutableFactories60::GetDocumentMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_MAPVISITOR, std::make_shared<RoutableFactories60::MapVisitorMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_PUTDOCUMENT, std::make_shared<RoutableFactories60::PutDocumentMessageFactory>(*_repo), from6);
-    putRoutableFactory(MESSAGE_QUERYRESULT, std::make_shared<RoutableFactories60::QueryResultMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_REMOVEDOCUMENT, std::make_shared<RoutableFactories60::RemoveDocumentMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_REMOVELOCATION, std::make_shared<RoutableFactories60::RemoveLocationMessageFactory>(*_repo), from6);
-    putRoutableFactory(MESSAGE_STATBUCKET, std::make_shared<RoutableFactories60::StatBucketMessageFactory>(), from6);
-    putRoutableFactory(MESSAGE_UPDATEDOCUMENT, std::make_shared<RoutableFactories60::UpdateDocumentMessageFactory>(*_repo), from6);
-    putRoutableFactory(MESSAGE_VISITORINFO, std::make_shared<RoutableFactories60::VisitorInfoMessageFactory>(), from6);
-    putRoutableFactory(REPLY_CREATEVISITOR, std::make_shared<RoutableFactories60::CreateVisitorReplyFactory>(), from6);
-    putRoutableFactory(REPLY_DESTROYVISITOR, std::make_shared<RoutableFactories60::DestroyVisitorReplyFactory>(), from6);
-    putRoutableFactory(REPLY_DOCUMENTIGNORED, std::make_shared<RoutableFactories60::DocumentIgnoredReplyFactory>(), from6);
-    putRoutableFactory(REPLY_DOCUMENTLIST, std::make_shared<RoutableFactories60::DocumentListReplyFactory>(), from6);
-    putRoutableFactory(REPLY_EMPTYBUCKETS, std::make_shared<RoutableFactories60::EmptyBucketsReplyFactory>(), from6);
-    putRoutableFactory(REPLY_GETBUCKETLIST, std::make_shared<RoutableFactories60::GetBucketListReplyFactory>(), from6);
-    putRoutableFactory(REPLY_GETBUCKETSTATE, std::make_shared<RoutableFactories60::GetBucketStateReplyFactory>(), from6);
-    putRoutableFactory(REPLY_GETDOCUMENT, std::make_shared<RoutableFactories60::GetDocumentReplyFactory>(*_repo), from6);
-    putRoutableFactory(REPLY_MAPVISITOR, std::make_shared<RoutableFactories60::MapVisitorReplyFactory>(), from6);
-    putRoutableFactory(REPLY_PUTDOCUMENT, std::make_shared<RoutableFactories60::PutDocumentReplyFactory>(), from6);
-    putRoutableFactory(REPLY_QUERYRESULT, std::make_shared<RoutableFactories60::QueryResultReplyFactory>(), from6);
-    putRoutableFactory(REPLY_REMOVEDOCUMENT, std::make_shared<RoutableFactories60::RemoveDocumentReplyFactory>(), from6);
-    putRoutableFactory(REPLY_REMOVELOCATION, std::make_shared<RoutableFactories60::RemoveLocationReplyFactory>(), from6);
-    putRoutableFactory(REPLY_STATBUCKET, std::make_shared<RoutableFactories60::StatBucketReplyFactory>(), from6);
-    putRoutableFactory(REPLY_UPDATEDOCUMENT, std::make_shared<RoutableFactories60::UpdateDocumentReplyFactory>(), from6);
-    putRoutableFactory(REPLY_VISITORINFO, std::make_shared<RoutableFactories60::VisitorInfoReplyFactory>(), from6);
-    putRoutableFactory(REPLY_WRONGDISTRIBUTION, std::make_shared<RoutableFactories60::WrongDistributionReplyFactory>(), from6);
+    add_legacy_v6_factories();
+    add_v8_factories();
 }
 
 DocumentProtocol::~DocumentProtocol() = default;
+
+void
+DocumentProtocol::add_legacy_v6_factories()
+{
+    // Prepare version specifications to use when adding routable factories.
+    vespalib::VersionSpecification version6(6, 221);
+    std::vector<vespalib::VersionSpecification> from6  = { version6 };
+
+    // Add 6.x serialization
+    putRoutableFactory(MESSAGE_CREATEVISITOR,   std::make_shared<RoutableFactories60::CreateVisitorMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_DESTROYVISITOR,  std::make_shared<RoutableFactories60::DestroyVisitorMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_DOCUMENTLIST,    std::make_shared<RoutableFactories60::DocumentListMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_EMPTYBUCKETS,    std::make_shared<RoutableFactories60::EmptyBucketsMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_GETBUCKETLIST,   std::make_shared<RoutableFactories60::GetBucketListMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_GETBUCKETSTATE,  std::make_shared<RoutableFactories60::GetBucketStateMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_GETDOCUMENT,     std::make_shared<RoutableFactories60::GetDocumentMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_MAPVISITOR,      std::make_shared<RoutableFactories60::MapVisitorMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_PUTDOCUMENT,     std::make_shared<RoutableFactories60::PutDocumentMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_QUERYRESULT,     std::make_shared<RoutableFactories60::QueryResultMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_REMOVEDOCUMENT,  std::make_shared<RoutableFactories60::RemoveDocumentMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_REMOVELOCATION,  std::make_shared<RoutableFactories60::RemoveLocationMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_STATBUCKET,      std::make_shared<RoutableFactories60::StatBucketMessageFactory>(), from6);
+    putRoutableFactory(MESSAGE_UPDATEDOCUMENT,  std::make_shared<RoutableFactories60::UpdateDocumentMessageFactory>(*_repo), from6);
+    putRoutableFactory(MESSAGE_VISITORINFO,     std::make_shared<RoutableFactories60::VisitorInfoMessageFactory>(), from6);
+    putRoutableFactory(REPLY_CREATEVISITOR,     std::make_shared<RoutableFactories60::CreateVisitorReplyFactory>(), from6);
+    putRoutableFactory(REPLY_DESTROYVISITOR,    std::make_shared<RoutableFactories60::DestroyVisitorReplyFactory>(), from6);
+    putRoutableFactory(REPLY_DOCUMENTIGNORED,   std::make_shared<RoutableFactories60::DocumentIgnoredReplyFactory>(), from6);
+    putRoutableFactory(REPLY_DOCUMENTLIST,      std::make_shared<RoutableFactories60::DocumentListReplyFactory>(), from6);
+    putRoutableFactory(REPLY_EMPTYBUCKETS,      std::make_shared<RoutableFactories60::EmptyBucketsReplyFactory>(), from6);
+    putRoutableFactory(REPLY_GETBUCKETLIST,     std::make_shared<RoutableFactories60::GetBucketListReplyFactory>(), from6);
+    putRoutableFactory(REPLY_GETBUCKETSTATE,    std::make_shared<RoutableFactories60::GetBucketStateReplyFactory>(), from6);
+    putRoutableFactory(REPLY_GETDOCUMENT,       std::make_shared<RoutableFactories60::GetDocumentReplyFactory>(*_repo), from6);
+    putRoutableFactory(REPLY_MAPVISITOR,        std::make_shared<RoutableFactories60::MapVisitorReplyFactory>(), from6);
+    putRoutableFactory(REPLY_PUTDOCUMENT,       std::make_shared<RoutableFactories60::PutDocumentReplyFactory>(), from6);
+    putRoutableFactory(REPLY_QUERYRESULT,       std::make_shared<RoutableFactories60::QueryResultReplyFactory>(), from6);
+    putRoutableFactory(REPLY_REMOVEDOCUMENT,    std::make_shared<RoutableFactories60::RemoveDocumentReplyFactory>(), from6);
+    putRoutableFactory(REPLY_REMOVELOCATION,    std::make_shared<RoutableFactories60::RemoveLocationReplyFactory>(), from6);
+    putRoutableFactory(REPLY_STATBUCKET,        std::make_shared<RoutableFactories60::StatBucketReplyFactory>(), from6);
+    putRoutableFactory(REPLY_UPDATEDOCUMENT,    std::make_shared<RoutableFactories60::UpdateDocumentReplyFactory>(), from6);
+    putRoutableFactory(REPLY_VISITORINFO,       std::make_shared<RoutableFactories60::VisitorInfoReplyFactory>(), from6);
+    putRoutableFactory(REPLY_WRONGDISTRIBUTION, std::make_shared<RoutableFactories60::WrongDistributionReplyFactory>(), from6);
+}
+
+void
+DocumentProtocol::add_v8_factories()
+{
+    vespalib::VersionSpecification version8(8, 310);
+    std::vector<vespalib::VersionSpecification> from8 = { version8 };
+
+    using RF8 = messagebus::RoutableFactories80;
+    auto put_v8_factory = [&](auto msg_id, auto factory) {
+        putRoutableFactory(msg_id, std::move(factory), from8);
+    };
+
+    put_v8_factory(MESSAGE_CREATEVISITOR,   RF8::create_visitor_message_factory());
+    put_v8_factory(MESSAGE_DESTROYVISITOR,  RF8::destroy_visitor_message_factory());
+    put_v8_factory(MESSAGE_DOCUMENTLIST,    RF8::document_list_message_factory(_repo));
+    put_v8_factory(MESSAGE_EMPTYBUCKETS,    RF8::empty_buckets_message_factory());
+    put_v8_factory(MESSAGE_GETBUCKETLIST,   RF8::get_bucket_list_message_factory());
+    put_v8_factory(MESSAGE_GETBUCKETSTATE,  RF8::get_bucket_state_message_factory());
+    put_v8_factory(MESSAGE_GETDOCUMENT,     RF8::get_document_message_factory());
+    put_v8_factory(MESSAGE_MAPVISITOR,      RF8::map_visitor_message_factory());
+    put_v8_factory(MESSAGE_PUTDOCUMENT,     RF8::put_document_message_factory(_repo));
+    put_v8_factory(MESSAGE_QUERYRESULT,     RF8::query_result_message_factory());
+    put_v8_factory(MESSAGE_REMOVEDOCUMENT,  RF8::remove_document_message_factory());
+    put_v8_factory(MESSAGE_REMOVELOCATION,  RF8::remove_location_message_factory(_repo));
+    put_v8_factory(MESSAGE_STATBUCKET,      RF8::stat_bucket_message_factory());
+    put_v8_factory(MESSAGE_UPDATEDOCUMENT,  RF8::update_document_message_factory(_repo));
+    put_v8_factory(MESSAGE_VISITORINFO,     RF8::visitor_info_message_factory());
+    put_v8_factory(REPLY_CREATEVISITOR,     RF8::create_visitor_reply_factory());
+    put_v8_factory(REPLY_DESTROYVISITOR,    RF8::destroy_visitor_reply_factory());
+    put_v8_factory(REPLY_DOCUMENTIGNORED,   RF8::document_ignored_reply_factory());
+    put_v8_factory(REPLY_DOCUMENTLIST,      RF8::document_list_reply_factory());
+    put_v8_factory(REPLY_EMPTYBUCKETS,      RF8::empty_buckets_reply_factory());
+    put_v8_factory(REPLY_GETBUCKETLIST,     RF8::get_bucket_list_reply_factory());
+    put_v8_factory(REPLY_GETBUCKETSTATE,    RF8::get_bucket_state_reply_factory());
+    put_v8_factory(REPLY_GETDOCUMENT,       RF8::get_document_reply_factory(_repo));
+    put_v8_factory(REPLY_MAPVISITOR,        RF8::map_visitor_reply_factory());
+    put_v8_factory(REPLY_PUTDOCUMENT,       RF8::put_document_reply_factory());
+    put_v8_factory(REPLY_QUERYRESULT,       RF8::query_result_reply_factory());
+    put_v8_factory(REPLY_REMOVEDOCUMENT,    RF8::remove_document_reply_factory());
+    put_v8_factory(REPLY_REMOVELOCATION,    RF8::remove_location_reply_factory());
+    put_v8_factory(REPLY_STATBUCKET,        RF8::stat_bucket_reply_factory());
+    put_v8_factory(REPLY_UPDATEDOCUMENT,    RF8::update_document_reply_factory());
+    put_v8_factory(REPLY_VISITORINFO,       RF8::visitor_info_reply_factory());
+    put_v8_factory(REPLY_WRONGDISTRIBUTION, RF8::wrong_distribution_reply_factory());
+}
 
 mbus::IRoutingPolicy::UP
 DocumentProtocol::createPolicy(const mbus::string &name, const mbus::string &param) const
@@ -99,13 +151,9 @@ mbus::Blob
 DocumentProtocol::encode(const vespalib::Version &version, const mbus::Routable &routable) const
 {
     mbus::Blob blob(_routableRepository->encode(version, routable));
-        // When valgrind reports errors of uninitialized data being written to
-        // the network, it is useful to be able to see the serialized data to
-        // try to identify what bits are uninitialized.
     if (LOG_WOULD_LOG(spam)) {
         std::ostringstream message;
-        document::StringUtil::printAsHex(
-                message, blob.data(), blob.size());
+        document::StringUtil::printAsHex(message, blob.data(), blob.size());
         LOG(spam, "Encoded message of protocol %s type %u using version %s serialization:\n%s",
             routable.getProtocol().c_str(), routable.getType(),
             version.toString().c_str(), message.str().c_str());
@@ -120,7 +168,7 @@ DocumentProtocol::decode(const vespalib::Version &version, mbus::BlobRef data) c
         return _routableRepository->decode(version, data);
     } catch (vespalib::Exception &e) {
         LOG(warning, "%s", e.getMessage().c_str());
-        return mbus::Routable::UP();
+        return {};
     }
 }
 

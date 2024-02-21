@@ -1,0 +1,50 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+syntax = "proto3";
+
+package documentapi.protobuf;
+
+option cc_enable_arenas = true;
+option java_package = "ai.vespa.documentapi.protobuf";
+
+message BucketSpace {
+    string name = 1;
+}
+
+message BucketId {
+    fixed64 raw_id = 1;
+}
+
+message Document {
+    bytes payload = 1;
+}
+
+message DocumentId {
+    string id = 1;
+}
+
+message FieldSet {
+    string spec = 1;
+}
+
+message GlobalId {
+    // Shall always be 12 bytes (96 bits)
+    bytes raw_gid = 1;
+}
+
+message DocumentSelection {
+    string selection = 1;
+}
+
+message ClusterState {
+    string state_string = 1;
+}
+
+// Polymorphic response type shared by other responses
+message WrongDistributionResponse {
+    ClusterState cluster_state = 1;
+}
+
+// Polymorphic response type shared by other responses
+message DocumentIgnoredResponse {
+    // empty
+}

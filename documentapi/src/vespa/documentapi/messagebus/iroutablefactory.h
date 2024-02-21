@@ -22,18 +22,13 @@ class IRoutableFactory {
 protected:
     IRoutableFactory() = default;
 public:
-    /**
-     * Convenience typedefs.
-     */
     using UP = std::unique_ptr<IRoutableFactory>;
     using SP = std::shared_ptr<IRoutableFactory>;
 
     IRoutableFactory(const IRoutableFactory &) = delete;
     IRoutableFactory & operator = (const IRoutableFactory &) = delete;
-    /**
-     * Virtual destructor required for inheritance.
-     */
-    virtual ~IRoutableFactory() { }
+
+    virtual ~IRoutableFactory() = default;
 
     /**
      * This method encodes the content of the given routable into a byte buffer that can later be decoded
@@ -45,11 +40,11 @@ public:
      * @param out The buffer to write into.
      * @return True if the routable could be encoded.
      */
-    virtual bool encode(const mbus::Routable &obj,
-                        vespalib::GrowableByteBuffer &out) const = 0;
+    [[nodiscard]] virtual bool encode(const mbus::Routable &obj,
+                                      vespalib::GrowableByteBuffer &out) const = 0;
 
     /**
-     * This method decodes the given byte bufer to a routable.
+     * This method decodes the given byte buffer to a routable.
      *
      * This method is NOT exception safe. Return null to signal failure.
      *
@@ -57,7 +52,7 @@ public:
      * @param loadTypes The set of configured load types.
      * @return The decoded routable.
      */
-    virtual mbus::Routable::UP decode(document::ByteBuffer &in) const = 0;
+    [[nodiscard]] virtual mbus::Routable::UP decode(document::ByteBuffer &in) const = 0;
 };
 
 }

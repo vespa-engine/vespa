@@ -6,9 +6,9 @@
 
 class Messages60Test : public TestBase {
 protected:
-    const vespalib::Version getVersion() const override { return vespalib::Version(6, 221); }
+    vespalib::Version getVersion() const override { return vespalib::Version(6, 221); }
     bool shouldTestCoverage() const override { return true; }
-    bool tryDocumentReply(const string &filename, uint32_t type);
+
     bool tryVisitorReply(const string &filename, uint32_t type);
 
     static size_t serializedLength(const string & str) { return sizeof(int32_t) + str.size(); }
@@ -23,7 +23,6 @@ public:
     bool testDocumentIgnoredReply();
     bool testDocumentListMessage();
     bool testDocumentListReply();
-    bool testDocumentSummaryMessage();
     bool testEmptyBucketsMessage();
     bool testEmptyBucketsReply();
     bool testGetBucketListMessage();
@@ -42,7 +41,6 @@ public:
     bool testRemoveDocumentReply();
     bool testRemoveLocationMessage();
     bool testRemoveLocationReply();
-    bool testSearchResultMessage();
     bool testStatBucketMessage();
     bool testStatBucketReply();
     bool testUpdateDocumentMessage();

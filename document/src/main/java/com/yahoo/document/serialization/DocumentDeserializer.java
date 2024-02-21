@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.serialization;
 
+import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.io.GrowableByteBuffer;
 
 /**
@@ -16,6 +17,8 @@ public interface DocumentDeserializer extends DocumentReader, DocumentUpdateRead
      * Returns the underlying buffer used for de-serialization.
      */
     GrowableByteBuffer getBuf();
+
+    DocumentTypeManager getTypeRepo();
 
 }
 

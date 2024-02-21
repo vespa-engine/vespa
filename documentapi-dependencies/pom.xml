@@ -16,6 +16,10 @@
   <dependencies>
 
     <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>annotations</artifactId>
       <version>${project.version}</version>

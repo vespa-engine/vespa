@@ -1,0 +1,48 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+syntax = "proto3";
+
+package documentapi.protobuf;
+
+option cc_enable_arenas = true;
+option java_package = "ai.vespa.documentapi.protobuf";
+
+import "docapi_common.proto";
+
+message GetBucketListRequest {
+    BucketId    bucket_id    = 1;
+    BucketSpace bucket_space = 2;
+}
+
+message BucketInformation {
+    BucketId bucket_id = 1;
+    string   info      = 2;
+}
+
+message GetBucketListResponse {
+    repeated BucketInformation bucket_info = 1;
+}
+
+message GetBucketStateRequest {
+    BucketId bucket_id = 1;
+}
+
+message DocumentState {
+    DocumentId document_id  = 1;
+    GlobalId   global_id    = 2;
+    uint64     timestamp    = 3;
+    bool       is_tombstone = 4;
+}
+
+message GetBucketStateResponse {
+    repeated DocumentState states = 1;
+}
+
+message StatBucketRequest {
+    BucketId          bucket_id    = 1;
+    DocumentSelection selection    = 2;
+    BucketSpace       bucket_space = 3;
+}
+
+message StatBucketResponse {
+    string results = 1;
+}

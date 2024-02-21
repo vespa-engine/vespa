@@ -751,7 +751,7 @@ Messages60Test::testVisitorInfoMessage()
 bool
 Messages60Test::testDestroyVisitorReply()
 {
-    return tryDocumentReply("DestroyVisitorReply", DocumentProtocol::REPLY_DESTROYVISITOR);
+    return tryVisitorReply("DestroyVisitorReply", DocumentProtocol::REPLY_DESTROYVISITOR);
 }
 
 bool
@@ -920,23 +920,6 @@ Messages60Test::testRemoveLocationReply()
 // Utilities
 //
 ////////////////////////////////////////////////////////////////////////////////
-
-bool
-Messages60Test::tryDocumentReply(const string &filename, uint32_t type)
-{
-    DocumentReply tmp(type);
-
-    EXPECT_EQUAL((uint32_t)5, serialize(filename, tmp));
-
-    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize(filename, type, lang);
-        if (EXPECT_TRUE(obj)) {
-            DocumentReply *ref = dynamic_cast<DocumentReply*>(obj.get());
-            EXPECT_TRUE(ref != NULL);
-        }
-    }
-    return true;
-}
 
 bool
 Messages60Test::tryVisitorReply(const string &filename, uint32_t type)

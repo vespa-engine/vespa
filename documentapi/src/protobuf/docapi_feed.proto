@@ -1,0 +1,71 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+syntax = "proto3";
+
+package documentapi.protobuf;
+
+option cc_enable_arenas = true;
+option java_package = "ai.vespa.documentapi.protobuf";
+
+import "docapi_common.proto";
+
+message TestAndSetCondition {
+    string selection = 1;
+}
+
+message DocumentUpdate {
+    bytes payload = 1;
+}
+
+message GetDocumentRequest {
+    DocumentId document_id = 1;
+    FieldSet   field_set   = 2;
+}
+
+message GetDocumentResponse {
+    Document document      = 1;
+    uint64   last_modified = 2;
+}
+
+message PutDocumentRequest {
+    // Note: document contains embedded document ID
+    Document            document               = 1;
+    TestAndSetCondition condition              = 2;
+    bool                create_if_missing      = 3;
+    uint64              force_assign_timestamp = 4;
+}
+
+message PutDocumentResponse {
+    uint64 modification_timestamp = 1;
+}
+
+message UpdateDocumentRequest {
+    // Note: update contains embedded document ID
+    DocumentUpdate      update                 = 1;
+    TestAndSetCondition condition              = 2;
+    uint64              expected_old_timestamp = 3;
+    uint64              force_assign_timestamp = 4;
+}
+
+message UpdateDocumentResponse {
+    bool   was_found              = 1;
+    uint64 modification_timestamp = 2;
+}
+
+message RemoveDocumentRequest {
+    DocumentId          document_id = 1;
+    TestAndSetCondition condition   = 2;
+}
+
+message RemoveDocumentResponse {
+    bool   was_found              = 1;
+    uint64 modification_timestamp = 2;
+}
+
+message RemoveLocationRequest {
+    DocumentSelection selection    = 1;
+    BucketSpace       bucket_space = 2;
+}
+
+message RemoveLocationResponse {
+    // empty
+}

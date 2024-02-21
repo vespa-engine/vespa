@@ -27,8 +27,9 @@ private:
 
     public:
         VersionMap();
-        bool putFactory(const vespalib::VersionSpecification &version, IRoutableFactory::SP factory);
-        IRoutableFactory::SP getFactory(const vespalib::Version &version) const;
+        ~VersionMap();
+        [[nodiscard]] bool putFactory(const vespalib::VersionSpecification &version, IRoutableFactory::SP factory);
+        [[nodiscard]] IRoutableFactory::SP getFactory(const vespalib::Version &version) const;
     };
 
     using CacheKey = std::pair<vespalib::Version, uint32_t>;

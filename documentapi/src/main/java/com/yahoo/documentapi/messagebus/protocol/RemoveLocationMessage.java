@@ -6,15 +6,17 @@ import com.yahoo.document.select.BucketSelector;
 import java.util.Set;
 
 /**
- * Message (VDS only) to remove an entire location for users using n= or g= schemes.
+ * Message to remove an entire location for users using n= or g= schemes.
  * We use a document selection so the user can specify a subset of those documents to be deleted
  * if they wish.
  */
 public class RemoveLocationMessage extends DocumentMessage {
     String documentSelection;
     BucketId bucketId;
+    private final String bucketSpace;
 
-    public RemoveLocationMessage(String documentSelection) {
+    public RemoveLocationMessage(String documentSelection, String bucketSpace) {
+        this.bucketSpace = bucketSpace;
         try {
             this.documentSelection = documentSelection;
             BucketSelector bucketSel = new BucketSelector(new BucketIdFactory());
@@ -30,6 +32,10 @@ public class RemoveLocationMessage extends DocumentMessage {
         } catch (com.yahoo.document.select.parser.ParseException p) {
             throw new IllegalArgumentException(p);
         }
+    }
+
+    public RemoveLocationMessage(String documentSelection) {
+        this(documentSelection, FixedBucketSpaces.defaultSpace());
     }
 
     public String getDocumentSelection() {
@@ -48,5 +54,9 @@ public class RemoveLocationMessage extends DocumentMessage {
 
     public BucketId getBucketId() {
         return bucketId;
+    }
+
+    public String getBucketSpace() {
+        return bucketSpace;
     }
 }

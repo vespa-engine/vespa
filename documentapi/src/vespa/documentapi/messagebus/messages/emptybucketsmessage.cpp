@@ -14,13 +14,12 @@ EmptyBucketsMessage::EmptyBucketsMessage(const std::vector<document::BucketId> &
 {
 }
 
-EmptyBucketsMessage::~EmptyBucketsMessage() {
-}
+EmptyBucketsMessage::~EmptyBucketsMessage() = default;
 
 void
-EmptyBucketsMessage::setBucketIds(const std::vector<document::BucketId> &bucketIds)
+EmptyBucketsMessage::setBucketIds(std::vector<document::BucketId> bucketIds)
 {
-    _bucketIds = bucketIds;
+    _bucketIds = std::move(bucketIds);
 }
 
 void

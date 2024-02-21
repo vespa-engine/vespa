@@ -1,0 +1,115 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+syntax = "proto3";
+
+package documentapi.protobuf;
+
+option cc_enable_arenas = true;
+option java_package = "ai.vespa.documentapi.protobuf";
+
+import "docapi_common.proto";
+
+message VisitorParameter {
+    string key   = 1;
+    bytes  value = 2;
+}
+
+message CreateVisitorRequest {
+    string            visitor_library_name       = 1;
+    string            instance_id                = 2;
+    string            control_destination        = 3;
+    string            data_destination           = 4;
+    DocumentSelection selection                  = 5;
+    uint32            max_pending_reply_count    = 6;
+    BucketSpace       bucket_space               = 7;
+    repeated BucketId buckets                    = 8;
+    uint64            from_timestamp             = 9;
+    uint64            to_timestamp               = 10;
+    bool              visit_tombstones           = 11;
+    FieldSet          field_set                  = 12;
+    bool              visit_inconsistent_buckets = 13;
+    uint32            max_buckets_per_visitor    = 14;
+    repeated VisitorParameter parameters         = 15;
+}
+
+message VisitorStatistics {
+    uint32 buckets_visited    = 1;
+    uint64 documents_visited  = 2;
+    uint64 bytes_visited      = 3;
+    uint64 documents_returned = 4;
+    uint64 bytes_returned     = 5;
+}
+
+message CreateVisitorResponse {
+    BucketId          last_bucket = 1;
+    VisitorStatistics statistics  = 2;
+}
+
+message DestroyVisitorRequest {
+    string instance_id = 1;
+}
+
+message DestroyVisitorResponse {
+    // empty
+}
+
+message VisitorInfoRequest {
+    repeated BucketId finished_buckets = 1;
+    string            error_message    = 2;
+}
+
+message VisitorInfoResponse {
+    // empty
+}
+
+message MapVisitorRequest {
+    repeated VisitorParameter data = 1;
+}
+
+message MapVisitorResponse {
+    // empty
+}
+
+message SearchResult {
+    bytes payload = 1;
+}
+
+message DocumentSummary {
+    bytes payload = 1;
+}
+
+// We consider streaming search query-related messages to be part of the visiting family
+message QueryResultRequest {
+    SearchResult    search_result    = 1;
+    DocumentSummary document_summary = 2;
+}
+
+message QueryResultResponse {
+    // empty
+}
+
+// TODO deprecate, only used by "recovery visitor" (?!)
+message DocumentListRequest {
+    message Entry {
+        Document document     = 1;
+        uint64   timestamp    = 2;
+        bool     is_tombstone = 3;
+    }
+
+    BucketId bucket_id     = 1;
+    repeated Entry entries = 2;
+}
+
+// TODO deprecate
+message DocumentListResponse {
+    // TODO
+}
+
+// TODO deprecate, not sent by backend
+message EmptyBucketsRequest {
+    repeated BucketId bucket_ids = 1;
+}
+
+// TODO deprecate, not sent by backend
+message EmptyBucketsResponse {
+    // empty
+}

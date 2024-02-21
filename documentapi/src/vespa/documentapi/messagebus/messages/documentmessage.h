@@ -18,7 +18,7 @@ protected:
      *
      * @return A document reply that corresponds to this message.
      */
-    virtual DocumentReply::UP doCreateReply() const = 0;
+    [[nodiscard]] virtual DocumentReply::UP doCreateReply() const = 0;
 
 public:
     /**
@@ -37,16 +37,16 @@ public:
      *
      * @return The created reply.
      */
-    std::unique_ptr<mbus::Reply> createReply() const;
+    [[nodiscard]] std::unique_ptr<mbus::Reply> createReply() const;
 
     /**
      * Returns the priority of this message.
      *
      * @return The priority.
      */
-    Priority::Value getPriority() const { return _priority; };
+    [[nodiscard]] Priority::Value getPriority() const { return _priority; };
 
-    uint8_t priority() const override { return (uint8_t)_priority; }
+    [[nodiscard]] uint8_t priority() const override { return (uint8_t)_priority; }
 
     /**
      * Sets the priority tag for this message.
@@ -55,7 +55,7 @@ public:
      */
     void setPriority(Priority::Value p) { _priority = p; };
 
-    uint32_t getApproxSize() const override;
+    [[nodiscard]] uint32_t getApproxSize() const override;
 
     void setApproxSize(uint32_t approxSize) {
         _approxSize = approxSize;

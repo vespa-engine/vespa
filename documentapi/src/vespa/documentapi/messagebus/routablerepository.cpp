@@ -14,11 +14,13 @@ RoutableRepository::VersionMap::VersionMap() :
     _factoryVersions()
 { }
 
+RoutableRepository::VersionMap::~VersionMap() = default;
+
 bool
 RoutableRepository::VersionMap::putFactory(const vespalib::VersionSpecification &version, IRoutableFactory::SP factory)
 {
     bool ret = _factoryVersions.find(version) != _factoryVersions.end();
-    _factoryVersions[version] = factory;
+    _factoryVersions[version] = std::move(factory);
     return ret;
 
 }
@@ -28,14 +30,14 @@ RoutableRepository::VersionMap::getFactory(const vespalib::Version &version) con
 {
     const vespalib::VersionSpecification versionSpec{version.getMajor(), version.getMinor(), version.getMicro()};
 
-    std::vector< std::pair<vespalib::VersionSpecification, IRoutableFactory::SP> > candidates;
-    for (auto & entry : _factoryVersions) {
+    std::vector<std::pair<vespalib::VersionSpecification, IRoutableFactory::SP>> candidates;
+    for (const auto & entry : _factoryVersions) {
         if (entry.first.compareTo(versionSpec) <= 0) {
-            candidates.push_back(std::make_pair(entry.first, entry.second));
+            candidates.emplace_back(entry.first, entry.second);
         }
     }
     if (candidates.empty()) {
-        return IRoutableFactory::SP();
+        return {};
     }
 
     return std::max_element(candidates.begin(), candidates.end(),
@@ -54,7 +56,7 @@ RoutableRepository::decode(const vespalib::Version &version, mbus::BlobRef data)
 {
     if (data.size() == 0) {
         LOG(error, "Received empty byte array for deserialization.");
-        return mbus::Routable::UP();
+        return {};
     }
 
     document::ByteBuffer in(data.data(), data.size());
@@ -64,7 +66,7 @@ RoutableRepository::decode(const vespalib::Version &version, mbus::BlobRef data)
     if (!factory) {
         LOG(error, "No routable factory found for routable type %d (version %s).",
             type, version.toString().c_str());
-        return mbus::Routable::UP();
+        return {};
     }
     mbus::Routable::UP ret = factory->decode(in);
     if (!ret) {
@@ -74,7 +76,7 @@ RoutableRepository::decode(const vespalib::Version &version, mbus::BlobRef data)
         std::ostringstream ost;
         document::StringUtil::printAsHex(ost, data.data(), data.size());
         LOG(error, "%s", ost.str().c_str());
-        return mbus::Routable::UP();
+        return {};
     }
     return ret;
 }
@@ -107,7 +109,7 @@ RoutableRepository::putFactory(const vespalib::VersionSpecification &version,
                                uint32_t type, IRoutableFactory::SP factory)
 {
     std::lock_guard guard(_lock);
-    if (_factoryTypes[type].putFactory(version, factory)) {
+    if (_factoryTypes[type].putFactory(version, std::move(factory))) {
         _cache.clear();
     }
 }
@@ -117,17 +119,17 @@ RoutableRepository::getFactory(const vespalib::Version &version, uint32_t type) 
 {
     std::lock_guard guard(_lock);
     CacheKey cacheKey(version, type);
-    FactoryCache::const_iterator cit = _cache.find(cacheKey);
+    auto cit = _cache.find(cacheKey);
     if (cit != _cache.end()) {
         return cit->second;
     }
-    TypeMap::const_iterator vit = _factoryTypes.find(type);
+    auto vit = _factoryTypes.find(type);
     if (vit == _factoryTypes.end()) {
-        return IRoutableFactory::SP();
+        return {};
     }
-    IRoutableFactory::SP factory = vit->second.getFactory(version);
+    auto factory = vit->second.getFactory(version);
     if (!factory) {
-        return IRoutableFactory::SP();
+        return {};
     }
     _cache[cacheKey] = factory;
     return factory;

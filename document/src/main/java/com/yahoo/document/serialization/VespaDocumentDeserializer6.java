@@ -91,6 +91,11 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     final public DocumentTypeManager getDocumentTypeManager() { return manager; }
 
+    @Override
+    public DocumentTypeManager getTypeRepo() {
+        return manager;
+    }
+
     public void read(Document document) {
         read(null, document);
     }
