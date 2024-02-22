@@ -299,6 +299,7 @@ TOKEN :
 | < HNSW: "hnsw" >
 | < MAX_LINKS_PER_NODE: "max-links-per-node" >
 | < DOUBLE_KEYWORD: "double" >
+| < LONG_KEYWORD: "long" >
 | < STRING_KEYWORD: "string" >
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
@@ -2048,6 +2049,11 @@ InputType valueType(Reference reference) :
       |
       ( <DOUBLE_KEYWORD> { result = new InputType(TensorType.empty, false); } )
       |
+      ( <LONG_KEYWORD> {
+        result = new InputType(TensorType.empty, false);
+        deployLogger.logApplicationPackage(Level.WARNING, "Input " + reference + ": 'long' is not possible, treated as 'double'");
+      } )
+      |
       ( <STRING_KEYWORD> { result = new InputType(TensorType.empty, true); } )
     )
     { return result; }
@@ -2715,6 +2721,7 @@ String identifier() : { }
       | <DIVERSITY>
       | <DOCUMENT>
       | <DOUBLE_KEYWORD>
+      | <LONG_KEYWORD>
       | <STRING_KEYWORD>
       | <DYNAMIC>
       | <EXACT>
