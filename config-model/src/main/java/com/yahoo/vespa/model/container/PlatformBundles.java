@@ -140,7 +140,6 @@ public class PlatformBundles {
             com.yahoo.search.rendering.Renderer.class.getName(),
             com.yahoo.search.rendering.SectionedRenderer.class.getName(),
             com.yahoo.search.searchchain.ForkingSearcher.class.getName(),
-            com.yahoo.search.searchchain.example.ExampleSearcher.class.getName(),
             com.yahoo.search.searchers.CacheControlSearcher.class.getName(),
             com.yahoo.search.searchers.RateLimitingSearcher.class.getName(),
             com.yahoo.vespa.streamingvisitors.MetricsSearcher.class.getName(),
