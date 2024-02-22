@@ -54,12 +54,6 @@ toLowVal(uint32_t key)
     return toVal(key) - 1000000;
 }
 
-int32_t
-toNotVal(uint32_t key)
-{
-    return key + 2000;
-}
-
 }
 
 using MyTraits = BTreeTraits<4, 4, 31, false>;
@@ -187,86 +181,6 @@ MockTree::MockTree()
 {}
 MockTree::~MockTree() {}
 
-class MyTreeForceApplyStore : public MyTreeStore
-{
-public:
-    using CompareT = MyComp;
-
-    bool
-    insert(EntryRef &ref, const KeyType &key, const DataType &data,
-           CompareT comp = CompareT());
-
-    bool
-    remove(EntryRef &ref, const KeyType &key, CompareT comp = CompareT());
-};
-
-
-bool
-MyTreeForceApplyStore::insert(EntryRef &ref,
-                              const KeyType &key, const DataType &data,
-                              CompareT comp)
-{
-    bool retVal = true;
-    if (ref.valid()) {
-        RefType iRef(ref);
-        uint32_t clusterSize = getClusterSize(iRef);
-        if (clusterSize == 0) {
-            const BTreeType *tree = getTreeEntry(iRef);
-            const NodeAllocatorType &allocator = getAllocator();
-            Iterator itr = tree->find(key, allocator, comp);
-            if (itr.valid())
-                retVal = false;
-        } else {
-            const KeyDataType *old = getKeyDataEntry(iRef, clusterSize);
-            const KeyDataType *olde = old + clusterSize;
-            const KeyDataType *oldi = lower_bound(old, olde, key, comp);
-            if (oldi < olde && !comp(key, oldi->_key))
-                retVal = false; // key already present
-        }
-    }
-    KeyDataType addition(key, data);
-    if (retVal) {
-        apply(ref, &addition, &addition+1, NULL, NULL, comp);
-    }
-    return retVal;
-}
-
-
-bool
-MyTreeForceApplyStore::remove(EntryRef &ref, const KeyType &key,
-                              CompareT comp)
-{
-    bool retVal = true;
-    if (!ref.valid())
-        retVal = false; // not found
-    else {
-        RefType iRef(ref);
-        uint32_t clusterSize = getClusterSize(iRef);
-        if (clusterSize == 0) {
-            const BTreeType *tree = getTreeEntry(iRef);
-            const NodeAllocatorType &allocator = getAllocator();
-            Iterator itr = tree->find(key, allocator, comp);
-            if (!itr.valid())
-                retVal = false;
-        } else {
-            const KeyDataType *old = getKeyDataEntry(iRef, clusterSize);
-            const KeyDataType *olde = old + clusterSize;
-            const KeyDataType *oldi = lower_bound(old, olde, key, comp);
-            if (oldi == olde || comp(key, oldi->_key))
-                retVal = false; // not found
-        }
-    }
-    std::vector<KeyDataType> additions;
-    std::vector<KeyType> removals;
-    removals.push_back(key);
-    apply(ref,
-          additions.data(), additions.data() + additions.size(),
-          removals.data(), removals.data() + removals.size(),
-          comp);
-    return retVal;
-}
-
-    
 template <typename ManagerType>
 void
 freezeTree(GenerationHandler &g, ManagerType &m)
@@ -337,7 +251,6 @@ private:
     void requireThatUpdateOfDataWorks();
     void requireThatFrozenViewProvidesAggregatedValues();
 
-    template <typename TreeStore>
     void
     requireThatSmallNodesWorks();
 public:
@@ -1101,86 +1014,81 @@ Test::requireThatUpdateOfDataWorks()
     }
 }
 
+namespace {
 
-template <typename TreeStore>
+void
+insert(MyTreeStore& s, EntryRef& root, MyTreeStore::KeyDataType addition)
+{
+    s.apply(root, &addition, &addition + 1, nullptr, nullptr);
+}
+
+void
+remove(MyTreeStore& s, EntryRef& root, MyTreeStore::KeyType removal)
+{
+    s.apply(root, nullptr, nullptr, &removal, &removal + 1);
+}
+
+}
+
 void
 Test::requireThatSmallNodesWorks()
 {
     GenerationHandler g;
-    TreeStore s;
+    MyTreeStore s;
     MockTree mock;
 
     EntryRef root;
     EXPECT_EQUAL(0u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
-    EXPECT_TRUE(s.insert(root, 40, toVal(40)));
+    insert(s, root, {40, toVal(40)});
     mock.insert(40, toVal(40));
-    EXPECT_TRUE(!s.insert(root, 40, toNotVal(40)));
     EXPECT_EQUAL(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
-    EXPECT_TRUE(s.insert(root, 20, toVal(20)));
+    insert(s, root, {20, toVal(20)});
     mock.insert(20, toVal(20));
-    EXPECT_TRUE(!s.insert(root, 20, toNotVal(20)));
-    EXPECT_TRUE(!s.insert(root, 40, toNotVal(40)));
     EXPECT_EQUAL(2u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
-    EXPECT_TRUE(s.insert(root, 60, toVal(60)));
+    insert(s, root, {60, toVal(60)});
     mock.insert(60, toVal(60));
-    EXPECT_TRUE(!s.insert(root, 60, toNotVal(60)));
-    EXPECT_TRUE(!s.insert(root, 20, toNotVal(20)));
-    EXPECT_TRUE(!s.insert(root, 40, toNotVal(40)));
     EXPECT_EQUAL(3u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
-    EXPECT_TRUE(s.insert(root, 50, toVal(50)));
+    insert(s, root, {50, toVal(50)});
     mock.insert(50, toVal(50));
-    EXPECT_TRUE(!s.insert(root, 50, toNotVal(50)));
-    EXPECT_TRUE(!s.insert(root, 60, toNotVal(60)));
-    EXPECT_TRUE(!s.insert(root, 20, toNotVal(20)));
-    EXPECT_TRUE(!s.insert(root, 40, toNotVal(40)));
     EXPECT_EQUAL(4u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
 
     for (uint32_t i = 0; i < 100; ++i) {
-        EXPECT_TRUE(s.insert(root, 1000 + i, 42));
+        insert(s, root, {int(1000 + i), 42});
         mock.insert(1000 + i, 42);
-        if (i > 0) {
-            EXPECT_TRUE(!s.insert(root, 1000 + i - 1, 42));
-        }
         EXPECT_EQUAL(5u + i, s.size(root));
-        EXPECT_EQUAL(5u + i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQUAL(5u + i <= MyTreeStore::clusterLimit,  s.isSmallArray(root));
         TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
     }
-    EXPECT_TRUE(s.remove(root, 40));
+    remove(s, root, 40);
     mock.erase(40);
-    EXPECT_TRUE(!s.remove(root, 40));
     EXPECT_EQUAL(103u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
-    EXPECT_TRUE(s.remove(root, 20));
+    remove(s, root, 20);
     mock.erase(20);
-    EXPECT_TRUE(!s.remove(root, 20));
     EXPECT_EQUAL(102u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
-    EXPECT_TRUE(s.remove(root, 50));
+    remove(s, root, 50);
     mock.erase(50);
-    EXPECT_TRUE(!s.remove(root, 50));
     EXPECT_EQUAL(101u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
     for (uint32_t i = 0; i < 100; ++i) {
-        EXPECT_TRUE(s.remove(root, 1000 + i));
+        remove(s, root, 1000 + i);
         mock.erase(1000 + i);
-        if (i > 0) {
-            EXPECT_TRUE(!s.remove(root, 1000 + i - 1));
-        }
         EXPECT_EQUAL(100 - i, s.size(root));
-        EXPECT_EQUAL(100 - i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQUAL(100 - i <= MyTreeStore::clusterLimit,  s.isSmallArray(root));
         TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
     }
     EXPECT_EQUAL(1u, s.size(root));
@@ -1233,8 +1141,7 @@ Test::Main()
     requireThatTreeIteratorAssignWorks();
     requireThatUpdateOfKeyWorks();
     requireThatUpdateOfDataWorks();
-    TEST_DO(requireThatSmallNodesWorks<MyTreeStore>());
-    TEST_DO(requireThatSmallNodesWorks<MyTreeForceApplyStore>());
+    TEST_DO(requireThatSmallNodesWorks());
     TEST_DO(requireThatFrozenViewProvidesAggregatedValues());
 
     TEST_DONE();

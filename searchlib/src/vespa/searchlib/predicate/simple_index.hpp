@@ -14,13 +14,15 @@ namespace simpleindex {
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::insertIntoPosting(vespalib::datastore::EntryRef &ref, Key key, DocId doc_id, const Posting &posting) {
-    bool ok = _btree_posting_lists.insert(ref, doc_id, posting);
-    if (!ok) {
-        _btree_posting_lists.remove(ref, doc_id);
-        ok = _btree_posting_lists.insert(ref, doc_id, posting);
-    }
-    assert(ok);
+SimpleIndex<Posting, Key, DocId>::insertIntoPosting(vespalib::datastore::EntryRef &ref, Key key, DocId doc_id, const Posting &posting)
+{
+    typename BTreeStore::KeyDataType addition(doc_id, posting);
+    /*
+     * Note: existing value is overwritten by new value without
+     * cleanup. Data referenced by existing value might be leaked,
+     * but PredicateIntervalStore::remove() is already a noop.
+     */
+    _btree_posting_lists.apply(ref, &addition, &addition + 1, nullptr, nullptr);
     insertIntoVectorPosting(ref, key, doc_id, posting);
     pruneBelowThresholdVectors();
 }
@@ -144,7 +146,7 @@ SimpleIndex<Posting, Key, DocId>::removeFromPostingList(Key key, DocId doc_id) {
 
     Posting posting = posting_it.getData();
     vespalib::datastore::EntryRef original_ref(ref);
-    _btree_posting_lists.remove(ref, doc_id);
+    _btree_posting_lists.apply(ref, nullptr, nullptr, &doc_id, &doc_id + 1);
     removeFromVectorPostingList(ref, key, doc_id);
     if (!ref.valid()) { // last posting was removed
         _dictionary.remove(dict_it);
