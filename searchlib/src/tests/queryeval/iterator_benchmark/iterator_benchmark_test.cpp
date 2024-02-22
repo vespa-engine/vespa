@@ -159,23 +159,26 @@ struct BenchmarkResult {
     double time_ms;
     uint32_t seeks;
     uint32_t hits;
-    double estimate;
-    double cost;
+    FlowStats flow;
+    double actual_cost;
+    double alt_cost;
     vespalib::string iterator_name;
     vespalib::string blueprint_name;
-    BenchmarkResult() : BenchmarkResult(0, 0, 0, 0, 0, "", "") {}
-    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, double estimate_in, double cost_in,
+    BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, 0, "", "") {}
+    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, FlowStats flow_in, double actual_cost_in, double alt_cost_in,
                     const vespalib::string& iterator_name_in, const vespalib::string& blueprint_name_in)
         : time_ms(time_ms_in),
           seeks(seeks_in),
           hits(hits_in),
-          estimate(estimate_in),
-          cost(cost_in),
+          flow(flow_in),
+          actual_cost(actual_cost_in),
+          alt_cost(alt_cost_in),
           iterator_name(iterator_name_in),
           blueprint_name(blueprint_name_in)
     {}
     double ns_per_seek() const { return (time_ms / seeks) * 1000.0 * 1000.0; }
-    double ms_per_cost() const { return (time_ms / cost); }
+    double ms_per_actual_cost() const { return (time_ms / actual_cost); }
+    double ms_per_alt_cost() const { return (time_ms / alt_cost); }
 };
 
 struct Stats {
@@ -250,8 +253,11 @@ public:
     Stats ns_per_seek_stats() const {
         return calc_stats([](const auto& res){ return res.ns_per_seek(); });
     }
-    Stats ms_per_cost_stats() const {
-        return calc_stats([](const auto& res){ return res.ms_per_cost(); });
+    Stats ms_per_actual_cost_stats() const {
+        return calc_stats([](const auto& res){ return res.ms_per_actual_cost(); });
+    }
+    Stats ms_per_alt_cost_stats() const {
+        return calc_stats([](const auto& res){ return res.ms_per_alt_cost(); });
     }
 };
 
@@ -298,23 +304,27 @@ strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit)
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, hits + 1, hits, blueprint.estimate(), blueprint.strict_cost(), get_class_name(*itr), get_class_name(blueprint)};
+    FlowStats flow(blueprint.estimate(), blueprint.cost(), blueprint.strict_cost());
+    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, flow.strict_cost, get_class_name(*itr), get_class_name(blueprint)};
 }
 
 BenchmarkResult
-non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit)
+non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, double filter_hit_ratio)
 {
     auto itr = blueprint.createSearch(md, false);
     assert(itr.get());
     BenchmarkTimer timer(budget_sec);
     uint32_t seeks = 0;
     uint32_t hits = 0;
+    // This simulates a filter that is evaluated before this iterator.
+    // The filter returns 'filter_hit_ratio' amount of the document corpus.
+    uint32_t docid_skip = 1.0 / filter_hit_ratio;
     while (timer.has_budget()) {
         timer.before();
         seeks = 0;
         hits = 0;
         itr->initRange(1, docid_limit);
-        for (uint32_t docid = 1; !itr->isAtEnd(docid); ++docid) {
+        for (uint32_t docid = 1; !itr->isAtEnd(docid); docid += docid_skip) {
             ++seeks;
             if (itr->seek(docid)) {
                 ++hits;
@@ -322,11 +332,15 @@ non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit)
         }
         timer.after();
     }
-    return {timer.min_time() * 1000.0, seeks, hits, blueprint.estimate(), blueprint.cost(), get_class_name(*itr), get_class_name(blueprint)};
+    FlowStats flow(blueprint.estimate(), blueprint.cost(), blueprint.strict_cost());
+    double actual_cost = flow.cost * filter_hit_ratio;
+    // This is an attempt to calculate an alternative actual cost for strict / posting list iterators that are used in a non-strict context.
+    double alt_cost = flow.strict_cost + 0.5 * filter_hit_ratio;
+    return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, alt_cost, get_class_name(*itr), get_class_name(blueprint)};
 }
 
 BenchmarkResult
-benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict)
+benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict, double filter_hit_ratio)
 {
     blueprint->sort(strict, true);
     blueprint->fetchPostings(ExecuteInfo::createForTest(strict));
@@ -336,7 +350,7 @@ benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict)
     if (strict) {
         return strict_search(*blueprint, *md, docid_limit);
     } else {
-        return non_strict_search(*blueprint, *md, docid_limit);
+        return non_strict_search(*blueprint, *md, docid_limit, filter_hit_ratio);
     }
 }
 
@@ -436,42 +450,47 @@ make_intermediate_blueprint(IAttributeContext& attr_ctx, const benchmark::TermVe
 }
 
 BenchmarkResult
-run_benchmark(IAttributeContext& attr_ctx, QueryOperator query_op, const benchmark::TermVector& terms, uint32_t docid_limit, bool strict)
+run_benchmark(IAttributeContext& attr_ctx, QueryOperator query_op, const benchmark::TermVector& terms, uint32_t docid_limit, bool strict, double filter_hit_ratio)
 {
     if (query_op == QueryOperator::And) {
-        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict);
+        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict, filter_hit_ratio);
     } else if (query_op == QueryOperator::Or) {
-        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict);
+        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict, filter_hit_ratio);
     } else {
         auto query_node = make_query_node(query_op, terms);
         auto blueprint = make_leaf_blueprint(*query_node, attr_ctx, docid_limit);
-        return benchmark_search(std::move(blueprint), docid_limit, strict);
+        return benchmark_search(std::move(blueprint), docid_limit, strict, filter_hit_ratio);
     }
 }
 
 void
 print_result_header()
 {
-    std::cout << "| children | t_ratio | a_ratio |   est |     hits |    seeks |  time_ms |     cost | ns_per_seek | ms_per_cost | iterator | blueprint |" << std::endl;
+    std::cout << "|  chn | f_ratio | o_ratio | a_ratio |  f.est | f.cost | f.scost |     hits |    seeks |  time_ms | act_cost | alt_cost | ns_per_seek | ms_per_act_cost | ms_per_alt_cost | iterator | blueprint |" << std::endl;
 }
 
 void
-print_result(const BenchmarkResult& res, const benchmark::TermVector& terms, double hit_ratio, uint32_t num_docs)
+print_result(const BenchmarkResult& res, const benchmark::TermVector& terms, double op_hit_ratio, double filter_hit_ratio, uint32_t num_docs)
 {
-    std::cout << std::fixed << std::setprecision(3)
-              << "| " << std::setw(8) << terms.size()
-              << " | " << std::setw(7) << hit_ratio
+    std::cout << std::fixed << std::setprecision(4)
+              << "| " << std::setw(4) << terms.size()
+              << " | " << std::setw(7) << filter_hit_ratio
+              << " | " << std::setw(7) << op_hit_ratio
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
-              << " | " << std::setw(5) << res.estimate
+              << " | " << std::setw(6) << res.flow.estimate
+              << " | " << std::setw(6) << res.flow.cost
+              << " | " << std::setw(7) << res.flow.strict_cost
               << " | " << std::setw(8) << res.hits
               << " | " << std::setw(8) << res.seeks
               << std::setprecision(2)
               << " | " << std::setw(8) << res.time_ms
               << std::setprecision(3)
-              << " | " << std::setw(8) << res.cost
+              << " | " << std::setw(8) << res.actual_cost
+              << " | " << std::setw(8) << res.alt_cost
               << std::setprecision(2)
               << " | " << std::setw(11) << res.ns_per_seek()
-              << " | " << std::setw(11) << res.ms_per_cost()
+              << " | " << std::setw(15) << res.ms_per_actual_cost()
+              << " | " << std::setw(15) << res.ms_per_alt_cost()
               << " | " << res.iterator_name
               << " | " << res.blueprint_name << " |" << std::endl;
 }
@@ -480,9 +499,10 @@ void
 print_result(const BenchmarkCaseResult& result)
 {
     std::cout << std::fixed << std::setprecision(3)
-              << "summary: time_ms=" << result.time_ms_stats().to_string()
-              << ", ns_per_seek=" << result.ns_per_seek_stats().to_string()
-              << ", ms_per_cost=" << result.ms_per_cost_stats().to_string() << std::endl << std::endl;
+              << "summary: time_ms=" << result.time_ms_stats().to_string() << std::endl
+              << "         ns_per_seek=" << result.ns_per_seek_stats().to_string() << std::endl
+              << "         ms_per_act_cost=" << result.ms_per_actual_cost_stats().to_string() << std::endl
+              << "         ms_per_alt_cost=" << result.ms_per_alt_cost_stats().to_string() << std::endl << std::endl;
 }
 
 struct BenchmarkCase {
@@ -530,12 +550,12 @@ public:
     }
     void calc_scaled_costs() {
         std::sort(_cases.begin(), _cases.end(), [](const auto& lhs, const auto& rhs) {
-            return lhs.result.ms_per_cost_stats().average < rhs.result.ms_per_cost_stats().average;
+            return lhs.result.ms_per_actual_cost_stats().average < rhs.result.ms_per_actual_cost_stats().average;
         });
-        double baseline_ms_per_cost = _cases[0].result.ms_per_cost_stats().average;
+        double baseline_ms_per_cost = _cases[0].result.ms_per_actual_cost_stats().average;
         for (size_t i = 1; i < _cases.size(); ++i) {
             auto& c = _cases[i];
-            c.scaled_cost = c.result.ms_per_cost_stats().average / baseline_ms_per_cost;
+            c.scaled_cost = c.result.ms_per_actual_cost_stats().average / baseline_ms_per_cost;
         }
     }
     const std::vector<BenchmarkCaseSummary>& cases() const { return _cases; }
@@ -548,7 +568,8 @@ print_summary(const BenchmarkSummary& summary)
     for (const auto& c : summary.cases()) {
         std::cout << std::fixed << std::setprecision(3) << ""
                   << std::setw(50) << std::left << c.bcase.to_string() << ": "
-                  << "ms_per_cost=" << std::setw(7) << std::right << c.result.ms_per_cost_stats().to_string()
+                  << "ms_per_act_cost=" << std::setw(7) << std::right << c.result.ms_per_actual_cost_stats().to_string()
+                  << ", ms_per_alt_cost=" << std::setw(7) << std::right << c.result.ms_per_alt_cost_stats().to_string()
                   << ", scaled_cost=" << std::setw(7) << c.scaled_cost << std::endl;
     }
 }
@@ -556,17 +577,19 @@ print_summary(const BenchmarkSummary& summary)
 struct BenchmarkCaseSetup {
     uint32_t num_docs;
     BenchmarkCase bcase;
-    std::vector<double> hit_ratios;
+    std::vector<double> op_hit_ratios;
     std::vector<uint32_t> child_counts;
+    std::vector<double> filter_hit_ratios;
     uint32_t default_values_per_document;
     BenchmarkCaseSetup(uint32_t num_docs_in,
                        const BenchmarkCase& bcase_in,
-                       const std::vector<double>& hit_ratios_in,
+                       const std::vector<double>& op_hit_ratios_in,
                        const std::vector<uint32_t>& child_counts_in)
         : num_docs(num_docs_in),
           bcase(bcase_in),
-          hit_ratios(hit_ratios_in),
+          op_hit_ratios(op_hit_ratios_in),
           child_counts(child_counts_in),
+          filter_hit_ratios({1.0}),
           default_values_per_document(0)
     {}
     ~BenchmarkCaseSetup() {}
@@ -577,33 +600,41 @@ struct BenchmarkSetup {
     std::vector<Config> attr_cfgs;
     std::vector<QueryOperator> query_ops;
     std::vector<bool> strictness;
-    std::vector<double> hit_ratios;
+    std::vector<double> op_hit_ratios;
     std::vector<uint32_t> child_counts;
+    std::vector<double> filter_hit_ratios;
     uint32_t default_values_per_document;
     BenchmarkSetup(uint32_t num_docs_in,
                    const std::vector<Config>& attr_cfgs_in,
                    const std::vector<QueryOperator>& query_ops_in,
                    const std::vector<bool>& strictness_in,
-                   const std::vector<double>& hit_ratios_in,
+                   const std::vector<double>& op_hit_ratios_in,
                    const std::vector<uint32_t>& child_counts_in)
         : num_docs(num_docs_in),
           attr_cfgs(attr_cfgs_in),
           query_ops(query_ops_in),
           strictness(strictness_in),
-          hit_ratios(hit_ratios_in),
+          op_hit_ratios(op_hit_ratios_in),
           child_counts(child_counts_in),
+          filter_hit_ratios({1.0}),
           default_values_per_document(0)
     {}
     BenchmarkSetup(uint32_t num_docs_in,
                    const std::vector<Config>& attr_cfgs_in,
                    const std::vector<QueryOperator>& query_ops_in,
                    const std::vector<bool>& strictness_in,
-                   const std::vector<double>& hit_ratios_in)
-        : BenchmarkSetup(num_docs_in, attr_cfgs_in, query_ops_in, strictness_in, hit_ratios_in, {1})
+                   const std::vector<double>& op_hit_ratios_in)
+        : BenchmarkSetup(num_docs_in, attr_cfgs_in, query_ops_in, strictness_in, op_hit_ratios_in, {1})
     {}
     BenchmarkCaseSetup make_case_setup(const BenchmarkCase& bcase) const {
-        BenchmarkCaseSetup res(num_docs, bcase, hit_ratios, child_counts);
+        BenchmarkCaseSetup res(num_docs, bcase, op_hit_ratios, child_counts);
         res.default_values_per_document = default_values_per_document;
+        if (!bcase.strict) {
+            // Simulation of a filter is only relevant in a non-strict context.
+            res.filter_hit_ratios = filter_hit_ratios;
+        } else {
+            res.filter_hit_ratios = {1.0};
+        }
         return res;
     }
     ~BenchmarkSetup();
@@ -612,14 +643,14 @@ struct BenchmarkSetup {
 BenchmarkSetup::~BenchmarkSetup() = default;
 
 uint32_t
-calc_hits_per_term(uint32_t num_docs, double target_hit_ratio, uint32_t children, QueryOperator query_op)
+calc_hits_per_term(uint32_t num_docs, double op_hit_ratio, uint32_t children, QueryOperator query_op)
 {
     if (query_op == QueryOperator::And) {
-        double child_hit_ratio = std::pow(target_hit_ratio, (1.0/(double)children));
+        double child_hit_ratio = std::pow(op_hit_ratio, (1.0/(double)children));
         return num_docs * child_hit_ratio;
     } else {
-        uint32_t target_num_hits = num_docs * target_hit_ratio;
-        return target_num_hits / children;
+        uint32_t op_num_hits = num_docs * op_hit_ratio;
+        return op_num_hits / children;
     }
 }
 
@@ -629,16 +660,19 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
     BenchmarkCaseResult result;
     std::cout << "-------- run_benchmark_case: " << setup.bcase.to_string() << " --------" << std::endl;
     print_result_header();
-    for (double hit_ratio : setup.hit_ratios) {
+    for (double op_hit_ratio : setup.op_hit_ratios) {
         for (uint32_t children : setup.child_counts) {
-            uint32_t hits_per_term = calc_hits_per_term(setup.num_docs, hit_ratio, children, setup.bcase.query_op);
+            uint32_t hits_per_term = calc_hits_per_term(setup.num_docs, op_hit_ratio, children, setup.bcase.query_op);
             HitSpecs hit_specs(55555);
             hit_specs.add(setup.default_values_per_document, setup.num_docs);
             auto terms = hit_specs.add(children, hits_per_term);
             auto attr_ctx = make_attribute_context(setup.bcase.attr_cfg, setup.num_docs, hit_specs);
-            auto res = run_benchmark(*attr_ctx, setup.bcase.query_op, terms, setup.num_docs + 1, setup.bcase.strict);
-            print_result(res, terms, hit_ratio, setup.num_docs);
-            result.add(res);
+            for (double filter_hit_ratio : setup.filter_hit_ratios) {
+                auto res = run_benchmark(*attr_ctx, setup.bcase.query_op, terms, setup.num_docs + 1,
+                                         setup.bcase.strict, filter_hit_ratio);
+                print_result(res, terms, op_hit_ratio, filter_hit_ratio, setup.num_docs);
+                result.add(res);
+            }
         }
     }
     print_result(result);
@@ -687,18 +721,19 @@ const Config str_array_fs = make_config(BasicType::STRING, CollectionType::ARRAY
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_without_fast_search)
 {
     std::vector<Config> attr_cfgs = {int32, int32_array, str, str_array};
-    const std::vector<double> hit_ratios = {0.001, 0.005, 0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9};
-    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
+    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
+    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {false}, hit_ratios);
     setup.default_values_per_document = 1;
+    setup.filter_hit_ratios = {0.01, 0.1, 0.5, 1.0};
     run_benchmarks(setup);
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_with_fast_search)
 {
-    std::vector<Config> attr_cfgs = {int32_array, int32_fs}; //, int32_array_fs, str_fs, str_array_fs};
+    std::vector<Config> attr_cfgs = {int32_fs, int32_array_fs, str_fs, str_array_fs};
     const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
     BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
-    setup.default_values_per_document = 1;
+    setup.filter_hit_ratios = {0.01, 0.1, 0.5, 1.0};
     run_benchmarks(setup);
 }
 
