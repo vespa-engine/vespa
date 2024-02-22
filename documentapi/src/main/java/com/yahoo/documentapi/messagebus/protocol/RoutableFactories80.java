@@ -59,13 +59,10 @@ abstract class RoutableFactories80 {
         public boolean encode(Routable obj, DocumentSerializer out) {
             try {
                 var protoMsg = encoderFn.apply(apiClass.cast(obj));
-                var protoStream = CodedOutputStream.newInstance(out.getBuf().getByteBuffer()); // Not AutoCloseable...
-                try {
-                    protoMsg.writeTo(protoStream);
-                } finally {
-                    protoStream.flush();
-                }
-            } catch (IOException | UnsupportedOperationException e) {
+                // TODO avoid this buffer indirection by directly exposing an OutputStream to write into...!
+                //  ... or at the very least have a way to preallocate buffer output of protoMsg.getSerializedSize() bytes!
+                out.getBuf().put(protoMsg.toByteArray());
+            } catch (RuntimeException e) {
                 logCodecError("encoding", e);
                 return false;
             }
