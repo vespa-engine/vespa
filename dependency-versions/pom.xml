@@ -66,7 +66,7 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <aws-sdk.vespa.version>1.12.663</aws-sdk.vespa.version>
-        <athenz.vespa.version>1.11.51</athenz.vespa.version>
+        <athenz.vespa.version>1.11.52</athenz.vespa.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
