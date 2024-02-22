@@ -130,7 +130,7 @@ MessageFixture::write_file(const std::filesystem::path& filename, const mbus::Bl
         return false;
     }
     if (write(file, blob.data(), blob.size()) != (ssize_t)blob.size()) {
-        throw vespalib::Exception("write failed");
+        throw vespalib::Exception(fmt("Write of file '%s' failed", filename.c_str()));
     }
     close(file);
     return true;
@@ -145,7 +145,7 @@ MessageFixture::read_file(const std::filesystem::path& filename)
     if (file != -1) {
         lseek(file, 0, SEEK_SET);
         if (read(file, blob.data(), len) != len) {
-            throw vespalib::Exception("read failed");
+            throw vespalib::Exception(fmt("Read of file '%s' failed", filename.c_str()));
         }
         close(file);
     }
