@@ -519,12 +519,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
             for (var input : inputs.values()) {
                 if (FeatureNames.isQueryFeature(input.name())) {
-                    if (input.type().rank() > 0) // Proton does not like representing the double type as a rank 0 tensor
+                    if (input.type().tensorType().rank() > 0) // Proton does not like representing the double type as a rank 0 tensor
                         properties.add(new Pair<>("vespa.type.query." + input.name().arguments().expressions().get(0),
                                                   input.type().toString()));
                     if (input.defaultValue().isPresent()) {
                         properties.add(new Pair<>(input.name().toString(),
-                                                  input.type().rank() == 0 ?
+                                                  input.type().tensorType().rank() == 0 ?
                                                   String.valueOf(input.defaultValue().get().asDouble()) :
                                                   input.defaultValue().get().toString(true, false)));
                     }

@@ -34,6 +34,7 @@ import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.fieldoperation.IndexingOperation;
+import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -298,6 +299,8 @@ TOKEN :
 | < HNSW: "hnsw" >
 | < MAX_LINKS_PER_NODE: "max-links-per-node" >
 | < DOUBLE_KEYWORD: "double" >
+| < LONG_KEYWORD: "long" >
+| < STRING_KEYWORD: "string" >
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
@@ -2005,18 +2008,19 @@ void inputs(ParsedRankProfile profile) :
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-      ( input(profile) (<NL>)*) *
+    (input(profile))?
+    (<NL> (input(profile))?)*
     <RBRACE>
 }
 
 void input(ParsedRankProfile profile) :
 {
     Reference reference;
-    TensorType type = TensorType.empty;
+    InputType type = new InputType(TensorType.empty, false);
     Tensor defaultValue = null;
 }
 {
-    reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
+    reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type.tensorType()) )?
     { profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue))); }
 }
 
@@ -2034,18 +2038,25 @@ Reference inputName() :
     { return FeatureNames.asQueryFeature(name); }
 }
 
-TensorType valueType(Reference reference) :
+InputType valueType(Reference reference) :
 {
     TensorType type;
-
+    InputType result;
 }
 {
     (
-      ( type = tensorType("Type of " + reference) )
+      ( type = tensorType("Type of " + reference) { result = new InputType(type, false); } )
       |
-      ( <DOUBLE_KEYWORD> { type = TensorType.empty; } )
+      ( <DOUBLE_KEYWORD> { result = new InputType(TensorType.empty, false); } )
+      |
+      ( <LONG_KEYWORD> {
+        result = new InputType(TensorType.empty, false);
+        deployLogger.logApplicationPackage(Level.WARNING, "Input " + reference + ": 'long' is not possible, treated as 'double'");
+      } )
+      |
+      ( <STRING_KEYWORD> { result = new InputType(TensorType.empty, true); } )
     )
-    { return type; }
+    { return result; }
 }
 
 /**
@@ -2329,7 +2340,7 @@ void constants(ParsedSchema schema, ParsedRankProfile profile) :
 void constant(ParsedSchema schema, ParsedRankProfile profile) :
 {
     Reference name = null;
-    TensorType type = TensorType.empty;
+    InputType type = new InputType(TensorType.empty, false);
     Tensor value = null;
     String valuePath = null;
 }
@@ -2337,12 +2348,12 @@ void constant(ParsedSchema schema, ParsedRankProfile profile) :
     (
       name = constantName()
       (
-        LOOKAHEAD(4) ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
+        LOOKAHEAD(4) ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type.tensorType()) | valuePath = fileItem())
         {
             if (value != null)
                 profile.add(new RankProfile.Constant(name, value));
             else
-                profile.add(new RankProfile.Constant(name, type, valuePath));
+                profile.add(new RankProfile.Constant(name, type.tensorType(), valuePath));
         }
         )
         | // Deprecated forms (TODO: Vespa > 8: Add warning):
@@ -2710,6 +2721,8 @@ String identifier() : { }
       | <DIVERSITY>
       | <DOCUMENT>
       | <DOUBLE_KEYWORD>
+      | <LONG_KEYWORD>
+      | <STRING_KEYWORD>
       | <DYNAMIC>
       | <EXACT>
       | <FALSE>

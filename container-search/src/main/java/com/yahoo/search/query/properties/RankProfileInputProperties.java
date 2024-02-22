@@ -6,6 +6,8 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.schema.internal.TensorConverter;
 import com.yahoo.search.query.Properties;
@@ -39,9 +41,9 @@ public class RankProfileInputProperties extends Properties {
     public void set(CompoundName name, Object value, Map<String, String> context) {
         if (RankFeatures.isFeatureName(name.toString())) {
             try {
-                TensorType expectedType = typeOf(name);
-                if (expectedType != null) {
-                    value = tensorConverter.convertTo(expectedType,
+                var expectedType = typeOf(name);
+                if (expectedType != null && ! expectedType.declaredString()) {
+                    value = tensorConverter.convertTo(expectedType.tensorType(),
                                                       name.last(),
                                                       value,
                                                       query.getModel().getLanguage(),
@@ -59,14 +61,14 @@ public class RankProfileInputProperties extends Properties {
     @Override
     public void requireSettable(CompoundName name, Object value, Map<String, String> context) {
         if (RankFeatures.isFeatureName(name.toString())) {
-            TensorType expectedType = typeOf(name);
-            if (expectedType != null)
-                verifyType(name, value, expectedType);
+            var expectedType = typeOf(name);
+            if (expectedType != null && ! expectedType.declaredString())
+                verifyType(name, value, expectedType.tensorType());
         }
         super.requireSettable(name, value, context);
     }
 
-    private TensorType typeOf(CompoundName name) {
+    private RankProfile.InputType typeOf(CompoundName name) {
         // Session is lazily resolved because order matters:
         // model.sources+restrict must be set in the query before this is done
         if (session == null)

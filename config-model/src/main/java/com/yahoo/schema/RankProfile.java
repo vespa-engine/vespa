@@ -17,6 +17,7 @@ import com.yahoo.schema.expressiontransforms.ExpressionTransforms;
 import com.yahoo.schema.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.schema.expressiontransforms.InputRecorder;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
@@ -841,7 +842,7 @@ public class RankProfile implements Cloneable {
         if (inputs.containsKey(reference)) {
             Input existing = inputs().get(reference);
             if (! input.equals(existing))
-                throw new IllegalArgumentException("Duplicate input: Has both " + input + " and existing");
+                throw new IllegalArgumentException("Duplicate input: Has both " + input + " and existing " + existing);
         }
         inputs.put(reference, input);
     }
@@ -1177,7 +1178,8 @@ public class RankProfile implements Cloneable {
 
     private Map<Reference, TensorType> featureTypes() {
         Map<Reference, TensorType> featureTypes = inputs().values().stream()
-                                                          .collect(Collectors.toMap(input -> input.name(), input -> input.type()));
+                .collect(Collectors.toMap(input -> input.name(),
+                                          input -> input.type().tensorType()));
         allFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         allImportedFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         return featureTypes;
@@ -1545,17 +1547,21 @@ public class RankProfile implements Cloneable {
     public static final class Input {
 
         private final Reference name;
-        private final TensorType type;
+        private final InputType type;
         private final Optional<Tensor> defaultValue;
 
-        public Input(Reference name, TensorType type, Optional<Tensor> defaultValue) {
+        public Input(Reference name, InputType type, Optional<Tensor> defaultValue) {
             this.name = name;
             this.type = type;
             this.defaultValue = defaultValue;
         }
 
+        public Input(Reference name, TensorType tType, Optional<Tensor> defaultValue) {
+            this(name, new InputType(tType, false), defaultValue);
+        }
+
         public Reference name() { return name; }
-        public TensorType type() { return type; }
+        public InputType type() { return type; }
         public Optional<Tensor> defaultValue() { return defaultValue; }
 
         @Override
