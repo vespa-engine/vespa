@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +41,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * A machine learned model imported from the models/ directory in the application package, for a single rank profile.
@@ -635,11 +638,7 @@ public class ConvertedModel {
         }
 
         private void createIfNeeded(Path path) {
-            File dir = application.getFileReference(path);
-            if ( ! dir.exists()) {
-                if (!dir.mkdirs())
-                    throw new IllegalStateException("Could not create " + dir);
-            }
+            uncheck(() -> Files.createDirectories(application.getFileReference(path).toPath()));
         }
 
     }
