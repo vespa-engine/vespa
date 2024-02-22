@@ -136,10 +136,6 @@ public:
 
     void makeTree(EntryRef &ref, const KeyDataType *array, uint32_t clusterSize);
     void makeArray(EntryRef &ref, EntryRef leafRef, LeafNodeType *leafNode);
-    bool insert(EntryRef &ref, const KeyType &key, const DataType &data, CompareT comp = CompareT());
-
-    bool remove(EntryRef &ref, const KeyType &key,CompareT comp = CompareT());
-
     uint32_t getNewClusterSize(const KeyDataType *o, const KeyDataType *oe, AddIter a, AddIter ae,
                                RemoveIter r, RemoveIter re, CompareT comp);
 

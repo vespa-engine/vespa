@@ -1227,6 +1227,23 @@ TEST_F(BTreeTest, require_that_update_of_key_works)
     EXPECT_EQ(0u, cmp2._numErrors);
 }
 
+namespace {
+
+template <typename TreeStore>
+void
+insert(TreeStore& s, EntryRef& root, typename TreeStore::KeyDataType addition)
+{
+    s.apply(root, &addition, &addition + 1, nullptr, nullptr);
+}
+
+template <typename TreeStore>
+void
+remove(TreeStore& s, EntryRef& root, typename TreeStore::KeyType removal)
+{
+    s.apply(root, nullptr, nullptr, &removal, &removal + 1);
+}
+
+}
 
 TEST_F(BTreeTest, require_that_small_nodes_works)
 {
@@ -1238,56 +1255,37 @@ TEST_F(BTreeTest, require_that_small_nodes_works)
     EntryRef root;
     EXPECT_EQ(0u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    EXPECT_TRUE(s.insert(root, 40, "fourty"));
-    EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
+    insert(s, root, {40, "fourty"});
     EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    EXPECT_TRUE(s.insert(root, 20, "twenty"));
-    EXPECT_TRUE(!s.insert(root, 20, "twenty.not"));
-    EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
+    insert(s, root, {20, "twenty"});
     EXPECT_EQ(2u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    EXPECT_TRUE(s.insert(root, 60, "sixty"));
-    EXPECT_TRUE(!s.insert(root, 60, "sixty.not"));
-    EXPECT_TRUE(!s.insert(root, 20, "twenty.not"));
-    EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
+    insert(s, root, {60, "sixty"});
     EXPECT_EQ(3u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    EXPECT_TRUE(s.insert(root, 50, "fifty"));
-    EXPECT_TRUE(!s.insert(root, 50, "fifty.not"));
-    EXPECT_TRUE(!s.insert(root, 60, "sixty.not"));
-    EXPECT_TRUE(!s.insert(root, 20, "twenty.not"));
-    EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
+    insert(s, root, {50, "fifty"});
     EXPECT_EQ(4u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     for (uint32_t i = 0; i < 100; ++i) {
-        EXPECT_TRUE(s.insert(root, 1000 + i, "big"));
-        if (i > 0) {
-            EXPECT_TRUE(!s.insert(root, 1000 + i - 1, "big"));
-        }
+        insert(s, root, {int(1000 + i), "big"});
         EXPECT_EQ(5u + i, s.size(root));
-        EXPECT_EQ(5u + i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(5u + i <= TreeStore::clusterLimit, s.isSmallArray(root));
     }
-    EXPECT_TRUE(s.remove(root, 40));
-    EXPECT_TRUE(!s.remove(root, 40));
+    remove(s, root, 40);
     EXPECT_EQ(103u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
-    EXPECT_TRUE(s.remove(root, 20));
-    EXPECT_TRUE(!s.remove(root, 20));
+    remove(s, root, 20);
     EXPECT_EQ(102u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
-    EXPECT_TRUE(s.remove(root, 50));
-    EXPECT_TRUE(!s.remove(root, 50));
+    remove(s, root, 50);
     EXPECT_EQ(101u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     for (uint32_t i = 0; i < 100; ++i) {
-        EXPECT_TRUE(s.remove(root, 1000 + i));
-        if (i > 0) {
-            EXPECT_TRUE(!s.remove(root, 1000 + i - 1));
-        }
+        remove(s, root,  1000 + i);
         EXPECT_EQ(100 - i, s.size(root));
-        EXPECT_EQ(100 - i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(100 - i <= TreeStore::clusterLimit,  s.isSmallArray(root));
     }
     EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
@@ -1367,7 +1365,7 @@ TEST_F(BTreeTest, require_that_apply_works)
         additions.push_back(KeyDataType(1000 + i, "big"));
         apply_tree_mutations(s, root, additions, removals);
         EXPECT_EQ(5u + i, s.size(root));
-        EXPECT_EQ(5u + i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(5u + i <= TreeStore::clusterLimit,  s.isSmallArray(root));
     }
 
     additions.clear();
@@ -1396,7 +1394,7 @@ TEST_F(BTreeTest, require_that_apply_works)
         removals.push_back(1000 +i);
         apply_tree_mutations(s, root, additions, removals);
         EXPECT_EQ(100 - i, s.size(root));
-        EXPECT_EQ(100 - i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(100 - i <= TreeStore::clusterLimit,  s.isSmallArray(root));
     }
     EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
