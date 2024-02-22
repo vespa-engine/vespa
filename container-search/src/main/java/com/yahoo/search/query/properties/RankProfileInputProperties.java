@@ -42,13 +42,6 @@ public class RankProfileInputProperties extends Properties {
         if (RankFeatures.isFeatureName(name.toString())) {
             try {
                 var expectedType = typeOf(name);
-                System.err.println("setting rank feature '" + name + "' -> " + value + " :: " + value.getClass());
-                if (expectedType != null && expectedType.declaredString()) {
-                    System.err.println("expected type: declared string");
-                    var e = new IllegalArgumentException("foo");
-                    e.fillInStackTrace();
-                    e.printStackTrace();
-                }
                 if (expectedType != null && ! expectedType.declaredString()) {
                     value = tensorConverter.convertTo(expectedType.tensorType(),
                                                       name.last(),
