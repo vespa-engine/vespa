@@ -3015,6 +3015,7 @@
     ],
     "methods" : [
       "public abstract boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
+      "public byte[] encode(int, com.yahoo.messagebus.Routable)",
       "public abstract com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
     ],
     "fields" : [ ]
