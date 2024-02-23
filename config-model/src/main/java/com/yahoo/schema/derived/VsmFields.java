@@ -60,7 +60,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
     private void derive(StreamingDocumentType document, SDField field, boolean isStructField, boolean ignoreAttributeAspect) {
         if (field.usesStructOrMap()) {
             if (GeoPos.isAnyPos(field)) {
-                StreamingField streamingField = new StreamingField(field, isStructField, true);
+                var streamingField = new StreamingField(field, isStructField, true);
                 addField(streamingField.getName(), streamingField);
                 addFieldToIndices(document, field.getName(), streamingField);
             }
@@ -71,7 +71,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             if (! (field.doesIndexing() || field.doesSummarying() || isAttributeField(field, isStructField, ignoreAttributeAspect)) )
                 return;
 
-            StreamingField streamingField = new StreamingField(field, isStructField, ignoreAttributeAspect);
+            var streamingField = new StreamingField(field, isStructField, ignoreAttributeAspect);
             addField(streamingField.getName(),streamingField);
             deriveIndices(document, field, streamingField, isStructField, ignoreAttributeAspect);
         }
