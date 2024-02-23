@@ -19,6 +19,7 @@ import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.messagebus.Routable;
 import com.yahoo.vdslib.DocumentSummary;
@@ -225,7 +226,7 @@ abstract class RoutableFactories80 {
 
     private static ByteBuffer serializeUpdate(DocumentUpdate update) {
         var buf = new GrowableByteBuffer();
-        update.serialize(buf);
+        update.serialize(DocumentSerializerFactory.createHead(buf));
         buf.flip();
         return buf.getByteBuffer();
     }
