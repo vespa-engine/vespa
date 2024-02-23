@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_crc_test_app TEST
     crc_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_crc_test_app COMMAND vespalib_crc_test_app boost)
