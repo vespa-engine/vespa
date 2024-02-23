@@ -75,14 +75,15 @@ public class MinimalQueryInserter extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
+        if (query.properties().get(YQL) == null) return execution.search(query);
+        Result errorResult;
         try {
-            if (query.properties().get(YQL) == null) return execution.search(query);
-            Result result = insertQuery(query, ParserEnvironment.fromExecutionContext(execution.context()));
-            return (result == null) ? execution.search(query) : result;
+            errorResult = insertQuery(query, ParserEnvironment.fromExecutionContext(execution.context()));
         }
         catch (IllegalArgumentException e) {
             throw new IllegalInputException("Illegal YQL query", e);
         }
+        return (errorResult == null) ? execution.search(query) : errorResult;
     }
 
     private static Result insertQuery(Query query, ParserEnvironment env) {
