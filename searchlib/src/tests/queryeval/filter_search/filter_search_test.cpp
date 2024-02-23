@@ -49,7 +49,7 @@ concept ChildCollector = requires(T a, std::unique_ptr<Blueprint> bp) {
 struct DefaultBlueprint : Blueprint {
     FlowStats calculate_flow_stats(uint32_t) const override { abort(); }
     void optimize(Blueprint* &, OptimizePass) override { abort(); }
-    void sort(bool, bool) override { abort(); }
+    double sort(InFlow, const Options &) override { abort(); }
     const State &getState() const override { abort(); }
     void fetchPostings(const ExecuteInfo &) override { abort(); }
     void freeze() override { abort(); }

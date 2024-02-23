@@ -200,7 +200,8 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 void
 Query::optimize(bool sort_by_cost)
 {
-    _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), true, sort_by_cost);
+    auto opts = Blueprint::Options::all().sort_by_cost(sort_by_cost);
+    _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), true, opts);
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
 
@@ -222,7 +223,8 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
     }
     // optimized order may change after accounting for global filter:
     trace.addEvent(5, "Optimize query execution plan to account for global filter");
-    _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), true, sort_by_cost);
+    auto opts = Blueprint::Options::all().sort_by_cost(sort_by_cost);
+    _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), true, opts);
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
     fetchPostings(ExecuteInfo::create(true, 1.0, requestContext.getDoom(), requestContext.thread_bundle()));

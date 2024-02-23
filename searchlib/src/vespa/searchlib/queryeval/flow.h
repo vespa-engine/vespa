@@ -11,6 +11,23 @@
 
 namespace search::queryeval {
 
+// Encapsulate information about strictness and in-flow in a structure
+// for convenient parameter passing. We do not need an explicit value
+// in the strict case since strict basically means the receiving end
+// will eventually decide the actual flow. We use a rate of 1.0 for
+// strict flow to indicate that the corpus is not reduced externally.
+class InFlow {
+private:
+    double _value;
+public:
+    constexpr InFlow(bool strict, double rate) noexcept
+      : _value(strict ? -1.0 : std::max(rate, 0.0)) {}
+    constexpr InFlow(bool strict) noexcept : InFlow(strict, 1.0) {}
+    constexpr InFlow(double rate) noexcept : InFlow(false, rate) {}
+    constexpr bool strict() noexcept { return _value < 0.0; }
+    constexpr double rate() noexcept { return strict() ? 1.0 : _value; }
+};
+
 struct FlowStats {
     double estimate;
     double cost;
@@ -122,16 +139,13 @@ void sort_partial(ADAPTER adapter, T &children, size_t offset) {
 
 template <typename ADAPTER, typename T, typename F>
 double ordered_cost_of(ADAPTER adapter, const T &children, F flow) {
-    double cost = 0.0;
+    double total_cost = 0.0;
     for (const auto &child: children) {
-        if (flow.strict()) {
-            cost += adapter.strict_cost(child);
-        } else {
-            cost += flow.flow() * adapter.cost(child);
-        }
+        double child_cost = flow.strict() ? adapter.strict_cost(child) : (flow.flow() * adapter.cost(child));
+        flow.update_cost(total_cost, child_cost);
         flow.add(adapter.estimate(child));
     }
-    return cost;
+    return total_cost;
 }
 
 template <typename ADAPTER, typename T>
@@ -188,8 +202,7 @@ private:
     bool _strict;
     bool _first;
 public:
-    AndFlow(bool strict) noexcept : _flow(1.0), _strict(strict), _first(true) {}
-    AndFlow(double in) noexcept : _flow(in), _strict(false), _first(true) {}
+    AndFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()), _first(true) {}
     void add(double est) noexcept {
         _flow *= est;
         _first = false;
@@ -202,6 +215,9 @@ public:
     }
     double estimate() const noexcept {
         return _first ? 0.0 : _flow;
+    }
+    void update_cost(double &total_cost, double child_cost) noexcept {
+        total_cost += child_cost;
     }
     static void sort(auto adapter, auto &children, bool strict) {
         flow::sort<flow::MinAndCost>(adapter, children);
@@ -225,8 +241,7 @@ private:
     bool _strict;
     bool _first;
 public:
-    OrFlow(bool strict) noexcept : _flow(1.0), _strict(strict), _first(true) {}
-    OrFlow(double in) noexcept : _flow(in), _strict(false), _first(true) {}
+    OrFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()), _first(true) {}
     void add(double est) noexcept {
         _flow *= (1.0 - est);
         _first = false;
@@ -239,6 +254,9 @@ public:
     }
     double estimate() const noexcept {
         return _first ? 0.0 : (1.0 - _flow);
+    }
+    void update_cost(double &total_cost, double child_cost) noexcept {
+        total_cost += child_cost;
     }
     static void sort(auto adapter, auto &children, bool strict) {
         if (!strict) {
@@ -256,8 +274,7 @@ private:
     bool _strict;
     bool _first;
 public:
-    AndNotFlow(bool strict) noexcept : _flow(1.0), _strict(strict), _first(true) {}
-    AndNotFlow(double in) noexcept : _flow(in), _strict(false), _first(true) {}
+    AndNotFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()), _first(true) {}
     void add(double est) noexcept {
         _flow *= _first ? est : (1.0 - est);
         _first = false;
@@ -271,6 +288,9 @@ public:
     double estimate() const noexcept {
         return _first ? 0.0 : _flow;
     }
+    void update_cost(double &total_cost, double child_cost) noexcept {
+        total_cost += child_cost;
+    }
     static void sort(auto adapter, auto &children, bool) {
         flow::sort_partial<flow::MinOrCost>(adapter, children, 1);
     }
@@ -282,21 +302,18 @@ public:
 using FlowCalc = std::function<double(double)>;
 
 template <typename FLOW>
-FlowCalc flow_calc(bool strict, double non_strict_rate) {
-    FLOW flow = strict ? FLOW(true) : FLOW(non_strict_rate);
-    return [flow](double est) mutable noexcept {
+FlowCalc flow_calc(InFlow in_flow) {
+    return [flow=FLOW(in_flow)](double est) mutable noexcept {
                double next_flow = flow.flow();
                flow.add(est);
                return next_flow;
            };
 }
 
-inline FlowCalc first_flow_calc(bool strict, double flow) {
-    if (strict) {
-        flow = 1.0;
-    }
+inline FlowCalc first_flow_calc(InFlow in_flow) {
     bool first = true;
-    return [flow,first](double est) mutable noexcept {
+    double flow = in_flow.rate();
+    return [first,flow](double est) mutable noexcept {
                double next_flow = flow;
                if (first) {
                    flow *= est;
@@ -306,10 +323,8 @@ inline FlowCalc first_flow_calc(bool strict, double flow) {
            };
 }
 
-inline FlowCalc full_flow_calc(bool strict, double flow) {
-    if (strict) {
-        flow = 1.0;
-    }
+inline FlowCalc full_flow_calc(InFlow in_flow) {
+    double flow = in_flow.rate();
     return [flow](double) noexcept { return flow; };
 }
 

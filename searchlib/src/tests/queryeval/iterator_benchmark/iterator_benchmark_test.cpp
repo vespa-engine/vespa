@@ -342,7 +342,8 @@ non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, dou
 BenchmarkResult
 benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict, double filter_hit_ratio)
 {
-    blueprint->sort(strict, true);
+    auto opts = Blueprint::Options::all();
+    blueprint->sort(strict, opts);
     blueprint->fetchPostings(ExecuteInfo::createForTest(strict));
     // Note: All blueprints get the same TermFieldMatchData instance.
     //       This is OK as long as we don't do unpacking and only use 1 thread.

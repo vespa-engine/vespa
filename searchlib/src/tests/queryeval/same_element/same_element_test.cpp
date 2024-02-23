@@ -46,7 +46,8 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResul
 }
 
 Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
-    Blueprint::UP result = Blueprint::optimize_and_sort(std::move(bp), true, true);
+    auto opts = Blueprint::Options::all();
+    Blueprint::UP result = Blueprint::optimize_and_sort(std::move(bp), true, opts);
     result->fetchPostings(ExecuteInfo::createForTest(strict));
     result->freeze();
     return result;
