@@ -93,17 +93,12 @@ final class RoutableRepository {
             log.log(Level.SEVERE,"Can not encode routable type " + type + " (version " + version + "). Only major version 5 and up supported.");
             return new byte[0];
         }
-        DocumentSerializer out= DocumentSerializerFactory.createHead(new GrowableByteBuffer(8192));
-
-        out.putInt(null, type);
-        if (!factory.encode(obj, out)) {
+        byte[] ret = factory.encode(type, obj);
+        if (ret == null) {
             log.log(Level.SEVERE, "Routable factory " + factory.getClass().getName() + " failed to serialize " +
                                     "routable of type " + type + " (version " + version + ").");
             return new byte[0];
         }
-        byte[] ret = new byte[out.getBuf().position()];
-        out.getBuf().rewind();
-        out.getBuf().get(ret);
         return ret;
     }
 

@@ -3,6 +3,8 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.messagebus.Routable;
 
 /**
@@ -29,6 +31,32 @@ public interface RoutableFactory {
      * @return True if the routable could be encoded.
      */
     boolean encode(Routable obj, DocumentSerializer out);
+
+    /**
+     * <p>Encode a message type and object payload to a byte array. This is an alternative,
+     * optional method to {@link #encode(Routable, DocumentSerializer)}, but which defers all
+     * buffer management to the callee. This allows protocol implementations to make more
+     * efficient use of memory, as they do not have to deal with DocumentSerializer indirections.</p>
+     *
+     * <p>Implementations <strong>must</strong> ensure that the first 4 bytes of the returned
+     * byte array contain a 32-bit integer (in network order) equal to the provided msgType value.</p>
+     *
+     * @param msgType A positive integer indicating the concrete message type of obj.
+     * @param obj The message to encode.
+     * @return A byte buffer encapsulating the message type and the serialized representation
+     *         of obj, or null if encoding failed.
+     */
+    default byte[] encode(int msgType, Routable obj) {
+        var out = DocumentSerializerFactory.createHead(new GrowableByteBuffer(8192));
+        out.putInt(null, msgType);
+        if (!encode(obj, out)) {
+            return null;
+        }
+        byte[] ret = new byte[out.getBuf().position()];
+        out.getBuf().rewind();
+        out.getBuf().get(ret);
+        return ret;
+    }
 
     /**
      * <p>This method decodes the given byte buffer to a routable.</p> <p>Return false to signal failure.</p> <p>This
