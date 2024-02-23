@@ -79,7 +79,7 @@ public class CJKSearcher extends Searcher {
             for (ListIterator<Item> i = ((CompositeItem) root).getItemIterator(); i.hasNext();) {
                 Item item = i.next();
                 Item transformedItem = transform(item);
-                if (item != transformedItem)
+                if (item != transformedItem && ((CompositeItem) root).acceptsItemsOfType(transformedItem.getItemType()))
                     i.set(transformedItem);
             }
             return root;

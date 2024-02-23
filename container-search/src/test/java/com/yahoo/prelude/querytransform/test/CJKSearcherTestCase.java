@@ -18,6 +18,8 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.searchchain.Execution;
 
+import com.yahoo.search.test.QueryTestCase;
+import com.yahoo.search.yql.MinimalQueryInserter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,6 +53,13 @@ public class CJKSearcherTestCase {
         // While "efg" will be segmented into one of the standard options, "e" "fg"
         assertTransformed("efg", "SAND e fg", Query.Type.ALL, Language.CHINESE_SIMPLIFIED, Language.CHINESE_TRADITIONAL,
                 TestLinguistics.INSTANCE);
+    }
+
+    @Test
+    public void testEquivAndChinese() {
+        Query query = new Query(QueryTestCase.httpEncode("search?yql=select * from music-only where default contains equiv('a', 'b c') or default contains '东'"));
+        new Execution(new Chain<>(new MinimalQueryInserter(), new CJKSearcher()), Execution.Context.createContextStub()).search(query);
+        assertEquals("OR (EQUIV default:a default:'b c') default:东", query.getModel().getQueryTree().toString());
     }
 
     private void assertTransformed(String queryString, String expected, Query.Type mode, Language actualLanguage,

@@ -1116,9 +1116,7 @@ public class YqlParserTestCase {
     void testBackslash() {
         {
             String queryString = "select * from testtype where title contains \"\\\\\""; // Java escaping * YQL escaping
-
             QueryTree query = parse(queryString);
-
             assertEquals("title:\\", query.toString());
         }
 
