@@ -57,7 +57,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         }
     }
 
-    private void derive(StreamingDocumentType document, SDField field, boolean isStructField, boolean ignoreAttributAspect) {
+    private void derive(StreamingDocumentType document, SDField field, boolean isStructField, boolean ignoreAttributeAspect) {
         if (field.usesStructOrMap()) {
             if (GeoPos.isAnyPos(field)) {
                 StreamingField streamingField = new StreamingField(field, isStructField, true);
@@ -65,22 +65,22 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
                 addFieldToIndices(document, field.getName(), streamingField);
             }
             for (SDField structField : field.getStructFields()) {
-                derive(document, structField, true, ignoreAttributAspect || GeoPos.isAnyPos(field)); // Recursion
+                derive(document, structField, true, ignoreAttributeAspect || GeoPos.isAnyPos(field)); // Recursion
             }
         } else {
-            if (! (field.doesIndexing() || field.doesSummarying() || isAttributeField(field, isStructField, ignoreAttributAspect)) )
+            if (! (field.doesIndexing() || field.doesSummarying() || isAttributeField(field, isStructField, ignoreAttributeAspect)) )
                 return;
 
-            StreamingField streamingField = new StreamingField(field, isStructField, ignoreAttributAspect);
+            StreamingField streamingField = new StreamingField(field, isStructField, ignoreAttributeAspect);
             addField(streamingField.getName(),streamingField);
-            deriveIndices(document, field, streamingField, isStructField, ignoreAttributAspect);
+            deriveIndices(document, field, streamingField, isStructField, ignoreAttributeAspect);
         }
     }
 
-    private void deriveIndices(StreamingDocumentType document, SDField field, StreamingField streamingField, boolean isStructField, boolean ignoreAttributAspect) {
+    private void deriveIndices(StreamingDocumentType document, SDField field, StreamingField streamingField, boolean isStructField, boolean ignoreAttributeAspect) {
         if (field.doesIndexing()) {
             addFieldToIndices(document, field.getName(), streamingField);
-        } else if (isAttributeField(field, isStructField, ignoreAttributAspect)) {
+        } else if (isAttributeField(field, isStructField, ignoreAttributeAspect)) {
             for (String indexName : field.getAttributes().keySet()) {
                 addFieldToIndices(document, indexName, streamingField);
             }
@@ -116,11 +116,11 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         }
     }
 
-    private static boolean isAttributeField(ImmutableSDField field, boolean isStructField, boolean ignoreAttributAspect) {
+    private static boolean isAttributeField(ImmutableSDField field, boolean isStructField, boolean ignoreAttributeAspect) {
         if (field.doesAttributing()) {
             return true;
         }
-        if (!isStructField || ignoreAttributAspect) {
+        if (!isStructField || ignoreAttributeAspect) {
             return false;
         }
         var attribute = field.getAttributes().get(field.getName());
@@ -182,8 +182,8 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
 
         }
 
-        public StreamingField(SDField field, boolean isStructField, boolean ignoreAttributAspect) {
-            this(field.getName(), field.getDataType(), field.getMatching(), isAttributeField(field, isStructField, ignoreAttributAspect), getDistanceMetric(field));
+        public StreamingField(SDField field, boolean isStructField, boolean ignoreAttributeAspect) {
+            this(field.getName(), field.getDataType(), field.getMatching(), isAttributeField(field, isStructField, ignoreAttributeAspect), getDistanceMetric(field));
         }
 
         private StreamingField(String name, DataType sourceType, Matching matching, boolean isAttribute, Attribute.DistanceMetric distanceMetric) {
