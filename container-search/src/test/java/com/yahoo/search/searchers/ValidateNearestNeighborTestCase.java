@@ -82,7 +82,7 @@ public class ValidateNearestNeighborTestCase {
     private static SchemaInfo createSchemaInfo() {
         List<Schema> schemas = new ArrayList<>();
         RankProfile.Builder common = new RankProfile.Builder("default")
-                                             .addInput("query(qvector)", TensorType.fromSpec("tensor<float>(x[3])"));
+                                             .addInput("query(qvector)", RankProfile.InputType.fromSpec("tensor<float>(x[3])"));
         schemas.add(new Schema.Builder("document").add(common.build()).build());
         List<Cluster> clusters = new ArrayList<>();
         clusters.add(new Cluster.Builder("test").addSchema("document").build());
