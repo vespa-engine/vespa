@@ -1,58 +1,59 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using namespace vespalib;
 using compress::Integer;
 
-class CompressTest : public TestApp
+class CompressTest : public ::testing::Test
 {
-private:
+protected:
+    CompressTest();
+    ~CompressTest() override;
     void verifyPositiveNumber(uint64_t n, const uint8_t * expected, size_t sz);
     void verifyNumber(int64_t n, const uint8_t * expected, size_t sz);
-    void requireThatPositiveNumberCompressCorrectly();
-    void requireThatNumberCompressCorrectly();
-public:
-    int Main() override;
 };
+
+CompressTest::CompressTest() = default;
+CompressTest::~CompressTest() = default;
 
 void
 CompressTest::verifyPositiveNumber(uint64_t n, const uint8_t * expected, size_t sz) {
     uint8_t buf[8];
-    EXPECT_EQUAL(sz, Integer::compressPositive(n, buf));
-    EXPECT_EQUAL(sz, Integer::compressedPositiveLength(n));
+    EXPECT_EQ(sz, Integer::compressPositive(n, buf));
+    EXPECT_EQ(sz, Integer::compressedPositiveLength(n));
     for (size_t i(0); i < sz; i++) {
-        EXPECT_EQUAL(expected[i], buf[i]);
+        EXPECT_EQ(expected[i], buf[i]);
     }
     EXPECT_FALSE(Integer::check_decompress_positive_space(expected, 0u));
     EXPECT_FALSE(Integer::check_decompress_positive_space(expected, sz - 1));
     EXPECT_TRUE(Integer::check_decompress_positive_space(expected, sz));
     uint64_t v(0);
-    EXPECT_EQUAL(sz, Integer::decompressPositive(v, expected));
-    EXPECT_EQUAL(n, v);
+    EXPECT_EQ(sz, Integer::decompressPositive(v, expected));
+    EXPECT_EQ(n, v);
 }
 
 void
 CompressTest::verifyNumber(int64_t n, const uint8_t * expected, size_t sz) {
     uint8_t buf[8];
-    EXPECT_EQUAL(sz, Integer::compress(n, buf));
-    EXPECT_EQUAL(sz, Integer::compressedLength(n));
+    EXPECT_EQ(sz, Integer::compress(n, buf));
+    EXPECT_EQ(sz, Integer::compressedLength(n));
     for (size_t i(0); i < sz; i++) {
-        EXPECT_EQUAL(expected[i], buf[i]);
+        EXPECT_EQ(expected[i], buf[i]);
     }
     EXPECT_FALSE(Integer::check_decompress_space(expected, 0u));
     EXPECT_FALSE(Integer::check_decompress_space(expected, sz - 1));
     EXPECT_TRUE(Integer::check_decompress_space(expected, sz));
     int64_t v(0);
-    EXPECT_EQUAL(sz, Integer::decompress(v, expected));
-    EXPECT_EQUAL(n, v);
+    EXPECT_EQ(sz, Integer::decompress(v, expected));
+    EXPECT_EQ(n, v);
 }
 
 #define VERIFY_POSITIVE(n, p) verifyPositiveNumber(n, p, sizeof(p))
-void
-CompressTest::requireThatPositiveNumberCompressCorrectly()
+
+TEST_F(CompressTest, require_that_positive_number_compress_correctly)
 {
     const uint8_t zero[1] = {0};
     VERIFY_POSITIVE(0, zero);
@@ -73,19 +74,19 @@ CompressTest::requireThatPositiveNumberCompressCorrectly()
         VERIFY_POSITIVE(0x40000000, x40000000);
         EXPECT_TRUE(false);
     } catch (const IllegalArgumentException & e)  {
-        EXPECT_EQUAL("Number '1073741824' too big, must extend encoding", e.getMessage());
+        EXPECT_EQ("Number '1073741824' too big, must extend encoding", e.getMessage());
     }
     try {
         VERIFY_POSITIVE(-1, x40000000);
         EXPECT_TRUE(false);
     } catch (const IllegalArgumentException & e)  {
-        EXPECT_EQUAL("Number '18446744073709551615' too big, must extend encoding", e.getMessage());
+        EXPECT_EQ("Number '18446744073709551615' too big, must extend encoding", e.getMessage());
     }
 }
 
 #define VERIFY_NUMBER(n, p) verifyNumber(n, p, sizeof(p))
-void
-CompressTest::requireThatNumberCompressCorrectly()
+
+TEST_F(CompressTest, require_that_number_compress_correctly)
 {
     const uint8_t zero[1] = {0};
     VERIFY_NUMBER(0, zero);
@@ -106,7 +107,7 @@ CompressTest::requireThatNumberCompressCorrectly()
         VERIFY_NUMBER(0x20000000, x20000000);
         EXPECT_TRUE(false);
     } catch (const IllegalArgumentException & e)  {
-        EXPECT_EQUAL("Number '536870912' too big, must extend encoding", e.getMessage());
+        EXPECT_EQ("Number '536870912' too big, must extend encoding", e.getMessage());
     }
     const uint8_t mzero[1] = {0x81};
     VERIFY_NUMBER(-1, mzero);
@@ -127,19 +128,8 @@ CompressTest::requireThatNumberCompressCorrectly()
         VERIFY_NUMBER(-0x20000000, mx20000000);
         EXPECT_TRUE(false);
     } catch (const IllegalArgumentException & e)  {
-        EXPECT_EQUAL("Number '-536870912' too big, must extend encoding", e.getMessage());
+        EXPECT_EQ("Number '-536870912' too big, must extend encoding", e.getMessage());
     }
 }
 
-int
-CompressTest::Main()
-{
-    TEST_INIT("compress_test");
-
-    requireThatPositiveNumberCompressCorrectly();
-    requireThatNumberCompressCorrectly();
-
-    TEST_DONE();
-}
-
-TEST_APPHOOK(CompressTest)
+GTEST_MAIN_RUN_ALL_TESTS()
