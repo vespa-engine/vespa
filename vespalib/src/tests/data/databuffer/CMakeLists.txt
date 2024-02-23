@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_data_databuffer_test_app TEST
     databuffer_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_data_databuffer_test_app COMMAND vespalib_data_databuffer_test_app)
