@@ -121,6 +121,7 @@ Blueprint::Blueprint() noexcept
       _flow_stats(0.0, 0.0, 0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
+      _force_strict(false),
       _frozen(false)
 {
 }
@@ -481,12 +482,6 @@ IntermediateBlueprint::count_termwise_nodes(const UnpackInfo &unpack) const
     return termwise_nodes;
 }
 
-FlowCalc
-IntermediateBlueprint::make_flow_calc(bool strict, double flow) const
-{
-    return full_flow_calc(strict, flow);
-}
-
 IntermediateBlueprint::IndexList
 IntermediateBlueprint::find(const IPredicate & pred) const
 {
@@ -574,13 +569,17 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
     maybe_eliminate_self(self, get_replacement());
 }
 
-void
-IntermediateBlueprint::sort(bool strict, bool sort_by_cost)
+double
+IntermediateBlueprint::sort(InFlow in_flow, const Options &opts)
 {
-    sort(_children, strict, sort_by_cost);
+    auto flow_calc = make_flow_calc(in_flow);
+    sort(_children, in_flow.strict(), opts.sort_by_cost());
     for (size_t i = 0; i < _children.size(); ++i) {
-        _children[i]->sort(strict && inheritStrict(i), sort_by_cost);
+        double next_rate = flow_calc(_children[i]->estimate());
+        _children[i]->sort(InFlow(in_flow.strict() && inheritStrict(i), next_rate), opts);
     }
+    // TODO: better cost estimate (due to known in-flow and eagerness)
+    return in_flow.strict() ? strict_cost() : in_flow.rate() * cost();
 }
 
 void
@@ -647,7 +646,7 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    FlowCalc flow_calc = make_flow_calc(execInfo.is_strict(), execInfo.hit_rate());
+    FlowCalc flow_calc = make_flow_calc(InFlow(execInfo.is_strict(), execInfo.hit_rate()));
     for (size_t i = 0; i < _children.size(); ++i) {
         Blueprint & child = *_children[i];
         double nextHitRate = flow_calc(child.estimate());
@@ -766,9 +765,11 @@ LeafBlueprint::optimize(Blueprint* &self, OptimizePass pass)
     maybe_eliminate_self(self, get_replacement());
 }
 
-void
-LeafBlueprint::sort(bool, bool)
+double
+LeafBlueprint::sort(InFlow in_flow, const Options &)
 {
+    // TODO: better cost estimate (due to known in-flow and eagerness)
+    return in_flow.strict() ? strict_cost() : in_flow.rate() * cost();
 }
 
 void

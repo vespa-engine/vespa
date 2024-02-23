@@ -229,7 +229,8 @@ Test::testNearSearch(MyQuery &query, uint32_t matchId)
         near_b->addChild(query.getTerm(i).make_blueprint(fieldId, i));
     }
     bp->setDocIdLimit(1000);
-    bp = search::queryeval::Blueprint::optimize_and_sort(std::move(bp), true, true);
+    auto opts = search::queryeval::Blueprint::Options::all();
+    bp = search::queryeval::Blueprint::optimize_and_sort(std::move(bp), true, opts);
     bp->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
     search::fef::MatchData::UP md(layout.createMatchData());
     search::queryeval::SearchIterator::UP near = bp->createSearch(*md, true);

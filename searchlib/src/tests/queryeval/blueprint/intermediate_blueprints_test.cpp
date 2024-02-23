@@ -132,7 +132,8 @@ TEST("test AndNot Blueprint") {
 
 template <typename BP>
 void optimize(std::unique_ptr<BP> &ref, bool strict) {
-    auto optimized = Blueprint::optimize_and_sort(std::move(ref), strict, true);
+    auto opts = Blueprint::Options::all();
+    auto optimized = Blueprint::optimize_and_sort(std::move(ref), strict, opts);
     ref.reset(dynamic_cast<BP*>(optimized.get()));
     ASSERT_TRUE(ref);
     optimized.release();
@@ -568,9 +569,10 @@ optimize_and_compare(Blueprint::UP top, Blueprint::UP expect, bool strict = true
     top->setDocIdLimit(1000);
     expect->setDocIdLimit(1000);
     TEST_DO(compare(*top, *expect, false));
-    top = Blueprint::optimize_and_sort(std::move(top), strict, sort_by_cost);
+    auto opts = Blueprint::Options::all().sort_by_cost(sort_by_cost);
+    top = Blueprint::optimize_and_sort(std::move(top), strict, opts);
     TEST_DO(compare(*top, *expect, true));
-    expect = Blueprint::optimize_and_sort(std::move(expect), strict, sort_by_cost);
+    expect = Blueprint::optimize_and_sort(std::move(expect), strict, opts);
     TEST_DO(compare(*expect, *top, true));
 }
 
@@ -699,11 +701,12 @@ TEST("test empty root node optimization and safeness") {
 
     //-------------------------------------------------------------------------
     auto expect_up = std::make_unique<EmptyBlueprint>();
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top1), true, true), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top2), true, true), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top3), true, true), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top4), true, true), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top5), true, true), true);
+    auto opts = Blueprint::Options::all();
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top1), true, opts), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top2), true, opts), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top3), true, opts), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top4), true, opts), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top5), true, opts), true);
 }
 
 TEST("and with one empty child is optimized away") {
@@ -711,7 +714,8 @@ TEST("and with one empty child is optimized away") {
     Blueprint::UP top = ap((new SourceBlenderBlueprint(*selector))->
                            addChild(ap(MyLeafSpec(10).create())).
                            addChild(addLeafs(std::make_unique<AndBlueprint>(), {{0, true}, 10, 20})));
-    top = Blueprint::optimize_and_sort(std::move(top), true, true);
+    auto opts = Blueprint::Options::all();
+    top = Blueprint::optimize_and_sort(std::move(top), true, opts);
     Blueprint::UP expect_up(ap((new SourceBlenderBlueprint(*selector))->
                           addChild(ap(MyLeafSpec(10).create())).
                           addChild(std::make_unique<EmptyBlueprint>())));
@@ -888,8 +892,9 @@ TEST("require that replaced blueprints retain source id") {
                              addChild(ap(MyLeafSpec(30).create()->setSourceId(55)))));
     Blueprint::UP expect2_up(ap(MyLeafSpec(30).create()->setSourceId(42)));
     //-------------------------------------------------------------------------
-    top1_up = Blueprint::optimize_and_sort(std::move(top1_up), true, true);
-    top2_up = Blueprint::optimize_and_sort(std::move(top2_up), true, true);
+    auto opts = Blueprint::Options::all();
+    top1_up = Blueprint::optimize_and_sort(std::move(top1_up), true, opts);
+    top2_up = Blueprint::optimize_and_sort(std::move(top2_up), true, opts);
     compare(*expect1_up, *top1_up, true);
     compare(*expect2_up, *top2_up, true);
     EXPECT_EQUAL(13u, top1_up->getSourceId());
@@ -1204,7 +1209,8 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
 TEST("require that ANDNOT without children is optimized to empty search") {
     Blueprint::UP top_up = std::make_unique<AndNotBlueprint>();
     auto expect_up = std::make_unique<EmptyBlueprint>();
-    top_up = Blueprint::optimize_and_sort(std::move(top_up), true, true);
+    auto opts = Blueprint::Options::all();
+    top_up = Blueprint::optimize_and_sort(std::move(top_up), true, opts);
     compare(*expect_up, *top_up, true);
 }
 

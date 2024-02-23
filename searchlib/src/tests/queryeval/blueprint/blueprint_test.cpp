@@ -17,13 +17,15 @@ using namespace search::fef;
 
 namespace {
 
+auto opts = Blueprint::Options::all();
+
 //-----------------------------------------------------------------------------
 
 class MyOr : public IntermediateBlueprint
 {
 private:
-    FlowCalc make_flow_calc(bool strict, double flow) const override {
-        return flow_calc<OrFlow>(strict, flow);
+    FlowCalc make_flow_calc(InFlow in_flow) const override {
+        return flow_calc<OrFlow>(in_flow);
     }
 public:
     FlowStats calculate_flow_stats(uint32_t) const final {
@@ -451,7 +453,7 @@ TEST_F("testChildAndNotCollapsing", Fixture)
                               );
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, true);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, opts);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -491,7 +493,7 @@ TEST_F("testChildAndCollapsing", Fixture)
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, true);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, opts);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -530,10 +532,9 @@ TEST_F("testChildOrCollapsing", Fixture)
                               );
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    // we sort non-strict here since the default costs of 1/est for
-    // non-strict/strict leaf iterators makes the order of iterators
-    // under a strict OR irrelevant.
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), false, true);
+    // we sort non-strict here since a strict OR does not have a
+    // deterministic sort order.
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), false, opts);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -577,7 +578,7 @@ TEST_F("testChildSorting", Fixture)
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, true);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, opts);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 

@@ -55,6 +55,29 @@ public:
 
     enum class OptimizePass { FIRST, LAST };
 
+    class Options {
+    private:
+        bool _sort_by_cost;
+        bool _allow_force_strict;
+    public:
+        constexpr Options() noexcept 
+          : _sort_by_cost(false),
+            _allow_force_strict(false) {}
+        constexpr bool sort_by_cost() const noexcept { return _sort_by_cost; }
+        constexpr Options &sort_by_cost(bool value) noexcept {
+            _sort_by_cost = value;
+            return *this;
+        }
+        constexpr bool allow_force_strict() const noexcept { return _allow_force_strict; }
+        constexpr Options &allow_force_strict(bool value) noexcept {
+            _allow_force_strict = value;
+            return *this;
+        }
+        static constexpr Options all() noexcept {
+            return Options().sort_by_cost(true).allow_force_strict(true);
+        }
+    };
+
     struct HitEstimate {
         uint32_t estHits;
         bool     empty;
@@ -182,6 +205,7 @@ private:
     FlowStats  _flow_stats;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
+    bool       _force_strict;
     bool       _frozen;
 
 protected:
@@ -224,10 +248,10 @@ public:
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
     static Blueprint::UP optimize(Blueprint::UP bp);
-    virtual void sort(bool strict, bool sort_by_cost) = 0;
-    static Blueprint::UP optimize_and_sort(Blueprint::UP bp, bool strict, bool sort_by_cost) {
+    virtual double sort(InFlow in_flow, const Options &opts) = 0;
+    static Blueprint::UP optimize_and_sort(Blueprint::UP bp, InFlow in_flow, const Options &opts) {
         auto result = optimize(std::move(bp));
-        result->sort(strict, sort_by_cost);
+        result->sort(in_flow, opts);
         return result;
     }
     virtual void optimize(Blueprint* &self, OptimizePass pass) = 0;
@@ -362,7 +386,7 @@ private:
     bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
-    virtual FlowCalc make_flow_calc(bool strict, double flow) const = 0;
+    virtual FlowCalc make_flow_calc(InFlow in_flow) const = 0;
 
 protected:
     // returns an empty collection if children have empty or
@@ -385,7 +409,7 @@ public:
     void setDocIdLimit(uint32_t limit) noexcept final;
 
     void optimize(Blueprint* &self, OptimizePass pass) final;
-    void sort(bool strict, bool sort_by_cost) override;
+    double sort(InFlow in_flow, const Options &opts) override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
@@ -422,7 +446,7 @@ private:
     State _state;
 protected:
     void optimize(Blueprint* &self, OptimizePass pass) final;
-    void sort(bool strict, bool sort_by_cost) override;
+    double sort(InFlow in_flow, const Options &opts) override;
     void setEstimate(HitEstimate est) {
         _state.estimate(est);
         notifyChange();
