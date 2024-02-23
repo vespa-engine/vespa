@@ -16,7 +16,7 @@ class SortBenchmark : public ::testing::Test
     char** _argv;
 public:
     SortBenchmark(int argc, char **argv);
-    ~SortBenchmark();
+    ~SortBenchmark() override;
     void TestBody() override;
 protected:
     template<typename T>
