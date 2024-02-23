@@ -17,6 +17,7 @@ import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.GeoPos;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.Matching;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDDocumentType;
@@ -52,34 +53,34 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             doctypes.put(document.getName(), docType);
         }
         for (Object o : document.fieldSet()) {
-            derive(docType, (SDField) o);
+            derive(docType, (SDField) o, false, false);
         }
     }
 
-    private void derive(StreamingDocumentType document, SDField field) {
+    private void derive(StreamingDocumentType document, SDField field, boolean isStructField, boolean ignoreAttributAspect) {
         if (field.usesStructOrMap()) {
             if (GeoPos.isAnyPos(field)) {
-                StreamingField streamingField = new StreamingField(field);
+                StreamingField streamingField = new StreamingField(field, isStructField, true);
                 addField(streamingField.getName(), streamingField);
                 addFieldToIndices(document, field.getName(), streamingField);
             }
             for (SDField structField : field.getStructFields()) {
-                derive(document, structField); // Recursion
+                derive(document, structField, true, ignoreAttributAspect || GeoPos.isAnyPos(field)); // Recursion
             }
         } else {
-            if (! (field.doesIndexing() || field.doesSummarying() || field.doesAttributing()) )
+            if (! (field.doesIndexing() || field.doesSummarying() || isAttributeField(field, isStructField, ignoreAttributAspect)) )
                 return;
 
-            StreamingField streamingField = new StreamingField(field);
+            StreamingField streamingField = new StreamingField(field, isStructField, ignoreAttributAspect);
             addField(streamingField.getName(),streamingField);
-            deriveIndices(document, field, streamingField);
+            deriveIndices(document, field, streamingField, isStructField, ignoreAttributAspect);
         }
     }
 
-    private void deriveIndices(StreamingDocumentType document, SDField field, StreamingField streamingField) {
+    private void deriveIndices(StreamingDocumentType document, SDField field, StreamingField streamingField, boolean isStructField, boolean ignoreAttributAspect) {
         if (field.doesIndexing()) {
             addFieldToIndices(document, field.getName(), streamingField);
-        } else if (field.doesAttributing()) {
+        } else if (isAttributeField(field, isStructField, ignoreAttributAspect)) {
             for (String indexName : field.getAttributes().keySet()) {
                 addFieldToIndices(document, indexName, streamingField);
             }
@@ -113,6 +114,17 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         for (StreamingDocumentType streamingDocType : doctypes.values()) {
             vsB.documenttype(streamingDocType.getDocTypeConfig());
         }
+    }
+
+    private static boolean isAttributeField(ImmutableSDField field, boolean isStructField, boolean ignoreAttributAspect) {
+        if (field.doesAttributing()) {
+            return true;
+        }
+        if (!isStructField || ignoreAttributAspect) {
+            return false;
+        }
+        var attribute = field.getAttributes().get(field.getName());
+        return attribute != null;
     }
 
     private static class StreamingField {
@@ -170,8 +182,8 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
 
         }
 
-        public StreamingField(SDField field) {
-            this(field.getName(), field.getDataType(), field.getMatching(), field.doesAttributing(), getDistanceMetric(field));
+        public StreamingField(SDField field, boolean isStructField, boolean ignoreAttributAspect) {
+            this(field.getName(), field.getDataType(), field.getMatching(), isAttributeField(field, isStructField, ignoreAttributAspect), getDistanceMetric(field));
         }
 
         private StreamingField(String name, DataType sourceType, Matching matching, boolean isAttribute, Attribute.DistanceMetric distanceMetric) {
