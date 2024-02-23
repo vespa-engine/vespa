@@ -1,23 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/bits.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
-class Test : public TestApp
+class BitsTest : public ::testing::Test
 {
-public:
-    int Main() override;
+protected:
+    BitsTest();
+    ~BitsTest() override;
     template <typename T>
     void testFixed(const T * v, size_t sz, const T * exp);
     void testBuffer();
 };
 
-int
-Test::Main()
+BitsTest::BitsTest() = default;
+BitsTest::~BitsTest() = default;
+
+TEST_F(BitsTest, test_bits)
 {
-    TEST_INIT("bits_test");
     uint8_t u8[5] = { 0, 0x1, 0x7f, 0x87, 0xff };
     uint8_t exp8[5] = { 0, 0x80, 0xfe, 0xe1, 0xff };
     testFixed(u8, sizeof(u8)/sizeof(u8[0]), exp8);
@@ -31,29 +33,28 @@ Test::Main()
     uint64_t exp64[5] = { 0, 0x8000000000000000, 0xfe00000000000000, 0xe100000000000000, 0xff00000000000000 };
     testFixed(u64, sizeof(u64)/sizeof(u64[0]), exp64);
     testBuffer();
-    TEST_DONE();
 }
 
 template <typename T>
-void Test::testFixed(const T * v, size_t sz, const T * exp)
+void BitsTest::testFixed(const T * v, size_t sz, const T * exp)
 {
-    EXPECT_EQUAL(0u, Bits::reverse(static_cast<T>(0)));
-    EXPECT_EQUAL(1ul << (sizeof(T)*8 - 1), Bits::reverse(static_cast<T>(1)));
-    EXPECT_EQUAL(static_cast<T>(-1), Bits::reverse(static_cast<T>(-1)));
+    EXPECT_EQ(0u, Bits::reverse(static_cast<T>(0)));
+    EXPECT_EQ(1ul << (sizeof(T)*8 - 1), Bits::reverse(static_cast<T>(1)));
+    EXPECT_EQ(static_cast<T>(-1), Bits::reverse(static_cast<T>(-1)));
     for (size_t i(0); i < sz; i++) {
-        EXPECT_EQUAL(Bits::reverse(v[i]), exp[i]);
-        EXPECT_EQUAL(Bits::reverse(Bits::reverse(v[i])), v[i]);
+        EXPECT_EQ(Bits::reverse(v[i]), exp[i]);
+        EXPECT_EQ(Bits::reverse(Bits::reverse(v[i])), v[i]);
     }
 }
 
-void Test::testBuffer()
+void BitsTest::testBuffer()
 {
     uint64_t a(0x0102040810204080ul);
     uint64_t b(a);
     Bits::reverse(&a, sizeof(a));
-    EXPECT_EQUAL(a, Bits::reverse(b));
+    EXPECT_EQ(a, Bits::reverse(b));
     Bits::reverse(&a, sizeof(a));
-    EXPECT_EQUAL(a, b);
+    EXPECT_EQ(a, b);
 }
 
-TEST_APPHOOK(Test)
+GTEST_MAIN_RUN_ALL_TESTS()
