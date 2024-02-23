@@ -11,5 +11,6 @@ vespa_add_executable(vespalib_sort_benchmark_app
     sort_benchmark.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_sort_benchmark_app COMMAND vespalib_sort_benchmark_app BENCHMARK)
