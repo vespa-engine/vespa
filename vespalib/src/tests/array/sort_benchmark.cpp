@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rusage.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <csignal>
 #include <algorithm>
@@ -10,18 +10,31 @@ LOG_SETUP("sort_benchmark");
 
 using namespace vespalib;
 
-class Test : public TestApp
+class SortBenchmark : public ::testing::Test
 {
+    int    _argc;
+    char** _argv;
 public:
-private:
+    SortBenchmark(int argc, char **argv);
+    ~SortBenchmark() override;
+    void TestBody() override;
+protected:
     template<typename T>
     vespalib::Array<T> create(size_t count);
     template<typename T>
     void sortDirect(size_t count);
     template<typename T>
     void sortInDirect(size_t count);
-    int Main() override;
 };
+
+SortBenchmark::SortBenchmark(int argc, char** argv)
+    : testing::Test(),
+      _argc(argc),
+      _argv(argv)
+{
+}
+
+SortBenchmark::~SortBenchmark() = default;
 
 template<size_t N>
 class TT
@@ -46,7 +59,7 @@ private:
 
 template<typename T>
 vespalib::Array<T>
-Test::create(size_t count)
+SortBenchmark::create(size_t count)
 {
     vespalib::Array<T> v;
     v.reserve(count);
@@ -58,7 +71,7 @@ Test::create(size_t count)
 }
 
 template<typename T>
-void Test::sortDirect(size_t count)
+void SortBenchmark::sortDirect(size_t count)
 {
     vespalib::Array<T> v(create<T>(count));
     LOG(info, "Running sortDirect with %ld count and payload of %ld", v.size(), sizeof(T));
@@ -69,7 +82,7 @@ void Test::sortDirect(size_t count)
 }
 
 template<typename T>
-void Test::sortInDirect(size_t count)
+void SortBenchmark::sortInDirect(size_t count)
 {
     vespalib::Array<T> k(create<T>(count));
     LOG(info, "Running sortInDirect with %ld count and payload of %ld", k.size(), sizeof(T));
@@ -84,8 +97,8 @@ void Test::sortInDirect(size_t count)
     }
 }
 
-int
-Test::Main()
+void
+SortBenchmark::TestBody()
 {
     std::string type("sortdirect");
     size_t count = 1000000;
@@ -99,8 +112,7 @@ Test::Main()
     if (_argc > 3) {
         payLoad = strtol(_argv[3], NULL, 0);
     }
-    TEST_INIT("sort_benchmark");
-    steady_time start(steady_clock::now());
+     steady_time start(steady_clock::now());
     if (payLoad < 8) {
         using T = TT<8>;
         if (type == "sortdirect") {
@@ -176,9 +188,13 @@ Test::Main()
         }
     }
     LOG(info, "rusage = {\n%s\n}", vespalib::RUsage::createSelf(start).toString().c_str());
-    ASSERT_EQUAL(0, kill(0, SIGPROF));
-    TEST_DONE();
+    ASSERT_EQ(0, kill(0, SIGPROF));
 }
 
-TEST_APPHOOK(Test);
-
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    ::testing::RegisterTest("SortBenchmark", "benchmark", nullptr, "",
+                            __FILE__, __LINE__,
+                            [=]() -> SortBenchmark* { return new SortBenchmark(argc, argv); });
+    return RUN_ALL_TESTS();
+}
