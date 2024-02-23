@@ -72,10 +72,6 @@ RoutableRepository::decode(const vespalib::Version &version, mbus::BlobRef data)
     if (!ret) {
         LOG(error, "Routable factory failed to deserialize routable of type %d (version %s).",
             type, version.toString().c_str());
-
-        std::ostringstream ost;
-        document::StringUtil::printAsHex(ost, data.data(), data.size());
-        LOG(error, "%s", ost.str().c_str());
         return {};
     }
     return ret;
