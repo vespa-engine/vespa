@@ -14,6 +14,20 @@ double ordered_cost_of(const std::vector<FlowStats> &data, bool strict) {
     return flow::ordered_cost_of(flow::DirectAdapter(), data, FLOW(strict));
 }
 
+template <typename FLOW>
+double dual_ordered_cost_of(const std::vector<FlowStats> &data, bool strict) {
+    double result = flow::ordered_cost_of(flow::DirectAdapter(), data, FLOW(strict));
+    AnyFlow any_flow = AnyFlow::create<FLOW>(strict);
+    double total_cost = 0.0;
+    for (const auto &item: data) {
+        double child_cost = any_flow.strict() ? item.strict_cost : any_flow.flow() * item.cost;
+        any_flow.update_cost(total_cost, child_cost);
+        any_flow.add(item.estimate);
+    }
+    EXPECT_EQ(total_cost, result);
+    return result;
+}
+
 std::vector<FlowStats> gen_data(size_t size) {
     static std::mt19937 gen;
     static std::uniform_real_distribution<double>    estimate(0.1,  0.9);
@@ -115,13 +129,22 @@ struct ExpectFlow {
 };
 
 void verify_flow(auto flow, const std::vector<double> &est_list, const std::vector<ExpectFlow> &expect) {
+    FlowCalc calc = flow_calc<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
+    AnyFlow any_flow = AnyFlow::create<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
     ASSERT_EQ(est_list.size() + 1, expect.size());
     for (size_t i = 0; i < expect.size(); ++i) {
+        EXPECT_EQ(any_flow.flow(), flow.flow());
+        EXPECT_EQ(any_flow.estimate(), flow.estimate());
+        EXPECT_EQ(any_flow.strict(), flow.strict());
         EXPECT_DOUBLE_EQ(flow.flow(), expect[i].flow);
         EXPECT_DOUBLE_EQ(flow.estimate(), expect[i].est);
         EXPECT_EQ(flow.strict(), expect[i].strict);
         if (i < est_list.size()) {
+            EXPECT_EQ(calc(est_list[i]), flow.flow());
             flow.add(est_list[i]);
+            any_flow.add(est_list[i]);
+        } else {
+            EXPECT_EQ(calc(0.5), flow.flow());
         }
     }
 }
@@ -141,8 +164,6 @@ TEST(FlowTest, full_and_flow) {
                      {0.4, 0.4, false},
                      {0.4*0.7, 0.4*0.7, false},
                      {0.4*0.7*0.2, 0.4*0.7*0.2, false}});
-        verify_flow_calc(flow_calc<AndFlow>(strict),
-                         {0.4, 0.7, 0.2}, {1.0, 0.4, 0.4*0.7, 0.4*0.7*0.2});
     }
 }
 
@@ -153,8 +174,6 @@ TEST(FlowTest, partial_and_flow) {
                      {in*0.4, in*0.4, false},
                      {in*0.4*0.7, in*0.4*0.7, false},
                      {in*0.4*0.7*0.2, in*0.4*0.7*0.2, false}});
-        verify_flow_calc(flow_calc<AndFlow>(in),
-                         {0.4, 0.7, 0.2}, {in*1.0, in*0.4, in*0.4*0.7, in*0.4*0.7*0.2});
     }
 }
 
@@ -164,15 +183,11 @@ TEST(FlowTest, full_or_flow) {
                  {0.6, 1.0-0.6, false},
                  {0.6*0.3, 1.0-0.6*0.3, false},
                  {0.6*0.3*0.8, 1.0-0.6*0.3*0.8, false}});
-    verify_flow_calc(flow_calc<OrFlow>(1.0),
-                     {0.4, 0.7, 0.2}, {1.0, 0.6, 0.6*0.3, 0.6*0.3*0.8});
     verify_flow(OrFlow(true), {0.4, 0.7, 0.2},
                 {{1.0, 0.0, true},
                  {1.0, 1.0-0.6, true},
                  {1.0, 1.0-0.6*0.3, true},
                  {1.0, 1.0-0.6*0.3*0.8, true}});
-    verify_flow_calc(flow_calc<OrFlow>(true),
-                     {0.4, 0.7, 0.2}, {1.0, 1.0, 1.0, 1.0});
 }
 
 TEST(FlowTest, partial_or_flow) {
@@ -182,8 +197,6 @@ TEST(FlowTest, partial_or_flow) {
                      {in*0.6, 1.0-in*0.6, false},
                      {in*0.6*0.3, 1.0-in*0.6*0.3, false},
                      {in*0.6*0.3*0.8, 1.0-in*0.6*0.3*0.8, false}});
-        verify_flow_calc(flow_calc<OrFlow>(in),
-                         {0.4, 0.7, 0.2}, {in, in*0.6, in*0.6*0.3, in*0.6*0.3*0.8});
     }
 }
 
@@ -194,8 +207,6 @@ TEST(FlowTest, full_and_not_flow) {
                      {0.4, 0.4, false},
                      {0.4*0.3, 0.4*0.3, false},
                      {0.4*0.3*0.8, 0.4*0.3*0.8, false}});
-        verify_flow_calc(flow_calc<AndNotFlow>(strict),
-                         {0.4, 0.7, 0.2}, {1.0, 0.4, 0.4*0.3, 0.4*0.3*0.8});
     }
 }
 
@@ -206,8 +217,6 @@ TEST(FlowTest, partial_and_not_flow) {
                      {in*0.4, in*0.4, false},
                      {in*0.4*0.3, in*0.4*0.3, false},
                      {in*0.4*0.3*0.8, in*0.4*0.3*0.8, false}});
-        verify_flow_calc(flow_calc<AndNotFlow>(in),
-                         {0.4, 0.7, 0.2}, {in, in*0.4, in*0.4*0.3, in*0.4*0.3*0.8});
     }
 }
 
@@ -256,12 +265,12 @@ TEST(FlowTest, in_flow_strict_vs_rate_interaction) {
 
 TEST(FlowTest, flow_cost) {
     std::vector<FlowStats> data = {{0.4, 1.1, 0.6}, {0.7, 1.2, 0.5}, {0.2, 1.3, 0.4}};
-    EXPECT_DOUBLE_EQ(ordered_cost_of<AndFlow>(data, false), 1.1 + 0.4*1.2 + 0.4*0.7*1.3);
-    EXPECT_DOUBLE_EQ(ordered_cost_of<AndFlow>(data, true), 0.6 + 0.4*1.2 + 0.4*0.7*1.3);
-    EXPECT_DOUBLE_EQ(ordered_cost_of<OrFlow>(data, false), 1.1 + 0.6*1.2 + 0.6*0.3*1.3);
-    EXPECT_DOUBLE_EQ(ordered_cost_of<OrFlow>(data, true), 0.6 + 0.5 + 0.4);
-    EXPECT_DOUBLE_EQ(ordered_cost_of<AndNotFlow>(data, false), 1.1 + 0.4*1.2 + 0.4*0.3*1.3);
-    EXPECT_DOUBLE_EQ(ordered_cost_of<AndNotFlow>(data, true), 0.6 + 0.4*1.2 + 0.4*0.3*1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndFlow>(data, false), 1.1 + 0.4*1.2 + 0.4*0.7*1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndFlow>(data, true), 0.6 + 0.4*1.2 + 0.4*0.7*1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<OrFlow>(data, false), 1.1 + 0.6*1.2 + 0.6*0.3*1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<OrFlow>(data, true), 0.6 + 0.5 + 0.4);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndNotFlow>(data, false), 1.1 + 0.4*1.2 + 0.4*0.3*1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndNotFlow>(data, true), 0.6 + 0.4*1.2 + 0.4*0.3*1.3);
 }
 
 TEST(FlowTest, optimal_and_flow) {

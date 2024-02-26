@@ -328,4 +328,54 @@ inline FlowCalc full_flow_calc(InFlow in_flow) {
     return [flow](double) noexcept { return flow; };
 }
 
+// type-erased flow wrapper
+class AnyFlow {
+private:
+    struct API {
+        virtual void add(double est) noexcept = 0;
+        virtual double flow() const noexcept = 0;
+        virtual bool strict() const noexcept = 0;
+        virtual double estimate() const noexcept = 0;
+        virtual void update_cost(double &total_cost, double child_cost) noexcept = 0;
+        virtual ~API() = default;
+    };
+    template <typename FLOW> struct Wrapper final : API {
+        FLOW _flow;
+        Wrapper(InFlow in_flow) noexcept : _flow(in_flow) {}
+        void add(double est) noexcept override { _flow.add(est); }
+        double flow() const noexcept override { return _flow.flow(); }
+        bool strict() const noexcept override { return _flow.strict(); }
+        double estimate() const noexcept override { return _flow.estimate(); }
+        void update_cost(double &total_cost, double child_cost) noexcept override { return _flow.update_cost(total_cost, child_cost); }
+        ~Wrapper() = default;
+    };
+    alignas(8) char _space[24];
+    API &api() noexcept { return *reinterpret_cast<API*>(_space); }
+    const API &api() const noexcept { return *reinterpret_cast<const API*>(_space); }
+    template <typename FLOW> struct type_tag{};
+    template <typename FLOW> AnyFlow(InFlow in_flow, type_tag<FLOW>) noexcept {
+        using stored_type = Wrapper<FLOW>;
+        static_assert(alignof(stored_type) <= alignof(_space));
+        static_assert(sizeof(stored_type) <= sizeof(_space));
+        stored_type *obj = ::new (static_cast<void*>(_space)) stored_type(in_flow);
+        API *upcasted = obj;
+        (void) upcasted;
+        assert(static_cast<void*>(upcasted) == static_cast<void*>(_space));
+    }
+public:
+    AnyFlow() = delete;
+    AnyFlow(AnyFlow &&) = delete;
+    AnyFlow(const AnyFlow &) = delete;
+    AnyFlow &operator=(AnyFlow &&) = delete;
+    AnyFlow &operator=(const AnyFlow &) = delete;
+    template <typename FLOW> static AnyFlow create(InFlow in_flow) noexcept {
+        return AnyFlow(in_flow, type_tag<FLOW>());
+    }
+    void add(double est) noexcept { api().add(est); }
+    double flow() const noexcept { return api().flow(); }
+    bool strict() const noexcept { return api().strict(); }
+    double estimate() const noexcept { return api().estimate(); }
+    void update_cost(double &total_cost, double child_cost) noexcept { api().update_cost(total_cost, child_cost); }
+};
+
 }
