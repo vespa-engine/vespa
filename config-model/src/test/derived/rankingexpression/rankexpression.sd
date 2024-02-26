@@ -510,6 +510,8 @@ schema rankexpression {
   rank-profile withstringcompare {
       inputs {
         query(myquerystring) string
+        query(mybadlong) long
+        query(mybadfloat) float
       }
       first-phase {
         expression: if (attribute(surl) == query(myquerystring), 0.75, 0.25)
