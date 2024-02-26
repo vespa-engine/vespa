@@ -13,6 +13,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -42,6 +43,10 @@ public class RestApiMappers {
             new ResponseMapperHolder<>(HttpResponse.class, (context, entity) -> entity),
             new ResponseMapperHolder<>(String.class, (context, entity) -> new MessageResponse(entity)),
             new ResponseMapperHolder<>(Slime.class, (context, entity) -> new SlimeJsonResponse(entity)),
+            new ResponseMapperHolder<>(Json.class, (ctx, entity) -> new HttpResponse(200) {
+                @Override public void render(OutputStream out) throws IOException { out.write(entity.toJson(true).getBytes(UTF_8)); }
+                @Override public String getContentType() { return "application/json"; }
+            }),
             new ResponseMapperHolder<>(JsonNode.class,
                     (context, entity) -> new JacksonJsonResponse<>(200, entity, context.jacksonJsonMapper(), true)));
 
