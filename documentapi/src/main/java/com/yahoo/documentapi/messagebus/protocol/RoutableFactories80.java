@@ -73,7 +73,7 @@ abstract class RoutableFactories80 {
                 protoStream.checkNoSpaceLeft();
                 return buf;
             } catch (IOException | RuntimeException e) {
-                logCodecError("encoding", e);
+                log.severe("Error during Protobuf encoding of message type %s: %s".formatted(apiClass.getSimpleName(), e.getMessage()));
                 return null;
             }
         }
@@ -89,17 +89,11 @@ abstract class RoutableFactories80 {
             try {
                 return decoderFn.apply(in);
             } catch (RuntimeException e) {
-                logCodecError("decoding", e);
-                return null;
+                throw new RuntimeException("Error during Protobuf decoding of message type %s: %s"
+                        .formatted(apiClass.getSimpleName(), e.getMessage()), e);
             }
         }
 
-        private void logCodecError(String op, Throwable t) {
-            // TODO ideally we'd print the peer address here, but that information is Abstracted Away(tm)
-            //  and we can't safely propagate the exception to a lower-level component which _does_ know this
-            //  information, as it's not necessarily exception safe.
-            log.severe("Error during Protobuf %s for message type %s: %s".formatted(op, apiClass.getSimpleName(), t.getMessage()));
-        }
     }
 
     private static class ProtobufCodecBuilder<DocApiT extends Routable, ProtoT extends AbstractMessage> {
