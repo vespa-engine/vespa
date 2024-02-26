@@ -78,14 +78,6 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
-    public static final List<String> VALID_NESSUS_AGENT_GROUPS = List.of(
-            ":default",      // Use vespa-ci in CD systems, vespa-config on cfgs in prod, and :stop elsewhere
-            ":skip",         // Skip task
-            ":stop",         // Stop / shut down Nessus if it is running
-            "All",           // Link to the All group.
-            "vespa-ci",      // Link to the vespa-ci group.
-            "vespa-config"); // Link to the vespa-config group.
-
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
             List.of("geirst, baldersheim"), "2021-10-21", "2024-12-31",
