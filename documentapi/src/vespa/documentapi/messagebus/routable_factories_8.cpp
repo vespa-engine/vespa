@@ -11,6 +11,7 @@
 #include <vespa/documentapi/messagebus/docapi_visiting.pb.h>
 #include <vespa/documentapi/messagebus/docapi_inspect.pb.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -147,6 +148,11 @@ void log_codec_error(const char* op, const char* type, const char* msg) noexcept
     LOGBM(error, "Error during Protobuf %s for message type %s: %s", op, type, msg);
 }
 
+[[noreturn]] void rethrow_as_decorated_exception(const char* type, const vespalib::string& msg) __attribute((noinline));
+[[noreturn]] void rethrow_as_decorated_exception(const char* type, const vespalib::string& msg) {
+    throw vespalib::IllegalArgumentException(vespalib::make_string("Failed decoding message of type %s: %s", type, msg.c_str()), VESPA_STRLOC);
+}
+
 template <typename DocApiType, typename ProtobufType, typename EncodeFn, typename DecodeFn>
 requires std::is_invocable_r_v<void, EncodeFn, const DocApiType&, ProtobufType&> &&
          std::is_invocable_r_v<std::unique_ptr<DocApiType>, DecodeFn, const ProtobufType&>
@@ -193,6 +199,12 @@ public:
                 msg->setApproxSize(buf_size); // Wire size is a proxy for in-memory size
             }
             return msg;
+        } catch (vespalib::Exception& e) {
+            // We handle vespalib exceptions more "gently" (by propagating them up to the DocumentProtocol)
+            // in that we assume they are caused by transient problems such as missing document types etc.,
+            // rather than indicating a more serious error. But to make debugging easier we add some
+            // explicit context to the exception message and throw a new exception in its place.
+            rethrow_as_decorated_exception(ProtobufType::descriptor()->name().c_str(), e.getMessage());
         } catch (std::exception& e) {
             log_codec_error("decode", ProtobufType::descriptor()->name().c_str(), e.what());
             return {};
