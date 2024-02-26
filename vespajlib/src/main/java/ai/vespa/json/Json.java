@@ -1,4 +1,4 @@
-package com.yahoo.restapi;
+package ai.vespa.json;
 
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -26,7 +26,7 @@ import static com.yahoo.slime.Type.ARRAY;
 import static com.yahoo.slime.Type.STRING;
 
 /**
- * A {@link Slime} wrapper that throws {@link RestApiException.BadRequest} on missing members or invalid types.
+ * A {@link Slime} wrapper that throws {@link InvalidJsonException} on missing members or invalid types.
  *
  * @author bjorncs
  */
@@ -146,16 +146,16 @@ public class Json implements Iterable<Json> {
 
     private void requirePresent() { if (isMissing()) throw createMissingMemberException(); }
 
-    private RestApiException.BadRequest createInvalidTypeException(Type... expected) {
+    private InvalidJsonException createInvalidTypeException(Type... expected) {
         var expectedTypesString = Arrays.stream(expected).map(this::toString).collect(Collectors.joining("' or '", "'", "'"));
         var pathString = path.isEmpty() ? "JSON" : "JSON member '%s'".formatted(path);
-        return new RestApiException.BadRequest(
+        return new InvalidJsonException(
                 "Expected %s to be a %s but got '%s'"
                         .formatted(pathString, expectedTypesString, toString(inspector.type())));
     }
 
-    private RestApiException.BadRequest createMissingMemberException() {
-        return new RestApiException.BadRequest(path.isEmpty() ? "Missing JSON" : "Missing JSON member '%s'".formatted(path));
+    private InvalidJsonException createMissingMemberException() {
+        return new InvalidJsonException(path.isEmpty() ? "Missing JSON" : "Missing JSON member '%s'".formatted(path));
     }
 
     private String toString(Type type) {
