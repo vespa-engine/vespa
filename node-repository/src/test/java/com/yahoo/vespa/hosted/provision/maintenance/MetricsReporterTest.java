@@ -360,6 +360,14 @@ public class MetricsReporterTest {
         metricsReporter.maintain();
         assertEquals(hosts.size(), metric.values.get("nodes.emptyExclusive").intValue());
 
+        // Hosts are not considered empty if children were just deallocated
+        tester.patchNodes(hosts, (host) -> host.withHostEmptyAt(tester.clock().instant()));
+        metricsReporter.maintain();
+        assertEquals(0, metric.values.get("nodes.emptyExclusive").intValue());
+        tester.clock().advance(Duration.ofMinutes(10));
+        metricsReporter.maintain();
+        assertEquals(hosts.size(), metric.values.get("nodes.emptyExclusive").intValue());
+
         // Deploy application
         ClusterSpec spec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("c1")).vespaVersion("1").build();
         Capacity capacity = Capacity.from(new ClusterResources(4, 1, resources));

@@ -397,13 +397,16 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
     private void updateEmptyExclusiveHosts(NodeList nodes) {
         Instant now = nodeRepository().clock().instant();
-        Duration minActivePeriod = Duration.ofMinutes(10);
+        Instant tenMinutesAgo = now.minus(Duration.ofMinutes(10));
         int emptyHosts = nodes.parents().state(State.active)
                               .matching(node -> (node.type() != NodeType.host && node.type().isHost()) ||
                                                 node.exclusiveToApplicationId().isPresent())
                               .matching(host -> host.history().hasEventBefore(History.Event.Type.activated,
-                                                                              now.minus(minActivePeriod)))
+                                                                              tenMinutesAgo))
                               .matching(host -> nodes.childrenOf(host).isEmpty())
+                              .matching(host -> host.hostEmptyAt()
+                                      .map(time -> time.isBefore(tenMinutesAgo))
+                                      .orElse(true))
                               .size();
         metric.set(ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.baseName(), emptyHosts, null);
     }
