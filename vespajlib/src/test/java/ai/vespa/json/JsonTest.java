@@ -1,8 +1,10 @@
-package com.yahoo.restapi;
+package ai.vespa.json;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -65,16 +67,16 @@ class JsonTest {
                 """;
         var json = Json.of(text);
 
-        var exception = assertThrows(RestApiException.BadRequest.class, () -> json.f("unknown").asString());
+        var exception = assertThrows(InvalidJsonException.class, () -> json.f("unknown").asString());
         assertEquals("Missing JSON member 'unknown'", exception.getMessage());
 
-        exception = assertThrows(RestApiException.BadRequest.class, () -> json.a(0));
+        exception = assertThrows(InvalidJsonException.class, () -> json.a(0));
         assertEquals("Expected JSON to be a 'array' but got 'object'", exception.getMessage());
 
-        exception = assertThrows(RestApiException.BadRequest.class, () -> json.f("string").f("unknown"));
+        exception = assertThrows(InvalidJsonException.class, () -> json.f("string").f("unknown"));
         assertEquals("Expected JSON member 'string' to be a 'object' but got 'string'", exception.getMessage());
 
-        exception = assertThrows(RestApiException.BadRequest.class, () -> json.f("string").asLong());
+        exception = assertThrows(InvalidJsonException.class, () -> json.f("string").asLong());
         assertEquals("Expected JSON member 'string' to be a 'integer' or 'float' but got 'string'", exception.getMessage());
     }
 
