@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/eventbarrier.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
@@ -13,19 +13,7 @@ struct MyBarrier {
     }
 };
 
-class Test : public TestApp
-{
-public:
-    void testEmpty();
-    void testSimple();
-    void testBarrierChain();
-    void testEventAfter();
-    void testReorder();
-    int Main() override;
-};
-
-void
-Test::testEmpty()
+TEST(EventBarrierTest, test_empty)
 {
     // waiting for an empty set of events
 
@@ -34,45 +22,43 @@ Test::testEmpty()
 
     EXPECT_TRUE(!eb.startBarrier(b));
     EXPECT_TRUE(!b.done);
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     uint32_t token = eb.startEvent();
     eb.completeEvent(token);
 
     EXPECT_TRUE(!eb.startBarrier(b));
     EXPECT_TRUE(!b.done);
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-void
-Test::testSimple()
+TEST(EventBarrierTest, test_simple)
 {
     // a single barrier waiting for a single event
 
     MyBarrier b;
     EventBarrier<MyBarrier> eb;
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     uint32_t token = eb.startEvent();
-    EXPECT_EQUAL(eb.countEvents(), 1u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 1u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     EXPECT_TRUE(eb.startBarrier(b));
     EXPECT_TRUE(!b.done);
-    EXPECT_EQUAL(eb.countEvents(), 1u);
-    EXPECT_EQUAL(eb.countBarriers(), 1u);
+    EXPECT_EQ(eb.countEvents(), 1u);
+    EXPECT_EQ(eb.countBarriers(), 1u);
 
     eb.completeEvent(token);
     EXPECT_TRUE(b.done);
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-void
-Test::testBarrierChain()
+TEST(EventBarriarTest, test_barrier_chain)
 {
     // more than one barrier waiting for the same set of events
 
@@ -80,12 +66,12 @@ Test::testBarrierChain()
     MyBarrier b2;
     MyBarrier b3;
     EventBarrier<MyBarrier> eb;
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     uint32_t token = eb.startEvent();
-    EXPECT_EQUAL(eb.countEvents(), 1u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 1u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     EXPECT_TRUE(eb.startBarrier(b1));
     EXPECT_TRUE(eb.startBarrier(b2));
@@ -94,53 +80,51 @@ Test::testBarrierChain()
     EXPECT_TRUE(!b2.done);
     EXPECT_TRUE(!b3.done);
 
-    EXPECT_EQUAL(eb.countEvents(), 1u);
-    EXPECT_EQUAL(eb.countBarriers(), 3u);
+    EXPECT_EQ(eb.countEvents(), 1u);
+    EXPECT_EQ(eb.countBarriers(), 3u);
 
     eb.completeEvent(token);
     EXPECT_TRUE(b1.done);
     EXPECT_TRUE(b2.done);
     EXPECT_TRUE(b3.done);
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-void
-Test::testEventAfter()
+TEST(EventBarrierTest, test_event_after)
 {
     // new events starting after the start of a barrier
 
     MyBarrier b;
     EventBarrier<MyBarrier> eb;
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     uint32_t token = eb.startEvent();
-    EXPECT_EQUAL(eb.countEvents(), 1u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 1u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     EXPECT_TRUE(eb.startBarrier(b));
     EXPECT_TRUE(!b.done);
-    EXPECT_EQUAL(eb.countEvents(), 1u);
-    EXPECT_EQUAL(eb.countBarriers(), 1u);
+    EXPECT_EQ(eb.countEvents(), 1u);
+    EXPECT_EQ(eb.countBarriers(), 1u);
 
     uint32_t t2 = eb.startEvent();
     EXPECT_TRUE(!b.done);
-    EXPECT_EQUAL(eb.countEvents(), 2u);
-    EXPECT_EQUAL(eb.countBarriers(), 1u);
+    EXPECT_EQ(eb.countEvents(), 2u);
+    EXPECT_EQ(eb.countBarriers(), 1u);
 
     eb.completeEvent(token);
     EXPECT_TRUE(b.done);
-    EXPECT_EQUAL(eb.countEvents(), 1u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 1u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 
     eb.completeEvent(t2);
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-void
-Test::testReorder()
+TEST(EventBarriarTest, test_reorder)
 {
     // events completing in a different order than they started
 
@@ -157,8 +141,8 @@ Test::testReorder()
     eb.startBarrier(b3);
     uint32_t t4 = eb.startEvent();
 
-    EXPECT_EQUAL(eb.countEvents(), 4u);
-    EXPECT_EQUAL(eb.countBarriers(), 3u);
+    EXPECT_EQ(eb.countEvents(), 4u);
+    EXPECT_EQ(eb.countBarriers(), 3u);
 
     EXPECT_TRUE(!b1.done);
     EXPECT_TRUE(!b2.done);
@@ -184,20 +168,8 @@ Test::testReorder()
     EXPECT_TRUE(b2.done);
     EXPECT_TRUE(b3.done);
 
-    EXPECT_EQUAL(eb.countEvents(), 0u);
-    EXPECT_EQUAL(eb.countBarriers(), 0u);
+    EXPECT_EQ(eb.countEvents(), 0u);
+    EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("eventbarrier_test");
-    testEmpty();
-    testSimple();
-    testBarrierChain();
-    testEventAfter();
-    testReorder();
-    TEST_DONE();
-}
-
-TEST_APPHOOK(Test);
+GTEST_MAIN_RUN_ALL_TESTS()
