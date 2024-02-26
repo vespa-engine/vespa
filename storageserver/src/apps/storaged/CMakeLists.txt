@@ -9,4 +9,6 @@ vespa_add_executable(storageserver_storaged_app
     storageserver_storageapp
 )
 
+vespa_add_target_package_dependency(storageserver_storaged_app Protobuf)
+
 install_absolute_symlink(vespa-storaged-bin sbin/vespa-distributord-bin)
