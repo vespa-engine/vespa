@@ -7,6 +7,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -183,6 +184,7 @@ public class Json implements Iterable<Json> {
 
         public static Builder.Array newArray() { return new Builder.Array(new Slime().setArray()); }
         public static Builder.Object newObject() { return new Builder.Object(new Slime().setObject()); }
+        public static Builder.Object existingObject(Cursor cursor) { return new Builder.Object(cursor); }
 
         private Builder(Cursor cursor) { this.cursor = cursor; }
 
@@ -230,8 +232,10 @@ public class Json implements Iterable<Json> {
             public Builder.Object set(String field, long value) { cursor.setLong(field, value); return this; }
             public Builder.Object set(String field, double value) { cursor.setDouble(field, value); return this; }
             public Builder.Object set(String field, boolean value) { cursor.setBool(field, value); return this; }
+            public Builder.Object set(String field, BigDecimal value) { cursor.setString(field, value.toPlainString()); return this; }
         }
 
+        public Cursor slimeCursor() { return cursor; }
         public Json build() { return Json.of(cursor); }
     }
 }
