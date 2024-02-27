@@ -572,11 +572,11 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 double
 IntermediateBlueprint::sort(InFlow in_flow, const Options &opts)
 {
-    auto flow_calc = make_flow_calc(in_flow);
     sort(_children, in_flow.strict(), opts.sort_by_cost());
+    auto flow = my_flow(in_flow);
     for (size_t i = 0; i < _children.size(); ++i) {
-        double next_rate = flow_calc(_children[i]->estimate());
-        _children[i]->sort(InFlow(in_flow.strict() && inheritStrict(i), next_rate), opts);
+        _children[i]->sort(InFlow(flow.strict(), flow.flow()), opts);
+        flow.add(_children[i]->estimate());
     }
     // TODO: better cost estimate (due to known in-flow and eagerness)
     return in_flow.strict() ? strict_cost() : in_flow.rate() * cost();
@@ -646,11 +646,12 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    FlowCalc flow_calc = make_flow_calc(InFlow(execInfo.is_strict(), execInfo.hit_rate()));
+    auto flow = my_flow(InFlow(execInfo.is_strict(), execInfo.hit_rate()));
     for (size_t i = 0; i < _children.size(); ++i) {
+        double nextHitRate = flow.flow();
         Blueprint & child = *_children[i];
-        double nextHitRate = flow_calc(child.estimate());
         child.fetchPostings(ExecuteInfo::create(execInfo.is_strict() && inheritStrict(i), nextHitRate, execInfo));
+        flow.add(child.estimate());
     }
 }
 

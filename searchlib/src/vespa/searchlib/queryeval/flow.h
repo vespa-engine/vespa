@@ -117,12 +117,31 @@ struct MinOrCost {
     }
 };
 
-template <typename ADAPTER, typename T, typename F>
-double estimate_of(ADAPTER adapter, const T &children, F flow) {
-    for (const auto &child: children) {
-        flow.add(adapter.estimate(child));
+template <typename ADAPTER, typename T>
+double estimate_of_and(ADAPTER adapter, const T &children) {
+    double flow = children.empty() ? 0.0 : adapter.estimate(children[0]);
+    for (size_t i = 1; i < children.size(); ++i) {
+        flow *= adapter.estimate(children[i]);
     }
-    return flow.estimate();
+    return flow;
+}
+
+template <typename ADAPTER, typename T>
+double estimate_of_or(ADAPTER adapter, const T &children) {
+    double flow = 1.0;
+    for (const auto &child: children) {
+        flow *= (1.0 - adapter.estimate(child));
+    }
+    return (1.0 - flow);
+}
+
+template <typename ADAPTER, typename T>
+double estimate_of_and_not(ADAPTER adapter, const T &children) {
+    double flow = children.empty() ? 0.0 : adapter.estimate(children[0]);
+    for (size_t i = 1; i < children.size(); ++i) {
+        flow *= (1.0 - adapter.estimate(children[i]));
+    }
+    return flow;
 }
 
 template <template <typename> typename ORDER, typename ADAPTER, typename T>
@@ -179,12 +198,6 @@ size_t select_strict_and_child(ADAPTER adapter, const T &children) {
 
 template <typename FLOW>
 struct FlowMixin {
-    static double estimate_of(auto adapter, const auto &children) {
-        return flow::estimate_of(adapter, children, FLOW(false));
-    }
-    static double estimate_of(const auto &children) {
-        return estimate_of(flow::make_adapter(children), children);
-    }
     static double cost_of(auto adapter, const auto &children, bool strict) {
         auto my_adapter = flow::IndirectAdapter(adapter, children);
         auto order = flow::make_index(children.size());
@@ -200,24 +213,22 @@ class AndFlow : public FlowMixin<AndFlow> {
 private:
     double _flow;
     bool _strict;
-    bool _first;
 public:
-    AndFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()), _first(true) {}
+    AndFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()) {}
     void add(double est) noexcept {
         _flow *= est;
-        _first = false;
+        _strict = false;
     }
-    double flow() const noexcept {
-        return _flow;
-    }
-    bool strict() const noexcept {
-        return _strict && _first;
-    }
-    double estimate() const noexcept {
-        return _first ? 0.0 : _flow;
-    }
+    double flow() const noexcept { return _flow; }
+    bool strict() const noexcept { return _strict; }
     void update_cost(double &total_cost, double child_cost) noexcept {
         total_cost += child_cost;
+    }
+    static double estimate_of(auto adapter, const auto &children) {
+        return flow::estimate_of_and(adapter, children);
+    }
+    static double estimate_of(const auto &children) {
+        return estimate_of(flow::make_adapter(children), children);
     }
     static void sort(auto adapter, auto &children, bool strict) {
         flow::sort<flow::MinAndCost>(adapter, children);
@@ -239,24 +250,23 @@ class OrFlow : public FlowMixin<OrFlow>{
 private:
     double _flow;
     bool _strict;
-    bool _first;
 public:
-    OrFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()), _first(true) {}
+    OrFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()) {}
     void add(double est) noexcept {
-        _flow *= (1.0 - est);
-        _first = false;
+        if (!_strict) {
+            _flow *= (1.0 - est);
+        }
     }
-    double flow() const noexcept {
-        return _strict ? 1.0 : _flow;
-    }
-    bool strict() const noexcept {
-        return _strict;
-    }
-    double estimate() const noexcept {
-        return _first ? 0.0 : (1.0 - _flow);
-    }
+    double flow() const noexcept { return _flow; }
+    bool strict() const noexcept { return _strict; }
     void update_cost(double &total_cost, double child_cost) noexcept {
         total_cost += child_cost;
+    }
+    static double estimate_of(auto adapter, const auto &children) {
+        return flow::estimate_of_or(adapter, children);
+    }
+    static double estimate_of(const auto &children) {
+        return estimate_of(flow::make_adapter(children), children);
     }
     static void sort(auto adapter, auto &children, bool strict) {
         if (!strict) {
@@ -276,20 +286,24 @@ private:
 public:
     AndNotFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()), _first(true) {}
     void add(double est) noexcept {
-        _flow *= _first ? est : (1.0 - est);
-        _first = false;
+        if (_first) {
+            _flow *= est;
+            _strict = false;
+            _first = false;
+        } else {
+            _flow *= (1.0 - est);            
+        }
     }
-    double flow() const noexcept {
-        return _flow;
-    }
-    bool strict() const noexcept {
-        return _strict && _first;
-    }
-    double estimate() const noexcept {
-        return _first ? 0.0 : _flow;
-    }
+    double flow() const noexcept { return _flow; }
+    bool strict() const noexcept { return _strict; }
     void update_cost(double &total_cost, double child_cost) noexcept {
         total_cost += child_cost;
+    }
+    static double estimate_of(auto adapter, const auto &children) {
+        return flow::estimate_of_and_not(adapter, children);
+    }
+    static double estimate_of(const auto &children) {
+        return estimate_of(flow::make_adapter(children), children);
     }
     static void sort(auto adapter, auto &children, bool) {
         flow::sort_partial<flow::MinOrCost>(adapter, children, 1);
@@ -299,34 +313,56 @@ public:
     }
 };
 
-using FlowCalc = std::function<double(double)>;
+class RankFlow : public FlowMixin<RankFlow> {
+private:
+    double _flow;
+    bool _strict;
+    bool _first;
+public:
+    RankFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()), _first(true) {}
+    void add(double) noexcept {
+        _flow = 0.0;
+        _strict = false;
+        _first = false;
+    }
+    double flow() const noexcept { return _flow; }
+    bool strict() const noexcept { return _strict; }
+    void update_cost(double &total_cost, double child_cost) noexcept {
+        if (_first) {
+            total_cost += child_cost;
+        }
+    };
+    static double estimate_of(auto adapter, const auto &children) {
+        return children.empty() ? 0.0 : adapter.estimate(children[0]);
+    }
+    static double estimate_of(const auto &children) {
+        return estimate_of(flow::make_adapter(children), children);
+    }
+    static void sort(auto, auto &, bool) {}
+    static void sort(auto &, bool) {}
+};
 
-template <typename FLOW>
-FlowCalc flow_calc(InFlow in_flow) {
-    return [flow=FLOW(in_flow)](double est) mutable noexcept {
-               double next_flow = flow.flow();
-               flow.add(est);
-               return next_flow;
-           };
-}
-
-inline FlowCalc first_flow_calc(InFlow in_flow) {
-    bool first = true;
-    double flow = in_flow.rate();
-    return [first,flow](double est) mutable noexcept {
-               double next_flow = flow;
-               if (first) {
-                   flow *= est;
-                   first = false;
-               }
-               return next_flow;
-           };
-}
-
-inline FlowCalc full_flow_calc(InFlow in_flow) {
-    double flow = in_flow.rate();
-    return [flow](double) noexcept { return flow; };
-}
+class BlenderFlow : public FlowMixin<BlenderFlow> {
+private:
+    double _flow;
+    bool _strict;
+public:
+    BlenderFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()) {}
+    void add(double) noexcept {}
+    double flow() const noexcept { return _flow; }
+    bool strict() const noexcept { return _strict; }
+    void update_cost(double &total_cost, double child_cost) noexcept {
+        total_cost = std::max(total_cost, child_cost);
+    };
+    static double estimate_of(auto adapter, const auto &children) {
+        return flow::estimate_of_or(adapter, children);
+    }
+    static double estimate_of(const auto &children) {
+        return estimate_of(flow::make_adapter(children), children);
+    }
+    static void sort(auto, auto &, bool) {}
+    static void sort(auto &, bool) {}
+};
 
 // type-erased flow wrapper
 class AnyFlow {
@@ -335,7 +371,6 @@ private:
         virtual void add(double est) noexcept = 0;
         virtual double flow() const noexcept = 0;
         virtual bool strict() const noexcept = 0;
-        virtual double estimate() const noexcept = 0;
         virtual void update_cost(double &total_cost, double child_cost) noexcept = 0;
         virtual ~API() = default;
     };
@@ -345,8 +380,9 @@ private:
         void add(double est) noexcept override { _flow.add(est); }
         double flow() const noexcept override { return _flow.flow(); }
         bool strict() const noexcept override { return _flow.strict(); }
-        double estimate() const noexcept override { return _flow.estimate(); }
-        void update_cost(double &total_cost, double child_cost) noexcept override { return _flow.update_cost(total_cost, child_cost); }
+        void update_cost(double &total_cost, double child_cost) noexcept override {
+            _flow.update_cost(total_cost, child_cost);
+        }
         ~Wrapper() = default;
     };
     alignas(8) char _space[24];
@@ -357,8 +393,7 @@ private:
         using stored_type = Wrapper<FLOW>;
         static_assert(alignof(stored_type) <= alignof(_space));
         static_assert(sizeof(stored_type) <= sizeof(_space));
-        stored_type *obj = ::new (static_cast<void*>(_space)) stored_type(in_flow);
-        API *upcasted = obj;
+        API *upcasted = ::new (static_cast<void*>(_space)) stored_type(in_flow);
         (void) upcasted;
         assert(static_cast<void*>(upcasted) == static_cast<void*>(_space));
     }
@@ -374,8 +409,9 @@ public:
     void add(double est) noexcept { api().add(est); }
     double flow() const noexcept { return api().flow(); }
     bool strict() const noexcept { return api().strict(); }
-    double estimate() const noexcept { return api().estimate(); }
-    void update_cost(double &total_cost, double child_cost) noexcept { api().update_cost(total_cost, child_cost); }
+    void update_cost(double &total_cost, double child_cost) noexcept {
+        api().update_cost(total_cost, child_cost);
+    }
 };
 
 }

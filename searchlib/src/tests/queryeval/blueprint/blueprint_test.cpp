@@ -24,8 +24,8 @@ auto opts = Blueprint::Options::all();
 class MyOr : public IntermediateBlueprint
 {
 private:
-    FlowCalc make_flow_calc(InFlow in_flow) const override {
-        return flow_calc<OrFlow>(in_flow);
+    AnyFlow my_flow(InFlow in_flow) const override {
+        return AnyFlow::create<OrFlow>(in_flow);
     }
 public:
     FlowStats calculate_flow_stats(uint32_t) const final {

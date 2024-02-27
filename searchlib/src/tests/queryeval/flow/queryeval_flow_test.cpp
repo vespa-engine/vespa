@@ -128,33 +128,31 @@ struct ExpectFlow {
     bool strict;
 };
 
-void verify_flow(auto flow, const std::vector<double> &est_list, const std::vector<ExpectFlow> &expect) {
-    FlowCalc calc = flow_calc<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
-    AnyFlow any_flow = AnyFlow::create<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
-    ASSERT_EQ(est_list.size() + 1, expect.size());
-    for (size_t i = 0; i < expect.size(); ++i) {
-        EXPECT_EQ(any_flow.flow(), flow.flow());
-        EXPECT_EQ(any_flow.estimate(), flow.estimate());
-        EXPECT_EQ(any_flow.strict(), flow.strict());
-        EXPECT_DOUBLE_EQ(flow.flow(), expect[i].flow);
-        EXPECT_DOUBLE_EQ(flow.estimate(), expect[i].est);
-        EXPECT_EQ(flow.strict(), expect[i].strict);
-        if (i < est_list.size()) {
-            EXPECT_EQ(calc(est_list[i]), flow.flow());
-            flow.add(est_list[i]);
-            any_flow.add(est_list[i]);
-        } else {
-            EXPECT_EQ(calc(0.5), flow.flow());
-        }
+std::vector<FlowStats> make_flow_stats(const std::vector<double> &est_list, size_t n) {
+    std::vector<FlowStats> result;
+    for (size_t i = 0; i < n; ++i) {
+        result.emplace_back(est_list[i], 123.0, 456.0);
     }
+    return result;
 }
 
-void verify_flow_calc(FlowCalc flow_calc, const std::vector<double> &est_list, const std::vector<double> &expect) {
+void verify_flow(auto flow, const std::vector<double> &est_list, const std::vector<ExpectFlow> &expect) {
+    AnyFlow any_flow = AnyFlow::create<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
     ASSERT_EQ(est_list.size() + 1, expect.size());
     for (size_t i = 0; i < est_list.size(); ++i) {
-        EXPECT_DOUBLE_EQ(flow_calc(est_list[i]), expect[i]);
+        EXPECT_EQ(any_flow.flow(), flow.flow());
+        EXPECT_EQ(any_flow.strict(), flow.strict());
+        EXPECT_DOUBLE_EQ(flow.flow(), expect[i].flow);
+        EXPECT_EQ(flow.strict(), expect[i].strict);
+        EXPECT_DOUBLE_EQ(flow.estimate_of(make_flow_stats(est_list, i)), expect[i].est);
+        any_flow.add(est_list[i]);
+        flow.add(est_list[i]);
     }
-    EXPECT_DOUBLE_EQ(flow_calc(0.5), expect.back());
+    EXPECT_EQ(any_flow.flow(), flow.flow());
+    EXPECT_EQ(any_flow.strict(), flow.strict());
+    EXPECT_DOUBLE_EQ(flow.flow(), expect.back().flow);
+    EXPECT_EQ(flow.strict(), expect.back().strict);
+    EXPECT_DOUBLE_EQ(flow.estimate_of(make_flow_stats(est_list, est_list.size())), expect.back().est);
 }
 
 TEST(FlowTest, full_and_flow) {
@@ -171,9 +169,9 @@ TEST(FlowTest, partial_and_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
         verify_flow(AndFlow(in), {0.4, 0.7, 0.2},
                     {{in, 0.0, false},
-                     {in*0.4, in*0.4, false},
-                     {in*0.4*0.7, in*0.4*0.7, false},
-                     {in*0.4*0.7*0.2, in*0.4*0.7*0.2, false}});
+                     {in*0.4, 0.4, false},
+                     {in*0.4*0.7, 0.4*0.7, false},
+                     {in*0.4*0.7*0.2, 0.4*0.7*0.2, false}});
     }
 }
 
@@ -194,9 +192,9 @@ TEST(FlowTest, partial_or_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
         verify_flow(OrFlow(in), {0.4, 0.7, 0.2},
                     {{in, 0.0, false},
-                     {in*0.6, 1.0-in*0.6, false},
-                     {in*0.6*0.3, 1.0-in*0.6*0.3, false},
-                     {in*0.6*0.3*0.8, 1.0-in*0.6*0.3*0.8, false}});
+                     {in*0.6, 1.0-0.6, false},
+                     {in*0.6*0.3, 1.0-0.6*0.3, false},
+                     {in*0.6*0.3*0.8, 1.0-0.6*0.3*0.8, false}});
     }
 }
 
@@ -214,37 +212,49 @@ TEST(FlowTest, partial_and_not_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
         verify_flow(AndNotFlow(in), {0.4, 0.7, 0.2},
                     {{in, 0.0, false},
-                     {in*0.4, in*0.4, false},
-                     {in*0.4*0.3, in*0.4*0.3, false},
-                     {in*0.4*0.3*0.8, in*0.4*0.3*0.8, false}});
+                     {in*0.4, 0.4, false},
+                     {in*0.4*0.3, 0.4*0.3, false},
+                     {in*0.4*0.3*0.8, 0.4*0.3*0.8, false}});
     }
 }
 
-TEST(FlowTest, full_first_flow_calc) {
+TEST(FlowTest, full_rank_flow) {
     for (bool strict: {false, true}) {
-        verify_flow_calc(first_flow_calc(strict),
-                         {0.4, 0.7, 0.2}, {1.0, 0.4, 0.4, 0.4});
+        verify_flow(RankFlow(strict), {0.4, 0.7, 0.2},
+                    {{1.0, 0.0, strict},
+                     {0.0, 0.4, false},
+                     {0.0, 0.4, false},
+                     {0.0, 0.4, false}});
     }
 }
 
-TEST(FlowTest, partial_first_flow_calc) {
+TEST(FlowTest, partial_rank_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
-        verify_flow_calc(first_flow_calc(in),
-                         {0.4, 0.7, 0.2}, {in, in*0.4, in*0.4, in*0.4});
+        verify_flow(RankFlow(in), {0.4, 0.7, 0.2},
+                    {{in, 0.0, false},
+                     {0.0, 0.4, false},
+                     {0.0, 0.4, false},
+                     {0.0, 0.4, false}});
     }
 }
 
-TEST(FlowTest, full_full_flow_calc) {
+TEST(FlowTest, full_blender_flow) {
     for (bool strict: {false, true}) {
-        verify_flow_calc(full_flow_calc(strict),
-                         {0.4, 0.7, 0.2}, {1.0, 1.0, 1.0, 1.0});
+        verify_flow(BlenderFlow(strict), {0.4, 0.7, 0.2},
+                    {{1.0, 0.0, strict},
+                     {1.0, 1.0-0.6, strict},
+                     {1.0, 1.0-0.6*0.3, strict},
+                     {1.0, 1.0-0.6*0.3*0.8, strict}});
     }
 }
 
-TEST(FlowTest, partial_full_flow_calc) {
+TEST(FlowTest, partial_blender_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
-        verify_flow_calc(full_flow_calc(in),
-                         {0.4, 0.7, 0.2}, {in, in, in, in});
+        verify_flow(BlenderFlow(in), {0.4, 0.7, 0.2},
+                    {{in, 0.0, false},
+                     {in, 1.0-0.6, false},
+                     {in, 1.0-0.6*0.3, false},
+                     {in, 1.0-0.6*0.3*0.8, false}});
     }
 }
 
@@ -271,6 +281,37 @@ TEST(FlowTest, flow_cost) {
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<OrFlow>(data, true), 0.6 + 0.5 + 0.4);
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndNotFlow>(data, false), 1.1 + 0.4*1.2 + 0.4*0.3*1.3);
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndNotFlow>(data, true), 0.6 + 0.4*1.2 + 0.4*0.3*1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<RankFlow>(data, false), 1.1);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<RankFlow>(data, true), 0.6);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<BlenderFlow>(data, false), 1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<BlenderFlow>(data, true), 0.6);
+}
+
+TEST(FlowTest, rank_flow_cost_accumulation_is_first) {
+    for (bool strict: {false, true}) {
+        auto flow = AnyFlow::create<RankFlow>(strict);
+        double cost = 0.0;
+        flow.update_cost(cost, 5.0);
+        EXPECT_EQ(cost, 5.0);
+        flow.add(0.5); // next child
+        flow.update_cost(cost, 5.0);
+        EXPECT_EQ(cost, 5.0);
+    }
+}
+
+TEST(FlowTest, blender_flow_cost_accumulation_is_max) {
+    for (bool strict: {false, true}) {
+        auto flow = AnyFlow::create<BlenderFlow>(strict);
+        double cost = 0.0;
+        flow.update_cost(cost, 5.0);
+        EXPECT_EQ(cost, 5.0);
+        flow.add(0.5); // next child
+        flow.update_cost(cost, 3.0);
+        EXPECT_EQ(cost, 5.0);
+        flow.add(0.5); // next child
+        flow.update_cost(cost, 7.0);
+        EXPECT_EQ(cost, 7.0);
+    }
 }
 
 TEST(FlowTest, optimal_and_flow) {
@@ -328,11 +369,11 @@ TEST(FlowTest, optimal_and_not_flow) {
             double max_cost = 0.0;
             AndNotFlow::sort(data, strict);
             EXPECT_EQ(data[0], first);
-            EXPECT_EQ(ordered_cost_of<AndNotFlow>(data, strict), min_cost);
+            EXPECT_DOUBLE_EQ(ordered_cost_of<AndNotFlow>(data, strict), min_cost);
             auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
                              if (my_data[0] == first) {
                                  double my_cost = ordered_cost_of<AndNotFlow>(my_data, strict);
-                                 EXPECT_LE(min_cost, my_cost);
+                                 EXPECT_LE(min_cost, my_cost + 1e-9);
                                  max_cost = std::max(max_cost, my_cost);
                              }
                          };

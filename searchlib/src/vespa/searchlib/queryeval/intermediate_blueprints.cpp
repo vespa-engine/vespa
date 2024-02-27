@@ -207,10 +207,10 @@ AndNotBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) co
 }
 
 
-FlowCalc
-AndNotBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+AndNotBlueprint::my_flow(InFlow in_flow) const
 {
-    return flow_calc<AndNotFlow>(in_flow);
+    return AnyFlow::create<AndNotFlow>(in_flow);
 }
 
 //-----------------------------------------------------------------------------
@@ -307,10 +307,10 @@ AndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
     return create_and_filter(get_children(), strict, constraint);
 }
 
-FlowCalc
-AndBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+AndBlueprint::my_flow(InFlow in_flow) const
 {
-    return flow_calc<AndFlow>(in_flow);
+    return AnyFlow::create<AndFlow>(in_flow);
 }
 
 //-----------------------------------------------------------------------------
@@ -407,10 +407,10 @@ OrBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
     return create_or_filter(get_children(), strict, constraint);
 }
 
-FlowCalc
-OrBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+OrBlueprint::my_flow(InFlow in_flow) const
 {
-    return flow_calc<OrFlow>(in_flow);
+    return AnyFlow::create<OrFlow>(in_flow);
 }
 
 uint8_t
@@ -425,10 +425,10 @@ OrBlueprint::calculate_cost_tier() const
 
 //-----------------------------------------------------------------------------
 
-FlowCalc
-WeakAndBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+WeakAndBlueprint::my_flow(InFlow in_flow) const
 {
-    return flow_calc<OrFlow>(in_flow);
+    return AnyFlow::create<OrFlow>(in_flow);
 }
 
 WeakAndBlueprint::~WeakAndBlueprint() = default;
@@ -502,10 +502,10 @@ WeakAndBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) c
 
 //-----------------------------------------------------------------------------
 
-FlowCalc
-NearBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+NearBlueprint::my_flow(InFlow in_flow) const
 {
-    return flow_calc<AndFlow>(in_flow);
+    return AnyFlow::create<AndFlow>(in_flow);
 }
 
 FlowStats
@@ -573,10 +573,10 @@ NearBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
 
 //-----------------------------------------------------------------------------
 
-FlowCalc
-ONearBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+ONearBlueprint::my_flow(InFlow in_flow) const
 {
-    return flow_calc<AndFlow>(in_flow);
+    return AnyFlow::create<AndFlow>(in_flow);
 }
 
 FlowStats
@@ -734,18 +734,18 @@ RankBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) cons
     return create_first_child_filter(get_children(), strict, constraint);
 }
 
-FlowCalc
-RankBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+RankBlueprint::my_flow(InFlow in_flow) const
 {
-    return first_flow_calc(in_flow);
+    return AnyFlow::create<RankFlow>(in_flow);
 }
 
 //-----------------------------------------------------------------------------
 
-FlowCalc
-SourceBlenderBlueprint::make_flow_calc(InFlow in_flow) const
+AnyFlow
+SourceBlenderBlueprint::my_flow(InFlow in_flow) const
 {
-    return full_flow_calc(in_flow);
+    return AnyFlow::create<BlenderFlow>(in_flow);
 }
 
 SourceBlenderBlueprint::SourceBlenderBlueprint(const ISourceSelector &selector) noexcept
