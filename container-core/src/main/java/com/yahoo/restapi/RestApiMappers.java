@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
+import ai.vespa.json.InvalidJsonException;
 import ai.vespa.json.Json;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +53,7 @@ public class RestApiMappers {
                     (context, entity) -> new JacksonJsonResponse<>(200, entity, context.jacksonJsonMapper(), true)));
 
     static List<ExceptionMapperHolder<?>> DEFAULT_EXCEPTION_MAPPERS = List.of(
+            new ExceptionMapperHolder<>(InvalidJsonException.class, (ctx, e) -> ErrorResponse.badRequest(e.getMessage())),
             new ExceptionMapperHolder<>(RestApiException.class, (context, exception) -> exception.response()));
 
     private RestApiMappers() {}

@@ -23,7 +23,8 @@ class JsonTest {
                     "array": [1, 2, 3],
                     "quux": {
                         "corge": "grault"
-                    }
+                    },
+                    "timestamp": "2021-06-01T12:00:00Z"
                 }
                 """;
         var json = Json.of(text);
@@ -37,6 +38,7 @@ class JsonTest {
         assertEquals(8.25D, json.f("floaty").asDouble());
         assertEquals(8L, json.f("floaty").asLong());
         assertTrue(json.f("bool").asBool());
+        assertEquals("2021-06-01T12:00:00Z", json.f("timestamp").asInstant().toString());
 
         // Array member
         assertEquals(3, json.f("array").length());
@@ -78,6 +80,9 @@ class JsonTest {
 
         exception = assertThrows(InvalidJsonException.class, () -> json.f("string").asLong());
         assertEquals("Expected JSON member 'string' to be a 'integer' or 'float' but got 'string'", exception.getMessage());
+
+        exception = assertThrows(InvalidJsonException.class, () -> json.f("string").asInstant());
+        assertEquals("Expected JSON member 'string' to be a valid timestamp: Text 'bar' could not be parsed at index 0", exception.getMessage());
     }
 
     @Test

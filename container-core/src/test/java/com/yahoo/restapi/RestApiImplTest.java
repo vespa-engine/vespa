@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
+import ai.vespa.json.InvalidJsonException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequestBuilder;
@@ -20,6 +21,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.MissingFormatWidthException;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
@@ -96,6 +99,23 @@ class RestApiImplTest {
                 .build();
         verifyJsonResponse(restApi, Method.GET, "/long", null, 200, "{\"message\":\"long value is 123456\"}");
         verifyJsonResponse(restApi, Method.GET, "/exception", null, 500, "{\"message\":\"oops division by zero\", \"error-code\":\"INTERNAL_SERVER_ERROR\"}");
+    }
+
+    @Test
+    void chooses_most_specific_exception_mapper() {
+        RestApi restApi = RestApi.builder()
+                .addRoute(route("/json").get(ctx -> { throw new InvalidJsonException("oops invalid json"); }))
+                .addRoute(route("/illegal-argument").get(ctx -> { throw new IllegalArgumentException(); }))
+                .addRoute(route("/bad-format").get(ctx -> { throw new MissingFormatWidthException(""); }))
+                .addExceptionMapper(IllegalArgumentException.class, (ctx, exception) -> ErrorResponse.badRequest("oops illegal argument"))
+                .addExceptionMapper(NoSuchElementException.class, (ctx, exception) -> ErrorResponse.badRequest("oops no such element"))
+                .addExceptionMapper(RuntimeException.class, (ctx, exception) -> ErrorResponse.internalServerError("oops runtime"))
+                .addExceptionMapper(MissingFormatWidthException.class, (ctx, exception) -> ErrorResponse.internalServerError("oops bad format width"))
+                .build();
+        // Uses default mapper for `InvalidJsonException` since it's more specific than `IllegalArgumentException`
+        verifyJsonResponse(restApi, Method.GET, "/json", null, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"oops invalid json\"}");
+        verifyJsonResponse(restApi, Method.GET, "/illegal-argument", null, 400, "{\"message\":\"oops illegal argument\", \"error-code\":\"BAD_REQUEST\"}");
+        verifyJsonResponse(restApi, Method.GET, "/bad-format", null, 500, "{\"message\":\"oops bad format width\", \"error-code\":\"INTERNAL_SERVER_ERROR\"}");
     }
 
     @Test
