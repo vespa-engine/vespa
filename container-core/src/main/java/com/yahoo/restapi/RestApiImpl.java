@@ -211,7 +211,11 @@ class RestApiImpl implements RestApi {
             exceptionMappers.addAll(RestApiMappers.DEFAULT_EXCEPTION_MAPPERS);
         }
         // Topologically sort children before superclasses, so most the specific match is found by iterating through mappers in order.
-        exceptionMappers.sort((a, b) -> (a.type.isAssignableFrom(b.type) ? 1 : 0) + (b.type.isAssignableFrom(a.type) ? -1 : 0));
+        exceptionMappers.sort((l, r) -> {
+            if (l.type.equals(r.type)) return 0;
+            if (l.type.isAssignableFrom(r.type)) return 1;
+            return -1;
+        });
         return exceptionMappers;
     }
 
