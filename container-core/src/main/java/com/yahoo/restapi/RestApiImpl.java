@@ -214,7 +214,9 @@ class RestApiImpl implements RestApi {
         exceptionMappers.sort((l, r) -> {
             if (l.type.equals(r.type)) return 0;
             if (l.type.isAssignableFrom(r.type)) return 1;
-            return -1;
+            if (r.type.isAssignableFrom(l.type)) return -1;
+            // Ensure global ordering when no inheritance relationship exists
+            return l.type.getName().compareTo(r.type.getName());
         });
         return exceptionMappers;
     }
