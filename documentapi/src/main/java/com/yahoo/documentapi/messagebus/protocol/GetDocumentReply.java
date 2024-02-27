@@ -11,9 +11,10 @@ import java.nio.ByteBuffer;
  */
 public class GetDocumentReply extends DocumentAcceptedReply {
 
-    private DocumentDeserializer buffer = null;
     private Document document = null;
     private long lastModified = 0;
+    // TODO Vespa 9: remove. Inherently tied to legacy protocol version.
+    private DocumentDeserializer buffer = null;
     private LazyDecoder decoder = null;
 
     /**
