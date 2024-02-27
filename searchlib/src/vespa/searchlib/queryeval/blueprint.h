@@ -386,7 +386,7 @@ private:
     bool infer_want_global_filter() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
-    virtual FlowCalc make_flow_calc(InFlow in_flow) const = 0;
+    virtual AnyFlow my_flow(InFlow in_flow) const = 0;
 
 protected:
     // returns an empty collection if children have empty or
