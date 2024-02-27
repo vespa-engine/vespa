@@ -172,7 +172,9 @@ class RestApiImpl implements RestApi {
         log.log(Level.FINE, e, e::getMessage);
         ExceptionMapperHolder<?> mapper = exceptionMappers.stream()
                 .filter(holder -> holder.type.isAssignableFrom(e.getClass()))
-                .findFirst().orElseThrow(() -> e);
+                // Topologically sort children before superclasses, so most the specific match is found by iterating through mappers in order.
+                .min((a, b) -> (a.type.isAssignableFrom(b.type) ? 1 : 0) + (b.type.isAssignableFrom(a.type) ? -1 : 0))
+                .orElseThrow(() -> e);
         return mapper.toResponse(context, e);
     }
 
@@ -210,14 +212,6 @@ class RestApiImpl implements RestApi {
         if (!disableDefaultMappers){
             exceptionMappers.addAll(RestApiMappers.DEFAULT_EXCEPTION_MAPPERS);
         }
-        // Topologically sort children before superclasses, so most the specific match is found by iterating through mappers in order.
-        exceptionMappers.sort((l, r) -> {
-            if (l.type.equals(r.type)) return 0;
-            if (l.type.isAssignableFrom(r.type)) return 1;
-            if (r.type.isAssignableFrom(l.type)) return -1;
-            // Ensure global ordering when no inheritance relationship exists
-            return l.type.getName().compareTo(r.type.getName());
-        });
         return exceptionMappers;
     }
 
