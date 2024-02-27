@@ -14,9 +14,10 @@ import java.util.Arrays;
  */
 public class PutDocumentMessage extends TestAndSetMessage {
 
-    private DocumentDeserializer buffer = null;
     private DocumentPut put = null;
     private long time = 0;
+    // TODO Vespa 9: remove. Inherently tied to legacy protocol version.
+    private DocumentDeserializer buffer = null;
     private LazyDecoder decoder = null;
 
     /**
