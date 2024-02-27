@@ -48,7 +48,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private enum BundleType {
         CORE,      // up to container-dev
-        INTERNAL,  // other vespa bundles (need not be set for groupId 'com.yahoo.vespa')
+        INTERNAL,  // other vespa bundles (some bundle will by default be INTERNAL, see isVespaInternalGroupId)
         USER
     }
 
@@ -321,6 +321,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private boolean isVespaInternalGroupId(String groupId) {
         return groupId.equals(VESPA_GROUP_ID)
+                || groupId.equals(VESPA_GROUP_ID + ".cloud")
                 || groupId.equals(VESPA_GROUP_ID + ".hosted")
                 || groupId.equals(VESPA_GROUP_ID + ".hosted.controller");
     }
