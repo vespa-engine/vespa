@@ -223,19 +223,33 @@ public class ValidateNearestNeighborTestCase {
 
     @Test
     void testWithQueryProfileArgument() {
+        testWithQueryProfileArgument("foo");
+    }
+
+    @Test
+    void testWithQueryProfileArgumentFromBuiltInProperties() {
+        testWithQueryProfileArgument("model.queryTree");
+    }
+
+    @Test
+    void testWithQueryProfileArgumentFromBuiltInPropertyAlias() {
+        testWithQueryProfileArgument("query");
+    }
+
+    private void testWithQueryProfileArgument(String argument) {
         var embedder = new MockEmbedder("test text",
                                         Language.UNKNOWN,
                                         Tensor.from("tensor<float>(x[3]):[1.0, 2.0, 3.0]"));
         var registry = new QueryProfileRegistry();
         var profile = new QueryProfile("test");
-        profile.set("ranking.features.query(qvector)", "embed(@foo)", registry);
+        profile.set("ranking.features.query(qvector)", "embed(@" + argument + ")", registry);
         registry.register(profile);
         var queryString = makeQuery("fvector", "qvector");
         var query = new Query.Builder()
                             .setSchemaInfo(createSchemaInfo())
                             .setQueryProfile(registry.compile().findQueryProfile("test"))
                             .setEmbedder(embedder)
-                            .setRequestMap(Map.of("foo", "test text"))
+                            .setRequestMap(Map.of(argument, "test text"))
                             .build();
         setYqlQuery(query, queryString);
         var result = doSearch(searcher, query);

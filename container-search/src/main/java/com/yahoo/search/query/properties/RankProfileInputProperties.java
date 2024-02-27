@@ -48,7 +48,7 @@ public class RankProfileInputProperties extends Properties {
                                                       value,
                                                       query.getModel().getLanguage(),
                                                       context,
-                                                      this);
+                                                      query.properties());
                 }
             }
             catch (IllegalArgumentException e) {
