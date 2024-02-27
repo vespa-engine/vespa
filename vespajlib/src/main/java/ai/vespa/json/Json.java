@@ -8,6 +8,8 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -88,6 +90,20 @@ public class Json implements Iterable<Json> {
     public boolean asBool(boolean defaultValue) {
         if (isMissing()) return defaultValue;
         return asBool();
+    }
+
+    public Optional<Instant> asOptionalInstant() { return isMissing() ? Optional.empty() : Optional.of(asInstant()); }
+    public Instant asInstant() {
+        requireType(Type.STRING);
+        try {
+            return Instant.parse(asString());
+        } catch (DateTimeParseException e) {
+            throw new InvalidJsonException("Expected JSON member '%s' to be a valid timestamp: %s".formatted(path, e.getMessage()));
+        }
+    }
+    public Instant asInstant(Instant defaultValue) {
+        if (isMissing()) return defaultValue;
+        return asInstant();
     }
 
     public List<Json> toList() {
@@ -184,7 +200,14 @@ public class Json implements Iterable<Json> {
 
         public static Builder.Array newArray() { return new Builder.Array(new Slime().setArray()); }
         public static Builder.Object newObject() { return new Builder.Object(new Slime().setObject()); }
-        public static Builder.Object existingObject(Cursor cursor) { return new Builder.Object(cursor); }
+        public static Builder.Object existingSlimeObjectCursor(Cursor cursor) {
+            if (cursor.type() != Type.OBJECT) throw new InvalidJsonException("Input is not an object");
+            return new Builder.Object(cursor);
+        }
+        public static Builder.Array existingSlimeArrayCursor(Cursor cursor) {
+            if (cursor.type() != Type.ARRAY) throw new InvalidJsonException("Input is not an array");
+            return new Builder.Array(cursor);
+        }
 
         private Builder(Cursor cursor) { this.cursor = cursor; }
 
@@ -200,6 +223,8 @@ public class Json implements Iterable<Json> {
             public Builder.Array add(Json json) {
                 SlimeUtils.addValue(json.inspector, cursor.addObject()); return this;
             }
+            public Builder.Array add(Json.Builder builder) { return add(builder.build()); }
+
             /** Note: does not return {@code this}! */
             public Builder.Array addArray() { return new Array(cursor.addArray()); }
             /** Note: does not return {@code this}! */
@@ -223,6 +248,9 @@ public class Json implements Iterable<Json> {
             public Builder.Object set(String field, Json json) {
                 SlimeUtils.setObjectEntry(json.inspector, field, cursor); return this;
             }
+            public Builder.Object set(String field, Json.Builder json) {
+                SlimeUtils.setObjectEntry(json.build().inspector, field, cursor); return this;
+            }
             /** Note: does not return {@code this}! */
             public Builder.Array setArray(String field) { return new Array(cursor.setArray(field)); }
             /** Note: does not return {@code this}! */
@@ -233,6 +261,7 @@ public class Json implements Iterable<Json> {
             public Builder.Object set(String field, double value) { cursor.setDouble(field, value); return this; }
             public Builder.Object set(String field, boolean value) { cursor.setBool(field, value); return this; }
             public Builder.Object set(String field, BigDecimal value) { cursor.setString(field, value.toPlainString()); return this; }
+            public Builder.Object set(String field, Instant timestamp) { cursor.setString(field, timestamp.toString()); return this; }
         }
 
         public Cursor slimeCursor() { return cursor; }
