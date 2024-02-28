@@ -108,7 +108,22 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                 return Optional.empty();
             }
         } else {
-            return Optional.of(nodeRepository.nodes().deallocate(node, Agent.FailedExpirer, "Expired by FailedExpirer"));
+            List<String> childrenBlockingDirtying = children
+                    .stream()
+                    // Examples: a failed child node may have an index we want to preserve. A dirty child node has
+                    // log we want to sync.  A parked child w/o wTD may have been parked by an operator for inspection.
+                    .filter(child -> child.state() != Node.State.parked || !child.status().wantToDeprovision())
+                    .map(Node::hostname)
+                    .toList();
+
+            if (childrenBlockingDirtying.isEmpty()) {
+                return Optional.of(nodeRepository.nodes().deallocate(node, Agent.FailedExpirer, "Expired by FailedExpirer"));
+            } else {
+                log.info(String.format("Expired failed host %s was not dirtied because it has children: %s",
+                                       node.hostname(), String.join(", ", childrenBlockingDirtying)));
+                return Optional.empty();
+            }
+
         }
     }
 
