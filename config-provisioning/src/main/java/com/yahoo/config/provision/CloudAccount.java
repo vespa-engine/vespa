@@ -90,7 +90,7 @@ public class CloudAccount implements Comparable<CloudAccount> {
                 return empty;
             if (META_BY_CLOUD.get("aws").matches(cloudAccount))
                 return new CloudAccount(cloudAccount, CloudName.AWS);
-            if (META_BY_CLOUD.get("gcp").matches(cloudAccount)) // TODO (freva): Remove July 2023
+            if (META_BY_CLOUD.get("gcp").matches(cloudAccount)) // TODO (freva): Remove July 2024
                 return new CloudAccount(cloudAccount, CloudName.GCP);
             throw illegal(cloudAccount, "Must be on format '<cloud-name>:<account>' or 'default'");
         }
