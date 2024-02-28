@@ -165,6 +165,37 @@ public class FailedExpirerTest {
     }
 
     @Test
+    public void ensure_failed_host_is_not_dirtied_unless_all_children_are_gone() {
+        FailureScenario scenario = new FailureScenario(SystemName.Public, Environment.prod)
+                .withNode(NodeType.host, FailureScenario.defaultFlavor, "host1")
+                .setReady("host1")
+                .allocate(NodeType.host)
+                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "host1")
+                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "host1")
+                .setReady("node1", "node2")
+                .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2")
+                .failNode(1, "host1", "node1", "node2");
+
+        scenario.clock.advance(Duration.ofHours(2));
+        scenario.expirer().run();
+        // host1 still failed because children are too
+        scenario.assertNodesIn(Node.State.failed, "host1", "node1", "node2");
+
+        scenario.clock.advance(Duration.ofDays(5));
+        scenario.expirer().run();
+        scenario.assertNodesIn(Node.State.failed, "host1");
+        scenario.assertNodesIn(Node.State.dirty, "node1", "node2");
+
+        scenario.setChildrenReady("node1", "node2");
+        scenario.assertNodesIn(Node.State.ready);
+        scenario.assertNodesIn(Node.State.failed, "host1");
+
+        scenario.clock.advance(Duration.ofHours(1));
+        scenario.expirer().run();
+        scenario.assertNodesIn(Node.State.dirty, "host1");
+    }
+
+    @Test
     public void ensure_parked_docker_host() {
         FailureScenario scenario = new FailureScenario(SystemName.main, Environment.prod)
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
@@ -304,6 +335,15 @@ public class FailedExpirerTest {
                                      .toList();
             nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
             tester.move(Node.State.ready, nodes);
+            return this;
+        }
+
+        public FailureScenario setChildrenReady(String... hostnames) {
+            List<Node> nodes = Stream.of(hostnames)
+                                     .map(this::get)
+                                     .toList();
+            nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+            Stream.of(hostnames).forEach(hostname -> nodeRepository.nodes().markNodeAvailableForNewAllocation(hostname, Agent.nodeAdmin, getClass().getSimpleName()));
             return this;
         }
 
