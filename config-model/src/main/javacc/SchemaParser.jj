@@ -2009,8 +2009,7 @@ void inputs(ParsedRankProfile profile) :
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-    (input(profile))?
-    (<NL> (input(profile))?)*
+      ( input(profile) (<NL>)*) *
     <RBRACE>
 }
 

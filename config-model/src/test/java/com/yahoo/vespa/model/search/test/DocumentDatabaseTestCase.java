@@ -277,7 +277,7 @@ public class DocumentDatabaseTestCase {
         String inputsProfile =
                 "  rank-profile inputs {" +
                         "    inputs {" +
-                        "      query(foo) tensor<float>(x[10])\n" +
+                        "      query(foo) tensor<float>(x[10])" +
                         "      query(bar) tensor(key{},x[1000])" +
                         "    }" +
                         "  }";
