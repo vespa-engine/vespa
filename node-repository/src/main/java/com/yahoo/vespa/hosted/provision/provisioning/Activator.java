@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,11 +76,11 @@ class Activator {
         NodeList oldActive = applicationNodes.state(Node.State.active); // All nodes active now
         NodeList continuedActive = oldActive.matching(node -> hostnames.contains(node.hostname()));
         NodeList newActive = withHostInfo(continuedActive, hosts, activationTime).and(reserved); // All nodes that will be active when this is committed
-        if ( ! containsAll(hostnames, newActive))
+        if ( ! newActive.hostnames().containsAll(hostnames))
             throw new RuntimeException("Activation of " + application + " failed, could not find all requested hosts." +
-                                               "\nRequested: " + hosts +
-                                               "\nReserved: " + reserved.hostnames() +
-                                               "\nActive: " + oldActive.hostnames());
+                                       "\nRequested: " + hosts +
+                                       "\nReserved: " + reserved.hostnames() +
+                                       "\nActive: " + oldActive.hostnames());
 
         validateParentHosts(application, allNodes, reserved);
 
@@ -193,13 +192,6 @@ class Activator {
 
             throw new ParentHostUnavailableException(message);
         }
-    }
-
-    private boolean containsAll(Set<String> hosts, NodeList nodes) {
-        Set<String> notFoundHosts = new HashSet<>(hosts);
-        for (Node node : nodes)
-            notFoundHosts.remove(node.hostname());
-        return notFoundHosts.isEmpty();
     }
 
     /** Returns the input nodes with the changes resulting from applying the settings in hosts to the given list of nodes. */
