@@ -4,8 +4,6 @@
 #include "match_tools.h"
 #include "search_session.h"
 #include "extract_features.h"
-#include <vespa/eval/eval/value_codec.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
@@ -63,10 +61,10 @@ void find_matching_elements(const std::vector<uint32_t> &docs, const SameElement
     auto search = same_element.create_same_element_search(dummy_tfmd, false);
     search->initRange(docs.front(), docs.back()+1);
     std::vector<uint32_t> matches;
-    for (uint32_t i = 0; i < docs.size(); ++i) {
-        search->find_matching_elements(docs[i], matches);
+    for (uint32_t doc : docs) {
+        search->find_matching_elements(doc, matches);
         if (!matches.empty()) {
-            result.add_matching_elements(docs[i], same_element.field_name(), matches);
+            result.add_matching_elements(doc, same_element.field_name(), matches);
             matches.clear();
         }
     }
@@ -74,20 +72,20 @@ void find_matching_elements(const std::vector<uint32_t> &docs, const SameElement
 
 void find_matching_elements(const std::vector<uint32_t> &docs, MatchingElementsSearch &search, MatchingElements &result) {
     search.initRange(docs.front(), docs.back() + 1);
-    for (uint32_t i = 0; i < docs.size(); ++i) {
-        search.find_matching_elements(docs[i], result);
+    for (uint32_t doc : docs) {
+        search.find_matching_elements(doc, result);
     }
 }
 
 void find_matching_elements(const std::vector<uint32_t> &docs, const vespalib::string &field_name, const AttrSearchCtx &attr_ctx, MatchingElements &result) {
     int32_t weight = 0;
     std::vector<uint32_t> matches;
-    for (uint32_t i = 0; i < docs.size(); ++i) {
-        for (int32_t id = attr_ctx.find(docs[i], 0, weight); id >= 0; id = attr_ctx.find(docs[i], id+1, weight)) {
+    for (uint32_t doc : docs) {
+        for (int32_t id = attr_ctx.find(doc, 0, weight); id >= 0; id = attr_ctx.find(doc, id+1, weight)) {
             matches.push_back(id);
         }
         if (!matches.empty()) {
-            result.add_matching_elements(docs[i], field_name, matches);
+            result.add_matching_elements(doc, field_name, matches);
             matches.clear();
         }
     }
