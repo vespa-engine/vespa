@@ -269,6 +269,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             // These should have been moved instead.
             owned_objects.feature_overrides = std::make_unique<Properties>(*feature_overrides);
             feature_overrides = owned_objects.feature_overrides.get();
+            vespalib::stringref queryStack = request.getStackRef();
+            owned_objects.stackDump.assign(queryStack.begin(), queryStack.end());
         }
 
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext, metaStore,
@@ -385,6 +387,18 @@ Matcher::get_matching_elements(const DocsumRequest &req, ISearchContext &search_
     return docsum_matcher->get_matching_elements(fields);
 }
 
+std::pair<std::shared_ptr<SearchSession>, bool>
+Matcher::lookupSearchSession(SessionManager &session_manager, const Request & req) {
+    SessionId sessionId(req.sessionId.data(), req.sessionId.size());
+    if (!sessionId.empty()) {
+        const Properties &cache_props = req.propertiesMap.cacheProperties();
+        if (cache_props.lookup("query").found()) {
+            return {session_manager.pickSearch(sessionId), true};
+        }
+    }
+    return {{}, false};
+}
+
 DocsumMatcher::UP
 Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
                                IAttributeContext &attr_ctx, SessionManager &session_manager) const
@@ -397,17 +411,9 @@ Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_
         }
     }
     std::sort(docs.begin(), docs.end());
-    SessionId sessionId(req.sessionId.data(), req.sessionId.size());
-    bool expectedSessionCached(false);
-    if (!sessionId.empty()) {
-        const Properties &cache_props = req.propertiesMap.cacheProperties();
-        expectedSessionCached = cache_props.lookup("query").found();
-        if (expectedSessionCached) {
-            SearchSession::SP session(session_manager.pickSearch(sessionId));
-            if (session) {
-                return std::make_unique<DocsumMatcher>(std::move(session), std::move(docs));
-            }
-        }
+    auto [session, expectedSessionCached] = lookupSearchSession(session_manager, req);
+    if (session) {
+        return std::make_unique<DocsumMatcher>(std::move(session), std::move(docs));
     }
     StupidMetaStore meta;
     MatchToolsFactory::UP mtf = create_match_tools_factory(req, search_ctx, attr_ctx, meta,

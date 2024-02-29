@@ -183,6 +183,11 @@ public:
      * @return true if this rankprofile has summary-features enabled
      **/
     bool canProduceSummaryFeatures() const;
+    /**
+     * Return a session if it exist, and a bool saying if it should exist.
+     */
+    static std::pair<std::shared_ptr<SearchSession>, bool>
+    lookupSearchSession(SessionManager &session_manager, const Request & request);
 };
 
 }

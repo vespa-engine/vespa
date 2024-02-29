@@ -7,7 +7,6 @@
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -50,6 +49,11 @@ DocsumContext::initState()
 {
     const DocsumRequest & req = _request;
     _docsumState._args.initFromDocsumRequest(req);
+    auto [session, expectSession] = Matcher::lookupSearchSession(_sessionMgr, req);
+    if (session) {
+        vespalib::stringref queryStack = session->getStackDump();
+        _docsumState._args.setStackDump(queryStack.size(), queryStack.data());
+    }
     _docsumState._docsumbuf.clear();
     _docsumState._docsumbuf.reserve(req.hits.size());
     for (const auto & hit : req.hits) {
