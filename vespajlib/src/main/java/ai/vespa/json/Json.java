@@ -16,8 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -71,14 +69,14 @@ public class Json implements Iterable<Json> {
         return asString();
     }
 
-    public OptionalLong asOptionalLong() { return isMissing() ? OptionalLong.empty() : OptionalLong.of(asLong()); }
+    public Optional<Long> asOptionalLong() { return isMissing() ? Optional.empty() : Optional.of(asLong()); }
     public long asLong() { requireType(Type.LONG, Type.DOUBLE); return inspector.asLong(); }
     public long asLong(long defaultValue) {
         if (isMissing()) return defaultValue;
         return asLong();
     }
 
-    public OptionalDouble asOptionalDouble() { return isMissing() ? OptionalDouble.empty() : OptionalDouble.of(asDouble()); }
+    public Optional<Double> asOptionalDouble() { return isMissing() ? Optional.empty() : Optional.of(asDouble()); }
     public double asDouble() { requireType(Type.LONG, Type.DOUBLE); return inspector.asDouble(); }
     public double asDouble(double defaultValue) {
         if (isMissing()) return defaultValue;
