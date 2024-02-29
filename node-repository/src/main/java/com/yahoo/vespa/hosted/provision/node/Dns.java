@@ -38,11 +38,12 @@ public class Dns {
         }
 
         if (cloudName == CloudName.AZURE) {
-            return ipVersion.is6() ?
-                    EnumSet.noneOf(RecordType.class) :
-                    enclave || hostType == confighost ?
-                            EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
-                            EnumSet.of(RecordType.FORWARD);
+            return ipVersion.is6() ? EnumSet.noneOf(RecordType.class) :
+                   // Each Azure enclave and cfg host and child gets one private 10.* address and one public address.
+                   // The private DNS zone resolves to the private, while the public DNS zone resolves to the public,
+                   // which is why we return FORWARD and PUBLIC_FORWARD here.  The node repo only contains the private addresses.
+                   enclave || hostType == confighost ? EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
+                   EnumSet.of(RecordType.FORWARD);
         }
 
         throw new IllegalArgumentException("Does not manage DNS for cloud " + cloudName);
