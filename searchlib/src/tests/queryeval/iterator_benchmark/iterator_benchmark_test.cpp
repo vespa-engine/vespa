@@ -309,9 +309,9 @@ strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit)
 }
 
 BenchmarkResult
-non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, double filter_hit_ratio)
+non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, double filter_hit_ratio, bool force_strict)
 {
-    auto itr = blueprint.createSearch(md, false);
+    auto itr = blueprint.createSearch(md, force_strict);
     assert(itr.get());
     BenchmarkTimer timer(budget_sec);
     uint32_t seeks = 0;
@@ -340,18 +340,18 @@ non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, dou
 }
 
 BenchmarkResult
-benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict, double filter_hit_ratio)
+benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict_context, bool force_strict, double filter_hit_ratio)
 {
     auto opts = Blueprint::Options::all();
-    blueprint->sort(strict, opts);
-    blueprint->fetchPostings(ExecuteInfo::createForTest(strict));
+    blueprint->sort(strict_context || force_strict, opts);
+    blueprint->fetchPostings(ExecuteInfo::createForTest(strict_context || force_strict));
     // Note: All blueprints get the same TermFieldMatchData instance.
     //       This is OK as long as we don't do unpacking and only use 1 thread.
     auto md = MatchData::makeTestInstance(1, 1);
-    if (strict) {
+    if (strict_context) {
         return strict_search(*blueprint, *md, docid_limit);
     } else {
-        return non_strict_search(*blueprint, *md, docid_limit, filter_hit_ratio);
+        return non_strict_search(*blueprint, *md, docid_limit, filter_hit_ratio, force_strict);
     }
 }
 
@@ -407,6 +407,12 @@ to_string(const Config& attr_config)
     return oss.str();
 }
 
+vespalib::string
+to_string(bool val)
+{
+    return val ? "true" : "false";
+}
+
 std::unique_ptr<Node>
 make_query_node(QueryOperator query_op, const benchmark::TermVector& terms)
 {
@@ -451,23 +457,23 @@ make_intermediate_blueprint(IAttributeContext& attr_ctx, const benchmark::TermVe
 }
 
 BenchmarkResult
-run_benchmark(IAttributeContext& attr_ctx, QueryOperator query_op, const benchmark::TermVector& terms, uint32_t docid_limit, bool strict, double filter_hit_ratio)
+run_benchmark(IAttributeContext& attr_ctx, QueryOperator query_op, const benchmark::TermVector& terms, uint32_t docid_limit, bool strict_context, bool force_strict, double filter_hit_ratio)
 {
     if (query_op == QueryOperator::And) {
-        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict, filter_hit_ratio);
+        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
     } else if (query_op == QueryOperator::Or) {
-        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict, filter_hit_ratio);
+        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
     } else {
         auto query_node = make_query_node(query_op, terms);
         auto blueprint = make_leaf_blueprint(*query_node, attr_ctx, docid_limit);
-        return benchmark_search(std::move(blueprint), docid_limit, strict, filter_hit_ratio);
+        return benchmark_search(std::move(blueprint), docid_limit, strict_context, force_strict, filter_hit_ratio);
     }
 }
 
 void
 print_result_header()
 {
-    std::cout << "|  chn | f_ratio | o_ratio | a_ratio |  f.est | f.cost | f.scost |     hits |    seeks |  time_ms | act_cost | alt_cost | ns_per_seek | ms_per_act_cost | ms_per_alt_cost | iterator | blueprint |" << std::endl;
+    std::cout << "|  chn | f_ratio | o_ratio | a_ratio |  f.est |  f.cost | f.scost |     hits |    seeks |  time_ms | act_cost | alt_cost | ns_per_seek | ms_per_act_cost | ms_per_alt_cost | iterator | blueprint |" << std::endl;
 }
 
 void
@@ -479,13 +485,13 @@ print_result(const BenchmarkResult& res, const benchmark::TermVector& terms, dou
               << " | " << std::setw(7) << op_hit_ratio
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
               << " | " << std::setw(6) << res.flow.estimate
-              << " | " << std::setw(6) << res.flow.cost
+              << " | " << std::setw(7) << res.flow.cost
               << " | " << std::setw(7) << res.flow.strict_cost
               << " | " << std::setw(8) << res.hits
               << " | " << std::setw(8) << res.seeks
-              << std::setprecision(2)
-              << " | " << std::setw(8) << res.time_ms
               << std::setprecision(3)
+              << " | " << std::setw(8) << res.time_ms
+              << std::setprecision(4)
               << " | " << std::setw(8) << res.actual_cost
               << " | " << std::setw(8) << res.alt_cost
               << std::setprecision(2)
@@ -509,14 +515,17 @@ print_result(const BenchmarkCaseResult& result)
 struct BenchmarkCase {
     Config attr_cfg;
     QueryOperator query_op;
-    bool strict;
-    BenchmarkCase(const Config& attr_cfg_in, QueryOperator query_op_in, bool strict_in)
+    bool strict_context;
+    bool force_strict;
+    BenchmarkCase(const Config& attr_cfg_in, QueryOperator query_op_in, bool strict_context_in)
         : attr_cfg(attr_cfg_in),
           query_op(query_op_in),
-          strict(strict_in)
+          strict_context(strict_context_in),
+          force_strict(false)
     {}
     vespalib::string to_string() const {
-        return "op=" + ::to_string(query_op) + ", cfg=" + ::to_string(attr_cfg) + ", strict=" + (strict ? "true" : "false");
+        return "op=" + ::to_string(query_op) + ", cfg=" + ::to_string(attr_cfg) +
+               ", strict_context=" + ::to_string(strict_context) + ", force_strict=" + ::to_string(force_strict);
     }
 };
 
@@ -582,6 +591,7 @@ struct BenchmarkCaseSetup {
     std::vector<uint32_t> child_counts;
     std::vector<double> filter_hit_ratios;
     uint32_t default_values_per_document;
+    double filter_crossover_factor;
     BenchmarkCaseSetup(uint32_t num_docs_in,
                        const BenchmarkCase& bcase_in,
                        const std::vector<double>& op_hit_ratios_in,
@@ -591,7 +601,8 @@ struct BenchmarkCaseSetup {
           op_hit_ratios(op_hit_ratios_in),
           child_counts(child_counts_in),
           filter_hit_ratios({1.0}),
-          default_values_per_document(0)
+          default_values_per_document(0),
+          filter_crossover_factor(1.0)
     {}
     ~BenchmarkCaseSetup() {}
 };
@@ -604,7 +615,9 @@ struct BenchmarkSetup {
     std::vector<double> op_hit_ratios;
     std::vector<uint32_t> child_counts;
     std::vector<double> filter_hit_ratios;
+    bool force_strict;
     uint32_t default_values_per_document;
+    double filter_crossover_factor;
     BenchmarkSetup(uint32_t num_docs_in,
                    const std::vector<Config>& attr_cfgs_in,
                    const std::vector<QueryOperator>& query_ops_in,
@@ -618,7 +631,9 @@ struct BenchmarkSetup {
           op_hit_ratios(op_hit_ratios_in),
           child_counts(child_counts_in),
           filter_hit_ratios({1.0}),
-          default_values_per_document(0)
+          force_strict(false),
+          default_values_per_document(0),
+          filter_crossover_factor(1.0)
     {}
     BenchmarkSetup(uint32_t num_docs_in,
                    const std::vector<Config>& attr_cfgs_in,
@@ -629,12 +644,15 @@ struct BenchmarkSetup {
     {}
     BenchmarkCaseSetup make_case_setup(const BenchmarkCase& bcase) const {
         BenchmarkCaseSetup res(num_docs, bcase, op_hit_ratios, child_counts);
+        res.bcase.force_strict = force_strict;
         res.default_values_per_document = default_values_per_document;
-        if (!bcase.strict) {
+        if (!bcase.strict_context) {
             // Simulation of a filter is only relevant in a non-strict context.
             res.filter_hit_ratios = filter_hit_ratios;
+            res.filter_crossover_factor = filter_crossover_factor;
         } else {
             res.filter_hit_ratios = {1.0};
+            res.filter_crossover_factor = 0.0;
         }
         return res;
     }
@@ -669,10 +687,12 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
             auto terms = hit_specs.add(children, hits_per_term);
             auto attr_ctx = make_attribute_context(setup.bcase.attr_cfg, setup.num_docs, hit_specs);
             for (double filter_hit_ratio : setup.filter_hit_ratios) {
-                auto res = run_benchmark(*attr_ctx, setup.bcase.query_op, terms, setup.num_docs + 1,
-                                         setup.bcase.strict, filter_hit_ratio);
-                print_result(res, terms, op_hit_ratio, filter_hit_ratio, setup.num_docs);
-                result.add(res);
+                if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
+                    auto res = run_benchmark(*attr_ctx, setup.bcase.query_op, terms, setup.num_docs + 1,
+                                             setup.bcase.strict_context, setup.bcase.force_strict, filter_hit_ratio);
+                    print_result(res, terms, op_hit_ratio, filter_hit_ratio, setup.num_docs);
+                    result.add(res);
+                }
             }
         }
     }
@@ -712,29 +732,43 @@ const Config int32 = make_config(BasicType::INT32, CollectionType::SINGLE, false
 const Config int32_fs = make_config(BasicType::INT32, CollectionType::SINGLE, true);
 const Config int32_array = make_config(BasicType::INT32, CollectionType::ARRAY, false);
 const Config int32_array_fs = make_config(BasicType::INT32, CollectionType::ARRAY, true);
+const Config int32_wset = make_config(BasicType::INT32, CollectionType::WSET, false);
 const Config int32_wset_fs = make_config(BasicType::INT32, CollectionType::WSET, true);
 const Config str = make_config(BasicType::STRING, CollectionType::SINGLE, false);
 const Config str_fs = make_config(BasicType::STRING, CollectionType::SINGLE, true);
 const Config str_array = make_config(BasicType::STRING, CollectionType::ARRAY, false);
 const Config str_array_fs = make_config(BasicType::STRING, CollectionType::ARRAY, true);
+const Config str_wset = make_config(BasicType::STRING, CollectionType::WSET, false);
 
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_without_fast_search)
 {
-    std::vector<Config> attr_cfgs = {int32, int32_array, str, str_array};
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
-    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {false}, hit_ratios);
+    std::vector<Config> attr_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
+    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
+    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
     setup.default_values_per_document = 1;
-    setup.filter_hit_ratios = {0.01, 0.1, 0.5, 1.0};
+    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
     run_benchmarks(setup);
 }
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_with_fast_search)
 {
     std::vector<Config> attr_cfgs = {int32_fs, int32_array_fs, str_fs, str_array_fs};
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0};
+    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
     BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
-    setup.filter_hit_ratios = {0.01, 0.1, 0.5, 1.0};
+    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
+    run_benchmarks(setup);
+}
+
+TEST(IteratorBenchmark, analyze_term_search_in_attributes_combined)
+{
+    // Note: all fast-search attributes has similar performance, so only needed to include one.
+    std::vector<Config> attr_cfgs = {int32_fs, int32, int32_array, int32_wset, str, str_array, str_wset};
+    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
+    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
+    setup.default_values_per_document = 1;
+    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
+    setup.filter_crossover_factor = 1.0;
     run_benchmarks(setup);
 }
 
