@@ -55,10 +55,10 @@ public class ArchiveStreamReader implements AutoCloseable {
         try {
             while ((entry = archiveInputStream.getNextEntry()) != null) {
                 Path path = Path.fromString(requireNormalized(entry.getName(), options.allowDotSegment));
-                if (isSymlink(entry)) throw new IllegalArgumentException("Archive entry " + path + " is a symbolic link, which is unsupported");
+                if (isSymlink(entry)) throw new IllegalArgumentException(archiveType() + " entry " + path + " is a symbolic link, which is unsupported");
                 if (entry.isDirectory()) continue;
                 if (!options.pathPredicate.test(path.toString())) continue;
-                if (++entriesRead > options.maxEntries) throw new IllegalArgumentException("Attempted to read more entries than entry limit of " + options.maxEntries);
+                if (++entriesRead > options.maxEntries) throw new IllegalArgumentException(archiveType() + " contains more files than the limit of " + options.maxEntries);
 
                 long size = 0;
                 byte[] buffer = new byte[2048];
@@ -66,9 +66,9 @@ public class ArchiveStreamReader implements AutoCloseable {
                 while ((read = archiveInputStream.read(buffer)) != -1) {
                     totalRead += read;
                     size += read;
-                    if (totalRead > options.maxSize) throw new IllegalArgumentException("Total size of archive exceeds size limit of " + options.maxSize + " bytes");
+                    if (totalRead > options.maxSize) throw new IllegalArgumentException("Total size of " + archiveType() + " exceeds size limit of " + options.maxSize + " bytes");
                     if (read > options.maxEntrySize) {
-                        if (!options.truncateEntry) throw new IllegalArgumentException("Size of entry " + path + " exceeded entry size limit of " + options.maxEntrySize + " bytes");
+                        if (!options.truncateEntry) throw new IllegalArgumentException("Size of " + archiveType() + " entry " + path + " exceeded entry size limit of " + options.maxEntrySize + " bytes");
                     } else {
                         outputStream.write(buffer, 0, read);
                     }
@@ -84,6 +84,10 @@ public class ArchiveStreamReader implements AutoCloseable {
     @Override
     public void close() {
         Exceptions.uncheck(archiveInputStream::close);
+    }
+
+    private String archiveType() {
+        return archiveInputStream instanceof TarArchiveInputStream ? "TAR" : "ZIP";
     }
 
     /** Information about a file extracted from a compressed archive */
