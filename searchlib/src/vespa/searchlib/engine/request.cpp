@@ -16,6 +16,7 @@ Request::Request(RelativeTime relativeTime, uint32_t reservePropMaps)
       location(),
       propertiesMap(reservePropMaps),
       stackDump(),
+      sessionId(),
       _trace(_relativeTime, 0)
 {
 }

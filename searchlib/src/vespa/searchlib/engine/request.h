@@ -23,7 +23,7 @@ public:
     vespalib::duration getTimeLeft() const;
     bool expired() const { return getTimeLeft() <= vespalib::duration::zero(); }
 
-    const vespalib::stringref getStackRef() const {
+    vespalib::stringref getStackRef() const {
         return vespalib::stringref(stackDump.data(), stackDump.size());
     }
 
@@ -43,6 +43,7 @@ public:
     vespalib::string   location;
     PropertiesMap      propertiesMap;
     std::vector<char>  stackDump;
+    std::vector<char>  sessionId;
 private:
     mutable Trace      _trace;
 };

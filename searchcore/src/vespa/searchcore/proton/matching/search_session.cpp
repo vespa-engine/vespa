@@ -28,7 +28,8 @@ SearchSession::OwnershipBundle::OwnershipBundle(MatchContext && match_context,
     : search_handler(std::move(searchHandler)),
       context(std::move(match_context)),
       feature_overrides(),
-      readGuard()
+      readGuard(),
+      stackDump()
 {}
 
 SearchSession::OwnershipBundle::OwnershipBundle() noexcept = default;
