@@ -39,15 +39,15 @@ class QueryBuilderBase
         bool _active;
         Weight _weight;
     public:
-        WeightOverride() : _active(false), _weight(0) {}
-        WeightOverride(Weight weight) : _active(true), _weight(weight) {}
+        WeightOverride() noexcept : _active(false), _weight(0) {}
+        explicit WeightOverride(Weight weight) noexcept : _active(true), _weight(weight) {}
         void adjustWeight(Weight &weight) const { if (_active) weight = _weight; }
     };
     struct NodeInfo {
         Intermediate *node;
         int remaining_child_count;
         WeightOverride weight_override;
-        NodeInfo(Intermediate *n, int c) : node(n), remaining_child_count(c) {}
+        NodeInfo(Intermediate *n, int c) noexcept : node(n), remaining_child_count(c) {}
     };
     Node::UP _root;
     std::stack<NodeInfo> _nodes;

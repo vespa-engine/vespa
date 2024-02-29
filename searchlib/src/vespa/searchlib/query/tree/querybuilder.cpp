@@ -71,7 +71,7 @@ void QueryBuilderBase::addIntermediateNode(Intermediate *n, int child_count)
             if (!_nodes.empty()) {
                 weight_override = _nodes.top().weight_override;
             }
-            _nodes.push(NodeInfo(node.release(), child_count));
+            _nodes.emplace(node.release(), child_count);
             _nodes.top().weight_override = weight_override;
             if (child_count == 0) {
                 Node *completed(_nodes.top().node);
@@ -95,7 +95,7 @@ Node::UP QueryBuilderBase::build() {
         reportError("QueryBuilderBase::build: Trying to build incomplete query tree.");
     }
     if (hasError()) {
-        return Node::UP();
+        return {};
     }
     return std::move(_root);
 }
@@ -105,6 +105,6 @@ void QueryBuilderBase::reset() {
         delete _nodes.top().node;
         _nodes.pop();
     }
-    _root.reset(0);
+    _root.reset();
     _error_msg = "";
 }
