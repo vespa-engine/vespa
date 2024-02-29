@@ -38,8 +38,6 @@ import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -477,14 +475,17 @@ public class LoadBalancerProvisionerTest {
         assertEquals(cloudAccount1, loadBalancers.first().get().instance().get().cloudAccount());
     }
 
-    // TODO: 'combined' does not work
-    public static Object[] data() {
-        return new Object[]{container /*, combined */};
+    @Test
+    public void container_load_balancer_with_existing_in_removable_state() {
+        load_balancer_with_existing_in_removable_state(container);
     }
 
-    @MethodSource("data")
-    @ParameterizedTest(name = "clusterType={0}")
-    public void load_balancer_with_existing_in_removable_state(ClusterSpec.Type clusterType) {
+    @Test
+    public void combined_load_balancer_with_existing_in_removable_state() {
+        load_balancer_with_existing_in_removable_state(combined);
+    }
+
+    private void load_balancer_with_existing_in_removable_state(ClusterSpec.Type clusterType) {
         ClusterResources resources = new ClusterResources(3, 1, nodeResources);
         Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(CloudAccount.empty), ClusterInfo.empty());
         ClusterSpec clusterSpec = clusterRequest(

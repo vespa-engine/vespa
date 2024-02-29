@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 
@@ -77,6 +78,11 @@ public class LoadBalancer {
     /** Returns a copy of this with instance set to given instance */
     public LoadBalancer with(LoadBalancerInstance instance) {
         return new LoadBalancer(id, idSeed, Optional.of(instance), state, changedAt);
+    }
+
+    /** Returns the effective container ID of given cluster. For combined clusters this returns the ID of the container cluster */
+    public static ClusterSpec.Id containerId(ClusterSpec cluster) {
+        return cluster.combinedId().orElse(cluster.id());
     }
 
     public enum State {
