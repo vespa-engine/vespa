@@ -526,6 +526,11 @@
                 <version>${spotbugs.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.vafer</groupId>
+                <artifactId>jdependency</artifactId>
+                <version>${vafer.jdependency.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wiremock</groupId>
                 <artifactId>wiremock-standalone</artifactId>
                 <version>${wiremock.vespa.version}</version>
@@ -995,6 +1000,16 @@
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-interpolation</artifactId>
                 <version>${plexus-interpolation.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-utils</artifactId>
+                <version>${plexus-utils.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-xml</artifactId>
+                <version>${plexus-xml.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>

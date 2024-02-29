@@ -129,6 +129,8 @@
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
+        <plexus-utils.vespa.version>3.5.1</plexus-utils.vespa.version>
+        <plexus-xml.vespa.version>3.0.0</plexus-xml.vespa.version>
         <protobuf.vespa.version>3.25.3</protobuf.vespa.version>
         <questdb.vespa.version>7.3.9</questdb.vespa.version>
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
@@ -142,6 +144,7 @@
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
         <zookeeper.client.vespa.version>3.9.1</zookeeper.client.vespa.version>
         <zookeeper.client.artifactId>zookeeper-server-3.9.1</zookeeper.client.artifactId>
+        <vafer.jdependency.vespa.version>2.10</vafer.jdependency.vespa.version>
 
         <!-- Versions used by tenant parent pom and testing framework -->
         <!-- CAUTION: upgrading junit for tenants poms may break testing frameworks -->
