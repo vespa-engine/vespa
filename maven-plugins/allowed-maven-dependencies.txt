@@ -52,7 +52,8 @@ org.codehaus.plexus:plexus-component-annotations:2.1.0
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${maven-enforcer-plugin.vespa.version}
 org.codehaus.plexus:plexus-sec-dispatcher:2.0
-org.codehaus.plexus:plexus-utils:${maven-shade-plugin.vespa.version}
+org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
+org.codehaus.plexus:plexus-xml:${plexus-xml.vespa.version}
 org.eclipse.aether:aether-api:1.0.0.v20140518
 org.eclipse.aether:aether-util:1.0.0.v20140518
 org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
@@ -76,4 +77,4 @@ org.ow2.asm:asm:${asm.vespa.version}
 org.slf4j:slf4j-api:${slf4j.vespa.version}
 org.tukaani:xz:1.9
 org.twdata.maven:mojo-executor:${mojo-executor.vespa.version}
-org.vafer:jdependency:2.9.0
+org.vafer:jdependency:${vafer.jdependency.vespa.version}
