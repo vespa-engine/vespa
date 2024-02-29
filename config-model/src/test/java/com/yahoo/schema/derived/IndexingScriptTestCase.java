@@ -40,4 +40,23 @@ public class IndexingScriptTestCase {
         verifyIndexingScript(false);
         verifyIndexingScript(true);
     }
+
+    private void verifyZcurveScript(boolean isStreaming) {
+        VespaModel model = IndexInfoTestCase.createModel(TEST,
+                """
+                        field f type position { indexing: attribute }
+                        """);
+        Schema schema = model.getSearchClusters().get(0).schemas().get(TEST).fullSchema();
+        IlscriptsConfig cfg = ilscriptsConfig(schema, isStreaming);
+        assertEquals(1, cfg.ilscript().size());
+        assertEquals(1, cfg.ilscript(0).content().size());
+        String exp_f = isStreaming ? "attribute f" : "zcurve | attribute f_zcurve";
+        assertEquals("clear_state | guard { input f | " + exp_f + "; }", cfg.ilscript(0).content(0));
+    }
+
+    @Test
+    void testThatZcurveIsRewrittenFromStreaming() {
+        verifyZcurveScript(false);
+        verifyZcurveScript(true);
+    }
 }

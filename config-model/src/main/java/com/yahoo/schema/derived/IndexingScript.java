@@ -8,6 +8,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
@@ -113,12 +114,49 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         }
     }
 
+    // for streaming, drop zcurve conversion to attribute with suffix
+    private static class DropZcurve extends ExpressionConverter {
+        private static final String zSuffix = "_zcurve";
+        private static final int zSuffixLen = zSuffix.length();
+        private boolean seenZcurve = false;
+
+        @Override
+        protected boolean shouldConvert(Expression exp) {
+            if (exp instanceof ZCurveExpression) {
+                seenZcurve = true;
+                return true;
+            }
+            if (seenZcurve && exp instanceof AttributeExpression attrExp) {
+                return attrExp.getFieldName().endsWith(zSuffix);
+            }
+            return false;
+        }
+
+        @Override
+        protected Expression doConvert(Expression exp) {
+            if (exp instanceof ZCurveExpression) {
+                return null;
+            }
+            if (exp instanceof AttributeExpression attrExp) {
+                String orig = attrExp.getFieldName();
+                int len = orig.length();
+                if (len > zSuffixLen && orig.endsWith(zSuffix)) {
+                    String fieldName = orig.substring(0, len - zSuffixLen);
+                    var result = new AttributeExpression(fieldName);
+                    return result;
+                }
+            }
+            return exp;
+        }
+    }
+
     private void addContentInOrder(IlscriptsConfig.Ilscript.Builder ilscriptBuilder) {
         ArrayList<Expression> later = new ArrayList<>();
         Set<String> touchedFields = new HashSet<>();
         for (Expression expression : expressions) {
             if (isStreaming) {
                 expression = expression.convertChildren(new DropTokenize());
+                expression = expression.convertChildren(new DropZcurve());
             }
             if (modifiesSelf(expression) && ! setsLanguage(expression)) {
                 later.add(expression);
