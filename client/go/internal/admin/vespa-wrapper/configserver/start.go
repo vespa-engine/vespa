@@ -4,6 +4,7 @@
 package configserver
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
@@ -81,6 +82,8 @@ func StartConfigserverEtc() int {
 	fixDirsAndFiles(fixSpec)
 	exportSettings(vespaHome)
 	vespa.MaybeSwitchUser("vespa-start-configserver")
+	hname, _ := vespa.FindOurHostname()
+	fmt.Printf("Starting configserver on '%s'\n", hname)
 	maybeStartLogd()
 	return runConfigserverWithRunserver()
 }

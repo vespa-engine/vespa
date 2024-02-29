@@ -70,7 +70,7 @@ func waitForProxyResponse() bool {
 	hname, _ := vespa.FindOurHostname()
 	backtick := osutil.BackTicksWithStderr
 	start := time.Now()
-	fmt.Printf("Waiting for config proxy to start\n")
+	fmt.Printf("Waiting for config proxy to start on '%s'\n", hname)
 	for sleepcount := 0; sleepcount < 1800; sleepcount++ {
 		time.Sleep(100 * time.Millisecond)
 		got, err := os.ReadFile(CONFIGPROXY_PIDFILE)
