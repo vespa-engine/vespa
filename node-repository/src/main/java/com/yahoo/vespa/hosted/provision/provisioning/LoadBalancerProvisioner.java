@@ -101,7 +101,7 @@ public class LoadBalancerProvisioner {
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         if (!shouldProvision(application, requested.type(), cluster.type())) return;
         try (var lock = db.lock(application)) {
-            ClusterSpec.Id clusterId = effectiveId(cluster);
+            ClusterSpec.Id clusterId = LoadBalancer.containerId(cluster);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
             prepare(loadBalancerId, cluster.zoneEndpoint(), requested);
         }
@@ -121,7 +121,7 @@ public class LoadBalancerProvisioner {
         Map<ClusterSpec.Id, ZoneEndpoint> activatingClusters = clusters.stream()
                                                                        // .collect(Collectors.toMap(ClusterSpec::id, ClusterSpec::zoneEndpoint));
                                                                        // TODO: this dies with combined clusters
-                                                                       .collect(groupingBy(LoadBalancerProvisioner::effectiveId,
+                                                                       .collect(groupingBy(LoadBalancer::containerId,
                                                                                           reducing(ZoneEndpoint.defaultEndpoint,
                                                                                                    ClusterSpec::zoneEndpoint,
                                                                                                    (o, n) -> o.isDefault() ? n : o)));
@@ -391,7 +391,7 @@ public class LoadBalancerProvisioner {
         } else {
             nodes = nodes.nodeType(NodeType.tenant).container();
         }
-        return nodes.groupingBy(node -> effectiveId(node.allocation().get().membership().cluster()));
+        return nodes.groupingBy(node -> LoadBalancer.containerId(node.allocation().get().membership().cluster()));
     }
 
     /** Returns real servers for given nodes */
@@ -434,10 +434,6 @@ public class LoadBalancerProvisioner {
             case ipv6 -> reachable.removeIf(IP::isV4);
         }
         return reachable;
-    }
-
-    private static ClusterSpec.Id effectiveId(ClusterSpec cluster) {
-        return cluster.combinedId().orElse(cluster.id());
     }
 
 }

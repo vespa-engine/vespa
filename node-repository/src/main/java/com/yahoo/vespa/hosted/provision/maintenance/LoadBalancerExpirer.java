@@ -160,10 +160,14 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
 
     private List<Node> allocatedNodes(LoadBalancerId loadBalancer) {
         return nodeRepository().nodes()
-                .list(Node.State.active, Node.State.inactive, Node.State.reserved)
-                .owner(loadBalancer.application())
-                .cluster(loadBalancer.cluster())
-                .asList();
+                               .list(Node.State.active, Node.State.inactive, Node.State.reserved)
+                               .owner(loadBalancer.application())
+                               // Always match the cluster by the effective container ID
+                               // TODO(mpolden): Remove this and use NodeList::cluster once combined disappears in Vespa 9
+                               .matching((node) -> node.allocation().isPresent() &&
+                                                   LoadBalancer.containerId(node.allocation().get().membership().cluster())
+                                                               .equals(loadBalancer.cluster()))
+                               .asList();
     }
 
 }
