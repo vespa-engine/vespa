@@ -19,7 +19,6 @@ public:
     uint32_t          maxhits;
     vespalib::string  sortSpec;
     std::vector<char> groupSpec;
-    std::vector<char> sessionId;
 
     SearchRequest();
     explicit SearchRequest(RelativeTime relativeTime);

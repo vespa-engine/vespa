@@ -13,7 +13,6 @@ DocsumRequest::DocsumRequest(RelativeTime relativeTime)
     : Request(std::move(relativeTime)),
       resultClassName(),
       hits(),
-      sessionId(),
       _fields()
 {
 }

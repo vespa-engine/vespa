@@ -12,8 +12,7 @@ SearchRequest::SearchRequest(RelativeTime relativeTime)
       offset(0),
       maxhits(10),
       sortSpec(),
-      groupSpec(),
-      sessionId()
+      groupSpec()
 {
 }
 

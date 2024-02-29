@@ -28,7 +28,6 @@ public:
 
     vespalib::string  resultClassName;
     std::vector<Hit>  hits;
-    std::vector<char> sessionId;
 
     DocsumRequest();
     explicit DocsumRequest(RelativeTime relativeTime);
