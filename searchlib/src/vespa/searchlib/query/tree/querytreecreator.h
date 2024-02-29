@@ -22,8 +22,7 @@ struct QueryTreeCreator {
         return StackDumpQueryCreator<NodeTypes>().create(iterator);
     }
 
-private:
-    QueryTreeCreator();
+    QueryTreeCreator() = delete;
 };
 
 }

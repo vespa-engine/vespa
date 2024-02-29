@@ -13,13 +13,11 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
-#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
-#include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/dot_product_blueprint.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -28,7 +26,6 @@
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/queryeval/matching_elements_search.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
@@ -43,7 +40,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
-#include <sstream>
 #include <charconv>
 
 #include <vespa/log/log.h>
@@ -274,7 +270,7 @@ public:
         using OrFlow = search::queryeval::OrFlow;
         struct MyAdapter {
             uint32_t docid_limit;
-            MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+            explicit MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
             double estimate(const AttrHitEstimate &est) const noexcept {
                 return est.is_unknown() ? 0.5 : abs_to_rel_est(est.est_hits(), docid_limit);
             }
@@ -480,7 +476,7 @@ public:
         using OrFlow = search::queryeval::OrFlow;
         struct MyAdapter {
             uint32_t docid_limit;
-            MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+            explicit MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
             double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
                 return abs_to_rel_est(term.posting_size, docid_limit);
             }
