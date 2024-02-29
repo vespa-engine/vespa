@@ -26,6 +26,7 @@ func startSentinelWithRunserver() {
 	_, veHost := commonPreChecks()
 	vespa.CheckCorrectUser()
 	os.Setenv(envvars.VESPA_SERVICE_NAME, SENTINEL_SERVICE_NAME)
+	fmt.Printf("Starting services for VESPA_HOSTNAME='%s'\n", veHost)
 	configId := fmt.Sprintf("hosts/%s", veHost)
 	args := []string{
 		"-r", "10",
