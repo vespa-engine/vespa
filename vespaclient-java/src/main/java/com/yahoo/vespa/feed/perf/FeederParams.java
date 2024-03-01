@@ -8,7 +8,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -151,36 +150,36 @@ class FeederParams {
         CommandLine cmd = new DefaultParser().parse(opts, args);
 
         if (cmd.hasOption('n')) {
-            numDispatchThreads = Integer.valueOf(cmd.getOptionValue('n').trim());
+            numDispatchThreads = Integer.parseInt(cmd.getOptionValue('n').trim());
         }
         if (cmd.hasOption('m')) {
-            maxPending = Integer.valueOf(cmd.getOptionValue('m').trim());
+            maxPending = Integer.parseInt(cmd.getOptionValue('m').trim());
         }
         if (cmd.hasOption('c')) {
-            numConnectionsPerTarget = Integer.valueOf(cmd.getOptionValue('c').trim());
+            numConnectionsPerTarget = Integer.parseInt(cmd.getOptionValue('c').trim());
         }
         if (cmd.hasOption("wi")) {
-            windowIncrementSize = Integer.valueOf(cmd.getOptionValue("wi").trim());
+            windowIncrementSize = Integer.parseInt(cmd.getOptionValue("wi").trim());
         }
         if (cmd.hasOption("wd")) {
-            windowDecrementFactor = Double.valueOf(cmd.getOptionValue("wd").trim());
+            windowDecrementFactor = Double.parseDouble(cmd.getOptionValue("wd").trim());
         }
         if (cmd.hasOption("wb")) {
-            windowSizeBackOff = Double.valueOf(cmd.getOptionValue("wb").trim());
+            windowSizeBackOff = Double.parseDouble(cmd.getOptionValue("wb").trim());
         }
         if (cmd.hasOption("wr")) {
-            windowResizeRate = Double.valueOf(cmd.getOptionValue("wr").trim());
+            windowResizeRate = Double.parseDouble(cmd.getOptionValue("wr").trim());
         }
         if (cmd.hasOption('r')) {
             route = Route.parse(cmd.getOptionValue('r').trim());
         }
         if (cmd.hasOption("t")) {
-            timeout = Double.valueOf(cmd.getOptionValue("t").trim());
+            timeout = Double.parseDouble(cmd.getOptionValue("t").trim());
         }
         benchmarkMode =  cmd.hasOption('b');
         if (cmd.hasOption('o')) {
             String fileName = cmd.getOptionValue('o').trim();
-            dumpStream = new FileOutputStream(new File(fileName));
+            dumpStream = new FileOutputStream(fileName);
             if (fileName.endsWith(".vespa")) {
                 dumpFormat = DumpFormat.VESPA;
             }
@@ -189,13 +188,13 @@ class FeederParams {
             setSerialTransfer();
         }
         if (cmd.hasOption('l')) {
-            numMessagesToSend = Long.valueOf(cmd.getOptionValue('l').trim());
+            numMessagesToSend = Long.parseLong(cmd.getOptionValue('l').trim());
         }
 
         if ( !cmd.getArgList().isEmpty()) {
             inputStreams.clear();
             for (String fileName : cmd.getArgList()) {
-                inputStreams.add(new BufferedInputStream(new FileInputStream(new File(fileName)), BUFFER_SIZE));
+                inputStreams.add(new BufferedInputStream(new FileInputStream(fileName), BUFFER_SIZE));
             }
         }
 
