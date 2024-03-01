@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "benchmark_searchable.h"
+#include "disk_index_builder.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
@@ -7,7 +9,9 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -31,10 +35,16 @@ using namespace search::queryeval;
 using namespace search;
 using namespace vespalib;
 
+using search::index::DocIdAndFeatures;
+using search::index::Schema;
+using search::queryeval::test::BenchmarkSearchable;
+using search::queryeval::test::DiskIndexBuilder;
+
 // TODO: Re-seed for each benchmark setup
 constexpr uint32_t default_seed = 1234;
 std::mt19937 gen(default_seed);
-const vespalib::string field = "myfield";
+const vespalib::string field_name = "myfield";
+const vespalib::string index_dir = "indexdir";
 double budget_sec = 1.0;
 
 BitVector::UP
@@ -90,8 +100,45 @@ public:
         }
         return res;
     }
+    size_t size() const { return _specs.size(); }
     auto begin() const { return _specs.begin(); }
     auto end() const { return _specs.end(); }
+};
+
+vespalib::string
+to_string(const Config& attr_config)
+{
+    std::ostringstream oss;
+    auto col_type = attr_config.collectionType();
+    auto basic_type = attr_config.basicType();
+    if (col_type == CollectionType::SINGLE) {
+        oss << basic_type.asString();
+    } else {
+        oss << col_type.asString() << "<" << basic_type.asString() << ">";
+    }
+    if (attr_config.fastSearch()) {
+        oss << "(fs)";
+    }
+    return oss.str();
+}
+
+class FieldConfig {
+private:
+    std::variant<Config, Schema::IndexField> _cfg;
+
+public:
+    FieldConfig(const Config& attr_cfg_in) : _cfg(attr_cfg_in) {}
+    FieldConfig(const Schema::IndexField& index_cfg_in) : _cfg(index_cfg_in) {}
+    bool is_attr() const { return _cfg.index() == 0; }
+    const Config& attr_cfg() const { return std::get<0>(_cfg); }
+    Schema index_cfg() const {
+        Schema res;
+        res.addIndexField(std::get<1>(_cfg));
+        return res;
+    }
+    vespalib::string to_string() const {
+        return is_attr() ? ::to_string(attr_cfg()) : "diskindex";
+    }
 };
 
 template <typename AttributeType, bool is_string, bool is_multivalue>
@@ -121,7 +168,7 @@ populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hi
 AttributeVector::SP
 make_attribute(const Config& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
 {
-    auto attr = AttributeFactory::createAttribute(field, cfg);
+    auto attr = AttributeFactory::createAttribute(field_name, cfg);
     attr->addReservedDoc();
     attr->addDocs(num_docs);
     uint32_t docid_limit = attr->getNumDocs();
@@ -146,13 +193,38 @@ make_attribute(const Config& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
     return attr;
 }
 
-std::unique_ptr<IAttributeContext>
-make_attribute_context(const Config& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
+class AttributeSearchable : public BenchmarkSearchable {
+private:
+    std::unique_ptr<MockAttributeContext> _attr_ctx;
+
+public:
+    AttributeSearchable(std::unique_ptr<MockAttributeContext> attr_ctx) : _attr_ctx(std::move(attr_ctx)) {}
+    std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field_spec,
+                                                const search::query::Node& term) override {
+        AttributeBlueprintFactory factory;
+        FakeRequestContext req_ctx(_attr_ctx.get());
+        return factory.createBlueprint(req_ctx, field_spec, term);
+    }
+};
+
+std::unique_ptr<BenchmarkSearchable>
+make_searchable(const FieldConfig& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
 {
-    auto attr = make_attribute(cfg, num_docs, hit_specs);
-    auto res = std::make_unique<MockAttributeContext>();
-    res->add(std::move(attr));
-    return res;
+    if (cfg.is_attr()) {
+        auto attr = make_attribute(cfg.attr_cfg(), num_docs, hit_specs);
+        auto ctx = std::make_unique<MockAttributeContext>();
+        ctx->add(std::move(attr));
+        return std::make_unique<AttributeSearchable>(std::move(ctx));
+    } else {
+        uint32_t docid_limit = num_docs + 1;
+        DiskIndexBuilder builder(cfg.index_cfg(), index_dir, docid_limit, hit_specs.size());
+        for (auto spec : hit_specs) {
+            // TODO: make number of occurrences configurable.
+            uint32_t num_occs = 1;
+            builder.add_word(std::to_string(spec.term_value), *random_docids(docid_limit, spec.num_hits), num_occs);
+        }
+        return builder.build();
+    }
 }
 
 struct BenchmarkResult {
@@ -356,11 +428,9 @@ benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict_cont
 }
 
 Blueprint::UP
-make_leaf_blueprint(const Node& node, IAttributeContext& attr_ctx, uint32_t docid_limit)
+make_leaf_blueprint(const Node& node, BenchmarkSearchable& searchable, uint32_t docid_limit)
 {
-    FakeRequestContext request_ctx(&attr_ctx);
-    AttributeBlueprintFactory source;
-    auto blueprint = source.createBlueprint(request_ctx, FieldSpec(field, 0, 0), node);
+    auto blueprint = searchable.create_blueprint(FieldSpec(field_name, 0, 0), node);
     assert(blueprint.get());
     blueprint->setDocIdLimit(docid_limit);
     blueprint->update_flow_stats(docid_limit);
@@ -391,23 +461,6 @@ to_string(QueryOperator query_op)
 }
 
 vespalib::string
-to_string(const Config& attr_config)
-{
-    std::ostringstream oss;
-    auto col_type = attr_config.collectionType();
-    auto basic_type = attr_config.basicType();
-    if (col_type == CollectionType::SINGLE) {
-        oss << basic_type.asString();
-    } else {
-        oss << col_type.asString() << "<" << basic_type.asString() << ">";
-    }
-    if (attr_config.fastSearch()) {
-        oss << "(fs)";
-    }
-    return oss.str();
-}
-
-vespalib::string
 to_string(bool val)
 {
     return val ? "true" : "false";
@@ -418,21 +471,21 @@ make_query_node(QueryOperator query_op, const benchmark::TermVector& terms)
 {
     if (query_op == QueryOperator::Term) {
         assert(terms.size() == 1);
-        return std::make_unique<SimpleNumberTerm>(std::to_string(terms[0]), field, 0, Weight(1));
+        return std::make_unique<SimpleStringTerm>(std::to_string(terms[0]), field_name, 0, Weight(1));
     } else if (query_op == QueryOperator::In) {
         auto termv = std::make_unique<IntegerTermVector>(terms.size());
         for (auto term : terms) {
             termv->addTerm(term);
         }
-        return std::make_unique<SimpleInTerm>(std::move(termv), MultiTerm::Type::INTEGER, field, 0, Weight(1));
+        return std::make_unique<SimpleInTerm>(std::move(termv), MultiTerm::Type::INTEGER, field_name, 0, Weight(1));
     } else if (query_op == QueryOperator::WeightedSet) {
-        auto res = std::make_unique<SimpleWeightedSetTerm>(terms.size(), field, 0, Weight(1));
+        auto res = std::make_unique<SimpleWeightedSetTerm>(terms.size(), field_name, 0, Weight(1));
         for (auto term : terms) {
             res->addTerm(term, Weight(1));
         }
         return res;
     } else if (query_op == QueryOperator::DotProduct) {
-        auto res = std::make_unique<SimpleDotProduct>(terms.size(), field, 0, Weight(1));
+        auto res = std::make_unique<SimpleDotProduct>(terms.size(), field_name, 0, Weight(1));
         for (auto term : terms) {
             res->addTerm(term, Weight(1));
         }
@@ -443,12 +496,12 @@ make_query_node(QueryOperator query_op, const benchmark::TermVector& terms)
 
 template <typename BlueprintType>
 Blueprint::UP
-make_intermediate_blueprint(IAttributeContext& attr_ctx, const benchmark::TermVector& terms, uint32_t docid_limit)
+make_intermediate_blueprint(BenchmarkSearchable& searchable, const benchmark::TermVector& terms, uint32_t docid_limit)
 {
     auto blueprint = std::make_unique<BlueprintType>();
     for (auto term : terms) {
-        SimpleNumberTerm sterm(std::to_string(term), field, 0, Weight(1));
-        auto child = make_leaf_blueprint(sterm, attr_ctx, docid_limit);
+        SimpleStringTerm sterm(std::to_string(term), field_name, 0, Weight(1));
+        auto child = make_leaf_blueprint(sterm, searchable, docid_limit);
         blueprint->addChild(std::move(child));
     }
     blueprint->setDocIdLimit(docid_limit);
@@ -457,15 +510,15 @@ make_intermediate_blueprint(IAttributeContext& attr_ctx, const benchmark::TermVe
 }
 
 BenchmarkResult
-run_benchmark(IAttributeContext& attr_ctx, QueryOperator query_op, const benchmark::TermVector& terms, uint32_t docid_limit, bool strict_context, bool force_strict, double filter_hit_ratio)
+run_benchmark(BenchmarkSearchable& searchable, QueryOperator query_op, const benchmark::TermVector& terms, uint32_t docid_limit, bool strict_context, bool force_strict, double filter_hit_ratio)
 {
     if (query_op == QueryOperator::And) {
-        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
+        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(searchable, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
     } else if (query_op == QueryOperator::Or) {
-        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(attr_ctx, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
+        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(searchable, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
     } else {
         auto query_node = make_query_node(query_op, terms);
-        auto blueprint = make_leaf_blueprint(*query_node, attr_ctx, docid_limit);
+        auto blueprint = make_leaf_blueprint(*query_node, searchable, docid_limit);
         return benchmark_search(std::move(blueprint), docid_limit, strict_context, force_strict, filter_hit_ratio);
     }
 }
@@ -513,18 +566,18 @@ print_result(const BenchmarkCaseResult& result)
 }
 
 struct BenchmarkCase {
-    Config attr_cfg;
+    FieldConfig field_cfg;
     QueryOperator query_op;
     bool strict_context;
     bool force_strict;
-    BenchmarkCase(const Config& attr_cfg_in, QueryOperator query_op_in, bool strict_context_in)
-        : attr_cfg(attr_cfg_in),
+    BenchmarkCase(const FieldConfig& field_cfg_in, QueryOperator query_op_in, bool strict_context_in)
+        : field_cfg(field_cfg_in),
           query_op(query_op_in),
           strict_context(strict_context_in),
           force_strict(false)
     {}
     vespalib::string to_string() const {
-        return "op=" + ::to_string(query_op) + ", cfg=" + ::to_string(attr_cfg) +
+        return "op=" + ::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
                ", strict_context=" + ::to_string(strict_context) + ", force_strict=" + ::to_string(force_strict);
     }
 };
@@ -609,7 +662,7 @@ struct BenchmarkCaseSetup {
 
 struct BenchmarkSetup {
     uint32_t num_docs;
-    std::vector<Config> attr_cfgs;
+    std::vector<FieldConfig> field_cfgs;
     std::vector<QueryOperator> query_ops;
     std::vector<bool> strictness;
     std::vector<double> op_hit_ratios;
@@ -619,13 +672,13 @@ struct BenchmarkSetup {
     uint32_t default_values_per_document;
     double filter_crossover_factor;
     BenchmarkSetup(uint32_t num_docs_in,
-                   const std::vector<Config>& attr_cfgs_in,
+                   const std::vector<FieldConfig>& field_cfgs_in,
                    const std::vector<QueryOperator>& query_ops_in,
                    const std::vector<bool>& strictness_in,
                    const std::vector<double>& op_hit_ratios_in,
                    const std::vector<uint32_t>& child_counts_in)
         : num_docs(num_docs_in),
-          attr_cfgs(attr_cfgs_in),
+          field_cfgs(field_cfgs_in),
           query_ops(query_ops_in),
           strictness(strictness_in),
           op_hit_ratios(op_hit_ratios_in),
@@ -636,11 +689,11 @@ struct BenchmarkSetup {
           filter_crossover_factor(1.0)
     {}
     BenchmarkSetup(uint32_t num_docs_in,
-                   const std::vector<Config>& attr_cfgs_in,
+                   const std::vector<FieldConfig>& field_cfgs_in,
                    const std::vector<QueryOperator>& query_ops_in,
                    const std::vector<bool>& strictness_in,
                    const std::vector<double>& op_hit_ratios_in)
-        : BenchmarkSetup(num_docs_in, attr_cfgs_in, query_ops_in, strictness_in, op_hit_ratios_in, {1})
+        : BenchmarkSetup(num_docs_in, field_cfgs_in, query_ops_in, strictness_in, op_hit_ratios_in, {1})
     {}
     BenchmarkCaseSetup make_case_setup(const BenchmarkCase& bcase) const {
         BenchmarkCaseSetup res(num_docs, bcase, op_hit_ratios, child_counts);
@@ -685,10 +738,10 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
             HitSpecs hit_specs(55555);
             hit_specs.add(setup.default_values_per_document, setup.num_docs);
             auto terms = hit_specs.add(children, hits_per_term);
-            auto attr_ctx = make_attribute_context(setup.bcase.attr_cfg, setup.num_docs, hit_specs);
+            auto searchable = make_searchable(setup.bcase.field_cfg, setup.num_docs, hit_specs);
             for (double filter_hit_ratio : setup.filter_hit_ratios) {
                 if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
-                    auto res = run_benchmark(*attr_ctx, setup.bcase.query_op, terms, setup.num_docs + 1,
+                    auto res = run_benchmark(*searchable, setup.bcase.query_op, terms, setup.num_docs + 1,
                                              setup.bcase.strict_context, setup.bcase.force_strict, filter_hit_ratio);
                     print_result(res, terms, op_hit_ratio, filter_hit_ratio, setup.num_docs);
                     result.add(res);
@@ -704,10 +757,10 @@ void
 run_benchmarks(const BenchmarkSetup& setup)
 {
     BenchmarkSummary summary;
-    for (const auto& attr_cfg : setup.attr_cfgs) {
+    for (const auto& field_cfg : setup.field_cfgs) {
         for (auto query_op : setup.query_ops) {
             for (bool strict : setup.strictness) {
-                BenchmarkCase bcase(attr_cfg, query_op, strict);
+                BenchmarkCase bcase(field_cfg, query_op, strict);
                 auto case_setup = setup.make_case_setup(bcase);
                 auto results = run_benchmark_case(case_setup);
                 summary.add(bcase, results);
@@ -718,34 +771,50 @@ run_benchmarks(const BenchmarkSetup& setup)
     print_summary(summary);
 }
 
-Config
-make_config(BasicType basic_type, CollectionType col_type, bool fast_search)
+FieldConfig
+make_attr_config(BasicType basic_type, CollectionType col_type, bool fast_search)
 {
-    Config res(basic_type, col_type);
-    res.setFastSearch(fast_search);
-    return res;
+    Config cfg(basic_type, col_type);
+    cfg.setFastSearch(fast_search);
+    return FieldConfig(cfg);
+}
+
+FieldConfig
+make_index_config()
+{
+    Schema::IndexField field(field_name, search::index::schema::DataType::STRING, search::index::schema::CollectionType::SINGLE);
+    field.set_interleaved_features(true);
+    return FieldConfig(field);
 }
 
 constexpr uint32_t num_docs = 10'000'000;
 const std::vector<double> base_hit_ratios = {0.001, 0.01, 0.1, 0.5};
-const Config int32 = make_config(BasicType::INT32, CollectionType::SINGLE, false);
-const Config int32_fs = make_config(BasicType::INT32, CollectionType::SINGLE, true);
-const Config int32_array = make_config(BasicType::INT32, CollectionType::ARRAY, false);
-const Config int32_array_fs = make_config(BasicType::INT32, CollectionType::ARRAY, true);
-const Config int32_wset = make_config(BasicType::INT32, CollectionType::WSET, false);
-const Config int32_wset_fs = make_config(BasicType::INT32, CollectionType::WSET, true);
-const Config str = make_config(BasicType::STRING, CollectionType::SINGLE, false);
-const Config str_fs = make_config(BasicType::STRING, CollectionType::SINGLE, true);
-const Config str_array = make_config(BasicType::STRING, CollectionType::ARRAY, false);
-const Config str_array_fs = make_config(BasicType::STRING, CollectionType::ARRAY, true);
-const Config str_wset = make_config(BasicType::STRING, CollectionType::WSET, false);
+const auto int32 = make_attr_config(BasicType::INT32, CollectionType::SINGLE, false);
+const auto int32_fs = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true);
+const auto int32_array = make_attr_config(BasicType::INT32, CollectionType::ARRAY, false);
+const auto int32_array_fs = make_attr_config(BasicType::INT32, CollectionType::ARRAY, true);
+const auto int32_wset = make_attr_config(BasicType::INT32, CollectionType::WSET, false);
+const auto int32_wset_fs = make_attr_config(BasicType::INT32, CollectionType::WSET, true);
+const auto str = make_attr_config(BasicType::STRING, CollectionType::SINGLE, false);
+const auto str_fs = make_attr_config(BasicType::STRING, CollectionType::SINGLE, true);
+const auto str_array = make_attr_config(BasicType::STRING, CollectionType::ARRAY, false);
+const auto str_array_fs = make_attr_config(BasicType::STRING, CollectionType::ARRAY, true);
+const auto str_wset = make_attr_config(BasicType::STRING, CollectionType::WSET, false);
+const auto str_index = make_index_config();
 
+TEST(IteratorBenchmark, analyze_term_search_in_disk_index)
+{
+    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
+    BenchmarkSetup setup(num_docs, {str_index}, {QueryOperator::Term}, {true, false}, hit_ratios);
+    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
+    run_benchmarks(setup);
+}
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_without_fast_search)
 {
-    std::vector<Config> attr_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
+    std::vector<FieldConfig> field_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
     const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
-    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
+    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
     setup.default_values_per_document = 1;
     setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
     run_benchmarks(setup);
@@ -753,9 +822,9 @@ TEST(IteratorBenchmark, analyze_term_search_in_attributes_without_fast_search)
 
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_with_fast_search)
 {
-    std::vector<Config> attr_cfgs = {int32_fs, int32_array_fs, str_fs, str_array_fs};
+    std::vector<FieldConfig> field_cfgs = {int32_fs, int32_array_fs, str_fs, str_array_fs};
     const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
-    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
+    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
     setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
     run_benchmarks(setup);
 }
@@ -763,9 +832,9 @@ TEST(IteratorBenchmark, analyze_term_search_in_attributes_with_fast_search)
 TEST(IteratorBenchmark, analyze_term_search_in_attributes_combined)
 {
     // Note: all fast-search attributes has similar performance, so only needed to include one.
-    std::vector<Config> attr_cfgs = {int32_fs, int32, int32_array, int32_wset, str, str_array, str_wset};
+    std::vector<FieldConfig> field_cfgs = {int32_fs, int32, int32_array, int32_wset, str, str_array, str_wset};
     const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
-    BenchmarkSetup setup(num_docs, attr_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
+    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
     setup.default_values_per_document = 1;
     setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
     setup.filter_crossover_factor = 1.0;
@@ -774,10 +843,10 @@ TEST(IteratorBenchmark, analyze_term_search_in_attributes_combined)
 
 TEST(IteratorBenchmark, analyze_complex_leaf_operators)
 {
-    std::vector<Config> attr_cfgs = {int32_array_fs};
+    std::vector<FieldConfig> field_cfgs = {int32_array_fs};
     std::vector<QueryOperator> query_ops = {QueryOperator::In, QueryOperator::DotProduct};
     const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
-    BenchmarkSetup setup(num_docs, attr_cfgs, query_ops, {true, false}, hit_ratios, {1, 2, 10, 100});
+    BenchmarkSetup setup(num_docs, field_cfgs, query_ops, {true, false}, hit_ratios, {1, 2, 10, 100});
     run_benchmarks(setup);
 }
 
