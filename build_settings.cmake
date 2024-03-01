@@ -47,6 +47,11 @@ if (VESPA_USE_SANITIZER)
     set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-tsan")
   endif()
 endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0)
+    # Turn off maybe uninitialized warning when compiling with
+    # gcc 14 or newer.
+    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-maybe-uninitialized")
+endif()
 
 # Warnings that are specific to C++ compilation
 # Note: this is not a union of C_WARN_OPTS, since CMAKE_CXX_FLAGS already includes CMAKE_C_FLAGS, which in turn includes C_WARN_OPTS transitively
