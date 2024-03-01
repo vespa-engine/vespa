@@ -180,7 +180,7 @@ class ApplicationApiHandlerTest {
                        """
                        {
                          "error-code": "BAD_REQUEST",
-                         "message": "Error preprocessing application package for test.default, session 2: services.xml does not exist in application package"
+                         "message": "Unable to decompress application stream: Cannot find zip signature within the file"
                        }
                        """);
     }
