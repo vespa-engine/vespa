@@ -391,7 +391,7 @@ private:
     template <typename FLOW> struct type_tag{};
     template <typename FLOW> AnyFlow(InFlow in_flow, type_tag<FLOW>) noexcept {
         using stored_type = Wrapper<FLOW>;
-        static_assert(alignof(stored_type) <= alignof(_space));
+        static_assert(alignof(stored_type) <= 8);
         static_assert(sizeof(stored_type) <= sizeof(_space));
         API *upcasted = ::new (static_cast<void*>(_space)) stored_type(in_flow);
         (void) upcasted;
