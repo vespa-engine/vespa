@@ -47,7 +47,10 @@ struct SimpleFixture
     {
         _res.search(_itr);
     }
+    ~SimpleFixture();
 };
+
+SimpleFixture::~SimpleFixture() = default;
 
 struct AdvancedFixture
 {
