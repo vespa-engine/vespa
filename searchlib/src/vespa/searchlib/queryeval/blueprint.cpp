@@ -121,7 +121,6 @@ Blueprint::Blueprint() noexcept
       _flow_stats(0.0, 0.0, 0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
-      _force_strict(false),
       _frozen(false)
 {
 }
