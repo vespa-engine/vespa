@@ -205,7 +205,6 @@ private:
     FlowStats  _flow_stats;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
-    bool       _force_strict;
     bool       _frozen;
 
 protected:
