@@ -29,10 +29,11 @@ TEST("require that separate parameter passing works") {
 TEST("require that array parameter passing works") {
     CompiledFunction arr_cf(*Function::parse(params_10, expr_10), PassParams::ARRAY);
     auto arr_fun = arr_cf.get_function();
-    EXPECT_EQUAL(10.0, arr_fun(&std::vector<double>({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0})[0]));
-    EXPECT_EQUAL(50.0, arr_fun(&std::vector<double>({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0})[0]));
-    EXPECT_EQUAL(45.0, arr_fun(&std::vector<double>({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0})[0]));
-    EXPECT_EQUAL(45.0, arr_fun(&std::vector<double>({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0})[0]));
+    auto eval_arr_fun = [&arr_fun](std::vector<double> args) { return arr_fun(&args[0]); };
+    EXPECT_EQUAL(10.0, eval_arr_fun({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}));
+    EXPECT_EQUAL(50.0, eval_arr_fun({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}));
+    EXPECT_EQUAL(45.0, eval_arr_fun({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}));
+    EXPECT_EQUAL(45.0, eval_arr_fun({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0}));
 }
 
 double my_resolve(void *ctx, size_t idx) { return ((double *)ctx)[idx]; }
@@ -40,10 +41,11 @@ double my_resolve(void *ctx, size_t idx) { return ((double *)ctx)[idx]; }
 TEST("require that lazy parameter passing works") {
     CompiledFunction lazy_cf(*Function::parse(params_10, expr_10), PassParams::LAZY);
     auto lazy_fun = lazy_cf.get_lazy_function();
-    EXPECT_EQUAL(10.0, lazy_fun(my_resolve, &std::vector<double>({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0})[0]));
-    EXPECT_EQUAL(50.0, lazy_fun(my_resolve, &std::vector<double>({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0})[0]));
-    EXPECT_EQUAL(45.0, lazy_fun(my_resolve, &std::vector<double>({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0})[0]));
-    EXPECT_EQUAL(45.0, lazy_fun(my_resolve, &std::vector<double>({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0})[0]));
+    auto eval_lazy_fun = [&lazy_fun](std::vector<double> args) { return lazy_fun(my_resolve, &args[0]); };
+    EXPECT_EQUAL(10.0, eval_lazy_fun({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}));
+    EXPECT_EQUAL(50.0, eval_lazy_fun({5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0}));
+    EXPECT_EQUAL(45.0, eval_lazy_fun({0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}));
+    EXPECT_EQUAL(45.0, eval_lazy_fun({9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0}));
 }
 
 //-----------------------------------------------------------------------------

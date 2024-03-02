@@ -275,10 +275,11 @@ TEST("require that less only VM tree optimizer works") {
     CompiledFunction compiled_function(*function, PassParams::ARRAY, less_only_vm_chain);
     EXPECT_EQUAL(1u, compiled_function.get_forests().size());
     auto f = compiled_function.get_function();
-    EXPECT_EQUAL(11.0, f(&std::vector<double>({0.5, 0.0, 0.0, 0.5, 0.0, 0.0})[0]));
-    EXPECT_EQUAL(22.0, f(&std::vector<double>({1.5, 0.5, 0.5, 1.5, 0.5, 0.5})[0]));
-    EXPECT_EQUAL(33.0, f(&std::vector<double>({1.5, 0.5, 1.5, 1.5, 0.5, 1.5})[0]));
-    EXPECT_EQUAL(44.0, f(&std::vector<double>({1.5, 1.5, 0.0, 1.5, 1.5, 0.0})[0]));
+    auto eval_f = [&f](std::vector<double> args) { return f(&args[0]); };
+    EXPECT_EQUAL(11.0, eval_f({0.5, 0.0, 0.0, 0.5, 0.0, 0.0}));
+    EXPECT_EQUAL(22.0, eval_f({1.5, 0.5, 0.5, 1.5, 0.5, 0.5}));
+    EXPECT_EQUAL(33.0, eval_f({1.5, 0.5, 1.5, 1.5, 0.5, 1.5}));
+    EXPECT_EQUAL(44.0, eval_f({1.5, 1.5, 0.0, 1.5, 1.5, 0.0}));
 }
 
 TEST("require that models with in checks are rejected by less only vm optimizer") {
@@ -305,10 +306,11 @@ TEST("require that general VM tree optimizer works") {
     CompiledFunction compiled_function(*function, PassParams::ARRAY, general_vm_chain);
     EXPECT_EQUAL(1u, compiled_function.get_forests().size());
     auto f = compiled_function.get_function();
-    EXPECT_EQUAL(11.0, f(&std::vector<double>({0.5, 0.0, 0.0, 1.0, 0.0, 0.0})[0]));
-    EXPECT_EQUAL(22.0, f(&std::vector<double>({1.5, 2.0, 1.0, 2.0, 0.5, 0.5})[0]));
-    EXPECT_EQUAL(33.0, f(&std::vector<double>({1.5, 2.0, 2.0, 2.0, 0.5, 1.5})[0]));
-    EXPECT_EQUAL(44.0, f(&std::vector<double>({1.5, 5.0, 0.0, 2.0, 1.5, 0.0})[0]));
+    auto eval_f = [&f](std::vector<double> args) { return f(&args[0]); };
+    EXPECT_EQUAL(11.0, eval_f({0.5, 0.0, 0.0, 1.0, 0.0, 0.0}));
+    EXPECT_EQUAL(22.0, eval_f({1.5, 2.0, 1.0, 2.0, 0.5, 0.5}));
+    EXPECT_EQUAL(33.0, eval_f({1.5, 2.0, 2.0, 2.0, 0.5, 1.5}));
+    EXPECT_EQUAL(44.0, eval_f({1.5, 5.0, 0.0, 2.0, 1.5, 0.0}));
 }
 
 TEST("require that models with too large sets are rejected by general vm optimizer") {
