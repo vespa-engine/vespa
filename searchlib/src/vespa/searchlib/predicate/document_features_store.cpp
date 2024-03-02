@@ -198,7 +198,7 @@ DocumentFeaturesStore::insert(const PredicateTreeAnnotations &annotations, uint3
                 ref = _word_store.addWord(word);
                 _word_index.insert(ref, BTreeNoLeafData(), cmp);
             }
-            ranges.emplace_back(ref, range.from, range.to);
+            ranges.push_back({ref, range.from, range.to});
         }
         cur_refs._ranges = _ranges.add(ranges);
         if (old_ranges_ref.valid()) {
