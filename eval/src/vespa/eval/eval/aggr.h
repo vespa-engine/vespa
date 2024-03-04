@@ -170,7 +170,7 @@ public:
     constexpr Median() noexcept : _seen() {}
     constexpr Median(T value) : _seen({value}) {}
     constexpr void sample(T value) { _seen.push_back(value); }
-    constexpr void merge(const Median &rhs) {
+    void merge(const Median &rhs) {
         for (T value: rhs._seen) {
             _seen.push_back(value);
         }
