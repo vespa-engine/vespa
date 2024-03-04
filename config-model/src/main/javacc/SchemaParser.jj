@@ -2006,14 +2006,27 @@ void inputs(ParsedRankProfile profile) :
 {
     Reference reference;
     TensorType type;
+    List<Reference> seenInputs = new ArrayList<>();
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-      ( input(profile) (<NL>)*) *
+    (
+        reference = input(profile) { seenInputs.add(reference); }
+        (<NL> { seenInputs.add(null); })*
+    )*
     <RBRACE>
+    {
+        Reference last = null;
+        for (Reference current : seenInputs) {
+            if (last != null && current != null) {
+	       deployLogger.logApplicationPackage(Level.WARNING, "Expected newline between inputs " + last + " and " + current);
+	   }
+	   last = current;
+        }
+    }
 }
 
-void input(ParsedRankProfile profile) :
+Reference input(ParsedRankProfile profile) :
 {
     Reference reference;
     InputType type = new InputType(TensorType.empty, false);
@@ -2021,7 +2034,10 @@ void input(ParsedRankProfile profile) :
 }
 {
     reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type.tensorType()) )?
-    { profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue))); }
+    {
+        profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue)));
+        return reference;
+    }
 }
 
 /** Returns the reference "query(name)" for both "query(name)" and "name". */
