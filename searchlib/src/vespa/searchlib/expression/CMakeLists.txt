@@ -31,6 +31,7 @@ vespa_add_library(searchlib_expression OBJECT
     arrayatlookupfunctionnode.cpp
     arrayoperationnode.cpp
     aggregationrefnode.cpp
+    simple_interpolate.cpp
     stringresultnode.cpp
     rawresultnode.cpp
     floatresultnode.cpp
