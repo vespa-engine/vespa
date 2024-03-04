@@ -20,6 +20,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.content.DispatchTuning;
+import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
 import java.util.ArrayList;
@@ -46,16 +47,18 @@ public class IndexedSearchCluster extends SearchCluster
     private final List<DocumentDatabase> documentDbs = new LinkedList<>();
     private final MultipleDocumentDatabasesConfigProducer documentDbsConfigProducer;
 
-    private int redundancy = 1;
+    private final Redundancy.Provider redundancyProvider;
 
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
     private final double dispatchWarmup;
     private final String summaryDecodePolicy;
 
-    public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
+    public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index,
+                                Redundancy.Provider redundancyProvider, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
         documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
+        this.redundancyProvider = redundancyProvider;
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
         summaryDecodePolicy = featureFlags.summaryDecodePolicy();
@@ -150,10 +153,6 @@ public class IndexedSearchCluster extends SearchCluster
         documentDbsConfigProducer.getConfig(builder);
     }
 
-    public void setRedundancy(int redundancy) {
-        this.redundancy = redundancy;
-    }
-
     private static DistributionPolicy.Enum toDistributionPolicy(DispatchTuning.DispatchPolicy tuning) {
         return switch (tuning) {
             case ADAPTIVE: yield DistributionPolicy.ADAPTIVE;
@@ -189,7 +188,7 @@ public class IndexedSearchCluster extends SearchCluster
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
 
-        builder.redundancy(redundancy);
+        builder.redundancy(redundancyProvider.redundancy().finalRedundancy());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
                 builder.minSearchCoverage(searchCoverage.getMinimum() * 100.0);

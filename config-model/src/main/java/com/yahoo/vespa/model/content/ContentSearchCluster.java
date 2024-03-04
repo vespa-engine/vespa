@@ -70,7 +70,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final List<SearchNode> nonIndexed = new ArrayList<>();
 
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
-    private Optional<ResourceLimits> resourceLimits = Optional.empty();
+    private ResourceLimits resourceLimits;
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
@@ -160,7 +160,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                                                String clusterName, ContentSearchCluster search) {
             List<ModelElement> indexedDefs = getIndexedSchemas(clusterElem);
             if (!indexedDefs.isEmpty()) {
-                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, deployState.featureFlags());
+                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, search, deployState.featureFlags());
 
                 Double visibilityDelay = clusterElem.childAsDouble("engine.proton.visibility-delay");
                 if (visibilityDelay != null) {
@@ -292,11 +292,10 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;
         TransactionLogServer tls;
-        Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
-                                           fractionOfMemoryReserved, this, deployState.featureFlags());
+                                           fractionOfMemoryReserved, deployState.featureFlags());
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
 
@@ -305,7 +304,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             tls.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, resourceLimits, fractionOfMemoryReserved, this)
+                                                tuning, resourceLimits, fractionOfMemoryReserved)
                     .build(deployState, parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
@@ -334,7 +333,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     public void setTuning(Tuning tuning) { this.tuning = tuning; }
 
     private void setResourceLimits(ResourceLimits resourceLimits) {
-        this.resourceLimits = Optional.of(resourceLimits);
+        this.resourceLimits = resourceLimits;
     }
 
     public boolean usesHierarchicDistribution() {
@@ -342,11 +341,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     }
 
     public void handleRedundancy(Redundancy redundancy) {
-        if (hasIndexedCluster()) {
-            // Important: these must all be the normalized "within a single leaf group" values,
-            // _not_ the cluster-wide, cross-group values.
-            indexedCluster.setRedundancy(redundancy.finalRedundancy());
-        }
         this.redundancy = redundancy;
     }
 
@@ -434,7 +428,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));
 
-        resourceLimits.ifPresent(limits -> limits.getConfig(builder));
+        if (resourceLimits != null) resourceLimits.getConfig(builder);
 
         if (tuning != null) {
             tuning.getConfig(builder);

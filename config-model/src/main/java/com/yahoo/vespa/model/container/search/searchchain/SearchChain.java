@@ -5,7 +5,6 @@ import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,7 +24,7 @@ public class SearchChain extends Chain<Searcher<?>> {
 
     //A list of documents types that this search chain provides results for, empty if unknown
     public List<String> getDocumentTypes() {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override
