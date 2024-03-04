@@ -23,7 +23,6 @@ import java.util.Map;
 public abstract class TreeConfigProducer<CHILD extends AnyConfigProducer>
     extends AnyConfigProducer
 {
-    private static final long serialVersionUID = 1L;
     private final List<Service> descendantServices = new ArrayList<>();
     private final FreezableMap<String, CHILD> childrenBySubId = new FreezableMap<>(LinkedHashMap.class);
 

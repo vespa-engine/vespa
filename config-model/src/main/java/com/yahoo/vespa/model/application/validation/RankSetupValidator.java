@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.DocumentDatabase;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.yolean.Exceptions;
 
@@ -111,31 +110,31 @@ public class RankSetupValidator implements Validator {
         writeConfig(dir, VsmfieldsConfig.getDefName() + ".cfg", vsmFB.build());
 
         RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
-        ((RankProfilesConfig.Producer) producer).getConfig(rpcb);
+        producer.getConfig(rpcb);
         writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpcb.build());
 
         IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
-        ((IndexschemaConfig.Producer) producer).getConfig(iscb);
+        producer.getConfig(iscb);
         writeConfig(dir, IndexschemaConfig.getDefName() + ".cfg", iscb.build());
 
         AttributesConfig.Builder acb = new AttributesConfig.Builder();
-        ((AttributesConfig.Producer) producer).getConfig(acb);
+        producer.getConfig(acb);
         writeConfig(dir, AttributesConfig.getDefName() + ".cfg", acb.build());
 
         RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
-        ((RankingConstantsConfig.Producer) producer).getConfig(rccb);
+        producer.getConfig(rccb);
         writeConfig(dir, RankingConstantsConfig.getDefName() + ".cfg", rccb.build());
 
         RankingExpressionsConfig.Builder recb = new RankingExpressionsConfig.Builder();
-        ((RankingExpressionsConfig.Producer) producer).getConfig(recb);
+        producer.getConfig(recb);
         writeConfig(dir, RankingExpressionsConfig.getDefName() + ".cfg", recb.build());
 
         OnnxModelsConfig.Builder omcb = new OnnxModelsConfig.Builder();
-        ((OnnxModelsConfig.Producer) producer).getConfig(omcb);
+        producer.getConfig(omcb);
         writeConfig(dir, OnnxModelsConfig.getDefName() + ".cfg", omcb.build());
 
         ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
-        ((ImportedFieldsConfig.Producer) producer).getConfig(ifcb);
+        producer.getConfig(ifcb);
         writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifcb.build());
     }
 
