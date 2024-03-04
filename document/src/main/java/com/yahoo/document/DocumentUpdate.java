@@ -347,8 +347,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     }
 
     public final void serialize(GrowableByteBuffer buf) {
-        // TODO shouldn't this be createHead()?!
-        serialize(DocumentSerializerFactory.create6(buf));
+        serialize(DocumentSerializerFactory.createHead(buf));
     }
 
     public void serialize(DocumentUpdateWriter data) {
