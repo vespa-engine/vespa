@@ -95,9 +95,6 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
 
     @Override
-    public void defaultDocumentsConfig() { }
-
-    @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
         derivedConfig.getIndexInfo().getConfig(builder);
     }

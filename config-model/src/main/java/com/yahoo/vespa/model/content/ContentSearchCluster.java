@@ -103,14 +103,13 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
             Boolean syncTransactionLog = clusterElem.childAsBoolean("engine.proton.sync-transactionlog");
 
-            ContentSearchCluster search = new ContentSearchCluster(ancestor,
-                                                                   clusterName,
-                                                                   deployState.getProperties().featureFlags(),
-                                                                   documentDefinitions,
-                                                                   globallyDistributedDocuments,
-                                                                   getFlushOnShutdown(flushOnShutdownElem),
-                                                                   syncTransactionLog,
-                                                                   fractionOfMemoryReserved);
+            var search = new ContentSearchCluster(ancestor, clusterName,
+                                                  deployState.getProperties().featureFlags(),
+                                                  documentDefinitions,
+                                                  globallyDistributedDocuments,
+                                                  getFlushOnShutdown(flushOnShutdownElem),
+                                                  syncTransactionLog,
+                                                  fractionOfMemoryReserved);
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -162,7 +161,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             List<ModelElement> indexedDefs = getIndexedSchemas(clusterElem);
             if (!indexedDefs.isEmpty()) {
                 IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, deployState.featureFlags());
-                isc.setRoutingSelector(clusterElem.childAsString("documents.selection"));
 
                 Double visibilityDelay = clusterElem.childAsDouble("engine.proton.visibility-delay");
                 if (visibilityDelay != null) {
@@ -236,7 +234,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (queryTimeout != null) {
             cluster.setQueryTimeout(queryTimeout);
         }
-        cluster.defaultDocumentsConfig();
         cluster.deriveFromSchemas(deployState);
         addCluster(cluster);
     }

@@ -24,7 +24,6 @@ import com.yahoo.vespa.model.content.SearchCoverage;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,8 +43,6 @@ public class IndexedSearchCluster extends SearchCluster
     private Tuning tuning;
     private SearchCoverage searchCoverage;
 
-    // This is the document selector string as derived from the subscription tag.
-    private String routingSelector = null;
     private final List<DocumentDatabase> documentDbs = new LinkedList<>();
     private final MultipleDocumentDatabasesConfigProducer documentDbsConfigProducer;
 
@@ -55,15 +52,6 @@ public class IndexedSearchCluster extends SearchCluster
     private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
     private final double dispatchWarmup;
     private final String summaryDecodePolicy;
-    /**
-     * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
-     * This string uses the document selector language as defined in the "document" module.
-     *
-     * @return the document selector
-     */
-    public String getRoutingSelector() {
-        return routingSelector;
-    }
 
     public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
@@ -100,32 +88,6 @@ public class IndexedSearchCluster extends SearchCluster
     private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
         ddbB.inputdoctypename(sdoc.getSchemaName())
             .configid(sdoc.getConfigId());
-    }
-
-    public void setRoutingSelector(String selector) {
-        this.routingSelector = selector;
-        if (this.routingSelector != null) {
-            try {
-                new DocumentSelectionConverter(this.routingSelector);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Invalid routing selector: " + e.getMessage());
-            }
-        }
-    }
-    /**
-     * Create default config if not specified by user.
-     * Accept empty strings as user config - it means that all feeds/documents are accepted.
-     */
-    public void defaultDocumentsConfig() {
-        if ((routingSelector == null) && !getDocumentNames().isEmpty()) {
-            Iterator<String> it = getDocumentNames().iterator();
-            routingSelector = it.next();
-            StringBuilder sb = new StringBuilder(routingSelector);
-            while (it.hasNext()) {
-                sb.append(" or ").append(it.next());
-            }
-            routingSelector = sb.toString();
-        }
     }
 
     @Override

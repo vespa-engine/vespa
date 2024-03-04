@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.ValidationOverrides.ValidationException;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
@@ -28,13 +27,10 @@ import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * Executor of validators. This defines the right order of validator execution.
@@ -82,7 +78,6 @@ public class Validation {
 
     private static void validateRouting(Execution execution) {
         new RoutingValidator().validate(execution);
-        new RoutingSelectorValidator().validate(execution);
     }
 
     private static void validateModel(ValidationParameters validationParameters, Execution execution) {
