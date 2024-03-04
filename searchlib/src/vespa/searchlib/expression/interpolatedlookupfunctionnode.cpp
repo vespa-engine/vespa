@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "interpolatedlookupfunctionnode.h"
 #include "floatresultnode.h"
+#include "simple_interpolate.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -38,22 +39,6 @@ InterpolatedLookup & InterpolatedLookup::operator= (const InterpolatedLookup &rh
 
 namespace {
 
-double
-simpleInterpolate(const std::vector<double> & v, double lookup) {
-    if (v.empty() || lookup < v[0])
-        return 0;
-    for (size_t i = 1; i < v.size(); ++i) {
-        if (lookup < v[i]) {
-            double total = v[i] - v[i - 1];
-            double above = lookup - v[i - 1];
-            double result = i - 1;
-            result += (above / total);
-            return result;
-        }
-    }
-    return v.size() - 1;
-}
-
 class InterpolateHandler : public AttributeNode::Handler {
 public:
     InterpolateHandler(FloatResultNode & result, const ExpressionNode * lookupExpression) noexcept
@@ -76,7 +61,7 @@ InterpolateHandler::handle(const AttributeResult &r) {
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _values.resize(numValues);
     r.getAttribute()->get(r.getDocId(), _values.data(), _values.size());
-    _result.set(simpleInterpolate(_values, lookup));
+    _result.set(simple_interpolate(_values, lookup));
 }
 
 }
