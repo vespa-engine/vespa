@@ -193,8 +193,8 @@ abstract class RoutableFactories80 {
     }
 
     private static ByteBuffer serializeDoc(Document doc) {
-        var buf = new GrowableByteBuffer();
-        doc.serialize(buf);
+        var buf = new GrowableByteBuffer(8 * 1024, 2.0f);
+        doc.serialize(DocumentSerializerFactory.createHead(buf));
         buf.flip();
         return buf.getByteBuffer();
     }
@@ -233,7 +233,7 @@ abstract class RoutableFactories80 {
     }
 
     private static ByteBuffer serializeUpdate(DocumentUpdate update) {
-        var buf = new GrowableByteBuffer();
+        var buf = new GrowableByteBuffer(4 * 1024, 2.0f);
         update.serialize(DocumentSerializerFactory.createHead(buf));
         buf.flip();
         return buf.getByteBuffer();
