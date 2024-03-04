@@ -160,7 +160,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                                                String clusterName, ContentSearchCluster search) {
             List<ModelElement> indexedDefs = getIndexedSchemas(clusterElem);
             if (!indexedDefs.isEmpty()) {
-                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, deployState.featureFlags());
+                IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, search, deployState.featureFlags());
 
                 Double visibilityDelay = clusterElem.childAsDouble("engine.proton.visibility-delay");
                 if (visibilityDelay != null) {
@@ -296,7 +296,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
-                                           fractionOfMemoryReserved, this, deployState.featureFlags());
+                                           fractionOfMemoryReserved, deployState.featureFlags());
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
 
@@ -305,7 +305,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             tls.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, resourceLimits, fractionOfMemoryReserved, this)
+                                                tuning, resourceLimits, fractionOfMemoryReserved)
                     .build(deployState, parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
@@ -342,11 +342,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     }
 
     public void handleRedundancy(Redundancy redundancy) {
-        if (hasIndexedCluster()) {
-            // Important: these must all be the normalized "within a single leaf group" values,
-            // _not_ the cluster-wide, cross-group values.
-            indexedCluster.setRedundancy(redundancy.finalRedundancy());
-        }
         this.redundancy = redundancy;
     }
 

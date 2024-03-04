@@ -58,14 +58,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     /** Returns the document databases contained in this cluster */
     public abstract List<DocumentDatabase> getDocumentDbs();
 
-    /** Returns a list of the document type names used in this search cluster */
-    public List<String> getDocumentNames() {
-        return schemas.values()
-                      .stream()
-                      .map(schema -> schema.fullSchema().getDocument().getDocumentName().getName())
-                      .toList();
-    }
-
     public String getClusterName()              { return clusterName; }
     public final String getIndexingModeName()   { return getIndexingMode().getName(); }
     public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }

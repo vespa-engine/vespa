@@ -38,7 +38,7 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
             if (doMapField(schema, summaryField)) {
                 SDField sdField = schema.getConcreteField(summaryField.getName());
                 if (sdField != null && GeoPos.isAnyPos(sdField)) {
-                    summaryMap.put(summaryField, Collections.singletonList(summaryField.getName()));
+                    summaryMap.put(summaryField, List.of(summaryField.getName()));
                 } else {
                     summaryMap.put(summaryField, from);
                 }
