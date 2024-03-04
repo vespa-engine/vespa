@@ -216,35 +216,35 @@ public class IndexedSearchCluster extends SearchCluster implements
     private record Join(List<DocumentDatabase> docDbs) {
 
         public void getConfig(IndexInfoConfig.Builder builder) {
-                for (DocumentDatabase docDb : docDbs) {
-                    docDb.getConfig(builder);
-                }
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
             }
-
-            public void getConfig(SchemaInfoConfig.Builder builder) {
-                for (DocumentDatabase docDb : docDbs) {
-                    docDb.getConfig(builder);
-                }
-            }
-
-            public void getConfig(IlscriptsConfig.Builder builder) {
-                for (DocumentDatabase docDb : docDbs) {
-                    docDb.getConfig(builder);
-                }
-            }
-
-            public void getConfig(AttributesConfig.Builder builder) {
-                for (DocumentDatabase docDb : docDbs) {
-                    docDb.getConfig(builder);
-                }
-            }
-
-            public void getConfig(RankProfilesConfig.Builder builder) {
-                for (DocumentDatabase docDb : docDbs) {
-                    docDb.getConfig(builder);
-                }
-            }
-
         }
+
+        public void getConfig(SchemaInfoConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(IlscriptsConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(AttributesConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(RankProfilesConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+    }
 
 }
