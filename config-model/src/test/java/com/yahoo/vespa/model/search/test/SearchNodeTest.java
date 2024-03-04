@@ -15,8 +15,6 @@ import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.TransactionLogServer;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -49,7 +47,7 @@ public class SearchNodeTest {
     private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey, NodeSpec nodeSpec,
                                                boolean flushOnShutDown, boolean isHosted, ModelContext.FeatureFlags featureFlags) {
         return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                Optional.empty(), Optional.empty(), isHosted, 0.0, featureFlags);
+                null, null, isHosted, 0.0, featureFlags);
     }
 
     private static SearchNode createSearchNode(MockRoot root) {

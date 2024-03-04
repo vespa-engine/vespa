@@ -70,7 +70,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final List<SearchNode> nonIndexed = new ArrayList<>();
 
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
-    private Optional<ResourceLimits> resourceLimits = Optional.empty();
+    private ResourceLimits resourceLimits;
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
@@ -292,7 +292,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;
         TransactionLogServer tls;
-        Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
@@ -334,7 +333,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     public void setTuning(Tuning tuning) { this.tuning = tuning; }
 
     private void setResourceLimits(ResourceLimits resourceLimits) {
-        this.resourceLimits = Optional.of(resourceLimits);
+        this.resourceLimits = resourceLimits;
     }
 
     public boolean usesHierarchicDistribution() {
@@ -429,7 +428,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));
 
-        resourceLimits.ifPresent(limits -> limits.getConfig(builder));
+        if (resourceLimits != null) resourceLimits.getConfig(builder);
 
         if (tuning != null) {
             tuning.getConfig(builder);
