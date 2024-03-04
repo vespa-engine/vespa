@@ -690,7 +690,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @return The size in bytes.
      */
     public static long getSerializedSize(Document doc) {
-        DocumentSerializer serializer = new VespaDocumentSerializer6(new GrowableByteBuffer());
+        DocumentSerializer serializer = new VespaDocumentSerializer6(new GrowableByteBuffer(8 * 1024, 2.0f));
         serializer.write(doc);
         return serializer.getBuf().position();
     }

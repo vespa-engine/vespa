@@ -123,8 +123,7 @@ public class Document extends StructuredFieldValue {
     }
 
     public int getSerializedSize() throws SerializationException {
-        // TODO shouldn't this be createHead()?
-        DocumentSerializer data = DocumentSerializerFactory.create6(new GrowableByteBuffer(64 * 1024, 2.0f));
+        DocumentSerializer data = DocumentSerializerFactory.createHead(new GrowableByteBuffer(8 * 1024, 2.0f));
         data.write(this);
         return data.getBuf().position();
     }
@@ -136,8 +135,7 @@ public class Document extends StructuredFieldValue {
     public final int getApproxSize() { return 4096; }
 
     public void serialize(OutputStream out) throws SerializationException {
-        // TODO shouldn't this be createHead()?
-        DocumentSerializer writer = DocumentSerializerFactory.create6(new GrowableByteBuffer(64 * 1024, 2.0f));
+        DocumentSerializer writer = DocumentSerializerFactory.createHead(new GrowableByteBuffer(8 * 1024, 2.0f));
         writer.write(this);
         GrowableByteBuffer data = writer.getBuf();
         byte[] array;

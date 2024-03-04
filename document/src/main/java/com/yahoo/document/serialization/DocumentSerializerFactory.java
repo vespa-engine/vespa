@@ -31,7 +31,7 @@ public class DocumentSerializerFactory {
      * This format is an extension of the 4.2 format.
      */
     public static DocumentSerializer create6() {
-        return new VespaDocumentSerializer6(new GrowableByteBuffer());
+        return new VespaDocumentSerializer6(new GrowableByteBuffer(8 * 1024, 2.0f));
     }
 
 }
