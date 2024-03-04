@@ -79,8 +79,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public final void setClusterIndex(int index) { this.index = index; }
     public final int getClusterIndex() { return index; }
 
-    public abstract void defaultDocumentsConfig();
-
     public abstract void getConfig(AttributesConfig.Builder builder);
 
     public abstract void getConfig(RankProfilesConfig.Builder builder);
