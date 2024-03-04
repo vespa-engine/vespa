@@ -45,7 +45,6 @@ public class IndexedSearchCluster extends SearchCluster
     private SearchCoverage searchCoverage;
 
     private final List<DocumentDatabase> documentDbs = new LinkedList<>();
-    private final MultipleDocumentDatabasesConfigProducer documentDbsConfigProducer;
 
     private final Redundancy.Provider redundancyProvider;
 
@@ -57,7 +56,6 @@ public class IndexedSearchCluster extends SearchCluster
     public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index,
                                 Redundancy.Provider redundancyProvider, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
-        documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
         this.redundancyProvider = redundancyProvider;
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
@@ -132,25 +130,25 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     @Override
     public void getConfig(SchemaInfoConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     public void getConfig(AttributesConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     public void getConfig(RankProfilesConfig.Builder builder) {
-        documentDbsConfigProducer.getConfig(builder);
+        new Join(documentDbs).getConfig(builder);
     }
 
     private static DistributionPolicy.Enum toDistributionPolicy(DispatchTuning.DispatchPolicy tuning) {
@@ -216,59 +214,42 @@ public class IndexedSearchCluster extends SearchCluster
 
     /**
      * Class used to retrieve combined configuration from multiple document databases.
-     * It is not a direct {@link com.yahoo.config.ConfigInstance.Producer} of those configs,
+     * It is not a direct {@link ConfigInstance.Producer} of those configs,
      * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
      * which is the parent to this. This avoids building the config multiple times.
      */
-    public static class MultipleDocumentDatabasesConfigProducer
-            extends TreeConfigProducer<MultipleDocumentDatabasesConfigProducer>
-            implements AttributesConfig.Producer,
-                       IndexInfoConfig.Producer,
-                       IlscriptsConfig.Producer,
-                       SchemaInfoConfig.Producer,
-                       RankProfilesConfig.Producer {
-        private final List<DocumentDatabase> docDbs;
+    private record Join(List<DocumentDatabase> docDbs) {
 
-        private MultipleDocumentDatabasesConfigProducer(TreeConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
-            super(parent, "union");
-            this.docDbs = docDbs;
-        }
-
-        @Override
         public void getConfig(IndexInfoConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
+                for (DocumentDatabase docDb : docDbs) {
+                    docDb.getConfig(builder);
+                }
             }
-        }
 
-        @Override
-        public void getConfig(SchemaInfoConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
+            public void getConfig(SchemaInfoConfig.Builder builder) {
+                for (DocumentDatabase docDb : docDbs) {
+                    docDb.getConfig(builder);
+                }
             }
-        }
 
-        @Override
-        public void getConfig(IlscriptsConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
+            public void getConfig(IlscriptsConfig.Builder builder) {
+                for (DocumentDatabase docDb : docDbs) {
+                    docDb.getConfig(builder);
+                }
             }
-        }
 
-        @Override
-        public void getConfig(AttributesConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
+            public void getConfig(AttributesConfig.Builder builder) {
+                for (DocumentDatabase docDb : docDbs) {
+                    docDb.getConfig(builder);
+                }
             }
-        }
 
-        @Override
-        public void getConfig(RankProfilesConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
+            public void getConfig(RankProfilesConfig.Builder builder) {
+                for (DocumentDatabase docDb : docDbs) {
+                    docDb.getConfig(builder);
+                }
             }
-        }
 
-    }
+        }
 
 }
