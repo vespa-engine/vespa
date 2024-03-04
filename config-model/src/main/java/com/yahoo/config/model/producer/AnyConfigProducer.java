@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 public abstract class AnyConfigProducer
         implements ConfigProducer, ConfigInstance.Producer, Serializable {
 
-    private static final long serialVersionUID = 1L;
     public static final Logger log = Logger.getLogger(AnyConfigProducer.class.getPackage().toString());
     private final String subId;
     private String configId = null;

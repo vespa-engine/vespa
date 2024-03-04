@@ -24,7 +24,7 @@ import java.io.Writer;
  *
  * @author bratseth
  */
-public class DerivedConfiguration implements AttributesConfig.Producer {
+public class DerivedConfiguration {
 
     private final Schema schema;
     private Summaries summaries;
@@ -74,8 +74,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
             if (!schema.isDocumentsOnly()) {
                 streamingFields = new VsmFields(schema);
                 streamingSummary = new VsmSummary(schema);
-            }
-            if (!schema.isDocumentsOnly()) {
                 attributeFields = new AttributeFields(schema);
                 summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
                 juniperrc = new Juniperrc(schema);
@@ -154,7 +152,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         return attributeFields;
     }
 
-    @Override
     public void getConfig(AttributesConfig.Builder builder) {
         getConfig(builder, AttributeFields.FieldSet.ALL);
     }

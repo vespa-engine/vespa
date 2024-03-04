@@ -29,14 +29,14 @@ import java.util.List;
  * @author vegardh
  */
 public class StreamingSearchCluster extends SearchCluster implements
-        DocumentdbInfoConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
         RankingExpressionsConfig.Producer,
         OnnxModelsConfig.Producer,
         VsmsummaryConfig.Producer,
         VsmfieldsConfig.Producer,
-        SummaryConfig.Producer {
+        SummaryConfig.Producer
+{
 
     private final String storageRouteSpec;
     private final AttributesProducer attributesConfig;
@@ -129,20 +129,17 @@ public class StreamingSearchCluster extends SearchCluster implements
 
     @Override
     public void getConfig(VsmsummaryConfig.Builder builder) {
-        if (derivedConfig.getVsmSummary() != null)
-            derivedConfig.getVsmSummary().getConfig(builder);
+        derivedConfig.getVsmSummary().getConfig(builder);
     }
     
     @Override
     public void getConfig(VsmfieldsConfig.Builder builder) {
-        if (derivedConfig.getVsmFields() != null)
-            derivedConfig.getVsmFields().getConfig(builder);
+        derivedConfig.getVsmFields().getConfig(builder);
     }
     
     @Override
     public void getConfig(SummaryConfig.Builder builder) {
-        if (derivedConfig.getSummaries() != null)
-            derivedConfig.getSummaries().getConfig(builder);
+        derivedConfig.getSummaries().getConfig(builder);
     }
 
     private class AttributesProducer extends AnyConfigProducer implements AttributesConfig.Producer {

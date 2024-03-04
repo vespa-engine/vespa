@@ -31,15 +31,10 @@ import java.util.List;
 /**
  * @author baldersheim
  */
-public class IndexedSearchCluster extends SearchCluster
-    implements
-        DocumentdbInfoConfig.Producer,
-        IndexInfoConfig.Producer,
-        SchemaInfoConfig.Producer,
-        IlscriptsConfig.Producer,
+public class IndexedSearchCluster extends SearchCluster implements
         DispatchConfig.Producer,
-        DispatchNodesConfig.Producer,
-        ConfigInstance.Producer {
+        DispatchNodesConfig.Producer
+{
 
     private Tuning tuning;
     private SearchCoverage searchCoverage;
