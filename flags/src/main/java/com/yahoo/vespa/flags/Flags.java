@@ -401,7 +401,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CLOUD_TRIAL_NOTIFICATIONS = defineFeatureFlag(
             "cloud-trial-notifications", false,
-            List.of("bjorncs", "oyving"), "2023-10-13", "2024-03-01",
+            List.of("bjorncs", "oyving"), "2023-10-13", "2024-12-31",
             "Whether to send cloud trial email notifications",
             "Takes effect immediately");
 
