@@ -5,7 +5,7 @@
 namespace search::expression {
 
 double
-simple_interpolate(const std::vector<double>& v, double lookup)
+simple_interpolate(const std::vector<double>& v, double lookup) noexcept
 {
     if (v.empty() || lookup < v[0]) {
         return 0;
