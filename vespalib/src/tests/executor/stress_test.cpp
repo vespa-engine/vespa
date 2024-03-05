@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/locale/c.h>
 #include <thread>
+#include <cmath>
 
 using namespace vespalib;
 using namespace std::literals;
@@ -44,7 +46,7 @@ struct SyncTask : public Executor::Task {
     }
 };
 
-class Test : public TestApp
+class Test
 {
 private:
     uint32_t _result;
@@ -53,57 +55,56 @@ public:
     Test() : _result(0) {}
     uint32_t calibrate(double ms);
     void stress(Executor &executor, uint32_t taskSize, uint32_t numTasks);
-    int Main() override;
+    void eat_value(uint32_t result) { _result += result; }
 };
 
 uint32_t
 Test::calibrate(double wanted_ms)
 {
     uint32_t n = 0;
-    vespalib::Timer t0;
-    vespalib::Timer t1;
+    vespalib::steady_time t0;
+    vespalib::steady_time t1;
     { // calibration of calibration loop
         uint32_t result = 0;
+        t0 = vespalib::steady_clock::now();
         vespalib::duration dur;
         do {
             result += doStuff(++n);
-            t1 = vespalib::Timer();
-            dur = (t1.elapsed() - t0.elapsed());
+            t1 = vespalib::steady_clock::now();
+            dur = t1 - t0;
         } while (dur < 1s);
         _result += result;
     }
     { // calibrate loop
-        t0 = vespalib::Timer();
+        t0 = vespalib::steady_clock::now();
         uint32_t result = 0;
         for (uint32_t i = 0; i < n; ++i) {
             result += doStuff(i);
         }
         _result += result;
-        t1 = vespalib::Timer();
+        t1 = vespalib::steady_clock::now();
     }
-    double ms = vespalib::count_ms(t1.elapsed() - t0.elapsed());
-    double size = (((double)n) / ms) * wanted_ms;
+    std::chrono::duration<double,std::milli> ms = t1 - t0;
+    double size = (double(n) / ms.count()) * wanted_ms;
     return (uint32_t) std::round(size);
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("stress_test");
-    if (_argc != 4) {
+int main(int argc, char **argv) {
+    if (argc != 4) {
         fprintf(stderr, "Usage: %s <threads> <ms per task> <tasks>\n",
-                _argv[0]);
-        TEST_DONE();
+                argv[0]);
+        return 1;
     }
-    uint32_t threads     = atoi(_argv[1]);
-    double   ms_per_task = locale::c::strtod(_argv[2], 0);
-    uint32_t tasks       = atoi(_argv[3]);
+    Test test;
+    uint32_t threads     = atoi(argv[1]);
+    double   ms_per_task = locale::c::strtod(argv[2], 0);
+    uint32_t tasks       = atoi(argv[3]);
     fprintf(stderr, "threads    : %u\n", threads);
     fprintf(stderr, "ms per task: %g\n", ms_per_task);
     fprintf(stderr, "tasks      : %u\n", tasks);
     {
         fprintf(stderr, "calibrating task size...\n");
-        uint32_t taskSize = calibrate(ms_per_task);
+        uint32_t taskSize = test.calibrate(ms_per_task);
         fprintf(stderr, "calibrated task size: %u\n", taskSize);
         ThreadStackExecutor executor(threads, 5000 + threads);
         {
@@ -113,7 +114,7 @@ Test::Main()
                 Executor::Task::UP res
                     = executor.execute(Executor::Task::UP(
                                                new SyncTask(gate, latch)));
-                ASSERT_TRUE(res.get() == 0);
+                REQUIRE(res.get() == 0);
             }
             latch.await();
             gate.countDown();
@@ -135,9 +136,8 @@ Test::Main()
             executor.sync();
             double ms = vespalib::count_ms(t0.elapsed());
             fprintf(stderr, "total execution wall time: %g ms\n", ms);
-            _result += result;
+            test.eat_value(result);
         }
     }
-    TEST_DONE();
+    return 0;
 }
-TEST_APPHOOK(Test);
