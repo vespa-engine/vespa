@@ -124,27 +124,27 @@ SearchEnvironment::~SearchEnvironment()
 }
 
 SearchEnvironment::Env &
-SearchEnvironment::getEnv(const vespalib::string & searchCluster)
+SearchEnvironment::getEnv(const vespalib::string & config_id)
 {
-    config::ConfigUri searchClusterUri(_configUri.createWithNewId(searchCluster));
+    config::ConfigUri configUri(_configUri.createWithNewId(config_id));
     if (_localEnvMap == nullptr) {
         EnvMapUP envMap = std::make_unique<EnvMap>();
         _localEnvMap = envMap.get();
         std::lock_guard guard(_lock);
         _threadLocals.emplace_back(std::move(envMap));
     }
-    auto localFound = _localEnvMap->find(searchCluster);
+    auto localFound = _localEnvMap->find(config_id);
     if (localFound == _localEnvMap->end()) {
         std::lock_guard guard(_lock);
-        auto found = _envMap.find(searchCluster);
+        auto found = _envMap.find(config_id);
         if (found == _envMap.end()) {
-            LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());
-            Env::SP env = std::make_shared<Env>(searchClusterUri, *_wordFolder, _transport, _file_distributor_connection_spec);
-            _envMap[searchCluster] = std::move(env);
-            found = _envMap.find(searchCluster);
+            LOG(debug, "Init VSMAdapter with config id = '%s'", config_id.c_str());
+            Env::SP env = std::make_shared<Env>(configUri, *_wordFolder, _transport, _file_distributor_connection_spec);
+            _envMap[config_id] = std::move(env);
+            found = _envMap.find(config_id);
         }
         _localEnvMap->insert(*found);
-        localFound = _localEnvMap->find(searchCluster);
+        localFound = _localEnvMap->find(config_id);
     }
     return *localFound->second;
 }
@@ -156,9 +156,9 @@ SearchEnvironment::clear_thread_local_env_map()
 }
 
 std::shared_ptr<const SearchEnvironmentSnapshot>
-SearchEnvironment::get_snapshot(const vespalib::string& search_cluster)
+SearchEnvironment::get_snapshot(const vespalib::string& config_id)
 {
-    return getEnv(search_cluster).get_snapshot();
+    return getEnv(config_id).get_snapshot();
 }
 
 std::optional<int64_t>
