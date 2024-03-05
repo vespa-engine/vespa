@@ -6,10 +6,15 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
+import java.nio.file.Path;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author hmusum
@@ -38,6 +43,13 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
         Handler logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
         logHandler.addServerBindings(SystemBindingPattern.fromHttpPath("/logs"));
         addComponent(logHandler);
+    }
+
+    @Override
+    protected Set<Path> unnecessaryPlatformBundles() {
+        return Stream.concat(PlatformBundles.VESPA_SECURITY_BUNDLES.stream(),
+                             PlatformBundles.VESPA_ZK_BUNDLES.stream())
+                .collect(Collectors.toSet());
     }
 
 }
