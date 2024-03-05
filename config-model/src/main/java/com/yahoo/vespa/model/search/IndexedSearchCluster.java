@@ -1,31 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.schema.DocumentOnlySchema;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.derived.SchemaInfo;
-import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchConfig.DistributionPolicy;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -35,11 +26,8 @@ public class IndexedSearchCluster extends SearchCluster implements
         DispatchConfig.Producer,
         DispatchNodesConfig.Producer
 {
-
     private Tuning tuning;
     private SearchCoverage searchCoverage;
-
-    private final List<DocumentDatabase> documentDbs = new LinkedList<>();
 
     private final Redundancy.Provider redundancyProvider;
 
@@ -72,78 +60,18 @@ public class IndexedSearchCluster extends SearchCluster implements
     }
     public Tuning getTuning() { return tuning; }
 
-    public void fillDocumentDBConfig(String documentType, ProtonConfig.Documentdb.Builder builder) {
-        for (DocumentDatabase sdoc : documentDbs) {
-            if (sdoc.getName().equals(documentType)) {
-                fillDocumentDBConfig(sdoc, builder);
-                return;
-            }
-        }
-    }
-
-    private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
-        ddbB.inputdoctypename(sdoc.getSchemaName())
-            .configid(sdoc.getConfigId());
-    }
-
     @Override
     public void deriveFromSchemas(DeployState deployState) {
         for (SchemaInfo spec : schemas().values()) {
             if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
-            DocumentDatabase db = new DocumentDatabase(this, spec.fullSchema().getName(),
-                                                       new DerivedConfiguration(spec.fullSchema(), deployState, false));
-            documentDbs.add(db);
+            var db = new DocumentDatabase(this, spec.fullSchema().getName(),
+                                          new DerivedConfiguration(spec.fullSchema(), deployState, false));
+            add(db);
         }
-    }
-
-    @Override
-    public List<DocumentDatabase> getDocumentDbs() {
-        return documentDbs;
-    }
-
-    public boolean hasDocumentDB(String name) {
-        for (DocumentDatabase db : documentDbs) {
-            if (db.getName().equals(name)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void setSearchCoverage(SearchCoverage searchCoverage) {
         this.searchCoverage = searchCoverage;
-    }
-
-    @Override
-    public void getConfig(DocumentdbInfoConfig.Builder builder) {
-        for (DocumentDatabase db : documentDbs) {
-            DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
-            docDb.name(db.getName());
-            builder.documentdb(docDb);
-        }
-    }
-
-    @Override
-    public void getConfig(IndexInfoConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(SchemaInfoConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(IlscriptsConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
-    }
-
-    public void getConfig(AttributesConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
-    }
-
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
     }
 
     private static DistributionPolicy.Enum toDistributionPolicy(DispatchTuning.DispatchPolicy tuning) {
@@ -205,46 +133,6 @@ public class IndexedSearchCluster extends SearchCluster implements
     @Override
     public String toString() {
         return "Indexing cluster '" + getClusterName() + "'";
-    }
-
-    /**
-     * Class used to retrieve combined configuration from multiple document databases.
-     * It is not a direct {@link ConfigInstance.Producer} of those configs,
-     * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
-     * which is the parent to this. This avoids building the config multiple times.
-     */
-    private record Join(List<DocumentDatabase> docDbs) {
-
-        public void getConfig(IndexInfoConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        public void getConfig(SchemaInfoConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        public void getConfig(IlscriptsConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        public void getConfig(AttributesConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        public void getConfig(RankProfilesConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
     }
 
 }
