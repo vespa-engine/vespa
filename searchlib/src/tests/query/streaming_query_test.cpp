@@ -380,6 +380,31 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     }
 }
 
+TEST(StreamingQueryTest, negative_integer_is_rewritten_if_allowed_for_string_field)
+{
+    const char term[7] = {TERM_UNIQ, 3, 1, 'c', 2, '-', '5'};
+    vespalib::stringref stackDump(term, sizeof(term));
+    EXPECT_EQ(7u, stackDump.size());
+    AllowRewrite empty("c");
+    const Query q(empty, stackDump);
+    EXPECT_TRUE(q.valid());
+    auto& root = q.getRoot();
+    auto& equiv = dynamic_cast<const EquivQueryNode &>(root);
+    EXPECT_EQ(2u, equiv.get_terms().size());
+    {
+        auto& qt = *equiv.get_terms()[0];
+        EXPECT_EQ("c", qt.index());
+        EXPECT_EQ(vespalib::stringref("-5"), qt.getTerm());
+        EXPECT_EQ(3u, qt.uniqueId());
+    }
+    {
+        auto& qt = *equiv.get_terms()[1];
+        EXPECT_EQ("c", qt.index());
+        EXPECT_EQ(vespalib::stringref("5"), qt.getTerm());
+        EXPECT_EQ(0u, qt.uniqueId());
+    }
+}
+
 TEST(StreamingQueryTest, test_get_query_parts)
 {
     QueryBuilder<SimpleQueryNodeTypes> builder;

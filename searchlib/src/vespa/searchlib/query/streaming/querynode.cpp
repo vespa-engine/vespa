@@ -14,9 +14,12 @@
 #include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
+#include <vespa/searchlib/queryeval/split_float.h>
 #include <charconv>
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.querynode");
+
+using search::queryeval::SplitFloat;
 
 namespace search::streaming {
 
@@ -29,7 +32,7 @@ bool disableRewrite(const QueryNode * qn) {
 }
 
 bool possibleFloat(const QueryTerm & qt, const QueryTerm::string & term) {
-    return !qt.encoding().isBase10Integer() && qt.encoding().isFloat() && (term.find('.') != QueryTerm::string::npos);
+    return qt.encoding().isFloat() && ((term.find('.') != QueryTerm::string::npos) || (term.find('-') != QueryTerm::string::npos));
 }
 
 }
@@ -139,14 +142,32 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             qt->setUniqueId(queryRep.getUniqueId());
             qt->setRanked( ! queryRep.hasNoRankFlag());
             if (allowRewrite && possibleFloat(*qt, ssTerm) && factory.allow_float_terms_rewrite(ssIndex)) {
-                auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), ssIndex, arity);
-                auto dotPos = ssTerm.find('.');
-                phrase->add_term(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, dotPos), ssIndex, TermType::WORD, normalize_mode));
-                phrase->add_term(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(dotPos + 1), ssIndex, TermType::WORD, normalize_mode));
-                auto eqn = std::make_unique<EquivQueryNode>(factory.create(), 2);
-                eqn->add_term(std::move(qt));
-                eqn->add_term(std::move(phrase));
-                qn = std::move(eqn);
+                /*
+                 * Tokenize number term and make add alternative
+                 * phrase or term when searching for numbers in string
+                 * fields. See
+                 * CreateBlueprintVisitorHelper::handleNumberTermAsText()
+                 * for similar code used for indexed search.
+                 */
+                SplitFloat splitter(ssTerm);
+                std::unique_ptr<QueryTerm> alt_qt;
+                if (splitter.parts() > 1) {
+                    auto phrase = std::make_unique<PhraseQueryNode>(factory.create(), ssIndex, splitter.parts());
+                    for (size_t i = 0; i < splitter.parts(); ++i) {
+                        phrase->add_term(std::make_unique<QueryTerm>(factory.create(), splitter.getPart(i), ssIndex, TermType::WORD, normalize_mode));
+                    }
+                    alt_qt = std::move(phrase);
+                } else if (splitter.parts() == 1 && ssTerm != splitter.getPart(0)) {
+                    alt_qt = std::make_unique<QueryTerm>(factory.create(), splitter.getPart(0), ssIndex, TermType::WORD, normalize_mode);
+                }
+                if (alt_qt) {
+                    auto eqn = std::make_unique<EquivQueryNode>(factory.create(), 2);
+                    eqn->add_term(std::move(qt));
+                    eqn->add_term(std::move(alt_qt));
+                    qn = std::move(eqn);
+                } else {
+                    qn = std::move(qt);
+                }
             } else {
                 qn = std::move(qt);
             }
