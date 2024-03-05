@@ -7,3 +7,4 @@ keyPathPrefix string
 trustStorePath string
 trustStoreType enum {pem, jks} default=jks
 athenzTruststorePath string default="/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"
+publicSystem bool default=false
