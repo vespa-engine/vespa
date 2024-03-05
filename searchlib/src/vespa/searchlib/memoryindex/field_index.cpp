@@ -4,9 +4,10 @@
 #include "ordered_field_index_inserter.h"
 #include "posting_iterator.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
-#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
@@ -30,6 +31,8 @@ using search::queryeval::BooleanMatchIteratorWrapper;
 using search::queryeval::FieldSpecBase;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;
+using search::queryeval::flow::btree_cost;
+using search::queryeval::flow::btree_strict_cost;
 using vespalib::GenerationHandler;
 
 namespace search::memoryindex {
@@ -257,7 +260,8 @@ public:
     }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
-        return default_flow_stats(docid_limit, _posting_itr.size(), 0);
+        double rel_est = abs_to_rel_est(_posting_itr.size(), docid_limit);
+        return {rel_est, btree_cost(), btree_strict_cost(rel_est)};
     }
     
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda, bool) const override {

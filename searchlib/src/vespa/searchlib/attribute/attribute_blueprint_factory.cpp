@@ -11,6 +11,7 @@
 #include "multi_term_or_filter_search.h"
 #include "predicate_attribute.h"
 #include <vespa/eval/eval/value.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
@@ -46,10 +47,11 @@
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 
 using search::attribute::BasicType;
-using search::attribute::SearchContextParams;
 using search::attribute::CollectionType;
+using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::attribute::ISearchContext;
+using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPosition;
@@ -87,6 +89,10 @@ using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::queryeval::SimpleLeafBlueprint;
 using search::queryeval::WeightedSetTermBlueprint;
+using search::queryeval::flow::btree_cost;
+using search::queryeval::flow::btree_strict_cost;
+using search::queryeval::flow::lookup_cost;
+using search::queryeval::flow::lookup_strict_cost;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::ITensorAttribute;
 using vespalib::Issue;
@@ -115,6 +121,19 @@ private:
 };
 //-----------------------------------------------------------------------------
 
+size_t
+get_num_indirections(const BasicType& basic_type, const CollectionType& col_type)
+{
+    size_t res = 0;
+    if (basic_type == BasicType::STRING) {
+        res += 1;
+    }
+    if (col_type != CollectionType::SINGLE) {
+        res += 1;
+    }
+    return res;
+}
+
 /**
  * Blueprint for creating regular, stack-based attribute iterators.
  **/
@@ -141,11 +160,12 @@ public:
         if (_hit_estimate.is_unknown()) {
             // E.g. attributes without fast-search are not able to provide a hit estimate.
             // In this case we just assume matching half of the document corpus.
-            // In addition, we are not able to skip documents efficiently when being strict.
-            return {0.5, 1.0, 1.0};
+            // In addition, matching is lookup based, and we are not able to skip documents efficiently when being strict.
+            size_t indirections = get_num_indirections(_attr.getBasicType(), _attr.getCollectionType());
+            return {0.5, lookup_cost(indirections), lookup_strict_cost(indirections)};
         } else {
             double rel_est = abs_to_rel_est(_hit_estimate.est_hits(), docid_limit);
-            return {rel_est, 1.0, rel_est};
+            return {rel_est, btree_cost(), btree_strict_cost(rel_est)};
         }
     }
 
@@ -480,9 +500,12 @@ public:
             double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
                 return abs_to_rel_est(term.posting_size, docid_limit);
             }
-            double cost(const IDirectPostingStore::LookupResult &) const noexcept { return 1.0; }
+            double cost(const IDirectPostingStore::LookupResult &) const noexcept {
+                return btree_cost();
+            }
             double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-                return abs_to_rel_est(term.posting_size, docid_limit);
+                double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
+                return btree_strict_cost(rel_est);
             }
         };
         double child_est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
