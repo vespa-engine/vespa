@@ -4,23 +4,19 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.DerivedConfiguration;
-import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
-import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-
-import java.util.List;
 
 /**
  * A search cluster of type streaming.
@@ -29,49 +25,35 @@ import java.util.List;
  * @author vegardh
  */
 public class StreamingSearchCluster extends SearchCluster implements
+        AttributesConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
         RankingExpressionsConfig.Producer,
         OnnxModelsConfig.Producer,
+        JuniperrcConfig.Producer,
+        SummaryConfig.Producer,
         VsmsummaryConfig.Producer,
-        VsmfieldsConfig.Producer,
-        SummaryConfig.Producer
+        VsmfieldsConfig.Producer
 {
-
     private final String storageRouteSpec;
     private final AttributesProducer attributesConfig;
     private final String docTypeName;
-    private DerivedConfiguration derivedConfig = null;
-    private DocumentDatabase derivedDb = null;
 
-    public StreamingSearchCluster(TreeConfigProducer<AnyConfigProducer> parent,
-                                  String clusterName,
-                                  int index,
-                                  String docTypeName,
-                                  String storageRouteSpec) {
+    public StreamingSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index,
+                                  String docTypeName, String storageRouteSpec) {
         super(parent, clusterName, index);
         attributesConfig = new AttributesProducer(parent, docTypeName);
         this.docTypeName = docTypeName;
         this.storageRouteSpec = storageRouteSpec;
     }
 
-    public final String getDocumentDBConfigId() {
-        return attributesConfig.getConfigId();
-    }
     @Override
     protected IndexingMode getIndexingMode() { return IndexingMode.STREAMING; }
-    public final String getStorageRouteSpec()       { return storageRouteSpec; }
+    public final String getStorageRouteSpec() { return storageRouteSpec; }
 
     public String getDocTypeName() { return docTypeName; }
 
-    public DerivedConfiguration derived() { return derivedConfig; }
-
-    @Override
-    public void getConfig(DocumentdbInfoConfig.Builder builder) {
-        DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
-        docDb.name(derivedConfig.getSchema().getName());
-        builder.documentdb(docDb);
-    }
+    public DerivedConfiguration derived() { return db().getDerivedConfiguration(); }
 
     @Override
     public void deriveFromSchemas(DeployState deployState) {
@@ -82,64 +64,51 @@ public class StreamingSearchCluster extends SearchCluster implements
         if ( ! schema.getName().equals(docTypeName))
             throw new IllegalArgumentException("Document type name '" + docTypeName +
                                                "' must be the same as the schema name '" + schema.getName() + "'");
-        this.derivedConfig = new DerivedConfiguration(schema, deployState, true);
-        this.derivedDb = new DocumentDatabase(this, docTypeName, this.derivedConfig);
+        add(new DocumentDatabase(this, docTypeName, new DerivedConfiguration(schema, deployState, true)));
+    }
+
+    protected void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
+        super.fillDocumentDBConfig(sdoc, ddbB);
+        ddbB.configid(attributesConfig.getConfigId()); // Temporary until fully cleaned up
+    }
+
+    private DocumentDatabase db() {
+        return getDocumentDbs().get(0);
     }
 
     @Override
-    public List<DocumentDatabase> getDocumentDbs() {
-        if (derivedDb == null) {
-            throw new IllegalArgumentException("missing derivedConfig");
-        }
-        return List.of(derivedDb);
+    public void getConfig(SummaryConfig.Builder builder) {
+        db().getConfig(builder);
     }
 
     @Override
-    public void getConfig(IndexInfoConfig.Builder builder) {
-        derivedConfig.getIndexInfo().getConfig(builder);
+    public void getConfig(OnnxModelsConfig.Builder builder) {
+        db().getConfig(builder);
     }
 
     @Override
-    public void getConfig(SchemaInfoConfig.Builder builder) {
-        derivedConfig.getSchemaInfo().getConfig(builder);
+    public void getConfig(RankingConstantsConfig.Builder builder) {
+        db().getConfig(builder);
     }
 
     @Override
-    public void getConfig(IlscriptsConfig.Builder builder) {
-        derivedConfig.getIndexingScript().getConfig(builder);
-    }
-
-    public void getConfig(AttributesConfig.Builder builder) {
-        derivedConfig.getConfig(builder);
+    public void getConfig(RankingExpressionsConfig.Builder builder) {
+        db().getConfig(builder);
     }
 
     @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        derivedConfig.getRankProfileList().getConfig(builder);
+    public void getConfig(JuniperrcConfig.Builder builder) {
+        db().getConfig(builder);
     }
 
     @Override
-    public void getConfig(RankingConstantsConfig.Builder builder) { derivedConfig.getRankProfileList().getConfig(builder); }
-
-    @Override
-    public void getConfig(RankingExpressionsConfig.Builder builder) { derivedConfig.getRankProfileList().getConfig(builder); }
-
-    @Override
-    public void getConfig(OnnxModelsConfig.Builder builder) { derivedConfig.getRankProfileList().getConfig(builder); }
+    public void getConfig(VsmfieldsConfig.Builder builder) {
+        db().getConfig(builder);
+    }
 
     @Override
     public void getConfig(VsmsummaryConfig.Builder builder) {
-        derivedConfig.getVsmSummary().getConfig(builder);
-    }
-    
-    @Override
-    public void getConfig(VsmfieldsConfig.Builder builder) {
-        derivedConfig.getVsmFields().getConfig(builder);
-    }
-    
-    @Override
-    public void getConfig(SummaryConfig.Builder builder) {
-        derivedConfig.getSummaries().getConfig(builder);
+        db().getConfig(builder);
     }
 
     private class AttributesProducer extends AnyConfigProducer implements AttributesConfig.Producer {
@@ -150,7 +119,7 @@ public class StreamingSearchCluster extends SearchCluster implements
 
         @Override
         public void getConfig(AttributesConfig.Builder builder) {
-            derivedConfig.getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
+            derived().getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
         }
     }
 

@@ -23,7 +23,7 @@ protected:
     mutable std::mutex _lock;
 
     void entryDropped(const SessionId &id);
-    ~SessionCacheBase() {}
+    ~SessionCacheBase() = default;
 };
 
 template <typename T>
@@ -31,7 +31,7 @@ struct SessionCache : SessionCacheBase {
     using EntryUP = typename T::UP;
     vespalib::lrucache_map<vespalib::LruParam<SessionId, EntryUP> > _cache;
 
-    SessionCache(uint32_t max_size) : _cache(max_size) {}
+    explicit SessionCache(uint32_t max_size) : _cache(max_size) {}
 
     void insert(EntryUP session) {
         std::lock_guard<std::mutex> guard(_lock);
@@ -115,7 +115,7 @@ struct SessionMap : SessionCacheBase {
                 toDestruct.back().swap(session);
             }
         }
-        for (auto key : keys) {
+        for (const auto & key : keys) {
             _map.erase(key);
             _stats.numTimedout++;
         }

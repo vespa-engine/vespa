@@ -178,7 +178,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         }
 
         List<Grouping> groupingList = GroupingExecutor.getGroupingList(query);
-        if (groupingList.size() > 0){
+        if ( ! groupingList.isEmpty()){
             BufferSerializer gbuf = new BufferSerializer(new GrowableByteBuffer());
             gbuf.putInt(null, groupingList.size());
             for(Grouping g: groupingList){

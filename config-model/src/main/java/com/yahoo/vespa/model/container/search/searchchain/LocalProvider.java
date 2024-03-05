@@ -72,8 +72,7 @@ public class LocalProvider extends Provider implements
 
     @Override
     public ChainSpecification getChainSpecification() {
-        ChainSpecification spec =
-                super.getChainSpecification();
+        ChainSpecification spec = super.getChainSpecification();
         return new ChainSpecification(spec.componentId, spec.inheritance, spec.phases(),
                 disableStemmingIfStreaming(spec.componentReferences));
     }
@@ -84,10 +83,9 @@ public class LocalProvider extends Provider implements
             return searcherReferences;
         } else {
             Set<ComponentSpecification> filteredSearcherReferences = new LinkedHashSet<>(searcherReferences);
-            filteredSearcherReferences.remove(
-                    toGlobalComponentId(
-                            new ComponentId("com.yahoo.prelude.querytransform.StemmingSearcher")).
-                            toSpecification());
+            filteredSearcherReferences
+                    .remove(toGlobalComponentId(new ComponentId("com.yahoo.prelude.querytransform.StemmingSearcher"))
+                            .toSpecification());
             return filteredSearcherReferences;
         }
     }

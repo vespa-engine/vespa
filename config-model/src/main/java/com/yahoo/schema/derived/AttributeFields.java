@@ -16,7 +16,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isMapOfPrimitiveType;
