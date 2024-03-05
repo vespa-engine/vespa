@@ -398,9 +398,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedCluster = true;
-                ddbB.inputdoctypename(type.getFullName().getName())
-                        .configid(findStreamingCluster(docTypeName).get().getDocumentDBConfigId())
-                        .mode(ProtonConfig.Documentdb.Mode.Enum.STREAMING);
+                findStreamingCluster(docTypeName).get().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STREAMING);
             } else if (hasIndexingModeIndexed(type)) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
             } else {

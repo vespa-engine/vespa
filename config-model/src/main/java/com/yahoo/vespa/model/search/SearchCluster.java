@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.derived.SchemaInfo;
@@ -8,12 +9,14 @@ import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -22,8 +25,7 @@ import java.util.Map;
  *
  * @author arnej27959
  */
-public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer>
-        implements
+public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer> implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
@@ -34,6 +36,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     private Double queryTimeout;
     private Double visibilityDelay = 0.0;
     private final Map<String, SchemaInfo> schemas = new LinkedHashMap<>();
+    private final List<DocumentDatabase> documentDbs = new LinkedList<>();
 
     public SearchCluster(TreeConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
@@ -43,6 +46,18 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     public void add(SchemaInfo schema) {
         schemas.put(schema.name(), schema);
+    }
+    public void add(DocumentDatabase db) {
+        documentDbs.add(db);
+    }
+
+    public boolean hasDocumentDB(String name) {
+        for (DocumentDatabase db : documentDbs) {
+            if (db.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Returns the schemas that should be active in this cluster. Note: These are added during processing. */
@@ -56,7 +71,9 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public abstract void deriveFromSchemas(DeployState deployState);
 
     /** Returns the document databases contained in this cluster */
-    public abstract List<DocumentDatabase> getDocumentDbs();
+    public List<DocumentDatabase> getDocumentDbs() {
+        return Collections.unmodifiableList(documentDbs);
+    }
 
     public String getClusterName()              { return clusterName; }
     public final String getIndexingModeName()   { return getIndexingMode().getName(); }
@@ -71,9 +88,50 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public final void setClusterIndex(int index) { this.index = index; }
     public final int getClusterIndex() { return index; }
 
-    public abstract void getConfig(AttributesConfig.Builder builder);
+    public void fillDocumentDBConfig(String documentType, ProtonConfig.Documentdb.Builder builder) {
+        for (DocumentDatabase sdoc : documentDbs) {
+            if (sdoc.getName().equals(documentType)) {
+                fillDocumentDBConfig(sdoc, builder);
+                return;
+            }
+        }
+    }
 
-    public abstract void getConfig(RankProfilesConfig.Builder builder);
+    protected void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
+        ddbB.inputdoctypename(sdoc.getSchemaName())
+            .configid(sdoc.getConfigId());
+    }
+
+    @Override
+    public void getConfig(DocumentdbInfoConfig.Builder builder) {
+        for (DocumentDatabase db : documentDbs) {
+            DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
+            docDb.name(db.getName());
+            builder.documentdb(docDb);
+        }
+    }
+    @Override
+    public void getConfig(IndexInfoConfig.Builder builder) {
+        new Join(documentDbs).getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(SchemaInfoConfig.Builder builder) {
+        new Join(documentDbs).getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(IlscriptsConfig.Builder builder) {
+        new Join(documentDbs).getConfig(builder);
+    }
+
+    public void getConfig(AttributesConfig.Builder builder) {
+        new Join(documentDbs).getConfig(builder);
+    }
+
+    public void getConfig(RankProfilesConfig.Builder builder) {
+        new Join(documentDbs).getConfig(builder);
+    }
 
     @Override
     public String toString() { return "search-capable cluster '" + clusterName + "'"; }
@@ -94,6 +152,46 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         public String toString() {
             return "indexingmode: " + name;
         }
+    }
+
+    /**
+     * Class used to retrieve combined configuration from multiple document databases.
+     * It is not a direct {@link ConfigInstance.Producer} of those configs,
+     * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
+     * which is the parent to this. This avoids building the config multiple times.
+     */
+    private record Join(List<DocumentDatabase> docDbs) {
+
+        public void getConfig(IndexInfoConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(SchemaInfoConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(IlscriptsConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(AttributesConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(RankProfilesConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
     }
 
 }
