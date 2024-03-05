@@ -966,6 +966,15 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
     }
 }
 
+namespace {
+bool notContained(const std::vector<size_t> &sortList, size_t idx) {
+    for (size_t v : sortList) {
+        if (v == idx) return false;
+    }
+    return true;
+}
+}
+
 void
 SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & sortList)
 {
@@ -977,7 +986,7 @@ SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & 
                 if (attr->valid()) {
                     size_t index(_attributeFields.size());
                     for(size_t j(0); j < index; j++) {
-                        if (_attributeFields[j]._field == fid) {
+                        if ((_attributeFields[j]._field == fid) && notContained(_sortList, j)) {
                             index = j;
                             _attributeFields[index]._ascending = sInfo._ascending;
                             _attributeFields[index]._converter = sInfo._converter.get();
