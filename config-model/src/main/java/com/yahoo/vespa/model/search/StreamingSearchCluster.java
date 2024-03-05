@@ -8,7 +8,15 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.SummaryConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
+import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
+import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
 
 /**
  * A search cluster of type streaming.
@@ -16,7 +24,16 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
  * @author baldersheim
  * @author vegardh
  */
-public class StreamingSearchCluster extends SearchCluster
+public class StreamingSearchCluster extends SearchCluster implements
+        AttributesConfig.Producer,
+        RankProfilesConfig.Producer,
+        RankingConstantsConfig.Producer,
+        RankingExpressionsConfig.Producer,
+        OnnxModelsConfig.Producer,
+        JuniperrcConfig.Producer,
+        SummaryConfig.Producer,
+        VsmsummaryConfig.Producer,
+        VsmfieldsConfig.Producer
 {
     private final String storageRouteSpec;
     private final AttributesProducer attributesConfig;
@@ -36,7 +53,7 @@ public class StreamingSearchCluster extends SearchCluster
 
     public String getDocTypeName() { return docTypeName; }
 
-    public DerivedConfiguration derived() { return getDocumentDbs().get(0).getDerivedConfiguration(); }
+    public DerivedConfiguration derived() { return db().getDerivedConfiguration(); }
 
     @Override
     public void deriveFromSchemas(DeployState deployState) {
@@ -53,6 +70,45 @@ public class StreamingSearchCluster extends SearchCluster
     protected void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
         super.fillDocumentDBConfig(sdoc, ddbB);
         ddbB.configid(attributesConfig.getConfigId()); // Temporary until fully cleaned up
+    }
+
+    private DocumentDatabase db() {
+        return getDocumentDbs().get(0);
+    }
+
+    @Override
+    public void getConfig(SummaryConfig.Builder builder) {
+        db().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(OnnxModelsConfig.Builder builder) {
+        db().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(RankingConstantsConfig.Builder builder) {
+        db().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(RankingExpressionsConfig.Builder builder) {
+        db().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(JuniperrcConfig.Builder builder) {
+        db().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(VsmfieldsConfig.Builder builder) {
+        db().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(VsmsummaryConfig.Builder builder) {
+        db().getConfig(builder);
     }
 
     private class AttributesProducer extends AnyConfigProducer implements AttributesConfig.Producer {
