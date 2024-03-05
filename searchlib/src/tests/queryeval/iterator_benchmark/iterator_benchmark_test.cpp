@@ -578,7 +578,7 @@ struct BenchmarkCase {
     {}
     vespalib::string to_string() const {
         return "op=" + ::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
-               ", strict_context=" + ::to_string(strict_context) + ", force_strict=" + ::to_string(force_strict);
+               ", strict_context=" + ::to_string(strict_context) + (force_strict ? (", force_strict=" + ::to_string(force_strict)) : "");
     }
 };
 
@@ -622,6 +622,7 @@ public:
         }
     }
     const std::vector<BenchmarkCaseSummary>& cases() const { return _cases; }
+    bool empty() const { return _cases.empty(); }
 };
 
 void
@@ -632,7 +633,6 @@ print_summary(const BenchmarkSummary& summary)
         std::cout << std::fixed << std::setprecision(3) << ""
                   << std::setw(50) << std::left << c.bcase.to_string() << ": "
                   << "ms_per_act_cost=" << std::setw(7) << std::right << c.result.ms_per_actual_cost_stats().to_string()
-                  << ", ms_per_alt_cost=" << std::setw(7) << std::right << c.result.ms_per_alt_cost_stats().to_string()
                   << ", scaled_cost=" << std::setw(7) << c.scaled_cost << std::endl;
     }
 }
@@ -754,9 +754,8 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
 }
 
 void
-run_benchmarks(const BenchmarkSetup& setup)
+run_benchmarks(const BenchmarkSetup& setup, BenchmarkSummary& summary)
 {
-    BenchmarkSummary summary;
     for (const auto& field_cfg : setup.field_cfgs) {
         for (auto query_op : setup.query_ops) {
             for (bool strict : setup.strictness) {
@@ -767,6 +766,13 @@ run_benchmarks(const BenchmarkSetup& setup)
             }
         }
     }
+}
+
+void
+run_benchmarks(const BenchmarkSetup& setup)
+{
+    BenchmarkSummary summary;
+    run_benchmarks(setup, summary);
     summary.calc_scaled_costs();
     print_summary(summary);
 }
@@ -788,7 +794,8 @@ make_index_config()
 }
 
 constexpr uint32_t num_docs = 10'000'000;
-const std::vector<double> base_hit_ratios = {0.001, 0.01, 0.1, 0.5};
+const std::vector<double> base_hit_ratios = {0.0001, 0.001, 0.01, 0.1, 0.5, 1.0};
+const std::vector<double> filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
 const auto int32 = make_attr_config(BasicType::INT32, CollectionType::SINGLE, false);
 const auto int32_fs = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true);
 const auto int32_array = make_attr_config(BasicType::INT32, CollectionType::ARRAY, false);
@@ -802,43 +809,42 @@ const auto str_array_fs = make_attr_config(BasicType::STRING, CollectionType::AR
 const auto str_wset = make_attr_config(BasicType::STRING, CollectionType::WSET, false);
 const auto str_index = make_index_config();
 
+BenchmarkSummary global_summary;
+
 TEST(IteratorBenchmark, analyze_term_search_in_disk_index)
 {
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
-    BenchmarkSetup setup(num_docs, {str_index}, {QueryOperator::Term}, {true, false}, hit_ratios);
-    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
-    run_benchmarks(setup);
+    BenchmarkSetup setup(num_docs, {str_index}, {QueryOperator::Term}, {true, false}, base_hit_ratios);
+    setup.filter_hit_ratios = filter_hit_ratios;
+    setup.filter_crossover_factor = 1.0;
+    run_benchmarks(setup, global_summary);
 }
 
-TEST(IteratorBenchmark, analyze_term_search_in_attributes_without_fast_search)
+TEST(IteratorBenchmark, analyze_term_search_in_attributes_non_strict)
 {
     std::vector<FieldConfig> field_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
-    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
+    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {false}, base_hit_ratios);
     setup.default_values_per_document = 1;
-    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
-    run_benchmarks(setup);
+    setup.filter_hit_ratios = filter_hit_ratios;
+    setup.filter_crossover_factor = 1.0;
+    run_benchmarks(setup, global_summary);
 }
 
-TEST(IteratorBenchmark, analyze_term_search_in_attributes_with_fast_search)
+TEST(IteratorBenchmark, analyze_term_search_in_attributes_strict)
+{
+    std::vector<FieldConfig> field_cfgs = {int32, int32_array, int32_wset, str, str_array, str_wset};
+    // Note: This hit ratio matches the estimate of such attributes (0.5).
+    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true}, {0.5});
+    setup.default_values_per_document = 1;
+    run_benchmarks(setup, global_summary);
+}
+
+TEST(IteratorBenchmark, analyze_term_search_in_fast_search_attributes)
 {
     std::vector<FieldConfig> field_cfgs = {int32_fs, int32_array_fs, str_fs, str_array_fs};
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
-    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
-    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
-    run_benchmarks(setup);
-}
-
-TEST(IteratorBenchmark, analyze_term_search_in_attributes_combined)
-{
-    // Note: all fast-search attributes has similar performance, so only needed to include one.
-    std::vector<FieldConfig> field_cfgs = {int32_fs, int32, int32_array, int32_wset, str, str_array, str_wset};
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.5, 1.0};
-    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, hit_ratios);
-    setup.default_values_per_document = 1;
-    setup.filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
+    BenchmarkSetup setup(num_docs, field_cfgs, {QueryOperator::Term}, {true, false}, base_hit_ratios);
+    setup.filter_hit_ratios = filter_hit_ratios;
     setup.filter_crossover_factor = 1.0;
-    run_benchmarks(setup);
+    run_benchmarks(setup, global_summary);
 }
 
 TEST(IteratorBenchmark, analyze_complex_leaf_operators)
@@ -868,4 +874,12 @@ TEST(IteratorBenchmark, or_benchmark)
     run_benchmarks(setup);
 }
 
-GTEST_MAIN_RUN_ALL_TESTS()
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    int res = RUN_ALL_TESTS();
+    if (!global_summary.empty()) {
+        global_summary.calc_scaled_costs();
+        print_summary(global_summary);
+    }
+    return res;
+}
