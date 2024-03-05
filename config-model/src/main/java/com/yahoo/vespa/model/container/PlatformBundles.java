@@ -59,6 +59,7 @@ public class PlatformBundles {
             SEARCH_AND_DOCPROC_BUNDLE,
             "docprocs",
             LINGUISTICS_BUNDLE_NAME,
+            "lucene-linguistics",
             EVALUATION_BUNDLE_NAME,
             INTEGRATION_BUNDLE_NAME,
             ONNXRUNTIME_BUNDLE_NAME
