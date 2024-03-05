@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.zookeeper;
+package com.yahoo.time;
 
 import java.time.Duration;
 import java.util.Random;

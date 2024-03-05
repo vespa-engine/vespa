@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.protect.Process;
+import com.yahoo.time.ExponentialBackoff;
 import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
 import com.yahoo.yolean.Exceptions;
 
