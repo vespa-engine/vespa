@@ -1,22 +1,22 @@
-    STATE[0]: 'foo' (statetest.cpp:25)
-    STATE[1]: 'bar' (statetest.cpp:28)
-    STATE[0]: 'foo' (statetest.cpp:25)
-    STATE[2]: 'baz' (statetest.cpp:31)
-    STATE[1]: 'bar' (statetest.cpp:28)
-    STATE[0]: 'foo' (statetest.cpp:25)
-    STATE[1]: 'bar' (statetest.cpp:28)
-    STATE[0]: 'foo' (statetest.cpp:25)
-    STATE[0]: 'foo' (statetest.cpp:25)
-    STATE[0]: 'testSomething()' (statetest.cpp:41)
-    STATE[1]: 'testInner()' (statetest.cpp:12)
-    STATE[0]: 'testSomething()' (statetest.cpp:41)
-    STATE[0]: 'testSomething()' (statetest.cpp:41)
-    STATE[0]: 'something else' (statetest.cpp:44)
-    STATE[1]: 'testSomethingElse()' (statetest.cpp:46)
-    STATE[0]: 'something else' (statetest.cpp:44)
-    STATE[2]: 'testInner()' (statetest.cpp:18)
-    STATE[1]: 'testSomethingElse()' (statetest.cpp:46)
-    STATE[0]: 'something else' (statetest.cpp:44)
-    STATE[1]: 'testSomethingElse()' (statetest.cpp:46)
-    STATE[0]: 'something else' (statetest.cpp:44)
-    STATE[0]: 'something else' (statetest.cpp:44)
+    STATE[0]: 'foo' statetest.cpp:25
+    STATE[1]: 'bar' statetest.cpp:28
+    STATE[0]: 'foo' statetest.cpp:25
+    STATE[2]: 'baz' statetest.cpp:31
+    STATE[1]: 'bar' statetest.cpp:28
+    STATE[0]: 'foo' statetest.cpp:25
+    STATE[1]: 'bar' statetest.cpp:28
+    STATE[0]: 'foo' statetest.cpp:25
+    STATE[0]: 'foo' statetest.cpp:25
+    STATE[0]: 'testSomething()' statetest.cpp:41
+    STATE[1]: 'testInner()' statetest.cpp:12
+    STATE[0]: 'testSomething()' statetest.cpp:41
+    STATE[0]: 'testSomething()' statetest.cpp:41
+    STATE[0]: 'something else' statetest.cpp:44
+    STATE[1]: 'testSomethingElse()' statetest.cpp:46
+    STATE[0]: 'something else' statetest.cpp:44
+    STATE[2]: 'testInner()' statetest.cpp:18
+    STATE[1]: 'testSomethingElse()' statetest.cpp:46
+    STATE[0]: 'something else' statetest.cpp:44
+    STATE[1]: 'testSomethingElse()' statetest.cpp:46
+    STATE[0]: 'something else' statetest.cpp:44
+    STATE[0]: 'something else' statetest.cpp:44

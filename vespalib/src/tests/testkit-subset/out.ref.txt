@@ -1,8 +1,8 @@
 testkit-subset_test.cpp: info:  running test suite 'testkit-subset_test.cpp'
 testkit-subset_test.cpp: info:  only running tests matching 'pass'
-testkit-subset_test.cpp: info:  trace: thread '0(1)' (testkit-subset_extra.cpp:5)
+testkit-subset_test.cpp: info:  trace: thread '0(1)' testkit-subset_extra.cpp:5
 testkit-subset_test.cpp: info:  status_for_test 'will pass extra': PASS
-testkit-subset_test.cpp: info:  trace: thread '0(1)' (testkit-subset_test.cpp:5)
+testkit-subset_test.cpp: info:  trace: thread '0(1)' testkit-subset_test.cpp:5
 testkit-subset_test.cpp: info:  status_for_test 'will pass main': PASS
 testkit-subset_test.cpp: info:  test summary --- 2 test(s) passed --- 0 test(s) failed
 testkit-subset_test.cpp: info:  test summary --- 2 test(s) skipped
@@ -11,7 +11,7 @@ testkit-subset_test.cpp: info:  summary --- 2 check(s) passed --- 0 check(s) fai
 testkit-subset_test.cpp: info:  CONCLUSION: PASS
 testkit-subset_test.cpp: info:  running test suite 'testkit-subset_test.cpp'
 testkit-subset_test.cpp: info:  only running tests matching 'extra\.cpp:.*pass.*'
-testkit-subset_test.cpp: info:  trace: thread '0(1)' (testkit-subset_extra.cpp:5)
+testkit-subset_test.cpp: info:  trace: thread '0(1)' testkit-subset_extra.cpp:5
 testkit-subset_test.cpp: info:  status_for_test 'will pass extra': PASS
 testkit-subset_test.cpp: info:  test summary --- 1 test(s) passed --- 0 test(s) failed
 testkit-subset_test.cpp: info:  test summary --- 3 test(s) skipped
