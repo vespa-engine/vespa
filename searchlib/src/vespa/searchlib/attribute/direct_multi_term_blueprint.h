@@ -80,9 +80,12 @@ public:
             double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
                 return abs_to_rel_est(term.posting_size, docid_limit);
             }
-            double cost(const IDirectPostingStore::LookupResult &) const noexcept { return 1.0; }
+            double cost(const IDirectPostingStore::LookupResult &) const noexcept {
+                return search::queryeval::flow::btree_cost();
+            }
             double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-                return abs_to_rel_est(term.posting_size, docid_limit);
+                double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
+                return search::queryeval::flow::btree_strict_cost(rel_est);
             }
         };
         double est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
