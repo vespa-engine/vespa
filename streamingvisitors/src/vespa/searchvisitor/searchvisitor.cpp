@@ -967,7 +967,7 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
 }
 
 namespace {
-bool notContained(const std::vector<size_t> sortList, size_t idx) {
+bool notContained(const std::vector<size_t> &sortList, size_t idx) {
     for (size_t v : sortList) {
         if (v == idx) return false;
     }
