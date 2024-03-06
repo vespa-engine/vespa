@@ -37,9 +37,12 @@ public:
     static bool is_async_unconditional_message(const api::StorageMessage& cmd) noexcept;
 private:
     [[nodiscard]] bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
-    static bool tasConditionExists(const api::TestAndSetCommand& cmd);
-    bool tasConditionMatches(const api::TestAndSetCommand& cmd, MessageTracker& tracker,
-                             spi::Context& context, bool missingDocumentImpliesMatch = false) const;
+    [[nodiscard]] static bool tasConditionExists(const api::TestAndSetCommand& cmd);
+    [[nodiscard]] bool tasConditionMatches(const api::TestAndSetCommand& cmd, MessageTracker& tracker,
+                                           spi::Context& context, bool missingDocumentImpliesMatch = false) const;
+    [[nodiscard]] api::Timestamp fetch_existing_document_timestamp(const document::DocumentId& id,
+                                                                   const spi::Bucket& bucket,
+                                                                   spi::Context& ctx) const;
     void on_delete_bucket_complete(const document::Bucket& bucket) const;
     const PersistenceUtil            & _env;
     spi::PersistenceProvider         & _spi;
