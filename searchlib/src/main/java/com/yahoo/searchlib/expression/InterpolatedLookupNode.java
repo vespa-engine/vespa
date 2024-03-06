@@ -91,4 +91,8 @@ public class InterpolatedLookupNode extends UnaryFunctionNode {
         visitor.visit("attribute", attribute);
     }
 
+    protected void visitSuperMembers(ObjectVisitor visitor) {
+        super.visitMembers(visitor);
+    }
+
 }

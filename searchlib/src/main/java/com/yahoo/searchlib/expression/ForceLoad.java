@@ -46,6 +46,7 @@ public class ForceLoad {
                 "ExpressionNode",
                 "AggregationRefNode",
                 "IntegerResultNode",
+                "InterpolatedDocumentFieldLookupNode",
                 "Int32ResultNode",
                 "Int16ResultNode",
                 "Int8ResultNode",

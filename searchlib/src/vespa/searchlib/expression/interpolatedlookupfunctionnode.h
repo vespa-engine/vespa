@@ -21,6 +21,7 @@ public:
     InterpolatedLookup & operator= (const InterpolatedLookup &rhs);
     void visitMembers(vespalib::ObjectVisitor & visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation) override;
+    std::unique_ptr<ExpressionNode> clone_lookup_expression() const;
 private:
     std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
     createResultHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const override;

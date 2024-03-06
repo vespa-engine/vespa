@@ -6,6 +6,8 @@
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/attribute_map_lookup_node.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/searchlib/expression/interpolated_document_field_lookup_node.h>
+#include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
 
 using namespace search::expression;
 
@@ -63,6 +65,10 @@ AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
 std::unique_ptr<ExpressionNode>
 Attribute2DocumentAccessor::getReplacementNode(const AttributeNode &attributeNode)
 {
+    if (attributeNode.inherits(InterpolatedLookup::classId)) {
+        auto& interpolated_lookup = static_cast<const InterpolatedLookup&>(attributeNode);
+        return std::make_unique<InterpolatedDocumentFieldLookupNode>(interpolated_lookup.getAttributeName(), interpolated_lookup.clone_lookup_expression());
+    }
     return std::make_unique<DocumentFieldNode>(attributeNode.getAttributeName());
 }
 
