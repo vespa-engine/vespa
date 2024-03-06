@@ -44,7 +44,7 @@ public class NonPhrasingSearcher extends Searcher {
     }
 
     private void setupAutomatonFile(String phraseAutomatonFile) {
-        if (phraseAutomatonFile == null || phraseAutomatonFile.trim().equals("")) {
+        if (phraseAutomatonFile == null || phraseAutomatonFile.trim().isEmpty()) {
             //no file, just use dummy matcher
             phraseMatcher = PhraseMatcher.getNullMatcher();
         } else {

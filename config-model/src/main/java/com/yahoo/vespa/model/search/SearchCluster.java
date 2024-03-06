@@ -60,6 +60,15 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         return false;
     }
 
+    public String getConfigId(String name) {
+        for (DocumentDatabase db : documentDbs) {
+            if (db.getName().equals(name)) {
+                return db.getConfigId();
+            }
+        }
+        return "";
+    }
+
     /** Returns the schemas that should be active in this cluster. Note: These are added during processing. */
     public Map<String, SchemaInfo> schemas() { return Collections.unmodifiableMap(schemas); }
 

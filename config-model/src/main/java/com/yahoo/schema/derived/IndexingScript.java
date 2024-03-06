@@ -95,6 +95,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
 
     @Override
     public void getConfig(IlscriptsConfig.Builder configBuilder) {
+        // Append
         IlscriptsConfig.Ilscript.Builder ilscriptBuilder = new IlscriptsConfig.Ilscript.Builder();
         ilscriptBuilder.doctype(getName());
         ilscriptBuilder.docfield(docFields);

@@ -316,6 +316,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
+        // Append
         IndexInfoConfig.Indexinfo.Builder iiB = new IndexInfoConfig.Indexinfo.Builder();
         iiB.name(getName());
         for (IndexCommand command : commands) {

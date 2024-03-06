@@ -44,18 +44,21 @@ public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
     @Override
     protected String getDerivedName() { return "juniperrc"; }
 
+    private static JuniperrcConfig.Override.Builder createOverride(String name) {
+        return new JuniperrcConfig.Override.Builder()
+                .fieldname(name)
+                .length(64*Mb)
+                .max_matches(1)
+                .min_length(8192)
+                .surround_max(64*Mb);
+    }
+
     @Override
     public void getConfig(JuniperrcConfig.Builder builder) {
-        if (boldingFields.size() != 0) {
+        // Replace
+        if (!boldingFields.isEmpty()) {
             builder.prefix(true);
-            for (String name : boldingFields) {
-                builder.override(new JuniperrcConfig.Override.Builder()
-                    .fieldname(name)
-                    .length(64*Mb)
-                    .max_matches(1)
-                    .min_length(8192)
-                    .surround_max(64*Mb));
-            }
+            builder.override(boldingFields.stream().map(Juniperrc::createOverride).toList());
         }
     }
 

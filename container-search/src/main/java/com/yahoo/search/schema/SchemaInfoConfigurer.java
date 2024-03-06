@@ -3,7 +3,6 @@ package com.yahoo.search.schema;
 
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
 import java.util.List;
