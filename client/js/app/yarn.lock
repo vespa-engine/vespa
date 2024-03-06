@@ -5421,9 +5421,9 @@ use-composed-ref@^1.3.0:
   integrity sha512-GLMG0Jc/jiKov/3Ulid1wbv3r54K9HlMW29IWcDFPEqFkSO2nS0MuefWgMJpeHQ9YJeXDL3ZUF+P3jdXlZX/cQ==
 
 use-context-selector@^1:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/use-context-selector/-/use-context-selector-1.4.2.tgz#168aa55fb9403bc7cc6c2c5c4ff8ca1118b0d9cd"
-  integrity sha512-OZvd4TWirCMOwIwFlQFnECIyEGb3fvSrd71A8sGWiAPl6SIJTS60Ho+WnAr67T6/JedvlperiReCM5n9mnM3fQ==
+  version "1.4.3"
+  resolved "https://registry.yarnpkg.com/use-context-selector/-/use-context-selector-1.4.3.tgz#cb13afa834331d689d6b045917d8b7dfdd7d8047"
+  integrity sha512-rFo2z14XipT7XvXfw0lB/GCbxaKp9LCJoW96VWbZTlzoe4/E1dlqufv8xDvXRMPh3aIjFtNlwoaofuKX1UwUNw==
 
 use-isomorphic-layout-effect@^1.1.1:
   version "1.1.2"
