@@ -94,6 +94,15 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             return false;
         }
 
+        private static boolean badQueryTensorType(TensorType queryTensorType) {
+            var queryDimensions = queryTensorType.dimensions();
+            if (queryDimensions.size() != 1) {
+                return true;
+            }
+            var dim = queryDimensions.get(0);
+            return ! dim.isIndexed();
+        }
+
         private static boolean isTensorTypeThatSupportsHnswIndex(TensorType tt) {
             List<TensorType.Dimension> dims = tt.dimensions();
             if (dims.size() == 1) {
@@ -117,6 +126,9 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             if (queryTensor.isEmpty())
                 return item + " requires a tensor rank feature named '" + queryFeatureName + "' but this is not present";
 
+            if (badQueryTensorType(queryTensor.get().type())) {
+                return item + " tensor " + queryFeatureName + " must have exactly 1, indexed dimension, but was: " + queryTensor.get().type();
+            }
             if ( ! validAttributes.containsKey(item.getIndexName())) {
                 return item + " field is not an attribute";
             }

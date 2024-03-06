@@ -208,17 +208,23 @@ public class ValidateNearestNeighborTestCase {
     @Test
     void testSparseTensor() {
         String q = makeQuery("sparse", "qvector");
-        Tensor t = makeTensor(tt_sparse_vector_x);
+        Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
         assertErrMsg(desc("sparse", "qvector", 1, "field type tensor(x{}) is not supported by nearest neighbor searcher"), r);
+        t = makeTensor(tt_sparse_vector_x);
+        r = doSearch(searcher, q, t);
+        assertErrMsg(desc("sparse", "qvector", 1, "tensor query(qvector) must have exactly 1, indexed dimension, but was: tensor(x{})"), r);
     }
 
     @Test
     void testMatrix() {
         String q = makeQuery("matrix", "qvector");
-        Tensor t = makeMatrix(tt_dense_matrix_xy);
+        Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
         assertErrMsg(desc("matrix", "qvector", 1, "field type tensor(x[3],y[1]) is not supported by nearest neighbor searcher"), r);
+        t = makeMatrix(tt_dense_matrix_xy);
+        r = doSearch(searcher, q, t);
+        assertErrMsg(desc("matrix", "qvector", 1, "tensor query(qvector) must have exactly 1, indexed dimension, but was: tensor(x[3],y[1])"), r);
     }
 
     @Test
