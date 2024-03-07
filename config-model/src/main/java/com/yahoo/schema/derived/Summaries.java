@@ -41,11 +41,10 @@ public class Summaries extends Derived implements SummaryConfig.Producer {
 
     @Override
     public void getConfig(SummaryConfig.Builder builder) {
+        // Replace
         builder.defaultsummaryid(summaries.isEmpty() ? -1 : summaries.get(0).hashCode());
         builder.usev8geopositions(useV8GeoPositions);
-        for (SummaryClass summaryClass : summaries) {
-            builder.classes(summaryClass.getSummaryClassConfig());
-        }
+        builder.classes(summaries.stream().map(SummaryClass::getSummaryClassConfig).toList());
     }    
 
 }

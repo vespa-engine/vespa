@@ -108,12 +108,9 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
 
     @Override
     public void getConfig(VsmfieldsConfig.Builder vsB) {
-        for (StreamingField streamingField : fields.values()) {
-            vsB.fieldspec(streamingField.getFieldSpecConfig());
-        }
-        for (StreamingDocumentType streamingDocType : doctypes.values()) {
-            vsB.documenttype(streamingDocType.getDocTypeConfig());
-        }
+        // Replace
+        vsB.fieldspec(fields.values().stream().map(StreamingField::getFieldSpecConfig).toList());
+        vsB.documenttype(doctypes.values().stream().map(StreamingDocumentType::getDocTypeConfig).toList());
     }
 
     private static boolean isAttributeField(ImmutableSDField field, boolean isStructField, boolean ignoreAttributeAspect) {

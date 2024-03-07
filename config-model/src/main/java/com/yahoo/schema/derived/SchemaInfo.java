@@ -65,6 +65,7 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
 
     @Override
     public void getConfig(SchemaInfoConfig.Builder builder) {
+        // Append
         var schemaBuilder = new SchemaInfoConfig.Schema.Builder();
         schemaBuilder.name(schema.getName());
         addFieldsConfig(schemaBuilder);

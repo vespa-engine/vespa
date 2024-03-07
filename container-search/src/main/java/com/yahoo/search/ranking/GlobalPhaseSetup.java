@@ -7,7 +7,13 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 class GlobalPhaseSetup {
@@ -122,7 +128,7 @@ class GlobalPhaseSetup {
                 } else if (availableMatchFeatures.contains(input)) {
                     String mfName = renamedFeatures.getOrDefault(input, input);
                     fromMF.add(new MatchFeatureInput(input, mfName));
-                } else if (renamedFeatures.values().contains(input)) {
+                } else if (renamedFeatures.containsValue(input)) {
                     fromMF.add(new MatchFeatureInput(input, input));
                 } else {
                     throw new IllegalArgumentException("Bad config, missing global-phase input: " + input);
@@ -145,7 +151,7 @@ class GlobalPhaseSetup {
         String toRename = null;
         for (var prop : rp.fef().property()) {
             if (prop.name().equals("vespa.globalphase.rerankcount")) {
-                rerankCount = Integer.valueOf(prop.value());
+                rerankCount = Integer.parseInt(prop.value());
             }
             if (prop.name().equals("vespa.rank.globalphase")) {
                 functionEvaluatorSource = () -> model.evaluatorOf("globalphase");
@@ -177,7 +183,7 @@ class GlobalPhaseSetup {
             for (var input : mainResolver.usedNormalizers) {
                 var cfg = availableNormalizers.get(input);
                 String normInput = cfg.input();
-                if (matchFeatures.contains(normInput) || renameFeatures.values().contains(normInput)) {
+                if (matchFeatures.contains(normInput) || renameFeatures.containsValue(normInput)) {
                     Supplier<Evaluator> normSource = () -> new DummyEvaluator(normInput);
                     normalizers.add(makeNormalizerSetup(cfg, matchFeatures, renameFeatures, normSource, List.of(normInput), rerankCount));
                 } else {

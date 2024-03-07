@@ -3,12 +3,8 @@ package com.yahoo.search.schema;
 
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
-import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.RankProfile.InputType;
-import com.yahoo.search.schema.Schema;
-import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;

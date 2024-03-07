@@ -61,18 +61,25 @@ public class DocumentDatabase extends AnyConfigProducer implements
     public DerivedConfiguration getDerivedConfiguration() {
         return derivedCfg;
     }
+    // These methods will append to the config
     @Override public void getConfig(IndexInfoConfig.Builder builder) { derivedCfg.getIndexInfo().getConfig(builder); }
     @Override public void getConfig(IlscriptsConfig.Builder builder) { derivedCfg.getIndexingScript().getConfig(builder); }
+    @Override public void getConfig(SchemaInfoConfig.Builder builder) { derivedCfg.getSchemaInfo().getConfig(builder); }
+
+    // These methods append as multiple databases join config => TODO will loose information - not good
     @Override public void getConfig(AttributesConfig.Builder builder) { derivedCfg.getConfig(builder); }
     @Override public void getConfig(RankProfilesConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
+
+    // These methods append, TODO unknown usage and consequences
     @Override public void getConfig(RankingExpressionsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
     @Override public void getConfig(RankingConstantsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
     @Override public void getConfig(OnnxModelsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
+
+    // Below methods will replace config completely
     @Override public void getConfig(IndexschemaConfig.Builder builder) { derivedCfg.getIndexSchema().getConfig(builder); }
     @Override public void getConfig(JuniperrcConfig.Builder builder) { derivedCfg.getJuniperrc().getConfig(builder); }
     @Override public void getConfig(SummaryConfig.Builder builder) { derivedCfg.getSummaries().getConfig(builder); }
     @Override public void getConfig(ImportedFieldsConfig.Builder builder) { derivedCfg.getImportedFields().getConfig(builder); }
-    @Override public void getConfig(SchemaInfoConfig.Builder builder) { derivedCfg.getSchemaInfo().getConfig(builder); }
     @Override public void getConfig(VsmsummaryConfig.Builder builder) { derivedCfg.getVsmSummary().getConfig(builder); }
     @Override public void getConfig(VsmfieldsConfig.Builder builder) { derivedCfg.getVsmFields().getConfig(builder); }
 

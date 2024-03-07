@@ -64,7 +64,7 @@ searchcluster[].name string
 searchcluster[].searchdef[] string
 
 ## configid that may be used to get rank-profiles config for the cluster.
-searchcluster[].rankprofiles.configid reference default=""
+searchcluster[].rankprofiles_configid string default=""
 
 ## Indexing mode of search cluster.
 searchcluster[].indexingmode enum { REALTIME, STREAMING } default=REALTIME

@@ -96,14 +96,14 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
 
     @Override
     public void getConfig(VsmsummaryConfig.Builder vB) {
-        for (Map.Entry<SummaryField, List<String>> entry : summaryMap.entrySet()) {
-            VsmsummaryConfig.Fieldmap.Builder fmB = new VsmsummaryConfig.Fieldmap.Builder().summary(entry.getKey().getName());
-            for (String field : entry.getValue()) {
-                fmB.document(new VsmsummaryConfig.Fieldmap.Document.Builder().field(field));
-            }
-            fmB.command(VsmsummaryConfig.Fieldmap.Command.Enum.valueOf(entry.getKey().getVsmCommand().toString()));
-            vB.fieldmap(fmB);
-        }
+        // Replace
+        vB.fieldmap(
+                summaryMap.entrySet().stream().map(entry -> new VsmsummaryConfig.Fieldmap.Builder()
+                        .summary(entry.getKey().getName())
+                        .document(entry.getValue().stream().map(field -> new VsmsummaryConfig.Fieldmap.Document.Builder().field(field)).toList())
+                        .command(VsmsummaryConfig.Fieldmap.Command.Enum.valueOf(entry.getKey().getVsmCommand().toString()))
+                ).toList()
+        );
     }
     
 }
