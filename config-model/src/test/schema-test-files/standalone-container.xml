@@ -55,11 +55,7 @@
       <searcher id='inner-searcher' />
     </chain>
 
-    <provider id='yca-provider' type='vespa'>
-      <nodes>
-        <node host='sourcehost' port='12'/>
-      </nodes>
-    </provider>
+    <provider id='provider' type='local' cluster='foo'/>
 
     <chain id="parentchain" searchers="one two">
       <searcher id="three" />
