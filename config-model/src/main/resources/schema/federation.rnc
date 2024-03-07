@@ -17,24 +17,8 @@ Provider =
         attribute type { xsd:string }? &
         attribute cluster { xsd:string }? &
 
-        HttpProviderSearcherOptions &
-
         Source*
     }
-
-HttpProviderSearcherOptions =
-    attribute cacheweight { xsd:float { minInclusive = "0" } }? &
-    attribute path { xsd:string }? &
-    attribute readtimeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
-    attribute connectiontimeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
-    attribute connectionpooltimeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
-    attribute retries { xsd:int }? &
-    element nodes {
-        element node {
-            attribute host { xsd:string } &
-            attribute port { xsd:int }
-        }+
-   } ?
 
 FederationOptions =
     element federationoptions {

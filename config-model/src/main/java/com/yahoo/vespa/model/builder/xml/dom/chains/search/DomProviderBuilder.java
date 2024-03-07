@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
@@ -15,6 +14,7 @@ import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.Provider;
 import com.yahoo.vespa.model.container.search.searchchain.Source;
 import org.w3c.dom.Element;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -36,25 +36,11 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
     private static class ProviderReader {
 
         final String type;
-        final String path;
-        final Double cacheWeight;
-        final Integer retries;
-        final Double readTimeout;
-        final Double connectionTimeout;
-        final Double connectionPoolTimeout;
         final String clusterName;
-        final List<Node> nodes;
 
         ProviderReader(Element providerElement) {
             type = readType(providerElement);
-            path = readPath(providerElement);
-            cacheWeight = readCacheWeight(providerElement);
             clusterName = readCluster(providerElement);
-            readTimeout = readReadTimeout(providerElement);
-            connectionTimeout = readConnectionTimeout(providerElement);
-            connectionPoolTimeout = readConnectionPoolTimeout(providerElement);
-            retries = readRetries(providerElement);
-            nodes = readNodes(providerElement);
         }
 
         private String getAttributeOrNull(Element element, String name) {
@@ -62,58 +48,8 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             return value.isEmpty() ? null : value;
         }
 
-        private String readPath(Element providerElement) {
-            return getAttributeOrNull(providerElement, "path");
-        }
-
         private String readCluster(Element providerElement) {
             return getAttributeOrNull(providerElement, "cluster");
-        }
-
-        private Double readCacheWeight(Element providerElement) {
-            String cacheWeightString = getAttributeOrNull(providerElement, "cacheweight");
-            return (cacheWeightString == null)? null : Double.parseDouble(cacheWeightString);
-        }
-
-        private Integer readRetries(Element providerElement) {
-            String retriesString = getAttributeOrNull(providerElement, "retries");
-            return (retriesString == null) ? null : Integer.parseInt(retriesString);
-        }
-
-        private Double readReadTimeout(Element providerElement) {
-            String timeoutString = getAttributeOrNull(providerElement, "readtimeout");
-            return (timeoutString == null) ? null : TimeParser.seconds(timeoutString);
-        }
-
-        private Double readConnectionTimeout(Element providerElement) {
-            String timeoutString = getAttributeOrNull(providerElement, "connectiontimeout");
-            return (timeoutString == null) ? null : TimeParser.seconds(timeoutString);
-        }
-
-        private Double readConnectionPoolTimeout(Element providerElement) {
-            String timeoutString = getAttributeOrNull(providerElement, "connectionpooltimeout");
-            return (timeoutString == null) ? null : TimeParser.seconds(timeoutString);
-        }
-
-        private List<Node> readNodes(Element providerElement) {
-            Element nodesSpec = XML.getChild(providerElement, "nodes");
-            if (nodesSpec == null) {
-                return null;
-            }
-
-            List<Node> nodes = new ArrayList<>();
-            for (Element nodeSpec : XML.getChildren(nodesSpec, "node")) {
-                nodes.add(readNode(nodeSpec));
-            }
-            return nodes;
-        }
-
-        private Node readNode(Element nodeElement) {
-            String host = getAttributeOrNull(nodeElement, "host");
-            // The direct calls to parse methods below works because the schema
-            // guarantees us no null references
-            int port = Integer.parseInt(getAttributeOrNull(nodeElement, "port"));
-            return new Node(host, port);
         }
 
         private String readType(Element providerElement) {
@@ -171,28 +107,11 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
                                         ProviderReader providerReader,
                                         FederationOptions federationOptions) {
         try {
-            ensureEmpty(specWithoutInnerSearchers.componentId,
-                        providerReader.cacheWeight,
-                        providerReader.path,
-                        providerReader.nodes,
-                        providerReader.readTimeout,
-                        providerReader.connectionTimeout,
-                        providerReader.connectionPoolTimeout,
-                        providerReader.retries);
-
             return new LocalProvider(specWithoutInnerSearchers,
                                      federationOptions,
                                      new LocalProviderSpec(providerReader.clusterName));
         } catch (Exception e) {
             throw new RuntimeException("Failed creating local provider " + specWithoutInnerSearchers.componentId, e);
-        }
-    }
-
-    private void ensureEmpty(ComponentId componentId, Object... objects) {
-        for (Object object : objects) {
-            if (object != null) {
-                throw new IllegalArgumentException("Invalid provider option in provider '" + componentId + "': value='" + object + "'");
-            }
         }
     }
 
