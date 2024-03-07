@@ -130,6 +130,16 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             return clusterElem.childAsDouble("engine.proton.query-timeout");
         }
 
+        private static Schema findResponsibleSchema(DeployState deployState, String docTypeName) {
+            var schemas = deployState.getSchemas();
+            for (var candidate : schemas) {
+                if (candidate.getName().equals(docTypeName)) {
+                    return candidate;
+                }
+            }
+            return null;
+        }
+
         private void buildAllStreamingSearchClusters(DeployState deployState, ModelElement clusterElem, String clusterName, ContentSearchCluster search) {
             ModelElement docElem = clusterElem.child("documents");
 
@@ -138,8 +148,10 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             }
 
             for (ModelElement docType : docElem.subElements("document")) {
+                String docTypeName = docType.stringAttribute("type");
                 String mode = docType.stringAttribute("mode");
-                if ("streaming".equals(mode)) {
+                var schema = findResponsibleSchema(deployState, docTypeName);
+                if ("streaming".equals(mode) && schema != null && !schema.isDocumentsOnly()) {
                     buildStreamingSearchCluster(deployState, clusterElem, clusterName, search, docType);
                 }
             }
