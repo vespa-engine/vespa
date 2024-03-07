@@ -8,7 +8,6 @@ import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.schema.derived.SchemaInfo;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
@@ -29,8 +28,8 @@ public class LocalProvider extends Provider implements
         DocumentdbInfoConfig.Producer,
         ClusterConfig.Producer,
         AttributesConfig.Producer,
-        QrMonitorConfig.Producer,
-        RankProfilesConfig.Producer {
+        QrMonitorConfig.Producer
+{
 
     private final LocalProviderSpec providerSpec;
     private volatile SearchCluster searchCluster;
@@ -44,11 +43,6 @@ public class LocalProvider extends Provider implements
 
         if (searchCluster.getVisibilityDelay() != null)
             builder.cacheTimeout(convertVisibilityDelay(searchCluster.getVisibilityDelay()));
-    }
-
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        searchCluster.getConfig(builder);
     }
 
     @Override

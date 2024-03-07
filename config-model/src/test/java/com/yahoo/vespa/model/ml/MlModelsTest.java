@@ -47,7 +47,7 @@ public class MlModelsTest {
         assertEquals(3, model.rankProfileList().getRankProfiles().size(), "Global models are created (although not used directly here)");
 
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
-        model.getSearchClusters().get(0).getConfig(builder);
+        model.getConfig(builder, "test/search/cluster.test/test");
         RankProfilesConfig config = new RankProfilesConfig(builder);
         assertEquals(3, config.rankprofile().size());
         assertEquals("test", config.rankprofile(2).name());
