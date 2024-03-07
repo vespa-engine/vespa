@@ -241,7 +241,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
      */
     private static int getXmlIntegerAttribute(Element spec, String attributeName) {
         String value = (spec == null) ? null : spec.getAttribute(attributeName);
-        if (value == null || value.equals("")) {
+        if (value == null || value.isEmpty()) {
             return 0;
         } else {
             try {

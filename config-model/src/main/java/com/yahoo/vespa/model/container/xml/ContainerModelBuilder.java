@@ -425,7 +425,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         cluster.addComponent(accessLogComponent);
                     });
                 }
-                if (components.size() > 0) {
+                if ( ! components.isEmpty()) {
                     cluster.removeSimpleComponent(VoidRequestLog.class);
                     cluster.addSimpleComponent(AccessLog.class);
                 }
