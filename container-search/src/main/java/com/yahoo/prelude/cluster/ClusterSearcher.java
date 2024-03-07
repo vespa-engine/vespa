@@ -151,7 +151,6 @@ public class ClusterSearcher extends Searcher {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         StreamingSearcher searcher = new StreamingSearcher(access);
         searcher.setSearchClusterName(searchClusterConfig.rankprofiles_configid());
-        searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
         searcher.init(serverId, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
         return searcher;
