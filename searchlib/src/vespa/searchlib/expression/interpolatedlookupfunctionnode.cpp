@@ -116,4 +116,14 @@ InterpolatedLookup::selectMembers(const vespalib::ObjectPredicate & predicate, v
     }
 }
 
+std::unique_ptr<ExpressionNode>
+InterpolatedLookup::clone_lookup_expression() const
+{
+    if (_lookupExpression) {
+        return std::unique_ptr<ExpressionNode>(_lookupExpression->clone());
+    } else {
+        return {};
+    }
+}
+
 }

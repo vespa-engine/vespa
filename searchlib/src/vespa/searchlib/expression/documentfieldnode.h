@@ -40,7 +40,7 @@ public:
     DocumentFieldNode(DocumentFieldNode && rhs) noexcept = default;
     DocumentFieldNode & operator = (DocumentFieldNode && rhs) noexcept = default;
     const vespalib::string & getFieldName() const override { return _fieldName; }
-private:
+public:
     class Handler : public document::fieldvalue::IteratorHandler {
     public:
         virtual void reset() = 0;
@@ -48,6 +48,7 @@ private:
         void onCollectionStart(const Content & c) override;
         void onStructStart(const Content & c) override;
     };
+private:
     class SingleHandler : public Handler {
     public:
         SingleHandler(ResultNode & result) : _result(result) {}
@@ -71,6 +72,7 @@ private:
     bool onExecute() const override;
     void onDoc(const document::Document & doc) override;
     void onDocType(const document::DocumentType & docType) override;
+protected:
     document::FieldPath                _fieldPath;
     mutable ResultNode::CP             _value;
     mutable std::unique_ptr<Handler>   _handler;

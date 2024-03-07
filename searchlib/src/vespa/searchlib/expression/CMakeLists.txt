@@ -25,6 +25,7 @@ vespa_add_library(searchlib_expression OBJECT
     mathfunctionnode.cpp
     numericfunctionnode.cpp
     resultnode.cpp
+    interpolated_document_field_lookup_node.cpp
     interpolatedlookupfunctionnode.cpp
     functionnodes.cpp
     resultnodes.cpp
