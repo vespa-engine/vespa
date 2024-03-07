@@ -138,7 +138,7 @@ org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${maven-enforcer-plugin.vespa.version}
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
-org.eclipse.angus:angus-activation:${jakarta.inject.vespa.version}
+org.eclipse.angus:angus-activation:${eclipse-angus.vespa.version}
 org.eclipse.collections:eclipse-collections-api:${eclipse-collections.vespa.version}
 org.eclipse.collections:eclipse-collections:${eclipse-collections.vespa.version}
 org.eclipse.jetty.http2:http2-client:${jetty.vespa.version}
