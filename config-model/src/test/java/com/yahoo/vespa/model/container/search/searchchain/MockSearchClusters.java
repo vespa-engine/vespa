@@ -31,7 +31,6 @@ public class MockSearchClusters {
         @Override public List<DocumentDatabase> getDocumentDbs() {return List.of();}
         @Override public void getConfig(AttributesConfig.Builder builder) {}
         @Override public void getConfig(DocumentdbInfoConfig.Builder builder) {}
-        @Override public void getConfig(RankProfilesConfig.Builder builder) {}
         @Override public void getConfig(IndexInfoConfig.Builder builder) {}
         @Override public void getConfig(IlscriptsConfig.Builder builder) {}
         @Override public void getConfig(SchemaInfoConfig.Builder builder) {}

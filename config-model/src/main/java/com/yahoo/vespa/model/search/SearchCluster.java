@@ -6,7 +6,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -138,10 +137,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         new Join(documentDbs).getConfig(builder);
     }
 
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
-    }
-
     @Override
     public String toString() { return "search-capable cluster '" + clusterName + "'"; }
 
@@ -190,12 +185,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         }
 
         public void getConfig(AttributesConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        public void getConfig(RankProfilesConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
             }

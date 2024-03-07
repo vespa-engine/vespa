@@ -72,44 +72,17 @@ public class StreamingSearchCluster extends SearchCluster implements
         ddbB.configid(attributesConfig.getConfigId()); // Temporary until fully cleaned up
     }
 
-    private DocumentDatabase db() {
-        return getDocumentDbs().get(0);
-    }
+    private DocumentDatabase db() { return getDocumentDbs().get(0); }
 
-    @Override
-    public void getConfig(SummaryConfig.Builder builder) {
-        db().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(OnnxModelsConfig.Builder builder) {
-        db().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(RankingConstantsConfig.Builder builder) {
-        db().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(RankingExpressionsConfig.Builder builder) {
-        db().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(JuniperrcConfig.Builder builder) {
-        db().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(VsmfieldsConfig.Builder builder) {
-        db().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(VsmsummaryConfig.Builder builder) {
-        db().getConfig(builder);
-    }
+    // These are temporary until backend uses correct config id.
+    @Override public void getConfig(SummaryConfig.Builder builder) { db().getConfig(builder); }
+    @Override public void getConfig(OnnxModelsConfig.Builder builder) { db().getConfig(builder); }
+    @Override public void getConfig(RankingConstantsConfig.Builder builder) { db().getConfig(builder); }
+    @Override public void getConfig(RankProfilesConfig.Builder builder) { db().getConfig(builder); }
+    @Override public void getConfig(RankingExpressionsConfig.Builder builder) { db().getConfig(builder); }
+    @Override public void getConfig(JuniperrcConfig.Builder builder) { db().getConfig(builder); }
+    @Override public void getConfig(VsmfieldsConfig.Builder builder) { db().getConfig(builder); }
+    @Override public void getConfig(VsmsummaryConfig.Builder builder) { db().getConfig(builder);}
 
     private class AttributesProducer extends AnyConfigProducer implements AttributesConfig.Producer {
 
