@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_floatingpointtype_test_app TEST
     floatingpointtypetest.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_floatingpointtype_test_app COMMAND vespalib_floatingpointtype_test_app)
