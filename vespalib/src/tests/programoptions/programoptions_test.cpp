@@ -2,37 +2,10 @@
 
 #include "programoptions_testutils.h"
 #include <vespa/vespalib/util/programoptions.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <iostream>
 
 namespace vespalib {
-
-class Test : public vespalib::TestApp
-{
-public:
-    void testSyntaxPage();
-    void testNormalUsage();
-    void testFailures();
-    void testVectorArgument();
-    void testAllHiddenOption();
-    void testOptionsAfterArguments();
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("programoptions_test");
-    srandom(1);
-    testSyntaxPage();
-    testNormalUsage();
-    testFailures();
-    testVectorArgument();
-    testAllHiddenOption();
-    // Currently not supported
-    // testOptionsAfterArguments();
-    TEST_DONE();
-}
 
 struct MyOptions : public ProgramOptions {
     bool boolOpt;
@@ -86,7 +59,8 @@ MyOptions::MyOptions(int argc, const char* const* argv)
 
 MyOptions::~MyOptions() { }
 
-void Test::testSyntaxPage() {
+TEST(ProgramOptionsTest, test_syntax_page)
+{
     AppOptions opts("myapp");
     MyOptions options(opts.getArgCount(), opts.getArguments());
     std::ostringstream actual;
@@ -116,41 +90,42 @@ void Test::testSyntaxPage() {
 "Advanced options:\n"
 " -p --properties <key> <value> : Property map (default empty)\n"
     );
-    EXPECT_EQUAL(expected, actual.str());
+    EXPECT_EQ(expected, actual.str());
 }
 
-void Test::testNormalUsage() {
+TEST(ProgramOptionsTest, test_normal_usage)
+{
     {
         AppOptions opts("myapp -b --uintopt 4 -s foo tit 1 tei 6");
         MyOptions options(opts.getArgCount(), opts.getArguments());
         options.parse();
-        EXPECT_EQUAL(true, options.boolOpt);
-        EXPECT_EQUAL(true, options.boolWithDefOpt);
-        EXPECT_EQUAL(5, options.intOpt);
-        EXPECT_EQUAL(4u, options.uintOpt);
-        EXPECT_APPROX(4, options.floatOpt, 0.00001);
-        EXPECT_EQUAL("foo", options.stringOpt);
-        EXPECT_EQUAL("tit", options.argString);
-        EXPECT_EQUAL(1, options.argInt);
-        EXPECT_EQUAL("tei", options.argOptionalString);
-        EXPECT_EQUAL(0u, options.properties.size());
-        EXPECT_EQUAL(6, options.anotherOptionalArg);
+        EXPECT_EQ(true, options.boolOpt);
+        EXPECT_EQ(true, options.boolWithDefOpt);
+        EXPECT_EQ(5, options.intOpt);
+        EXPECT_EQ(4u, options.uintOpt);
+        EXPECT_NEAR(4, options.floatOpt, 0.00001);
+        EXPECT_EQ("foo", options.stringOpt);
+        EXPECT_EQ("tit", options.argString);
+        EXPECT_EQ(1, options.argInt);
+        EXPECT_EQ("tei", options.argOptionalString);
+        EXPECT_EQ(0u, options.properties.size());
+        EXPECT_EQ(6, options.anotherOptionalArg);
     }
     {
         AppOptions opts("myapp --uintopt 6 tit 1");
         MyOptions options(opts.getArgCount(), opts.getArguments());
         options.parse();
-        EXPECT_EQUAL(false, options.boolOpt);
-        EXPECT_EQUAL(true, options.boolWithDefOpt);
-        EXPECT_EQUAL(5, options.intOpt);
-        EXPECT_EQUAL(6u, options.uintOpt);
-        EXPECT_APPROX(4, options.floatOpt, 0.00001);
-        EXPECT_EQUAL("ballalaika", options.stringOpt);
-        EXPECT_EQUAL("tit", options.argString);
-        EXPECT_EQUAL(1, options.argInt);
-        EXPECT_EQUAL("foo", options.argOptionalString);
-        EXPECT_EQUAL(0u, options.properties.size());
-        EXPECT_EQUAL(3, options.anotherOptionalArg);
+        EXPECT_EQ(false, options.boolOpt);
+        EXPECT_EQ(true, options.boolWithDefOpt);
+        EXPECT_EQ(5, options.intOpt);
+        EXPECT_EQ(6u, options.uintOpt);
+        EXPECT_NEAR(4, options.floatOpt, 0.00001);
+        EXPECT_EQ("ballalaika", options.stringOpt);
+        EXPECT_EQ("tit", options.argString);
+        EXPECT_EQ(1, options.argInt);
+        EXPECT_EQ("foo", options.argOptionalString);
+        EXPECT_EQ(0u, options.properties.size());
+        EXPECT_EQ(3, options.anotherOptionalArg);
     }
         // Arguments coming after options.
         // (Required for nesting of short options)
@@ -158,62 +133,63 @@ void Test::testNormalUsage() {
         AppOptions opts("myapp --uintopt --intopt 6 -8 tit 1 tei");
         MyOptions options(opts.getArgCount(), opts.getArguments());
         options.parse();
-        EXPECT_EQUAL(false, options.boolOpt);
-        EXPECT_EQUAL(true, options.boolWithDefOpt);
-        EXPECT_EQUAL(-8, options.intOpt);
-        EXPECT_EQUAL(6u, options.uintOpt);
-        EXPECT_APPROX(4, options.floatOpt, 0.00001);
-        EXPECT_EQUAL("ballalaika", options.stringOpt);
-        EXPECT_EQUAL("tit", options.argString);
-        EXPECT_EQUAL(1, options.argInt);
-        EXPECT_EQUAL("tei", options.argOptionalString);
-        EXPECT_EQUAL(0u, options.properties.size());
+        EXPECT_EQ(false, options.boolOpt);
+        EXPECT_EQ(true, options.boolWithDefOpt);
+        EXPECT_EQ(-8, options.intOpt);
+        EXPECT_EQ(6u, options.uintOpt);
+        EXPECT_NEAR(4, options.floatOpt, 0.00001);
+        EXPECT_EQ("ballalaika", options.stringOpt);
+        EXPECT_EQ("tit", options.argString);
+        EXPECT_EQ(1, options.argInt);
+        EXPECT_EQ("tei", options.argOptionalString);
+        EXPECT_EQ(0u, options.properties.size());
     }
     {
         AppOptions opts( "myapp -uib 6 -8 --boolwithdef tit 1 tei");
         MyOptions options(opts.getArgCount(), opts.getArguments());
         options.parse();
-        EXPECT_EQUAL(true, options.boolOpt);
-        EXPECT_EQUAL(false, options.boolWithDefOpt);
-        EXPECT_EQUAL(-8, options.intOpt);
-        EXPECT_EQUAL(6u, options.uintOpt);
-        EXPECT_APPROX(4, options.floatOpt, 0.00001);
-        EXPECT_EQUAL("ballalaika", options.stringOpt);
-        EXPECT_EQUAL("tit", options.argString);
-        EXPECT_EQUAL(1, options.argInt);
-        EXPECT_EQUAL("tei", options.argOptionalString);
-        EXPECT_EQUAL(0u, options.properties.size());
+        EXPECT_EQ(true, options.boolOpt);
+        EXPECT_EQ(false, options.boolWithDefOpt);
+        EXPECT_EQ(-8, options.intOpt);
+        EXPECT_EQ(6u, options.uintOpt);
+        EXPECT_NEAR(4, options.floatOpt, 0.00001);
+        EXPECT_EQ("ballalaika", options.stringOpt);
+        EXPECT_EQ("tit", options.argString);
+        EXPECT_EQ(1, options.argInt);
+        EXPECT_EQ("tei", options.argOptionalString);
+        EXPECT_EQ(0u, options.properties.size());
     }
         // Properties
     {
         AppOptions opts("myapp -u 6 -p foo bar --prop hmm brr tit 1 tei");
         MyOptions options(opts.getArgCount(), opts.getArguments());
         options.parse();
-        EXPECT_EQUAL(false, options.boolOpt);
-        EXPECT_EQUAL(true, options.boolWithDefOpt);
-        EXPECT_EQUAL(5, options.intOpt);
-        EXPECT_EQUAL(6u, options.uintOpt);
-        EXPECT_APPROX(4, options.floatOpt, 0.00001);
-        EXPECT_EQUAL("ballalaika", options.stringOpt);
-        EXPECT_EQUAL("tit", options.argString);
-        EXPECT_EQUAL(1, options.argInt);
-        EXPECT_EQUAL("tei", options.argOptionalString);
-        EXPECT_EQUAL(2u, options.properties.size());
-        EXPECT_EQUAL("bar", options.properties["foo"]);
-        EXPECT_EQUAL("brr", options.properties["hmm"]);
+        EXPECT_EQ(false, options.boolOpt);
+        EXPECT_EQ(true, options.boolWithDefOpt);
+        EXPECT_EQ(5, options.intOpt);
+        EXPECT_EQ(6u, options.uintOpt);
+        EXPECT_NEAR(4, options.floatOpt, 0.00001);
+        EXPECT_EQ("ballalaika", options.stringOpt);
+        EXPECT_EQ("tit", options.argString);
+        EXPECT_EQ(1, options.argInt);
+        EXPECT_EQ("tei", options.argOptionalString);
+        EXPECT_EQ(2u, options.properties.size());
+        EXPECT_EQ("bar", options.properties["foo"]);
+        EXPECT_EQ("brr", options.properties["hmm"]);
     }
 }
 
-void Test::testFailures() {
+TEST(ProgramOptionsTest, test_failures)
+{
         // Non-existing long option
     {
         AppOptions opts("myapp -b --uintopt 4 -s foo --none");
         MyOptions options(opts.getArgCount(), opts.getArguments());
         try{
             options.parse();
-            TEST_FATAL("Expected exception");
+            FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("Invalid option 'none'.", e.getMessage());
+            EXPECT_EQ("Invalid option 'none'.", e.getMessage());
         }
     }
         // Non-existing short option
@@ -222,9 +198,9 @@ void Test::testFailures() {
         MyOptions options(opts.getArgCount(), opts.getArguments());
         try{
             options.parse();
-            TEST_FATAL("Expected exception");
+            FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("Invalid option 'q'.", e.getMessage());
+            EXPECT_EQ("Invalid option 'q'.", e.getMessage());
         }
     }
         // Lacking option argument
@@ -233,9 +209,9 @@ void Test::testFailures() {
         MyOptions options(opts.getArgCount(), opts.getArguments());
         try{
             options.parse();
-            TEST_FATAL("Expected exception");
+            FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("Option 's' needs 1 arguments. Only 0 available.",
+            EXPECT_EQ("Option 's' needs 1 arguments. Only 0 available.",
                        e.getMessage());
         }
     }
@@ -245,35 +221,21 @@ void Test::testFailures() {
         MyOptions options(opts.getArgCount(), opts.getArguments());
         try{
             options.parse();
-            TEST_FATAL("Expected exception");
+            FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("The argument '3000000000' can not be interpreted as a "
+            EXPECT_EQ("The argument '3000000000' can not be interpreted as a "
                        "number of type int.", e.getMessage());
         }
     }
-        // Negative value to unsigned var (Currently doesnt fail)
-/*
-    {
-        AppOptions opts("myapp -b --uintopt -1 foo 0");
-        MyOptions options(opts.getArgCount(), opts.getArguments());
-        try{
-            options.parse();
-            TEST_FATAL("Expected exception");
-        } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("The argument '-1' can not be interpreted as a "
-                         "number of type uint.", e.getMessage());
-        }
-    }
-    */
         // Lacking required option
     {
         AppOptions opts("myapp -b");
         MyOptions options(opts.getArgCount(), opts.getArguments());
         try{
             options.parse();
-            TEST_FATAL("Expected exception");
+            FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("Option 'uintopt' has no default and must be set.",
+            EXPECT_EQ("Option 'uintopt' has no default and must be set.",
                        e.getMessage());
         }
     }
@@ -283,9 +245,9 @@ void Test::testFailures() {
         MyOptions options(opts.getArgCount(), opts.getArguments());
         try{
             options.parse();
-            TEST_FATAL("Expected exception");
+            FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("Insufficient data is given to set required argument "
+            EXPECT_EQ("Insufficient data is given to set required argument "
                        "'argInt'.",
                        e.getMessage());
         }
@@ -296,16 +258,16 @@ void Test::testFailures() {
         MyOptions options(opts.getArgCount(), opts.getArguments());
         try{
             options.parse();
-            TEST_FATAL("Expected exception");
+            FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQUAL("The argument 'en' can not be interpreted as a number "
+            EXPECT_EQ("The argument 'en' can not be interpreted as a number "
                        "of type int.",
                        e.getMessage());
         }
     }
 }
 
-void Test::testVectorArgument()
+TEST(ProgramOptionsTest, test_vector_argument)
 {
     AppOptions opts("myapp foo bar baz");
     std::vector<std::string> args;
@@ -318,16 +280,16 @@ void Test::testVectorArgument()
 "Arguments:\n"
 " ids (string[]) : Vector element\n"
     );
-    EXPECT_EQUAL(expected, actual.str());
+    EXPECT_EQ(expected, actual.str());
 
     options.parse();
-    EXPECT_EQUAL(3u, args.size());
-    EXPECT_EQUAL("foo", args[0]);
-    EXPECT_EQUAL("bar", args[1]);
-    EXPECT_EQUAL("baz", args[2]);
+    EXPECT_EQ(3u, args.size());
+    EXPECT_EQ("foo", args[0]);
+    EXPECT_EQ("bar", args[1]);
+    EXPECT_EQ("baz", args[2]);
 }
 
-void Test::testAllHiddenOption()
+TEST(ProgramOptionsTest, test_all_hidden_options)
 {
     AppOptions opts("myapp --foo bar");
     std::string option;
@@ -337,25 +299,12 @@ void Test::testAllHiddenOption()
     std::ostringstream actual;
     options.writeSyntaxPage(actual);
     std::string expected("\nUsage: myapp\n");
-    EXPECT_EQUAL(expected, actual.str());
+    EXPECT_EQ(expected, actual.str());
 
     options.parse();
-    EXPECT_EQUAL("bar", option);
-}
-
-void Test::testOptionsAfterArguments()
-{
-    AppOptions opts("myapp bar --foo baz");
-    std::string option;
-    std::string argument;
-    ProgramOptions options(opts.getArgCount(), opts.getArguments());
-    options.addOption("foo", option, "Description");
-    options.addArgument("arg", argument, "Description");
-    options.parse();
-    EXPECT_EQUAL("baz", option);
-    EXPECT_EQUAL("bar", argument);
+    EXPECT_EQ("bar", option);
 }
 
 } // vespalib
 
-TEST_APPHOOK(vespalib::Test)
+GTEST_MAIN_RUN_ALL_TESTS()

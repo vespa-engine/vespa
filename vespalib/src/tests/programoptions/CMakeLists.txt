@@ -5,5 +5,6 @@ vespa_add_executable(vespalib_programoptions_test_app TEST
     programoptions_testutils.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_programoptions_test_app COMMAND vespalib_programoptions_test_app)
