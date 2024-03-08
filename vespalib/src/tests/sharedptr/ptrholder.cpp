@@ -1,18 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/ptrholder.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::PtrHolder;
-
-
-class Test : public vespalib::TestApp
-{
-public:
-    void testEmpty();
-    void testSimple();
-    int Main() override;
-};
 
 
 struct Data
@@ -39,8 +30,7 @@ using PT = std::shared_ptr<DataRef>;
 using HOLD = PtrHolder<DataRef>;
 
 
-void
-Test::testEmpty()
+TEST(PtrHolderTest, test_empty)
 {
     HOLD hold;
     EXPECT_TRUE(hold.get().get() == NULL);
@@ -56,8 +46,7 @@ Test::testEmpty()
 }
 
 
-void
-Test::testSimple()
+TEST(PtrHolderTest, test_simple)
 {
     Data data;
     HOLD hold;
@@ -86,14 +75,4 @@ Test::testSimple()
     EXPECT_TRUE(data.dtorCnt == 2);
 }
 
-
-int
-Test::Main()
-{
-    TEST_INIT("ptrholder_test");
-    testEmpty();
-    testSimple();
-    TEST_DONE();
-}
-
-TEST_APPHOOK(Test)
+GTEST_MAIN_RUN_ALL_TESTS()
