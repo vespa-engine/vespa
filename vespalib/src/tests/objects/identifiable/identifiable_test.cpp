@@ -1,26 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "namedobject.h"
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/identifiable.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/testkit/testapp.h>
 
 using namespace vespalib;
 
-class IdentifiableTest : public TestApp {
-    void requireThatIdentifiableCastCanCastPointers();
-    void requireThatIdentifiableCastCanCastReferences();
-    void testNamedObject();
-    void testNboStream();
+class IdentifiableTest : public ::testing::Test {
+protected:
+    IdentifiableTest();
+    ~IdentifiableTest() override;
     template <typename T>
     void testStream(const T & a);
-    void testNboSerializer();
     template <typename T>
     void testSerializer(const T & a);
-public:
-    int Main() override;
 };
+
+IdentifiableTest::IdentifiableTest() = default;
+IdentifiableTest::~IdentifiableTest() = default;
 
 #define CID_Abstract  0x700000
 #define CID_A  0x700001
@@ -74,22 +73,21 @@ IMPLEMENT_IDENTIFIABLE(A, Abstract);
 IMPLEMENT_IDENTIFIABLE(B, A);
 IMPLEMENT_IDENTIFIABLE(C, Identifiable);
 
-void
-IdentifiableTest::testNamedObject()
+TEST_F(IdentifiableTest, test_named_object)
 {
     NamedObject a("first"), b("second");;
     nbostream os;
     NBOSerializer nos(os);
     nos << a << b;
-    EXPECT_EQUAL(27u,os.size());
+    EXPECT_EQ(27u,os.size());
     Identifiable::UP o1;
     o1 = Identifiable::create(nos);
-    EXPECT_EQUAL(14u, os.size());
+    EXPECT_EQ(14u, os.size());
     ASSERT_TRUE(o1->inherits(NamedObject::classId));
     ASSERT_TRUE(o1->getClass().id() == NamedObject::classId);
     EXPECT_TRUE(static_cast<const NamedObject &>(*o1).getName() == "first");
     o1 = Identifiable::create(nos);
-    EXPECT_EQUAL(0u, os.size());
+    EXPECT_EQ(0u, os.size());
     ASSERT_TRUE(o1->inherits(NamedObject::classId));
     ASSERT_TRUE(o1->getClass().id() == NamedObject::classId);
     EXPECT_TRUE(static_cast<const NamedObject &>(*o1).getName() == "second");
@@ -103,8 +101,8 @@ void IdentifiableTest::testStream(const T & a)
     T b;
     s >> b;
     EXPECT_TRUE(s.empty());
-    EXPECT_EQUAL(a, b);
-    EXPECT_EQUAL(nbostream::ok, s.state());
+    EXPECT_EQ(a, b);
+    EXPECT_EQ(nbostream::ok, s.state());
     EXPECT_TRUE(s.good());
 }
 
@@ -117,11 +115,11 @@ void IdentifiableTest::testSerializer(const T & a)
     T b;
     s >> b;
     EXPECT_TRUE(s.getStream().empty());
-    EXPECT_EQUAL(a, b);
-    EXPECT_EQUAL(nbostream::ok, s.getStream().state());
+    EXPECT_EQ(a, b);
+    EXPECT_EQ(nbostream::ok, s.getStream().state());
 }
 
-void IdentifiableTest::testNboSerializer()
+TEST_F(IdentifiableTest, test_nbo_serializer)
 {
     testSerializer(true);
     testSerializer(false);
@@ -138,7 +136,7 @@ void IdentifiableTest::testNboSerializer()
     testSerializer(vespalib::string("abcdefgh"));
 }
 
-void IdentifiableTest::testNboStream()
+TEST_F(IdentifiableTest, test_nbo_stream)
 {
     testStream(true);
     testStream(false);
@@ -156,94 +154,85 @@ void IdentifiableTest::testNboStream()
     testStream(vespalib::string("abcdefgh"));
     {
         nbostream s(4);
-        EXPECT_EQUAL(4u, s.capacity());
+        EXPECT_EQ(4u, s.capacity());
         s << "abcdef";
-        EXPECT_EQUAL(nbostream::ok, s.state());
-        EXPECT_EQUAL(10u, s.size());
-        EXPECT_EQUAL(16u, s.capacity());
-        EXPECT_EQUAL(0, strncmp(s.data() + 4, "abcdef", 6));
+        EXPECT_EQ(nbostream::ok, s.state());
+        EXPECT_EQ(10u, s.size());
+        EXPECT_EQ(16u, s.capacity());
+        EXPECT_EQ(0, strncmp(s.data() + 4, "abcdef", 6));
     }
     {
         nbostream s(8);
-        EXPECT_EQUAL(0u, s.size());
-        EXPECT_EQUAL(8u, s.capacity());
+        EXPECT_EQ(0u, s.size());
+        EXPECT_EQ(8u, s.capacity());
         const char * prev = s.data();
         s << "ABCD";
-        EXPECT_EQUAL(8u, s.size());
-        EXPECT_EQUAL(8u, s.capacity());
-        EXPECT_EQUAL(prev, s.data());
+        EXPECT_EQ(8u, s.size());
+        EXPECT_EQ(8u, s.capacity());
+        EXPECT_EQ(prev, s.data());
         s << "A long string that will cause resizing";
-        EXPECT_EQUAL(50u, s.size());
-        EXPECT_EQUAL(64u, s.capacity());
-        EXPECT_NOT_EQUAL(prev, s.data());
+        EXPECT_EQ(50u, s.size());
+        EXPECT_EQ(64u, s.capacity());
+        EXPECT_NE(prev, s.data());
     }
     {
         nbostream s(8);
-        EXPECT_EQUAL(0u, s.size());
-        EXPECT_EQUAL(8u, s.capacity());
+        EXPECT_EQ(0u, s.size());
+        EXPECT_EQ(8u, s.capacity());
         const char * prev = s.data();
         s << "ABCD";
-        EXPECT_EQUAL(8u, s.size());
-        EXPECT_EQUAL(8u, s.capacity());
-        EXPECT_EQUAL(prev, s.data());
+        EXPECT_EQ(8u, s.size());
+        EXPECT_EQ(8u, s.capacity());
+        EXPECT_EQ(prev, s.data());
         s.reserve(50);
-        EXPECT_NOT_EQUAL(prev, s.data());
-        EXPECT_EQUAL(8u, s.size());
-        EXPECT_EQUAL(64u, s.capacity());
+        EXPECT_NE(prev, s.data());
+        EXPECT_EQ(8u, s.size());
+        EXPECT_EQ(64u, s.capacity());
         prev = s.data();
         s << "A long string that will cause resizing";
-        EXPECT_EQUAL(50u, s.size());
-        EXPECT_EQUAL(64u, s.capacity());
-        EXPECT_EQUAL(prev, s.data());
+        EXPECT_EQ(50u, s.size());
+        EXPECT_EQ(64u, s.capacity());
+        EXPECT_EQ(prev, s.data());
     }
     {
         nbostream s;
         s << int64_t(9);
-        EXPECT_EQUAL(8u, s.size());
-        EXPECT_EQUAL(0u, s.rp());
+        EXPECT_EQ(8u, s.size());
+        EXPECT_EQ(0u, s.rp());
         int64_t a(7), b(1);
         s >> a;
-        EXPECT_EQUAL(0u, s.size());
-        EXPECT_EQUAL(8u, s.rp());
+        EXPECT_EQ(0u, s.size());
+        EXPECT_EQ(8u, s.rp());
         EXPECT_TRUE(s.empty());
         EXPECT_TRUE(s.good());
-        EXPECT_EQUAL(9, a);
+        EXPECT_EQ(9, a);
         try {
             s >> b;
             EXPECT_TRUE(false);
         } catch (const IllegalStateException & e) {
-            EXPECT_EQUAL("Stream failed bufsize(1024), readp(8), writep(8)", e.getMessage());
+            EXPECT_EQ("Stream failed bufsize(1024), readp(8), writep(8)", e.getMessage());
         }
-        EXPECT_EQUAL(0u, s.size());
-        EXPECT_EQUAL(8u, s.rp());
+        EXPECT_EQ(0u, s.size());
+        EXPECT_EQ(8u, s.rp());
         EXPECT_TRUE(s.empty());
         EXPECT_FALSE(s.good());
-        EXPECT_EQUAL(1, b);
-        EXPECT_EQUAL(nbostream::eof, s.state());
+        EXPECT_EQ(1, b);
+        EXPECT_EQ(nbostream::eof, s.state());
     }
 }
 
-int
-IdentifiableTest::Main()
+TEST_F(IdentifiableTest, test_identifiable)
 {
-    TEST_INIT("identifiable_test");
-
-    TEST_DO(requireThatIdentifiableCastCanCastPointers());
-    TEST_DO(requireThatIdentifiableCastCanCastReferences());
-    testNamedObject();
-    testNboStream();
-    testNboSerializer();
-
     A a;
     B b;
 
     const Identifiable::RuntimeClass & rtcA = a.getClass();
-    EXPECT_EQUAL(rtcA.id(), static_cast<unsigned int>(A::classId));
-    EXPECT_EQUAL(strcmp(rtcA.name(), "A"), 0);
+    EXPECT_EQ(rtcA.id(), static_cast<unsigned int>(A::classId));
+    EXPECT_EQ(strcmp(rtcA.name(), "A"), 0);
 
     const Identifiable::RuntimeClass & rtcB = b.getClass();
-    EXPECT_EQUAL(rtcB.id(), static_cast<unsigned int>(B::classId));
-    EXPECT_EQUAL(strcmp(rtcB.name(), "B"), 0);
+    EXPECT_EQ(rtcB.id(), static_cast<unsigned int>(B::classId));
+    EXPECT_EQ(strcmp(rtcB.name(), "B"), 0);
 
     const Identifiable::RuntimeClass * rt(Identifiable::classFromId(0x1ab76245));
     ASSERT_TRUE(rt == NULL);
@@ -270,7 +259,7 @@ IdentifiableTest::Main()
     nbostream os;
     NBOSerializer nos(os);
     nos << *o;
-    EXPECT_EQUAL(os.size(), 4u);
+    EXPECT_EQ(os.size(), 4u);
     Identifiable::UP o2 = Identifiable::create(nos);
     EXPECT_TRUE(os.empty());
     ASSERT_TRUE(o->inherits(B::classId));
@@ -297,18 +286,17 @@ IdentifiableTest::Main()
     IdentifiablePtr<C> c1(new C(10));
     IdentifiablePtr<C> c2(new C(20));
 
-    EXPECT_LESS(c0.cmp(c1), 0);
-    EXPECT_EQUAL(c0.cmp(c0), 0);
-    EXPECT_GREATER(c1.cmp(c0), 0);
+    EXPECT_LT(c0.cmp(c1), 0);
+    EXPECT_EQ(c0.cmp(c0), 0);
+    EXPECT_GT(c1.cmp(c0), 0);
 
-    EXPECT_LESS(c1.cmp(c2), 0);
-    EXPECT_EQUAL(c1.cmp(c1), 0);
-    EXPECT_GREATER(c2.cmp(c1), 0);
-
-    TEST_DONE();
+    EXPECT_LT(c1.cmp(c2), 0);
+    EXPECT_EQ(c1.cmp(c1), 0);
+    EXPECT_GT(c2.cmp(c1), 0);
 }
 
-void IdentifiableTest::requireThatIdentifiableCastCanCastPointers() {
+TEST_F(IdentifiableTest, require_that_identifiable_cast_can_cast_pointers)
+{
     A a;
     B b;
     EXPECT_TRUE(Identifiable::cast<A *>(&a));
@@ -319,7 +307,8 @@ void IdentifiableTest::requireThatIdentifiableCastCanCastPointers() {
     EXPECT_TRUE(Identifiable::cast<Abstract *>(&b));
 }
 
-void IdentifiableTest::requireThatIdentifiableCastCanCastReferences() {
+TEST_F(IdentifiableTest, require_that_identifiable_cast_can_cast_references)
+{
     A a;
     B b;
     try {
@@ -330,9 +319,9 @@ void IdentifiableTest::requireThatIdentifiableCastCanCastReferences() {
         Identifiable::cast<Abstract &>(a);
         Identifiable::cast<Abstract &>(b);
     } catch (std::bad_cast &e) {
-        TEST_FATAL(e.what());
+        FAIL() << e.what();
     }
-    EXPECT_EXCEPTION(Identifiable::cast<B &>(a), std::bad_cast, "bad_cast");
+    EXPECT_THROW(Identifiable::cast<B &>(a), std::bad_cast);
 }
 
-TEST_APPHOOK(IdentifiableTest)
+GTEST_MAIN_RUN_ALL_TESTS()
