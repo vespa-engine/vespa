@@ -70,6 +70,7 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
         DerivedConfiguration.exportDocuments(new DocumentTypes().produce(builder.getModel(), new DocumenttypesConfig.Builder()), path);
         DerivedConfiguration.exportQueryProfiles(builder.getQueryProfileRegistry(), path);
         config.exportConstants(path);
+        config.exportOnnxModels(path);
         return config;
     }
 

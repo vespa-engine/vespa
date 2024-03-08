@@ -4,6 +4,7 @@ package com.yahoo.schema.derived;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.schema.RankingExpressionBody;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.schema.LargeRankingExpressions;
 import com.yahoo.schema.OnnxModel;
@@ -32,6 +33,7 @@ import java.util.concurrent.Future;
  *
  * @author bratseth
  */
+//TODO Remove implements RankProfilesConfig.Producer, that is only necessary due to some test magic
 public class RankProfileList extends Derived implements RankProfilesConfig.Producer {
 
     private final Map<String, RawRankProfile> rankProfiles;
@@ -201,21 +203,26 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
 
     @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
-        for (RawRankProfile rank : rankProfiles.values() ) {
-            rank.getConfig(builder);
-        }
+        // Replace
+        builder.rankprofile(rankProfiles.values().stream().map(RawRankProfile::getConfig).toList());
     }
 
-    public void getConfig(RankingExpressionsConfig.Builder builder) {
-        largeRankingExpressions.expressions().forEach((expr) -> builder.expression.add(new RankingExpressionsConfig.Expression.Builder().name(expr.getName()).fileref(expr.getFileReference())));
+    private static RankingExpressionsConfig.Expression.Builder toConfig(RankingExpressionBody expr) {
+        return new RankingExpressionsConfig.Expression.Builder()
+                .name(expr.getName())
+                .fileref(expr.getFileReference());
     }
 
-    public void getConfig(RankingConstantsConfig.Builder builder) {
-        constants.getConfig(builder);
+    public List<RankingExpressionsConfig.Expression.Builder> getExpressionsConfig() {
+        return largeRankingExpressions.expressions().stream().map(RankProfileList::toConfig).toList();
     }
 
-    public void getConfig(OnnxModelsConfig.Builder builder) {
-        onnxModels.getConfig(builder);
+    public List<RankingConstantsConfig.Constant.Builder> getConstantsConfig() {
+        return constants.getConfig();
+    }
+
+    public List<OnnxModelsConfig.Model.Builder> getOnnxConfig() {
+        return onnxModels.getConfig();
     }
 
 }

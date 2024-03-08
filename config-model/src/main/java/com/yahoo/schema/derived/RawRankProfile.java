@@ -43,7 +43,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public class RawRankProfile implements RankProfilesConfig.Producer {
+public class RawRankProfile {
 
     /** A reusable compressor with default settings */
     private static final Compressor compressor = new Compressor();
@@ -130,12 +130,11 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
      */
     public List<Pair<String, String>> configProperties() { return decompress(compressedProperties); }
 
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
+    public RankProfilesConfig.Rankprofile.Builder getConfig() {
         RankProfilesConfig.Rankprofile.Builder b = new RankProfilesConfig.Rankprofile.Builder().name(getName());
         getRankProperties(b);
         buildNormalizers(b);
-        builder.rankprofile(b);
+        return b;
     }
 
     @Override
