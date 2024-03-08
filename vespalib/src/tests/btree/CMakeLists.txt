@@ -20,6 +20,7 @@ vespa_add_executable(vespalib_btreeaggregation_test_app TEST
     btreeaggregation_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_btreeaggregation_test_app COMMAND vespalib_btreeaggregation_test_app COST 30)
 vespa_add_executable(vespalib_iteratespeed_app
