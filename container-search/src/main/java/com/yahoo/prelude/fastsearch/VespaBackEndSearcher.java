@@ -12,13 +12,11 @@ import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.schema.SchemaInfo;
-import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 
 import java.util.ArrayList;
@@ -27,14 +25,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * Superclass for backend searchers.
  *
  * @author baldersheim
  */
-public abstract class VespaBackEndSearcher extends PingableSearcher {
+public abstract class VespaBackEndSearcher {
 
     /** for vespa-internal use only; consider renaming the summary class */
     public static final String SORTABLE_ATTRIBUTES_SUMMARY_CLASS = "attributeprefetch";
@@ -62,16 +59,13 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     /** Sets default document summary class. Default is null */
     private void setDefaultDocsumClass(String docsumClass) { defaultDocsumClass = docsumClass; }
 
-    public final Logger getLogger() { return super.getLogger(); }
-
     /**
      * Searches a search cluster
      * This is an endpoint - searchers will never propagate the search to any nested searcher.
      *
      * @param query the query to search
-     * @param execution the query execution context
      */
-    protected abstract Result doSearch2(Query query, Execution execution);
+    protected abstract Result doSearch2(String schema, Query query);
 
     protected abstract void doPartialFill(Result result, String summaryClass);
 
@@ -154,8 +148,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     protected void transformQuery(Query query) { }
 
-    @Override
-    public Result search(Query query, Execution execution) {
+    public Result search(String schema, Query query) {
         // query root should not be null here
         Item root = query.getModel().getQueryTree().getRoot();
         if (root == null || root instanceof NullItem) {
@@ -183,7 +176,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (root == null || root instanceof NullItem) // root can become null after resolving and transformation?
             return new Result(query);
 
-        Result result = doSearch2(query, execution);
+        Result result = doSearch2(schema, query);
 
         if (query.getTrace().getLevel() >= 1)
             query.trace(getName() + " dispatch response: " + result, false, 1);
@@ -217,8 +210,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return parts;
     }
 
-    @Override
-    public void fill(Result result, String summaryClass, Execution execution) {
+    public void fill(Result result, String summaryClass) {
         if (result.isFilled(summaryClass)) return; // TODO: Checked in the superclass - remove
 
         List<Result> parts = partitionHits(result, summaryClass);

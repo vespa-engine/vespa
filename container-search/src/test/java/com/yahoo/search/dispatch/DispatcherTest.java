@@ -18,7 +18,6 @@ import com.yahoo.search.dispatch.searchcluster.Pinger;
 import com.yahoo.search.dispatch.searchcluster.PongHandler;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.dispatch.searchcluster.SearchGroups;
-import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.yolean.UncheckedInterruptedException;
@@ -243,7 +242,7 @@ public class DispatcherTest {
                         rpcPool.getConnection(node.key()).request(null, null, 0, null, null, 0);
                         return null;
                     };
-                    @Override protected InvokerResult getSearchResult(Execution execution) {
+                    @Override protected InvokerResult getSearchResult() {
                         return new InvokerResult(new Result(new Query()));
                     }
                     @Override protected void release() { }
@@ -288,11 +287,11 @@ public class DispatcherTest {
 
         // Start some searches, one against each group, since we have a round-robin policy.
         SearchInvoker search0 = dispatcher.getSearchInvoker(new Query(), null);
-        search0.search(new Query(), null);
+        search0.search(new Query());
         // Unknown whether the first or second search hits node0, so we must track that.
         int offset = nodeIdOfSearcher0.get();
         SearchInvoker search1 = dispatcher.getSearchInvoker(new Query(), null);
-        search1.search(new Query(), null);
+        search1.search(new Query());
 
         // Wait for the current cluster monitor to be mid-ping-round.
         doPing.set(true);
@@ -330,7 +329,7 @@ public class DispatcherTest {
 
         // Next search should hit group0 again, this time on node2.
         SearchInvoker search2 = dispatcher.getSearchInvoker(new Query(), null);
-        search2.search(new Query(), null);
+        search2.search(new Query());
 
         // Searches against nodes 1 and 2 complete.
         (offset == 0 ? search0 : search1).close();

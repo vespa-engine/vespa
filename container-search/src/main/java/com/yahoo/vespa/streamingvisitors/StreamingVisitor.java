@@ -77,13 +77,13 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public StreamingVisitor(Query query, String searchCluster, Route route,
-                            String documentType, VisitorSessionFactory visitorSessionFactory,
+                            String schema, VisitorSessionFactory visitorSessionFactory,
                             int traceLevelOverride)
     {
         this.query = query;
         this.visitorSessionFactory = visitorSessionFactory;
         this.traceLevelOverride = traceLevelOverride;
-        setVisitorParameters(searchCluster, route, documentType);
+        setVisitorParameters(searchCluster, route, schema);
     }
 
     private int inferSessionTraceLevel(Query query) {

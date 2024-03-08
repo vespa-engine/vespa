@@ -31,9 +31,9 @@ public abstract class SearchInvoker extends CloseableInvoker {
      * nodes, the provided {@link Execution} may be used to retrieve document summaries required
      * for correct result windowing.
      */
-    public Result search(Query query, Execution execution) throws IOException {
+    public Result search(Query query) throws IOException {
         sendSearchRequest(query, null);
-        InvokerResult result = getSearchResult(execution);
+        InvokerResult result = getSearchResult();
         setFinalStatus(result.getResult().hits().getError() == null);
         result.complete();
         return result.getResult();
@@ -48,7 +48,7 @@ public abstract class SearchInvoker extends CloseableInvoker {
      */
     protected abstract Object sendSearchRequest(Query query, Object context) throws IOException;
 
-    protected abstract InvokerResult getSearchResult(Execution execution) throws IOException;
+    protected abstract InvokerResult getSearchResult() throws IOException;
 
     protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
         this.monitor = monitor;

@@ -9,7 +9,6 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -45,7 +44,7 @@ public class RpcSearchInvokerTest {
 
         assertEquals(10, request.getHits());
         assertEquals(3, request.getOffset());
-        assertTrue(request.getQueryTreeBlob().size() > 0);
+        assertFalse(request.getQueryTreeBlob().isEmpty());
 
         var invoker2 = new RpcSearchInvoker(mockSearcher(), compressor, new Node("test", 8, "eight", 1), mockPool, 1000);
         RpcSearchInvoker.RpcContext context2 = (RpcSearchInvoker.RpcContext) invoker2.sendSearchRequest(q, context);
@@ -121,7 +120,7 @@ public class RpcSearchInvokerTest {
     private VespaBackEndSearcher mockSearcher() {
         return new VespaBackEndSearcher() {
             @Override
-            protected Result doSearch2(Query query, Execution execution) {
+            protected Result doSearch2(String schema, Query query) {
                 fail("Unexpected call");
                 return null;
             }

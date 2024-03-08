@@ -189,17 +189,17 @@ public class StreamingVisitorTest {
         return query;
     }
 
-    private void verifyVisitorParameters(VisitorParameters params, QueryArguments qa, String searchCluster, String docType, Route route) {
+    private void verifyVisitorParameters(VisitorParameters params, QueryArguments qa, String searchCluster, String schema, Route route) {
         //System.out.println("params="+params);
         // Verify parameters based on properties
         if (qa.userId != null) {
-            assertEquals(docType + " and ( id.user=="+qa.userId + " )", params.getDocumentSelection());
+            assertEquals(schema + " and ( id.user=="+qa.userId + " )", params.getDocumentSelection());
         } else if (qa.groupName != null) {
-            assertEquals(docType + " and ( id.group==\""+qa.groupName+"\" )", params.getDocumentSelection());
+            assertEquals(schema + " and ( id.group==\""+qa.groupName+"\" )", params.getDocumentSelection());
         } else if ((qa.selection == null) || qa.selection.isEmpty()) {
-            assertEquals(docType, params.getDocumentSelection());
+            assertEquals(schema, params.getDocumentSelection());
         } else {
-            assertEquals(docType + " and ( " + qa.selection + " )", params.getDocumentSelection());
+            assertEquals(schema + " and ( " + qa.selection + " )", params.getDocumentSelection());
         }
         assertEquals(qa.from, params.getFromTimestamp());
         assertEquals(qa.to, params.getToTimestamp());
@@ -224,7 +224,7 @@ public class StreamingVisitorTest {
         //System.err.println("query="+new String(params.getLibraryParameters().get("querystackcount")));
         assertNotNull(params.getLibraryParameters().get("querystackcount")); // TODO: Check contents
         assertEquals(searchCluster, new String(params.getLibraryParameters().get("searchcluster")));
-        assertEquals(docType, new String(params.getLibraryParameters().get("schema")));
+        assertEquals(schema, new String(params.getLibraryParameters().get("schema")));
         assertEquals(Objects.requireNonNullElse(qa.summary, "default"), new String(params.getLibraryParameters().get("summaryclass")));
         assertEquals(Integer.toString(qa.offset+qa.hits), new String(params.getLibraryParameters().get("summarycount")));
         assertEquals(Objects.requireNonNullElse(qa.profile, "default"), new String(params.getLibraryParameters().get("rankprofile")));

@@ -35,7 +35,7 @@ public class SearchErrorInvoker extends SearchInvoker {
     }
 
     @Override
-    protected Object sendSearchRequest(Query query, Object context) throws IOException {
+    protected Object sendSearchRequest(Query query, Object context) {
         this.query = query;
         if (monitor != null) {
             monitor.responseAvailable(this);
@@ -44,7 +44,7 @@ public class SearchErrorInvoker extends SearchInvoker {
     }
 
     @Override
-    protected InvokerResult getSearchResult(Execution execution) throws IOException {
+    protected InvokerResult getSearchResult() {
         Result res = new Result(query, message);
         if (coverage != null) {
             res.setCoverage(coverage);
