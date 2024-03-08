@@ -24,6 +24,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public static final ComponentId xmlRendererId = ComponentId.fromString("XmlRenderer");
     public static final ComponentId pageRendererId = ComponentId.fromString("PageTemplatesXmlRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
+    public static final ComponentId eventRendererId = ComponentId.fromString("EventRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
 
@@ -56,6 +57,11 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         pageRenderer.initId(pageRendererId);
         register(pageRenderer.getId(), pageRenderer);
 
+        // Add event renderer
+        Renderer eventRenderer = new EventRenderer(executor);
+        eventRenderer.initId(eventRendererId);
+        register(eventRenderer.getId(), eventRenderer);
+
         // add application renderers
         for (Renderer renderer : renderers)
             register(renderer.getId(), renderer);
@@ -69,6 +75,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         getRenderer(jsonRendererId.toSpecification()).deconstruct();
         getRenderer(xmlRendererId.toSpecification()).deconstruct();
         getRenderer(pageRendererId.toSpecification()).deconstruct();
+        getRenderer(eventRendererId.toSpecification()).deconstruct();
     }
 
     /**
@@ -92,6 +99,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         if (format.stringValue().equals("json")) return getComponent(jsonRendererId);
         if (format.stringValue().equals("xml")) return getComponent(xmlRendererId);
         if (format.stringValue().equals("page")) return getComponent(pageRendererId);
+        if (format.stringValue().equals("sse")) return getComponent(eventRendererId);
 
         com.yahoo.processing.rendering.Renderer<Result> renderer = getComponent(format);
         if (renderer == null)

@@ -7460,6 +7460,25 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.EventRenderer" : {
+    "superClass" : "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.util.concurrent.Executor)",
+      "public void beginResponse(java.io.OutputStream)",
+      "public void beginList(com.yahoo.processing.response.DataList)",
+      "public void data(com.yahoo.processing.response.Data)",
+      "public void endList(com.yahoo.processing.response.DataList)",
+      "public void endResponse()",
+      "public java.lang.String getEncoding()",
+      "public java.lang.String getMimeType()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -7554,6 +7573,7 @@
       "public static final com.yahoo.component.ComponentId xmlRendererId",
       "public static final com.yahoo.component.ComponentId pageRendererId",
       "public static final com.yahoo.component.ComponentId jsonRendererId",
+      "public static final com.yahoo.component.ComponentId eventRendererId",
       "public static final com.yahoo.component.ComponentId defaultRendererId"
     ]
   },
@@ -7820,6 +7840,36 @@
       "public static final int NULL_QUERY",
       "public static final int timeoutCode",
       "public static final int emptyDocsumsCode"
+    ]
+  },
+  "com.yahoo.search.result.EventStream$Event" : {
+    "superClass" : "com.yahoo.search.result.Hit",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public java.lang.String toString()",
+      "public java.lang.String type()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.result.EventStream" : {
+    "superClass" : "com.yahoo.search.result.HitGroup",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.result.EventStream create(java.lang.String)",
+      "public void add(java.lang.String)",
+      "public void add(java.lang.String, java.lang.String)",
+      "public void error(java.lang.String, com.yahoo.search.result.ErrorMessage)",
+      "public void markComplete()"
+    ],
+    "fields" : [
+      "public static final java.lang.String DEFAULT_EVENT_TYPE"
     ]
   },
   "com.yahoo.search.result.FeatureData" : {
