@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/fastos/file.h>
 #include <filesystem>
 
@@ -14,63 +15,20 @@ vespalib::string fileheader_tmp("fileheader.tmp");
 
 }
 
-class Test : public vespalib::TestApp {
-private:
-    void testTag();
-    void testTagErrors();
-    void testTagIteration();
-    void testGenericHeader();
-    void testBufferReader();
-    void testBufferWriter();
-    void testBufferAccess();
-    void testFileReader();
-    void testFileWriter();
-    void testFileHeader();
-    void testFileAlign();
-    void testFileSize();
-    void testReadErrors();
+class FileHeaderTest : public ::testing::Test {
+protected:
+    FileHeaderTest();
+    ~FileHeaderTest() override;
     bool testReadError(DataBuffer &buf, const std::string &expected);
-    void testWriteErrors();
-    void testRewriteErrors();
-    void testLayout();
-
     void testReadSize(bool mapped);
     void testReadSizeErrors(bool mapped);
     bool testReadSizeError(DataBuffer &buf, const std::string &expected, bool mapped);
-
-public:
-    int Main() override {
-        TEST_INIT("fileheader_test");
-
-        testTag();           TEST_FLUSH();
-        testTagErrors();     TEST_FLUSH();
-        testTagIteration();  TEST_FLUSH();
-        testGenericHeader(); TEST_FLUSH();
-        testBufferReader();  TEST_FLUSH();
-        testBufferWriter();  TEST_FLUSH();
-        testBufferAccess();  TEST_FLUSH();
-        testFileReader();    TEST_FLUSH();
-        testFileWriter();    TEST_FLUSH();
-        testFileHeader();    TEST_FLUSH();
-        testFileAlign();     TEST_FLUSH();
-        testFileSize();      TEST_FLUSH();
-        testReadErrors();    TEST_FLUSH();
-        testWriteErrors();   TEST_FLUSH();
-        testRewriteErrors(); TEST_FLUSH();
-        testLayout();        TEST_FLUSH();
-        testReadSize(false);      TEST_FLUSH();
-        testReadSizeErrors(false); TEST_FLUSH();
-        testReadSize(true);      TEST_FLUSH();
-        testReadSizeErrors(true); TEST_FLUSH();
-
-        TEST_DONE();
-    }
 };
 
-TEST_APPHOOK(Test);
+FileHeaderTest::FileHeaderTest() = default;
+FileHeaderTest::~FileHeaderTest() = default;
 
-void
-Test::testTag()
+TEST_F(FileHeaderTest, test_tag)
 {
     {
         std::vector<GenericHeader::Tag> tags;
@@ -81,18 +39,18 @@ Test::testTag()
         {
             GenericHeader::Tag tag = *it;
             for (uint32_t i = 0; i < 2; ++i) {
-                EXPECT_EQUAL(GenericHeader::Tag::TYPE_FLOAT, tag.getType());
-                EXPECT_EQUAL("foo", tag.getName());
+                EXPECT_EQ(GenericHeader::Tag::TYPE_FLOAT, tag.getType());
+                EXPECT_EQ("foo", tag.getName());
                 EXPECT_TRUE(tag.asString().empty());
-                EXPECT_APPROX(6.9, tag.asFloat(), 1E-6);
-                EXPECT_EQUAL(0, tag.asInteger());
+                EXPECT_NEAR(6.9, tag.asFloat(), 1E-6);
+                EXPECT_EQ(0, tag.asInteger());
 
                 uint32_t len = tag.getSize();
                 DataBuffer buf(len);
-                EXPECT_EQUAL(len, tag.write(buf));
+                EXPECT_EQ(len, tag.write(buf));
 
                 GenericHeader::Tag tmp;
-                EXPECT_EQUAL(len, tmp.read(buf));
+                EXPECT_EQ(len, tmp.read(buf));
                 tag = tmp;
             }
         }
@@ -111,18 +69,18 @@ Test::testTag()
         {
             GenericHeader::Tag tag = *it;
             for (uint32_t i = 0; i < 2; ++i) {
-                EXPECT_EQUAL(GenericHeader::Tag::TYPE_INTEGER, tag.getType());
-                EXPECT_EQUAL("foo", tag.getName());
+                EXPECT_EQ(GenericHeader::Tag::TYPE_INTEGER, tag.getType());
+                EXPECT_EQ("foo", tag.getName());
                 EXPECT_TRUE(tag.asString().empty());
-                EXPECT_EQUAL(0.0, tag.asFloat());
-                EXPECT_EQUAL(69l, tag.asInteger());
+                EXPECT_EQ(0.0, tag.asFloat());
+                EXPECT_EQ(69l, tag.asInteger());
 
                 uint32_t len = tag.getSize();
                 DataBuffer buf(len);
-                EXPECT_EQUAL(len, tag.write(buf));
+                EXPECT_EQ(len, tag.write(buf));
 
                 GenericHeader::Tag tmp;
-                EXPECT_EQUAL(len, tmp.read(buf));
+                EXPECT_EQ(len, tmp.read(buf));
                 tag = tmp;
             }
         }
@@ -130,35 +88,34 @@ Test::testTag()
     {
         GenericHeader::Tag tag("foo", "bar");
         for (uint32_t i = 0; i < 2; ++i) {
-            EXPECT_EQUAL(GenericHeader::Tag::TYPE_STRING, tag.getType());
-            EXPECT_EQUAL("foo", tag.getName());
-            EXPECT_EQUAL("bar", tag.asString());
-            EXPECT_EQUAL(0.0, tag.asFloat());
-            EXPECT_EQUAL(0, tag.asInteger());
+            EXPECT_EQ(GenericHeader::Tag::TYPE_STRING, tag.getType());
+            EXPECT_EQ("foo", tag.getName());
+            EXPECT_EQ("bar", tag.asString());
+            EXPECT_EQ(0.0, tag.asFloat());
+            EXPECT_EQ(0, tag.asInteger());
 
             uint32_t len = tag.getSize();
             DataBuffer buf(len);
-            EXPECT_EQUAL(len, tag.write(buf));
+            EXPECT_EQ(len, tag.write(buf));
 
             GenericHeader::Tag tmp;
-            EXPECT_EQUAL(len, tmp.read(buf));
+            EXPECT_EQ(len, tmp.read(buf));
             tag = tmp;
         }
     }
     {
         GenericHeader::Tag trueTag("foo", true);
         GenericHeader::Tag falseTag("foo", false);
-        EXPECT_EQUAL(GenericHeader::Tag::TYPE_INTEGER, trueTag.getType());
-        EXPECT_EQUAL(GenericHeader::Tag::TYPE_INTEGER, falseTag.getType());
-        EXPECT_EQUAL(1, trueTag.asInteger());
-        EXPECT_EQUAL(0, falseTag.asInteger());
+        EXPECT_EQ(GenericHeader::Tag::TYPE_INTEGER, trueTag.getType());
+        EXPECT_EQ(GenericHeader::Tag::TYPE_INTEGER, falseTag.getType());
+        EXPECT_EQ(1, trueTag.asInteger());
+        EXPECT_EQ(0, falseTag.asInteger());
         EXPECT_TRUE(trueTag.asBool());
         EXPECT_FALSE(falseTag.asBool());
     }
 }
 
-void
-Test::testTagErrors()
+TEST_F(FileHeaderTest, test_tag_errors)
 {
     DataBuffer buf(1024);
     buf.writeBytes("foo", 3);
@@ -170,33 +127,31 @@ Test::testTagErrors()
         tag.read(buf);
         EXPECT_TRUE(false);
     } catch (IllegalHeaderException &e) {
-        EXPECT_EQUAL("Can not deserialize empty tag.", e.getMessage());
+        EXPECT_EQ("Can not deserialize empty tag.", e.getMessage());
     }
-    EXPECT_EQUAL("bar", tag.getName());
-    EXPECT_EQUAL(GenericHeader::Tag::TYPE_FLOAT, tag.getType());
-    EXPECT_EQUAL(6.9, tag.asFloat());
+    EXPECT_EQ("bar", tag.getName());
+    EXPECT_EQ(GenericHeader::Tag::TYPE_FLOAT, tag.getType());
+    EXPECT_EQ(6.9, tag.asFloat());
 }
 
-void
-Test::testTagIteration()
+TEST_F(FileHeaderTest, test_tag_iteration)
 {
     GenericHeader header;
     header.putTag(GenericHeader::Tag("foo", 6.9));
     header.putTag(GenericHeader::Tag("bar", 6699));
     header.putTag(GenericHeader::Tag("baz", "666999"));
 
-    EXPECT_EQUAL(3u, header.getNumTags());
-    EXPECT_EQUAL("bar", header.getTag(0).getName());
-    EXPECT_EQUAL("baz", header.getTag(1).getName());
-    EXPECT_EQUAL("foo", header.getTag(2).getName());
+    EXPECT_EQ(3u, header.getNumTags());
+    EXPECT_EQ("bar", header.getTag(0).getName());
+    EXPECT_EQ("baz", header.getTag(1).getName());
+    EXPECT_EQ("foo", header.getTag(2).getName());
 }
 
-void
-Test::testGenericHeader()
+TEST_F(FileHeaderTest, test_generic_header)
 {
     GenericHeader header;
     EXPECT_TRUE(header.isEmpty());
-    EXPECT_EQUAL(0u, header.getNumTags());
+    EXPECT_EQ(0u, header.getNumTags());
     EXPECT_TRUE(!header.hasTag("foo"));
     EXPECT_TRUE(header.getTag("foo").isEmpty());
     EXPECT_TRUE(!header.hasTag("bar"));
@@ -206,9 +161,9 @@ Test::testGenericHeader()
 
     header.putTag(GenericHeader::Tag("foo", 6.9));
     EXPECT_TRUE(!header.isEmpty());
-    EXPECT_EQUAL(1u, header.getNumTags());
+    EXPECT_EQ(1u, header.getNumTags());
     EXPECT_TRUE(header.hasTag("foo"));
-    EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
+    EXPECT_EQ(6.9, header.getTag("foo").asFloat());
     EXPECT_TRUE(!header.hasTag("bar"));
     EXPECT_TRUE(header.getTag("bar").isEmpty());
     EXPECT_TRUE(!header.hasTag("baz"));
@@ -216,29 +171,29 @@ Test::testGenericHeader()
 
     header.putTag(GenericHeader::Tag("bar", 6699));
     EXPECT_TRUE(!header.isEmpty());
-    EXPECT_EQUAL(2u, header.getNumTags());
+    EXPECT_EQ(2u, header.getNumTags());
     EXPECT_TRUE(header.hasTag("foo"));
-    EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
+    EXPECT_EQ(6.9, header.getTag("foo").asFloat());
     EXPECT_TRUE(header.hasTag("bar"));
-    EXPECT_EQUAL(6699, header.getTag("bar").asInteger());
+    EXPECT_EQ(6699, header.getTag("bar").asInteger());
     EXPECT_TRUE(!header.hasTag("baz"));
     EXPECT_TRUE(header.getTag("baz").isEmpty());
 
     header.putTag(GenericHeader::Tag("baz", "666999"));
     EXPECT_TRUE(header.hasTag("foo"));
-    EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
+    EXPECT_EQ(6.9, header.getTag("foo").asFloat());
     EXPECT_TRUE(header.hasTag("bar"));
-    EXPECT_EQUAL(6699, header.getTag("bar").asInteger());
+    EXPECT_EQ(6699, header.getTag("bar").asInteger());
     EXPECT_TRUE(header.hasTag("baz"));
-    EXPECT_EQUAL("666999", header.getTag("baz").asString());
+    EXPECT_EQ("666999", header.getTag("baz").asString());
 
     header.removeTag("bar");
     EXPECT_TRUE(header.hasTag("foo"));
-    EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
+    EXPECT_EQ(6.9, header.getTag("foo").asFloat());
     EXPECT_TRUE(!header.hasTag("bar"));
     EXPECT_TRUE(header.getTag("bar").isEmpty());
     EXPECT_TRUE(header.hasTag("baz"));
-    EXPECT_EQUAL("666999", header.getTag("baz").asString());
+    EXPECT_EQ("666999", header.getTag("baz").asString());
 
     header.removeTag("foo");
     EXPECT_TRUE(!header.hasTag("foo"));
@@ -246,7 +201,7 @@ Test::testGenericHeader()
     EXPECT_TRUE(!header.hasTag("bar"));
     EXPECT_TRUE(header.getTag("bar").isEmpty());
     EXPECT_TRUE(header.hasTag("baz"));
-    EXPECT_EQUAL("666999", header.getTag("baz").asString());
+    EXPECT_EQ("666999", header.getTag("baz").asString());
 
     header.removeTag("baz");
     EXPECT_TRUE(!header.hasTag("foo"));
@@ -257,8 +212,7 @@ Test::testGenericHeader()
     EXPECT_TRUE(header.getTag("baz").isEmpty());
 }
 
-void
-Test::testBufferReader()
+TEST_F(FileHeaderTest, test_buffer_reader)
 {
     DataBuffer src(256);
     for (uint32_t i = 0; i < 256; ++i) {
@@ -272,15 +226,14 @@ Test::testBufferReader()
     while (sum < 256) {
         uint32_t len = (uint32_t)reader.getData(dst, 7);
         for (uint32_t i = 0; i < len; ++i) {
-            EXPECT_EQUAL(sum + i, (uint8_t)dst[i]);
+            EXPECT_EQ(sum + i, (uint8_t)dst[i]);
         }
         sum += len;
     }
-    EXPECT_EQUAL(256u, sum);
+    EXPECT_EQ(256u, sum);
 }
 
-void
-Test::testBufferWriter()
+TEST_F(FileHeaderTest, test_buffer_writer)
 {
     DataBuffer dst(256);
     GenericHeader::BufferWriter writer(dst);
@@ -292,20 +245,19 @@ Test::testBufferWriter()
             src[i] = (uint8_t)(sum + i);
         }
         uint32_t len = std::min(7u, 256 - sum);
-        EXPECT_EQUAL(len, (uint32_t)writer.putData(src, len));
+        EXPECT_EQ(len, (uint32_t)writer.putData(src, len));
         sum += len;
     }
-    EXPECT_EQUAL(256u, sum);
+    EXPECT_EQ(256u, sum);
 
     // flip dst
     for (uint32_t i = 0; i < 256; ++i) {
         uint8_t b = dst.readInt8();
-        EXPECT_EQUAL(i, (uint32_t)b);
+        EXPECT_EQ(i, (uint32_t)b);
     }
 }
 
-void
-Test::testBufferAccess()
+TEST_F(FileHeaderTest, test_buffer_access)
 {
     DataBuffer buf;
     uint32_t len;
@@ -321,26 +273,25 @@ Test::testBufferAccess()
         len = header.getSize();
         buf.ensureFree(len);
         GenericHeader::BufferWriter writer(buf);
-        EXPECT_EQUAL(len, header.write(writer));
+        EXPECT_EQ(len, header.write(writer));
     }
     {
         GenericHeader header;
         GenericHeader::BufferReader reader(buf);
-        EXPECT_EQUAL(len, header.read(reader));
+        EXPECT_EQ(len, header.read(reader));
 
         EXPECT_TRUE(header.hasTag("foo"));
-        EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
+        EXPECT_EQ(6.9, header.getTag("foo").asFloat());
         EXPECT_TRUE(header.hasTag("bar"));
-        EXPECT_EQUAL(6699, header.getTag("bar").asInteger());
+        EXPECT_EQ(6699, header.getTag("bar").asInteger());
         EXPECT_TRUE(header.hasTag("baz"));
-        EXPECT_EQUAL("666999", header.getTag("baz").asString());
+        EXPECT_EQ("666999", header.getTag("baz").asString());
         EXPECT_TRUE(header.hasTag("big"));
-        EXPECT_EQUAL(0x1234567890abcdefLL, header.getTag("big").asInteger());
+        EXPECT_EQ(0x1234567890abcdefLL, header.getTag("big").asInteger());
     }
 }
 
-void
-Test::testFileReader()
+TEST_F(FileHeaderTest, test_file_reader)
 {
     {
         FastOS_File file;
@@ -350,7 +301,7 @@ Test::testFileReader()
         for (uint32_t i = 0; i < 256; ++i) {
             buf[i] = (uint8_t)i;
         }
-        EXPECT_EQUAL(256, file.Write2(buf, 256));
+        EXPECT_EQ(256, file.Write2(buf, 256));
     }
     {
         FastOS_File file;
@@ -362,19 +313,18 @@ Test::testFileReader()
         while(sum < 256) {
             uint32_t len = (uint32_t)reader.getData(buf, 7);
             for (uint32_t i = 0; i < len; ++i) {
-                EXPECT_EQUAL(sum + i, (uint8_t)buf[i]);
+                EXPECT_EQ(sum + i, (uint8_t)buf[i]);
             }
             sum += len;
         }
-        EXPECT_EQUAL(256u, sum);
+        EXPECT_EQ(256u, sum);
 
         ASSERT_TRUE(file.Close());
         std::filesystem::remove(std::filesystem::path(fileheader_tmp));
     }
 }
 
-void
-Test::testFileWriter()
+TEST_F(FileHeaderTest, test_file_writer)
 {
     {
         FastOS_File file;
@@ -388,19 +338,19 @@ Test::testFileWriter()
                 src[i] = (uint8_t)(sum + i);
             }
             uint32_t len = std::min(7u, 256 - sum);
-            EXPECT_EQUAL(len, (uint32_t)writer.putData(src, len));
+            EXPECT_EQ(len, (uint32_t)writer.putData(src, len));
             sum += len;
         }
-        EXPECT_EQUAL(256u, sum);
+        EXPECT_EQ(256u, sum);
     }
     {
         FastOS_File file;
         ASSERT_TRUE(file.OpenReadOnly(fileheader_tmp.c_str()));
 
         uint8_t buf[256];
-        EXPECT_EQUAL(256, file.Read(buf, 256));
+        EXPECT_EQ(256, file.Read(buf, 256));
         for (uint32_t i = 0; i < 256; ++i) {
-            EXPECT_EQUAL(i, (uint32_t)buf[i]);
+            EXPECT_EQ(i, (uint32_t)buf[i]);
         }
 
         ASSERT_TRUE(file.Close());
@@ -408,8 +358,7 @@ Test::testFileWriter()
     }
 }
 
-void
-Test::testFileHeader()
+TEST_F(FileHeaderTest, test_file_header)
 {
     uint32_t len = 0;
     {
@@ -421,60 +370,58 @@ Test::testFileHeader()
         FastOS_File file;
         ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
         len = header.writeFile(file);
-        EXPECT_EQUAL(len, header.getSize());
+        EXPECT_EQ(len, header.getSize());
     }
     {
         FastOS_File file;
         ASSERT_TRUE(file.OpenReadWrite(fileheader_tmp.c_str()));
 
         FileHeader header;
-        EXPECT_EQUAL(len, header.readFile(file));
-        EXPECT_EQUAL(len, header.getSize());
+        EXPECT_EQ(len, header.readFile(file));
+        EXPECT_EQ(len, header.getSize());
 
         EXPECT_TRUE(header.hasTag("foo"));
-        EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
+        EXPECT_EQ(6.9, header.getTag("foo").asFloat());
         EXPECT_TRUE(header.hasTag("bar"));
-        EXPECT_EQUAL(6699, header.getTag("bar").asInteger());
+        EXPECT_EQ(6699, header.getTag("bar").asInteger());
         EXPECT_TRUE(header.hasTag("baz"));
-        EXPECT_EQUAL("666999", header.getTag("baz").asString());
+        EXPECT_EQ("666999", header.getTag("baz").asString());
 
         header.putTag(FileHeader::Tag("foo", 9.6));
         header.putTag(FileHeader::Tag("bar", 9966));
         header.putTag(FileHeader::Tag("baz", "999666"));
-        EXPECT_EQUAL(len, header.getSize());
-        EXPECT_EQUAL(len, header.rewriteFile(file));
+        EXPECT_EQ(len, header.getSize());
+        EXPECT_EQ(len, header.rewriteFile(file));
     }
     {
         FileHeader header;
 
         FastOS_File file;
         ASSERT_TRUE(file.OpenReadOnly(fileheader_tmp.c_str()));
-        EXPECT_EQUAL(len, header.readFile(file));
-        EXPECT_EQUAL(len, header.getSize());
+        EXPECT_EQ(len, header.readFile(file));
+        EXPECT_EQ(len, header.getSize());
         ASSERT_TRUE(file.Close());
         std::filesystem::remove(std::filesystem::path(fileheader_tmp));
 
         EXPECT_TRUE(header.hasTag("foo"));
-        EXPECT_EQUAL(9.6, header.getTag("foo").asFloat());
+        EXPECT_EQ(9.6, header.getTag("foo").asFloat());
         EXPECT_TRUE(header.hasTag("bar"));
-        EXPECT_EQUAL(9966, header.getTag("bar").asInteger());
+        EXPECT_EQ(9966, header.getTag("bar").asInteger());
         EXPECT_TRUE(header.hasTag("baz"));
-        EXPECT_EQUAL("999666", header.getTag("baz").asString());
+        EXPECT_EQ("999666", header.getTag("baz").asString());
     }
 }
 
-void
-Test::testFileAlign()
+TEST_F(FileHeaderTest, test_file_align)
 {
     for (uint32_t alignTo = 1; alignTo < 16; ++alignTo) {
         FileHeader header(alignTo);
         header.putTag(FileHeader::Tag("foo", "bar"));
-        EXPECT_EQUAL(0u, header.getSize() % alignTo);
+        EXPECT_EQ(0u, header.getSize() % alignTo);
     }
 }
 
-void
-Test::testFileSize()
+TEST_F(FileHeaderTest, test_file_size)
 {
     for (uint32_t minSize = 0; minSize < 512; ++minSize) {
         FileHeader header(1u, minSize);
@@ -483,8 +430,7 @@ Test::testFileSize()
     }
 }
 
-void
-Test::testReadErrors()
+TEST_F(FileHeaderTest, test_read_errors)
 {
     {
         DataBuffer buf;
@@ -524,7 +470,7 @@ Test::testReadErrors()
 }
 
 bool
-Test::testReadError(DataBuffer &buf, const std::string &expected)
+FileHeaderTest::testReadError(DataBuffer &buf, const std::string &expected)
 {
     GenericHeader header;
     header.putTag(GenericHeader::Tag("foo", "bar"));
@@ -534,21 +480,22 @@ Test::testReadError(DataBuffer &buf, const std::string &expected)
         EXPECT_TRUE(false);
         return false;
     } catch (IllegalHeaderException &e) {
-        if (!EXPECT_EQUAL(expected, e.getMessage())) {
+        bool failed = false;
+        EXPECT_EQ(expected, e.getMessage()) << (failed = true, "");
+        if (failed) {
             return false;
         }
     }
-    if (!EXPECT_EQUAL(1u, header.getNumTags())) {
+    bool failed = false;
+    EXPECT_EQ(1u, header.getNumTags()) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_EQUAL("bar", header.getTag("foo").asString())) {
-        return false;
-    }
-    return true;
+    EXPECT_EQ("bar", header.getTag("foo").asString()) << (failed = true, "");
+    return !failed;
 }
 
-void
-Test::testWriteErrors()
+TEST_F(FileHeaderTest, test_write_errors)
 {
     GenericHeader header;
     header.putTag(GenericHeader::Tag("foo", 69));
@@ -562,15 +509,14 @@ Test::testWriteErrors()
         header.write(writer);
         EXPECT_TRUE(false);
     } catch (IllegalHeaderException &e) {
-        EXPECT_EQUAL("Failed to write header.", e.getMessage());
+        EXPECT_EQ("Failed to write header.", e.getMessage());
     }
 
     EXPECT_TRUE(header.hasTag("foo"));
-    EXPECT_EQUAL(69, header.getTag("foo").asInteger());
+    EXPECT_EQ(69, header.getTag("foo").asInteger());
 }
 
-void
-Test::testRewriteErrors()
+TEST_F(FileHeaderTest, test_rewrite_errors)
 {
     FileHeader header;
     header.putTag(FileHeader::Tag("foo", "bar"));
@@ -579,7 +525,7 @@ Test::testRewriteErrors()
     {
         FastOS_File file;
         ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
-        EXPECT_EQUAL(len, header.writeFile(file));
+        EXPECT_EQ(len, header.writeFile(file));
     }
     {
         FastOS_File file;
@@ -590,13 +536,12 @@ Test::testRewriteErrors()
             header.rewriteFile(file);
             EXPECT_TRUE(false);
         } catch (IllegalHeaderException &e) {
-            EXPECT_EQUAL("Failed to rewrite resized header.", e.getMessage());
+            EXPECT_EQ("Failed to rewrite resized header.", e.getMessage());
         }
     }
 }
 
-void
-Test::testLayout()
+TEST_F(FileHeaderTest, test_layout)
 {
     FileHeader header;
     {
@@ -604,20 +549,20 @@ Test::testLayout()
         const std::string fileName = TEST_PATH("fileheader.dat");
         ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
         uint32_t len = header.readFile(file);
-        EXPECT_EQUAL(len, header.getSize());
+        EXPECT_EQ(len, header.getSize());
     }
 
     EXPECT_TRUE(header.hasTag("foo"));
-    EXPECT_EQUAL(6.9, header.getTag("foo").asFloat());
+    EXPECT_EQ(6.9, header.getTag("foo").asFloat());
     EXPECT_TRUE(header.hasTag("bar"));
-    EXPECT_EQUAL(6699, header.getTag("bar").asInteger());
+    EXPECT_EQ(6699, header.getTag("bar").asInteger());
     EXPECT_TRUE(header.hasTag("baz"));
-    EXPECT_EQUAL("666999", header.getTag("baz").asString());
+    EXPECT_EQ("666999", header.getTag("baz").asString());
 }
 
 
 void
-Test::testReadSize(bool mapped)
+FileHeaderTest::testReadSize(bool mapped)
 {
         DataBuffer buf;
         buf.writeInt32(GenericHeader::MAGIC);
@@ -632,12 +577,21 @@ Test::testReadSize(bool mapped)
             GenericHeader::BufferReader reader(buf);
             headerLen = FileHeader::readSize(reader);
         }
-        EXPECT_EQUAL(21u, headerLen);
+        EXPECT_EQ(21u, headerLen);
 }
 
+TEST_F(FileHeaderTest, test_read_size_unmapped)
+{
+    testReadSize(false);
+}
+
+TEST_F(FileHeaderTest, test_read_size_mapped)
+{
+    testReadSize(true);
+}
 
 void
-Test::testReadSizeErrors(bool mapped)
+FileHeaderTest::testReadSizeErrors(bool mapped)
 {
     {
         DataBuffer buf;
@@ -674,9 +628,18 @@ Test::testReadSizeErrors(bool mapped)
     }
 }
 
+TEST_F(FileHeaderTest, test_read_size_errors_unmapped)
+{
+    testReadSizeErrors(false);
+}
+
+TEST_F(FileHeaderTest, test_read_size_errors_mapped)
+{
+    testReadSizeErrors(true);
+}
 
 bool
-Test::testReadSizeError(DataBuffer &buf, const std::string &expected,
+FileHeaderTest::testReadSizeError(DataBuffer &buf, const std::string &expected,
                         bool mapped)
 {
     uint32_t headerLen = 0u;
@@ -691,11 +654,14 @@ Test::testReadSizeError(DataBuffer &buf, const std::string &expected,
         EXPECT_TRUE(false);
         return false;
     } catch (IllegalHeaderException &e) {
-        if (!EXPECT_EQUAL(expected, e.getMessage())) {
+        bool failed = false;
+        EXPECT_EQ(expected, e.getMessage()) << (failed = true, "");
+        if (failed) {
             return false;
         }
     }
-    EXPECT_EQUAL(headerLen, 0u);
+    EXPECT_EQ(headerLen, 0u);
     return true;
 }
 
+GTEST_MAIN_RUN_ALL_TESTS()
