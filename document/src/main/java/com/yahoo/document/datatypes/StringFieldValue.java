@@ -29,6 +29,9 @@ import java.util.Objects;
  */
 public class StringFieldValue extends FieldValue {
 
+    // TODO: remove this, it's a temporary workaround for invalid data stored before unicode validation was fixed
+    private static final boolean replaceInvalidUnicode = System.getProperty("vespa.replace_invalid_unicode", "false").equals("true");
+
     private static class Factory extends PrimitiveDataType.Factory {
         @Override public FieldValue create() { return new StringFieldValue(); }
         @Override public FieldValue create(String value) { return new StringFieldValue(value); }
@@ -56,16 +59,17 @@ public class StringFieldValue extends FieldValue {
         setValue(value);
     }
 
-    private static void validateTextString(String value) {
+    private static String validateTextString(String value) {
         if ( ! Text.isValidTextString(value)) {
-            throw new IllegalArgumentException("The string field value contains illegal code point 0x" +
-                                               Integer.toHexString(Text.validateTextString(value).getAsInt()).toUpperCase());
+            if (replaceInvalidUnicode) return Text.stripInvalidCharacters(value);
+            else throw new IllegalArgumentException("The string field value contains illegal code point 0x" +
+                                                    Integer.toHexString(Text.validateTextString(value).getAsInt()).toUpperCase());
         }
+        return value;
     }
 
     private void setValue(String value) {
-        validateTextString(value);
-        this.value = value;
+        this.value = validateTextString(value);
     }
 
     /**
