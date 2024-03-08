@@ -59,7 +59,6 @@ public class StreamingSearcher extends VespaBackEndSearcher {
 
     /** The configId used to access the searchcluster. */
     private String searchClusterName = null;
-    private String documentType;
 
     /** The route to the storage cluster. */
     private String storageClusterRouteSpec = null;
@@ -81,9 +80,6 @@ public class StreamingSearcher extends VespaBackEndSearcher {
     private String getSearchClusterName() { return searchClusterName; }
     private String getStorageClusterRouteSpec() { return storageClusterRouteSpec; }
     public final void setSearchClusterName(String clusterName) { this.searchClusterName = clusterName; }
-    public final void setDocumentType(String documentType) {
-        this.documentType = documentType;
-    }
 
     public final void setStorageClusterRouteSpec(String storageClusterRouteSpec) {
         this.storageClusterRouteSpec = storageClusterRouteSpec;
@@ -139,12 +135,15 @@ public class StreamingSearcher extends VespaBackEndSearcher {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
+        // Cluster searcher guarantees that there will be one, and only one schema here
+        String schema = query.getModel().getRestrict().iterator().next();
+
         if (query.getTrace().isTraceable(4))
-            query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + documentType, 4);
+            query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + schema, 4);
         long timeStartedNanos = tracingOptions.getClock().nanoTimeNow();
         int effectiveTraceLevel = inferEffectiveQueryTraceLevel(query);
 
-        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterName(), route, documentType, effectiveTraceLevel);
+        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterName(), route, schema, effectiveTraceLevel);
         try {
             visitor.doSearch();
         } catch (ParseException e) {

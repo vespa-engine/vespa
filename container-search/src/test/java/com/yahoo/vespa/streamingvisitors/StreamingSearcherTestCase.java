@@ -162,6 +162,7 @@ public class StreamingSearcherTestCase {
 
     private static Result executeQuery(StreamingSearcher searcher, Query query) {
         Execution execution = new Execution(Execution.Context.createContextStub());
+        query.getModel().setRestrict("test");
         return searcher.doSearch2(query, execution);
     }
 
