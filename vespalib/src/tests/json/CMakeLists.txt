@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_json_test_app TEST
     json.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_json_test_app COMMAND vespalib_json_test_app boost)
