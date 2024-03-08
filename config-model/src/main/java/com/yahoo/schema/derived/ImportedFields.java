@@ -9,6 +9,7 @@ import com.yahoo.schema.document.ImportedComplexField;
 import com.yahoo.schema.document.ImportedField;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +23,7 @@ import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isMapOfSimple
  *
  * @author geirst
  */
-public class ImportedFields extends Derived implements ImportedFieldsConfig.Producer {
+public class ImportedFields extends Derived {
 
     private Optional<com.yahoo.schema.document.ImportedFields> importedFields = Optional.empty();
 
@@ -40,7 +41,6 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
         return "imported-fields";
     }
 
-    @Override
     public void getConfig(ImportedFieldsConfig.Builder builder) {
         // Replace
         if (importedFields.isPresent()) {
@@ -48,6 +48,12 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
             importedFields.get().fields().forEach( (name, field) -> considerField(imported, field));
             builder.attribute(imported.stream().map(ImportedFields::createAttributeBuilder).toList());
         }
+    }
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new ImportedFieldsConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
     }
 
     private static boolean isNestedFieldName(String fieldName) {

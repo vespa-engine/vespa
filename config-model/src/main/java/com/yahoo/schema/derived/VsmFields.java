@@ -25,13 +25,14 @@ import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.processing.TensorFieldProcessor;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Vertical streaming matcher field specification
  */
-public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
+public class VsmFields extends Derived {
 
     private final Map<String, StreamingField> fields=new LinkedHashMap<>();
     private final Map<String, StreamingDocumentType> doctypes=new LinkedHashMap<>();
@@ -106,11 +107,16 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
         return "vsmfields";
     }
 
-    @Override
     public void getConfig(VsmfieldsConfig.Builder vsB) {
         // Replace
         vsB.fieldspec(fields.values().stream().map(StreamingField::getFieldSpecConfig).toList());
         vsB.documenttype(doctypes.values().stream().map(StreamingDocumentType::getDocTypeConfig).toList());
+    }
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new VsmfieldsConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
     }
 
     private static boolean isAttributeField(ImmutableSDField field, boolean isStructField, boolean ignoreAttributeAspect) {

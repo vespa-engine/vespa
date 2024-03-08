@@ -11,7 +11,6 @@ import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GuardExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
@@ -22,6 +21,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ZCurveExpression;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,7 +35,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public final class IndexingScript extends Derived implements IlscriptsConfig.Producer {
+public final class IndexingScript extends Derived {
 
     private final List<String> docFields = new ArrayList<>();
     private final List<Expression> expressions = new ArrayList<>();
@@ -93,7 +93,6 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         return "ilscripts";
     }
 
-    @Override
     public void getConfig(IlscriptsConfig.Builder configBuilder) {
         // Append
         IlscriptsConfig.Ilscript.Builder ilscriptBuilder = new IlscriptsConfig.Ilscript.Builder();
@@ -101,6 +100,12 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         ilscriptBuilder.docfield(docFields);
         addContentInOrder(ilscriptBuilder);
         configBuilder.ilscript(ilscriptBuilder);
+    }
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new IlscriptsConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
     }
 
     private static class DropTokenize extends ExpressionConverter {

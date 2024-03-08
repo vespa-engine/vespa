@@ -9,14 +9,18 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Vertical streaming matcher summary specification
  *
  * @author bratseth
  */
-public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
+public class VsmSummary extends Derived {
 
     private final Map<SummaryField, List<String>> summaryMap = new java.util.LinkedHashMap<>(1);
 
@@ -89,12 +93,10 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
         return ret;
     }
 
-    @Override
-    public String getDerivedName() {
+    @Override public String getDerivedName() {
         return "vsmsummary";
     }
 
-    @Override
     public void getConfig(VsmsummaryConfig.Builder vB) {
         // Replace
         vB.fieldmap(
@@ -105,5 +107,10 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
                 ).toList()
         );
     }
-    
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new VsmsummaryConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
+    }
 }

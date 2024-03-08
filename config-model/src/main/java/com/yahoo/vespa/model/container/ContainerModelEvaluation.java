@@ -55,7 +55,7 @@ public class ContainerModelEvaluation implements
 
     @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
-        rankProfileList.getConfig(builder);
+        builder.rankprofile(rankProfileList.getRankProfilesConfig());
     }
 
     @Override

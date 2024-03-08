@@ -24,6 +24,7 @@ import com.yahoo.schema.processing.NGramMatch;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,7 +35,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
+public class IndexInfo extends Derived {
 
     private static final String CMD_ATTRIBUTE = "attribute";
     private static final String CMD_DEFAULT_POSITION = "default-position";
@@ -314,7 +315,6 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         return true;
     }
 
-    @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
         // Append
         IndexInfoConfig.Indexinfo.Builder iiB = new IndexInfoConfig.Indexinfo.Builder();
@@ -333,6 +333,12 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             iiB.alias(new IndexInfoConfig.Indexinfo.Alias.Builder().alias(e.getKey()).indexname(e.getValue()));
         }
         builder.indexinfo(iiB);
+    }
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new IndexInfoConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
     }
 
     // TODO: Move this to the FieldSetSettings processor (and rename it) as that already has to look at this.

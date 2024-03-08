@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,8 +34,7 @@ import java.util.concurrent.Future;
  *
  * @author bratseth
  */
-//TODO Remove implements RankProfilesConfig.Producer, that is only necessary due to some test magic
-public class RankProfileList extends Derived implements RankProfilesConfig.Producer {
+public class RankProfileList extends Derived {
 
     private final Map<String, RawRankProfile> rankProfiles;
     private final FileDistributedConstants constants;
@@ -194,10 +194,12 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
 
     @Override public String getDerivedName() { return "rank-profiles"; }
 
-    @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        // Replace
-        builder.rankprofile(rankProfiles.values().stream().map(RawRankProfile::getConfig).toList());
+    public void export(String toDirectory) throws IOException {
+        export(toDirectory, new RankProfilesConfig.Builder().rankprofile(getRankProfilesConfig()).build());
+    }
+
+    public List<RankProfilesConfig.Rankprofile.Builder> getRankProfilesConfig() {
+        return rankProfiles.values().stream().map(RawRankProfile::getConfig).toList();
     }
 
     private static RankingExpressionsConfig.Expression.Builder toConfig(RankingExpressionBody expr) {
