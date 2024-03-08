@@ -23,6 +23,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -76,7 +77,7 @@ public class StreamingVisitorTest {
         };
     }
 
-    private class QueryArguments {
+    private static class QueryArguments {
         // General query parameters
         String query = "test";
         double timeout = 0.5;
@@ -202,11 +203,7 @@ public class StreamingVisitorTest {
         }
         assertEquals(qa.from, params.getFromTimestamp());
         assertEquals(qa.to, params.getToTimestamp());
-        if (qa.priority != null) {
-            assertEquals(qa.priority, params.getPriority());
-        } else {
-            assertEquals(DocumentProtocol.Priority.VERY_HIGH, params.getPriority());
-        }
+        assertEquals(Objects.requireNonNullElse(qa.priority, DocumentProtocol.Priority.VERY_HIGH), params.getPriority());
         if (qa.maxBucketsPerVisitor != 0) {
             assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());
         } else {
@@ -227,17 +224,10 @@ public class StreamingVisitorTest {
         //System.err.println("query="+new String(params.getLibraryParameters().get("querystackcount")));
         assertNotNull(params.getLibraryParameters().get("querystackcount")); // TODO: Check contents
         assertEquals(searchCluster, new String(params.getLibraryParameters().get("searchcluster")));
-        if (qa.summary != null) {
-            assertEquals(qa.summary, new String(params.getLibraryParameters().get("summaryclass")));
-        } else {
-            assertEquals("default", new String(params.getLibraryParameters().get("summaryclass")));
-        }
+        assertEquals(docType, new String(params.getLibraryParameters().get("schema")));
+        assertEquals(Objects.requireNonNullElse(qa.summary, "default"), new String(params.getLibraryParameters().get("summaryclass")));
         assertEquals(Integer.toString(qa.offset+qa.hits), new String(params.getLibraryParameters().get("summarycount")));
-        if (qa.profile != null) {
-            assertEquals(qa.profile, new String(params.getLibraryParameters().get("rankprofile")));
-        } else {
-            assertEquals("default", new String(params.getLibraryParameters().get("rankprofile")));
-        }
+        assertEquals(Objects.requireNonNullElse(qa.profile, "default"), new String(params.getLibraryParameters().get("rankprofile")));
         //System.err.println("queryflags="+new String(params.getLibraryParameters().get("queryflags")));
         assertNotNull(params.getLibraryParameters().get("queryflags")); // TODO: Check contents
         if (qa.location != null) {
