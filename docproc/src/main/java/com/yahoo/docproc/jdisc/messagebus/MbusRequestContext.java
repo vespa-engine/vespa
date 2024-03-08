@@ -40,6 +40,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
 
     private final static Logger log = Logger.getLogger(MbusRequestContext.class.getName());
     private final static CopyOnWriteHashMap<String, URI> uriCache = new CopyOnWriteHashMap<>();
+
     private final AtomicBoolean deserialized = new AtomicBoolean(false);
     private final AtomicBoolean responded = new AtomicBoolean(false);
     private final ProcessingFactory processingFactory;

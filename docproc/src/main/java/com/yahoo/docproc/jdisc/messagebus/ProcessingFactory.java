@@ -81,7 +81,12 @@ class ProcessingFactory {
             log.fine(() -> "Unable to get document factory component '" + componentId + "' from document factory registry.");
             return document;
         }
-        return cdf.getDocumentCopy(document.getDataType().getName(), document, document.getId());
+        try {
+            return cdf.getDocumentCopy(document.getDataType().getName(), document, document.getId());
+        }
+        catch (RuntimeException e) {
+            throw new IllegalArgumentException("error in document with id '" + document.getId() + "'", e);
+        }
     }
 
     private ContainerDocumentConfig.Doctype getDocumentConfig(String name) {
