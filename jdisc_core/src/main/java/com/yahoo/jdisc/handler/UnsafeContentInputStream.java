@@ -109,9 +109,10 @@ public class UnsafeContentInputStream extends InputStream {
         if (marked == null) {
             throw new IOException("mark has not been called, or too much has been read since marked.");
         }
-        ByteBuffer newBuf = ByteBuffer.allocate(readSinceMarked + currBuf.remaining());
+        var remainingInCurrent = currBuf == null ? 0 : currBuf.remaining();
+        ByteBuffer newBuf = ByteBuffer.allocate(readSinceMarked + remainingInCurrent);
         newBuf.put(marked, 0, readSinceMarked);
-        newBuf.put(currBuf);
+        if (remainingInCurrent > 0) newBuf.put(currBuf);
         newBuf.flip();
         currBuf = newBuf;
         marked = null;
