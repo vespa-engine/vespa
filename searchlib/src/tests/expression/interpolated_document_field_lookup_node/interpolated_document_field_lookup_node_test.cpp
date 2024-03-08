@@ -85,7 +85,7 @@ protected:
 InterpolatedDocumentFieldLookupNodeTest::InterpolatedDocumentFieldLookupNodeTest() = default;
 InterpolatedDocumentFieldLookupNodeTest::~InterpolatedDocumentFieldLookupNodeTest() = default;
 
-TEST_F(InterpolatedDocumentFieldLookupNodeTest, hello_world)
+TEST_F(InterpolatedDocumentFieldLookupNodeTest, test_interpolated_lookup_in_document_field)
 {
     EXPECT_EQ(0.0, setup_doc({ 2, 10 }).setup_node(1.0).evaluate());
     EXPECT_EQ(0.0, setup_node(2.0).evaluate());
