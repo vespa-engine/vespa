@@ -55,15 +55,24 @@ using vespalib::string;
 
 namespace {
 
-std::optional<vespalib::string>
+vespalib::stringref
 extract_search_cluster(const vdslib::Parameters& params)
 {
-    Parameters::ValueRef searchClusterBlob;
-    if (params.lookup("searchcluster", searchClusterBlob)) {
-        LOG(spam, "Received searchcluster blob of %zd bytes", searchClusterBlob.size());
-        return {{searchClusterBlob.data(), searchClusterBlob.size()}};
+    Parameters::ValueRef searchCluster;
+    if (params.lookup("searchcluster", searchCluster)) {
+        LOG(spam, "Received searchcluster blob of %zd bytes", searchCluster.size());
     }
-    return std::nullopt;
+    return searchCluster;
+}
+
+vespalib::stringref
+extract_schema(const vdslib::Parameters& params)
+{
+    Parameters::ValueRef schema;
+    if (params.lookup("schema", schema)) {
+        LOG(spam, "Received searchcluster blob of %zd bytes", schema.size());
+    }
+    return schema;
 }
 
 std::shared_ptr<const SearchEnvironmentSnapshot>
@@ -71,8 +80,11 @@ get_search_environment_snapshot(VisitorEnvironment& v_env, const Parameters& par
 {
     auto& env = dynamic_cast<SearchEnvironment&>(v_env);
     auto search_cluster = extract_search_cluster(params);
-    if (search_cluster.has_value()) {
-        return env.get_snapshot(search_cluster.value());
+    if ( !search_cluster.empty()) {
+        auto schema = extract_schema(params);
+        return schema.empty()
+            ? env.get_snapshot(search_cluster)
+            : env.get_snapshot(search_cluster + "/" + schema);
     }
     return {};
 }

@@ -86,7 +86,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
     }
 
     @Override
-    protected InvokerResult getSearchResult(Execution execution) throws IOException {
+    protected InvokerResult getSearchResult() throws IOException {
         long timeLeftMs = query.getTimeLeft();
         if (timeLeftMs <= 0) {
             return errorResult(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName()));

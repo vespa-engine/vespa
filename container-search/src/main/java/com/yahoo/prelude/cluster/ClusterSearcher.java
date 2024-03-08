@@ -29,9 +29,11 @@ import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -177,7 +179,7 @@ public class ClusterSearcher extends Searcher {
     public Result search(Query query, Execution execution) {
         validateQueryTimeout(query);
         validateQueryCache(query);
-        Searcher searcher = server;
+        var searcher = server;
         if (searcher == null) {
             return new Result(query, ErrorMessage.createNoBackendsInService("Could not search"));
         }
@@ -185,17 +187,17 @@ public class ClusterSearcher extends Searcher {
             return new Result(query, ErrorMessage.createTimeout("No time left for searching"));
         }
 
-        return doSearch(searcher, query, execution);
+        return doSearch(searcher, query);
     }
 
     @Override
     public void fill(com.yahoo.search.Result result, String summaryClass, Execution execution) {
         Query query = result.getQuery();
 
-        Searcher searcher = server;
+        VespaBackEndSearcher searcher = server;
         if (searcher != null) {
             if (query.getTimeLeft() > 0) {
-                searcher.fill(result, summaryClass, execution);
+                searcher.fill(result, summaryClass);
             } else {
                 if (result.hits().getErrorHit() == null) {
                     result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " +
@@ -230,22 +232,21 @@ public class ClusterSearcher extends Searcher {
         query.getRanking().setQueryCache(false);
     }
 
-    private Result doSearch(Searcher searcher, Query query, Execution execution) {
+    private Result doSearch(VespaBackEndSearcher searcher, Query query) {
         if (schemas.size() > 1) {
-            return searchMultipleDocumentTypes(searcher, query, execution);
+            return searchMultipleDocumentTypes(searcher, query);
         } else {
-            String docType = schemas.iterator().next();
-            query.getModel().setRestrict(docType);
-            return perSchemaSearch(searcher, query, execution);
+            String schema = schemas.iterator().next();
+            query.getModel().setRestrict(schema);
+            return perSchemaSearch(searcher, schema, query);
         }
     }
 
-    private Result perSchemaSearch(Searcher searcher, Query query, Execution execution) {
+    private Result perSchemaSearch(VespaBackEndSearcher searcher, String schema, Query query) {
         Set<String> restrict = query.getModel().getRestrict();
         if (restrict.size() != 1) {
             throw new IllegalStateException("perSchemaSearch must always be called with 1 schema, got: " + restrict.size());
         }
-        String schema = restrict.iterator().next();
         int rerankCount = globalPhaseRanker != null ? globalPhaseRanker.getRerankCount(query, schema) : 0;
         boolean useGlobalPhase = rerankCount > 0;
         final int wantOffset = query.getOffset();
@@ -257,7 +258,7 @@ public class ClusterSearcher extends Searcher {
             query.setOffset(0);
             query.setHits(useHits);
         }
-        Result result = searcher.search(query, execution);
+        Result result = searcher.search(schema, query);
         if (useGlobalPhase) {
             globalPhaseRanker.rerankHits(query, result, schema);
             result.hits().trim(wantOffset, wantHits);
@@ -284,16 +285,17 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    private Result searchMultipleDocumentTypes(Searcher searcher, Query query, Execution execution) {
+    private Result searchMultipleDocumentTypes(VespaBackEndSearcher searcher, Query query) {
         Set<String> schemas = resolveSchemas(query);
-        List<Query> queries = createQueries(query, schemas);
-        if (queries.size() == 1) {
-            return perSchemaSearch(searcher, queries.get(0), execution);
+        Map<String, Query> schemaQueries = createQueries(query, schemas);
+        if (schemaQueries.size() == 1) {
+            var entry = schemaQueries.entrySet().iterator().next();
+            return perSchemaSearch(searcher, entry.getKey(), entry.getValue());
         } else {
             Result mergedResult = new Result(query);
-            List<FutureTask<Result>> pending = new ArrayList<>(queries.size());
-            for (Query q : queries) {
-                FutureTask<Result> task = new FutureTask<>(() -> perSchemaSearch(searcher, q, execution));
+            List<FutureTask<Result>> pending = new ArrayList<>(schemaQueries.size());
+            for (var entry : schemaQueries.entrySet()) {
+                FutureTask<Result> task = new FutureTask<>(() -> perSchemaSearch(searcher, entry.getKey(), entry.getValue()));
                 try {
                     executor.execute(task);
                     pending.add(task);
@@ -309,7 +311,7 @@ public class ClusterSearcher extends Searcher {
             if (query.getOffset() > 0 || query.getHits() < mergedResult.hits().size()) {
                 if (mergedResult.getHitOrderer() != null) {
                     // Make sure we have the necessary data for sorting
-                    searcher.fill(mergedResult, VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS, execution);
+                    searcher.fill(mergedResult, VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
                 }
                 mergedResult.hits().trim(query.getOffset(), query.getHits());
                 query.setOffset(0); // Needed when doing a trim
@@ -351,22 +353,24 @@ public class ClusterSearcher extends Searcher {
         return retval;
     }
 
-    private List<Query> createQueries(Query query, Set<String> docTypes) {
+    private Map<String, Query> createQueries(Query query, Set<String> schemas) {
         query.getModel().getQueryTree(); // performance: parse query before cloning such that it is only done once
-        List<Query> retval = new ArrayList<>(docTypes.size());
-        if (docTypes.size() == 1) {
-            query.getModel().setRestrict(docTypes.iterator().next());
-            retval.add(query);
-        } else if ( ! docTypes.isEmpty() ) {
-            for (String docType : docTypes) {
+        if (schemas.size() == 1) {
+            String schema = schemas.iterator().next();
+            query.getModel().setRestrict(schema);
+            return Map.of(schema, query);
+        } else if ( ! schemas.isEmpty() ) {
+            var schemaQueries = new HashMap<String, Query>();
+            for (String schema : schemas) {
                 Query q = query.clone();
                 q.setOffset(0);
                 q.setHits(query.getOffset() + query.getHits());
-                q.getModel().setRestrict(docType);
-                retval.add(q);
+                q.getModel().setRestrict(schema);
+                schemaQueries.put(schema, q);
             }
+            return schemaQueries;
         }
-        return retval;
+        return Map.of();
     }
 
     @Override

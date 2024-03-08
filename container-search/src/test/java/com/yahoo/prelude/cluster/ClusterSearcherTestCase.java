@@ -206,12 +206,12 @@ public class ClusterSearcherTestCase {
         }
 
         @Override
-        protected com.yahoo.search.Result doSearch2(Query query, Execution execution) {
+        protected com.yahoo.search.Result doSearch2(String schema, Query query) {
             return null; // search() is overriden, this should never be called
         }
 
         @Override
-        public com.yahoo.search.Result search(Query query, Execution execution) {
+        public com.yahoo.search.Result search(String schema, Query query) {
             com.yahoo.search.Result result = new com.yahoo.search.Result(query);
             List<Hit> hits = getHits(query);
             if (hits != null) {

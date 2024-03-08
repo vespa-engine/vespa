@@ -2,16 +2,13 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -27,7 +24,7 @@ public class PartialFillTestCase {
 
     public static class FS4 extends VespaBackEndSearcher {
         public List<Result> history = new ArrayList<>();
-        protected Result doSearch2(Query query, Execution execution) {
+        protected Result doSearch2(String schema, Query query) {
             return new Result(query);
         }
         protected void doPartialFill(Result result, String summaryClass) {
@@ -36,7 +33,7 @@ public class PartialFillTestCase {
     }
 
     public static class BadFS4 extends VespaBackEndSearcher {
-        protected Result doSearch2(Query query, Execution execution) {
+        protected Result doSearch2(String schema, Query query) {
             return new Result(query);
         }
         protected void doPartialFill(Result result, String summaryClass) {
@@ -130,24 +127,18 @@ public class PartialFillTestCase {
             com.yahoo.search.result.ErrorMessage error = i.next();
             switch (n) {
                 case 0:
-                    assertEquals(exp_sub, error);
-                    break;
                 case 1:
                     assertEquals(exp_sub, error);
                     break;
                 default:
-                    assertTrue(false);
+                    fail();
             }
             n++;
         }
     }
 
-    private Execution createExecution(Searcher searcher) {
-        return new Execution(chainedAsSearchChain(searcher), Execution.Context.createContextStub());
-    }
-
-    private void doFill(Searcher searcher, Result result, String summaryClass) {
-        createExecution(searcher).fill(result, summaryClass);
+    private void doFill(VespaBackEndSearcher searcher, Result result, String summaryClass) {
+        searcher.fill(result, summaryClass);
     }
 
     private Chain<Searcher> chainedAsSearchChain(Searcher topOfChain) {

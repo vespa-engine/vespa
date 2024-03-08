@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
-import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
@@ -9,9 +8,9 @@ import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastSearcher;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.Searcher;
 import com.yahoo.search.dispatch.MockDispatcher;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -24,10 +23,8 @@ import com.yahoo.search.schema.DocumentSummary;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
-import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -42,16 +39,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author bratseth
  */
 public class FastSearcherTestCase {
+    private static final String SCHEMA = "test";
+    private static final String CLUSTER = "test";
 
     @Test
     void testNullQuery() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         FastSearcher fastSearcher = new FastSearcher("container.0",
-                MockDispatcher.create(Collections.emptyList()),
+                MockDispatcher.create(List.of()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
-                documentdbInfoConfig("test"),
-                schemaInfo("test"));
+                documentdbInfoConfig(SCHEMA),
+                schemaInfo(SCHEMA));
 
         String query = "?junkparam=ignored";
         Result result = doSearch(fastSearcher, new Query(query), 0, 10);
@@ -63,30 +62,20 @@ public class FastSearcherTestCase {
         assertEquals(Error.NULL_QUERY.code, message.getCode());
     }
 
-    private Chain<Searcher> chainedAsSearchChain(Searcher topOfChain) {
-        List<Searcher> searchers = new ArrayList<>();
-        searchers.add(topOfChain);
-        return new Chain<>(searchers);
-    }
-
-    private Result doSearch(Searcher searcher, Query query, int offset, int hits) {
+    private Result doSearch(VespaBackEndSearcher searcher, Query query, int offset, int hits) {
         query.setOffset(offset);
         query.setHits(hits);
-        return createExecution(searcher).search(query);
-    }
-
-    private Execution createExecution(Searcher searcher) {
-        return new Execution(chainedAsSearchChain(searcher), Execution.Context.createContextStub());
+        return searcher.search(SCHEMA, query);
     }
 
     @Test
     void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher("container.0",
-                MockDispatcher.create(List.of(new Node("test", 0, "host0", 0))),
+                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
-                documentdbInfoConfig("test"),
-                schemaInfo("test"));
+                documentdbInfoConfig(SCHEMA),
+                schemaInfo(SCHEMA));
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -98,18 +87,18 @@ public class FastSearcherTestCase {
         request2.setRootOperation(all);
 
         assertForceSinglePassIs(false, q);
-        fastSearcher.search(q, new Execution(Execution.Context.createContextStub()));
+        fastSearcher.search(SCHEMA, q);
         assertForceSinglePassIs(true, q);
     }
 
     @Test
     void testRankProfileValidation() {
         FastSearcher fastSearcher = new FastSearcher("container.0",
-                MockDispatcher.create(List.of(new Node("test", 0, "host0", 0))),
+                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
-                documentdbInfoConfig("test"),
-                schemaInfo("test"));
+                documentdbInfoConfig(SCHEMA),
+                schemaInfo(SCHEMA));
         assertFalse(searchError("?query=q", fastSearcher).contains("does not contain requested rank profile"));
         assertFalse(searchError("?query=q&ranking.profile=default", fastSearcher).contains("does not contain requested rank profile"));
         assertTrue(searchError("?query=q&ranking.profile=nosuch", fastSearcher).contains("does not contain requested rank profile"));
@@ -117,14 +106,14 @@ public class FastSearcherTestCase {
 
     @Test
     void testSummaryNeedsQuery() {
-        var documentDb = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("test")));
-        var schema = new Schema.Builder("test")
+        var documentDb = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name(SCHEMA)));
+        var schema = new Schema.Builder(SCHEMA)
                 .add(new DocumentSummary.Builder("default").build())
                 .add(new RankProfile.Builder("default").setHasRankFeatures(false)
                         .setHasSummaryFeatures(false)
                         .build());
         FastSearcher backend = new FastSearcher("container.0",
-                MockDispatcher.create(Collections.singletonList(new Node("test", 0, "host0", 0))),
+                MockDispatcher.create(Collections.singletonList(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
                 documentDb,
@@ -141,14 +130,14 @@ public class FastSearcherTestCase {
 
     @Test
     void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
-        MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node("test", 0, "host0", 0), new Node("test", 2, "host1", 0)));
+        MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0), new Node(CLUSTER, 2, "host1", 0)));
 
         FastSearcher fastSearcher = new FastSearcher("container.0",
                 dispatcher,
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
-                documentdbInfoConfig("test"),
-                schemaInfo("test"));
+                documentdbInfoConfig(SCHEMA),
+                schemaInfo(SCHEMA));
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -160,7 +149,7 @@ public class FastSearcherTestCase {
         request2.setRootOperation(all);
 
         assertForceSinglePassIs(false, q);
-        fastSearcher.search(q, new Execution(Execution.Context.createContextStub()));
+        fastSearcher.search(SCHEMA, q);
         assertForceSinglePassIs(false, q);
     }
 
@@ -183,7 +172,7 @@ public class FastSearcherTestCase {
         searchClusterB.name(clusterName);
         b.searchcluster(searchClusterB);
         VipStatus vipStatus = new VipStatus(b.build());
-        List<Node> nodes_1 = List.of(new Node("test", 0, "host0", 0));
+        List<Node> nodes_1 = List.of(new Node(CLUSTER, 0, "host0", 0));
         RpcResourcePool rpcPool_1 = new RpcResourcePool(MockDispatcher.toDispatchConfig(), MockDispatcher.toNodesConfig(nodes_1));
         MockDispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, vipStatus);
         dispatch_1.clusterMonitor.shutdown();
@@ -193,12 +182,12 @@ public class FastSearcherTestCase {
         assertTrue(vipStatus.isInRotation()); //Verify that deconstruct does not touch vipstatus
     }
 
-    private String searchError(String query, Searcher searcher) {
+    private String searchError(String query, VespaBackEndSearcher searcher) {
         return search(query, searcher).hits().getError().getDetailedMessage();
     }
 
-    private Result search(String query, Searcher searcher) {
-        return searcher.search(new Query(query), new Execution(Execution.Context.createContextStub()));
+    private Result search(String query, VespaBackEndSearcher searcher) {
+        return searcher.search(SCHEMA, new Query(query));
     }
 
     private DocumentdbInfoConfig documentdbInfoConfig(String schemaName) {

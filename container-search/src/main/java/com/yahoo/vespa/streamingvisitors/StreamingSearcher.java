@@ -126,7 +126,7 @@ public class StreamingSearcher extends VespaBackEndSearcher {
     }
 
     @Override
-    public Result doSearch2(Query query, Execution execution) {
+    public Result doSearch2(String schema, Query query) {
         if (query.getTimeLeft() <= 0)
             return new Result(query, ErrorMessage.createTimeout(String.format("No time left for searching (timeout=%d)", query.getTimeout())));
 
@@ -135,8 +135,6 @@ public class StreamingSearcher extends VespaBackEndSearcher {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
-        // Cluster searcher guarantees that there will be one, and only one schema here
-        String schema = query.getModel().getRestrict().iterator().next();
 
         if (query.getTrace().isTraceable(4))
             query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + schema, 4);
@@ -264,7 +262,7 @@ public class StreamingSearcher extends VespaBackEndSearcher {
         lazyTrace(query, 8, "Returning result ", result);
 
         if (skippedHits > 0) {
-            getLogger().info("skipping " + skippedHits + " hits for query: " + result.getQuery());
+            log.info("skipping " + skippedHits + " hits for query: " + result.getQuery());
             result.hits().addError(ErrorMessage.createTimeout("Missing hit summary data for " + skippedHits + " hits"));
         }
 
@@ -366,8 +364,8 @@ public class StreamingSearcher extends VespaBackEndSearcher {
         }
 
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
-            return new StreamingVisitor(query, searchCluster, route, documentType, this, traceLevelOverride);
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String schema, int traceLevelOverride) {
+            return new StreamingVisitor(query, searchCluster, route, schema, this, traceLevelOverride);
         }
 
     }

@@ -16,7 +16,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
-import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
@@ -161,9 +160,7 @@ public class StreamingSearcherTestCase {
     }
 
     private static Result executeQuery(StreamingSearcher searcher, Query query) {
-        Execution execution = new Execution(Execution.Context.createContextStub());
-        query.getModel().setRestrict("test");
-        return searcher.doSearch2(query, execution);
+        return searcher.doSearch2("test", query);
     }
 
     private static Query[] generateTestQueries(String queryString) {

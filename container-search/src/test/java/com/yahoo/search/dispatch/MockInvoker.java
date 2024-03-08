@@ -40,7 +40,7 @@ class MockInvoker extends SearchInvoker {
     }
 
     @Override
-    protected InvokerResult getSearchResult(Execution execution) {
+    protected InvokerResult getSearchResult() {
         InvokerResult ret = new InvokerResult(query, 10);
         if (coverage != null) {
             ret.getResult().setCoverage(coverage);

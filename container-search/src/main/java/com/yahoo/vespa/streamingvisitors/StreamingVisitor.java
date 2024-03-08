@@ -28,6 +28,7 @@ import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,13 +77,13 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
     }
 
     public StreamingVisitor(Query query, String searchCluster, Route route,
-                            String documentType, VisitorSessionFactory visitorSessionFactory,
+                            String schema, VisitorSessionFactory visitorSessionFactory,
                             int traceLevelOverride)
     {
         this.query = query;
         this.visitorSessionFactory = visitorSessionFactory;
         this.traceLevelOverride = traceLevelOverride;
-        setVisitorParameters(searchCluster, route, documentType);
+        setVisitorParameters(searchCluster, route, schema);
     }
 
     private int inferSessionTraceLevel(Query query) {
@@ -112,8 +113,8 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         return query.properties().getString(streamingSelection);
     }
 
-    private void setVisitorParameters(String searchCluster, Route route, String documentType) {
-        params.setDocumentSelection(createSelectionString(documentType, createQuerySelectionString()));
+    private void setVisitorParameters(String searchCluster, Route route, String schema) {
+        params.setDocumentSelection(createSelectionString(schema, createQuerySelectionString()));
         params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
         params.setSessionTimeoutMs(query.getTimeout());
         params.setVisitorLibrary("searchvisitor");
@@ -146,7 +147,8 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         encodeQueryData(query, 0, ed);
         params.setLibraryParameter("query", ed.getEncodedData());
         params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
-        params.setLibraryParameter("searchcluster", searchCluster.getBytes());
+        params.setLibraryParameter("searchcluster", searchCluster.getBytes(StandardCharsets.UTF_8));
+        params.setLibraryParameter("schema", schema.getBytes(StandardCharsets.UTF_8));
         if (query.getPresentation().getSummary() != null) {
             params.setLibraryParameter("summaryclass", query.getPresentation().getSummary());
         } else {

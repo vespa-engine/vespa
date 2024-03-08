@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.prelude.Ping;
-import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -16,7 +14,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.schema.SchemaInfo;
-import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -61,14 +58,6 @@ public class FastSearcher extends VespaBackEndSearcher {
         this.dispatcher = dispatcher;
     }
 
-    /**
-     * Pings the backend. Does not propagate to other searchers.
-     */
-    @Override
-    public Pong ping(Ping ping, Execution execution) {
-        throw new IllegalStateException("This ping should not have been called.");
-    }
-
     @Override
     protected void transformQuery(Query query) {
         QueryRewrite.rewriteSddocname(query);
@@ -83,11 +72,11 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     @Override
-    public Result doSearch2(Query query, Execution execution) {
+    public Result doSearch2(String schema, Query query) {
         if (dispatcher.allGroupsHaveSize1())
             forceSinglePassGrouping(query);
         try (SearchInvoker invoker = getSearchInvoker(query)) {
-            Result result = invoker.search(query, execution);
+            Result result = invoker.search(query);
             injectSource(result.hits());
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
@@ -97,7 +86,7 @@ public class FastSearcher extends VespaBackEndSearcher {
                 // contain the data we need. If we fetch the default
                 // one we end up fetching docsums twice unless the
                 // user also requested the default one.
-                fill(result, query.getPresentation().getSummary(), execution); // ARGH
+                fill(result, query.getPresentation().getSummary()); // ARGH
             }
             return result;
         } catch (TimeoutException e) {
