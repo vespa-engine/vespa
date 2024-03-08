@@ -135,7 +135,7 @@ public class StreamingSearcher extends VespaBackEndSearcher {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
-        // Cluster searcher guartees that there will one, and only one schema here
+        // Cluster searcher guarantees that there will be one, and only one schema here
         String schema = query.getModel().getRestrict().iterator().next();
 
         if (query.getTrace().isTraceable(4))
