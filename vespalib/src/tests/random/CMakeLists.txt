@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_random_test_app TEST
     random_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_random_test_app COMMAND vespalib_random_test_app)
 vespa_add_executable(vespalib_friendfinder_test_app
