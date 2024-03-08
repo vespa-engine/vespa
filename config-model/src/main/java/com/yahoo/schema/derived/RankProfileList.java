@@ -192,14 +192,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     public FileDistributedConstants constants() { return constants; }
     public FileDistributedOnnxModels getOnnxModels() { return onnxModels; }
 
-    @Override
-    public String getDerivedName() { return "rank-profiles"; }
-
-    @Override
-    public void export(String toDirectory) throws java.io.IOException {
-        super.export(toDirectory);
-        onnxModels.export(toDirectory);
-    }
+    @Override public String getDerivedName() { return "rank-profiles"; }
 
     @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
