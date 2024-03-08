@@ -184,6 +184,8 @@
                     <i>com.yahoo.vespa:vsm:*:*</i>
 
                     <!-- 3rd party artifacts embedded -->
+                    <i>de.kherud:llama:*:*</i>
+                    <i>org.jetbrains:annotations:jar:*:*</i>
                     <i>aopalliance:aopalliance:*:*</i>
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>

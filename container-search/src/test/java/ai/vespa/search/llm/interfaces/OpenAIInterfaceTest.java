@@ -30,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // This should be a test for the language model, not openai searchers
 public class OpenAIInterfaceTest {
 
-    private static final String apiKey = "foobar";
+    private static final String apiKey = "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";
+//    private static final String apiKey = "foobar";
 
     // Change only to interface actually
 

@@ -24,7 +24,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public static final ComponentId xmlRendererId = ComponentId.fromString("XmlRenderer");
     public static final ComponentId pageRendererId = ComponentId.fromString("PageTemplatesXmlRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
-    public static final ComponentId tokenRendererId = ComponentId.fromString("TokenRenderer");
+    public static final ComponentId eventRendererId = ComponentId.fromString("EventRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
 
@@ -57,10 +57,10 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         pageRenderer.initId(pageRendererId);
         register(pageRenderer.getId(), pageRenderer);
 
-        // Add token renderer
-        Renderer tokenRenderer = new TokenRenderer(executor);
-        tokenRenderer.initId(tokenRendererId);
-        register(tokenRenderer.getId(), tokenRenderer);
+        // Add event renderer
+        Renderer eventRenderer = new EventRenderer(executor);
+        eventRenderer.initId(eventRendererId);
+        register(eventRenderer.getId(), eventRenderer);
 
         // add application renderers
         for (Renderer renderer : renderers)
@@ -75,7 +75,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         getRenderer(jsonRendererId.toSpecification()).deconstruct();
         getRenderer(xmlRendererId.toSpecification()).deconstruct();
         getRenderer(pageRendererId.toSpecification()).deconstruct();
-        getRenderer(tokenRendererId.toSpecification()).deconstruct();
+        getRenderer(eventRendererId.toSpecification()).deconstruct();
     }
 
     /**
@@ -99,7 +99,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         if (format.stringValue().equals("json")) return getComponent(jsonRendererId);
         if (format.stringValue().equals("xml")) return getComponent(xmlRendererId);
         if (format.stringValue().equals("page")) return getComponent(pageRendererId);
-        if (format.stringValue().equals("token")) return getComponent(tokenRendererId);
+        if (format.stringValue().equals("sse")) return getComponent(eventRendererId);
 
         com.yahoo.processing.rendering.Renderer<Result> renderer = getComponent(format);
         if (renderer == null)

@@ -1,6 +1,6 @@
 package com.yahoo.search.rendering;
 
-import ai.vespa.search.llm.TokenStream;
+import com.yahoo.search.result.EventStream;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.document.DocumentId;
 import com.yahoo.search.Query;
@@ -35,24 +35,24 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TokenRendererTestCase {
+public class EventRendererTestCase {
 
     private static ThreadPoolExecutor executor;
-    private static TokenRenderer blueprint;
-    private TokenRenderer renderer;
+    private static EventRenderer blueprint;
+    private EventRenderer renderer;
 
     @BeforeAll
     public static void createExecutorAndBlueprint() {
         ThreadFactory threadFactory = ThreadFactoryFactory.getThreadFactory("test-rendering");
         executor = new ThreadPoolExecutor(4, 4, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), threadFactory);
         executor.prestartAllCoreThreads();
-        blueprint = new TokenRenderer(executor);
+        blueprint = new EventRenderer(executor);
     }
 
     @BeforeEach
     public void createClone() {
         // Use the shared renderer as a prototype object, as specified in the API contract
-        renderer = (TokenRenderer) blueprint.clone();
+        renderer = (EventRenderer) blueprint.clone();
         renderer.init();
     }
 
@@ -96,7 +96,7 @@ public class TokenRendererTestCase {
                 
                 event: end
                 """;
-        var tokenStream = TokenStream.create("token_stream");
+        var tokenStream = EventStream.create("token_stream");
         for (String token : splitter("Ducks have adorable waddling walks")) {
             tokenStream.add(token);
         }
@@ -129,7 +129,7 @@ public class TokenRendererTestCase {
         var result = "";
         var executor = Executors.newFixedThreadPool(1);
         try {
-            var tokenStream = TokenStream.create("token_stream");
+            var tokenStream = EventStream.create("token_stream");
             var future = completeAsync("Ducks have adorable waddling walks", executor, token -> {
                 tokenStream.add(token);
             }).exceptionally(e -> {
@@ -151,7 +151,7 @@ public class TokenRendererTestCase {
 
     @Test
     public void testErrorEndsStream() throws ExecutionException, InterruptedException {
-        var tokenStream = TokenStream.create("token_stream");
+        var tokenStream = EventStream.create("token_stream");
         tokenStream.add("token1");
         tokenStream.add("token2");
         tokenStream.error("my_llm", new ErrorMessage(400, "Something went wrong"));
@@ -173,9 +173,39 @@ public class TokenRendererTestCase {
     }
 
     @Test
+    public void testPromptRendering() throws ExecutionException, InterruptedException {
+        String prompt = "Why are ducks better than cats?\n\nBe concise.\n";
+
+        var tokenStream = EventStream.create("token_stream");
+        tokenStream.add(prompt, "prompt");
+        tokenStream.add("Just");
+        tokenStream.add(" because");
+        tokenStream.add(".");
+        tokenStream.markComplete();
+        var result = render(new Result(new Query(), tokenStream));
+
+        var expected = """
+                event: prompt
+                data: {"prompt":"Why are ducks better than cats?\\n\\nBe concise.\\n"}
+                
+                event: token
+                data: {"token":"Just"}
+
+                event: token
+                data: {"token":" because"}
+
+                event: token
+                data: {"token":"."}
+
+                event: end
+                """;
+        assertEquals(expected, result);
+    }
+
+    @Test
     @Timeout(5)
     public void testResultRenderingFails() {
-        var tokenStream = TokenStream.create("token_stream");
+        var tokenStream = EventStream.create("token_stream");
         tokenStream.add("token1");
         tokenStream.add("token2");
         tokenStream.markComplete();

@@ -156,7 +156,8 @@ public class PlatformBundles {
             "com.yahoo.vespa.streamingvisitors.MetricsSearcher",
             "com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher",
             "ai.vespa.search.llm.RAGSearcher",
-            "ai.vespa.search.llm.interfaces.OpenAIInterface"
+            "ai.vespa.search.llm.interfaces.OpenAIInterface",
+            "ai.vespa.search.llm.interfaces.LocalLLMInterface"
     );
 
 }

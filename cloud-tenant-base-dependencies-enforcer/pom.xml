@@ -109,6 +109,8 @@
                                         <include>com.yahoo.vespa:vespalog:*:provided</include>
 
                                         <!-- Vespa test dependencies -->
+                                        <include>de.kherud:llama:*:*</include>
+                                        <include>org.jetbrains:annotations:jar:*:*</include>
                                         <include>com.yahoo.vespa:application:*:test</include>
                                         <include>com.yahoo.vespa:cloud-tenant-cd:*:test</include>
                                         <include>com.yahoo.vespa:config-application-package:*:test</include>

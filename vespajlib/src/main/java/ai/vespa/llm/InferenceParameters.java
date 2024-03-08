@@ -4,7 +4,9 @@ import ai.vespa.llm.completion.Prompt;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class InferenceParameters {
 
@@ -42,6 +44,10 @@ public class InferenceParameters {
         } catch (Exception e) {
             return Optional.empty();
         }
+    }
+
+    public void ifPresent(String option, Consumer<String> func) {
+        get(option).ifPresent(func);
     }
 
 }

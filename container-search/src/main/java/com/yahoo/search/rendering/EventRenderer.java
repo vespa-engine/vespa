@@ -1,6 +1,6 @@
 package com.yahoo.search.rendering;
 
-import ai.vespa.search.llm.TokenStream;
+import com.yahoo.search.result.EventStream;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
@@ -18,19 +18,16 @@ import com.yahoo.search.result.ErrorMessage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WRITE_VALUE;
 
 /**
- *
- * A comment about SSE
+ * A Server-Sent Events (SSE) renderer for asynchronous events such as
+ * tokens from a language model.
  *
  * @author lesters
  */
-public class TokenRenderer extends AsynchronousSectionedRenderer<Result> {
-
-    private static final Logger log = Logger.getLogger(TokenRenderer.class.getName());
+public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final JsonFactory generatorFactory = createGeneratorFactory();
     private volatile JsonGenerator generator;
@@ -43,14 +40,14 @@ public class TokenRenderer extends AsynchronousSectionedRenderer<Result> {
         return factory;
     }
 
-    private static final boolean RENDER_TOKEN_EVENT_HEADER = true;
+    private static final boolean RENDER_EVENT_HEADER = true;
     private static final boolean RENDER_END_EVENT = true;
 
-    public TokenRenderer() {
+    public EventRenderer() {
         this(null);
     }
 
-    public TokenRenderer(Executor executor) {
+    public EventRenderer(Executor executor) {
         super(executor);
     }
 
@@ -62,21 +59,21 @@ public class TokenRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void beginList(DataList<?> dataList) throws IOException {
-        if ( ! (dataList instanceof TokenStream)) {
-            throw new IllegalArgumentException("TokenRenderer currently only supports TokenStreams");
+        if ( ! (dataList instanceof EventStream)) {
+            throw new IllegalArgumentException("EventRenderer currently only supports EventStreams");
             // Todo: support results and timing and trace by delegating to JsonRenderer
         }
     }
 
     @Override
     public void data(Data data) throws IOException {
-        if (data instanceof TokenStream.Token token) {
-            if (RENDER_TOKEN_EVENT_HEADER) {
-                generator.writeRaw("event: token\n");
+        if (data instanceof EventStream.Event event) {
+            if (RENDER_EVENT_HEADER) {
+                generator.writeRaw("event: " + event.type() + "\n");
             }
             generator.writeRaw("data: ");
             generator.writeStartObject();
-            generator.writeStringField("token", token.toString());
+            generator.writeStringField(event.type(), event.toString());
             generator.writeEndObject();
             generator.writeRaw("\n\n");
             generator.flush();
@@ -115,7 +112,7 @@ public class TokenRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public String getMimeType() {
-        return "application/json";
+        return "text/event-stream";
     }
 
 }

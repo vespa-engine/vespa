@@ -20,6 +20,8 @@ public class RAGSearcher extends LLMSearcher {
 
     private static Logger log = Logger.getLogger(RAGSearcher.class.getName());
 
+    private static final String PROMPT = "prompt";
+
     @Inject
     public RAGSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
         super(config, languageModels);
@@ -30,22 +32,49 @@ public class RAGSearcher extends LLMSearcher {
     public Result search(Query query, Execution execution) {
         Result result = execution.search(query);
         execution.fill(result);
-        return complete(query, buildPrompt(query, result));
+
+        // Todo: Add resulting prompt to the result
+        Prompt prompt = buildPrompt(query, result);
+
+        return complete(query, prompt);
     }
 
     protected Prompt buildPrompt(Query query, Result result) {
-        String propertyWithPrefix = this.getPropertyPrefix() + ".prompt";
-        String prompt = query.properties().getString(propertyWithPrefix);
-        if (prompt == null) {
-            prompt = "Please provide a summary of the above";
+        String prompt = getPrompt(query);
+
+        // Replace @query with the actual query
+        if (prompt.contains("@query")) {
+            prompt = prompt.replace("@query", query.getModel().getQueryString());
         }
-        if (!prompt.contains("{context}")) {
+
+        if ( !prompt.contains("{context}")) {
             prompt = "{context}\n" + prompt;
         }
-        // Todo: support system and user prompt
         prompt = prompt.replace("{context}", buildContext(result));
         log.info("Prompt: " + prompt);  // remove
         return StringPrompt.from(prompt);
+    }
+
+    private String getPrompt(Query query) {
+        // First, check if prompt is set with a prefix
+        String propertyWithPrefix = this.getPropertyPrefix() + "." + PROMPT;
+        String prompt = query.properties().getString(propertyWithPrefix);
+        if (prompt != null)
+            return prompt;
+
+        // If not, try without prefix
+        prompt = query.properties().getString(PROMPT);
+        if (prompt != null)
+            return prompt;
+
+        // If not, use query
+        prompt = query.getModel().getQueryString();
+        if (prompt != null)
+            return prompt;
+
+        // If not, throw exception
+        throw new IllegalArgumentException("RAG searcher could not find prompt found for query. Tried looking for " +
+                "'" + propertyWithPrefix + "." + PROMPT + "', '" + PROMPT + "' or '@query'.");
     }
 
     private String buildContext(Result result) {

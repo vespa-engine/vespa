@@ -148,6 +148,8 @@
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 
                                         <!-- 3rd party test dependencies -->
+                                        <include>de.kherud:llama:*:*</include>
+                                        <include>org.jetbrains:annotations:jar:*:*</include>
                                         <include>com.google.code.findbugs:jsr305:${findbugs.vespa.version}:test</include>
                                         <include>com.google.protobuf:protobuf-java:${protobuf.vespa.version}:test</include>
                                         <include>com.ibm.icu:icu4j:${icu4j.vespa.version}:test</include>

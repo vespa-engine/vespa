@@ -7,7 +7,6 @@ import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
-import ai.vespa.search.llm.LlmSearcherConfig;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.annotation.Inject;
@@ -16,6 +15,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.EventStream;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 
@@ -42,7 +42,7 @@ public abstract class LLMSearcher extends Searcher {
     LLMSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.stream = config.stream();
         this.languageModelId = config.providerId();
-        this.languageModel = findLanguageModel(config.providerId(), languageModels);
+        this.languageModel = findLanguageModel(languageModelId, languageModels);
         this.propertyPrefix = config.propertyPrefix();
     }
 
@@ -98,23 +98,27 @@ public abstract class LLMSearcher extends Searcher {
     }
 
     private Result completeAsync(Query query, Prompt prompt, InferenceParameters options) {
-        TokenStream tokenStream = TokenStream.create("token_stream");
+        EventStream eventStream = EventStream.create("token_stream");
+
+        if (query.getTrace().getLevel() >= 1) {
+            eventStream.add(prompt.asString(), "prompt");
+        }
 
         languageModel.completeAsync(prompt, options, token -> {
-            tokenStream.add(token.text());
+            eventStream.add(token.text());
         }).exceptionally(exception -> {
             int errorCode = 400;
             if (exception instanceof LanguageModelException languageModelException) {
                 errorCode = languageModelException.code();
             }
-            tokenStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage()));
-            tokenStream.markComplete();
+            eventStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage()));
+            eventStream.markComplete();
             return Completion.FinishReason.error;
         }).thenAccept(finishReason -> {
-            tokenStream.markComplete();
+            eventStream.markComplete();
         });
 
-        return new Result(query, tokenStream);
+        return new Result(query, eventStream);
     }
 
     private Result completeSync(Query query, Prompt prompt, InferenceParameters options) {
