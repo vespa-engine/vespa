@@ -1,35 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/xmlstream.h>
 
 namespace vespalib {
 
-class Test : public vespalib::TestApp
-{
-public:
-    void testNormalUsage();
-    void testEscaping();
-    void testNesting();
-    void testIndent();
-
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("xmlserializables_test");
-    srandom(1);
-    testNormalUsage();
-    testEscaping();
-    testNesting();
-    testIndent();
-    TEST_DONE();
-}
-
-void
-Test::testNormalUsage()
+TEST(XmlSerializableTest, test_normal_usage)
 {
     std::ostringstream ost;
     XmlOutputStream xos(ost);
@@ -47,11 +23,10 @@ Test::testNormalUsage()
         "<door windowstate=\"up\"/>\n"
         "<description>This is a car description used to test</description>\n"
         "</car>";
-    EXPECT_EQUAL(expected, ost.str());
+    EXPECT_EQ(expected, ost.str());
 }
 
-void
-Test::testEscaping()
+TEST(XmlSerializableTest, test_escaping)
 {
     std::ostringstream ost;
     XmlOutputStream xos(ost);
@@ -83,7 +58,7 @@ Test::testEscaping()
         "<auto1>&lt;&gt;&amp;&#9;&#12;&#13;\nfoo</auto1>\n"
         "<auto2 binaryencoding=\"base64\">PD4mCQANCmZvbw==</auto2>\n"
         "</__trash_->";
-    EXPECT_EQUAL(expected, ost.str());
+    EXPECT_EQ(expected, ost.str());
 }
 
 namespace {
@@ -103,8 +78,7 @@ namespace {
     };
 }
 
-void
-Test::testNesting()
+TEST(XmlSerializableTest, test_nesting)
 {
     std::ostringstream ost;
     XmlOutputStream xos(ost);
@@ -127,11 +101,10 @@ Test::testNesting()
         "</door>\n"
         "<description>This is a car description used to test</description>\n"
         "</car>";
-    EXPECT_EQUAL(expected, ost.str());
+    EXPECT_EQ(expected, ost.str());
 }
 
-void
-Test::testIndent()
+TEST(XmlSerializableTest, test_indent)
 {
     std::ostringstream ost;
     XmlOutputStream xos(ost, "  ");
@@ -155,9 +128,9 @@ Test::testIndent()
         "    <base binaryencoding=\"base64\">Zm9vYmFy</base>\n"
         "  </nytag>\n"
         "</foo>";
-    EXPECT_EQUAL(expected, ost.str());
+    EXPECT_EQ(expected, ost.str());
 }
 
 } // vespalib
 
-TEST_APPHOOK(vespalib::Test)
+GTEST_MAIN_RUN_ALL_TESTS()
