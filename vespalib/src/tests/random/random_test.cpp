@@ -1,30 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/random.h>
 
 using namespace vespalib;
 
+namespace {
 
-class Test : public vespalib::TestApp
-{
-public:
-    int getFive() { return 5; }
-    void testJavaCompatibility();
-    void testFloatingPoint();
-    void testNormalDistribution();
-    int Main() override;
-};
+constexpr double eps = 1.0e-9;
 
-bool eqD(double a, double b) {
-    if (a == b) return true;
-    printf("is %f approx equal to %f ?\n", a, b);
-    if ((a + 1.0e-9) > b && b > (a - 1.0e-9)) return true;
-    return false;
 }
 
-void
-Test::testJavaCompatibility()
+TEST(RandomTest, test_java_compatibility)
 {
     RandomGen rnd(1);
 
@@ -42,16 +29,16 @@ Test::testJavaCompatibility()
     EXPECT_TRUE(rnd.nextInt32() == 655996946);
 
     rnd.setSeed(1);
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.7308781907032909));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.41008081149220166));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.20771484130971707));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.3327170559595112));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.9677559094241207));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.006117182265761301));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.9637047970232077));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.9398653887819098));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.9471949176631939));
-    EXPECT_TRUE(eqD(rnd.nextDouble(), 0.9370821488959696));
+    EXPECT_NEAR(rnd.nextDouble(), 0.7308781907032909, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.41008081149220166, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.20771484130971707, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.3327170559595112, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.9677559094241207, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.006117182265761301, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.9637047970232077, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.9398653887819098, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.9471949176631939, eps);
+    EXPECT_NEAR(rnd.nextDouble(), 0.9370821488959696, eps);
 
     RandomGen rnd2(-1);
     EXPECT_TRUE(rnd2.nextInt32() == 1155099827);
@@ -64,8 +51,7 @@ Test::testJavaCompatibility()
     EXPECT_TRUE(rnd2.nextInt32() == 52699159);
 }
 
-void
-Test::testFloatingPoint()
+TEST(RandoMTest, test_floating_point)
 {
     RandomGen rnd;
 
@@ -88,8 +74,7 @@ Test::testFloatingPoint()
     }
 }
 
-void
-Test::testNormalDistribution()
+TEST(RandoMTest, test_normal_distribution)
 {
     RandomGen rnd;
 
@@ -149,16 +134,4 @@ Test::testNormalDistribution()
     EXPECT_TRUE(buckets[90] > buckets[100]);
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("random_test");
-    testJavaCompatibility();
-    TEST_FLUSH();
-    testFloatingPoint();
-    TEST_FLUSH();
-    testNormalDistribution();
-    TEST_DONE();
-}
-
-TEST_APPHOOK(Test)
+GTEST_MAIN_RUN_ALL_TESTS()
