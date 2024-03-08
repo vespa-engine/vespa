@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_printabletest_app TEST
     printabletest.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_printabletest_app COMMAND vespalib_printabletest_app)
