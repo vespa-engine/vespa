@@ -16,8 +16,8 @@
 #include <vespa/vespalib/btree/btreeaggregator.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/btree/btree_printer.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rand48.h>
 
 #include <iostream>
@@ -216,115 +216,95 @@ cleanup(GenerationHandler & g,
     cleanup(g, m);
 }
 
-class Test : public vespalib::TestApp {
-private:
+class BTreeAggregationTest : public ::testing::Test {
+protected:
+    BTreeAggregationTest();
+    ~BTreeAggregationTest() override;
     template <typename Tree>
     bool
     assertTree(const std::string & exp, const Tree &t);
 
     template <typename Tree>
     bool
-    assertAggregated(const MockTree &m, const Tree &t);
+    assertAggregated(const MockTree &m, const Tree &t, const vespalib::string& label);
 
     template <typename TreeStore>
     bool
-    assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref);
+    assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref, const vespalib::string& label);
 
     void
     buildSubTree(const std::vector<LeafPair> &sub,
                  size_t numEntries);
-
-    void requireThatNodeInsertWorks();
-    void keys_are_aggregated_correctly_on_node_insertions();
-    void requireThatNodeSplitInsertWorks();
-    void keys_are_aggregated_correctly_when_node_split_on_insert();
-    void requireThatTreeInsertWorks();
-    void requireThatNodeStealWorks();
-    void requireThatNodeRemoveWorks();
-    void keys_are_aggregated_correctly_on_node_removal();
-    void requireThatWeCanInsertAndRemoveFromTree();
-    void requireThatSortedTreeInsertWorks();
-    void requireThatCornerCaseTreeFindWorks();
-    void requireThatBasicTreeIteratorWorks();
-    void requireThatTreeIteratorAssignWorks();
-    void requireThatUpdateOfKeyWorks();
-    void requireThatUpdateOfDataWorks();
-    void requireThatFrozenViewProvidesAggregatedValues();
-
-    void
-    requireThatSmallNodesWorks();
-public:
-    int Main() override;
 };
 
+BTreeAggregationTest::BTreeAggregationTest() = default;
+BTreeAggregationTest::~BTreeAggregationTest() = default;
 
 template<typename Tree>
 bool
-Test::assertTree(const std::string &exp, const Tree &t)
+BTreeAggregationTest::assertTree(const std::string &exp, const Tree &t)
 {
     std::stringstream ss;
     test::BTreePrinter<std::stringstream, typename Tree::NodeAllocatorType> printer(ss, t.getAllocator());
     printer.print(t.getRoot());
-    if (!EXPECT_EQUAL(exp, ss.str())) return false;
-    return true;
+    bool failed = false;
+    EXPECT_EQ(exp, ss.str()) << (failed = true, "");
+    return !failed;
 }
 
 
 template <typename Tree>
 bool
-Test::assertAggregated(const MockTree &m, const Tree &t)
+BTreeAggregationTest::assertAggregated(const MockTree &m, const Tree &t, const vespalib::string& label)
 {
+    SCOPED_TRACE(label);
     const MinMaxAggregated &ta(t.getAggregated());
+    bool failed = false;
     if (t.getRoot().valid()) {
-        return
-            EXPECT_FALSE(m._rtree.empty()) &&
-            EXPECT_EQUAL(m._rtree.rbegin()->first,
-                         ta.getMax()) &&
-            EXPECT_EQUAL(m._rtree.begin()->first,
-                         ta.getMin());
+        EXPECT_FALSE(m._rtree.empty()) << (failed = true, "");
+        if (failed) {
+            return false;
+        }
+        EXPECT_EQ(m._rtree.rbegin()->first, ta.getMax()) << (failed = true, "");
+        EXPECT_EQ(m._rtree.begin()->first, ta.getMin()) << (failed = true, "");
     } else {
-        return EXPECT_TRUE(m._rtree.empty()) &&
-            EXPECT_EQUAL(std::numeric_limits<int32_t>::min(),
-                         ta.getMax()) &&
-            EXPECT_EQUAL(std::numeric_limits<int32_t>::max(),
-                         ta.getMin());
+        EXPECT_TRUE(m._rtree.empty()) << (failed = true, "");
+        EXPECT_EQ(std::numeric_limits<int32_t>::min(), ta.getMax()) << (failed = true, "");
+        EXPECT_EQ(std::numeric_limits<int32_t>::max(), ta.getMin()) << (failed = true, "");
     }
+    return !failed;
 }
 
 template <typename TreeStore>
 bool
-Test::assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref)
+BTreeAggregationTest::assertAggregated(const MockTree &m, const TreeStore &s, EntryRef ref, const vespalib::string& label)
 {
+    SCOPED_TRACE(label);
     typename TreeStore::Iterator i(s.begin(ref));
     MinMaxAggregated sa(s.getAggregated(ref));
     const MinMaxAggregated &ia(i.getAggregated());
+    bool failed = false;
     if (ref.valid()) {
-        return
-            EXPECT_FALSE(m._rtree.empty()) &&
-            EXPECT_EQUAL(m._rtree.rbegin()->first,
-                         ia.getMax()) &&
-            EXPECT_EQUAL(m._rtree.begin()->first,
-                         ia.getMin()) &&
-            EXPECT_EQUAL(m._rtree.rbegin()->first,
-                         sa.getMax()) &&
-            EXPECT_EQUAL(m._rtree.begin()->first,
-                         sa.getMin());
+        EXPECT_FALSE(m._rtree.empty()) << (failed = true, "");
+        if (failed) {
+            return  false;
+        }
+        EXPECT_EQ(m._rtree.rbegin()->first, ia.getMax()) << (failed = true, "");
+        EXPECT_EQ(m._rtree.begin()->first, ia.getMin()) << (failed = true, "");
+        EXPECT_EQ(m._rtree.rbegin()->first, sa.getMax()) << (failed = true, "");
+        EXPECT_EQ(m._rtree.begin()->first, sa.getMin()) << (failed = true, "");
     } else {
-        return EXPECT_TRUE(m._rtree.empty()) &&
-            EXPECT_EQUAL(std::numeric_limits<int32_t>::min(),
-                         ia.getMax()) &&
-            EXPECT_EQUAL(std::numeric_limits<int32_t>::max(),
-                         ia.getMin()) &&
-            EXPECT_EQUAL(std::numeric_limits<int32_t>::min(),
-                         sa.getMax()) &&
-            EXPECT_EQUAL(std::numeric_limits<int32_t>::max(),
-                         sa.getMin());
+        EXPECT_TRUE(m._rtree.empty()) << (failed = true, "");
+        EXPECT_EQ(std::numeric_limits<int32_t>::min(), ia.getMax()) << (failed = true, "");
+        EXPECT_EQ(std::numeric_limits<int32_t>::max(), ia.getMin()) << (failed = true, "");
+        EXPECT_EQ(std::numeric_limits<int32_t>::min(), sa.getMax()) << (failed  =true, "");
+        EXPECT_EQ(std::numeric_limits<int32_t>::max(), sa.getMin()) << (failed =true, "");
     }
+    return !failed;
 }
 
 
-void
-Test::requireThatNodeInsertWorks()
+TEST_F(BTreeAggregationTest, require_that_node_insert_works)
 {
     MyTree t;
     t.insert(20, 102);
@@ -336,7 +316,8 @@ Test::requireThatNodeInsertWorks()
     EXPECT_TRUE(assertTree("{{10:101,20:102,30:103,40:104[min=101,max=104]}}", t));
 }
 
-void Test::keys_are_aggregated_correctly_on_node_insertions() {
+TEST_F(BTreeAggregationTest, keys_are_aggregated_correctly_on_node_insertions)
+{
     MyKeyAggrTree t;
     t.insert(20, 102);
     EXPECT_TRUE(assertTree("{{20:102[min=20,max=20]}}", t));
@@ -367,8 +348,7 @@ populateLeafNode(Tree &t)
     populateTree(t, 4, 2);
 }
 
-void
-Test::requireThatNodeSplitInsertWorks()
+TEST_F(BTreeAggregationTest, require_that_node_split_insert_works)
 {
     { // new entry in current node
         MyTree t;
@@ -396,7 +376,8 @@ Test::requireThatNodeSplitInsertWorks()
     }
 }
 
-void Test::keys_are_aggregated_correctly_when_node_split_on_insert() {
+TEST_F(BTreeAggregationTest, keys_are_aggregated_correctly_when_node_split_on_insert)
+{
     { // new entry in current node
         MyKeyAggrTree t;
         populateLeafNode(t);
@@ -423,8 +404,7 @@ void Test::keys_are_aggregated_correctly_when_node_split_on_insert() {
     }
 }
 
-void
-Test::requireThatTreeInsertWorks()
+TEST_F(BTreeAggregationTest, require_that_tree_insert_works)
 {
     { // multi level node split
         MyTree t;
@@ -523,8 +503,7 @@ struct BTreeStealTraits
 
 }
 
-void
-Test::requireThatNodeStealWorks()
+TEST_F(BTreeAggregationTest, require_that_node_steal_works)
 {
     typedef BTree<MyKey, int32_t,
         btree::MinMaxAggregated,
@@ -602,8 +581,7 @@ Test::requireThatNodeStealWorks()
     }
 }
 
-void
-Test::requireThatNodeRemoveWorks()
+TEST_F(BTreeAggregationTest, require_that_node_remove_works)
 {
     MyTree t;
     populateLeafNode(t);
@@ -615,7 +593,8 @@ Test::requireThatNodeRemoveWorks()
     EXPECT_TRUE(assertTree("{{5:105[min=105,max=105]}}", t));
 }
 
-void Test::keys_are_aggregated_correctly_on_node_removal() {
+TEST_F(BTreeAggregationTest, keys_are_aggregated_correctly_on_node_removal)
+{
     MyKeyAggrTree t;
     populateLeafNode(t);
     t.remove(3);
@@ -640,7 +619,7 @@ generateData(std::vector<LeafPair> & data, size_t numEntries)
 }
 
 void
-Test::buildSubTree(const std::vector<LeafPair> &sub,
+BTreeAggregationTest::buildSubTree(const std::vector<LeafPair> &sub,
                    size_t numEntries)
 {
     GenerationHandler g;
@@ -660,31 +639,31 @@ Test::buildSubTree(const std::vector<LeafPair> &sub,
     assert(numEntries == tree.size());
     assert(tree.isValid());
     
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
-    EXPECT_EQUAL(numEntries, tree.size());
+    EXPECT_TRUE(assertAggregated(mock, tree, "build_sub_tree"));
+    EXPECT_EQ(numEntries, tree.size());
     EXPECT_TRUE(tree.isValid());
     MyTree::Iterator itr = tree.begin();
     MyTree::Iterator ritr = itr;
     if (numEntries > 0) {
         EXPECT_TRUE(ritr.valid());
-        EXPECT_EQUAL(0u, ritr.position());
+        EXPECT_EQ(0u, ritr.position());
         --ritr;
         EXPECT_TRUE(!ritr.valid());
-        EXPECT_EQUAL(numEntries, ritr.position());
+        EXPECT_EQ(numEntries, ritr.position());
         --ritr;
         EXPECT_TRUE(ritr.valid());
-        EXPECT_EQUAL(numEntries - 1, ritr.position());
+        EXPECT_EQ(numEntries - 1, ritr.position());
     } else {
         EXPECT_TRUE(!ritr.valid());
-        EXPECT_EQUAL(0u, ritr.position());
+        EXPECT_EQ(0u, ritr.position());
         --ritr;
         EXPECT_TRUE(!ritr.valid());
-        EXPECT_EQUAL(0u, ritr.position());
+        EXPECT_EQ(0u, ritr.position());
     }
     for (size_t i = 0; i < numEntries; ++i) {
         EXPECT_TRUE(itr.valid());
-        EXPECT_EQUAL(sorted[i].first, itr.getKey());
-        EXPECT_EQUAL(sorted[i].second, itr.getData());
+        EXPECT_EQ(sorted[i].first, itr.getKey());
+        EXPECT_EQ(sorted[i].second, itr.getData());
         ++itr;
     }
     EXPECT_TRUE(!itr.valid());
@@ -693,22 +672,21 @@ Test::buildSubTree(const std::vector<LeafPair> &sub,
     --ritr;
     for (size_t i = 0; i < numEntries; ++i) {
         EXPECT_TRUE(ritr.valid());
-        EXPECT_EQUAL(sorted[numEntries - 1 - i].first, ritr.getKey());
-        EXPECT_EQUAL(sorted[numEntries - 1 - i].second, ritr.getData());
+        EXPECT_EQ(sorted[numEntries - 1 - i].first, ritr.getKey());
+        EXPECT_EQ(sorted[numEntries - 1 - i].second, ritr.getData());
         --ritr;
     }
     EXPECT_TRUE(!ritr.valid());
 }
 
-void
-Test::requireThatWeCanInsertAndRemoveFromTree()
+TEST_F(BTreeAggregationTest, require_that_we_can_insert_and_remove_from_tree)
 {
     GenerationHandler g;
     MyTree tree;
     MockTree mock;
     std::vector<LeafPair> exp;
     std::vector<LeafPair> sorted;
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
+    EXPECT_TRUE(assertAggregated(mock, tree, "insert_and_remove_1"));
     size_t numEntries = 1000;
     generateData(exp, numEntries);
     sorted = exp;
@@ -722,15 +700,15 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
         EXPECT_TRUE(tree.insert(num, val));
         EXPECT_TRUE(!tree.insert(num, val));
         mock.insert(num, val);
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
+        EXPECT_TRUE(assertAggregated(mock, tree, "insert_and_remove_2"));
         for (size_t j = 0; j <= i; ++j) {
             //LOG(info, "find[%zu](%d)", j, exp[j].first._val);
             MyTree::Iterator itr = tree.find(exp[j].first);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(exp[j].first, itr.getKey());
-            EXPECT_EQUAL(exp[j].second, itr.getData());
+            EXPECT_EQ(exp[j].first, itr.getKey());
+            EXPECT_EQ(exp[j].second, itr.getData());
         }
-        EXPECT_EQUAL(i + 1u, tree.size());
+        EXPECT_EQ(i + 1u, tree.size());
         EXPECT_TRUE(tree.isValid());
         buildSubTree(exp, i + 1);
     }
@@ -745,36 +723,36 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
             ++itre;
         if (numEntries > 0) {
             EXPECT_TRUE(ritr.valid());
-            EXPECT_EQUAL(0u, ritr.position());
+            EXPECT_EQ(0u, ritr.position());
             --ritr;
             EXPECT_TRUE(!ritr.valid());
-            EXPECT_EQUAL(numEntries, ritr.position());
+            EXPECT_EQ(numEntries, ritr.position());
             --ritr;
             EXPECT_TRUE(ritr.valid());
-            EXPECT_EQUAL(numEntries - 1, ritr.position());
+            EXPECT_EQ(numEntries - 1, ritr.position());
         } else {
             EXPECT_TRUE(!ritr.valid());
-            EXPECT_EQUAL(0u, ritr.position());
+            EXPECT_EQ(0u, ritr.position());
             --ritr;
             EXPECT_TRUE(!ritr.valid());
-            EXPECT_EQUAL(0u, ritr.position());
+            EXPECT_EQ(0u, ritr.position());
         }
         MyTree::Iterator pitr = itr;
         for (size_t i = 0; i < numEntries; ++i) {
             ssize_t si = i;
             ssize_t sileft = numEntries - i;
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(i, itr.position());
-            EXPECT_EQUAL(sileft, itre - itr);
-            EXPECT_EQUAL(-sileft, itr - itre);
-            EXPECT_EQUAL(sileft, itre2 - itr);
-            EXPECT_EQUAL(-sileft, itr - itre2);
-            EXPECT_EQUAL(si, itr - tree.begin());
-            EXPECT_EQUAL(-si, tree.begin() - itr);
-            EXPECT_EQUAL(i != 0, itr - pitr);
-            EXPECT_EQUAL(-(i != 0), pitr - itr);
-            EXPECT_EQUAL(sorted[i].first, itr.getKey());
-            EXPECT_EQUAL(sorted[i].second, itr.getData());
+            EXPECT_EQ(i, itr.position());
+            EXPECT_EQ(sileft, itre - itr);
+            EXPECT_EQ(-sileft, itr - itre);
+            EXPECT_EQ(sileft, itre2 - itr);
+            EXPECT_EQ(-sileft, itr - itre2);
+            EXPECT_EQ(si, itr - tree.begin());
+            EXPECT_EQ(-si, tree.begin() - itr);
+            EXPECT_EQ(i != 0, itr - pitr);
+            EXPECT_EQ(-(i != 0), pitr - itr);
+            EXPECT_EQ(sorted[i].first, itr.getKey());
+            EXPECT_EQ(sorted[i].second, itr.getData());
             pitr = itr;
             ++itr;
             ritr = itr;
@@ -783,12 +761,12 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
             EXPECT_TRUE(ritr == pitr);
         }
         EXPECT_TRUE(!itr.valid());
-        EXPECT_EQUAL(numEntries, itr.position());
+        EXPECT_EQ(numEntries, itr.position());
         ssize_t sNumEntries = numEntries;
-        EXPECT_EQUAL(sNumEntries, itr - tree.begin());
-        EXPECT_EQUAL(-sNumEntries, tree.begin() - itr);
-        EXPECT_EQUAL(1, itr - pitr);
-        EXPECT_EQUAL(-1, pitr - itr);
+        EXPECT_EQ(sNumEntries, itr - tree.begin());
+        EXPECT_EQ(-sNumEntries, tree.begin() - itr);
+        EXPECT_EQ(1, itr - pitr);
+        EXPECT_EQ(-1, pitr - itr);
     }
     // compact full tree by calling incremental compaction methods in a loop
     {
@@ -818,52 +796,50 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
         EXPECT_TRUE(!tree.remove(num));
         EXPECT_TRUE(tree.isValid());
         mock.erase(num);
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
+        EXPECT_TRUE(assertAggregated(mock, tree, "insert_and_remove3"));
         for (size_t j = i + 1; j < numEntries; ++j) {
             MyTree::Iterator itr = tree.find(exp[j].first);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(exp[j].first, itr.getKey());
-            EXPECT_EQUAL(exp[j].second, itr.getData());
+            EXPECT_EQ(exp[j].first, itr.getKey());
+            EXPECT_EQ(exp[j].second, itr.getData());
         }
-        EXPECT_EQUAL(numEntries - 1 - i, tree.size());
+        EXPECT_EQ(numEntries - 1 - i, tree.size());
     }
 }
 
-void
-Test::requireThatSortedTreeInsertWorks()
+TEST_F(BTreeAggregationTest, require_that_sorted_tree_insert_works)
 {
     {
         MyTree tree;
         MockTree mock;
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
+        EXPECT_TRUE(assertAggregated(mock, tree, "sorted_tree_insert1"));
         for (int i = 0; i < 1000; ++i) {
             EXPECT_TRUE(tree.insert(i, toVal(i)));
             mock.insert(i, toVal(i));
             MyTree::Iterator itr = tree.find(i);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(toVal(i), itr.getData());
+            EXPECT_EQ(toVal(i), itr.getData());
             EXPECT_TRUE(tree.isValid());
-            TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
+            EXPECT_TRUE(assertAggregated(mock, tree, "sorted_tree_insert2"));
         }
     }
     {
         MyTree tree;
         MockTree mock;
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
+        EXPECT_TRUE(assertAggregated(mock, tree, "sorted_tree_insert3"));
         for (int i = 1000; i > 0; --i) {
             EXPECT_TRUE(tree.insert(i, toVal(i)));
             mock.insert(i, toVal(i));
             MyTree::Iterator itr = tree.find(i);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(toVal(i), itr.getData());
+            EXPECT_EQ(toVal(i), itr.getData());
             EXPECT_TRUE(tree.isValid());
-            TEST_DO(EXPECT_TRUE(assertAggregated(mock, tree)));
+            EXPECT_TRUE(assertAggregated(mock, tree, "sorted_tree_insert4"));
         }
     }
 }
 
-void
-Test::requireThatCornerCaseTreeFindWorks()
+TEST_F(BTreeAggregationTest, require_that_corner_case_tree_find_works)
 {
     GenerationHandler g;
     MyTree tree;
@@ -874,8 +850,7 @@ Test::requireThatCornerCaseTreeFindWorks()
     EXPECT_TRUE(!tree.find(1000).valid()); // higher than highest
 }
 
-void
-Test::requireThatBasicTreeIteratorWorks()
+TEST_F(BTreeAggregationTest, require_that_basic_tree_iterator_works)
 {
     GenerationHandler g;
     MyTree tree;
@@ -890,27 +865,24 @@ Test::requireThatBasicTreeIteratorWorks()
     size_t ei = 0;
     MyTree::Iterator itr = tree.begin();
     MyTree::Iterator ritr;
-    EXPECT_EQUAL(1000u, itr.size());
+    EXPECT_EQ(1000u, itr.size());
     for (; itr.valid(); ++itr) {
         //LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
-        EXPECT_EQUAL(UNWRAP(exp[ei].first), UNWRAP(itr.getKey()));
-        EXPECT_EQUAL(exp[ei].second, itr.getData());
+        EXPECT_EQ(UNWRAP(exp[ei].first), UNWRAP(itr.getKey()));
+        EXPECT_EQ(exp[ei].second, itr.getData());
         ei++;
         ritr = itr;
     }
-    EXPECT_EQUAL(numEntries, ei);
+    EXPECT_EQ(numEntries, ei);
     for (; ritr.valid(); --ritr) {
         --ei;
         //LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
-        EXPECT_EQUAL(UNWRAP(exp[ei].first), UNWRAP(ritr.getKey()));
-        EXPECT_EQUAL(exp[ei].second, ritr.getData());
+        EXPECT_EQ(UNWRAP(exp[ei].first), UNWRAP(ritr.getKey()));
+        EXPECT_EQ(exp[ei].second, ritr.getData());
     }
 }
 
-
-
-void
-Test::requireThatTreeIteratorAssignWorks()
+TEST_F(BTreeAggregationTest, require_that_tree_iterator_assign_works)
 {
     GenerationHandler g;
     MyTree tree;
@@ -923,9 +895,9 @@ Test::requireThatTreeIteratorAssignWorks()
         EXPECT_TRUE(itr == itr2);
         int expNum = i;
         for (; itr2.valid(); ++itr2) {
-            EXPECT_EQUAL(expNum++, UNWRAP(itr2.getKey()));
+            EXPECT_EQ(expNum++, UNWRAP(itr2.getKey()));
         }
-        EXPECT_EQUAL(1000, expNum);
+        EXPECT_EQ(1000, expNum);
     }
 }
 
@@ -940,8 +912,7 @@ struct UpdKeyComp {
     }
 };
 
-void
-Test::requireThatUpdateOfKeyWorks()
+TEST_F(BTreeAggregationTest, require_that_update_of_key_works)
 {
     using UpdKeyTree = BTree<int, BTreeNoLeafData, btree::NoAggregated, UpdKeyComp &>;
     using UpdKeyTreeIterator = UpdKeyTree::Iterator;
@@ -951,7 +922,7 @@ Test::requireThatUpdateOfKeyWorks()
     for (int i = 0; i < 1000; i+=2) {
         EXPECT_TRUE(t.insert(i, BTreeNoLeafData(), cmp1));
     }
-    EXPECT_EQUAL(0u, cmp1._numErrors);
+    EXPECT_EQ(0u, cmp1._numErrors);
     for (int i = 0; i < 1000; i+=2) {
         UpdKeyTreeIterator itr = t.find(i, cmp1);
         itr.writeKey(i + 1);
@@ -961,23 +932,22 @@ Test::requireThatUpdateOfKeyWorks()
         UpdKeyTreeIterator itr = t.find(i, cmp2);
         EXPECT_TRUE(itr.valid());
     }
-    EXPECT_EQUAL(0u, cmp2._numErrors);
+    EXPECT_EQ(0u, cmp2._numErrors);
 }
 
 
-void
-Test::requireThatUpdateOfDataWorks()
+TEST_F(BTreeAggregationTest, require_that_update_of_data_works)
 {
     GenerationHandler g;
     MyTree t;
     MockTree mock;
     MyAggrCalc ac;
     MyTree::NodeAllocatorType &manager = t.getAllocator();
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, t)));
+    EXPECT_TRUE(assertAggregated(mock, t, "update_data1"));
     for (int i = 0; i < 1000; i+=2) {
         EXPECT_TRUE(t.insert(i, toVal(i)));
         mock.insert(i, toVal(i));
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, t)));
+        EXPECT_TRUE(assertAggregated(mock, t, "udate_data2"));
     }
     freezeTree(g, manager);
     for (int i = 0; i < 1000; i+=2) {
@@ -985,31 +955,31 @@ Test::requireThatUpdateOfDataWorks()
         MyTree::Iterator itr2 = itr;
         t.thaw(itr);
         itr.updateData(toHighVal(i), ac);
-        EXPECT_EQUAL(toHighVal(i), itr.getData());
-        EXPECT_EQUAL(toVal(i), itr2.getData());
+        EXPECT_EQ(toHighVal(i), itr.getData());
+        EXPECT_EQ(toVal(i), itr2.getData());
         mock.erase(i);
         mock.insert(i, toHighVal(i));
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, t)));
+        EXPECT_TRUE(assertAggregated(mock, t, "update_data3"));
         freezeTree(g, manager);
         itr = t.find(i);
         itr2 = itr;
         t.thaw(itr);
         itr.updateData(toLowVal(i), ac);
-        EXPECT_EQUAL(toLowVal(i), itr.getData());
-        EXPECT_EQUAL(toHighVal(i), itr2.getData());
+        EXPECT_EQ(toLowVal(i), itr.getData());
+        EXPECT_EQ(toHighVal(i), itr2.getData());
         mock.erase(i);
         mock.insert(i, toLowVal(i));
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, t)));
+        EXPECT_TRUE(assertAggregated(mock, t, "update_data4"));
         freezeTree(g, manager);
         itr = t.find(i);
         itr2 = itr;
         t.thaw(itr);
         itr.updateData(toVal(i), ac);
-        EXPECT_EQUAL(toVal(i), itr.getData());
-        EXPECT_EQUAL(toLowVal(i), itr2.getData());
+        EXPECT_EQ(toVal(i), itr.getData());
+        EXPECT_EQ(toLowVal(i), itr2.getData());
         mock.erase(i);
         mock.insert(i, toVal(i));
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, t)));
+        EXPECT_TRUE(assertAggregated(mock, t, "update_data5"));
         freezeTree(g, manager);
     }
 }
@@ -1030,68 +1000,67 @@ remove(MyTreeStore& s, EntryRef& root, MyTreeStore::KeyType removal)
 
 }
 
-void
-Test::requireThatSmallNodesWorks()
+TEST_F(BTreeAggregationTest, require_that_small_nodes_works)
 {
     GenerationHandler g;
     MyTreeStore s;
     MockTree mock;
 
     EntryRef root;
-    EXPECT_EQUAL(0u, s.size(root));
+    EXPECT_EQ(0u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small1"));
     insert(s, root, {40, toVal(40)});
     mock.insert(40, toVal(40));
-    EXPECT_EQUAL(1u, s.size(root));
+    EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small2"));
     insert(s, root, {20, toVal(20)});
     mock.insert(20, toVal(20));
-    EXPECT_EQUAL(2u, s.size(root));
+    EXPECT_EQ(2u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small3"));
     insert(s, root, {60, toVal(60)});
     mock.insert(60, toVal(60));
-    EXPECT_EQUAL(3u, s.size(root));
+    EXPECT_EQ(3u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small4"));
     insert(s, root, {50, toVal(50)});
     mock.insert(50, toVal(50));
-    EXPECT_EQUAL(4u, s.size(root));
+    EXPECT_EQ(4u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small5"));
 
     for (uint32_t i = 0; i < 100; ++i) {
         insert(s, root, {int(1000 + i), 42});
         mock.insert(1000 + i, 42);
-        EXPECT_EQUAL(5u + i, s.size(root));
-        EXPECT_EQUAL(5u + i <= MyTreeStore::clusterLimit,  s.isSmallArray(root));
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+        EXPECT_EQ(5u + i, s.size(root));
+        EXPECT_EQ(5u + i <= MyTreeStore::clusterLimit,  s.isSmallArray(root));
+        EXPECT_TRUE(assertAggregated(mock, s, root, "small6"));
     }
     remove(s, root, 40);
     mock.erase(40);
-    EXPECT_EQUAL(103u, s.size(root));
+    EXPECT_EQ(103u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small7"));
     remove(s, root, 20);
     mock.erase(20);
-    EXPECT_EQUAL(102u, s.size(root));
+    EXPECT_EQ(102u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small8"));
     remove(s, root, 50);
     mock.erase(50);
-    EXPECT_EQUAL(101u, s.size(root));
+    EXPECT_EQ(101u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
-    TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+    EXPECT_TRUE(assertAggregated(mock, s, root, "small9"));
     for (uint32_t i = 0; i < 100; ++i) {
         remove(s, root, 1000 + i);
         mock.erase(1000 + i);
-        EXPECT_EQUAL(100 - i, s.size(root));
-        EXPECT_EQUAL(100 - i <= MyTreeStore::clusterLimit,  s.isSmallArray(root));
-        TEST_DO(EXPECT_TRUE(assertAggregated(mock, s, root)));
+        EXPECT_EQ(100 - i, s.size(root));
+        EXPECT_EQ(100 - i <= MyTreeStore::clusterLimit,  s.isSmallArray(root));
+        EXPECT_TRUE(assertAggregated(mock, s, root, "small10"));
     }
-    EXPECT_EQUAL(1u, s.size(root));
+    EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     s.clear(root);
@@ -1102,8 +1071,7 @@ Test::requireThatSmallNodesWorks()
     s.reclaim_memory(g.get_oldest_used_generation());
 }
 
-void
-Test::requireThatFrozenViewProvidesAggregatedValues()
+TEST_F(BTreeAggregationTest, require_that_frozen_view_provides_aggregated_values)
 {
     MyTree t;
     t.insert(20, 102);
@@ -1114,39 +1082,13 @@ Test::requireThatFrozenViewProvidesAggregatedValues()
     t.getAllocator().freeze();
     auto new_view = t.getFrozenView();
     auto new_aggregated = new_view.getAggregated();
-    EXPECT_EQUAL(new_aggregated.getMin(), 101);
-    EXPECT_EQUAL(new_aggregated.getMax(), 104);
+    EXPECT_EQ(new_aggregated.getMin(), 101);
+    EXPECT_EQ(new_aggregated.getMax(), 104);
     auto old_aggregated = old_view.getAggregated();
-    EXPECT_EQUAL(old_aggregated.getMin(), std::numeric_limits<int32_t>::max());
-    EXPECT_EQUAL(old_aggregated.getMax(), std::numeric_limits<int32_t>::min());
-}
-
-int
-Test::Main()
-{
-    TEST_INIT("btreeaggregation_test");
-
-    requireThatNodeInsertWorks();
-    keys_are_aggregated_correctly_on_node_insertions();
-    requireThatNodeSplitInsertWorks();
-    keys_are_aggregated_correctly_when_node_split_on_insert();
-    requireThatTreeInsertWorks();
-    requireThatNodeStealWorks();
-    requireThatNodeRemoveWorks();
-    keys_are_aggregated_correctly_on_node_removal();
-    requireThatWeCanInsertAndRemoveFromTree();
-    requireThatSortedTreeInsertWorks();
-    requireThatCornerCaseTreeFindWorks();
-    requireThatBasicTreeIteratorWorks();
-    requireThatTreeIteratorAssignWorks();
-    requireThatUpdateOfKeyWorks();
-    requireThatUpdateOfDataWorks();
-    TEST_DO(requireThatSmallNodesWorks());
-    TEST_DO(requireThatFrozenViewProvidesAggregatedValues());
-
-    TEST_DONE();
+    EXPECT_EQ(old_aggregated.getMin(), std::numeric_limits<int32_t>::max());
+    EXPECT_EQ(old_aggregated.getMax(), std::numeric_limits<int32_t>::min());
 }
 
 }
 
-TEST_APPHOOK(vespalib::btree::Test);
+GTEST_MAIN_RUN_ALL_TESTS()
