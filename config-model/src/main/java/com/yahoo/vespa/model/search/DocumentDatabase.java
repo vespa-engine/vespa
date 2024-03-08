@@ -68,14 +68,18 @@ public class DocumentDatabase extends AnyConfigProducer implements
 
     // These methods append as multiple databases join config => TODO will loose information - not good
     @Override public void getConfig(AttributesConfig.Builder builder) { derivedCfg.getConfig(builder); }
-    @Override public void getConfig(RankProfilesConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
-
-    // These methods append, TODO unknown usage and consequences
-    @Override public void getConfig(RankingExpressionsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
-    @Override public void getConfig(RankingConstantsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
-    @Override public void getConfig(OnnxModelsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
 
     // Below methods will replace config completely
+    @Override public void getConfig(OnnxModelsConfig.Builder builder) {
+        builder.model(derivedCfg.getRankProfileList().getOnnxConfig());
+    }
+    @Override public void getConfig(RankingExpressionsConfig.Builder builder) {
+        builder.expression(derivedCfg.getRankProfileList().getExpressionsConfig());
+    }
+    @Override public void getConfig(RankingConstantsConfig.Builder builder) {
+        builder.constant(derivedCfg.getRankProfileList().getConstantsConfig());
+    }
+    @Override public void getConfig(RankProfilesConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
     @Override public void getConfig(IndexschemaConfig.Builder builder) { derivedCfg.getIndexSchema().getConfig(builder); }
     @Override public void getConfig(JuniperrcConfig.Builder builder) { derivedCfg.getJuniperrc().getConfig(builder); }
     @Override public void getConfig(SummaryConfig.Builder builder) { derivedCfg.getSummaries().getConfig(builder); }

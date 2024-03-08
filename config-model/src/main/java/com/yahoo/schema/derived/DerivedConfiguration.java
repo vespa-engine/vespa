@@ -12,6 +12,7 @@ import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.validation.Validation;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -126,9 +127,14 @@ public class DerivedConfiguration {
     }
 
     public void exportConstants(String toDirectory) throws IOException {
-        RankingConstantsConfig.Builder b = new RankingConstantsConfig.Builder();
-        rankProfileList.getConfig(b);
+        var b = new RankingConstantsConfig.Builder()
+                .constant(rankProfileList.getConstantsConfig());
         exportCfg(b.build(), toDirectory + "/" + "ranking-constants.cfg");
+    }
+    public void exportOnnxModels(String toDirectory) throws IOException {
+        var b = new OnnxModelsConfig.Builder()
+                .model(rankProfileList.getOnnxConfig());
+        exportCfg(b.build(), toDirectory + "/" + "onnx-models.cfg");
     }
 
     private static void exportCfg(ConfigInstance instance, String fileName) throws IOException {

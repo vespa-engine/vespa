@@ -121,21 +121,21 @@ public class ModelsEvaluatorTester {
     }
 
     private static RankingConstantsConfig getRankingConstantConfig(RankProfileList rankProfileList) {
-        RankingConstantsConfig.Builder builder = new RankingConstantsConfig.Builder();
-        rankProfileList.getConfig(builder);
-        return builder.build();
+        return new RankingConstantsConfig.Builder()
+                .constant(rankProfileList.getConstantsConfig())
+                .build();
     }
 
     private static RankingExpressionsConfig getRankingExpressionsConfig(RankProfileList rankProfileList) {
-        RankingExpressionsConfig.Builder builder = new RankingExpressionsConfig.Builder();
-        rankProfileList.getConfig(builder);
-        return builder.build();
+        return new RankingExpressionsConfig.Builder()
+                .expression(rankProfileList.getExpressionsConfig())
+                .build();
     }
 
     private static OnnxModelsConfig getOnnxModelsConfig(RankProfileList rankProfileList) {
-        OnnxModelsConfig.Builder builder = new OnnxModelsConfig.Builder();
-        rankProfileList.getConfig(builder);
-        return builder.build();
+        return new OnnxModelsConfig.Builder()
+                .model(rankProfileList.getOnnxConfig())
+                .build();
     }
 
     private static FileAcquirer createFileAcquirer(MockFileRegistry fileRegistry, File appDir) {

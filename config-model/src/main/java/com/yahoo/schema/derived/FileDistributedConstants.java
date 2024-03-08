@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,7 +26,7 @@ public class FileDistributedConstants {
     public FileDistributedConstants(FileRegistry fileRegistry, Collection<RankProfile.Constant> constants) {
         Map<String, DistributableConstant> distributableConstants = new LinkedHashMap<>();
         for (var constant : constants) {
-            if ( ! constant.valuePath().isPresent()) continue;
+            if (constant.valuePath().isEmpty()) continue;
 
             var distributableConstant = new DistributableConstant(constant.name().simpleArgument().get(),
                                                                   constant.type(),
@@ -41,22 +42,20 @@ public class FileDistributedConstants {
     /** Returns a read-only map of the constants in this indexed by name. */
     public Map<String, DistributableConstant> asMap() { return constants; }
 
-    public void getConfig(RankingConstantsConfig.Builder builder) {
-        for (var constant : constants.values()) {
-            builder.constant(new RankingConstantsConfig.Constant.Builder()
-                                     .name(constant.getName())
-                                     .fileref(constant.getFileReference())
-                                     .type(constant.getType()));
-        }
+    private static RankingConstantsConfig.Constant.Builder toConfig(DistributableConstant constant) {
+        return new RankingConstantsConfig.Constant.Builder()
+                .name(constant.getName())
+                .fileref(constant.getFileReference())
+                .type(constant.getType());
+    }
+
+    public List<RankingConstantsConfig.Constant.Builder> getConfig() {
+        return constants.values().stream().map(FileDistributedConstants::toConfig).toList();
     }
 
     public static class DistributableConstant extends DistributableResource {
 
         private final TensorType tensorType;
-
-        public DistributableConstant(String name, TensorType type, String fileName) {
-            this(name, type, fileName, PathType.FILE);
-        }
 
         public DistributableConstant(String name, TensorType type, String fileName, PathType pathType) {
             super(name, fileName, pathType);
