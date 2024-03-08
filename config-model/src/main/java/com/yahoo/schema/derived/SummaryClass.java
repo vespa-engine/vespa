@@ -11,6 +11,7 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Level;
@@ -119,11 +120,9 @@ public class SummaryClass extends Derived {
         return classBuilder;
     }
 
-    @Override
-    public int hashCode() { return id; }
+    @Override public int hashCode() { return id; }
 
-    @Override
-    protected String getDerivedName() { return "summary"; }
+    @Override protected String getDerivedName() { return "summary"; }
 
     @Override
     public String toString() {

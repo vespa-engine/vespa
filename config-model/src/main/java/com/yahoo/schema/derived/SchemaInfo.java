@@ -21,6 +21,7 @@ import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.searchlib.rankingexpression.Reference;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -32,7 +33,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public final class SchemaInfo extends Derived implements SchemaInfoConfig.Producer {
+public final class SchemaInfo extends Derived {
 
     private final Schema schema;
 
@@ -63,7 +64,6 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
         return rankProfileInfos;
     }
 
-    @Override
     public void getConfig(SchemaInfoConfig.Builder builder) {
         // Append
         var schemaBuilder = new SchemaInfoConfig.Schema.Builder();
@@ -73,6 +73,12 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
         addSummaryConfig(schemaBuilder);
         addRankProfilesConfig(schemaBuilder);
         builder.schema(schemaBuilder);
+    }
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new SchemaInfoConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
     }
 
     private void addFieldsConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {

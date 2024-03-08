@@ -6,6 +6,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
  *
  * @author Simon Thoresen Hult
  */
-public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
+public class Juniperrc extends Derived {
 
     private static final int Mb = 1024 * 1024;
 
@@ -43,8 +44,13 @@ public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
         }
     }
 
-    @Override
-    protected String getDerivedName() { return "juniperrc"; }
+    public void export(String toDirectory) throws IOException {
+        var builder = new JuniperrcConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
+    }
+
+    @Override protected String getDerivedName() { return "juniperrc"; }
 
     private static JuniperrcConfig.Override.Builder createOverride(String name) {
         return new JuniperrcConfig.Override.Builder()
@@ -55,7 +61,6 @@ public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
                 .surround_max(64*Mb);
     }
 
-    @Override
     public void getConfig(JuniperrcConfig.Builder builder) {
         // Replace
         if (!boldingFields.isEmpty()) {

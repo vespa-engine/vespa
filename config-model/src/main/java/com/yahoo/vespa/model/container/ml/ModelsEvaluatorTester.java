@@ -115,9 +115,9 @@ public class ModelsEvaluatorTester {
     }
 
     private static RankProfilesConfig getRankProfilesConfig(RankProfileList rankProfileList) {
-        RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
-        rankProfileList.getConfig(builder);
-        return builder.build();
+        return new RankProfilesConfig.Builder()
+                .rankprofile(rankProfileList.getRankProfilesConfig())
+                .build();
     }
 
     private static RankingConstantsConfig getRankingConstantConfig(RankProfileList rankProfileList) {

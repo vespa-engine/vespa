@@ -7,6 +7,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.config.search.SummaryConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +16,7 @@ import java.util.List;
  *
  * @author  bratseth
  */
-public class Summaries extends Derived implements SummaryConfig.Producer {
+public class Summaries extends Derived {
 
     private final boolean useV8GeoPositions;
     private final List<SummaryClass> summaries;
@@ -36,15 +37,18 @@ public class Summaries extends Derived implements SummaryConfig.Producer {
 
     public List<SummaryClass> asList() { return summaries; }
 
-    @Override
-    protected String getDerivedName() { return "summary"; }
+    @Override protected String getDerivedName() { return "summary"; }
 
-    @Override
     public void getConfig(SummaryConfig.Builder builder) {
         // Replace
         builder.defaultsummaryid(summaries.isEmpty() ? -1 : summaries.get(0).hashCode());
         builder.usev8geopositions(useV8GeoPositions);
         builder.classes(summaries.stream().map(SummaryClass::getSummaryClassConfig).toList());
-    }    
+    }
+    public void export(String toDirectory) throws IOException {
+        var builder = new SummaryConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
+    }
 
 }

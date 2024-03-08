@@ -79,7 +79,9 @@ public class DocumentDatabase extends AnyConfigProducer implements
     @Override public void getConfig(RankingConstantsConfig.Builder builder) {
         builder.constant(derivedCfg.getRankProfileList().getConstantsConfig());
     }
-    @Override public void getConfig(RankProfilesConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
+    @Override public void getConfig(RankProfilesConfig.Builder builder) {
+        builder.rankprofile(derivedCfg.getRankProfileList().getRankProfilesConfig());
+    }
     @Override public void getConfig(IndexschemaConfig.Builder builder) { derivedCfg.getIndexSchema().getConfig(builder); }
     @Override public void getConfig(JuniperrcConfig.Builder builder) { derivedCfg.getJuniperrc().getConfig(builder); }
     @Override public void getConfig(SummaryConfig.Builder builder) { derivedCfg.getSummaries().getConfig(builder); }

@@ -12,6 +12,7 @@ import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,7 +25,7 @@ import java.util.Map;
  *
  * @author geirst
  */
-public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
+public class IndexSchema extends Derived {
 
     private final List<IndexField> fields = new ArrayList<>();
     private final Map<String, FieldCollection> collections = new LinkedHashMap<>();
@@ -131,11 +132,16 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         return fsB;
     }
 
-    @Override
     public void getConfig(IndexschemaConfig.Builder icB) {
         // Replace
         icB.indexfield(fields.stream().map(IndexSchema::createIndexFieldConfig).toList());
         icB.fieldset(fieldSets.values().stream().map(IndexSchema::createFieldSetConfig).toList());
+    }
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new IndexschemaConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
     }
 
     static List<Field> flattenField(Field field) {

@@ -12,6 +12,7 @@ import com.yahoo.schema.document.Sorting;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -27,7 +28,7 @@ import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isSupportedCo
  *
  * @author bratseth
  */
-public class AttributeFields extends Derived implements AttributesConfig.Producer {
+public class AttributeFields extends Derived {
 
     public enum FieldSet {ALL, FAST_ACCESS}
 
@@ -178,10 +179,14 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return "attributes";
     }
 
-    @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        //TODO This is just to get some exporting tests to work, Should be undone and removed
         getConfig(builder, FieldSet.ALL, 77777);
+    }
+
+    public void export(String toDirectory) throws IOException {
+        var builder = new AttributesConfig.Builder();
+        getConfig(builder);
+        export(toDirectory, builder.build());
     }
 
     private boolean isAttributeInFieldSet(Attribute attribute, FieldSet fs) {
