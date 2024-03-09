@@ -6,7 +6,8 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
@@ -15,44 +16,35 @@ using mbus::Blob;
 using mbus::Routable;
 using mbus::IRoutingPolicy;
 
-class Test : public vespalib::TestApp {
-    std::shared_ptr<const DocumentTypeRepo> _repo;
-
-public:
-    Test();
-    ~Test();
-    int Main() override;
-
-private:
-    void testMessage();
-    void testProtocol();
-    void get_document_message_is_not_sequenced();
-    void stat_bucket_message_is_not_sequenced();
-    void get_bucket_list_message_is_not_sequenced();
+class MessageBusTest : public testing::Test {
+protected:
+    static std::shared_ptr<const DocumentTypeRepo> _repo;
+    MessageBusTest();
+    ~MessageBusTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
 };
 
-TEST_APPHOOK(Test);
+MessageBusTest::MessageBusTest() = default;
+MessageBusTest::~MessageBusTest() = default;
 
-int
-Test::Main()
+std::shared_ptr<const DocumentTypeRepo> MessageBusTest::_repo;
+
+void
+MessageBusTest::SetUpTestSuite()
 {
-    TEST_INIT(_argv[0]);
-    _repo.reset(new DocumentTypeRepo(readDocumenttypesConfig(
-            TEST_PATH("../../../test/cfg/testdoctypes.cfg"))));
-
-    testMessage();  TEST_FLUSH();
-    testProtocol(); TEST_FLUSH();
-    get_document_message_is_not_sequenced();    TEST_FLUSH();
-    stat_bucket_message_is_not_sequenced();     TEST_FLUSH();
-    get_bucket_list_message_is_not_sequenced(); TEST_FLUSH();
-
-    TEST_DONE();
+    auto path = TEST_PATH("../../../test/cfg/testdoctypes.cfg");
+    _repo = std::make_shared<const DocumentTypeRepo>(readDocumenttypesConfig(path));
 }
 
-Test::Test() = default;
-Test::~Test() = default;
+void
+MessageBusTest::TearDownTestSuite()
+{
+    _repo.reset();
+}
 
-void Test::testMessage() {
+TEST_F(MessageBusTest, test_message)
+{
     const document::DataType *testdoc_type = _repo->getDocumentType("testdoc");
 
     // Test one update.
@@ -85,7 +77,8 @@ void Test::testMessage() {
     EXPECT_TRUE(msg2.getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);
 }
 
-void Test::testProtocol() {
+TEST_F(MessageBusTest, test_protocol)
+{
     DocumentProtocol protocol(_repo);
     EXPECT_TRUE(protocol.getName() == "document");
 
@@ -99,17 +92,22 @@ void Test::testProtocol() {
     EXPECT_TRUE(policy.get() == NULL);
 }
 
-void Test::get_document_message_is_not_sequenced() {
+TEST_F(MessageBusTest, get_document_message_is_not_sequenced)
+{
     GetDocumentMessage message(document::DocumentId("id:foo:bar::baz"));
     EXPECT_FALSE(message.hasSequenceId());
 }
 
-void Test::stat_bucket_message_is_not_sequenced() {
+TEST_F(MessageBusTest, stat_bucket_message_is_not_sequenced)
+{
     StatBucketMessage message(document::BucketId(16, 1), "");
     EXPECT_FALSE(message.hasSequenceId());
 }
 
-void Test::get_bucket_list_message_is_not_sequenced() {
+TEST_F(MessageBusTest, get_bucket_list_message_is_not_sequenced)
+{
     GetBucketListMessage message(document::BucketId(16, 1));
     EXPECT_FALSE(message.hasSequenceId());
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
