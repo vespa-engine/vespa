@@ -31,6 +31,7 @@ public class Matching implements Cloneable, Serializable {
 
     /** Maximum number of characters to consider when searching in this field. Used for limiting resources, especially in streaming search. */
     private Integer maxLength;
+
     /** Maximum number of occurrences for each term */
     private Integer maxTermOccurrences;
 

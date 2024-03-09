@@ -16,6 +16,14 @@ public class SuffixItem extends WordItem {
         super(suffix, isFromQuery);
     }
 
+    public SuffixItem(String substring, String indexName, boolean isFromQuery, Substring origin) {
+        super(substring, indexName, isFromQuery, origin);
+    }
+
+    public SuffixItem newInstance(String word, String indexName, boolean isFromQuery, Substring origin) {
+        return new SuffixItem(word, indexName, isFromQuery, origin);
+    }
+
     @Override
     public ItemType getItemType() {
         return ItemType.SUFFIX;

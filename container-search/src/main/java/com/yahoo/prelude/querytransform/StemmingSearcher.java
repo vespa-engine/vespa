@@ -163,7 +163,7 @@ public class StemmingSearcher extends Searcher {
     }
 
     private Item checkBlock(BlockItem b, StemContext context) {
-        if (b instanceof PrefixItem || !b.isWords()) return (Item) b;
+        if (!b.isWords()) return (Item) b;
 
         if (b.isFromQuery() && !b.isStemmed()) {
             Index index = context.indexFacts.getIndex(b.getIndexName());
@@ -190,10 +190,8 @@ public class StemmingSearcher extends Searcher {
 
     // The rewriting logic is here
     private Item stem(BlockItem current, StemContext context, Index index) {
-        Item blockAsItem = (Item)current;
-        CompositeItem composite;
         List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), index.getStemMode(), context.language);
-        if (segments.isEmpty()) return blockAsItem;
+        if (segments.isEmpty()) return (Item)current;
 
         String indexName = current.getIndexName();
         Substring substring = getOffsets(current);
@@ -203,6 +201,7 @@ public class StemmingSearcher extends Searcher {
             return (Item)w;
         }
 
+        CompositeItem composite;
         if (context.isCJK)
             composite = chooseCompositeForCJK(current, ((Item) current).getParent(), indexName);
         else
@@ -219,7 +218,7 @@ public class StemmingSearcher extends Searcher {
         if (composite instanceof AndSegmentItem) {
             andSegmentConnectivity(current, context.reverseConnectivity, composite);
         }
-        copyAttributes(blockAsItem, composite);
+        copyAttributes((Item)current, composite);
         composite.lock();
 
         if (composite instanceof PhraseSegmentItem replacement) {
@@ -320,7 +319,11 @@ public class StemmingSearcher extends Searcher {
 
     private WordItem singleStemSegment(Item blockAsItem, String stem, String indexName,
                                        Substring substring) {
-        WordItem replacement = new WordItem(stem, indexName, true, substring);
+        WordItem replacement;
+        if (blockAsItem instanceof WordItem) // preserve the WordItem subclass type
+            replacement = ((WordItem)blockAsItem).newInstance(stem, indexName, true, substring);
+        else
+            replacement = new WordItem(stem, indexName, true, substring);
         replacement.setStemmed(true);
         copyAttributes(blockAsItem, replacement);
         return replacement;

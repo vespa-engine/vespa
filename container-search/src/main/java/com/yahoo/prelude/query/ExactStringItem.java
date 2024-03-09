@@ -17,6 +17,14 @@ public class ExactStringItem extends WordItem {
         super(substring, isFromQuery);
     }
 
+    public ExactStringItem(String word, String indexName, boolean isFromQuery, Substring origin) {
+        super(word, indexName, isFromQuery, origin);
+    }
+
+    public ExactStringItem newInstance(String word, String indexName, boolean isFromQuery, Substring origin) {
+        return new ExactStringItem(word, indexName, isFromQuery, origin);
+    }
+
     @Override
     public ItemType getItemType() {
         return ItemType.EXACT;

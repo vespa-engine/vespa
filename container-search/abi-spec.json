@@ -524,9 +524,12 @@
     "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
+      "public void <init>(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public com.yahoo.prelude.query.ExactStringItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()"
+      "public java.lang.String stringValue()",
+      "public bridge synthetic com.yahoo.prelude.query.WordItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)"
     ],
     "fields" : [ ]
   },
@@ -914,6 +917,7 @@
       "public"
     ],
     "methods" : [
+      "public com.yahoo.prelude.query.MarkerWordItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public boolean isStartAnchor()",
       "public boolean isEndAnchor()",
       "protected java.lang.String getEncodedWord()",
@@ -923,7 +927,8 @@
       "public static com.yahoo.prelude.query.MarkerWordItem createStartOfHost(java.lang.String)",
       "public static com.yahoo.prelude.query.MarkerWordItem createStartOfHost()",
       "public static com.yahoo.prelude.query.MarkerWordItem createEndOfHost(java.lang.String)",
-      "public static com.yahoo.prelude.query.MarkerWordItem createEndOfHost()"
+      "public static com.yahoo.prelude.query.MarkerWordItem createEndOfHost()",
+      "public bridge synthetic com.yahoo.prelude.query.WordItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)"
     ],
     "fields" : [ ]
   },
@@ -1296,9 +1301,12 @@
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
       "public void <init>(java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public com.yahoo.prelude.query.PrefixItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()"
+      "public java.lang.String stringValue()",
+      "public bridge synthetic com.yahoo.prelude.query.WordItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)"
     ],
     "fields" : [ ]
   },
@@ -1622,9 +1630,12 @@
     "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
+      "public void <init>(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public com.yahoo.prelude.query.SubstringItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()"
+      "public java.lang.String stringValue()",
+      "public bridge synthetic com.yahoo.prelude.query.WordItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)"
     ],
     "fields" : [ ]
   },
@@ -1637,9 +1648,12 @@
     "methods" : [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
+      "public void <init>(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public com.yahoo.prelude.query.SuffixItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String stringValue()"
+      "public java.lang.String stringValue()",
+      "public bridge synthetic com.yahoo.prelude.query.WordItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)"
     ],
     "fields" : [ ]
   },
@@ -1962,6 +1976,7 @@
       "public void <init>(com.yahoo.prelude.query.parser.Token, boolean)",
       "public void <init>(java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public void <init>(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
+      "public com.yahoo.prelude.query.WordItem newInstance(java.lang.String, java.lang.String, boolean, com.yahoo.prelude.query.Substring)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public void setWord(java.lang.String)",

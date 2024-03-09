@@ -25,6 +25,16 @@ public class MarkerWordItem extends WordItem {
         this.markerWord = markerWord;
     }
 
+    private MarkerWordItem(String publicSymbol, String markerWord, String indexName, boolean isFromQuery, Substring origin) {
+        super(publicSymbol, indexName);
+        this.markerWord = markerWord;
+    }
+
+    /** Returns a new instance of this kind of WordItem, initialized with the given data and nothing else. */
+    public MarkerWordItem newInstance(String word, String indexName, boolean isFromQuery, Substring origin) {
+        return new MarkerWordItem(word, markerWord, indexName, isFromQuery, origin);
+    }
+
     public boolean isStartAnchor() { return getWord().equals(startAnchor); }
 
     public boolean isEndAnchor() { return getWord().equals(endAnchor); }

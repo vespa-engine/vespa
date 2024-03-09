@@ -62,6 +62,14 @@ public class WordItem extends TermItem {
         setWord(word);
     }
 
+    /**
+     * Returns a new instance of this kind of WordItem, initialized with the given data and any other
+     * fields belonging to the item subclass copied from this instance.
+     */
+    public WordItem newInstance(String word, String indexName, boolean isFromQuery, Substring origin) {
+        return new WordItem(word, indexName, isFromQuery, origin);
+    }
+
     public ItemType getItemType() {
         return ItemType.WORD;
     }

@@ -17,7 +17,17 @@ public class PrefixItem extends WordItem {
         super(prefix, isFromQuery);
     }
 
-    public PrefixItem(String prefix, String indexName) { super(prefix, indexName); }
+    public PrefixItem(String prefix, String indexName) {
+        super(prefix, indexName);
+    }
+
+    public PrefixItem(String prefix, String indexName, boolean isFromQuery, Substring origin) {
+        super(prefix, indexName, isFromQuery, origin);
+    }
+
+    public PrefixItem newInstance(String word, String indexName, boolean isFromQuery, Substring origin) {
+        return new PrefixItem(word, indexName, isFromQuery, origin);
+    }
 
     @Override
     public ItemType getItemType() {

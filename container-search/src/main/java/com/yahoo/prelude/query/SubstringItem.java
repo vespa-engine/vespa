@@ -16,6 +16,14 @@ public class SubstringItem extends WordItem {
         super(substring, isFromQuery);
     }
 
+    public SubstringItem(String substring, String indexName, boolean isFromQuery, Substring origin) {
+        super(substring, indexName, isFromQuery, origin);
+    }
+
+    public SubstringItem newInstance(String word, String indexName, boolean isFromQuery, Substring origin) {
+        return new SubstringItem(word, indexName, isFromQuery, origin);
+    }
+
     @Override
     public ItemType getItemType() {
         return ItemType.SUBSTRING;
