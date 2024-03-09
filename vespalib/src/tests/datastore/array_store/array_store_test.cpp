@@ -145,7 +145,7 @@ struct ArrayStoreTest : public TestT
     }
     void assert_ref_reused(const ElemVector& first, const ElemVector& second, bool should_reuse) {
         EntryRef ref1 = add(first);
-        remove(ref1);
+        ASSERT_NO_FATAL_FAILURE(remove(ref1));
         reclaim_memory();
         EntryRef ref2 = add(second);
         EXPECT_EQ(should_reuse, (ref2 == ref1));
@@ -372,7 +372,7 @@ TYPED_TEST(NumberStoreFreeListsDisabledTest, large_arrays_are_NOT_allocated_from
 TYPED_TEST(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_enabled) {
     EntryRef ref = this->add({1,2,3,4,5});
     this->assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(20));
-    this->remove({1,2,3,4,5});
+    ASSERT_NO_FATAL_FAILURE(this->remove({1,2,3,4,5}));
     this->assert_buffer_stats(ref, TestBufferStats().used(2).hold(1).dead(1).extra_hold(20).extra_used(20));
     this->reclaim_memory();
     this->assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(2).extra_used(0));
@@ -406,7 +406,7 @@ test_compaction(NumberStoreBasicTest &f)
     EntryRef size1Ref = f.add({1});
     EntryRef size2Ref = f.add({2,2});
     EntryRef size3Ref = f.add({3,3,3});
-    f.remove(f.add({5,5}));
+    ASSERT_NO_FATAL_FAILURE(f.remove(f.add({5,5})));
     f.reclaim_memory();
     f.assertBufferState(size1Ref, MemStats().used(1).dead(0));
     f.assertBufferState(size2Ref, MemStats().used(2).dead(1));
@@ -416,7 +416,7 @@ test_compaction(NumberStoreBasicTest &f)
     uint32_t size3BufferId = f.getBufferId(size3Ref);
 
     EXPECT_EQ(3u, f.refStore.size());
-    f.compactWorst(true, false);
+    ASSERT_NO_FATAL_FAILURE(f.compactWorst(true, false));
     EXPECT_EQ(3u, f.refStore.size());
     f.assertStoreContent();
 
@@ -449,9 +449,9 @@ void testCompaction(Fixture &f, bool compactMemory, bool compactAddressSpace)
     EntryRef size1Ref = f.add({1});
     EntryRef size2Ref = f.add({2,2});
     EntryRef size3Ref = f.add({3,3,3});
-    f.remove(f.add({5,5,5}));
-    f.remove(f.add({6}));
-    f.remove(f.add({7}));
+    ASSERT_NO_FATAL_FAILURE(f.remove(f.add({5,5,5})));
+    ASSERT_NO_FATAL_FAILURE(f.remove(f.add({6})));
+    ASSERT_NO_FATAL_FAILURE(f.remove(f.add({7})));
     f.reclaim_memory();
     f.assertBufferState(size1Ref, MemStats().used(3).dead(2));
     f.assertBufferState(size2Ref, MemStats().used(1).dead(0));
@@ -461,7 +461,7 @@ void testCompaction(Fixture &f, bool compactMemory, bool compactAddressSpace)
     uint32_t size3BufferId = f.getBufferId(size3Ref);
 
     EXPECT_EQ(3u, f.refStore.size());
-    f.compactWorst(compactMemory, compactAddressSpace);
+    ASSERT_NO_FATAL_FAILURE(f.compactWorst(compactMemory, compactAddressSpace));
     EXPECT_EQ(3u, f.refStore.size());
     f.assertStoreContent();
 
@@ -527,7 +527,7 @@ TYPED_TEST(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_sma
     this->add({1,2,3});
     uint32_t exp_entry_size = this->simple_buffers() ? (this->elem_size() * 3) : (this->elem_size() * 4 + 4);
     this->assertMemoryUsage(exp.used(exp_entry_size));
-    this->remove({1,2,3});
+    ASSERT_NO_FATAL_FAILURE(this->remove({1,2,3}));
     this->assertMemoryUsage(exp.hold(exp_entry_size));
     this->reclaim_memory();
     this->assertMemoryUsage(exp.holdToDead(exp_entry_size));
@@ -538,7 +538,7 @@ TYPED_TEST(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_lar
     MemStats exp(this->store.getMemoryUsage());
     this->add({1,2,3,4,5});
     this->assertMemoryUsage(exp.used(this->largeArraySize() + this->elem_size() * 5));
-    this->remove({1,2,3,4,5});
+    ASSERT_NO_FATAL_FAILURE(this->remove({1,2,3,4,5}));
     this->assertMemoryUsage(exp.hold(this->largeArraySize() + this->elem_size() * 5));
     this->reclaim_memory();
     this->assertMemoryUsage(exp.decUsed(this->elem_size() * 5).decHold(this->largeArraySize() + this->elem_size() * 5).
@@ -599,8 +599,8 @@ TYPED_TEST(NumberStoreTest, provided_memory_allocator_is_used)
     EXPECT_EQ(AllocStats(5, 0), this->stats);
     this->assertAdd({2,3,4,5,6,7});
     EXPECT_EQ(AllocStats(6, 0), this->stats);
-    this->remove({1,2,3,4,5});
-    this->remove({2,3,4,5,6,7});
+    ASSERT_NO_FATAL_FAILURE(this->remove({1,2,3,4,5}));
+    ASSERT_NO_FATAL_FAILURE(this->remove({2,3,4,5,6,7}));
     this->reclaim_memory();
     EXPECT_EQ(AllocStats(6, 2), this->stats);
     this->assertAdd({1,2,3,4,5});
