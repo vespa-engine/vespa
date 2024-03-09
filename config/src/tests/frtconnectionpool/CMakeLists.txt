@@ -4,5 +4,6 @@ vespa_add_executable(config_frtconnectionpool_test_app TEST
     frtconnectionpool.cpp
     DEPENDS
     config_cloudconfig
+    GTest::gtest
 )
 vespa_add_test(NAME config_frtconnectionpool_test_app COMMAND config_frtconnectionpool_test_app)
