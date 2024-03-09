@@ -11,5 +11,6 @@ vespa_add_executable(document_annotationserializer_test_app TEST
     annotationserializer_test.cpp
     DEPENDS
     document
+    GTest::gtest
 )
 vespa_add_test(NAME document_annotationserializer_test_app COMMAND document_annotationserializer_test_app)
