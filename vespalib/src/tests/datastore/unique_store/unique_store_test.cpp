@@ -352,14 +352,14 @@ TYPED_TEST(TestBase, store_can_be_compacted)
 {
     EntryRef val0Ref = this->add(this->values()[0]);
     EntryRef val1Ref = this->add(this->values()[1]);
-    this->remove(this->add(this->values()[2]));
+    ASSERT_NO_FATAL_FAILURE(this->remove(this->add(this->values()[2])));
     this->reclaim_memory();
     size_t reserved = this->get_reserved(val0Ref);
     this->assertBufferState(val0Ref, TestBufferStats().used(reserved + 3).dead(reserved + 1));
     uint32_t val1BufferId = this->getBufferId(val0Ref);
 
     EXPECT_EQ(2u, this->refStore.size());
-    this->compactWorst();
+    ASSERT_NO_FATAL_FAILURE(this->compactWorst());
     EXPECT_EQ(2u, this->refStore.size());
     this->assertStoreContent();
 
@@ -401,7 +401,7 @@ TYPED_TEST(TestBase, store_can_be_enumerated)
 {
     EntryRef val0Ref = this->add(this->values()[0]);
     EntryRef val1Ref = this->add(this->values()[1]);
-    this->remove(this->add(this->values()[2]));
+    ASSERT_NO_FATAL_FAILURE(this->remove(this->add(this->values()[2])));
     this->reclaim_memory();
 
     auto enumerator = this->getEnumerator(true);
