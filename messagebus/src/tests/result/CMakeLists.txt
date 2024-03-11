@@ -5,5 +5,6 @@ vespa_add_executable(messagebus_result_test_app TEST
     DEPENDS
     messagebus_messagebus-test
     messagebus
+    GTest::gtest
 )
 vespa_add_test(NAME messagebus_result_test_app COMMAND messagebus_result_test_app)
