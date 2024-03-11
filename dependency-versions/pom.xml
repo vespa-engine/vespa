@@ -158,7 +158,7 @@
         <!-- Maven plugins -->
         <clover-maven-plugin.vespa.version>4.5.2</clover-maven-plugin.vespa.version>
         <maven-antrun-plugin.vespa.version>3.1.0</maven-antrun-plugin.vespa.version>
-        <maven-assembly-plugin.vespa.version>3.6.0</maven-assembly-plugin.vespa.version>
+        <maven-assembly-plugin.vespa.version>3.7.0</maven-assembly-plugin.vespa.version>
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>
         <maven-compiler-plugin.vespa.version>3.12.1</maven-compiler-plugin.vespa.version>
         <maven-core.vespa.version>3.9.6</maven-core.vespa.version>
