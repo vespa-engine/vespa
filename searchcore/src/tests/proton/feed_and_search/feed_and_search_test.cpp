@@ -23,14 +23,11 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <sstream>
-
-#include <vespa/log/log.h>
-LOG_SETUP("feed_and_search_test");
 
 using document::DataType;
 using document::Document;
@@ -75,38 +72,6 @@ void commit_memory_index_and_wait(MemoryIndex &memory_index)
     gate.await();
 }
 
-class Test : public vespalib::TestApp {
-    const char *current_state;
-    void DumpState(bool) {
-      fprintf(stderr, "%s: ERROR: in %s\n", __FILE__, current_state);
-    }
-
-    void requireThatMemoryIndexCanBeDumpedAndSearched();
-
-    void testSearch(Searchable &source,
-                    const string &term, uint32_t doc_id);
-
-public:
-    int Main() override;
-};
-
-#define TEST_CALL(func) \
-    current_state = #func; \
-    func();
-
-int
-Test::Main()
-{
-    TEST_INIT("feed_and_search_test");
-
-    if (_argc > 0) {
-        DummyFileHeaderContext::setCreator(_argv[0]);
-    }
-    TEST_CALL(requireThatMemoryIndexCanBeDumpedAndSearched);
-
-    TEST_DONE();
-}
-
 const string field_name = "string_field";
 const string noise = "noise";
 const string word1 = "foo";
@@ -123,7 +88,8 @@ Document::UP buildDocument(DocBuilder & doc_builder, int id, const string &word)
 }
 
 // Performs a search using a Searchable.
-void Test::testSearch(Searchable &source, const string &term, uint32_t doc_id)
+void
+testSearch(Searchable &source, const string &term, uint32_t doc_id)
 {
     FakeRequestContext requestContext;
     uint32_t fieldId = 0;
@@ -139,12 +105,12 @@ void Test::testSearch(Searchable &source, const string &term, uint32_t doc_id)
     search_iterator->initFullRange();
     ASSERT_TRUE(search_iterator.get());
     ASSERT_TRUE(search_iterator->seek(doc_id));
-    EXPECT_EQUAL(doc_id, search_iterator->getDocId());
+    EXPECT_EQ(doc_id, search_iterator->getDocId());
     search_iterator->unpack(doc_id);
     FieldPositionsIterator it = match_data->resolveTermField(handle)->getIterator();
     ASSERT_TRUE(it.valid());
-    EXPECT_EQUAL(1u, it.size());
-    EXPECT_EQUAL(1u, it.getPosition());  // All hits are at pos 1 in this index
+    EXPECT_EQ(1u, it.size());
+    EXPECT_EQ(1u, it.getPosition());  // All hits are at pos 1 in this index
 
     EXPECT_TRUE(!search_iterator->seek(doc_id + 1));
     EXPECT_TRUE(search_iterator->isAtEnd());
@@ -155,7 +121,8 @@ VESPA_THREAD_STACK_TAG(write_executor)
 // Creates a memory index, inserts documents, performs a few
 // searches, dumps the index to disk, and performs the searches
 // again.
-void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
+TEST(FeedAndSearchTest, require_that_memory_index_can_be_dumped_and_searched)
+{
     vespalib::ThreadStackExecutor sharedExecutor(2);
     auto indexFieldInverter = vespalib::SequencedTaskExecutor::create(invert_executor, 2);
     auto indexFieldWriter = vespalib::SequencedTaskExecutor::create(write_executor, 2);
@@ -239,4 +206,12 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
 }
 }  // namespace
 
-TEST_APPHOOK(Test);
+int
+main(int argc, char* argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    if (argc > 0) {
+        DummyFileHeaderContext::setCreator(argv[0]);
+    }
+    return RUN_ALL_TESTS();
+}
