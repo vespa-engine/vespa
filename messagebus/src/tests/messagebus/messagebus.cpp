@@ -11,8 +11,8 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 
 using namespace mbus;
@@ -98,8 +98,8 @@ struct Search : public Server {
 
 //-----------------------------------------------------------------------------
 
-class Test : public vespalib::TestApp {
-private:
+class MessageBusTest : public testing::Test {
+protected:
     Slobrok::UP  slobrok;
     Client::UP   client;
     DocProc::UP  dp0;
@@ -112,44 +112,21 @@ private:
     std::vector<DocProc*> dpVec;
     std::vector<Search*>  searchVec;
 
-public:
-    Test();
-    ~Test();
-    int Main() override;
-    void testSendToCol();
-    void testDirectHop();
-    void testDirectRoute();
-    void testRoutingPolicyCache();
-
-private:
-    void setup();
-    void teardown();
+    MessageBusTest();
+    ~MessageBusTest();
+    void SetUp() override;
+    void TearDown() override;
 
     void assertSrc(Client& src);
     void assertItr(DocProc& itr);
     void assertDst(Search& dst);
 };
 
-TEST_APPHOOK(Test);
-
-Test::Test() = default;
-Test::~Test() = default;
-
-int
-Test::Main()
-{
-    TEST_INIT("messagebus_test");
-
-    testSendToCol();          TEST_FLUSH();
-    testDirectHop();          TEST_FLUSH();
-    testDirectRoute();        TEST_FLUSH();
-    testRoutingPolicyCache(); TEST_FLUSH();
-
-    TEST_DONE();
-}
+MessageBusTest::MessageBusTest() = default;
+MessageBusTest::~MessageBusTest() = default;
 
 void
-Test::setup()
+MessageBusTest::SetUp()
 {
     slobrok.reset(new Slobrok());
     client.reset(new Client(*slobrok));
@@ -188,7 +165,8 @@ Test::setup()
     ASSERT_TRUE(dp2->server.waitSlobrok("search/r.1/c.1/session"));
 }
 
-void Test::teardown()
+void
+MessageBusTest::TearDown()
 {
     dpVec.clear();
     searchVec.clear();
@@ -203,10 +181,8 @@ void Test::teardown()
     slobrok.reset();
 }
 
-void
-Test::testSendToCol()
+TEST_F(MessageBusTest, test_send_to_col)
 {
-    setup();
     ASSERT_TRUE(SimpleMessage("msg").getHash() % 2 == 0);
     for (uint32_t i = 0; i < 150; ++i) {
         Message::UP msg(new SimpleMessage("msg"));
@@ -244,13 +220,10 @@ Test::testSendToCol()
         ASSERT_TRUE(reply->isReply());
         EXPECT_TRUE(static_cast<Reply&>(*reply).getNumErrors() == 0);
     }
-    teardown();
 }
 
-void
-Test::testDirectHop()
+TEST_F(MessageBusTest, test_direct_hop)
 {
-    setup();
     for (int row = 0; row < 2; row++) {
         for (int col = 0; col < 2; col++) {
             Search* dst = searchVec[row * 2 + col];
@@ -260,25 +233,22 @@ Test::testDirectHop()
                             Message::UP(new SimpleMessage("empty")),
                             Route().addHop(vespalib::make_string("search/r.%d/c.%d/session", row, col)))
                         .isAccepted());
-            assertDst(*dst);
-            assertSrc(*client);
+            ASSERT_NO_FATAL_FAILURE(assertDst(*dst));
+            ASSERT_NO_FATAL_FAILURE(assertSrc(*client));
 
             // Send using address.
             ASSERT_TRUE(client->session->send(
                             Message::UP(new SimpleMessage("empty")),
                             Route().addHop(Hop(dst->session->getConnectionSpec().c_str())))
                         .isAccepted());
-            assertDst(*dst);
-            assertSrc(*client);
+            ASSERT_NO_FATAL_FAILURE(assertDst(*dst));
+            ASSERT_NO_FATAL_FAILURE(assertSrc(*client));
         }
     }
-    teardown();
 }
 
-void
-Test::testDirectRoute()
+TEST_F(MessageBusTest, test_direct_route)
 {
-    setup();
     ASSERT_TRUE(client->session->send(
                     Message::UP(new SimpleMessage("empty")),
                     Route()
@@ -290,26 +260,24 @@ Test::testDirectRoute()
                     .addHop(Hop(dp2->session->getConnectionSpec()))
                     .addHop(Hop("search/r.0/c.0/session")))
                 .isAccepted());
-    assertItr(*dp0);
-    assertItr(*dp0);
-    assertItr(*dp1);
-    assertItr(*dp1);
-    assertItr(*dp2);
-    assertItr(*dp2);
-    assertDst(*search00);
-    assertItr(*dp2);
-    assertItr(*dp2);
-    assertItr(*dp1);
-    assertItr(*dp1);
-    assertItr(*dp0);
-    assertItr(*dp0);
-    assertSrc(*client);
-
-    teardown();
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp0));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp0));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp1));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp1));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp2));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp2));
+    ASSERT_NO_FATAL_FAILURE(assertDst(*search00));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp2));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp2));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp1));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp1));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp0));
+    ASSERT_NO_FATAL_FAILURE(assertItr(*dp0));
+    ASSERT_NO_FATAL_FAILURE(assertSrc(*client));
 }
 
 void
-Test::assertDst(Search& dst)
+MessageBusTest::assertDst(Search& dst)
 {
     ASSERT_TRUE(dst.waitQueueSize(1));
     Routable::UP msg = dst.queue.dequeue();
@@ -318,7 +286,7 @@ Test::assertDst(Search& dst)
 }
 
 void
-Test::assertItr(DocProc& itr)
+MessageBusTest::assertItr(DocProc& itr)
 {
     ASSERT_TRUE(itr.waitQueueSize(1));
     Routable::UP msg = itr.queue.dequeue();
@@ -327,17 +295,15 @@ Test::assertItr(DocProc& itr)
 }
 
 void
-Test::assertSrc(Client& src)
+MessageBusTest::assertSrc(Client& src)
 {
     ASSERT_TRUE(src.waitQueueSize(1));
     Routable::UP msg = src.queue.dequeue();
     ASSERT_TRUE(msg);
 }
 
-void
-Test::testRoutingPolicyCache()
+TEST_F(MessageBusTest, test_routing_policy_cache)
 {
-    setup();
     MessageBus &bus = client->server.mb;
 
     IRoutingPolicy::SP all = bus.getRoutingPolicy(SimpleProtocol::NAME, "All", "");
@@ -354,6 +320,6 @@ Test::testRoutingPolicyCache()
     IRoutingPolicy::SP refArg = bus.getRoutingPolicy(SimpleProtocol::NAME, "All", "Arg");
     ASSERT_TRUE(refArg.get() != NULL);
     ASSERT_TRUE(allArg.get() == refArg.get());
-
-    teardown();
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
