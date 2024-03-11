@@ -7,7 +7,7 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
@@ -16,6 +16,8 @@ using namespace mbus;
 // Setup
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+namespace {
 
 class TestData {
 public:
@@ -33,32 +35,20 @@ public:
     bool start();
 };
 
-class Test : public vespalib::TestApp {
-private:
-    Message::UP createMessage(const string &msg);
-
-public:
-    int Main() override;
-    void testMaxCount(TestData &data);
-    void testMaxSize(TestData &data);
-};
-
-TEST_APPHOOK(Test);
-
-TestData::TestData() :
-    _slobrok(),
-    _srcServer(MessageBusParams()
-               .setRetryPolicy(IRetryPolicy::SP())
-               .addProtocol(std::make_shared<SimpleProtocol>()),
-               RPCNetworkParams(_slobrok.config())),
-    _srcSession(),
-    _srcHandler(),
-    _dstServer(MessageBusParams()
-               .addProtocol(std::make_shared<SimpleProtocol>()),
-               RPCNetworkParams(_slobrok.config())
-               .setIdentity(Identity("dst"))),
-    _dstSession(),
-    _dstHandler()
+TestData::TestData()
+    :  _slobrok(),
+       _srcServer(MessageBusParams()
+                  .setRetryPolicy(IRetryPolicy::SP())
+                  .addProtocol(std::make_shared<SimpleProtocol>()),
+                  RPCNetworkParams(_slobrok.config())),
+       _srcSession(),
+       _srcHandler(),
+       _dstServer(MessageBusParams()
+                  .addProtocol(std::make_shared<SimpleProtocol>()),
+                  RPCNetworkParams(_slobrok.config())
+                  .setIdentity(Identity("dst"))),
+       _dstSession(),
+       _dstHandler()
 {
     // empty
 }
@@ -86,26 +76,41 @@ TestData::start()
     return true;
 }
 
-Message::UP
-Test::createMessage(const string &msg)
+std::unique_ptr<Message>
+createMessage(const string &msg)
 {
     Message::UP ret(new SimpleMessage(msg));
     ret->getTrace().setLevel(9);
     return ret;
 }
 
-int
-Test::Main()
+}
+
+class ChokeTest : public testing::Test {
+protected:
+    static std::shared_ptr<TestData> _data;
+    ChokeTest();
+    ~ChokeTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+std::shared_ptr<TestData> ChokeTest::_data;
+
+ChokeTest::ChokeTest() = default;
+ChokeTest::~ChokeTest() = default;
+
+void
+ChokeTest::SetUpTestSuite()
 {
-    TEST_INIT("choke_test");
+    _data = std::make_shared<TestData>();
+    ASSERT_TRUE(_data->start());
+}
 
-    TestData data;
-    ASSERT_TRUE(data.start());
-
-    testMaxCount(data); TEST_FLUSH();
-    testMaxSize(data);  TEST_FLUSH();
-
-    TEST_DONE();
+void
+ChokeTest::TearDownTestSuite()
+{
+    _data.reset();
 }
 
 static const duration TIMEOUT = 120s;
@@ -116,17 +121,17 @@ static const duration TIMEOUT = 120s;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void
-Test::testMaxCount(TestData &data)
+TEST_F(ChokeTest, test_max_count)
 {
+    auto& data = *_data;
     uint32_t max = 10;
     data._dstServer.mb.setMaxPendingCount(max);
     std::vector<Message*> lst;
     for (uint32_t i = 0; i < max * 2; ++i) {
         if (i < max) {
-            EXPECT_EQUAL(i, data._dstServer.mb.getPendingCount());
+            EXPECT_EQ(i, data._dstServer.mb.getPendingCount());
         } else {
-            EXPECT_EQUAL(max, data._dstServer.mb.getPendingCount());
+            EXPECT_EQ(max, data._dstServer.mb.getPendingCount());
         }
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
         if (i < max) {
@@ -136,8 +141,8 @@ Test::testMaxCount(TestData &data)
         } else {
             Reply::UP reply = data._srcHandler.getReply();
             ASSERT_TRUE(reply);
-            EXPECT_EQUAL(1u, reply->getNumErrors());
-            EXPECT_EQUAL((uint32_t)ErrorCode::SESSION_BUSY, reply->getError(0).getCode());
+            EXPECT_EQ(1u, reply->getNumErrors());
+            EXPECT_EQ((uint32_t)ErrorCode::SESSION_BUSY, reply->getError(0).getCode());
         }
     }
     for (uint32_t i = 0; i < 5; ++i) {
@@ -157,7 +162,7 @@ Test::testMaxCount(TestData &data)
         lst.push_back(msg.release());
     }
     while (!lst.empty()) {
-        EXPECT_EQUAL(lst.size(), data._dstServer.mb.getPendingCount());
+        EXPECT_EQ(lst.size(), data._dstServer.mb.getPendingCount());
         Message::UP msg(lst[0]);
         lst.erase(lst.begin());
         data._dstSession->acknowledge(std::move(msg));
@@ -166,21 +171,21 @@ Test::testMaxCount(TestData &data)
         ASSERT_TRUE(reply);
         EXPECT_TRUE(!reply->hasErrors());
     }
-    EXPECT_EQUAL(0u, data._dstServer.mb.getPendingCount());
+    EXPECT_EQ(0u, data._dstServer.mb.getPendingCount());
 }
 
-void
-Test::testMaxSize(TestData &data)
+TEST_F(ChokeTest, test_max_size)
 {
+    auto& data = *_data;
     uint32_t size = createMessage("msg")->getApproxSize();
     uint32_t max = size * 10;
     data._dstServer.mb.setMaxPendingSize(max);
     std::vector<Message*> lst;
     for (uint32_t i = 0; i < max * 2; i += size) {
         if (i < max) {
-            EXPECT_EQUAL(i, data._dstServer.mb.getPendingSize());
+            EXPECT_EQ(i, data._dstServer.mb.getPendingSize());
         } else {
-            EXPECT_EQUAL(max, data._dstServer.mb.getPendingSize());
+            EXPECT_EQ(max, data._dstServer.mb.getPendingSize());
         }
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
         if (i < max) {
@@ -190,8 +195,8 @@ Test::testMaxSize(TestData &data)
         } else {
             Reply::UP reply = data._srcHandler.getReply();
             ASSERT_TRUE(reply);
-            EXPECT_EQUAL(1u, reply->getNumErrors());
-            EXPECT_EQUAL((uint32_t)ErrorCode::SESSION_BUSY, reply->getError(0).getCode());
+            EXPECT_EQ(1u, reply->getNumErrors());
+            EXPECT_EQ((uint32_t)ErrorCode::SESSION_BUSY, reply->getError(0).getCode());
         }
     }
     for (uint32_t i = 0; i < 5; ++i) {
@@ -211,7 +216,7 @@ Test::testMaxSize(TestData &data)
         lst.push_back(msg.release());
     }
     while (!lst.empty()) {
-        EXPECT_EQUAL(size * lst.size(), data._dstServer.mb.getPendingSize());
+        EXPECT_EQ(size * lst.size(), data._dstServer.mb.getPendingSize());
         Message::UP msg(lst[0]);
         lst.erase(lst.begin());
         data._dstSession->acknowledge(std::move(msg));
@@ -220,5 +225,7 @@ Test::testMaxSize(TestData &data)
         ASSERT_TRUE(reply);
         EXPECT_TRUE(!reply->hasErrors());
     }
-    EXPECT_EQUAL(0u, data._dstServer.mb.getPendingSize());
+    EXPECT_EQ(0u, data._dstServer.mb.getPendingSize());
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
