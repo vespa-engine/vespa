@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_feedtoken_test_app TEST
     DEPENDS
     searchcore_pcommon
     searchcore_proton_metrics
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_feedtoken_test_app COMMAND searchcore_feedtoken_test_app)
