@@ -15,7 +15,7 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 
 using namespace mbus;
@@ -64,21 +64,7 @@ bool waitQueueSize(RoutableQueue &queue, uint32_t size) {
     return false;
 }
 
-class Test : public vespalib::TestApp
-{
-public:
-    void testSequencing();
-    void testResendError();
-    void testResendConnDown();
-    void testIllegalRoute();
-    void testNoServices();
-    void testBlockingClose();
-    void testNonBlockingClose();
-    int Main() override;
-};
-
-void
-Test::testSequencing()
+TEST(SourceSessionTest, test_sequencing)
 {
     Slobrok     slobrok;
     TestServer  src(Identity(""), getRouting(), slobrok);
@@ -111,8 +97,7 @@ Test::testSequencing()
     ASSERT_TRUE(waitQueueSize(dstQ, 0));
 }
 
-void
-Test::testResendError()
+TEST(SourceSessionTest, test_resend_error)
 {
     Slobrok slobrok;
     auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
@@ -172,8 +157,7 @@ Test::testResendError()
     }
 }
 
-void
-Test::testResendConnDown()
+TEST(SourceSessionTest, test_resend_conn_down)
 {
     Slobrok slobrok;
     auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
@@ -218,8 +202,7 @@ Test::testResendConnDown()
     fprintf(stderr, "\nTRACE DUMP:\n%s\n\n", trace.c_str());
 }
 
-void
-Test::testIllegalRoute()
+TEST(SourceSessionTest, test_illegal_route)
 {
     Slobrok slobrok;
     TestServer src(MessageBusParams()
@@ -243,16 +226,15 @@ Test::testIllegalRoute()
             Routable::UP routable = srcQ.dequeue();
             ASSERT_TRUE(routable->isReply());
             Reply::UP r(dynamic_cast<Reply*>(routable.release()));
-            EXPECT_EQUAL(1u, r->getNumErrors());
-            EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, r->getError(0).getCode());
+            EXPECT_EQ(1u, r->getNumErrors());
+            EXPECT_EQ((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, r->getError(0).getCode());
             string trace = r->getTrace().toString();
             fprintf(stderr, "\nTRACE DUMP:\n%s\n\n", trace.c_str());
         }
     }
 }
 
-void
-Test::testNoServices()
+TEST(SourceSessionTest, test_no_services)
 {
     Slobrok slobrok;
     TestServer src(MessageBusParams()
@@ -283,8 +265,7 @@ Test::testNoServices()
     }
 }
 
-void
-Test::testBlockingClose()
+TEST(SourceSessionTest, test_blocking_close)
 {
     Slobrok     slobrok;
     TestServer  src(Identity(""), getRouting(), slobrok);
@@ -304,8 +285,7 @@ Test::testBlockingClose()
     EXPECT_TRUE(routable->isReply());
 }
 
-void
-Test::testNonBlockingClose()
+TEST(SourceSessionTest, test_non_blocking_close)
 {
     Slobrok     slobrok;
     TestServer  src(Identity(""), getRouting(), slobrok);
@@ -317,18 +297,4 @@ Test::testNonBlockingClose()
     ss->close(); // this should not hang
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("sourcesession_test");
-    testSequencing();       TEST_FLUSH();
-    testResendError();      TEST_FLUSH();
-    testResendConnDown();   TEST_FLUSH();
-    testIllegalRoute();     TEST_FLUSH();
-    testNoServices();       TEST_FLUSH();
-    testBlockingClose();    TEST_FLUSH();
-    testNonBlockingClose(); TEST_FLUSH();
-    TEST_DONE();
-}
-
-TEST_APPHOOK(Test);
+GTEST_MAIN_RUN_ALL_TESTS()
