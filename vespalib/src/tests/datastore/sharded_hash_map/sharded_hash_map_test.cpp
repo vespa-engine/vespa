@@ -306,7 +306,7 @@ void
 DataStoreShardedHashTest::test_normalize_values(bool use_filter, bool one_filter)
 {
     populate_sample_data(large_population);
-    populate_sample_values(large_population);
+    ASSERT_NO_FATAL_FAILURE(populate_sample_values(large_population));
     if (use_filter) {
         auto filter = make_entry_ref_filter<RefT>(one_filter);
         EXPECT_TRUE(_hash_map.normalize_values([](std::vector<EntryRef> &refs) noexcept { for (auto &ref : refs) { RefT iref(ref); ref = RefT(iref.offset() + 300, iref.bufferId()); } }, filter));
@@ -332,7 +332,7 @@ void
 DataStoreShardedHashTest::test_foreach_value(bool one_filter)
 {
     populate_sample_data(large_population);
-    populate_sample_values(large_population);
+    ASSERT_NO_FATAL_FAILURE(populate_sample_values(large_population));
 
     auto filter = make_entry_ref_filter<RefT>(one_filter);
     std::vector<EntryRef> exp_refs;
@@ -340,7 +340,7 @@ DataStoreShardedHashTest::test_foreach_value(bool one_filter)
     std::vector<EntryRef> act_refs;
     _hash_map.foreach_value([&act_refs](const std::vector<EntryRef> &refs) { act_refs.insert(act_refs.end(), refs.begin(), refs.end()); }, filter);
     EXPECT_EQ(exp_refs, act_refs);
-    clear_sample_values(large_population);
+    ASSERT_NO_FATAL_FAILURE(clear_sample_values(large_population));
 }
 
 TEST_F(DataStoreShardedHashTest, single_threaded_reader_without_updates)
