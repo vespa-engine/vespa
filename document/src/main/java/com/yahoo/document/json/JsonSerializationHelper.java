@@ -347,4 +347,5 @@ public class JsonSerializationHelper {
             wrapIOException(() -> generator.writeFieldName(field.getName()));
         }
     }
+
 }

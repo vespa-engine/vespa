@@ -87,8 +87,13 @@ public class SimpleFeederTest {
                 "",
                 "(.+\n)+" +
                         "\\s*\\d+,\\s*3,.+\n");
-        assertEquals(58, dump.size());
-        assertEquals("[\n{\"id\":\"id:simple:simple::0\",\"fields\":{\"my_str\":\"foo\"}}\n]", dump.toString());
+        assertEquals(93, dump.size());
+        assertEquals("""
+                             [
+                             {"id":"id:simple:simple::0","fields":{"my_str":"foo"}},
+                              {"remove":"id:simple:simple::2"}
+                             ]""",
+                     dump.toString());
     }
 
     @Test
@@ -116,8 +121,14 @@ public class SimpleFeederTest {
                 "",
                 "(.+\n)+" +
                         "\\s*\\d+,\\s*3,.+\n");
-        assertEquals(115, dump.size());
-        assertEquals("[\n{\"id\":\"id:simple:simple::0\",\"fields\":{\"my_str\":\"foo\"}},\n {\"id\":\"id:simple:simple::1\",\"fields\":{\"my_str\":\"bar\"}}\n]", dump.toString());
+        assertEquals(150, dump.size());
+        assertEquals("""
+                         [
+                         {"id":"id:simple:simple::0","fields":{"my_str":"foo"}},
+                          {"id":"id:simple:simple::1","fields":{"my_str":"bar"}},
+                          {"remove":"id:simple:simple::2"}
+                         ]""",
+                     dump.toString());
         assertFeed(dump.toString(),
                 new MessageHandler() {
                     @Override
@@ -129,7 +140,7 @@ public class SimpleFeederTest {
                 },
                 "",
                 "(.+\n)+" +
-                        "\\s*\\d+,\\s*2,.+\n");
+                        "\\s*\\d+,\\s*3,.+\n");
     }
 
     @Test

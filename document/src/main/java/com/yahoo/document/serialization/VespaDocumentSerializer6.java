@@ -8,6 +8,7 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
@@ -424,6 +425,10 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         put(null, docType);
         putByte(null, ((byte) 0));
         putShort(null, (short) 0); // Used to hold the version. Is now always 0.
+    }
+
+    public void write(DocumentRemove documentRemove) {
+        throw new UnsupportedOperationException("serializing remove not implemented");
     }
 
     public void write(Annotation annotation) {

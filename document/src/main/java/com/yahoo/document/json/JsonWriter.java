@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReference;
@@ -261,6 +262,19 @@ public class JsonWriter implements DocumentWriter {
     @Override
     public void write(DocumentType type) {
         // NOP, fetched from Document
+    }
+
+    public void write(DocumentRemove documentRemove) {
+        try {
+            generator.writeStartObject();
+
+            serializeStringField(generator, new FieldBase("remove"), new StringFieldValue(documentRemove.getId().toString()));
+
+            generator.writeEndObject();
+            generator.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

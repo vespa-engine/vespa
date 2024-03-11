@@ -185,21 +185,34 @@ public class SimpleFeeder implements ReplyHandler {
             }
         }
         public void send(FeedOperation op) {
-            if (op.getType() == FeedOperation.Type.DOCUMENT) {
-                if (!isFirst) {
-                    try {
-                        outputStream.write(',');
-                        outputStream.write('\n');
-                    } catch (IOException e) {
-                        failure.set(e);
-                    }
-                } else {
-                    isFirst = false;
+            switch (op.getType()) {
+                case DOCUMENT -> {
+                    addCommaAndNewline();
+                    writer.write(op.getDocumentPut().getDocument());
                 }
-                writer.write(op.getDocumentPut().getDocument());
+                case REMOVE -> {
+                    addCommaAndNewline();
+                    writer.write(op.getDocumentRemove());
+                }
+                default -> { /* TODO: No more operations supported yet */ }
             }
             numReplies.incrementAndGet();
         }
+
+        private void addCommaAndNewline() {
+            if (! isFirst) {
+                try {
+                    outputStream.write(',');
+                    outputStream.write('\n');
+                } catch (IOException e) {
+                    failure.set(e);
+                }
+            }
+            else {
+                isFirst = false;
+            }
+        }
+
         public void close() throws Exception {
             outputStream.write('\n');
             outputStream.write(']');
