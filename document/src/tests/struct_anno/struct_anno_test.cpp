@@ -11,8 +11,9 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/fastos/file.h>
 
 using std::ostringstream;
@@ -23,23 +24,12 @@ using namespace document;
 
 namespace {
 
-class Test : public vespalib::TestApp {
-    void requireThatStructFieldsCanContainAnnotations();
-
-public:
-    int Main() override;
-};
-
-int Test::Main() {
-    if (getenv("TEST_SUBSET") != 0) { return 0; }
-    TEST_INIT("struct_anno_test");
-    TEST_DO(requireThatStructFieldsCanContainAnnotations());
-    TEST_DONE();
-}
-
 template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
-void Test::requireThatStructFieldsCanContainAnnotations() {
+}
+
+TEST(StructAnnoTest, require_that_struct_fields_can_contain_annotations)
+{
     DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("documenttypes.cfg")));
 
     FastOS_File file(TEST_PATH("document.dat").c_str());
@@ -62,19 +52,17 @@ void Test::requireThatStructFieldsCanContainAnnotations() {
     const StringFieldValue *str = dynamic_cast<const StringFieldValue*>(strRef.get());
     ASSERT_TRUE(str != NULL);
 
-    SpanTree::UP tree = std::move(str->getSpanTrees().front());
+    auto tree = std::move(str->getSpanTrees().front());
 
-    EXPECT_EQUAL("my_tree", tree->getName());
+    EXPECT_EQ("my_tree", tree->getName());
     const SimpleSpanList *root = dynamic_cast<const SimpleSpanList*>(&tree->getRoot());
     ASSERT_TRUE(root != NULL);
-    EXPECT_EQUAL(1u, root->size());
+    EXPECT_EQ(1u, root->size());
     SimpleSpanList::const_iterator it = root->begin();
-    EXPECT_EQUAL(Span(0, 6), (*it++));
+    EXPECT_EQ(Span(0, 6), (*it++));
     EXPECT_TRUE(it == root->end());
 
-    EXPECT_EQUAL(1u, tree->numAnnotations());
+    EXPECT_EQ(1u, tree->numAnnotations());
 }
 
-}  // namespace
-
-TEST_APPHOOK(Test);
+GTEST_MAIN_RUN_ALL_TESTS()
