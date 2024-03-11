@@ -24,7 +24,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.SetVarExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
+import static com.yahoo.prelude.fastsearch.VespaBackend.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -31,7 +31,7 @@ import java.util.Optional;
  *
  * @author baldersheim
  */
-public abstract class VespaBackEndSearcher {
+public abstract class VespaBackend {
 
     /** for vespa-internal use only; consider renaming the summary class */
     public static final String SORTABLE_ATTRIBUTES_SUMMARY_CLASS = "attributeprefetch";

@@ -267,7 +267,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
                 log.log(Level.FINE, () -> "StreamingVisitor returned from waitUntilDone without being completed for " + query +
                                           " with selection " + params.getDocumentSelection());
                 session.abort();
-                throw new TimeoutException("Query timed out in " + StreamingSearcher.class.getName());
+                throw new TimeoutException("Query timed out in " + StreamingBackend.class.getName());
             }
         } finally {
             session.destroy();

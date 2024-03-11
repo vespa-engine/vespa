@@ -9,7 +9,7 @@ import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastHit;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.config.ClusterConfig;
@@ -74,7 +74,7 @@ public class ClusterSearcherTestCase {
 
     @Test
     void testThatDocumentTypesAreResolved() {
-        var backend = new MyMockSearcher(false);
+        var backend = new MyMockBackend(false);
         SchemaInfo schemaInfo = createSchemaInfo();
         ClusterSearcher cluster1 = new ClusterSearcher(schemaInfo, Map.of("type1", backend, "type2", backend, "type3", backend));
         try {
@@ -115,7 +115,7 @@ public class ClusterSearcherTestCase {
 
     @Test
     void testThatDocumentTypesAreResolvedTODO_REMOVE() {
-        var backend = new MyMockSearcher(false);
+        var backend = new MyMockBackend(false);
         SchemaInfo schemaInfo = createSchemaInfo();
         ClusterSearcher cluster1 = new ClusterSearcher(schemaInfo, Map.of("type1", backend, "type2", backend, "type3", backend));
         try {
@@ -130,7 +130,7 @@ public class ClusterSearcherTestCase {
         }
     }
 
-    private static class MyMockSearcher extends VespaBackEndSearcher {
+    private static class MyMockBackend extends VespaBackend {
 
         private final String type1 = "type1";
         private final String type2 = "type2";
@@ -187,7 +187,7 @@ public class ClusterSearcherTestCase {
                                              createHit(getId(type3, 2), 5)));
         }
 
-        MyMockSearcher(boolean expectAttributePrefetch) {
+        MyMockBackend(boolean expectAttributePrefetch) {
             this.expectAttributePrefetch = expectAttributePrefetch;
             init();
         }
@@ -254,8 +254,8 @@ public class ClusterSearcherTestCase {
     }
 
     private Execution createExecution(List<String> docTypesList, boolean expectAttributePrefetch) {
-        var backend = new MyMockSearcher(expectAttributePrefetch);
-        Map<String, VespaBackEndSearcher> searchers = new HashMap<>();
+        var backend = new MyMockBackend(expectAttributePrefetch);
+        Map<String, VespaBackend> searchers = new HashMap<>();
         for(String schema : docTypesList) {
             searchers.put(schema, backend);
         }

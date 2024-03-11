@@ -11,9 +11,9 @@ import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.FastSearcher;
+import com.yahoo.prelude.fastsearch.FastBackend;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -25,7 +25,7 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.vespa.streamingvisitors.StreamingSearcher;
+import com.yahoo.vespa.streamingvisitors.StreamingBackend;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class ClusterSearcher extends Searcher {
     private final String searchClusterName;
 
     // The set of document types contained in this search cluster
-    private final Map<String, VespaBackEndSearcher> schema2Searcher;
+    private final Map<String, VespaBackend> schema2Searcher;
     private final SchemaInfo schemaInfo;
 
     private final long maxQueryTimeout; // in milliseconds
@@ -97,7 +97,7 @@ public class ClusterSearcher extends Searcher {
                 .defaultclass());
 
         String uniqueServerId = UUID.randomUUID().toString();
-        VespaBackEndSearcher streaming = null, indexed = null;
+        VespaBackend streaming = null, indexed = null;
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             if (docDb.mode() == DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX) {
                 if (indexed == null) {
@@ -130,34 +130,34 @@ public class ClusterSearcher extends Searcher {
         return new ClusterParams("sc" + searchclusterIndex + ".num" + 0);
     }
 
-    private static FastSearcher searchDispatch(int searchclusterIndex,
-                                               String searchClusterName,
-                                               String serverId,
-                                               SummaryParameters docSumParams,
-                                               DocumentdbInfoConfig documentdbInfoConfig,
-                                               SchemaInfo schemaInfo,
-                                               ComponentRegistry<Dispatcher> dispatchers) {
+    private static FastBackend searchDispatch(int searchclusterIndex,
+                                              String searchClusterName,
+                                              String serverId,
+                                              SummaryParameters docSumParams,
+                                              DocumentdbInfoConfig documentdbInfoConfig,
+                                              SchemaInfo schemaInfo,
+                                              ComponentRegistry<Dispatcher> dispatchers) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         ComponentId dispatcherComponentId = new ComponentId("dispatcher." + searchClusterName);
         Dispatcher dispatcher = dispatchers.getComponent(dispatcherComponentId);
         if (dispatcher == null)
             throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId +
                                                " is configured");
-        return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
+        return new FastBackend(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
     }
 
-    private static StreamingSearcher streamingCluster(String serverId,
-                                                      int searchclusterIndex,
-                                                      QrSearchersConfig.Searchcluster searchClusterConfig,
-                                                      SummaryParameters docSumParams,
-                                                      DocumentdbInfoConfig documentdbInfoConfig,
-                                                      SchemaInfo schemaInfo,
-                                                      VespaDocumentAccess access) {
+    private static StreamingBackend streamingCluster(String serverId,
+                                                     int searchclusterIndex,
+                                                     QrSearchersConfig.Searchcluster searchClusterConfig,
+                                                     SummaryParameters docSumParams,
+                                                     DocumentdbInfoConfig documentdbInfoConfig,
+                                                     SchemaInfo schemaInfo,
+                                                     VespaDocumentAccess access) {
         if (searchClusterConfig.searchdef().size() != 1)
             throw new IllegalArgumentException("Streaming search clusters can only contain a single schema but got " +
                                                searchClusterConfig.searchdef());
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
-        StreamingSearcher searcher = new StreamingSearcher(access);
+        StreamingBackend searcher = new StreamingBackend(access);
         searcher.setSearchClusterName(searchClusterConfig.rankprofiles_configid());
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
         searcher.init(serverId, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
@@ -165,7 +165,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     /** Do not use, for internal testing purposes only. **/
-    ClusterSearcher(SchemaInfo schemaInfo, Map<String, VespaBackEndSearcher> schema2Searcher, Executor executor) {
+    ClusterSearcher(SchemaInfo schemaInfo, Map<String, VespaBackend> schema2Searcher, Executor executor) {
         this.schemaInfo = schemaInfo;
         searchClusterName = "testScenario";
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
@@ -176,7 +176,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     /** Do not use, for internal testing purposes only. **/
-    ClusterSearcher(SchemaInfo schemaInfo, Map<String, VespaBackEndSearcher> schema2Searcher) {
+    ClusterSearcher(SchemaInfo schemaInfo, Map<String, VespaBackend> schema2Searcher) {
         this(schemaInfo, schema2Searcher, null);
     }
 
@@ -201,7 +201,7 @@ public class ClusterSearcher extends Searcher {
     private void fill(Result result, String summaryClass) {
         Query query = result.getQuery();
         var restrict = query.getModel().getRestrict();
-        Collection<VespaBackEndSearcher> servers = (restrict != null && ! restrict.isEmpty())
+        Collection<VespaBackend> servers = (restrict != null && ! restrict.isEmpty())
                 ? query.getModel().getRestrict().stream()
                     .map(schema2Searcher::get)
                     .collect(Collectors.toCollection(TinyIdentitySet::new))
@@ -325,7 +325,7 @@ public class ClusterSearcher extends Searcher {
             if (query.getOffset() > 0 || query.getHits() < mergedResult.hits().size()) {
                 if (mergedResult.getHitOrderer() != null) {
                     // Make sure we have the necessary data for sorting
-                    fill(mergedResult, VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
+                    fill(mergedResult, VespaBackend.SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
                 }
                 mergedResult.hits().trim(query.getOffset(), query.getHits());
                 query.setOffset(0); // Needed when doing a trim
@@ -389,7 +389,7 @@ public class ClusterSearcher extends Searcher {
 
     @Override
     public void deconstruct() {
-        Map<String, VespaBackEndSearcher> servers = new HashMap<>();
+        Map<String, VespaBackend> servers = new HashMap<>();
         for (var server : schema2Searcher.values()) {
             servers.put(server.getName(), server);
         }

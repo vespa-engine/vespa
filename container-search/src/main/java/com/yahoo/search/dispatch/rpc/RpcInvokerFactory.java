@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
@@ -37,12 +37,12 @@ public class RpcInvokerFactory extends InvokerFactory {
     }
 
     @Override
-    protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, int maxHits, Node node) {
+    protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher, Query query, int maxHits, Node node) {
         return Optional.of(new RpcSearchInvoker(searcher, compressor, node, rpcResourcePool, maxHits));
     }
 
     @Override
-    public FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result) {
+    public FillInvoker createFillInvoker(VespaBackend searcher, Result result) {
         Query query = result.getQuery();
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);

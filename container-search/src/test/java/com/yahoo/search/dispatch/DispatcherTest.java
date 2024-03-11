@@ -3,7 +3,7 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.compress.CompressionType;
 import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterMonitor;
@@ -236,7 +236,7 @@ public class DispatcherTest {
 
         // This factory just forwards search to the dummy RPC layer above, nothing more.
         InvokerFactoryFactory invokerFactories = (rpcConnectionPool, searchGroups, dispatchConfig) -> new InvokerFactory(searchGroups, dispatchConfig) {
-            @Override protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, int maxHits, Node node) {
+            @Override protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher, Query query, int maxHits, Node node) {
                 return Optional.of(new SearchInvoker(Optional.of(node)) {
                     @Override protected Object sendSearchRequest(Query query, Object context) {
                         rpcPool.getConnection(node.key()).request(null, null, 0, null, null, 0);
@@ -248,7 +248,7 @@ public class DispatcherTest {
                     @Override protected void release() { }
                 });
             };
-            @Override public FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result) {
+            @Override public FillInvoker createFillInvoker(VespaBackend searcher, Result result) {
                 return new FillInvoker() {
                     @Override protected void getFillResults(Result result, String summaryClass) { fail(); }
                     @Override protected void sendFillRequest(Result result, String summaryClass) { fail(); }
@@ -369,7 +369,7 @@ public class DispatcherTest {
         }
 
         @Override
-        public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
+        public Optional<SearchInvoker> createSearchInvoker(VespaBackend searcher,
                                                            Query query,
                                                            List<Node> nodes,
                                                            boolean acceptIncompleteCoverage,
@@ -391,7 +391,7 @@ public class DispatcherTest {
         }
 
         @Override
-        protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher,
+        protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher,
                                                                   Query query,
                                                                   int maxHitsPerNode,
                                                                   Node node) {
@@ -400,7 +400,7 @@ public class DispatcherTest {
         }
 
         @Override
-        public FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result) {
+        public FillInvoker createFillInvoker(VespaBackend searcher, Result result) {
             fail("Unexpected call to createFillInvoker");
             return null;
         }

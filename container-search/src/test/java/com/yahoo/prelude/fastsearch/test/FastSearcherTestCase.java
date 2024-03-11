@@ -6,9 +6,9 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.FastSearcher;
+import com.yahoo.prelude.fastsearch.FastBackend;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.MockDispatcher;
@@ -44,8 +44,8 @@ public class FastSearcherTestCase {
 
     @Test
     void testNullQuery() {
-        Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
-        FastSearcher fastSearcher = new FastSearcher("container.0",
+        Logger.getLogger(FastBackend.class.getName()).setLevel(Level.ALL);
+        FastBackend fastSearcher = new FastBackend("container.0",
                 MockDispatcher.create(List.of()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -62,7 +62,7 @@ public class FastSearcherTestCase {
         assertEquals(Error.NULL_QUERY.code, message.getCode());
     }
 
-    private Result doSearch(VespaBackEndSearcher searcher, Query query, int offset, int hits) {
+    private Result doSearch(VespaBackend searcher, Query query, int offset, int hits) {
         query.setOffset(offset);
         query.setHits(hits);
         return searcher.search(SCHEMA, query);
@@ -70,7 +70,7 @@ public class FastSearcherTestCase {
 
     @Test
     void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
-        FastSearcher fastSearcher = new FastSearcher("container.0",
+        FastBackend fastSearcher = new FastBackend("container.0",
                 MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -93,7 +93,7 @@ public class FastSearcherTestCase {
 
     @Test
     void testRankProfileValidation() {
-        FastSearcher fastSearcher = new FastSearcher("container.0",
+        FastBackend fastSearcher = new FastBackend("container.0",
                 MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -112,7 +112,7 @@ public class FastSearcherTestCase {
                 .add(new RankProfile.Builder("default").setHasRankFeatures(false)
                         .setHasSummaryFeatures(false)
                         .build());
-        FastSearcher backend = new FastSearcher("container.0",
+        FastBackend backend = new FastBackend("container.0",
                 MockDispatcher.create(Collections.singletonList(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -132,7 +132,7 @@ public class FastSearcherTestCase {
     void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
         MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0), new Node(CLUSTER, 2, "host1", 0)));
 
-        FastSearcher fastSearcher = new FastSearcher("container.0",
+        FastBackend fastSearcher = new FastBackend("container.0",
                 dispatcher,
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -182,11 +182,11 @@ public class FastSearcherTestCase {
         assertTrue(vipStatus.isInRotation()); //Verify that deconstruct does not touch vipstatus
     }
 
-    private String searchError(String query, VespaBackEndSearcher searcher) {
+    private String searchError(String query, VespaBackend searcher) {
         return search(query, searcher).hits().getError().getDetailedMessage();
     }
 
-    private Result search(String query, VespaBackEndSearcher searcher) {
+    private Result search(String query, VespaBackend searcher) {
         return searcher.search(SCHEMA, new Query(query));
     }
 

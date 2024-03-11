@@ -2,7 +2,7 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.concurrent.Timer;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
@@ -34,12 +34,12 @@ public abstract class InvokerFactory {
         this.hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
     }
 
-    protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher,
+    protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher,
                                                                        Query query,
                                                                        int maxHits,
                                                                        Node node);
 
-    public abstract FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result);
+    public abstract FillInvoker createFillInvoker(VespaBackend searcher, Result result);
 
     /**
      * Creates a {@link SearchInvoker} for a list of content nodes.
@@ -52,7 +52,7 @@ public abstract class InvokerFactory {
      * @return the invoker or empty if some node in the
      *         list is invalid and the remaining coverage is not sufficient
      */
-    Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
+    Optional<SearchInvoker> createSearchInvoker(VespaBackend searcher,
                                                 Query query,
                                                 List<Node> nodes,
                                                 boolean acceptIncompleteCoverage,

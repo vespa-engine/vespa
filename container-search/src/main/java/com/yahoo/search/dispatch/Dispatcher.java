@@ -6,7 +6,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.compress.Compressor;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -256,13 +256,13 @@ public class Dispatcher extends AbstractComponent {
         }
     }
 
-    public FillInvoker getFillInvoker(Result result, VespaBackEndSearcher searcher) {
+    public FillInvoker getFillInvoker(Result result, VespaBackend searcher) {
         try (var items = volatileItems()) { // Take a snapshot, and release it when we're done.
             return items.register(items.get().invokerFactory.createFillInvoker(searcher, result));
         }
     }
 
-    public SearchInvoker getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
+    public SearchInvoker getSearchInvoker(Query query, VespaBackend searcher) {
         try (var items = volatileItems()) { // Take a snapshot, and release it when we're done.
             int maxHitsPerNode = dispatchConfig.maxHitsPerNode();
             SearchInvoker invoker = getSearchPathInvoker(query, searcher, searchCluster.groupList(), items.get().invokerFactory, maxHitsPerNode)
@@ -277,7 +277,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /** Builds an invoker based on searchpath */
-    private static Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher, SearchGroups cluster,
+    private static Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackend searcher, SearchGroups cluster,
                                                                 InvokerFactory invokerFactory, int maxHitsPerNode) {
         String searchPath = query.getModel().getSearchPath();
         if (searchPath == null) return Optional.empty();
@@ -297,7 +297,7 @@ public class Dispatcher extends AbstractComponent {
         }
     }
 
-    private static SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher, SearchCluster cluster,
+    private static SearchInvoker getInternalInvoker(Query query, VespaBackend searcher, SearchCluster cluster,
                                                     LoadBalancer loadBalancer, InvokerFactory invokerFactory, int maxHitsPerNode) {
         Optional<Node> directNode = cluster.localCorpusDispatchTarget();
         if (directNode.isPresent()) {
