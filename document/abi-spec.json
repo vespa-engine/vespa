@@ -2862,7 +2862,8 @@
     "methods" : [
       "public abstract void write(com.yahoo.document.Document)",
       "public abstract void write(com.yahoo.document.DocumentId)",
-      "public abstract void write(com.yahoo.document.DocumentType)"
+      "public abstract void write(com.yahoo.document.DocumentType)",
+      "public abstract void write(com.yahoo.document.DocumentRemove)"
     ],
     "fields" : [ ]
   },
@@ -3104,6 +3105,7 @@
       "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.annotation.AnnotationReference)",
       "public void write(com.yahoo.document.DocumentId)",
       "public void write(com.yahoo.document.DocumentType)",
+      "public void write(com.yahoo.document.DocumentRemove)",
       "public void write(com.yahoo.document.annotation.Annotation)",
       "public void write(com.yahoo.document.annotation.SpanTree)",
       "public void write(com.yahoo.document.annotation.SpanNode)",
