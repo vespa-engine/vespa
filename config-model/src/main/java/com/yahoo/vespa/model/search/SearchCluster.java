@@ -113,8 +113,11 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     @Override
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
         for (DocumentDatabase db : documentDbs) {
-            DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
-            docDb.name(db.getName());
+            var docDb = new DocumentdbInfoConfig.Documentdb.Builder()
+                    .name(db.getName())
+                    .mode(db.getDerivedConfiguration().isStreaming()
+                            ? DocumentdbInfoConfig.Documentdb.Mode.Enum.STREAMING
+                            : DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX);
             builder.documentdb(docDb);
         }
     }

@@ -28,6 +28,7 @@ import java.io.Writer;
 public class DerivedConfiguration {
 
     private final Schema schema;
+    private final boolean isStreaming;
     private Summaries summaries;
     private Juniperrc juniperrc;
     private AttributeFields attributeFields;
@@ -67,6 +68,7 @@ public class DerivedConfiguration {
      *               schema is later modified.
      */
     public DerivedConfiguration(Schema schema, DeployState deployState, boolean isStreaming) {
+        this.isStreaming = isStreaming;
         try {
             Validator.ensureNotNull("Schema", schema);
             this.schema = schema;
@@ -148,6 +150,10 @@ public class DerivedConfiguration {
                 IOUtils.closeWriter(writer);
             }
         }
+    }
+
+    public boolean isStreaming() {
+        return isStreaming;
     }
 
     public Summaries getSummaries() {
