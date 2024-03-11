@@ -5,5 +5,6 @@ vespa_add_executable(messagebus_choke_test_app TEST
     DEPENDS
     messagebus_messagebus-test
     messagebus
+    GTest::gtest
 )
 vespa_add_test(NAME messagebus_choke_test_app NO_VALGRIND COMMAND messagebus_choke_test_app)
