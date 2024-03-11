@@ -3,13 +3,10 @@
 
 #include <vespa/searchcorespi/index/disk_indexes.h>
 #include <vespa/searchcorespi/index/diskindexcleaner.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <filesystem>
-
-#include <vespa/log/log.h>
-LOG_SETUP("diskindexcleaner_test");
 
 using std::string;
 using std::vector;
@@ -17,39 +14,33 @@ using namespace searchcorespi::index;
 
 namespace {
 
-class Test : public vespalib::TestApp {
-    void requireThatAllIndexesOlderThanLastFusionIsRemoved();
-    void requireThatIndexesInUseAreNotRemoved();
-    void requireThatInvalidFlushIndexesAreRemoved();
-    void requireThatInvalidFusionIndexesAreRemoved();
-    void requireThatRemoveDontTouchNewIndexes();
-
-public:
-    int Main() override;
-};
-
 const string index_dir = "diskindexcleaner_test_data";
 
 void removeTestData() {
     std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
-int
-Test::Main()
+class DiskIndexCleanerTest : public ::testing::Test {
+protected:
+    DiskIndexCleanerTest();
+    ~DiskIndexCleanerTest() override;
+    void SetUp() override;
+    void TearDown() override;
+};
+
+DiskIndexCleanerTest::DiskIndexCleanerTest() = default;
+DiskIndexCleanerTest::~DiskIndexCleanerTest() = default;
+
+void
+DiskIndexCleanerTest::SetUp()
 {
-    TEST_INIT("diskindexcleaner_test");
+    removeTestData();
+}
 
-    TEST_DO(removeTestData());
-
-    TEST_DO(requireThatAllIndexesOlderThanLastFusionIsRemoved());
-    TEST_DO(requireThatIndexesInUseAreNotRemoved());
-    TEST_DO(requireThatInvalidFlushIndexesAreRemoved());
-    TEST_DO(requireThatInvalidFusionIndexesAreRemoved());
-    TEST_DO(requireThatRemoveDontTouchNewIndexes());
-
-    TEST_DO(removeTestData());
-
-    TEST_DONE();
+void
+DiskIndexCleanerTest::TearDown()
+{
+    removeTestData();
 }
 
 void createIndex(const string &name) {
@@ -87,18 +78,20 @@ void createIndexes() {
     createIndex("index.flush.4");
 }
 
-void Test::requireThatAllIndexesOlderThanLastFusionIsRemoved() {
+TEST_F(DiskIndexCleanerTest, require_that_all_indexes_older_than_last_fusion_is_removed)
+{
     createIndexes();
     DiskIndexes disk_indexes;
     DiskIndexCleaner::clean(index_dir, disk_indexes);
     vector<string> indexes = readIndexes();
-    EXPECT_EQUAL(3u, indexes.size());
+    EXPECT_EQ(3u, indexes.size());
     EXPECT_TRUE(contains(indexes, "index.fusion.2"));
     EXPECT_TRUE(contains(indexes, "index.flush.3"));
     EXPECT_TRUE(contains(indexes, "index.flush.4"));
 }
 
-void Test::requireThatIndexesInUseAreNotRemoved() {
+TEST_F(DiskIndexCleanerTest, require_that_indexes_in_use_are_not_removed)
+{
     createIndexes();
     DiskIndexes disk_indexes;
     disk_indexes.setActive(index_dir + "/index.fusion.1", 0);
@@ -116,37 +109,40 @@ void Test::requireThatIndexesInUseAreNotRemoved() {
     EXPECT_TRUE(!contains(indexes, "index.flush.2"));
 }
 
-void Test::requireThatInvalidFlushIndexesAreRemoved() {
+TEST_F(DiskIndexCleanerTest, require_that_invalid_flush_indexes_are_removed)
+{
     createIndexes();
     std::filesystem::remove(std::filesystem::path(index_dir + "/index.flush.4/serial.dat"));
     DiskIndexes disk_indexes;
     DiskIndexCleaner::clean(index_dir, disk_indexes);
     vector<string> indexes = readIndexes();
-    EXPECT_EQUAL(2u, indexes.size());
+    EXPECT_EQ(2u, indexes.size());
     EXPECT_TRUE(contains(indexes, "index.fusion.2"));
     EXPECT_TRUE(contains(indexes, "index.flush.3"));
 }
 
-void Test::requireThatInvalidFusionIndexesAreRemoved() {
+TEST_F(DiskIndexCleanerTest, require_that_invalid_fusion_indexes_are_removed)
+{
     createIndexes();
     std::filesystem::remove(std::filesystem::path(index_dir + "/index.fusion.2/serial.dat"));
     DiskIndexes disk_indexes;
     DiskIndexCleaner::clean(index_dir, disk_indexes);
     vector<string> indexes = readIndexes();
-    EXPECT_EQUAL(4u, indexes.size());
+    EXPECT_EQ(4u, indexes.size());
     EXPECT_TRUE(contains(indexes, "index.fusion.1"));
     EXPECT_TRUE(contains(indexes, "index.flush.2"));
     EXPECT_TRUE(contains(indexes, "index.flush.3"));
     EXPECT_TRUE(contains(indexes, "index.flush.4"));
 }
 
-void Test::requireThatRemoveDontTouchNewIndexes() {
+TEST_F(DiskIndexCleanerTest, require_that_remove_doesnt_touch_new_indexes)
+{
     createIndexes();
     std::filesystem::remove(std::filesystem::path(index_dir + "/index.flush.4/serial.dat"));
     DiskIndexes disk_indexes;
     DiskIndexCleaner::removeOldIndexes(index_dir, disk_indexes);
     vector<string> indexes = readIndexes();
-    EXPECT_EQUAL(3u, indexes.size());
+    EXPECT_EQ(3u, indexes.size());
     EXPECT_TRUE(contains(indexes, "index.fusion.2"));
     EXPECT_TRUE(contains(indexes, "index.flush.3"));
     EXPECT_TRUE(contains(indexes, "index.flush.4"));
@@ -154,4 +150,4 @@ void Test::requireThatRemoveDontTouchNewIndexes() {
 
 }  // namespace
 
-TEST_APPHOOK(Test);
+GTEST_MAIN_RUN_ALL_TESTS()
