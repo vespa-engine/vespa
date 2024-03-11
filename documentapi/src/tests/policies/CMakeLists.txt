@@ -5,5 +5,6 @@ vespa_add_executable(documentapi_policies_test_app TEST
     policies_test.cpp
     DEPENDS
     documentapi
+    GTest::gtest
 )
 vespa_add_test(NAME documentapi_policies_test_app COMMAND documentapi_policies_test_app)
