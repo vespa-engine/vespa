@@ -246,7 +246,7 @@ PoliciesTest::assertMirrorContains(const slobrok::api::IMirrorAPI &mirror, const
         }
         std::this_thread::sleep_for(10ms);
     }
-    FAIL() << "Mirror does not cotnain pattern '" << pattern << "'";
+    FAIL() << "Mirror does not contain pattern '" << pattern << "'";
 }
 
 TEST_F(PoliciesTest, test_extern_send)
