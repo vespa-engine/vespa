@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <iostream>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/documentapi/messagebus/replymerger.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
@@ -9,34 +8,26 @@
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace documentapi;
 
-class Test : public vespalib::TestApp
-{
-    static void assertReplyErrorsMatch(const mbus::Reply& r,
-                                       const std::vector<mbus::Error>& errors);
-public:
-    int Main() override;
-
-    void mergingGenericRepliesWithNoErrorsPicksFirstReply();
-    void mergingSingleReplyWithOneErrorReturnsEmptyReplyWithError();
-    void mergingSingleReplyWithMultipleErrorsReturnsEmptyReplyWithAllErrors();
-    void mergingMultipleRepliesWithMultipleErrorsReturnsEmptyReplyWithAllErrors();
-    void returnIgnoredReplyWhenAllRepliesHaveOnlyIgnoredErrors();
-    void successfulReplyTakesPrecedenceOverIgnoredReplyWhenNoErrors();
-    void nonIgnoredErrorTakesPrecedence();
-    void returnRemoveDocumentReplyWhereDocWasFound();
-    void returnFirstRemoveDocumentReplyIfNoDocsWereFound();
-    void returnUpdateDocumentReplyWhereDocWasFound();
-    void returnGetDocumentReplyWhereDocWasFound();
-    void mergingZeroRepliesReturnsDefaultEmptyReply();
-};
-
-TEST_APPHOOK(Test);
+namespace {
 
 void
-Test::mergingGenericRepliesWithNoErrorsPicksFirstReply()
+assertReplyErrorsMatch(const mbus::Reply& r,
+                       const std::vector<mbus::Error>& errors)
+{
+    ASSERT_EQ(r.getNumErrors(), errors.size());
+    for (size_t i = 0; i < errors.size(); ++i) {
+        ASSERT_EQ(errors[i].getCode(), r.getError(i).getCode());
+        ASSERT_EQ(errors[i].getMessage(), r.getError(i).getMessage());
+    }
+}
+
+}
+
+TEST(ReplyMergerTest, merging_generic_replies_with_no_errors_picks_first_reply)
 {
     mbus::EmptyReply r1;
     mbus::EmptyReply r2;
@@ -48,11 +39,10 @@ Test::mergingGenericRepliesWithNoErrorsPicksFirstReply()
     ReplyMerger::Result ret(merger.mergedReply());
     ASSERT_TRUE(ret.isSuccessful());
     ASSERT_FALSE(ret.hasGeneratedReply());
-    EXPECT_EQUAL(0u, ret.getSuccessfulReplyIndex());
+    EXPECT_EQ(0u, ret.getSuccessfulReplyIndex());
 }
 
-void
-Test::mergingSingleReplyWithOneErrorReturnsEmptyReplyWithError()
+TEST(ReplyMergerTest, merging_single_reply_with_one_error_returns_empty_reply_with_error)
 {
     mbus::EmptyReply r1;
     std::vector<mbus::Error> errors = { mbus::Error(1234, "oh no!") };
@@ -66,8 +56,7 @@ Test::mergingSingleReplyWithOneErrorReturnsEmptyReplyWithError()
     assertReplyErrorsMatch(*gen, errors);
 }
 
-void
-Test::mergingSingleReplyWithMultipleErrorsReturnsEmptyReplyWithAllErrors()
+TEST(ReplyMergerTest, merging_single_reply_with_multiple_errors_returns_empty_reply_with_all_errors)
 {
     mbus::EmptyReply r1;
     std::vector<mbus::Error> errors = {
@@ -85,8 +74,7 @@ Test::mergingSingleReplyWithMultipleErrorsReturnsEmptyReplyWithAllErrors()
     assertReplyErrorsMatch(*gen, errors);
 }
 
-void
-Test::mergingMultipleRepliesWithMultipleErrorsReturnsEmptyReplyWithAllErrors()
+TEST(ReplyMergerTest, merging_multiple_replies_with_multiple_errors_returns_empty_reply_with_all_errors)
 {
     mbus::EmptyReply r1;
     mbus::EmptyReply r2;
@@ -108,8 +96,7 @@ Test::mergingMultipleRepliesWithMultipleErrorsReturnsEmptyReplyWithAllErrors()
     assertReplyErrorsMatch(*gen, errors);
 }
 
-void
-Test::returnIgnoredReplyWhenAllRepliesHaveOnlyIgnoredErrors()
+TEST(ReplyMergerTest, return_ignored_reply_when_all_replies_have_only_ignored_errors)
 {
     mbus::EmptyReply r1;
     mbus::EmptyReply r2;
@@ -132,8 +119,7 @@ Test::returnIgnoredReplyWhenAllRepliesHaveOnlyIgnoredErrors()
     assertReplyErrorsMatch(*gen, { errors[0], errors[2] });
 }
 
-void
-Test::successfulReplyTakesPrecedenceOverIgnoredReplyWhenNoErrors()
+TEST(ReplyMergerTest, successful_reply_takes_precedence_over_ignored_reply_when_no_errors)
 {
     mbus::EmptyReply r1;
     mbus::EmptyReply r2;
@@ -147,11 +133,10 @@ Test::successfulReplyTakesPrecedenceOverIgnoredReplyWhenNoErrors()
     ReplyMerger::Result ret(merger.mergedReply());
     ASSERT_TRUE(ret.isSuccessful());
     ASSERT_FALSE(ret.hasGeneratedReply());
-    EXPECT_EQUAL(1u, ret.getSuccessfulReplyIndex());
+    EXPECT_EQ(1u, ret.getSuccessfulReplyIndex());
 }
 
-void
-Test::nonIgnoredErrorTakesPrecedence()
+TEST(ReplyMergerTest, non_ignored_error_takes_precedence)
 {
     mbus::EmptyReply r1;
     mbus::EmptyReply r2;
@@ -175,8 +160,7 @@ Test::nonIgnoredErrorTakesPrecedence()
     assertReplyErrorsMatch(*gen, { errors[0], errors[1] });
 }
 
-void
-Test::returnRemoveDocumentReplyWhereDocWasFound()
+TEST(ReplyMergerTest, return_remove_document_reply_where_doc_was_found)
 {
     RemoveDocumentReply r1;
     RemoveDocumentReply r2;
@@ -192,11 +176,10 @@ Test::returnRemoveDocumentReplyWhereDocWasFound()
     ReplyMerger::Result ret(merger.mergedReply());
     ASSERT_TRUE(ret.isSuccessful());
     ASSERT_FALSE(ret.hasGeneratedReply());
-    ASSERT_EQUAL(1u, ret.getSuccessfulReplyIndex());
+    ASSERT_EQ(1u, ret.getSuccessfulReplyIndex());
 }
 
-void
-Test::returnFirstRemoveDocumentReplyIfNoDocsWereFound()
+TEST(ReplyMergerTest, return_first_remove_document_reply_if_no_docs_were_found)
 {
     RemoveDocumentReply r1;
     RemoveDocumentReply r2;
@@ -209,11 +192,10 @@ Test::returnFirstRemoveDocumentReplyIfNoDocsWereFound()
     ReplyMerger::Result ret(merger.mergedReply());
     ASSERT_TRUE(ret.isSuccessful());
     ASSERT_FALSE(ret.hasGeneratedReply());
-    ASSERT_EQUAL(0u, ret.getSuccessfulReplyIndex());
+    ASSERT_EQ(0u, ret.getSuccessfulReplyIndex());
 }
 
-void
-Test::returnUpdateDocumentReplyWhereDocWasFound()
+TEST(ReplyMergerTest, return_update_document_reply_where_doc_was_found)
 {
     UpdateDocumentReply r1;
     UpdateDocumentReply r2;
@@ -229,11 +211,10 @@ Test::returnUpdateDocumentReplyWhereDocWasFound()
     ReplyMerger::Result ret(merger.mergedReply());
     ASSERT_TRUE(ret.isSuccessful());
     ASSERT_FALSE(ret.hasGeneratedReply());
-    ASSERT_EQUAL(1u, ret.getSuccessfulReplyIndex());
+    ASSERT_EQ(1u, ret.getSuccessfulReplyIndex());
 }
 
-void
-Test::returnGetDocumentReplyWhereDocWasFound()
+TEST(ReplyMergerTest, return_get_document_reply_where_doc_was_found)
 {
     GetDocumentReply r1;
     GetDocumentReply r2;
@@ -247,22 +228,10 @@ Test::returnGetDocumentReplyWhereDocWasFound()
     ReplyMerger::Result ret(merger.mergedReply());
     ASSERT_TRUE(ret.isSuccessful());
     ASSERT_FALSE(ret.hasGeneratedReply());
-    ASSERT_EQUAL(1u, ret.getSuccessfulReplyIndex());
+    ASSERT_EQ(1u, ret.getSuccessfulReplyIndex());
 }
 
-void
-Test::assertReplyErrorsMatch(const mbus::Reply& r,
-                             const std::vector<mbus::Error>& errors)
-{
-    ASSERT_EQUAL(r.getNumErrors(), errors.size());
-    for (size_t i = 0; i < errors.size(); ++i) {
-        ASSERT_EQUAL(errors[i].getCode(), r.getError(i).getCode());
-        ASSERT_EQUAL(errors[i].getMessage(), r.getError(i).getMessage());
-    }
-}
-
-void
-Test::mergingZeroRepliesReturnsDefaultEmptyReply()
+TEST(ReplyMergerTest, merging_zero_replies_returns_default_empty_reply)
 {
     ReplyMerger merger;
     ReplyMerger::Result ret(merger.mergedReply());
@@ -273,30 +242,4 @@ Test::mergingZeroRepliesReturnsDefaultEmptyReply()
     assertReplyErrorsMatch(*gen, {});
 }
 
-#ifdef RUN_TEST
-#  error Someone defined RUN_TEST already! Oh no!
-#endif
-#define RUN_TEST(f) \
-  std::cerr << "running test case '" #f "'\n"; \
-  f(); TEST_FLUSH();
-
-int
-Test::Main()
-{
-    TEST_INIT("replymerger_test");
-
-    RUN_TEST(mergingGenericRepliesWithNoErrorsPicksFirstReply);
-    RUN_TEST(mergingSingleReplyWithOneErrorReturnsEmptyReplyWithError);
-    RUN_TEST(mergingSingleReplyWithMultipleErrorsReturnsEmptyReplyWithAllErrors);
-    RUN_TEST(mergingMultipleRepliesWithMultipleErrorsReturnsEmptyReplyWithAllErrors);
-    RUN_TEST(returnIgnoredReplyWhenAllRepliesHaveOnlyIgnoredErrors);
-    RUN_TEST(successfulReplyTakesPrecedenceOverIgnoredReplyWhenNoErrors);
-    RUN_TEST(nonIgnoredErrorTakesPrecedence);
-    RUN_TEST(returnRemoveDocumentReplyWhereDocWasFound);
-    RUN_TEST(returnFirstRemoveDocumentReplyIfNoDocsWereFound);
-    RUN_TEST(returnUpdateDocumentReplyWhereDocWasFound);
-    RUN_TEST(returnGetDocumentReplyWhereDocWasFound);
-    RUN_TEST(mergingZeroRepliesReturnsDefaultEmptyReply);
-
-    TEST_DONE();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
