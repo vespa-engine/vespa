@@ -93,7 +93,7 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
-                .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
+                .com().yahoo().prelude().fastsearch().FastBackend().docsum()
                 .defaultclass());
 
         String uniqueServerId = UUID.randomUUID().toString();
