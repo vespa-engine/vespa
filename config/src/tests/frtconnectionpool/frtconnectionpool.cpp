@@ -1,121 +1,79 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/frt/frtconnectionpool.h>
 #include <vespa/fnet/frt/error.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <sstream>
 #include <set>
 #include <unistd.h>
 
 using namespace config;
 
-class Test : public vespalib::TestApp {
-private:
-    static ServerSpec::HostSpecList _sources;
+class FRTConnectionPoolTest : public testing::Test {
+protected:
+    ServerSpec::HostSpecList _sources;
     FNET_Transport    _transport;
     void verifyAllSourcesInRotation(FRTConnectionPool& sourcePool);
-public:
-    Test();
-    ~Test() override;
-    int Main() override;
-    void testBasicRoundRobin();
-    void testBasicHashBasedSelection();
-    void testSetErrorRoundRobin();
-    void testSetErrorAllRoundRobin();
-    void testSetErrorHashBased();
-    void testSetErrorAllHashBased();
-    void testSuspensionTimeout();
-    void testManySources();
+    FRTConnectionPoolTest();
+    ~FRTConnectionPoolTest() override;
 };
 
-Test::Test()
-    : vespalib::TestApp(),
+FRTConnectionPoolTest::FRTConnectionPoolTest()
+    : testing::Test(),
+      _sources(),
       _transport()
 {
-    _transport.Start();
-}
-
-Test::~Test() {
-    _transport.ShutDown(true);
-}
-
-TEST_APPHOOK(Test);
-
-ServerSpec::HostSpecList Test::_sources;
-TimingValues timingValues;
-
-int Test::Main() {
-    TEST_INIT("frtconnectionpool_test");
-
     _sources.push_back("host0");
     _sources.push_back("host1");
     _sources.push_back("host2");
-
-    testBasicRoundRobin();
-    TEST_FLUSH();
-
-    testBasicHashBasedSelection();
-    TEST_FLUSH();
-
-    testSetErrorRoundRobin();
-    TEST_FLUSH();
-
-    testSetErrorAllRoundRobin();
-    TEST_FLUSH();
-
-    testSetErrorHashBased();
-    TEST_FLUSH();
-
-    testSetErrorAllHashBased();
-    TEST_FLUSH();
-
-    testSuspensionTimeout();
-    TEST_FLUSH();
-
-    testManySources();
-    TEST_FLUSH();
-
-    TEST_DONE();
-    return 0;
+    _transport.Start();
 }
 
-void Test::verifyAllSourcesInRotation(FRTConnectionPool& sourcePool) {
+FRTConnectionPoolTest::~FRTConnectionPoolTest() {
+    _transport.ShutDown(true);
+}
+
+TimingValues timingValues;
+
+void FRTConnectionPoolTest::verifyAllSourcesInRotation(FRTConnectionPool& sourcePool) {
     std::set<std::string> completeSet(_sources.begin(), _sources.end());
     std::set<std::string> foundSet;
     for (int i = 0; i < (int)_sources.size(); i++) {
         foundSet.insert(sourcePool.getNextRoundRobin()->getAddress());
     }
-    EXPECT_EQUAL(true, completeSet == foundSet);
+    EXPECT_EQ(true, completeSet == foundSet);
 }
 
 /**
  * Tests that basic round robin selection through the list works.
  */
-void Test::testBasicRoundRobin() {
+TEST_F(FRTConnectionPoolTest, test_basic_round_robin)
+{
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     for (int i = 0; i < 9; i++) {
         int j = i % _sources.size();
         std::stringstream s;
         s << "host" << j;
-        EXPECT_EQUAL(s.str(), sourcePool.getNextRoundRobin()->getAddress());
+        EXPECT_EQ(s.str(), sourcePool.getNextRoundRobin()->getAddress());
     }
 }
 
 /**
  * Tests that hash-based selection through the list works.
  */
-void Test::testBasicHashBasedSelection() {
+TEST_F(FRTConnectionPoolTest, test_basic_hash_based_selection)
+{
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     sourcePool.setHostname("a.b.com");
     for (int i = 0; i < 9; i++) {
-        EXPECT_EQUAL("host1", sourcePool.getNextHashBased()->getAddress());
+        EXPECT_EQ("host1", sourcePool.getNextHashBased()->getAddress());
     }
     sourcePool.setHostname("host98");
     for (int i = 0; i < 9; i++) {
-        EXPECT_EQUAL("host0", sourcePool.getNextHashBased()->getAddress());
+        EXPECT_EQ("host0", sourcePool.getNextHashBased()->getAddress());
     }
 
     ServerSpec::HostSpecList hostnames;
@@ -125,24 +83,25 @@ void Test::testBasicHashBasedSelection() {
     const ServerSpec spec2(hostnames);
     FRTConnectionPool sourcePool2(_transport, spec2, timingValues);
     sourcePool2.setHostname("sutter-01.example.yahoo.com");
-    EXPECT_EQUAL("stroustrup-02.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());
+    EXPECT_EQ("stroustrup-02.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());
     sourcePool2.setHostname("stroustrup-02.example.yahoo.com");
-    EXPECT_EQUAL("sutter-01.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());
+    EXPECT_EQ("sutter-01.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());
     sourcePool2.setHostname("alexandrescu-03.example.yahoo.com");
-    EXPECT_EQUAL("alexandrescu-03.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());
+    EXPECT_EQ("alexandrescu-03.example.yahoo.com", sourcePool2.getNextHashBased()->getAddress());
 }
 
 /**
  * Tests that a source is taken out of rotation when an error is reported,
  * and that it is taken back in when a success is reported.
  */
-void Test::testSetErrorRoundRobin() {
+TEST_F(FRTConnectionPoolTest, test_set_error_round_robin)
+{
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     FRTConnection* source = sourcePool.getNextRoundRobin();
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < 9; i++) {
-        EXPECT_NOT_EQUAL(source->getAddress(), sourcePool.getCurrent()->getAddress());
+        EXPECT_NE(source->getAddress(), sourcePool.getCurrent()->getAddress());
     }
     source->setSuccess();
     verifyAllSourcesInRotation(sourcePool);
@@ -151,7 +110,8 @@ void Test::testSetErrorRoundRobin() {
 /**
  * Tests that all sources are in rotation when all sources have errors set.
  */
-void Test::testSetErrorAllRoundRobin() {
+TEST_F(FRTConnectionPoolTest, test_set_error_all_round_robin)
+{
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     for (int i = 0; i < (int)_sources.size(); i++) {
@@ -165,22 +125,24 @@ void Test::testSetErrorAllRoundRobin() {
  * Tests that a source is not used when an error is reported,
  * and that the same source is used when a success is reported.
  */
-void Test::testSetErrorHashBased() {
+TEST_F(FRTConnectionPoolTest, test_set_error_hash_based)
+{
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     FRTConnection* source = sourcePool.getNextHashBased();
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < (int)_sources.size(); i++) {
-        EXPECT_NOT_EQUAL(source->getAddress(), sourcePool.getNextHashBased()->getAddress());
+        EXPECT_NE(source->getAddress(), sourcePool.getNextHashBased()->getAddress());
     }
     source->setSuccess();
-    EXPECT_EQUAL(source->getAddress(), sourcePool.getNextHashBased()->getAddress());
+    EXPECT_EQ(source->getAddress(), sourcePool.getNextHashBased()->getAddress());
 }
 
 /**
  * Tests that the same source is used when all sources have errors set.
  */
-void Test::testSetErrorAllHashBased() {
+TEST_F(FRTConnectionPoolTest, test_set_error_all_hash_based)
+{
     const ServerSpec spec(_sources);
     FRTConnectionPool sourcePool(_transport, spec, timingValues);
     FRTConnection* firstSource = sourcePool.getNextHashBased();
@@ -188,11 +150,11 @@ void Test::testSetErrorAllHashBased() {
     for (int i = 0; i < (int)readySources.size(); i++) {
         readySources[i]->setError(FRTE_RPC_CONNECTION);
     }
-    EXPECT_EQUAL(sourcePool.getReadySources().size(), 0u);
-    EXPECT_EQUAL(sourcePool.getSuspendedSources().size(), 3u);
+    EXPECT_EQ(sourcePool.getReadySources().size(), 0u);
+    EXPECT_EQ(sourcePool.getSuspendedSources().size(), 3u);
 
     // should get the same source now, since all are suspended
-    EXPECT_EQUAL(firstSource->getAddress(), sourcePool.getNextHashBased()->getAddress());
+    EXPECT_EQ(firstSource->getAddress(), sourcePool.getNextHashBased()->getAddress());
 
     // set all except firstSource to OK
     for (int i = 0; i < (int)readySources.size(); i++) {
@@ -201,18 +163,19 @@ void Test::testSetErrorAllHashBased() {
         }
     }
 
-    EXPECT_EQUAL(sourcePool.getReadySources().size(), 2u);
-    EXPECT_EQUAL(sourcePool.getSuspendedSources().size(), 1u);
+    EXPECT_EQ(sourcePool.getReadySources().size(), 2u);
+    EXPECT_EQ(sourcePool.getSuspendedSources().size(), 1u);
 
     // should not get the same source now, since original source is
     // suspended, while the rest are OK
-    EXPECT_NOT_EQUAL(firstSource->getAddress(), sourcePool.getNextHashBased()->getAddress());
+    EXPECT_NE(firstSource->getAddress(), sourcePool.getNextHashBased()->getAddress());
 }
 
 /**
  * Tests that the source is put back into rotation when the suspension times out.
  */
-void Test::testSuspensionTimeout() {
+TEST_F(FRTConnectionPoolTest, test_suspension_timeout)
+{
     const ServerSpec spec(_sources);
     TimingValues short_transient_delay;
     short_transient_delay.transientDelay = 1s;
@@ -220,7 +183,7 @@ void Test::testSuspensionTimeout() {
     FRTConnection* source = dynamic_cast<FRTConnection *>(sourcePool.getCurrent());
     source->setError(FRTE_RPC_CONNECTION);
     for (int i = 0; i < 9; i++) {
-        EXPECT_NOT_EQUAL(source->getAddress(), sourcePool.getCurrent()->getAddress());
+        EXPECT_NE(source->getAddress(), sourcePool.getCurrent()->getAddress());
     }
     sleep(2);
     verifyAllSourcesInRotation(sourcePool);
@@ -230,7 +193,8 @@ void Test::testSuspensionTimeout() {
  * Tests that when there are two sources and several clients
  * the sources will be chosen with equal probability.
  */
-void Test::testManySources() {
+TEST_F(FRTConnectionPoolTest, test_many_sources)
+{
     std::vector<std::string> hostnames;
     for (int i = 0; i < 20; ++i) {
         hostnames.push_back("host-" + std::to_string(i) + ".example.yahoo.com");
@@ -255,6 +219,8 @@ void Test::testManySources() {
             timesUsed[address] = 1;
         }
     }
-    EXPECT_EQUAL(timesUsed["host0"], (int)hostnames.size() / 2);
-    EXPECT_EQUAL(timesUsed["host1"], (int)hostnames.size() / 2);
+    EXPECT_EQ(timesUsed["host0"], (int)hostnames.size() / 2);
+    EXPECT_EQ(timesUsed["host1"], (int)hostnames.size() / 2);
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
