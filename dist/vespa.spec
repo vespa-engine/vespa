@@ -32,6 +32,7 @@
 %define _create_vespa_service 1
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake3
+%global _vespa_build_depencencies_version 1.2.7
 
 Name:           vespa
 Version:        _VESPA_VERSION_
@@ -42,7 +43,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-BuildRequires: vespa-build-dependencies = 1.2.7
+BuildRequires: vespa-build-dependencies = %{_vespa_build_depencencies_version}
 
 Requires: %{name}-base             = %{version}-%{release}
 Requires: %{name}-base-libs        = %{version}-%{release}
@@ -262,6 +263,7 @@ Vespa - The open big data serving engine - tools for system tests
 
 Summary: Vespa - The open big data serving engine - devel package
 
+Requires: vespa-build-dependencies = %{_vespa_build_depencencies_version}
 Requires: %{name}           = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
 
