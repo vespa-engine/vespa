@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.yahoo.component.chain.dependencies.After;
-import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
+import static com.yahoo.prelude.fastsearch.VespaBackend.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;

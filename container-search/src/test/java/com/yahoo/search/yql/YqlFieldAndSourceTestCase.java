@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import com.yahoo.search.schema.DocumentSummary;
 import com.yahoo.search.schema.Schema;
@@ -21,7 +20,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import static com.yahoo.search.searchchain.testutil.DocumentSourceSearcher.DEFAULT_SUMMARY_CLASS;
-import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
+import static com.yahoo.prelude.fastsearch.VespaBackend.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
 
 
 /**

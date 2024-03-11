@@ -1,14 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.prelude.fastsearch.ByteField;
-import com.yahoo.prelude.fastsearch.DataField;
-import com.yahoo.prelude.fastsearch.DocsumDefinition;
-import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
-import com.yahoo.prelude.fastsearch.FastHit;
-import com.yahoo.prelude.fastsearch.IntegerField;
-import com.yahoo.prelude.fastsearch.StringField;
-import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
 import com.yahoo.search.schema.DocumentSummary;
 import com.yahoo.search.schema.Schema;

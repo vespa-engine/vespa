@@ -30,7 +30,7 @@ import java.util.Optional;
 // errors on results and returning them. It could be handy to create a QueryHandlingErrorException
 // or similar which could wrap an error message, and then just always throw that and
 // catch and unwrap into a results with an error in high level methods.  -Jon
-public class FastSearcher extends VespaBackEndSearcher {
+public class IndexedBackend extends VespaBackend {
 
     /** Used to dispatch directly to search nodes over RPC, replacing the old fnet communication path */
     private final Dispatcher dispatcher;
@@ -48,12 +48,12 @@ public class FastSearcher extends VespaBackEndSearcher {
      * @param clusterParams the cluster number, and other cluster backend parameters
      * @param documentdbInfoConfig document database parameters
      */
-    public FastSearcher(String serverId,
-                        Dispatcher dispatcher,
-                        SummaryParameters docSumParams,
-                        ClusterParams clusterParams,
-                        DocumentdbInfoConfig documentdbInfoConfig,
-                        SchemaInfo schemaInfo) {
+    public IndexedBackend(String serverId,
+                          Dispatcher dispatcher,
+                          SummaryParameters docSumParams,
+                          ClusterParams clusterParams,
+                          DocumentdbInfoConfig documentdbInfoConfig,
+                          SchemaInfo schemaInfo) {
         init(serverId, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
         this.dispatcher = dispatcher;
     }

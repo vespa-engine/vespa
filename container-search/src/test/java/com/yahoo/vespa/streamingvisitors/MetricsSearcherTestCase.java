@@ -134,9 +134,9 @@ public class MetricsSearcherTestCase {
 
         private void assignContextProperties(Query query, String loadType) {
             if (loadType != null && loadType.equals(LOADTYPE1)) {
-                query.getContext(true).setProperty(StreamingSearcher.STREAMING_STATISTICS, visitorStats);
+                query.getContext(true).setProperty(StreamingBackend.STREAMING_STATISTICS, visitorStats);
             } else {
-                query.getContext(true).setProperty(StreamingSearcher.STREAMING_STATISTICS, null);
+                query.getContext(true).setProperty(StreamingBackend.STREAMING_STATISTICS, null);
             }
         }
     }

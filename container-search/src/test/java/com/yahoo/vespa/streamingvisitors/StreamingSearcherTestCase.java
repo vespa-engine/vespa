@@ -159,7 +159,7 @@ public class StreamingSearcherTestCase {
         }
     }
 
-    private static Result executeQuery(StreamingSearcher searcher, Query query) {
+    private static Result executeQuery(StreamingBackend searcher, Query query) {
         return searcher.doSearch2("test", query);
     }
 
@@ -181,7 +181,7 @@ public class StreamingSearcherTestCase {
         return queries;
     }
 
-    private static void checkError(StreamingSearcher searcher, String queryString, String message, String detailedMessage) {
+    private static void checkError(StreamingBackend searcher, String queryString, String message, String detailedMessage) {
         for (Query query : generateTestQueries(queryString)) {
             Result result = executeQuery(searcher, query);
             assertNotNull(result.hits().getError());
@@ -194,7 +194,7 @@ public class StreamingSearcherTestCase {
         }
     }
 
-    private static void checkSearch(StreamingSearcher searcher, String queryString, int hitCount, String idPrefix) {
+    private static void checkSearch(StreamingBackend searcher, String queryString, int hitCount, String idPrefix) {
         for (Query query : generateTestQueries(queryString)) {
             Result result = executeQuery(searcher, query);
             assertNull(result.hits().getError());
@@ -212,11 +212,11 @@ public class StreamingSearcherTestCase {
         }
     }
 
-    private static void checkGrouping(StreamingSearcher searcher, String queryString, int hitCount) {
+    private static void checkGrouping(StreamingBackend searcher, String queryString, int hitCount) {
         checkSearch(searcher, queryString, hitCount, null);
     }
 
-    private static void checkMatchFeatures(StreamingSearcher searcher) {
+    private static void checkMatchFeatures(StreamingBackend searcher) {
         String queryString = "/?streaming.selection=true&query=match_features";
         Result result = executeQuery(searcher, new Query(queryString));
         assertNull(result.hits().getError());
@@ -229,7 +229,7 @@ public class StreamingSearcherTestCase {
     @Test
     void testBasics() {
         MockVisitorFactory factory = new MockVisitorFactory();
-        StreamingSearcher searcher = new StreamingSearcher(factory);
+        StreamingBackend searcher = new StreamingBackend(factory);
 
         var schema = new Schema.Builder("test");
         schema.add(new com.yahoo.search.schema.DocumentSummary.Builder("default").build());
@@ -276,25 +276,25 @@ public class StreamingSearcherTestCase {
         String groupId2 = "id:namespace:mytype:g=group2:userspecific";
         String badId = "unknowscheme:namespace:something";
 
-        assertTrue(StreamingSearcher.verifyDocId(userId1, generalQuery, true));
+        assertTrue(StreamingBackend.verifyDocId(userId1, generalQuery, true));
 
-        assertTrue(StreamingSearcher.verifyDocId(userId1, generalQuery, false));
-        assertTrue(StreamingSearcher.verifyDocId(userId2, generalQuery, false));
-        assertTrue(StreamingSearcher.verifyDocId(groupId1, generalQuery, false));
-        assertTrue(StreamingSearcher.verifyDocId(groupId2, generalQuery, false));
-        assertFalse(StreamingSearcher.verifyDocId(badId, generalQuery, false));
+        assertTrue(StreamingBackend.verifyDocId(userId1, generalQuery, false));
+        assertTrue(StreamingBackend.verifyDocId(userId2, generalQuery, false));
+        assertTrue(StreamingBackend.verifyDocId(groupId1, generalQuery, false));
+        assertTrue(StreamingBackend.verifyDocId(groupId2, generalQuery, false));
+        assertFalse(StreamingBackend.verifyDocId(badId, generalQuery, false));
 
-        assertTrue(StreamingSearcher.verifyDocId(userId1, user1Query, false));
-        assertFalse(StreamingSearcher.verifyDocId(userId2, user1Query, false));
-        assertFalse(StreamingSearcher.verifyDocId(groupId1, user1Query, false));
-        assertFalse(StreamingSearcher.verifyDocId(groupId2, user1Query, false));
-        assertFalse(StreamingSearcher.verifyDocId(badId, user1Query, false));
+        assertTrue(StreamingBackend.verifyDocId(userId1, user1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(userId2, user1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(groupId1, user1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(groupId2, user1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(badId, user1Query, false));
 
-        assertFalse(StreamingSearcher.verifyDocId(userId1, group1Query, false));
-        assertFalse(StreamingSearcher.verifyDocId(userId2, group1Query, false));
-        assertTrue(StreamingSearcher.verifyDocId(groupId1, group1Query, false));
-        assertFalse(StreamingSearcher.verifyDocId(groupId2, group1Query, false));
-        assertFalse(StreamingSearcher.verifyDocId(badId, group1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(userId1, group1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(userId2, group1Query, false));
+        assertTrue(StreamingBackend.verifyDocId(groupId1, group1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(groupId2, group1Query, false));
+        assertFalse(StreamingBackend.verifyDocId(badId, group1Query, false));
     }
 
     private static class TraceFixture {
@@ -304,13 +304,13 @@ public class StreamingSearcherTestCase {
         TracingOptions options;
 
         MockVisitorFactory factory;
-        StreamingSearcher searcher;
+        StreamingBackend searcher;
 
         private TraceFixture(Long firstTimestamp, Long... additionalTimestamps) {
             clock = MockUtils.mockedClockReturning(firstTimestamp, additionalTimestamps);
             options = new TracingOptions(sampler, exporter, clock, 8, 2.0);
             factory = new MockVisitorFactory();
-            searcher = new StreamingSearcher(factory, options);
+            searcher = new StreamingBackend(factory, options);
         }
 
         private TraceFixture() {

@@ -1,12 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.component.chain.Chain;
-import com.yahoo.prelude.fastsearch.FastHit;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.Searcher;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import org.junit.jupiter.api.Test;
@@ -22,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class PartialFillTestCase {
 
-    public static class FS4 extends VespaBackEndSearcher {
+    public static class FS4 extends VespaBackend {
         public List<Result> history = new ArrayList<>();
         protected Result doSearch2(String schema, Query query) {
             return new Result(query);
@@ -32,7 +28,7 @@ public class PartialFillTestCase {
         }
     }
 
-    public static class BadFS4 extends VespaBackEndSearcher {
+    public static class BadFS4 extends VespaBackend {
         protected Result doSearch2(String schema, Query query) {
             return new Result(query);
         }
@@ -137,14 +133,8 @@ public class PartialFillTestCase {
         }
     }
 
-    private void doFill(VespaBackEndSearcher searcher, Result result, String summaryClass) {
+    private void doFill(VespaBackend searcher, Result result, String summaryClass) {
         searcher.fill(result, summaryClass);
-    }
-
-    private Chain<Searcher> chainedAsSearchChain(Searcher topOfChain) {
-        List<Searcher> searchers = new ArrayList<>();
-        searchers.add(topOfChain);
-        return new Chain<>(searchers);
     }
 
 }

@@ -31,7 +31,7 @@ import java.util.Optional;
  *
  * @author baldersheim
  */
-public abstract class VespaBackEndSearcher {
+public abstract class VespaBackend {
 
     /** for vespa-internal use only; consider renaming the summary class */
     public static final String SORTABLE_ATTRIBUTES_SUMMARY_CLASS = "attributeprefetch";
@@ -184,7 +184,7 @@ public abstract class VespaBackEndSearcher {
         return result;
     }
 
-    private List<Result> partitionHits(Result result, String summaryClass) {
+    private static List<Result> partitionHits(Result result, String summaryClass) {
         List<Result> parts = new ArrayList<>();
         TinyIdentitySet<Query> queryMap = new TinyIdentitySet<>(4);
 
@@ -210,6 +210,7 @@ public abstract class VespaBackEndSearcher {
         return parts;
     }
 
+    //TODO Add schema here too.
     public void fill(Result result, String summaryClass) {
         if (result.isFilled(summaryClass)) return; // TODO: Checked in the superclass - remove
 

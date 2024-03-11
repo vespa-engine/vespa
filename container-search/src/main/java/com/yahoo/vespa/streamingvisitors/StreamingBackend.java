@@ -14,7 +14,7 @@ import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
-import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
+import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  * @author  baldersheim
  * @author  Ulf Carlin
  */
-public class StreamingSearcher extends VespaBackEndSearcher {
+public class StreamingBackend extends VespaBackend {
 
     private static final CompoundName streamingUserid = CompoundName.from("streaming.userid");
     private static final CompoundName streamingGroupname = CompoundName.from("streaming.groupname");
@@ -53,7 +53,7 @@ public class StreamingSearcher extends VespaBackEndSearcher {
     static final String STREAMING_STATISTICS = "streaming.statistics";
     private final VisitorFactory visitorFactory;
     private final TracingOptions tracingOptions;
-    private static final Logger log = Logger.getLogger(StreamingSearcher.class.getName());
+    private static final Logger log = Logger.getLogger(StreamingBackend.class.getName());
 
     private Route route;
 
@@ -63,17 +63,17 @@ public class StreamingSearcher extends VespaBackEndSearcher {
     /** The route to the storage cluster. */
     private String storageClusterRouteSpec = null;
 
-    StreamingSearcher(VisitorFactory visitorFactory) {
+    StreamingBackend(VisitorFactory visitorFactory) {
         this.visitorFactory = visitorFactory;
         tracingOptions = TracingOptions.DEFAULT;
     }
 
-    StreamingSearcher(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
+    StreamingBackend(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
         this.visitorFactory = visitorFactory;
         this.tracingOptions = tracingOptions;
     }
 
-    public StreamingSearcher(VespaDocumentAccess access) {
+    public StreamingBackend(VespaDocumentAccess access) {
         this(new VespaVisitorFactory(access));
     }
 

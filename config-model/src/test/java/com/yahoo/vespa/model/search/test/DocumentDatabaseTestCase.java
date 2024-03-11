@@ -289,8 +289,12 @@ public class DocumentDatabaseTestCase {
         { // documentdb-info config
             DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, searcherId);
             assertEquals(2, dcfg.documentdb().size());
-            assertEquals("type1", dcfg.documentdb(0).name());
-            assertEquals("type2", dcfg.documentdb(1).name());
+            var db = dcfg.documentdb(0);
+            assertEquals("type1", db.name());
+            assertEquals(DocumentdbInfoConfig.Documentdb.Mode.INDEX, db.mode());
+            db = dcfg.documentdb(1);
+            assertEquals("type2", db.name());
+            assertEquals(DocumentdbInfoConfig.Documentdb.Mode.INDEX, db.mode());
         }
         { // attributes config
             AttributesConfig acfg = model.getConfig(AttributesConfig.class, searcherId);
@@ -312,11 +316,30 @@ public class DocumentDatabaseTestCase {
         assertEquals(1, dcfg.documentdb().size());
         DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
         assertEquals("type", db.name());
+        assertEquals(DocumentdbInfoConfig.Documentdb.Mode.STREAMING, db.mode());
     }
 
     @Test
     void requireThatDocumentDBConfigIsAvailableForStreaming() {
         assertDocumentDBConfigAvailableForStreaming("streaming");
+    }
+
+    @Test
+    void testMixedModeCluster() {
+        // Will soon change
+        List<DocType> sds = List.of(DocType.create("a", "index"), DocType.create("b", "streaming"));
+        var tester = new SchemaTester();
+        var model = tester.createModel(sds, "");
+        DocumentdbInfoConfig indexed_cfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test");
+        assertEquals(1, indexed_cfg.documentdb().size());
+        var db = indexed_cfg.documentdb(0);
+        assertEquals("a", db.name());
+        assertEquals(DocumentdbInfoConfig.Documentdb.Mode.INDEX, db.mode());
+        DocumentdbInfoConfig streaming_cfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.b");
+        assertEquals(1, streaming_cfg.documentdb().size());
+        db = streaming_cfg.documentdb(0);
+        assertEquals("b", db.name());
+        assertEquals(DocumentdbInfoConfig.Documentdb.Mode.STREAMING, db.mode());
     }
 
     private void assertAttributesConfigIndependentOfMode(String mode, List<String> sds,
