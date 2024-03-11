@@ -3,9 +3,9 @@
 #include <vespa/messagebus/configagent.h>
 #include <vespa/messagebus/iconfighandler.h>
 #include <vespa/messagebus/routing/routingspec.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 
 using namespace mbus;
@@ -31,32 +31,19 @@ public:
     }
 };
 
-class Test : public vespalib::TestApp {
-private:
-    bool testRouting(const RoutingSpec &spec);
-    bool testConfig(const RoutingSpec &spec);
-
-public:
-    void testConstructors();
-    void testConfigGeneration();
-    int Main() override;
+class RoutingSpecTest : public testing::Test {
+protected:
+    RoutingSpecTest();
+    ~RoutingSpecTest() override;
+    static void test_routing_helper(const RoutingSpec &spec, bool& success);
+    static bool testRouting(const RoutingSpec &spec);
+    static bool testConfig(const RoutingSpec &spec);
 };
 
-TEST_APPHOOK(Test);
+RoutingSpecTest::RoutingSpecTest() = default;
+RoutingSpecTest::~RoutingSpecTest() = default;
 
-int
-Test::Main()
-{
-    TEST_INIT("routingspec_test");
-
-    testConstructors();     TEST_FLUSH();
-    testConfigGeneration(); TEST_FLUSH();
-
-    TEST_DONE();
-}
-
-void
-Test::testConstructors()
+TEST_F(RoutingSpecTest, test_constructors)
 {
     {
         RoutingSpec spec;
@@ -126,57 +113,64 @@ Test::testConstructors()
     }
 }
 
-bool
-Test::testRouting(const RoutingSpec &spec)
+void
+RoutingSpecTest::test_routing_helper(const RoutingSpec &spec, bool& success)
 {
-    if (!ASSERT_TRUE(spec.getNumTables() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getProtocol() == "foo")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(0).getNumHops() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(0).getName() == "foo-h1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(0).getSelector() == "foo-h1-sel")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(0).getHop(0).getNumRecipients() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(0).getRecipient(0) == "foo-h1-r1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(0).getRecipient(1) == "foo-h1-r2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(1).getName() == "foo-h2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(1).getSelector() == "foo-h2-sel")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(0).getHop(1).getNumRecipients() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(1).getRecipient(0) == "foo-h2-r1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getHop(1).getRecipient(1) == "foo-h2-r2")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(0).getNumRoutes() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getRoute(0).getName() == "foo-r1")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(0).getRoute(0).getNumHops() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getRoute(0).getHop(0) == "foo-h1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getRoute(0).getHop(1) == "foo-h2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getRoute(1).getName() == "foo-r2")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(0).getRoute(1).getNumHops() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getRoute(1).getHop(0) == "foo-h2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(0).getRoute(1).getHop(1) == "foo-h1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getProtocol() == "bar")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(1).getNumHops() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(0).getName() == "bar-h1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(0).getSelector() == "bar-h1-sel")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(1).getHop(0).getNumRecipients() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(0).getRecipient(0) == "bar-h1-r1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(0).getRecipient(1) == "bar-h1-r2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(1).getName() == "bar-h2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(1).getSelector() == "bar-h2-sel")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(1).getHop(1).getNumRecipients() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(1).getRecipient(0) == "bar-h2-r1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getHop(1).getRecipient(1) == "bar-h2-r2")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(1).getNumRoutes() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getRoute(0).getName() == "bar-r1")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(1).getRoute(0).getNumHops() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getRoute(0).getHop(0) == "bar-h1")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getRoute(0).getHop(1) == "bar-h2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getRoute(1).getName() == "bar-r2")) { return false; }
-    if (!ASSERT_TRUE(spec.getTable(1).getRoute(1).getNumHops() == 2)) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getRoute(1).getHop(0) == "bar-h2")) { return false; }
-    if (!EXPECT_TRUE(spec.getTable(1).getRoute(1).getHop(1) == "bar-h1")) { return false; }
-    return true;
+    ASSERT_TRUE(spec.getNumTables() == 2);
+    ASSERT_TRUE(spec.getTable(0).getProtocol() == "foo");
+    ASSERT_TRUE(spec.getTable(0).getNumHops() == 2);
+    ASSERT_TRUE(spec.getTable(0).getHop(0).getName() == "foo-h1");
+    ASSERT_TRUE(spec.getTable(0).getHop(0).getSelector() == "foo-h1-sel");
+    ASSERT_TRUE(spec.getTable(0).getHop(0).getNumRecipients() == 2);
+    ASSERT_TRUE(spec.getTable(0).getHop(0).getRecipient(0) == "foo-h1-r1");
+    ASSERT_TRUE(spec.getTable(0).getHop(0).getRecipient(1) == "foo-h1-r2");
+    ASSERT_TRUE(spec.getTable(0).getHop(1).getName() == "foo-h2");
+    ASSERT_TRUE(spec.getTable(0).getHop(1).getSelector() == "foo-h2-sel");
+    ASSERT_TRUE(spec.getTable(0).getHop(1).getNumRecipients() == 2);
+    ASSERT_TRUE(spec.getTable(0).getHop(1).getRecipient(0) == "foo-h2-r1");
+    ASSERT_TRUE(spec.getTable(0).getHop(1).getRecipient(1) == "foo-h2-r2");
+    ASSERT_TRUE(spec.getTable(0).getNumRoutes() == 2);
+    ASSERT_TRUE(spec.getTable(0).getRoute(0).getName() == "foo-r1");
+    ASSERT_TRUE(spec.getTable(0).getRoute(0).getNumHops() == 2);
+    ASSERT_TRUE(spec.getTable(0).getRoute(0).getHop(0) == "foo-h1");
+    ASSERT_TRUE(spec.getTable(0).getRoute(0).getHop(1) == "foo-h2");
+    ASSERT_TRUE(spec.getTable(0).getRoute(1).getName() == "foo-r2");
+    ASSERT_TRUE(spec.getTable(0).getRoute(1).getNumHops() == 2);
+    ASSERT_TRUE(spec.getTable(0).getRoute(1).getHop(0) == "foo-h2");
+    ASSERT_TRUE(spec.getTable(0).getRoute(1).getHop(1) == "foo-h1");
+    ASSERT_TRUE(spec.getTable(1).getProtocol() == "bar");
+    ASSERT_TRUE(spec.getTable(1).getNumHops() == 2);
+    ASSERT_TRUE(spec.getTable(1).getHop(0).getName() == "bar-h1");
+    ASSERT_TRUE(spec.getTable(1).getHop(0).getSelector() == "bar-h1-sel");
+    ASSERT_TRUE(spec.getTable(1).getHop(0).getNumRecipients() == 2);
+    ASSERT_TRUE(spec.getTable(1).getHop(0).getRecipient(0) == "bar-h1-r1");
+    ASSERT_TRUE(spec.getTable(1).getHop(0).getRecipient(1) == "bar-h1-r2");
+    ASSERT_TRUE(spec.getTable(1).getHop(1).getName() == "bar-h2");
+    ASSERT_TRUE(spec.getTable(1).getHop(1).getSelector() == "bar-h2-sel");
+    ASSERT_TRUE(spec.getTable(1).getHop(1).getNumRecipients() == 2);
+    ASSERT_TRUE(spec.getTable(1).getHop(1).getRecipient(0) == "bar-h2-r1");
+    ASSERT_TRUE(spec.getTable(1).getHop(1).getRecipient(1) == "bar-h2-r2");
+    ASSERT_TRUE(spec.getTable(1).getNumRoutes() == 2);
+    ASSERT_TRUE(spec.getTable(1).getRoute(0).getName() == "bar-r1");
+    ASSERT_TRUE(spec.getTable(1).getRoute(0).getNumHops() == 2);
+    ASSERT_TRUE(spec.getTable(1).getRoute(0).getHop(0) == "bar-h1");
+    ASSERT_TRUE(spec.getTable(1).getRoute(0).getHop(1) == "bar-h2");
+    ASSERT_TRUE(spec.getTable(1).getRoute(1).getName() == "bar-r2");
+    ASSERT_TRUE(spec.getTable(1).getRoute(1).getNumHops() == 2);
+    ASSERT_TRUE(spec.getTable(1).getRoute(1).getHop(0) == "bar-h2");
+    ASSERT_TRUE(spec.getTable(1).getRoute(1).getHop(1) == "bar-h1");
+    success = true;
 }
 
-void
-Test::testConfigGeneration()
+bool
+RoutingSpecTest::testRouting(const RoutingSpec &spec)
+{
+    bool success = false;
+    test_routing_helper(spec, success);
+    return success;
+}
+
+TEST_F(RoutingSpecTest, test_config_generation)
 {
     EXPECT_TRUE(testConfig(RoutingSpec()));
     EXPECT_TRUE(testConfig(RoutingSpec().addTable(RoutingTableSpec("mytable1"))));
@@ -200,50 +194,52 @@ Test::testConfigGeneration()
                                     .addRoute(RouteSpec("myroute12").addHop("myhop1").addHop("myhop2")))
                           .addTable(RoutingTableSpec("mytable2"))));
 
-    EXPECT_EQUAL("routingtable[2]\n"
-               "routingtable[0].protocol \"mytable1\"\n"
-               "routingtable[1].protocol \"mytable2\"\n"
-               "routingtable[1].hop[3]\n"
-               "routingtable[1].hop[0].name \"myhop1\"\n"
-               "routingtable[1].hop[0].selector \"myselector1\"\n"
-               "routingtable[1].hop[1].name \"myhop2\"\n"
-               "routingtable[1].hop[1].selector \"myselector2\"\n"
-               "routingtable[1].hop[1].ignoreresult true\n"
-               "routingtable[1].hop[2].name \"myhop1\"\n"
-               "routingtable[1].hop[2].selector \"myselector3\"\n"
-               "routingtable[1].hop[2].recipient[2]\n"
-               "routingtable[1].hop[2].recipient[0] \"myrecipient1\"\n"
-               "routingtable[1].hop[2].recipient[1] \"myrecipient2\"\n"
-               "routingtable[1].route[1]\n"
-               "routingtable[1].route[0].name \"myroute1\"\n"
-               "routingtable[1].route[0].hop[1]\n"
-               "routingtable[1].route[0].hop[0] \"myhop1\"\n",
-               RoutingSpec()
-               .addTable(RoutingTableSpec("mytable1"))
-               .addTable(RoutingTableSpec("mytable2")
-                         .addHop(HopSpec("myhop1", "myselector1"))
-                         .addHop(std::move(HopSpec("myhop2", "myselector2").setIgnoreResult(true)))
-                         .addHop(HopSpec("myhop1", "myselector3")
-                                 .addRecipient("myrecipient1")
-                                 .addRecipient("myrecipient2"))
-                         .addRoute(RouteSpec("myroute1").addHop("myhop1"))).toString());
+    EXPECT_EQ("routingtable[2]\n"
+              "routingtable[0].protocol \"mytable1\"\n"
+              "routingtable[1].protocol \"mytable2\"\n"
+              "routingtable[1].hop[3]\n"
+              "routingtable[1].hop[0].name \"myhop1\"\n"
+              "routingtable[1].hop[0].selector \"myselector1\"\n"
+              "routingtable[1].hop[1].name \"myhop2\"\n"
+              "routingtable[1].hop[1].selector \"myselector2\"\n"
+              "routingtable[1].hop[1].ignoreresult true\n"
+              "routingtable[1].hop[2].name \"myhop1\"\n"
+              "routingtable[1].hop[2].selector \"myselector3\"\n"
+              "routingtable[1].hop[2].recipient[2]\n"
+              "routingtable[1].hop[2].recipient[0] \"myrecipient1\"\n"
+              "routingtable[1].hop[2].recipient[1] \"myrecipient2\"\n"
+              "routingtable[1].route[1]\n"
+              "routingtable[1].route[0].name \"myroute1\"\n"
+              "routingtable[1].route[0].hop[1]\n"
+              "routingtable[1].route[0].hop[0] \"myhop1\"\n",
+              RoutingSpec()
+              .addTable(RoutingTableSpec("mytable1"))
+              .addTable(RoutingTableSpec("mytable2")
+                        .addHop(HopSpec("myhop1", "myselector1"))
+                        .addHop(std::move(HopSpec("myhop2", "myselector2").setIgnoreResult(true)))
+                        .addHop(HopSpec("myhop1", "myselector3")
+                                .addRecipient("myrecipient1")
+                                .addRecipient("myrecipient2"))
+                        .addRoute(RouteSpec("myroute1").addHop("myhop1"))).toString());
 }
 
 bool
-Test::testConfig(const RoutingSpec &spec)
+RoutingSpecTest::testConfig(const RoutingSpec &spec)
 {
-    if (!EXPECT_TRUE(spec == spec)) {
+    bool failure = false;
+    EXPECT_TRUE(spec == spec) << (failure = true, "");
+    if (failure) {
         return false;
     }
-    if (!EXPECT_TRUE(spec == RoutingSpec(spec))) {
+    EXPECT_TRUE(spec == RoutingSpec(spec)) << (failure = true, "");
+    if (failure) {
         return false;
     }
     ConfigStore store;
     ConfigAgent agent(store);
     agent.configure(ConfigGetter<MessagebusConfig>().getConfig("", RawSpec(spec.toString())));
-    if (!EXPECT_TRUE(store.getRoutingSpec() == spec)) {
-        return false;
-    }
-    return true;
+    EXPECT_TRUE(store.getRoutingSpec() == spec) << (failure = true, "");
+    return !failure;
 }
 
+GTEST_MAIN_RUN_ALL_TESTS()
