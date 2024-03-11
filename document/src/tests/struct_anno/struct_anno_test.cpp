@@ -28,7 +28,7 @@ template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
 }
 
-TEST(StructAnnoTest, require_that_struct_fields_can_contain_nnotations)
+TEST(StructAnnoTest, require_that_struct_fields_can_contain_annotations)
 {
     DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("documenttypes.cfg")));
 
