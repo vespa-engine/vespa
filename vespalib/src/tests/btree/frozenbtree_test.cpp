@@ -416,37 +416,22 @@ TEST_F(FrozenBTreeTest, test_frozen_btree)
     sortRandomValues();
 
     allocTree();
-    insertRandomValues(*_tree, *_allocator, _randomValues);
-    lookupRandomValues(*_tree, *_allocator, _randomValues);
+    ASSERT_NO_FATAL_FAILURE(insertRandomValues(*_tree, *_allocator, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(lookupRandomValues(*_tree, *_allocator, _randomValues));
     EXPECT_TRUE(_tree->getFrozenView(*_allocator).empty());
     _allocator->freeze();
     EXPECT_FALSE(_tree->getFrozenView(*_allocator).empty());
     _allocator->assign_generation(_generationHandler->getCurrentGeneration());
     lookupFrozenRandomValues(*_tree, *_allocator, _randomValues);
-    traverseTreeIterator(*_tree,
-                         *_allocator,
-                         _sortedRandomValues,
-                         false);
-    traverseTreeIterator(*_tree,
-                         *_allocator,
-                         _sortedRandomValues,
-                         true);
-    traverseTreeIterator(*_tree,
-                         *_allocator,
-                         _sortedRandomValues,
-                         false);
-    traverseTreeIterator(*_tree,
-                         *_allocator,
-                         _sortedRandomValues,
-                         true);
-    removeRandomValues(*_tree, *_allocator, _randomValues);
-    lookupGoneRandomValues(*_tree, *_allocator, _randomValues);
-    lookupFrozenRandomValues(*_tree, *_allocator,_randomValues);
-    traverseTreeIterator(*_tree,
-                         *_allocator,
-                         _sortedRandomValues,
-                         true);
-    insertRandomValues(*_tree, *_allocator, _randomValues);
+    ASSERT_NO_FATAL_FAILURE(traverseTreeIterator(*_tree, *_allocator, _sortedRandomValues, false));
+    ASSERT_NO_FATAL_FAILURE(traverseTreeIterator(*_tree, *_allocator, _sortedRandomValues, true));
+    ASSERT_NO_FATAL_FAILURE(traverseTreeIterator(*_tree, *_allocator, _sortedRandomValues, false));
+    ASSERT_NO_FATAL_FAILURE(traverseTreeIterator(*_tree, *_allocator, _sortedRandomValues, true));
+    ASSERT_NO_FATAL_FAILURE(removeRandomValues(*_tree, *_allocator, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(lookupGoneRandomValues(*_tree, *_allocator, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(lookupFrozenRandomValues(*_tree, *_allocator,_randomValues));
+    ASSERT_NO_FATAL_FAILURE(traverseTreeIterator(*_tree, *_allocator, _sortedRandomValues, true));
+    ASSERT_NO_FATAL_FAILURE(insertRandomValues(*_tree, *_allocator, _randomValues));
     freeTree(true);
 }
 
