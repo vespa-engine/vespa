@@ -6,24 +6,4 @@ namespace=prelude.fastsearch
 
 ## The name of the schema/document database
 documentdb[].name string
-
-## The id of the summary class. Not used TODO: Remove after July 2022
-documentdb[].summaryclass[].id int
-## The name of the summary class. Not used TODO: Remove after July 2022
-documentdb[].summaryclass[].name string
-## The name of a field in the summary class. Not used TODO: Remove after July 2022
-documentdb[].summaryclass[].fields[].name string
-## The type of a field in the summary class. Not used TODO: Remove after July 2022
-documentdb[].summaryclass[].fields[].type string
-## Whether this field is a dynamic snippet. Not used TODO: Remove after July 2022
-documentdb[].summaryclass[].fields[].dynamic bool default=false
-
-## Information about rank profiles. Not used TODO: Remove after July 2022
-documentdb[].rankprofile[].name string
-documentdb[].rankprofile[].hasSummaryFeatures bool default=true
-documentdb[].rankprofile[].hasRankFeatures bool default=true
-
-# The name of an input (query rank feature) accepted by this profile. Not used TODO: Remove after July 2022
-documentdb[].rankprofile[].input[].name string
-# The tensor type of an input (query rank feature) accepted by this profile. Not used TODO: Remove after July 2022
-documentdb[].rankprofile[].input[].type string
+documentdb[].mode enum {INDEX, STREAMING, STORE_ONLY} default=INDEX

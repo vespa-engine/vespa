@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -38,7 +39,6 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,21 +50,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ClusterSearcherTestCase {
 
     private static final double DELTA = 0.0000000000000001;
-
-    @Test
-    void testNoBackends() {
-        ClusterSearcher cluster = new ClusterSearcher(createSchemaInfo(), Set.of("dummy"));
-        try {
-            Execution execution = new Execution(cluster, Execution.Context.createContextStub());
-            Query query = new Query("query=hello");
-            query.setHits(10);
-            com.yahoo.search.Result result = execution.search(query);
-            assertNotNull(result.hits().getError());
-            assertEquals("No backends in service. Try later", result.hits().getError().getMessage());
-        } finally {
-            cluster.deconstruct();
-        }
-    }
 
     private static SchemaInfo createSchemaInfo() {
         var schemas = Stream.of("type1", "type2", "type3", "type4", "type5", "type6")
@@ -89,10 +74,11 @@ public class ClusterSearcherTestCase {
 
     @Test
     void testThatDocumentTypesAreResolved() {
+        var backend = new MyMockSearcher(false);
         SchemaInfo schemaInfo = createSchemaInfo();
-        ClusterSearcher cluster1 = new ClusterSearcher(schemaInfo, Set.of("type1", "type2", "type3"));
+        ClusterSearcher cluster1 = new ClusterSearcher(schemaInfo, Map.of("type1", backend, "type2", backend, "type3", backend));
         try {
-            ClusterSearcher type1 = new ClusterSearcher(schemaInfo, Set.of("type6"));
+            ClusterSearcher type1 = new ClusterSearcher(schemaInfo, Map.of("type6", backend));
             try {
                 assertEquals(Set.of("type1", "type2", "type3"), resolve(cluster1, ""));
                 assertEquals(Set.of("type6"), resolve(type1, ""));
@@ -129,10 +115,11 @@ public class ClusterSearcherTestCase {
 
     @Test
     void testThatDocumentTypesAreResolvedTODO_REMOVE() {
+        var backend = new MyMockSearcher(false);
         SchemaInfo schemaInfo = createSchemaInfo();
-        ClusterSearcher cluster1 = new ClusterSearcher(schemaInfo, Set.of("type1", "type2", "type3"));
+        ClusterSearcher cluster1 = new ClusterSearcher(schemaInfo, Map.of("type1", backend, "type2", backend, "type3", backend));
         try {
-            ClusterSearcher type1 = new ClusterSearcher(schemaInfo, Set.of("type6"));
+            ClusterSearcher type1 = new ClusterSearcher(schemaInfo, Map.of("type6", backend));
             try {
                 assertEquals(Set.of(), resolve(cluster1, "&sources=cluster2"));
             } finally {
@@ -267,10 +254,14 @@ public class ClusterSearcherTestCase {
     }
 
     private Execution createExecution(List<String> docTypesList, boolean expectAttributePrefetch) {
+        var backend = new MyMockSearcher(expectAttributePrefetch);
+        Map<String, VespaBackEndSearcher> searchers = new HashMap<>();
+        for(String schema : docTypesList) {
+            searchers.put(schema, backend);
+        }
         Set<String> documentTypes = new LinkedHashSet<>(docTypesList);
         ClusterSearcher cluster = new ClusterSearcher(toSchemaInfo(documentTypes, "mycluster"),
-                                                      documentTypes,
-                                                      new MyMockSearcher(expectAttributePrefetch),
+                                                      searchers,
                                                       new InThreadExecutorService());
         try {
             List<Schema> schemas = new ArrayList<>();
@@ -449,7 +440,11 @@ public class ClusterSearcherTestCase {
             clusterConfig.maxQueryCacheTimeout(maxQueryCacheTimeout);
 
         DocumentdbInfoConfig.Builder documentDbConfig = new DocumentdbInfoConfig.Builder();
-        documentDbConfig.documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1"));
+        documentDbConfig.documentdb(new DocumentdbInfoConfig.Documentdb.Builder()
+                .name("type1")
+                .mode(streamingMode
+                        ? DocumentdbInfoConfig.Documentdb.Mode.Enum.STREAMING
+                        : DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX));
         var schema = new Schema.Builder("type1");
 
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
