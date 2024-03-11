@@ -7,7 +7,6 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.data.access.Inspector;
-import com.yahoo.search.result.NanNumber;
 
 /**
  * @author bratseth

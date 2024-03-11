@@ -130,6 +130,29 @@ public class ClusterSearcherTestCase {
         }
     }
 
+    @Test
+    void testThatMultipleBackendsAreUsed() {
+        var backendA = new MyMockBackend(false);
+        var backendB = new MyMockBackend(false);
+        SchemaInfo schemaInfo = createSchemaInfo();
+        var cluster1 = new ClusterSearcher(schemaInfo, Map.of("type1", backendA, "type2", backendB, "type3", backendA),
+                new InThreadExecutorService());
+        try {
+            Execution execution = new Execution(cluster1, Execution.Context.createContextStub());
+            execution.search(new Query("?query=hello"));
+            assertEquals(2, backendA.queries().size());
+            assertEquals(1, backendB.queries().size());
+            execution.search(new Query("?query=hello&restrict=type1"));
+            assertEquals(3, backendA.queries().size());
+            assertEquals(1, backendB.queries().size());
+            execution.search(new Query("?query=hello&restrict=type2,type3"));
+            assertEquals(4, backendA.queries().size());
+            assertEquals(2, backendB.queries().size());
+        } finally {
+            cluster1.deconstruct();
+        }
+    }
+
     private static class MyMockBackend extends VespaBackend {
 
         private final String type1 = "type1";
@@ -137,6 +160,8 @@ public class ClusterSearcherTestCase {
         private final String type3 = "type3";
         private final Map<String, List<Hit>> results = new LinkedHashMap<>();
         private final boolean expectAttributePrefetch;
+
+        private final List<Query> queries = new ArrayList<>();
         static final String ATTRIBUTE_PREFETCH = "attributeprefetch";
 
         private String getId(String type, int i) {
@@ -197,8 +222,11 @@ public class ClusterSearcherTestCase {
             return null; // search() is overriden, this should never be called
         }
 
+        List<Query> queries() { return queries; }
+
         @Override
         public com.yahoo.search.Result search(String schema, Query query) {
+            queries.add(query);
             com.yahoo.search.Result result = new com.yahoo.search.Result(query);
             List<Hit> hits = getHits(query);
             if (hits != null) {
@@ -419,7 +447,7 @@ public class ClusterSearcherTestCase {
         assertResult(6, List.of(7.0, 9.0),  getResult(3, 2, extra, ex));
         assertResult(6, List.of(9.0, 10.0), getResult(4, 2, extra, ex));
         assertResult(6, List.of(10.0),      getResult(5, 2, extra, ex));
-        assertResult(6, List.of(),  getResult(6, 2, extra, ex));
+        assertResult(6, List.of(),          getResult(6, 2, extra, ex));
     }
 
     private static ClusterSearcher createSearcher(String clusterName, Double maxQueryTimeout, Double maxQueryCacheTimeout,
