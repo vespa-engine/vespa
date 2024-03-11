@@ -1,14 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.prelude.fastsearch.test;
+package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
-import com.yahoo.prelude.fastsearch.ClusterParams;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.FastBackend;
-import com.yahoo.prelude.fastsearch.SummaryParameters;
-import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.MockDispatcher;
@@ -38,14 +33,14 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author bratseth
  */
-public class FastSearcherTestCase {
+public class IndexedBackendTestCase {
     private static final String SCHEMA = "test";
     private static final String CLUSTER = "test";
 
     @Test
     void testNullQuery() {
-        Logger.getLogger(FastBackend.class.getName()).setLevel(Level.ALL);
-        FastBackend fastSearcher = new FastBackend("container.0",
+        Logger.getLogger(IndexedBackend.class.getName()).setLevel(Level.ALL);
+        IndexedBackend fastSearcher = new IndexedBackend("container.0",
                 MockDispatcher.create(List.of()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -70,7 +65,7 @@ public class FastSearcherTestCase {
 
     @Test
     void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
-        FastBackend fastSearcher = new FastBackend("container.0",
+        IndexedBackend fastSearcher = new IndexedBackend("container.0",
                 MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -93,7 +88,7 @@ public class FastSearcherTestCase {
 
     @Test
     void testRankProfileValidation() {
-        FastBackend fastSearcher = new FastBackend("container.0",
+        IndexedBackend fastSearcher = new IndexedBackend("container.0",
                 MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -112,7 +107,7 @@ public class FastSearcherTestCase {
                 .add(new RankProfile.Builder("default").setHasRankFeatures(false)
                         .setHasSummaryFeatures(false)
                         .build());
-        FastBackend backend = new FastBackend("container.0",
+        IndexedBackend backend = new IndexedBackend("container.0",
                 MockDispatcher.create(Collections.singletonList(new Node(CLUSTER, 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
@@ -132,7 +127,7 @@ public class FastSearcherTestCase {
     void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
         MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0), new Node(CLUSTER, 2, "host1", 0)));
 
-        FastBackend fastSearcher = new FastBackend("container.0",
+        IndexedBackend fastSearcher = new IndexedBackend("container.0",
                 dispatcher,
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),

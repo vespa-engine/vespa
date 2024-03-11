@@ -11,7 +11,7 @@ import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.FastBackend;
+import com.yahoo.prelude.fastsearch.IndexedBackend;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
@@ -93,7 +93,7 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
-                .com().yahoo().prelude().fastsearch().FastBackend().docsum()
+                .com().yahoo().prelude().fastsearch().IndexedBackend().docsum()
                 .defaultclass());
 
         String uniqueServerId = UUID.randomUUID().toString();
@@ -130,20 +130,20 @@ public class ClusterSearcher extends Searcher {
         return new ClusterParams("sc" + searchclusterIndex + ".num" + 0);
     }
 
-    private static FastBackend searchDispatch(int searchclusterIndex,
-                                              String searchClusterName,
-                                              String serverId,
-                                              SummaryParameters docSumParams,
-                                              DocumentdbInfoConfig documentdbInfoConfig,
-                                              SchemaInfo schemaInfo,
-                                              ComponentRegistry<Dispatcher> dispatchers) {
+    private static IndexedBackend searchDispatch(int searchclusterIndex,
+                                                 String searchClusterName,
+                                                 String serverId,
+                                                 SummaryParameters docSumParams,
+                                                 DocumentdbInfoConfig documentdbInfoConfig,
+                                                 SchemaInfo schemaInfo,
+                                                 ComponentRegistry<Dispatcher> dispatchers) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         ComponentId dispatcherComponentId = new ComponentId("dispatcher." + searchClusterName);
         Dispatcher dispatcher = dispatchers.getComponent(dispatcherComponentId);
         if (dispatcher == null)
             throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId +
                                                " is configured");
-        return new FastBackend(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
+        return new IndexedBackend(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
     }
 
     private static StreamingBackend streamingCluster(String serverId,

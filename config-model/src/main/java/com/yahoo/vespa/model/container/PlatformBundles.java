@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.prelude.fastsearch.IndexedBackend;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.nio.file.Path;
@@ -92,7 +93,7 @@ public class PlatformBundles {
             com.yahoo.docproc.SimpleDocumentProcessor.class.getName(),
             com.yahoo.language.simple.SimpleLinguistics.class.getName(),
             com.yahoo.prelude.cluster.ClusterSearcher.class.getName(),
-            com.yahoo.prelude.fastsearch.FastBackend.class.getName(),
+            IndexedBackend.class.getName(),
             com.yahoo.prelude.fastsearch.VespaBackend.class.getName(),
             com.yahoo.prelude.querytransform.CJKSearcher.class.getName(),
             com.yahoo.prelude.querytransform.CollapsePhraseSearcher.class.getName(),
