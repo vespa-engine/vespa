@@ -5,13 +5,15 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
+
+namespace {
 
 class TestData {
 public:
@@ -34,37 +36,26 @@ public:
     bool start();
 };
 
-class Test : public vespalib::TestApp {
-private:
-    Message::UP createMessage(const string &msg);
-    bool testTrace(const std::vector<string> &expected, const Trace &trace);
-
-public:
-    int Main() override;
-    void testAdvanced(TestData &data);
-};
-
-TEST_APPHOOK(Test);
-
-TestData::~TestData() = default;
-TestData::TestData() :
-    _slobrok(),
-    _retryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
-    _srcServer(MessageBusParams().setRetryPolicy(_retryPolicy).addProtocol(std::make_shared<SimpleProtocol>()),
-               RPCNetworkParams(_slobrok.config())),
-    _srcSession(),
-    _srcHandler(),
-    _dstServer(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()),
-               RPCNetworkParams(_slobrok.config()).setIdentity(Identity("dst"))),
-    _fooSession(),
-    _fooHandler(),
-    _barSession(),
-    _barHandler(),
-    _bazSession(),
-    _bazHandler()
+TestData::TestData()
+    : _slobrok(),
+      _retryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
+      _srcServer(MessageBusParams().setRetryPolicy(_retryPolicy).addProtocol(std::make_shared<SimpleProtocol>()),
+                 RPCNetworkParams(_slobrok.config())),
+      _srcSession(),
+      _srcHandler(),
+      _dstServer(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()),
+                 RPCNetworkParams(_slobrok.config()).setIdentity(Identity("dst"))),
+      _fooSession(),
+      _fooHandler(),
+      _barSession(),
+      _barHandler(),
+      _bazSession(),
+      _bazHandler()
 {
     _retryPolicy->setBaseDelay(0);
 }
+
+TestData::~TestData() = default;
 
 bool
 TestData::start()
@@ -91,30 +82,21 @@ TestData::start()
     return true;
 }
 
-Message::UP
-Test::createMessage(const string &msg)
+std::unique_ptr<Message>
+createMessage(const string &msg)
 {
     auto ret = std::make_unique<SimpleMessage>(msg);
     ret->getTrace().setLevel(9);
     return ret;
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("routing_test");
+}
 
+TEST(AdvancedRoutingTest, test_advanced)
+{
     TestData data;
     ASSERT_TRUE(data.start());
 
-    testAdvanced(data); TEST_FLUSH();
-
-    TEST_DONE();
-}
-
-void
-Test::testAdvanced(TestData &data)
-{
     const duration TIMEOUT = 60s;
     IProtocol::SP protocol(new SimpleProtocol());
     auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
@@ -174,7 +156,9 @@ Test::testAdvanced(TestData &data)
     reply = data._srcHandler.getReply();
     ASSERT_TRUE(reply);
     printf("%s", reply->getTrace().toString().c_str());
-    EXPECT_EQUAL(2u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::FATAL_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(1).getCode());
+    EXPECT_EQ(2u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::FATAL_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(1).getCode());
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
