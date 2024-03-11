@@ -5,5 +5,6 @@ vespa_add_executable(messagebus_throttling_test_app TEST
     DEPENDS
     messagebus_messagebus-test
     messagebus
+    GTest::gtest
 )
 vespa_add_test(NAME messagebus_throttling_test_app COMMAND messagebus_throttling_test_app)
