@@ -2863,7 +2863,8 @@
       "public abstract void write(com.yahoo.document.Document)",
       "public abstract void write(com.yahoo.document.DocumentId)",
       "public abstract void write(com.yahoo.document.DocumentType)",
-      "public abstract void write(com.yahoo.document.DocumentRemove)"
+      "public abstract void write(com.yahoo.document.DocumentRemove)",
+      "public abstract void write(com.yahoo.document.DocumentUpdate)"
     ],
     "fields" : [ ]
   },

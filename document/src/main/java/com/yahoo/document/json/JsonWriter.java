@@ -9,6 +9,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.datatypes.Array;
@@ -264,6 +265,7 @@ public class JsonWriter implements DocumentWriter {
         // NOP, fetched from Document
     }
 
+    @Override
     public void write(DocumentRemove documentRemove) {
         try {
             generator.writeStartObject();
@@ -275,6 +277,12 @@ public class JsonWriter implements DocumentWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void write(DocumentUpdate documentUpdate) {
+        var serializer = new DocumentUpdateJsonSerializer(generator);
+        serializer.serialize(documentUpdate);
     }
 
     /**

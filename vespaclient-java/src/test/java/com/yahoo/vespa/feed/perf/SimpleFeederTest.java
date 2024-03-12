@@ -87,10 +87,11 @@ public class SimpleFeederTest {
                 "",
                 "(.+\n)+" +
                         "\\s*\\d+,\\s*3,.+\n");
-        assertEquals(96, dump.size());
+        assertEquals(169, dump.size());
         assertEquals("""
                              [
                                {"id":"id:simple:simple::0","fields":{"my_str":"foo"}},
+                               {"update":"id:simple:simple::1","fields":{"my_str":{"assign":"bar"}}},
                                {"remove":"id:simple:simple::2"}
                              ]""",
                      dump.toString());

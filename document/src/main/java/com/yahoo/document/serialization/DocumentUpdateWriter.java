@@ -17,8 +17,7 @@ import com.yahoo.document.update.TensorRemoveUpdate;
 /**
  * Interface for writing document updates in custom serializers.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.27
+ * @author Einar M R Rosenvinge
  */
 public interface DocumentUpdateWriter {
     void write(DocumentUpdate update);
