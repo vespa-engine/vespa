@@ -32,6 +32,7 @@ vespa_add_executable(searchcore_diskindexcleaner_test_app TEST
     diskindexcleaner_test.cpp
     DEPENDS
     searchcore_index
+    GTest::gtest
 )
 
 vespa_add_test(NAME searchcore_diskindexcleaner_test_app
