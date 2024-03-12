@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_featurenameparser_test_app TEST
     featurenameparser_test.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_featurenameparser_test_app COMMAND searchlib_featurenameparser_test_app)
