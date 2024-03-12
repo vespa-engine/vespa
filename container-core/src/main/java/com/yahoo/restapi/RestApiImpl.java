@@ -479,6 +479,7 @@ class RestApiImpl implements RestApi {
             }
             return HttpURL.from(URI.create(sb.toString()));
         }
+        @Override public HttpURL url() { return HttpURL.from(request.getUri()); }
         @Override public AclMapping.Action aclAction() { return aclAction; }
         @Override public Optional<Principal> userPrincipal() {
             return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal());
