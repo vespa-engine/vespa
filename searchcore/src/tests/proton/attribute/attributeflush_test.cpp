@@ -14,7 +14,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
@@ -209,46 +209,6 @@ AVConfig getInt32ArrayConfig()
     return AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY);
 }
 
-class Test : public vespalib::TestApp
-{
-private:
-    void
-    requireThatUpdaterAndFlusherCanRunConcurrently();
-
-    void
-    requireThatFlushableAttributeReportsMemoryUsage();
-
-    void
-    requireThatFlushableAttributeManagesSyncTokenInfo();
-
-    void
-    requireThatFlushTargetsCanBeRetrieved();
-
-    void
-    requireThatCleanUpIsPerformedAfterFlush();
-
-    void
-    requireThatFlushStatsAreUpdated();
-
-    void
-    requireThatOnlyOneFlusherCanRunAtTheSameTime();
-
-    void
-    requireThatLastFlushTimeIsReported();
-
-    void
-    requireThatShrinkWorks();
-
-    void requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo);
-    void requireThatFlushedAttributeCanBeLoaded();
-
-    void requireThatFlushFailurePreventsSyncTokenUpdate();
-public:
-    int
-    Main() override;
-};
-
-
 const string test_dir = "flush";
 
 struct BaseFixture
@@ -325,9 +285,7 @@ struct Fixture : public BaseFixture, public AttributeManagerFixture
 
 Fixture::~Fixture() = default;
 
-
-void
-Test::requireThatUpdaterAndFlusherCanRunConcurrently()
+TEST(AttributeFlushTest, require_that_updater_and_flusher_can_run_concurrently)
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -352,14 +310,12 @@ Test::requireThatUpdaterAndFlusherCanRunConcurrently()
                 AttributeFactory::createAttribute(baseFileName,
                         getInt32Config());
             EXPECT_TRUE(attr->load());
-            EXPECT_EQUAL((uint32_t)snap.syncToken + 1, attr->getNumDocs());
+            EXPECT_EQ((uint32_t)snap.syncToken + 1, attr->getNumDocs());
         }
     }
 }
 
-
-void
-Test::requireThatFlushableAttributeReportsMemoryUsage()
+TEST(AttributeFlushTest, require_that_flushable_attribute_reports_memory_usage)
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -368,16 +324,14 @@ Test::requireThatFlushableAttributeReportsMemoryUsage()
     av->commit();
     IFlushTarget::SP fa = am.getFlushable("a2");
     EXPECT_TRUE(av->getStatus().getAllocated() >= 100u * sizeof(int32_t));
-    EXPECT_EQUAL(av->getStatus().getUsed(),
-               fa->getApproxMemoryGain().getBefore()+0lu);
+    EXPECT_EQ(av->getStatus().getUsed(),
+              fa->getApproxMemoryGain().getBefore()+0lu);
     // attributes stay in memory
-    EXPECT_EQUAL(fa->getApproxMemoryGain().getBefore(),
-               fa->getApproxMemoryGain().getAfter());
+    EXPECT_EQ(fa->getApproxMemoryGain().getBefore(),
+              fa->getApproxMemoryGain().getAfter());
 }
 
-
-void
-Test::requireThatFlushableAttributeManagesSyncTokenInfo()
+TEST(AttributeFlushTest, require_that_flushable_attribute_manages_sync_token_info)
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -386,49 +340,45 @@ Test::requireThatFlushableAttributeManagesSyncTokenInfo()
     IFlushTarget::SP fa = am.getFlushable("a3");
 
     IndexMetaInfo info("flush/a3");
-    EXPECT_EQUAL(0u, fa->getFlushedSerialNum());
+    EXPECT_EQ(0u, fa->getFlushedSerialNum());
     EXPECT_TRUE(fa->initFlush(0, std::make_shared<search::FlushToken>()).get() == NULL);
     EXPECT_TRUE(!info.load());
 
     av->commit(CommitParam(10)); // last sync token = 10
-    EXPECT_EQUAL(0u, fa->getFlushedSerialNum());
+    EXPECT_EQ(0u, fa->getFlushedSerialNum());
     EXPECT_TRUE(fa->initFlush(10, std::make_shared<search::FlushToken>()).get() != NULL);
     fa->initFlush(10, std::make_shared<search::FlushToken>())->run();
-    EXPECT_EQUAL(10u, fa->getFlushedSerialNum());
+    EXPECT_EQ(10u, fa->getFlushedSerialNum());
     EXPECT_TRUE(info.load());
-    EXPECT_EQUAL(1u, info.snapshots().size());
+    EXPECT_EQ(1u, info.snapshots().size());
     EXPECT_TRUE(info.snapshots()[0].valid);
-    EXPECT_EQUAL(10u, info.snapshots()[0].syncToken);
+    EXPECT_EQ(10u, info.snapshots()[0].syncToken);
 
     av->commit(CommitParam(20)); // last sync token = 20
-    EXPECT_EQUAL(10u, fa->getFlushedSerialNum());
+    EXPECT_EQ(10u, fa->getFlushedSerialNum());
     fa->initFlush(20, std::make_shared<search::FlushToken>())->run();
-    EXPECT_EQUAL(20u, fa->getFlushedSerialNum());
+    EXPECT_EQ(20u, fa->getFlushedSerialNum());
     EXPECT_TRUE(info.load());
-    EXPECT_EQUAL(1u, info.snapshots().size()); // snapshot 10 removed
+    EXPECT_EQ(1u, info.snapshots().size()); // snapshot 10 removed
     EXPECT_TRUE(info.snapshots()[0].valid);
-    EXPECT_EQUAL(20u, info.snapshots()[0].syncToken);
+    EXPECT_EQ(20u, info.snapshots()[0].syncToken);
 }
 
-
-void
-Test::requireThatFlushTargetsCanBeRetrieved()
+TEST(AttributeFlushTest, require_that_flush_targets_can_be_retrieved)
 {
     Fixture f;
     AttributeManager &am = f._m;
     f.addAttribute("a4");
     f.addAttribute("a5");
     std::vector<IFlushTarget::SP> ftl = am.getFlushTargets();
-    EXPECT_EQUAL(4u, ftl.size());
-    EXPECT_EQUAL(am.getFlushable("a4").get(), ftl[0].get());
-    EXPECT_EQUAL(am.getShrinker("a4").get(),  ftl[1].get());
-    EXPECT_EQUAL(am.getFlushable("a5").get(), ftl[2].get());
-    EXPECT_EQUAL(am.getShrinker("a5").get(),  ftl[3].get());
+    EXPECT_EQ(4u, ftl.size());
+    EXPECT_EQ(am.getFlushable("a4").get(), ftl[0].get());
+    EXPECT_EQ(am.getShrinker("a4").get(),  ftl[1].get());
+    EXPECT_EQ(am.getFlushable("a5").get(), ftl[2].get());
+    EXPECT_EQ(am.getShrinker("a5").get(),  ftl[3].get());
 }
 
-
-void
-Test::requireThatCleanUpIsPerformedAfterFlush()
+TEST(AttributeFlushTest, require_that_cleanup_is_performed_after_flush)
 {
     Fixture f;
     AttributeVector::SP av = f.addAttribute("a6");
@@ -454,16 +404,14 @@ Test::requireThatCleanUpIsPerformedAfterFlush()
     fa.initFlush(30, std::make_shared<search::FlushToken>())->run();
 
     EXPECT_TRUE(info.load());
-    EXPECT_EQUAL(1u, info.snapshots().size()); // snapshots 10 & 20 removed
+    EXPECT_EQ(1u, info.snapshots().size()); // snapshots 10 & 20 removed
     EXPECT_TRUE(info.snapshots()[0].valid);
-    EXPECT_EQUAL(30u, info.snapshots()[0].syncToken);
+    EXPECT_EQ(30u, info.snapshots()[0].syncToken);
     EXPECT_FALSE(fs::exists(fs::path(snap10)));
     EXPECT_FALSE(fs::exists(fs::path(snap20)));
 }
 
-
-void
-Test::requireThatFlushStatsAreUpdated()
+TEST(AttributeFlushTest, require_that_flush_stats_are_updated)
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -473,13 +421,11 @@ Test::requireThatFlushStatsAreUpdated()
     IFlushTarget::SP ft = am.getFlushable("a7");
     ft->initFlush(101, std::make_shared<search::FlushToken>())->run();
     FlushStats stats = ft->getLastFlushStats();
-    EXPECT_EQUAL("flush/a7/snapshot-101", stats.getPath());
-    EXPECT_EQUAL(8u, stats.getPathElementsToLog());
+    EXPECT_EQ("flush/a7/snapshot-101", stats.getPath());
+    EXPECT_EQ(8u, stats.getPathElementsToLog());
 }
 
-
-void
-Test::requireThatOnlyOneFlusherCanRunAtTheSameTime()
+TEST(AttributeFlushTest, require_that_only_one_flusher_can_run_at_the_same_time)
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -504,15 +450,13 @@ Test::requireThatOnlyOneFlusherCanRunAtTheSameTime()
     ASSERT_TRUE(info.load());
     LOG(info, "Found %zu snapshots", info.snapshots().size());
     for (size_t i = 0; i < info.snapshots().size(); ++i) {
-        EXPECT_EQUAL(true, info.snapshots()[i].valid);
+        EXPECT_EQ(true, info.snapshots()[i].valid);
     }
     IndexMetaInfo::Snapshot best = info.getBestSnapshot();
-    EXPECT_EQUAL(true, best.valid);
+    EXPECT_EQ(true, best.valid);
 }
 
-
-void
-Test::requireThatLastFlushTimeIsReported()
+TEST(AttributeFlushTest, require_that_last_flush_time_is_reported)
 {
     using seconds = std::chrono::seconds;
     BaseFixture f;
@@ -521,38 +465,36 @@ Test::requireThatLastFlushTimeIsReported()
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         AttributeVector::SP av = amf.addAttribute("a9");
-        EXPECT_EQUAL(vespalib::system_time(), am.getFlushable("a9")->getLastFlushTime());
+        EXPECT_EQ(vespalib::system_time(), am.getFlushable("a9")->getLastFlushTime());
     }
     { // no snapshot flushed yet
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         AttributeVector::SP av = amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
-        EXPECT_EQUAL(vespalib::system_time(), ft->getLastFlushTime());
+        EXPECT_EQ(vespalib::system_time(), ft->getLastFlushTime());
         ft->initFlush(200, std::make_shared<search::FlushToken>())->run();
         EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
-        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime());
+        EXPECT_EQ(stat._modifiedTime, ft->getLastFlushTime());
     }
     { // snapshot flushed
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
-        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime());
+        EXPECT_EQ(stat._modifiedTime, ft->getLastFlushTime());
         { // updated flush time after nothing to flush
             std::this_thread::sleep_for(1100ms);
             std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
             Executor::Task::UP task = ft->initFlush(200, std::make_shared<search::FlushToken>());
             EXPECT_FALSE(task);
-            EXPECT_LESS(stat._modifiedTime, ft->getLastFlushTime());
-            EXPECT_APPROX(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 3);
+            EXPECT_LT(stat._modifiedTime, ft->getLastFlushTime());
+            EXPECT_NEAR(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 3);
         }
     }
 }
 
-
-void
-Test::requireThatShrinkWorks()
+TEST(AttributeFlushTest, require_that_shrink_works)
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -562,32 +504,32 @@ Test::requireThatShrinkWorks()
     av->addDocs(1000 - av->getNumDocs());
     av->commit(CommitParam(50));
     IFlushTarget::SP ft = am.getShrinker("a10");
-    EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
-                 ft->getApproxMemoryGain().getAfter());
+    EXPECT_EQ(ft->getApproxMemoryGain().getBefore(),
+              ft->getApproxMemoryGain().getAfter());
     AttributeGuard::UP g = am.getAttribute("a10");
     EXPECT_FALSE(av->wantShrinkLidSpace());
     EXPECT_FALSE(av->canShrinkLidSpace());
-    EXPECT_EQUAL(1000u, av->getNumDocs());
-    EXPECT_EQUAL(1000u, av->getCommittedDocIdLimit());
+    EXPECT_EQ(1000u, av->getNumDocs());
+    EXPECT_EQ(1000u, av->getCommittedDocIdLimit());
     av->compactLidSpace(100);
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_FALSE(av->canShrinkLidSpace());
-    EXPECT_EQUAL(1000u, av->getNumDocs());
-    EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
+    EXPECT_EQ(1000u, av->getNumDocs());
+    EXPECT_EQ(100u, av->getCommittedDocIdLimit());
     aw.heartBeat(51, IDestructorCallback::SP());
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_FALSE(av->canShrinkLidSpace());
-    EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
-                 ft->getApproxMemoryGain().getAfter());
+    EXPECT_EQ(ft->getApproxMemoryGain().getBefore(),
+              ft->getApproxMemoryGain().getAfter());
     g.reset();
     aw.heartBeat(52, IDestructorCallback::SP());
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_TRUE(av->canShrinkLidSpace());
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() >
                 ft->getApproxMemoryGain().getAfter());
-    EXPECT_EQUAL(1000u, av->getNumDocs());
-    EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
-    EXPECT_EQUAL(createSerialNum - 1, ft->getFlushedSerialNum());
+    EXPECT_EQ(1000u, av->getNumDocs());
+    EXPECT_EQ(100u, av->getCommittedDocIdLimit());
+    EXPECT_EQ(createSerialNum - 1, ft->getFlushedSerialNum());
     vespalib::ThreadStackExecutor exec(1);
     vespalib::Executor::Task::UP task = ft->initFlush(53, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
@@ -595,15 +537,16 @@ Test::requireThatShrinkWorks()
     exec.shutdown();
     EXPECT_FALSE(av->wantShrinkLidSpace());
     EXPECT_FALSE(av->canShrinkLidSpace());
-    EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
-                 ft->getApproxMemoryGain().getAfter());
-    EXPECT_EQUAL(100u, av->getNumDocs());
-    EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
+    EXPECT_EQ(ft->getApproxMemoryGain().getBefore(),
+              ft->getApproxMemoryGain().getAfter());
+    EXPECT_EQ(100u, av->getNumDocs());
+    EXPECT_EQ(100u, av->getCommittedDocIdLimit());
 }
 
 void
-Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
+require_that_flushed_attribute_can_be_loaded(const HwInfo &hwInfo, const vespalib::string& label)
 {
+    SCOPED_TRACE(label);
     constexpr uint32_t numDocs = 100;
     BaseFixture f(hwInfo);
     vespalib::string attrName(hwInfo.disk().slow() ? "a11slow" : "a11fast");
@@ -612,9 +555,9 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
         AttributeManager &am = amf._m;
         AttributeVector::SP av = amf.addPostingAttribute(attrName);
         IntegerAttribute & ia = static_cast<IntegerAttribute &>(*av);
-        EXPECT_EQUAL(1u, av->getNumDocs());
+        EXPECT_EQ(1u, av->getNumDocs());
         av->addDocs(numDocs);
-        EXPECT_EQUAL(numDocs + 1, av->getNumDocs());
+        EXPECT_EQ(numDocs + 1, av->getNumDocs());
         for (uint32_t i = 0; i < numDocs; ++i) {
             ia.update(i + 1, i + 43);
         }
@@ -625,61 +568,44 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
     {
         AttributeManagerFixture amf(f);
         AttributeVector::SP av = amf.addPostingAttribute(attrName);
-        EXPECT_EQUAL(numDocs + 1, av->getNumDocs());
+        EXPECT_EQ(numDocs + 1, av->getNumDocs());
         for (uint32_t i = 0; i < numDocs; ++i) {
-            EXPECT_EQUAL(i + 43, av->getInt(i + 1));
+            EXPECT_EQ(i + 43, av->getInt(i + 1));
         }
     }
 }
 
-void
-Test::requireThatFlushedAttributeCanBeLoaded()
+TEST(AttributeFlushTest, require_that_flushed_attribute_can_be_loaded)
 {
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(HwInfo::Disk(0, false, false), HwInfo::Memory(0), HwInfo::Cpu(0))));
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(HwInfo::Disk(0, true, false), HwInfo::Memory(0), HwInfo::Cpu(0))));
+    require_that_flushed_attribute_can_be_loaded(HwInfo(HwInfo::Disk(0, false, false), HwInfo::Memory(0), HwInfo::Cpu(0)), "fast-disk");
+    require_that_flushed_attribute_can_be_loaded(HwInfo(HwInfo::Disk(0, true, false), HwInfo::Memory(0), HwInfo::Cpu(0)), "slow-disk");
 }
 
-void
-Test::requireThatFlushFailurePreventsSyncTokenUpdate()
+TEST(AttributeFlushTest, require_that_flush_failure_prevents_sync_token_update)
 {
     BaseFixture f;
     AttributeManagerFixture amf(f);
     auto &am = amf._m;
     auto av = amf.addIntArrayPostingAttribute("a12");
-    EXPECT_EQUAL(1u, av->getNumDocs());
+    EXPECT_EQ(1u, av->getNumDocs());
     auto flush_target = am.getFlushable("a12");
-    EXPECT_EQUAL(0u, flush_target->getFlushedSerialNum());
+    EXPECT_EQ(0u, flush_target->getFlushedSerialNum());
     auto flush_task = flush_target->initFlush(200, std::make_shared<search::FlushToken>());
     // Trigger flush failure
     av->getEnumStoreBase()->inc_compaction_count();
     flush_task->run();
-    EXPECT_EQUAL(0u, flush_target->getFlushedSerialNum());
+    EXPECT_EQ(0u, flush_target->getFlushedSerialNum());
+}
+
 }
 
 int
-Test::Main()
+main(int argc, char* argv[])
 {
-    TEST_INIT("attributeflush_test");
-
-    if (_argc > 0) {
-        DummyFileHeaderContext::setCreator(_argv[0]);
+    ::testing::InitGoogleTest(&argc, argv);
+    if (argc > 0) {
+        DummyFileHeaderContext::setCreator(argv[0]);
     }
-    fs::remove_all(fs::path(test_dir));
-    TEST_DO(requireThatUpdaterAndFlusherCanRunConcurrently());
-    TEST_DO(requireThatFlushableAttributeReportsMemoryUsage());
-    TEST_DO(requireThatFlushableAttributeManagesSyncTokenInfo());
-    TEST_DO(requireThatFlushTargetsCanBeRetrieved());
-    TEST_DO(requireThatCleanUpIsPerformedAfterFlush());
-    TEST_DO(requireThatFlushStatsAreUpdated());
-    TEST_DO(requireThatOnlyOneFlusherCanRunAtTheSameTime());
-    TEST_DO(requireThatLastFlushTimeIsReported());
-    TEST_DO(requireThatShrinkWorks());
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded());
-    TEST_DO(requireThatFlushFailurePreventsSyncTokenUpdate());
-
-    TEST_DONE();
+    fs::remove_all(fs::path(proton::test_dir));
+    return RUN_ALL_TESTS();
 }
-
-}
-
-TEST_APPHOOK(proton::Test);

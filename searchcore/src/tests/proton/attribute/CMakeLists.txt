@@ -21,6 +21,7 @@ vespa_add_executable(searchcore_attributeflush_test_app TEST
     searchcore_attribute
     searchcore_flushengine
     searchcore_pcommon
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_attributeflush_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/attributeflush_test.sh
                DEPENDS searchcore_attributeflush_test_app)
