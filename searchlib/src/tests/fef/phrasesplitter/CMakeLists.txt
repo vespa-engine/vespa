@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_phrasesplitter_test_app TEST
     phrasesplitter_test.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_phrasesplitter_test_app COMMAND searchlib_phrasesplitter_test_app)
 vespa_add_executable(searchlib_benchmark_app
