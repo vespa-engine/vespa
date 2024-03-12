@@ -2,7 +2,6 @@
 package com.yahoo.vespa.feed.perf;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
@@ -66,7 +65,6 @@ import java.util.stream.Stream;
 public class SimpleFeeder implements ReplyHandler {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
-    private final ConfigSubscriber documentTypeConfigSubscriber;
     private final List<InputStream> inputStreams;
     private final PrintStream out;
     private final RPCMessageBus mbus;
@@ -200,16 +198,18 @@ public class SimpleFeeder implements ReplyHandler {
         }
 
         private void addCommaAndNewline() {
-            if (! isFirst) {
-                try {
+            try {
+                if (isFirst) {
+                    outputStream.write(' ');
+                    outputStream.write(' ');
+                    isFirst = false;
+                } else {
                     outputStream.write(',');
                     outputStream.write('\n');
-                } catch (IOException e) {
-                    failure.set(e);
+                    outputStream.write(' ');
                 }
-            }
-            else {
-                isFirst = false;
+            } catch (IOException e) {
+                failure.set(e);
             }
         }
 
@@ -391,7 +391,7 @@ public class SimpleFeeder implements ReplyHandler {
         numMessagesToSend = params.getNumMessagesToSend();
         mbus = newMessageBus(docTypeMgr, params);
         session = newSession(mbus, this, params);
-        documentTypeConfigSubscriber = DocumentTypeManagerConfigurer.configure(docTypeMgr, params.getConfigId());
+        DocumentTypeManagerConfigurer.configure(docTypeMgr, params.getConfigId());
         benchmarkMode = params.isBenchmarkMode();
         destination = (params.getDumpStream() != null)
                 ? createDumper(params)
@@ -482,6 +482,7 @@ public class SimpleFeeder implements ReplyHandler {
         numReplies.incrementAndGet();
         accumulateReplies(now, latency);
     }
+
     private synchronized void accumulateReplies(long now, long latency) {
         minLatency = Math.min(minLatency, latency);
         maxLatency = Math.max(maxLatency, latency);
@@ -492,6 +493,7 @@ public class SimpleFeeder implements ReplyHandler {
             nextReport += REPORT_INTERVAL;
         }
     }
+
     private static void printHeader(PrintStream out) {
         out.println("# Time used, num ok, num error, min latency, max latency, average latency");
     }

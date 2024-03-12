@@ -87,11 +87,11 @@ public class SimpleFeederTest {
                 "",
                 "(.+\n)+" +
                         "\\s*\\d+,\\s*3,.+\n");
-        assertEquals(93, dump.size());
+        assertEquals(96, dump.size());
         assertEquals("""
                              [
-                             {"id":"id:simple:simple::0","fields":{"my_str":"foo"}},
-                              {"remove":"id:simple:simple::2"}
+                               {"id":"id:simple:simple::0","fields":{"my_str":"foo"}},
+                               {"remove":"id:simple:simple::2"}
                              ]""",
                      dump.toString());
     }
@@ -121,12 +121,12 @@ public class SimpleFeederTest {
                 "",
                 "(.+\n)+" +
                         "\\s*\\d+,\\s*3,.+\n");
-        assertEquals(150, dump.size());
+        assertEquals(154, dump.size());
         assertEquals("""
                          [
-                         {"id":"id:simple:simple::0","fields":{"my_str":"foo"}},
-                          {"id":"id:simple:simple::1","fields":{"my_str":"bar"}},
-                          {"remove":"id:simple:simple::2"}
+                           {"id":"id:simple:simple::0","fields":{"my_str":"foo"}},
+                           {"id":"id:simple:simple::1","fields":{"my_str":"bar"}},
+                           {"remove":"id:simple:simple::2"}
                          ]""",
                      dump.toString());
         assertFeed(dump.toString(),
