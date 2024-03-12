@@ -1,15 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/diskindex/bitvectordictionary.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <filesystem>
-
-#include <vespa/log/log.h>
-LOG_SETUP("bitvector_test");
 
 using namespace search::index;
 using search::index::schema::DataType;
@@ -58,38 +55,57 @@ FieldWriterWrapper::add(uint32_t docId)
     daf.elements().emplace_back(0);
     daf.elements().back().setNumOccs(1);
     daf.word_positions().emplace_back(0);
-    //LOG(info, "add(%" PRIu64 ", %u)", wordNum, docId);
     _writer.add(daf);
     return *this;
 }
 
-class Test : public vespalib::TestApp
-{
-private:
-    Schema _schema;
-    uint32_t _indexId;
-public:
-    void requireThatDictionaryHandlesNoEntries(bool directio, bool readmmap);
-    void requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap);
-
-    Test();
-    ~Test() override;
-    int Main() override;
+struct TestParam {
+    bool directio;
+    bool readmmap;
 };
 
-void
-Test::requireThatDictionaryHandlesNoEntries(bool directio, bool readmmap)
+std::ostream& operator<<(std::ostream& os, const TestParam& param)
+{
+    os << (param.directio ? "directio" : "normal") << (param.readmmap ? "mmap" : "read");
+    return os;
+}
+
+class BitVectorTest : public ::testing::TestWithParam<TestParam>
+{
+protected:
+    Schema _schema;
+    uint32_t _indexId;
+    BitVectorTest();
+    ~BitVectorTest() override;
+};
+
+BitVectorTest::BitVectorTest()
+    : ::testing::TestWithParam<TestParam>(),
+      _schema(),
+      _indexId(0)
+{
+    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
+}
+
+BitVectorTest::~BitVectorTest() = default;
+
+INSTANTIATE_TEST_SUITE_P(BitVectorMultiTest, BitVectorTest,
+                         ::testing::Values(TestParam{false, false}, TestParam{true, false}, TestParam{false, true}),
+                         ::testing::PrintToStringParamName());
+
+TEST_P(BitVectorTest, require_that_dictionary_handles_no_entries)
 {
     TuneFileSeqWrite tuneFileWrite;
     TuneFileRandRead tuneFileRead;
     DummyFileHeaderContext fileHeaderContext;
 
-    if (directio) {
+    if (GetParam().directio) {
         tuneFileWrite.setWantDirectIO();
         tuneFileRead.setWantDirectIO();
     }
-    if (readmmap)
+    if (GetParam().readmmap) {
         tuneFileRead.setWantMemoryMap();
+    }
     std::filesystem::create_directory(std::filesystem::path("dump"));
     FieldWriterWrapper fww(5, 2, "dump/1/");
     EXPECT_TRUE(fww.open(_schema, _indexId, tuneFileWrite, fileHeaderContext));
@@ -100,25 +116,25 @@ Test::requireThatDictionaryHandlesNoEntries(bool directio, bool readmmap)
     BitVectorDictionary dict;
     BitVectorKeyScope bvScope(BitVectorKeyScope::PERFIELD_WORDS);
     EXPECT_TRUE(dict.open("dump/1/", tuneFileRead, bvScope));
-    EXPECT_EQUAL(5u, dict.getDocIdLimit());
-    EXPECT_EQUAL(0u, dict.getEntries().size());
+    EXPECT_EQ(5u, dict.getDocIdLimit());
+    EXPECT_EQ(0u, dict.getEntries().size());
     EXPECT_FALSE(dict.lookup(1));
     EXPECT_FALSE(dict.lookup(2));
 }
 
-void
-Test::requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap)
+TEST_P(BitVectorTest, require_that_dictionary_handles_multiple_entries)
 {
     TuneFileSeqWrite tuneFileWrite;
     TuneFileRandRead tuneFileRead;
     DummyFileHeaderContext fileHeaderContext;
 
-    if (directio) {
+    if (GetParam().directio) {
         tuneFileWrite.setWantDirectIO();
         tuneFileRead.setWantDirectIO();
     }
-    if (readmmap)
+    if (GetParam().readmmap) {
         tuneFileRead.setWantMemoryMap();
+    }
     FieldWriterWrapper fww(64, 6, "dump/2/");
     EXPECT_TRUE(fww.open(_schema, _indexId, tuneFileWrite, fileHeaderContext));
     // must have >16 docs in order to create bitvector for a word
@@ -149,16 +165,16 @@ Test::requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap)
     BitVectorDictionary dict;
     BitVectorKeyScope bvScope(BitVectorKeyScope::PERFIELD_WORDS);
     EXPECT_TRUE(dict.open("dump/2/", tuneFileRead, bvScope));
-    EXPECT_EQUAL(64u, dict.getDocIdLimit());
-    EXPECT_EQUAL(2u, dict.getEntries().size());
+    EXPECT_EQ(64u, dict.getDocIdLimit());
+    EXPECT_EQ(2u, dict.getEntries().size());
 
     BitVectorWordSingleKey e;
     e = dict.getEntries()[0];
-    EXPECT_EQUAL(1u, e._wordNum);
-    EXPECT_EQUAL(17u, e._numDocs);
+    EXPECT_EQ(1u, e._wordNum);
+    EXPECT_EQ(17u, e._numDocs);
     e = dict.getEntries()[1];
-    EXPECT_EQUAL(5u, e._wordNum);
-    EXPECT_EQUAL(23u, e._numDocs);
+    EXPECT_EQ(5u, e._wordNum);
+    EXPECT_EQ(23u, e._numDocs);
 
     EXPECT_FALSE(dict.lookup(2));
     EXPECT_FALSE(dict.lookup(3));
@@ -174,33 +190,14 @@ Test::requireThatDictionaryHandlesMultipleEntries(bool directio, bool readmmap)
     EXPECT_TRUE(*bv5exp == *bv5act);
 }
 
-Test::Test()
-    : _schema(),
-      _indexId(0)
-{
-    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
 }
-
-Test::~Test() = default;
 
 int
-Test::Main()
+main(int argc, char* argv[])
 {
-    TEST_INIT("bitvector_test");
-
-    if (_argc > 0) {
-        DummyFileHeaderContext::setCreator(_argv[0]);
+    ::testing::InitGoogleTest(&argc, argv);
+    if (argc > 0) {
+        search::index::DummyFileHeaderContext::setCreator(argv[0]);
     }
-    TEST_DO(requireThatDictionaryHandlesNoEntries(false, false));
-    TEST_DO(requireThatDictionaryHandlesMultipleEntries(false, false));
-    TEST_DO(requireThatDictionaryHandlesNoEntries(true, false));
-    TEST_DO(requireThatDictionaryHandlesMultipleEntries(true, false));
-    TEST_DO(requireThatDictionaryHandlesNoEntries(false, true));
-    TEST_DO(requireThatDictionaryHandlesMultipleEntries(false, true));
-
-    TEST_DONE();
+    return RUN_ALL_TESTS();
 }
-
-}
-
-TEST_APPHOOK(search::diskindex::Test);
