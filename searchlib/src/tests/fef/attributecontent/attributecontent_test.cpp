@@ -1,34 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/log/log.h>
-LOG_SETUP("attributecontent_test");
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::attribute;
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
-class Test : public vespalib::TestApp {
-private:
-    void testWriteAndRead();
-    void testFill();
-
-public:
-    int Main() override;
-};
-
-void
-Test::testWriteAndRead()
+TEST(AttributeContentTest, test_write_and_read)
 {
     using UintContent = search::attribute::AttributeContent<uint32_t>;
     UintContent buf;
-    EXPECT_EQUAL(buf.capacity(), 16u);
-    EXPECT_EQUAL(buf.size(), 0u);
+    EXPECT_EQ(buf.capacity(), 16u);
+    EXPECT_EQ(buf.size(), 0u);
 
     uint32_t i;
     uint32_t * data;
@@ -37,34 +24,33 @@ Test::testWriteAndRead()
         *data = i;
     }
     buf.setSize(16);
-    EXPECT_EQUAL(buf.size(), 16u);
+    EXPECT_EQ(buf.size(), 16u);
     for (i = 0, itr = buf.begin(); itr != buf.end(); ++i, ++itr) {
-        EXPECT_EQUAL(*itr, i);
-        EXPECT_EQUAL(buf[i], i);
+        EXPECT_EQ(*itr, i);
+        EXPECT_EQ(buf[i], i);
     }
-    EXPECT_EQUAL(i, 16u);
+    EXPECT_EQ(i, 16u);
 
     buf.allocate(10);
-    EXPECT_EQUAL(buf.capacity(), 16u);
-    EXPECT_EQUAL(buf.size(), 16u);
+    EXPECT_EQ(buf.capacity(), 16u);
+    EXPECT_EQ(buf.size(), 16u);
     buf.allocate(32);
-    EXPECT_EQUAL(buf.capacity(), 32u);
-    EXPECT_EQUAL(buf.size(), 0u);
+    EXPECT_EQ(buf.capacity(), 32u);
+    EXPECT_EQ(buf.size(), 0u);
 
     for (i = 0, data = buf.data(); i < 32; ++i, ++data) {
         *data = i;
     }
     buf.setSize(32);
-    EXPECT_EQUAL(buf.size(), 32u);
+    EXPECT_EQ(buf.size(), 32u);
     for (i = 0, itr = buf.begin(); itr != buf.end(); ++i, ++itr) {
-        EXPECT_EQUAL(*itr, i);
-        EXPECT_EQUAL(buf[i], i);
+        EXPECT_EQ(*itr, i);
+        EXPECT_EQ(buf[i], i);
     }
-    EXPECT_EQUAL(i, 32u);
+    EXPECT_EQ(i, 32u);
 }
 
-void
-Test::testFill()
+TEST(AttributeContentTest, test_fill)
 {
     Config cfg(BasicType::INT32, CollectionType::ARRAY);
     AttributeVector::SP av = AttributeFactory::createAttribute("aint32", cfg);
@@ -77,29 +63,17 @@ Test::testFill()
     const IAttributeVector & iav = *av.get();
     IntegerContent buf;
     buf.fill(iav, 0);
-    EXPECT_EQUAL(1u, buf.size());
-    EXPECT_EQUAL(10, buf[0]);
+    EXPECT_EQ(1u, buf.size());
+    EXPECT_EQ(10, buf[0]);
     buf.fill(iav, 1);
-    EXPECT_EQUAL(2u, buf.size());
-    EXPECT_EQUAL(20, buf[0]);
-    EXPECT_EQUAL(30, buf[1]);
+    EXPECT_EQ(2u, buf.size());
+    EXPECT_EQ(20, buf[0]);
+    EXPECT_EQ(30, buf[1]);
     buf.fill(iav, 0);
-    EXPECT_EQUAL(1u, buf.size());
-    EXPECT_EQUAL(10, buf[0]);
+    EXPECT_EQ(1u, buf.size());
+    EXPECT_EQ(10, buf[0]);
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("attributecontent_test");
-
-    testWriteAndRead();
-    testFill();
-
-    TEST_DONE();
 }
 
-} // namespace fef
-} // namespace search
-
-TEST_APPHOOK(search::fef::Test);
+GTEST_MAIN_RUN_ALL_TESTS()
