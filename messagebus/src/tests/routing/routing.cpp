@@ -11,7 +11,7 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/component/vtag.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 
@@ -330,59 +330,59 @@ public:
                                                  mergeFromChild, mergeError, mergeException);
     }
 
-    static MyPolicyFactory::SP 
-    newSelectAndMerge(const string &select) 
+    static MyPolicyFactory::SP
+    newSelectAndMerge(const string &select)
     {
         return newInstance(select, ErrorCode::NONE, false, true, ErrorCode::NONE, false);
     }
 
-    static MyPolicyFactory::SP 
-    newEmptySelection() 
+    static MyPolicyFactory::SP
+    newEmptySelection()
     {
         return newInstance("", ErrorCode::NONE, false, false, ErrorCode::NONE, false);
     }
 
-    static MyPolicyFactory::SP 
+    static MyPolicyFactory::SP
     newSelectError(uint32_t errCode)
     {
         return newInstance("", errCode, false, false, ErrorCode::NONE, false);
     }
 
-    static MyPolicyFactory::SP 
-    newSelectException() 
+    static MyPolicyFactory::SP
+    newSelectException()
     {
         return newInstance("", ErrorCode::NONE, true, false, ErrorCode::NONE, false);
     }
 
-    static MyPolicyFactory::SP 
-    newSelectAndThrow(const string &select) 
+    static MyPolicyFactory::SP
+    newSelectAndThrow(const string &select)
     {
         return newInstance(select, ErrorCode::NONE, true, false, ErrorCode::NONE, false);
     }
 
-    static MyPolicyFactory::SP 
-    newEmptyMerge(const string &select) 
+    static MyPolicyFactory::SP
+    newEmptyMerge(const string &select)
     {
         return newInstance(select, ErrorCode::NONE, false, false, ErrorCode::NONE, false);
     }
 
-    static MyPolicyFactory::SP 
-    newMergeError(const string &select, int errCode) 
+    static MyPolicyFactory::SP
+    newMergeError(const string &select, int errCode)
     {
         return newInstance(select, ErrorCode::NONE, false, false, errCode, false);
     }
 
-    static MyPolicyFactory::SP 
-    newMergeException(const string &select) 
+    static MyPolicyFactory::SP
+    newMergeException(const string &select)
     {
         return newInstance(select, ErrorCode::NONE, false, false, ErrorCode::NONE, true);
     }
 
-    static MyPolicyFactory::SP 
+    static MyPolicyFactory::SP
     newMergeAndThrow(const string &select)
     {
         return newInstance(select, ErrorCode::NONE, false, true, ErrorCode::NONE, true);
-    }    
+    }
 };
 
 MyPolicyFactory::MyPolicyFactory(const string &selectRoute, uint32_t &selectError, bool selectException,
@@ -400,7 +400,7 @@ MyPolicyFactory::~MyPolicyFactory() = default;
 class MyPolicy : public IRoutingPolicy {
 private:
     const MyPolicyFactory &_parent;
-    
+
 public:
     explicit MyPolicy(const MyPolicyFactory &parent) :
         _parent(parent)
@@ -465,76 +465,6 @@ public:
     bool start();
 };
 
-class Test : public vespalib::TestApp {
-private:
-    Message::UP createMessage(const string &msg, uint32_t level = 9);
-    void setupRouting(TestData &data, RoutingTableSpec && spec);
-    void setupPolicy(TestData &data, const string &policyName, 
-                     SimpleProtocol::IPolicyFactory::SP policy);
-    static bool testAcknowledge(TestData &data);
-    bool testSend(TestData &data, const string &route, uint32_t level = 9);
-    bool testTrace(TestData &data, const std::vector<string> &expected);
-    bool testTrace(const std::vector<string> &expected, const Trace &trace);
-
-    static const duration RECEPTOR_TIMEOUT;
-
-public:
-    int Main() override;
-    void testNoRoutingTable(TestData &data);
-    void testUnknownRoute(TestData &data);
-    void testNoRoute(TestData &data);
-    void testRecognizeHopName(TestData &data);
-    void testRecognizeRouteDirective(TestData &data);
-    void testRecognizeRouteName(TestData &data);
-    void testHopResolutionOverflow(TestData &data);
-    void testRouteResolutionOverflow(TestData &data);
-    void testInsertRoute(TestData &data);
-    void testErrorDirective(TestData &data);
-    void testSelectError(TestData &data);
-    void testSelectNone(TestData &data);
-    void testSelectOne(TestData &data);
-    void testResend1(TestData &data);
-    void testResend2(TestData &data);
-    void testNoResend(TestData &data);
-    void testSelectOnResend(TestData &data);
-    void testNoSelectOnResend(TestData &data);
-    void testCanConsumeError(TestData &data);
-    void testCantConsumeError(TestData &data);
-    void testNestedPolicies(TestData &data);
-    void testRemoveReply(TestData &data);
-    void testSetReply(TestData &data);
-    void testResendSetAndReuseReply(TestData &data);
-    void testResendSetAndRemoveReply(TestData &data);
-    void testHopIgnoresReply(TestData &data);
-    void testHopBlueprintIgnoresReply(TestData &data);
-    void testAcceptEmptyRoute(TestData &data);
-    void testAbortOnlyActiveNodes(TestData &data);
-    void testTimeout(TestData &data);
-    void testUnknownPolicy(TestData &data);
-    void testSelectException(TestData &data);
-    void testMergeException(TestData &data);
-
-    void requireThatIgnoreFlagPersistsThroughHopLookup(TestData &data);
-    void requireThatIgnoreFlagPersistsThroughRouteLookup(TestData &data);
-    void requireThatIgnoreFlagPersistsThroughPolicySelect(TestData &data);
-    void requireThatIgnoreFlagIsSerializedWithMessage(TestData &data);
-    void requireThatIgnoreFlagDoesNotInterfere(TestData &data);
-    void requireThatEmptySelectionCanBeIgnored(TestData &data);
-    void requireThatSelectErrorCanBeIgnored(TestData &data);
-    void requireThatSelectExceptionCanBeIgnored(TestData &data);
-    void requireThatSelectAndThrowCanBeIgnored(TestData &data);
-    void requireThatEmptyMergeCanBeIgnored(TestData &data);
-    void requireThatMergeErrorCanBeIgnored(TestData &data);
-    void requireThatMergeExceptionCanBeIgnored(TestData &data);
-    void requireThatMergeAndThrowCanBeIgnored(TestData &data);
-    void requireThatAllocServiceCanBeIgnored(TestData &data);
-    void requireThatDepthLimitCanBeIgnored(TestData &data);
-};
-
-const duration Test::RECEPTOR_TIMEOUT = 120s;
-
-TEST_APPHOOK(Test);
-
 TestData::TestData() :
     _slobrok(),
     _retryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
@@ -577,22 +507,81 @@ TestData::start()
     return true;
 }
 
+class RoutingTest : public testing::Test {
+protected:
+    static const duration RECEPTOR_TIMEOUT;
+    static std::shared_ptr<TestData> _data;
+    static bool                      _force_teardown;
+    RoutingTest();
+    ~RoutingTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+    void SetUp() override;
+    void TearDown() override;
+    static Message::UP createMessage(const string &msg, uint32_t level = 9);
+    static void setupRouting(TestData &data, RoutingTableSpec && spec);
+    static void setupPolicy(TestData &data, const string &policyName,
+                            SimpleProtocol::IPolicyFactory::SP policy);
+    static bool testAcknowledge(TestData &data);
+    static bool testSend(TestData &data, const string &route, uint32_t level = 9);
+    static bool testTrace(TestData &data, const std::vector<string> &expected);
+    static bool testTrace(const std::vector<string> &expected, const Trace &trace);
+};
+
+const duration RoutingTest::RECEPTOR_TIMEOUT = 120s;
+std::shared_ptr<TestData> RoutingTest::_data;
+bool RoutingTest::_force_teardown = false;
+
+RoutingTest::RoutingTest() = default;
+RoutingTest::~RoutingTest() = default;
+
+void
+RoutingTest::SetUpTestSuite()
+{
+    _data = std::make_shared<TestData>();
+    ASSERT_TRUE(_data->start());
+}
+
+void
+RoutingTest::TearDownTestSuite()
+{
+    _data.reset();
+}
+
+void
+RoutingTest::SetUp()
+{
+    if (!_data) {
+        _data = std::make_shared<TestData>();
+        ASSERT_TRUE(_data->start());
+    }
+}
+
+void
+RoutingTest::TearDown()
+{
+    if (_force_teardown) {
+        _force_teardown = false;
+        _data.reset();
+    }
+}
+
 Message::UP
-Test::createMessage(const string &msg, uint32_t level)
+RoutingTest::createMessage(const string &msg, uint32_t level)
 {
     auto ret = std::make_unique<SimpleMessage>(msg);
     ret->getTrace().setLevel(level);
     return ret;
 }
 
-void 
-Test::setupRouting(TestData &data, RoutingTableSpec && spec)
+void
+RoutingTest::setupRouting(TestData &data, RoutingTableSpec && spec)
 {
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(std::move(spec)));
 }
 
-void 
-Test::setupPolicy(TestData &data, const string &policyName,
+void
+RoutingTest::setupPolicy(TestData &data, const string &policyName,
                   SimpleProtocol::IPolicyFactory::SP policy)
 {
     auto protocol = std::make_shared<SimpleProtocol>();
@@ -600,40 +589,45 @@ Test::setupPolicy(TestData &data, const string &policyName,
     data._srcServer.mb.putProtocol(protocol);
 }
 
-bool 
-Test::testAcknowledge(TestData &data)
+bool
+RoutingTest::testAcknowledge(TestData &data)
 {
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    if (!EXPECT_TRUE(msg)) {
+    bool failed = false;
+    EXPECT_TRUE(msg) << (failed = true, "");
+    if (failed) {
         return false;
     }
     data._dstSession->acknowledge(std::move(msg));
     return true;
 }
- 
-bool 
-Test::testSend(TestData &data, const string &route, uint32_t level) 
+
+bool
+RoutingTest::testSend(TestData &data, const string &route, uint32_t level)
 {
     Message::UP msg = createMessage("msg", level);
     msg->setRoute(Route::parse(route));
     return data._srcSession->send(std::move(msg)).isAccepted();
 }
 
-bool 
-Test::testTrace(TestData &data, const std::vector<string> &expected)
+bool
+RoutingTest::testTrace(TestData &data, const std::vector<string> &expected)
 {
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    if (!EXPECT_TRUE(reply)) {
+    bool failed = false;
+    EXPECT_TRUE(reply) << (failed = true, "");
+    if (failed) {
         return false;
     }
-    if (!EXPECT_FALSE(reply->hasErrors())) {
+    EXPECT_FALSE(reply->hasErrors()) << (failed = true, "");
+    if (failed) {
         return false;
     }
     return testTrace(expected, reply->getTrace());
 }
 
 bool
-Test::testTrace(const std::vector<string> &expected, const Trace &trace)
+RoutingTest::testTrace(const std::vector<string> &expected, const Trace &trace)
 {
     const string& version = vespalib::Vtag::currentVersion.toString();
     string actual = trace.toString();
@@ -646,13 +640,17 @@ Test::testTrace(const std::vector<string> &expected, const Trace &trace)
         }
         if (line[0] == '-') {
             string str = line.substr(1);
-            if (!EXPECT_TRUE(actual.find(str, pos) == string::npos)) {
+            bool failed = false;
+            EXPECT_TRUE(actual.find(str, pos) == string::npos) << (failed = true, "");
+            if (failed) {
                 LOG(error, "Line %d '%s' not expected.", i, str.c_str());
                 return false;
             }
         } else {
             pos = actual.find(line, pos);
-            if (!EXPECT_TRUE(pos != string::npos)) {
+            bool failed = false;
+            EXPECT_TRUE(pos != string::npos) << (failed = true, "");
+            if (failed) {
                 LOG(error, "Line %d '%s' missing.", i, line.c_str());
                 return false;
             }
@@ -662,110 +660,47 @@ Test::testTrace(const std::vector<string> &expected, const Trace &trace)
     return true;
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("routing_test");
-
-    TestData data;
-    ASSERT_TRUE(data.start());
-
-    testNoRoutingTable(data);            TEST_FLUSH();
-    testUnknownRoute(data);              TEST_FLUSH();
-    testNoRoute(data);                   TEST_FLUSH();
-    testRecognizeHopName(data);          TEST_FLUSH();
-    testRecognizeRouteDirective(data);   TEST_FLUSH();
-    testRecognizeRouteName(data);        TEST_FLUSH();
-    testHopResolutionOverflow(data);     TEST_FLUSH();
-    testRouteResolutionOverflow(data);   TEST_FLUSH();
-    testInsertRoute(data);               TEST_FLUSH();
-    testErrorDirective(data);            TEST_FLUSH();
-    testSelectError(data);               TEST_FLUSH();
-    testSelectNone(data);                TEST_FLUSH();
-    testSelectOne(data);                 TEST_FLUSH();
-    testResend1(data);                   TEST_FLUSH();
-    testResend2(data);                   TEST_FLUSH();
-    testNoResend(data);                  TEST_FLUSH();
-    testSelectOnResend(data);            TEST_FLUSH();
-    testNoSelectOnResend(data);          TEST_FLUSH();
-    testCanConsumeError(data);           TEST_FLUSH();
-    testCantConsumeError(data);          TEST_FLUSH();
-    testNestedPolicies(data);            TEST_FLUSH();
-    testRemoveReply(data);               TEST_FLUSH();
-    testSetReply(data);                  TEST_FLUSH();
-    testResendSetAndReuseReply(data);    TEST_FLUSH();
-    testResendSetAndRemoveReply(data);   TEST_FLUSH();
-    testHopIgnoresReply(data);           TEST_FLUSH();
-    testHopBlueprintIgnoresReply(data);  TEST_FLUSH();
-    testAcceptEmptyRoute(data);          TEST_FLUSH();
-    testAbortOnlyActiveNodes(data);      TEST_FLUSH();
-    testUnknownPolicy(data);             TEST_FLUSH();
-    testSelectException(data);           TEST_FLUSH();
-    testMergeException(data);            TEST_FLUSH();
-
-    requireThatIgnoreFlagPersistsThroughHopLookup(data);    TEST_FLUSH();
-    requireThatIgnoreFlagPersistsThroughRouteLookup(data);  TEST_FLUSH();
-    requireThatIgnoreFlagPersistsThroughPolicySelect(data); TEST_FLUSH();
-    requireThatIgnoreFlagIsSerializedWithMessage(data);     TEST_FLUSH();
-    requireThatIgnoreFlagDoesNotInterfere(data);            TEST_FLUSH();
-    requireThatEmptySelectionCanBeIgnored(data);            TEST_FLUSH();
-    requireThatSelectErrorCanBeIgnored(data);               TEST_FLUSH();
-    requireThatSelectExceptionCanBeIgnored(data);           TEST_FLUSH();
-    requireThatSelectAndThrowCanBeIgnored(data);            TEST_FLUSH();
-    requireThatEmptyMergeCanBeIgnored(data);                TEST_FLUSH();
-    requireThatMergeErrorCanBeIgnored(data);                TEST_FLUSH();
-    requireThatMergeExceptionCanBeIgnored(data);            TEST_FLUSH();
-    requireThatMergeAndThrowCanBeIgnored(data);             TEST_FLUSH();
-    requireThatAllocServiceCanBeIgnored(data);              TEST_FLUSH();
-    requireThatDepthLimitCanBeIgnored(data);                TEST_FLUSH();
-
-    // This needs to be last because it changes timeouts:
-    testTimeout(data);                   TEST_FLUSH();
-
-    TEST_DONE();
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Tests
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void
-Test::testNoRoutingTable(TestData &data)
+TEST_F(RoutingTest, test_no_routing_table)
 {
+    auto& data = *_data;
     Result res = data._srcSession->send(createMessage("msg"), "foo");
     EXPECT_FALSE(res.isAccepted());
-    EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
+    EXPECT_EQ((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
     Message::UP msg = res.getMessage();
     EXPECT_TRUE(msg);
 }
 
-void
-Test::testUnknownRoute(TestData &data)
+TEST_F(RoutingTest, test_unknown_route)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addHop(HopSpec("foo", "bar"))));
     Result res = data._srcSession->send(createMessage("msg"), "baz");
     EXPECT_FALSE(res.isAccepted());
-    EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
+    EXPECT_EQ((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
     Message::UP msg = res.getMessage();
     EXPECT_TRUE(msg);
 }
 
-void
-Test::testNoRoute(TestData &data)
+TEST_F(RoutingTest, test_no_route)
 {
+    auto& data = *_data;
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route()).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
 
-void
-Test::testRecognizeHopName(TestData &data)
+TEST_F(RoutingTest, test_recognize_hop_name)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addHop(HopSpec("dst", "dst/session"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst")).isAccepted());
@@ -777,9 +712,9 @@ Test::testRecognizeHopName(TestData &data)
     EXPECT_FALSE(reply->hasErrors());
 }
 
-void
-Test::testRecognizeRouteDirective(TestData &data)
+TEST_F(RoutingTest, test_recognize_route_directive)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addRoute(RouteSpec("dst").addHop("dst/session"))
                                                            .addHop(HopSpec("dir", "route:dst"))));
@@ -792,9 +727,9 @@ Test::testRecognizeRouteDirective(TestData &data)
     EXPECT_FALSE(reply->hasErrors());
 }
 
-void
-Test::testRecognizeRouteName(TestData &data)
+TEST_F(RoutingTest, test_recognize_route_name)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addRoute(RouteSpec("dst").addHop("dst/session"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst")).isAccepted());
@@ -806,64 +741,64 @@ Test::testRecognizeRouteName(TestData &data)
     EXPECT_FALSE(reply->hasErrors());
 }
 
-void
-Test::testHopResolutionOverflow(TestData &data)
+TEST_F(RoutingTest, test_hop_resolution_overflow)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addHop(HopSpec("foo", "bar"))
                                                            .addHop(HopSpec("bar", "foo"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("foo")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
 
-void
-Test::testRouteResolutionOverflow(TestData &data)
+TEST_F(RoutingTest, test_route_resolution_overflow)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addRoute(RouteSpec("foo").addHop("route:foo"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), "foo").isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
 
-void
-Test::testInsertRoute(TestData &data)
+TEST_F(RoutingTest, test_insert_route)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addRoute(RouteSpec("foo").addHop("dst/session").addHop("bar"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("route:foo baz")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    EXPECT_EQUAL(2u, msg->getRoute().getNumHops());
-    EXPECT_EQUAL("bar", msg->getRoute().getHop(0).toString());
-    EXPECT_EQUAL("baz", msg->getRoute().getHop(1).toString());
+    EXPECT_EQ(2u, msg->getRoute().getNumHops());
+    EXPECT_EQ("bar", msg->getRoute().getHop(0).toString());
+    EXPECT_EQ("baz", msg->getRoute().getHop(1).toString());
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
     EXPECT_FALSE(reply->hasErrors());
 }
 
-void
-Test::testErrorDirective(TestData &data)
+TEST_F(RoutingTest, test_error_directive)
 {
+    auto& data = *_data;
     Route route = Route::parse("foo/bar/baz");
     route.getHop(0).setDirective(1, std::make_shared<ErrorDirective>("err"));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), route).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
-    EXPECT_EQUAL("err", reply->getError(0).getMessage());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
+    EXPECT_EQ("err", reply->getError(0).getMessage());
 }
 
-void
-Test::testSelectError(TestData &data)
+TEST_F(RoutingTest, test_select_error)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
@@ -872,26 +807,26 @@ Test::testSelectError(TestData &data)
     ASSERT_TRUE(reply);
     LOG(info, "testSelectError trace=%s", reply->getTrace().toString().c_str());
     LOG(info, "testSelectError error=%s", reply->getError(0).toString().c_str());
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
 
-void
-Test::testSelectNone(TestData &data)
+TEST_F(RoutingTest, test_select_none)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::NO_SERVICES_FOR_ROUTE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::NO_SERVICES_FOR_ROUTE, reply->getError(0).getCode());
 }
 
-void
-Test::testSelectOne(TestData &data)
+TEST_F(RoutingTest, test_select_one)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
@@ -904,9 +839,9 @@ Test::testSelectOne(TestData &data)
     EXPECT_FALSE(reply->hasErrors());
 }
 
-void
-Test::testResend1(TestData &data)
+TEST_F(RoutingTest, test_resend_1)
 {
+    auto& data = *_data;
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
@@ -935,9 +870,9 @@ Test::testResend1(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testResend2(TestData &data)
+TEST_F(RoutingTest, test_resend_2)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
@@ -1003,9 +938,9 @@ Test::testResend2(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testNoResend(TestData &data)
+TEST_F(RoutingTest, test_no_resend)
 {
+    auto& data = *_data;
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
@@ -1016,13 +951,13 @@ Test::testNoResend(TestData &data)
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::APP_TRANSIENT_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::APP_TRANSIENT_ERROR, reply->getError(0).getCode());
 }
 
-void
-Test::testSelectOnResend(TestData &data)
+TEST_F(RoutingTest, test_select_on_resend)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
@@ -1051,9 +986,9 @@ Test::testSelectOnResend(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testNoSelectOnResend(TestData &data)
+TEST_F(RoutingTest, test_no_select_on_resend)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(false));
     data._srcServer.mb.putProtocol(protocol);
@@ -1082,9 +1017,9 @@ Test::testNoSelectOnResend(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testCanConsumeError(TestData &data)
+TEST_F(RoutingTest, test_can_consume_error)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(true, ErrorCode::NO_ADDRESS_FOR_SERVICE));
     data._srcServer.mb.putProtocol(protocol);
@@ -1095,8 +1030,8 @@ Test::testCanConsumeError(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/session', 'dst/unknown' }.")
                          .add("[NO_ADDRESS_FOR_SERVICE @ localhost]")
@@ -1105,9 +1040,9 @@ Test::testCanConsumeError(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testCantConsumeError(TestData &data)
+TEST_F(RoutingTest, test_cant_consume_error)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
@@ -1116,8 +1051,8 @@ Test::testCantConsumeError(TestData &data)
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
     printf("%s", reply->getTrace().toString().c_str());
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/unknown' }.")
                          .add("[NO_ADDRESS_FOR_SERVICE @ localhost]")
@@ -1125,9 +1060,9 @@ Test::testCantConsumeError(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testNestedPolicies(TestData &data)
+TEST_F(RoutingTest, test_nested_policies)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(true, ErrorCode::NO_ADDRESS_FOR_SERVICE));
     data._srcServer.mb.putProtocol(protocol);
@@ -1138,13 +1073,13 @@ Test::testNestedPolicies(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
 }
 
-void
-Test::testRemoveReply(TestData &data)
+TEST_F(RoutingTest, test_remove_reply)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<RemoveReplyPolicyFactory>(true, UIntList().add(ErrorCode::NO_ADDRESS_FOR_SERVICE), 0));
     data._srcServer.mb.putProtocol(protocol);
@@ -1164,9 +1099,9 @@ Test::testRemoveReply(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testSetReply(TestData &data)
+TEST_F(RoutingTest, test_set_reply)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Select", std::make_shared<CustomPolicyFactory>(true, ErrorCode::APP_FATAL_ERROR));
     protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(true, UIntList().add(ErrorCode::APP_FATAL_ERROR)));
@@ -1178,14 +1113,14 @@ Test::testSetReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL("foo", reply->getError(0).getMessage());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ("foo", reply->getError(0).getMessage());
 }
 
-void
-Test::testResendSetAndReuseReply(TestData &data)
+TEST_F(RoutingTest, test_resend_set_and_reuse_reply)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("ReuseReply", std::make_shared<ReuseReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_FATAL_ERROR)));
     protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_FATAL_ERROR)));
@@ -1206,9 +1141,9 @@ Test::testResendSetAndReuseReply(TestData &data)
     EXPECT_FALSE(reply->hasErrors());
 }
 
-void
-Test::testResendSetAndRemoveReply(TestData &data)
+TEST_F(RoutingTest, test_resend_set_and_remove_reply)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("RemoveReply", std::make_shared<RemoveReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_TRANSIENT_ERROR), 0));
     protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_TRANSIENT_ERROR).add(ErrorCode::APP_FATAL_ERROR)));
@@ -1220,9 +1155,9 @@ Test::testResendSetAndRemoveReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL("foo", reply->getError(0).getMessage());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ("foo", reply->getError(0).getMessage());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Resolving '[SetReply:foo]'.")
                          .add("Resolving 'dst/session'.")
@@ -1232,9 +1167,9 @@ Test::testResendSetAndRemoveReply(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testHopIgnoresReply(TestData &data)
+TEST_F(RoutingTest, test_hop_ignores_reply)
 {
+    auto& data = *_data;
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("?dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
@@ -1250,9 +1185,9 @@ Test::testHopIgnoresReply(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testHopBlueprintIgnoresReply(TestData &data)
+TEST_F(RoutingTest, test_hop_blueprint_ignores_reply)
 {
+    auto& data = *_data;
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addHop(std::move(HopSpec("foo", "dst/session").setIgnoreResult(true)))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("foo")).isAccepted());
@@ -1270,22 +1205,22 @@ Test::testHopBlueprintIgnoresReply(TestData &data)
                          reply->getTrace()));
 }
 
-void
-Test::testAcceptEmptyRoute(TestData &data)
+TEST_F(RoutingTest, test_accept_empty_route)
 {
+    auto& data = *_data;
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
     const Route &route = msg->getRoute();
-    EXPECT_EQUAL(0u, route.getNumHops());
+    EXPECT_EQ(0u, route.getNumHops());
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
 }
 
-void
-Test::testAbortOnlyActiveNodes(TestData &data)
+TEST_F(RoutingTest, test_abort_only_active_nodes)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(false));
     protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(false,
@@ -1297,39 +1232,39 @@ Test::testAbortOnlyActiveNodes(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[SetReply:foo],?bar,dst/session]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(2u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL((uint32_t)ErrorCode::SEND_ABORTED, reply->getError(1).getCode());
+    EXPECT_EQ(2u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ((uint32_t)ErrorCode::SEND_ABORTED, reply->getError(1).getCode());
 }
 
-void
-Test::testUnknownPolicy(TestData &data)
+TEST_F(RoutingTest, test_unknown_policy)
 {
+    auto& data = *_data;
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Unknown]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
 }
 
-void
-Test::testSelectException(TestData &data)
+TEST_F(RoutingTest, test_select_exception)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("SelectException", std::make_shared<SelectExceptionPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[SelectException]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL("Policy 'SelectException' threw an exception; {test exception}",
-                 reply->getError(0).getMessage());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::POLICY_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ("Policy 'SelectException' threw an exception; {test exception}",
+              reply->getError(0).getMessage());
 }
 
-void
-Test::testMergeException(TestData &data)
+TEST_F(RoutingTest, test_merge_exception)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     protocol->addPolicyFactory("MergeException", std::make_shared<MergeExceptionPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
@@ -1340,157 +1275,161 @@ Test::testMergeException(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR,
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::POLICY_ERROR,
                  reply->getError(0).getCode());
-    EXPECT_EQUAL("Policy 'MergeException' threw an exception; {test exception}",
-                 reply->getError(0).getMessage());
+    EXPECT_EQ("Policy 'MergeException' threw an exception; {test exception}",
+              reply->getError(0).getMessage());
 }
 
-void 
-Test::requireThatIgnoreFlagPersistsThroughHopLookup(TestData &data)
+TEST_F(RoutingTest, require_that_ignore_flag_persists_through_hop_lookup)
 {
+    auto& data = *_data;
     setupRouting(data, RoutingTableSpec(SimpleProtocol::NAME).addHop(HopSpec("foo", "dst/unknown")));
     ASSERT_TRUE(testSend(data, "?foo"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void 
-Test::requireThatIgnoreFlagPersistsThroughRouteLookup(TestData &data)
+TEST_F(RoutingTest, require_that_ignore_flag_persists_through_route_lookup)
 {
+    auto& data = *_data;
     setupRouting(data, RoutingTableSpec(SimpleProtocol::NAME).addRoute(RouteSpec("foo").addHop("dst/unknown")));
     ASSERT_TRUE(testSend(data, "?foo"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void 
-Test::requireThatIgnoreFlagPersistsThroughPolicySelect(TestData &data) 
+TEST_F(RoutingTest, require_that_ignore_flag_persists_through_policy_select)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newSelectAndMerge("dst/unknown"));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void 
-Test::requireThatIgnoreFlagIsSerializedWithMessage(TestData &data)
+TEST_F(RoutingTest, require_that_ignore_flag_is_serialized_with_message)
 {
+    auto& data = *_data;
     ASSERT_TRUE(testSend(data, "dst/session foo ?bar"));
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
     Route route = msg->getRoute();
-    EXPECT_EQUAL(2u, route.getNumHops());
+    EXPECT_EQ(2u, route.getNumHops());
     Hop hop = route.getHop(0);
-    EXPECT_EQUAL("foo", hop.toString());
+    EXPECT_EQ("foo", hop.toString());
     EXPECT_FALSE(hop.getIgnoreResult());
     hop = route.getHop(1);
-    EXPECT_EQUAL("?bar", hop.toString());
+    EXPECT_EQ("?bar", hop.toString());
     EXPECT_TRUE(hop.getIgnoreResult());
     data._dstSession->acknowledge(std::move(msg));
     ASSERT_TRUE(testTrace(data, StringList().add("-Ignoring errors in reply.")));
 }
 
-void 
-Test::requireThatIgnoreFlagDoesNotInterfere(TestData &data) 
+TEST_F(RoutingTest, require_that_ignore_flag_does_not_interfere)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newSelectAndMerge("dst/session"));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testTrace(data, StringList().add("-Ignoring errors in reply.")));
     ASSERT_TRUE(testAcknowledge(data));
 }
-                
-void 
-Test::requireThatEmptySelectionCanBeIgnored(TestData &data) 
+
+TEST_F(RoutingTest, require_that_empty_selection_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newEmptySelection());
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void
-Test::requireThatSelectErrorCanBeIgnored(TestData &data) 
+TEST_F(RoutingTest, require_that_select_error_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newSelectError(ErrorCode::APP_FATAL_ERROR));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void 
-Test::requireThatSelectExceptionCanBeIgnored(TestData &data) 
+TEST_F(RoutingTest, require_that_select_exception_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newSelectException());
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void
-Test::requireThatSelectAndThrowCanBeIgnored(TestData &data) 
+TEST_F(RoutingTest, require_that_select_and_throw_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newSelectAndThrow("dst/session"));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void
-Test::requireThatEmptyMergeCanBeIgnored(TestData &data) 
+TEST_F(RoutingTest, require_that_empty_merge_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newEmptyMerge("dst/session"));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testAcknowledge(data));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void 
-Test::requireThatMergeErrorCanBeIgnored(TestData &data) 
+TEST_F(RoutingTest, require_that_merge_error_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newMergeError("dst/session", ErrorCode::APP_FATAL_ERROR));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testAcknowledge(data));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void 
-Test::requireThatMergeExceptionCanBeIgnored(TestData &data) 
+TEST_F(RoutingTest, require_that_merge_exception_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newMergeException("dst/session"));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testAcknowledge(data));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
-                
-void 
-Test::requireThatMergeAndThrowCanBeIgnored(TestData &data) 
+
+TEST_F(RoutingTest, require_that_merge_and_throw_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newMergeAndThrow("dst/session"));
     ASSERT_TRUE(testSend(data, "?[Custom]"));
     ASSERT_TRUE(testAcknowledge(data));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void
-Test::requireThatAllocServiceCanBeIgnored(TestData &data)
+TEST_F(RoutingTest, require_that_alloc_service_can_be_ignored)
 {
+    auto& data = *_data;
     ASSERT_TRUE(testSend(data, "?dst/unknown"));
     ASSERT_TRUE(testTrace(data, StringList().add("Ignoring errors in reply.")));
 }
 
-void
-Test::requireThatDepthLimitCanBeIgnored(TestData &data) 
+TEST_F(RoutingTest, require_that_depth_limit_can_be_ignored)
 {
+    auto& data = *_data;
     setupPolicy(data, "Custom", MyPolicyFactory::newSelectAndMerge("[Custom]"));
     ASSERT_TRUE(testSend(data, "?[Custom]", 0));
     ASSERT_TRUE(testTrace(data, StringList()));
 }
 
-void
-Test::testTimeout(TestData &data)
+TEST_F(RoutingTest, test_timeout)
 {
+    auto& data = *_data;
+    // Force teardown after this test case since timeouts have been changed.
+    _force_teardown = true;
     data._retryPolicy->setEnabled(true);
     data._retryPolicy->setBaseDelay(0.01);
     data._srcSession->setTimeout(500ms);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/unknown")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(2u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
-    EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(1).getCode());
+    EXPECT_EQ(2u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
+    EXPECT_EQ((uint32_t)ErrorCode::TIMEOUT, reply->getError(1).getCode());
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
