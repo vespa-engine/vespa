@@ -192,6 +192,10 @@ public class SimpleFeeder implements ReplyHandler {
                     addCommaAndNewline();
                     writer.write(op.getDocumentRemove());
                 }
+                case UPDATE -> {
+                    addCommaAndNewline();
+                    writer.write(op.getDocumentUpdate());
+                }
                 default -> { /* TODO: No more operations supported yet */ }
             }
             numReplies.incrementAndGet();
