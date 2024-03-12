@@ -36,7 +36,7 @@ public:
 
 
 class SelectPruner : public document::select::CloningVisitor,
-                      public SelectPrunerBase
+                     public SelectPrunerBase
 {
 public:
 private:
@@ -53,16 +53,16 @@ public:
                  bool hasFields,
                  bool hasDocuments);
 
-    SelectPruner(const SelectPruner *rhs);
-    virtual ~SelectPruner();
+    explicit SelectPruner(const SelectPruner *rhs);
+    ~SelectPruner() override;
 
-    uint32_t getFieldNodes() const { return _fieldNodes; }
-    uint32_t getAttrFieldNodes() const { return _attrFieldNodes; }
-    const document::select::ResultSet & getResultSet() const { return _resultSet; }
-    bool isFalse() const;
-    bool isTrue() const;
-    bool isInvalid() const;
-    bool isConst() const;
+    [[nodiscard]] uint32_t getFieldNodes() const noexcept { return _fieldNodes; }
+    [[nodiscard]] uint32_t getAttrFieldNodes() const noexcept { return _attrFieldNodes; }
+    [[nodiscard]] const document::select::ResultSet & getResultSet() const noexcept { return _resultSet; }
+    [[nodiscard]] bool isFalse() const;
+    [[nodiscard]] bool isTrue() const;
+    [[nodiscard]] bool isInvalid() const;
+    [[nodiscard]] bool isConst() const;
     void trace(std::ostream &t);
     void process(const document::select::Node &node);
 private:
@@ -83,8 +83,8 @@ private:
     void setTernaryConst(bool val);
     void set_null_value_node();
     void resolveTernaryConst(bool wantInverted);
-    bool isInvalidVal() const;
-    bool isNullVal() const;
+    [[nodiscard]] bool isInvalidVal() const;
+    [[nodiscard]] bool isNullVal() const;
     void swap(SelectPruner &rhs);
 };
 

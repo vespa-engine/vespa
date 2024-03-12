@@ -42,9 +42,10 @@ public:
         Session(std::unique_ptr<document::select::Node> docSelect,
                 std::unique_ptr<document::select::Node> preDocOnlySelect,
                 std::unique_ptr<document::select::Node> preDocSelect);
-        bool contains(const SelectContext &context) const;
-        bool contains(const document::Document &doc) const;
-        const document::select::Node &selectNode() const;
+        [[nodiscard]] bool contains_pre_doc(const SelectContext &context) const;
+        // Precondition: context must have non-nullptr _doc
+        [[nodiscard]] bool contains_doc(const SelectContext &context) const;
+        [[nodiscard]] const document::select::Node &selectNode() const;
     };
 
     using AttributeVectors = std::vector<std::shared_ptr<search::attribute::ReadableAttributeVector>>;

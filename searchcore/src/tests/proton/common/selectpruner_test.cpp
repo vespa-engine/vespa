@@ -799,6 +799,12 @@ TEST_F("Imported fields with matching attribute names are supported", TestFixtur
                 "test.my_imported_field > 0");
 }
 
+TEST_F("Imported fields can be used alongside non-attribute fields", TestFixture)
+{
+    f.testPrune("test.my_imported_field > 0 and id.namespace != \"foo\"",
+                "test.my_imported_field > 0 and id.namespace != \"foo\"");
+}
+
 // Edge case: document type reconfigured but attribute not yet visible in Proton
 TEST_F("Imported fields without matching attribute are mapped to constant NullValue", TestFixture)
 {
