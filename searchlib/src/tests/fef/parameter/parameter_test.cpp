@@ -1,32 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("parameter_test");
-#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/fef/parametervalidator.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("parameter_test");
 
 using namespace search::fef::test;
 using CollectionType = search::fef::FieldInfo::CollectionType;
 using DataType = search::fef::FieldInfo::DataType;
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class StringList : public std::vector<vespalib::string> {
 public:
     StringList & add(const vespalib::string & str) { push_back(str); return *this; }
 };
 
-class ParameterTest : public vespalib::TestApp {
-private:
+class ParameterTest : public ::testing::Test {
+protected:
     using PDS = ParameterDescriptions;
     using PT = ParameterType;
     using P = Parameter;
     using SL = StringList;
     using PVR = ParameterValidator::Result;
 
+    ParameterTest();
+    ~ParameterTest() override;
     bool assertParameter(const Parameter & exp, const Parameter & act);
     bool validate(const IIndexEnvironment & env,
                   const std::vector<vespalib::string> & params,
@@ -35,24 +37,20 @@ private:
                   const std::vector<vespalib::string> & params,
                   const ParameterDescriptions & descs,
                   const ParameterValidator::Result & result);
-
-    void testDescriptions();
-    void testValidator();
-    void testParameters();
-
-public:
-    int Main() override;
 };
+
+ParameterTest::ParameterTest() = default;
+ParameterTest::~ParameterTest() = default;
 
 bool
 ParameterTest::assertParameter(const Parameter & exp, const Parameter & act)
 {
     bool retval = true;
-    if (!EXPECT_EQUAL(exp.getType(), act.getType())) retval = false;
-    if (!EXPECT_EQUAL(exp.getValue(), act.getValue())) retval = false;
-    if (!EXPECT_EQUAL(exp.asDouble(), act.asDouble())) retval = false;
-    if (!EXPECT_EQUAL(exp.asInteger(), act.asInteger())) retval = false;
-    if (!EXPECT_EQUAL(exp.asField(), act.asField())) retval = false;
+    EXPECT_EQ(exp.getType(), act.getType()) << (retval = false, "");
+    EXPECT_EQ(exp.getValue(), act.getValue()) << (retval = false, "");
+    EXPECT_EQ(exp.asDouble(), act.asDouble()) << (retval = false, "");
+    EXPECT_EQ(exp.asInteger(), act.asInteger()) << (retval = false, "");
+    EXPECT_EQ(exp.asField(), act.asField()) << (retval = false, "");
     return retval;
 }
 
@@ -76,8 +74,15 @@ ParameterTest::validate(const IIndexEnvironment & env,
     if (!validate(env, params, descs)) return false;
     ParameterValidator pv(env, params, descs);
     ParameterValidator::Result actual = pv.validate();
-    if (!EXPECT_EQUAL(result.getTag(), actual.getTag())) return false;
-    if (!EXPECT_EQUAL(result.getParameters().size(), actual.getParameters().size())) return false;
+    bool failed = false;
+    EXPECT_EQ(result.getTag(), actual.getTag()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
+    EXPECT_EQ(result.getParameters().size(), actual.getParameters().size()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     bool retval = true;
     for (size_t i = 0; i < result.getParameters().size(); ++i) {
         if (!assertParameter(result.getParameters()[i], actual.getParameters()[i])) retval = false;
@@ -85,52 +90,50 @@ ParameterTest::validate(const IIndexEnvironment & env,
     return retval;
 }
 
-void
-ParameterTest::testDescriptions()
+TEST_F(ParameterTest, test_descriptions)
 {
     PDS descs = PDS().
         desc().indexField(ParameterCollection::SINGLE).indexField(ParameterCollection::ARRAY).indexField(ParameterCollection::WEIGHTEDSET).attribute(ParameterCollection::ANY).attributeField(ParameterCollection::ANY).field().
         desc(5).feature().number().string().attribute(ParameterCollection::ANY).
         desc().string().number().repeat(2);
     const PDS::DescriptionVector & v = descs.getDescriptions();
-    EXPECT_EQUAL(v.size(), 3u);
-    EXPECT_EQUAL(v[0].getTag(), 0u);
+    EXPECT_EQ(v.size(), 3u);
+    EXPECT_EQ(v[0].getTag(), 0u);
     EXPECT_TRUE(!v[0].hasRepeat());
-    EXPECT_EQUAL(v[0].getParams().size(), 6u);
-    EXPECT_EQUAL(v[0].getParam(0).type, ParameterType::INDEX_FIELD);
-    EXPECT_EQUAL(v[0].getParam(1).type, ParameterType::INDEX_FIELD);
-    EXPECT_EQUAL(v[0].getParam(2).type, ParameterType::INDEX_FIELD);
-    EXPECT_EQUAL(v[0].getParam(3).type, ParameterType::ATTRIBUTE);
-    EXPECT_EQUAL(v[0].getParam(4).type, ParameterType::ATTRIBUTE_FIELD);
-    EXPECT_EQUAL(v[0].getParam(5).type, ParameterType::FIELD);
-    EXPECT_EQUAL(v[0].getParam(0).collection, ParameterCollection::SINGLE);
-    EXPECT_EQUAL(v[0].getParam(1).collection, ParameterCollection::ARRAY);
-    EXPECT_EQUAL(v[0].getParam(2).collection, ParameterCollection::WEIGHTEDSET);
-    EXPECT_EQUAL(v[0].getParam(3).collection, ParameterCollection::ANY);
-    EXPECT_EQUAL(v[0].getParam(4).collection, ParameterCollection::ANY);
-    EXPECT_EQUAL(v[0].getParam(5).collection, ParameterCollection::ANY);
+    EXPECT_EQ(v[0].getParams().size(), 6u);
+    EXPECT_EQ(v[0].getParam(0).type, ParameterType::INDEX_FIELD);
+    EXPECT_EQ(v[0].getParam(1).type, ParameterType::INDEX_FIELD);
+    EXPECT_EQ(v[0].getParam(2).type, ParameterType::INDEX_FIELD);
+    EXPECT_EQ(v[0].getParam(3).type, ParameterType::ATTRIBUTE);
+    EXPECT_EQ(v[0].getParam(4).type, ParameterType::ATTRIBUTE_FIELD);
+    EXPECT_EQ(v[0].getParam(5).type, ParameterType::FIELD);
+    EXPECT_EQ(v[0].getParam(0).collection, ParameterCollection::SINGLE);
+    EXPECT_EQ(v[0].getParam(1).collection, ParameterCollection::ARRAY);
+    EXPECT_EQ(v[0].getParam(2).collection, ParameterCollection::WEIGHTEDSET);
+    EXPECT_EQ(v[0].getParam(3).collection, ParameterCollection::ANY);
+    EXPECT_EQ(v[0].getParam(4).collection, ParameterCollection::ANY);
+    EXPECT_EQ(v[0].getParam(5).collection, ParameterCollection::ANY);
 
-    EXPECT_EQUAL(v[1].getTag(), 5u);
+    EXPECT_EQ(v[1].getTag(), 5u);
     EXPECT_TRUE(!v[1].hasRepeat());
-    EXPECT_EQUAL(v[1].getParams().size(), 4u);
-    EXPECT_EQUAL(v[1].getParam(0).type, ParameterType::FEATURE);
-    EXPECT_EQUAL(v[1].getParam(1).type, ParameterType::NUMBER);
-    EXPECT_EQUAL(v[1].getParam(2).type, ParameterType::STRING);
-    EXPECT_EQUAL(v[1].getParam(3).type, ParameterType::ATTRIBUTE);
+    EXPECT_EQ(v[1].getParams().size(), 4u);
+    EXPECT_EQ(v[1].getParam(0).type, ParameterType::FEATURE);
+    EXPECT_EQ(v[1].getParam(1).type, ParameterType::NUMBER);
+    EXPECT_EQ(v[1].getParam(2).type, ParameterType::STRING);
+    EXPECT_EQ(v[1].getParam(3).type, ParameterType::ATTRIBUTE);
 
-    EXPECT_EQUAL(v[2].getTag(), 6u);
+    EXPECT_EQ(v[2].getTag(), 6u);
     EXPECT_TRUE(v[2].hasRepeat());
-    EXPECT_EQUAL(v[2].getParams().size(), 2u);
-    EXPECT_EQUAL(v[2].getParam(0).type, ParameterType::STRING);
-    EXPECT_EQUAL(v[2].getParam(1).type, ParameterType::NUMBER);
-    EXPECT_EQUAL(v[2].getParam(2).type, ParameterType::STRING);
-    EXPECT_EQUAL(v[2].getParam(3).type, ParameterType::NUMBER);
-    EXPECT_EQUAL(v[2].getParam(4).type, ParameterType::STRING);
-    EXPECT_EQUAL(v[2].getParam(5).type, ParameterType::NUMBER);
+    EXPECT_EQ(v[2].getParams().size(), 2u);
+    EXPECT_EQ(v[2].getParam(0).type, ParameterType::STRING);
+    EXPECT_EQ(v[2].getParam(1).type, ParameterType::NUMBER);
+    EXPECT_EQ(v[2].getParam(2).type, ParameterType::STRING);
+    EXPECT_EQ(v[2].getParam(3).type, ParameterType::NUMBER);
+    EXPECT_EQ(v[2].getParam(4).type, ParameterType::STRING);
+    EXPECT_EQ(v[2].getParam(5).type, ParameterType::NUMBER);
 }
 
-void
-ParameterTest::testValidator()
+TEST_F(ParameterTest, test_validator)
 {
     IndexEnvironment env;
     IndexEnvironmentBuilder builder(env);
@@ -201,8 +204,7 @@ ParameterTest::testValidator()
     EXPECT_TRUE(!validate(env, SL().add("str").add("bar").add("foo").add("bar"), d2));
 }
 
-void
-ParameterTest::testParameters()
+TEST_F(ParameterTest, test_parameters)
 {
     IndexEnvironment env;
     IndexEnvironmentBuilder builder(env);
@@ -254,20 +256,6 @@ ParameterTest::testParameters()
                         PVR(20).addParameter(P(PT::STRING, "baz")))); // second desc matching
 }
 
-int
-ParameterTest::Main()
-{
-    TEST_INIT("parameter_test");
-
-    testDescriptions();
-    testValidator();
-    testParameters();
-
-    TEST_DONE();
 }
 
-}
-}
-
-TEST_APPHOOK(search::fef::ParameterTest);
-
+GTEST_MAIN_RUN_ALL_TESTS()
