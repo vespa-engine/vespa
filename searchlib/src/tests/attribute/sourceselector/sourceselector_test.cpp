@@ -59,8 +59,14 @@ TEST_F(SourceSelectorTest, test_fixed)
     FixedSourceSelector selector(default_source, base_file_name, 10);
     EXPECT_EQ(default_source, selector.getDefaultSource());
     EXPECT_EQ(10u, selector.getDocIdLimit());
-//    EXPECT_EQ(default_source, selector.createIterator()->getSource(maxDocId + 1));
     setSources(selector);
+    /*
+     * One extra element beyond highest explicitly set element is
+     * initialized to accommodate a match loop optimization. See
+     * setSource() and reserve() member functions in
+     * FixedSourceSelector for details.
+     */
+    EXPECT_EQ(default_source, selector.createIterator()->getSource(maxDocId + 1));
     testSourceSelector(docSource, sz, selector.getDefaultSource(), selector, false);
     EXPECT_EQ(maxDocId+1, selector.getDocIdLimit());
 }
