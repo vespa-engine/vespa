@@ -39,6 +39,10 @@ namespace {
     ResultList traceAndValue(const T& value, std::ostream& out,
                          const Node& leftNode, const Node& rightNode)
     {
+        out << "And (lhs):\n";
+        (void)leftNode.trace(value, out);
+        out << "And (rhs):\n";
+        (void)rightNode.trace(value, out);
         out << "And - Left branch returned " << leftNode.contains(value) << ".\n";
         out << "And - Right branch returned " << rightNode.contains(value) << ".\n";
         return leftNode.contains(value) && rightNode.contains(value);
@@ -83,6 +87,10 @@ namespace {
     ResultList traceOrValue(const T& value, std::ostream& out,
                          const Node& leftNode, const Node& rightNode)
     {
+        out << "Or (lhs):\n";
+        (void)leftNode.trace(value, out);
+        out << "Or (rhs):\n";
+        (void)rightNode.trace(value, out);
         out << "Or - Left branch returned " << leftNode.contains(value) << ".\n";
         out << "Or - Right branch returned " << rightNode.contains(value) << ".\n";
         return leftNode.contains(value) || rightNode.contains(value);
@@ -122,6 +130,8 @@ namespace {
     template<typename T>
     ResultList traceNotValue(const T& value, std::ostream& out, const Node& node)
     {
+        out << "Not:\n";
+        (void)node.trace(value, out);
         out << "Not - Child returned " << node.contains(value)
             << ". Returning opposite.\n";
         return !node.contains(value);
