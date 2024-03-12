@@ -4,7 +4,7 @@
 #include <vespa/messagebus/sequencer.h>
 #include <vespa/messagebus/routablequeue.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -82,32 +82,13 @@ struct MyQueue : public RoutableQueue {
     }
 };
 
-class Test : public vespalib::TestApp {
-private:
-    void testSyncNone();
-    void testSyncId();
-
-public:
-    int Main() override {
-        TEST_INIT("sequencer_test");
-
-        testSyncNone(); TEST_FLUSH();
-        testSyncId();   TEST_FLUSH();
-
-        TEST_DONE();
-    }
-};
-
-TEST_APPHOOK(Test);
-
 // --------------------------------------------------------------------------------
 //
 // Tests.
 //
 // --------------------------------------------------------------------------------
 
-void
-Test::testSyncNone()
+TEST(SequencerTest, test_sync_none)
 {
     MyQueue       src;
     MyQueue       dst;
@@ -118,28 +99,27 @@ Test::testSyncNone()
     seq.handleMessage(src.createMessage(false, 0));
     seq.handleMessage(src.createMessage(false, 0));
     seq.handleMessage(src.createMessage(false, 0));
-    EXPECT_EQUAL(0u, src.size());
-    EXPECT_EQUAL(5u, dst.size());
+    EXPECT_EQ(0u, src.size());
+    EXPECT_EQ(5u, dst.size());
 
     dst.replyNext();
     dst.replyNext();
     dst.replyNext();
     dst.replyNext();
     dst.replyNext();
-    EXPECT_EQUAL(5u, src.size());
-    EXPECT_EQUAL(0u, dst.size());
+    EXPECT_EQ(5u, src.size());
+    EXPECT_EQ(0u, dst.size());
 
     EXPECT_TRUE(src.checkReply(false, 0));
     EXPECT_TRUE(src.checkReply(false, 0));
     EXPECT_TRUE(src.checkReply(false, 0));
     EXPECT_TRUE(src.checkReply(false, 0));
     EXPECT_TRUE(src.checkReply(false, 0));
-    EXPECT_EQUAL(0u, src.size());
-    EXPECT_EQUAL(0u, dst.size());
+    EXPECT_EQ(0u, src.size());
+    EXPECT_EQ(0u, dst.size());
 }
 
-void
-Test::testSyncId()
+TEST(SequencerTest, test_sync_id)
 {
     MyQueue     src;
     MyQueue     dst;
@@ -150,8 +130,8 @@ Test::testSyncId()
     seq.handleMessage(src.createMessage(true, 3));
     seq.handleMessage(src.createMessage(true, 4));
     seq.handleMessage(src.createMessage(true, 5));
-    EXPECT_EQUAL(0u, src.size());
-    EXPECT_EQUAL(5u, dst.size());
+    EXPECT_EQ(0u, src.size());
+    EXPECT_EQ(5u, dst.size());
 
     seq.handleMessage(src.createMessage(true, 1));
     seq.handleMessage(src.createMessage(true, 5));
@@ -159,16 +139,16 @@ Test::testSyncId()
     seq.handleMessage(src.createMessage(true, 10));
     seq.handleMessage(src.createMessage(true, 4));
     seq.handleMessage(src.createMessage(true, 3));
-    EXPECT_EQUAL(0u, src.size());
-    EXPECT_EQUAL(6u, dst.size());
+    EXPECT_EQ(0u, src.size());
+    EXPECT_EQ(6u, dst.size());
 
     dst.replyNext();
     dst.replyNext();
     dst.replyNext();
     dst.replyNext();
     dst.replyNext();
-    EXPECT_EQUAL(5u, src.size());
-    EXPECT_EQUAL(6u, dst.size());
+    EXPECT_EQ(5u, src.size());
+    EXPECT_EQ(6u, dst.size());
 
     dst.replyNext();
     dst.replyNext();
@@ -176,8 +156,8 @@ Test::testSyncId()
     dst.replyNext();
     dst.replyNext();
     dst.replyNext();
-    EXPECT_EQUAL(11u, src.size());
-    EXPECT_EQUAL(0u, dst.size());
+    EXPECT_EQ(11u, src.size());
+    EXPECT_EQ(0u, dst.size());
 
     EXPECT_TRUE(src.checkReply(true, 1));
     EXPECT_TRUE(src.checkReply(true, 2));
@@ -190,6 +170,8 @@ Test::testSyncId()
     EXPECT_TRUE(src.checkReply(true, 3));
     EXPECT_TRUE(src.checkReply(true, 4));
     EXPECT_TRUE(src.checkReply(true, 5));
-    EXPECT_EQUAL(0u, src.size());
-    EXPECT_EQUAL(0u, dst.size());
+    EXPECT_EQ(0u, src.size());
+    EXPECT_EQ(0u, dst.size());
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
