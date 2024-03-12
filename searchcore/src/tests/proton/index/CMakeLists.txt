@@ -22,6 +22,7 @@ vespa_add_executable(searchcore_fusionrunner_test_app TEST
     searchcore_server
     searchcore_index
     searchcore_pcommon
+    GTest::gtest
 )
 
 vespa_add_test(NAME searchcore_fusionrunner_test_app
