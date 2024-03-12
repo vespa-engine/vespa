@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/sourcesession.h>
@@ -11,33 +10,13 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 using namespace std::chrono_literals;
 
 
-class Test : public vespalib::TestApp {
-public:
-    int Main() override;
-    void testZeroTimeout();
-    void testMessageExpires();
-};
-
-TEST_APPHOOK(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("timeout_test");
-
-    testZeroTimeout();    TEST_FLUSH();
-    testMessageExpires(); TEST_FLUSH();
-
-    TEST_DONE();
-}
-
-void
-Test::testZeroTimeout()
+TEST(TimeoutTest, test_zero_timeout)
 {
     Slobrok slobrok;
     TestServer srcServer(Identity("src"), RoutingSpec(), slobrok);
@@ -53,12 +32,11 @@ Test::testZeroTimeout()
 
     Reply::UP reply = srcHandler.getReply();
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::TIMEOUT, reply->getError(0).getCode());
 }
 
-void
-Test::testMessageExpires()
+TEST(TimeoutTest, test_message_expires)
 {
     Slobrok slobrok;
     TestServer srcServer(Identity("src"), RoutingSpec(), slobrok);
@@ -73,11 +51,13 @@ Test::testMessageExpires()
 
     Reply::UP reply = srcHandler.getReply();
     ASSERT_TRUE(reply);
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)ErrorCode::TIMEOUT, reply->getError(0).getCode());
 
     Message::UP msg = dstHandler.getMessage(1s);
     if (msg) {
         msg->discard();
     }
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
