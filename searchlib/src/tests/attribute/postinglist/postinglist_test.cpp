@@ -8,7 +8,7 @@
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <set>
 #include <map>
 #include <cinttypes>
@@ -24,9 +24,9 @@ using vespalib::GenerationHandler;
  * TODO: Make it pass MALLOC_OPTIONS=AJ on freebsd and valgrind on Linux.
  */
 
-class AttributePostingListTest : public vespalib::TestApp
+class AttributePostingListTest : public ::testing::Test
 {
-private:
+protected:
     /* Limited STL version for validation of full version */
     using STLPostingList = std::set<uint32_t>;
     using STLValueTree = std::map<int, STLPostingList>;
@@ -96,7 +96,6 @@ private:
     };
     std::vector<RandomValue> _randomValues;
 
-public:
     using IntKeyStore = vespalib::datastore::DataStore<int>;
     using AttributePosting = vespalib::btree::BTreeKeyData<uint32_t, vespalib::btree::BTreeNoLeafData>;
     using PostingList = vespalib::btree::BTreeStore<uint32_t,
@@ -134,7 +133,7 @@ public:
     using TreeManager = IntEnumNodeAllocator;
     using ValueHandle = IntKeyStore;
     using RandomValuesVector = std::vector<RandomValue>;
-private:
+
     GenerationHandler _handler;
     IntKeyStore *_intKeyStore;
     IntEnumNodeAllocator *_intNodeAlloc;
@@ -210,15 +209,12 @@ private:
     {
         return frozen ? "frozen" : "thawed";
     }
-public:
     AttributePostingListTest();
-    ~AttributePostingListTest();
-
-    int Main() override;
+    ~AttributePostingListTest() override;
 };
 
 AttributePostingListTest::AttributePostingListTest()
-    : vespalib::TestApp(),
+    : ::testing::Test(),
       _randomValues(),
       _handler(),
       _intKeyStore(NULL),
@@ -228,7 +224,8 @@ AttributePostingListTest::AttributePostingListTest()
       _stlTree(NULL),
       _randomGenerator()
 {}
-AttributePostingListTest::~AttributePostingListTest() {}
+
+AttributePostingListTest::~AttributePostingListTest() = default;
 
 void
 AttributePostingListTest::allocTree()
@@ -368,7 +365,7 @@ insertRandomValues(Tree &tree,
         } else {
         }
         ASSERT_TRUE(itr.valid());
-        EXPECT_EQUAL(i->_value, valueHandle.getEntry(itr.getKey()));
+        EXPECT_EQ(i->_value, valueHandle.getEntry(itr.getKey()));
 
         /* TODO: Insert docid to postinglist */
         PostingIdx oldIdx = itr.getData();
@@ -669,30 +666,21 @@ reclaim_memory(Tree &tree,
     postings.reclaim_memory(_handler.get_oldest_used_generation());
 }
 
-int
-AttributePostingListTest::Main()
+TEST_F(AttributePostingListTest, test_posting_list)
 {
-    TEST_INIT("postinglist_test");
-
     fillRandomValues(1000, 10);
 
     allocTree();
-    insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings,
-                       _stlTree, _randomValues);
-    lookupRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings,
-                       _stlTree, _randomValues);
+    ASSERT_NO_FATAL_FAILURE(insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(lookupRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
     _intNodeAlloc->freeze();
     _intNodeAlloc->assign_generation(_handler.getCurrentGeneration());
     doCompactEnumStore(*_intTree, *_intNodeAlloc, *_intKeyStore);
-    removeRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings,
-                       _stlTree, _randomValues);
-    insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings,
-                       _stlTree, _randomValues);
+    ASSERT_NO_FATAL_FAILURE(removeRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
     freeTree(true);
-
-    TEST_DONE();
 }
 
 }
 
-TEST_APPHOOK(search::AttributePostingListTest);
+GTEST_MAIN_RUN_ALL_TESTS()

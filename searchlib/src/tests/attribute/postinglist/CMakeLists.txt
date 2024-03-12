@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_postinglist_test_app TEST
     postinglist_test.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_postinglist_test_app COMMAND searchlib_postinglist_test_app)
