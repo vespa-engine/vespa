@@ -4,12 +4,9 @@
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
-
-#include <vespa/log/log.h>
-LOG_SETUP("sourceselector_test");
 
 using std::unique_ptr;
 using std::string;
@@ -37,47 +34,17 @@ uint8_t capSource(uint8_t source, uint8_t defaultSource, bool cap) {
     return (cap ? std::min(source, defaultSource) : source);
 }
 
-class Test : public vespalib::TestApp
+class SourceSelectorTest : public ::testing::Test
 {
-public:
-    int Main() override;
-private:
+protected:
+    SourceSelectorTest();
+    ~SourceSelectorTest() override;
     void testSourceSelector(const DocSource *docSource, size_t sz, uint8_t defaultSource, ISourceSelector & selector, bool cap);
-    void testFixed(const DocSource *docSource, size_t sz);
-    template <typename SelectorType>
-    void requireThatSelectorCanCloneAndSubtract();
-    void requireThatSelectorCanCloneAndSubtract();
-    template <typename SelectorType>
     void requireThatSelectorCanSaveAndLoad(bool compactLidSpace);
-    void requireThatSelectorCanSaveAndLoad();
-    template <typename SelectorType>
-    void requireThatCompleteSourceRangeIsHandled();
-    void requireThatCompleteSourceRangeIsHandled();
-    template <typename SelectorType>
-    void requireThatSourcesAreCountedCorrectly();
-    void requireThatSourcesAreCountedCorrectly();
-    void requireThatDocIdLimitIsCorrect();
-    void requireThatCorrectDefaultValueIsUsedAfterCompaction();
 };
 
-int
-Test::Main()
-{
-    TEST_INIT("sourceselector_test");
-
-    if (_argc > 0) {
-        DummyFileHeaderContext::setCreator(_argv[0]);
-    }
-    testFixed(docs, arraysize(docs));
-    TEST_DO(requireThatSelectorCanCloneAndSubtract());
-    TEST_DO(requireThatSelectorCanSaveAndLoad());
-    TEST_DO(requireThatCompleteSourceRangeIsHandled());
-    TEST_DO(requireThatSourcesAreCountedCorrectly());
-    TEST_DO(requireThatDocIdLimitIsCorrect());
-    TEST_DO(requireThatCorrectDefaultValueIsUsedAfterCompaction());
-
-    TEST_DONE();
-}
+SourceSelectorTest::SourceSelectorTest() = default;
+SourceSelectorTest::~SourceSelectorTest() = default;
 
 void setSources(ISourceSelector &selector) {
     for (size_t i = 0; i < arraysize(docs); ++i) {
@@ -85,75 +52,75 @@ void setSources(ISourceSelector &selector) {
     }
 }
 
-void Test::testFixed(const DocSource *docSource, size_t sz)
+TEST_F(SourceSelectorTest, test_fixed)
 {
+    const DocSource *docSource = docs;
+    size_t sz = arraysize(docs);
     FixedSourceSelector selector(default_source, base_file_name, 10);
-    EXPECT_EQUAL(default_source, selector.getDefaultSource());
-    EXPECT_EQUAL(10u, selector.getDocIdLimit());
-//    EXPECT_EQUAL(default_source, selector.createIterator()->getSource(maxDocId + 1));
+    EXPECT_EQ(default_source, selector.getDefaultSource());
+    EXPECT_EQ(10u, selector.getDocIdLimit());
     setSources(selector);
+    /*
+     * One extra element beyond highest explicitly set element is
+     * initialized to accommodate a match loop optimization. See
+     * setSource() and reserve() member functions in
+     * FixedSourceSelector for details.
+     */
+    EXPECT_EQ(default_source, selector.createIterator()->getSource(maxDocId + 1));
     testSourceSelector(docSource, sz, selector.getDefaultSource(), selector, false);
-    EXPECT_EQUAL(maxDocId+1, selector.getDocIdLimit());
+    EXPECT_EQ(maxDocId+1, selector.getDocIdLimit());
 }
 
-void Test::testSourceSelector(const DocSource *docSource, size_t sz,
-                              uint8_t defaultSource, ISourceSelector &selector, bool cap)
+void
+SourceSelectorTest::testSourceSelector(const DocSource *docSource, size_t sz,
+                                       uint8_t defaultSource, ISourceSelector &selector, bool cap)
 {
     {
         auto it(selector.createIterator());
         for (size_t i = 0; i < sz; ++i) {
-            EXPECT_EQUAL((uint32_t)capSource(docSource[i].source, defaultSource, cap), (uint32_t)it->getSource(docSource[i].docId));
+            EXPECT_EQ((uint32_t)capSource(docSource[i].source, defaultSource, cap), (uint32_t)it->getSource(docSource[i].docId));
         }
     }
     {
         auto it(selector.createIterator());
         for (size_t i = 0, j = 0; i <= docSource[sz - 1].docId; ++i) {
             if (i != docSource[j].docId) {
-                EXPECT_EQUAL((uint32_t)defaultSource, (uint32_t)it->getSource(i));
+                EXPECT_EQ((uint32_t)defaultSource, (uint32_t)it->getSource(i));
             } else {
-                EXPECT_EQUAL((uint32_t)capSource(docSource[j].source, defaultSource, cap), (uint32_t)it->getSource(i));
+                EXPECT_EQ((uint32_t)capSource(docSource[j].source, defaultSource, cap), (uint32_t)it->getSource(i));
                 ++j;
             }
         }
     }
 }
 
-template <typename SelectorType>
-void
-Test::requireThatSelectorCanCloneAndSubtract()
+TEST_F(SourceSelectorTest, require_that_selector_can_clone_and_subtract)
 {
-    SelectorType selector(default_source, base_file_name);
+    FixedSourceSelector selector(default_source, base_file_name);
     setSources(selector);
     selector.setBaseId(base_id);
 
     const uint32_t diff = 3;
-    typename SelectorType::UP
-        new_selector(selector.cloneAndSubtract(base_file_name2, diff));
-    EXPECT_EQUAL(default_source - diff, new_selector->getDefaultSource());
-    EXPECT_EQUAL(base_id + diff, new_selector->getBaseId());
-    EXPECT_EQUAL(maxDocId+1, new_selector->getDocIdLimit());
+    auto new_selector(selector.cloneAndSubtract(base_file_name2, diff));
+    EXPECT_EQ(default_source - diff, new_selector->getDefaultSource());
+    EXPECT_EQ(base_id + diff, new_selector->getBaseId());
+    EXPECT_EQ(maxDocId+1, new_selector->getDocIdLimit());
 
     auto it(new_selector->createIterator());
     for(size_t i = 0; i < arraysize(docs); ++i) {
         if (docs[i].source > diff) {
-            EXPECT_EQUAL(docs[i].source - diff, it->getSource(docs[i].docId));
+            EXPECT_EQ(docs[i].source - diff, it->getSource(docs[i].docId));
         } else {
-            EXPECT_EQUAL(0, it->getSource(docs[i].docId));
+            EXPECT_EQ(0, it->getSource(docs[i].docId));
         }
     }
 }
 
 void
-Test::requireThatSelectorCanCloneAndSubtract()
+SourceSelectorTest::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
 {
-    requireThatSelectorCanCloneAndSubtract<FixedSourceSelector>();
-}
-
-template <typename SelectorType>
-void
-Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
-{
-    SelectorType selector(default_source, base_file_name2);
+    SCOPED_TRACE(compactLidSpace ? "compactLidSpace=true" : "compactLidSpace=false");
+    FixedSourceSelector selector(default_source, base_file_name2);
     setSources(selector);
     selector.setBaseId(base_id);
     selector.setSource(maxDocId + 1, default_source);
@@ -167,105 +134,93 @@ Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
     SourceSelector::SaveInfo::UP save_info =
         selector.extractSaveInfo(base_file_name);
     save_info->save(TuneFileAttributes(), DummyFileHeaderContext());
-    typename SelectorType::UP
-        selector2(SelectorType::load(base_file_name, default_source + base_id));
+    auto selector2(FixedSourceSelector::load(base_file_name, default_source + base_id));
     testSourceSelector(docs, arraysize(docs) - compactLidSpace, default_source, *selector2, true);
-    EXPECT_EQUAL(base_id, selector2->getBaseId());
+    EXPECT_EQ(base_id, selector2->getBaseId());
     if (compactLidSpace) {
-        EXPECT_EQUAL(maxDocId - 4, selector2->getDocIdLimit());
+        EXPECT_EQ(maxDocId - 4, selector2->getDocIdLimit());
     } else {
-        EXPECT_EQUAL(maxDocId + 2, selector2->getDocIdLimit());
+        EXPECT_EQ(maxDocId + 2, selector2->getDocIdLimit());
     }
 
     std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
-void
-Test::requireThatSelectorCanSaveAndLoad()
+TEST_F(SourceSelectorTest, require_that_selector_can_save_and_Load)
 {
-    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>(false);
-    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>(true);
+    requireThatSelectorCanSaveAndLoad(false);
+    requireThatSelectorCanSaveAndLoad(true);
 }
 
-template <typename SelectorType>
-void
-Test::requireThatCompleteSourceRangeIsHandled()
+TEST_F(SourceSelectorTest, require_that_complete_source_range_is_handled)
 {
-    SelectorType selector(default_source, base_file_name);
+    FixedSourceSelector selector(default_source, base_file_name);
     for (uint32_t i = 0; i < ISourceSelector::SOURCE_LIMIT; ++i) {
         selector.setSource(i, i);
     }
     auto itr = selector.createIterator();
     for (uint32_t i = 0; i < ISourceSelector::SOURCE_LIMIT; ++i) {
-        EXPECT_EQUAL((queryeval::Source)i, itr->getSource(i));
+        EXPECT_EQ((queryeval::Source)i, itr->getSource(i));
     }
 }
 
-void
-Test::requireThatCompleteSourceRangeIsHandled()
+TEST_F(SourceSelectorTest, require_that_sources_are_counted_correctly)
 {
-    requireThatCompleteSourceRangeIsHandled<FixedSourceSelector>();
-}
-
-template <typename SelectorType>
-void
-Test::requireThatSourcesAreCountedCorrectly()
-{
-    SelectorType selector(default_source, base_file_name);
+    FixedSourceSelector selector(default_source, base_file_name);
     for (uint32_t i = 0; i < 256; ++i) {
         selector.setSource(i, i%16);
     }
     SourceSelector::Histogram hist = selector.getDistribution();
     for (uint32_t i = 0; i < 16; ++i) {
-        EXPECT_EQUAL(16u, hist[i]);
+        EXPECT_EQ(16u, hist[i]);
     }
     for (uint32_t i = 16; i < 256; ++i) {
-        EXPECT_EQUAL(0u, hist[i]);
+        EXPECT_EQ(0u, hist[i]);
     }
 }
 
-void
-Test::requireThatSourcesAreCountedCorrectly()
-{
-    requireThatSourcesAreCountedCorrectly<FixedSourceSelector>();
-}
-
-void
-Test::requireThatDocIdLimitIsCorrect()
+TEST_F(SourceSelectorTest, require_that_doc_id_limit_is_correct)
 {
     FixedSourceSelector selector(default_source, base_file_name);
-    EXPECT_EQUAL(0u, selector.getDocIdLimit());
+    EXPECT_EQ(0u, selector.getDocIdLimit());
     selector.setSource(8, 10);
-    EXPECT_EQUAL(9u, selector.getDocIdLimit());
+    EXPECT_EQ(9u, selector.getDocIdLimit());
     selector.compactLidSpace(4);
-    EXPECT_EQUAL(4u, selector.getDocIdLimit());
+    EXPECT_EQ(4u, selector.getDocIdLimit());
     selector.setSource(6, 10);
-    EXPECT_EQUAL(7u, selector.getDocIdLimit());
+    EXPECT_EQ(7u, selector.getDocIdLimit());
     auto selector2 = selector.cloneAndSubtract(base_file_name2, 3);
-    EXPECT_EQUAL(7u, selector2->getDocIdLimit());
+    EXPECT_EQ(7u, selector2->getDocIdLimit());
 }
 
-void
-Test::requireThatCorrectDefaultValueIsUsedAfterCompaction()
+TEST_F(SourceSelectorTest, require_that_correct_default_value_is_used_after_compaction)
 {
     FixedSourceSelector selector(default_source, base_file_name);
-    EXPECT_EQUAL(0u, selector.getDocIdLimit());
+    EXPECT_EQ(0u, selector.getDocIdLimit());
     auto it(selector.createIterator());
     selector.setSource(8, 4);
-    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(9));
-    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(6));
+    EXPECT_EQ(default_source, (uint32_t) it->getSource(9));
+    EXPECT_EQ(default_source, (uint32_t) it->getSource(6));
     selector.compactLidSpace(4);
-    EXPECT_EQUAL(4u, selector.getDocIdLimit());
-    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(4));
-    EXPECT_EQUAL(invalid_source, (uint32_t) it->getSource(5)); // beyond guard
+    EXPECT_EQ(4u, selector.getDocIdLimit());
+    EXPECT_EQ(default_source, (uint32_t) it->getSource(4));
+    EXPECT_EQ(invalid_source, (uint32_t) it->getSource(5)); // beyond guard
     selector.setSource(6, 4);
-    EXPECT_EQUAL(7u, selector.getDocIdLimit());
-    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(5));
-    EXPECT_EQUAL(4u, (uint8_t) it->getSource(6));
-    EXPECT_EQUAL(default_source, (uint32_t) it->getSource(7));
+    EXPECT_EQ(7u, selector.getDocIdLimit());
+    EXPECT_EQ(default_source, (uint32_t) it->getSource(5));
+    EXPECT_EQ(4u, (uint8_t) it->getSource(6));
+    EXPECT_EQ(default_source, (uint32_t) it->getSource(7));
 }
 
 
 }  // namespace
 
-TEST_APPHOOK(Test);
+int
+main(int argc, char* argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    if (argc > 0) {
+        DummyFileHeaderContext::setCreator(argv[0]);
+    }
+    return RUN_ALL_TESTS();
+}
