@@ -9,13 +9,15 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 
 using namespace mbus;
 
 using vespalib::make_string;
+
+namespace {
 
 static const duration TIMEOUT = 120s;
 
@@ -192,20 +194,6 @@ public:
     bool start();
 };
 
-class Test : public vespalib::TestApp {
-private:
-    static Message::UP createMessage(const string &msg);
-
-public:
-    int Main() override;
-    void testSingleDirective(TestData &data);
-    void testMoreDirectives(TestData &data);
-    void testRecipientsRemain(TestData &data);
-    void testConstRoute(TestData &data);
-};
-
-TEST_APPHOOK(Test);
-
 TestData::TestData() :
     _slobrok(),
     _retryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
@@ -240,28 +228,33 @@ TestData::start()
     return true;
 }
 
-Message::UP
-Test::createMessage(const string &msg)
-{
-    auto ret = std::make_unique<SimpleMessage>(msg);
-    ret->getTrace().setLevel(9);
-    return ret;
 }
 
-int
-Test::Main()
+class RoutingContextTest : public testing::Test {
+protected:
+    static std::shared_ptr<TestData> _data;
+    RoutingContextTest();
+    ~RoutingContextTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+std::shared_ptr<TestData> RoutingContextTest::_data;
+
+RoutingContextTest::RoutingContextTest() = default;
+RoutingContextTest::~RoutingContextTest() = default;
+
+void
+RoutingContextTest::SetUpTestSuite()
 {
-    TEST_INIT("routingcontext_test");
+    _data = std::make_shared<TestData>();
+    ASSERT_TRUE(_data->start());
+}
 
-    TestData data;
-    ASSERT_TRUE(data.start());
-
-    testSingleDirective(data);  TEST_FLUSH();
-    testMoreDirectives(data);   TEST_FLUSH();
-    testRecipientsRemain(data); TEST_FLUSH();
-    testConstRoute(data);       TEST_FLUSH();
-
-    TEST_DONE();
+void
+RoutingContextTest::TearDownTestSuite()
+{
+    _data.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -270,9 +263,9 @@ Test::Main()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void
-Test::testSingleDirective(TestData &data)
+TEST_F(RoutingContextTest, test_single_directive)
 {
+    auto& data = *_data;
     IProtocol::SP protocol(new SimpleProtocol());
     auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
     simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(
@@ -295,9 +288,9 @@ Test::testSingleDirective(TestData &data)
     }
 }
 
-void
-Test::testMoreDirectives(TestData &data)
+TEST_F(RoutingContextTest, test_more_directives)
 {
+    auto& data = *_data;
     IProtocol::SP protocol(new SimpleProtocol());
     auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
     simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(
@@ -322,9 +315,9 @@ Test::testMoreDirectives(TestData &data)
     }
 }
 
-void
-Test::testRecipientsRemain(TestData &data)
+TEST_F(RoutingContextTest, test_recipients_remain)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
     simple.addPolicyFactory("First", std::make_shared<CustomPolicyFactory>(true,
@@ -347,9 +340,9 @@ Test::testRecipientsRemain(TestData &data)
     }
 }
 
-void
-Test::testConstRoute(TestData &data)
+TEST_F(RoutingContextTest, test_const_route)
 {
+    auto& data = *_data;
     auto protocol = std::make_shared<SimpleProtocol>();
     auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
     simple.addPolicyFactory("DocumentRouteSelector",
@@ -371,3 +364,4 @@ Test::testConstRoute(TestData &data)
     }
 }
 
+GTEST_MAIN_RUN_ALL_TESTS()
