@@ -24,7 +24,7 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.ONNXRUNTI
  */
 public class PlatformBundles {
 
-    private enum JarSuffix {
+    public enum JarSuffix {
         JAR_WITH_DEPS("-jar-with-dependencies.jar"),
         DEPLOY("-deploy.jar");
 
