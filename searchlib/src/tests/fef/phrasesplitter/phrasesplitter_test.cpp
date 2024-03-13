@@ -1,41 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("phrasesplitter_test");
-#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/phrase_splitter_query_env.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
-namespace search {
-namespace fef {
-
-class PhraseSplitterTest : public vespalib::TestApp
-{
-private:
-    void assertTermData(const ITermData * td, uint32_t uniqueId, uint32_t numTerms,
-                        uint32_t fieldId, uint32_t termHandle);
-    void testCopyTermFieldMatchData();
-    void testSplitter();
-    void testSplitterUpdate();
-
-public:
-    int Main() override;
-};
+namespace search::fef {
 
 void
-PhraseSplitterTest::assertTermData(const ITermData *td, uint32_t uniqueId, uint32_t numTerms,
-                                   uint32_t fieldId, uint32_t tfHandle)
+assertTermData(const ITermData *td, uint32_t uniqueId, uint32_t numTerms,
+               uint32_t fieldId, uint32_t tfHandle, const vespalib::string& label)
 {
+    SCOPED_TRACE(label);
     // fprintf(stderr, "checking uid=%d numterms=%d field=%d handle=%d\n", uniqueId, numTerms, fieldId, tfHandle);
-    EXPECT_EQUAL(uniqueId, td->getUniqueId());
-    EXPECT_EQUAL(numTerms, td->getPhraseLength());
-    EXPECT_EQUAL(tfHandle, td->lookupField(fieldId)->getHandle());
+    EXPECT_EQ(uniqueId, td->getUniqueId());
+    EXPECT_EQ(numTerms, td->getPhraseLength());
+    EXPECT_EQ(tfHandle, td->lookupField(fieldId)->getHandle());
 }
 
-void
-PhraseSplitterTest::testCopyTermFieldMatchData()
+TEST(PhraseSplitterTest, test_copy_term_field_match_data)
 {
     TermFieldMatchData src;
     src.reset(1);
@@ -49,34 +33,33 @@ PhraseSplitterTest::testCopyTermFieldMatchData()
     dst.appendPosition(TermFieldMatchDataPosition(0, 10, 0, 1000));
     {
         FieldPositionsIterator itr = dst.getIterator();
-        EXPECT_EQUAL(itr.getPosition(), 10u);
+        EXPECT_EQ(itr.getPosition(), 10u);
         itr.next();
         ASSERT_TRUE(!itr.valid());
     }
 
     PhraseSplitter::copyTermFieldMatchData(dst, src, 2);
 
-    EXPECT_EQUAL(dst.getDocId(), 1u);
+    EXPECT_EQ(dst.getDocId(), 1u);
     {
         TermFieldMatchData::PositionsIterator itr = dst.begin();
-        EXPECT_EQUAL(itr->getPosition(), 7u);
+        EXPECT_EQ(itr->getPosition(), 7u);
         ++itr;
-        EXPECT_EQUAL(itr->getPosition(), 17u);
+        EXPECT_EQ(itr->getPosition(), 17u);
         ++itr;
         ASSERT_TRUE(itr == dst.end());
     }
     {
         FieldPositionsIterator itr = dst.getIterator();
-        EXPECT_EQUAL(itr.getPosition(), 7u);
+        EXPECT_EQ(itr.getPosition(), 7u);
         itr.next();
-        EXPECT_EQUAL(itr.getPosition(), 17u);
+        EXPECT_EQ(itr.getPosition(), 17u);
         itr.next();
         ASSERT_TRUE(!itr.valid());
     }
 }
 
-void
-PhraseSplitterTest::testSplitter()
+TEST(PhraseSplitterTest, test_splitter)
 {
     { // single term
         test::QueryEnvironment qe;
@@ -91,9 +74,9 @@ PhraseSplitterTest::testSplitter()
         ps.bind_match_data(*md);
         ps.update();
         // check that nothing is served from the splitter
-        EXPECT_EQUAL(ps.get_query_env().getTerm(0), &terms[0]);
+        EXPECT_EQ(ps.get_query_env().getTerm(0), &terms[0]);
         TermFieldHandle handle = terms[0].lookupField(0)->getHandle();
-        EXPECT_EQUAL(ps.resolveTermField(handle), md->resolveTermField(handle));
+        EXPECT_EQ(ps.resolveTermField(handle), md->resolveTermField(handle));
     }
     { // single phrase
         test::QueryEnvironment qe;
@@ -114,14 +97,14 @@ PhraseSplitterTest::testSplitter()
         for (size_t i = 0; i < 3; ++i) {
             // fprintf(stderr, "checking term %d\n", (int)i);
             const ITermData *td = ps.get_query_env().getTerm(i);
-            EXPECT_NOT_EQUAL(td, &terms[0]);
-            EXPECT_NOT_EQUAL(td->lookupField(7), (ITermFieldData *)0);
-            EXPECT_EQUAL(td->lookupField(0), (ITermFieldData *)0);
-            TEST_DO(assertTermData(td, 1, 1, 7, i + 4)); // skipHandles = 4
-            EXPECT_NOT_EQUAL(td->lookupField(7)->getHandle(),
-                             terms[0].lookupField(7)->getHandle());
-            EXPECT_NOT_EQUAL(ps.resolveTermField(td->lookupField(7)->getHandle()),
-                             md->resolveTermField(terms[0].lookupField(7)->getHandle()));
+            EXPECT_NE(td, &terms[0]);
+            EXPECT_NE(td->lookupField(7), (ITermFieldData *)0);
+            EXPECT_EQ(td->lookupField(0), (ITermFieldData *)0);
+            assertTermData(td, 1, 1, 7, i + 4, "single phrase"); // skipHandles = 4
+            EXPECT_NE(td->lookupField(7)->getHandle(),
+                      terms[0].lookupField(7)->getHandle());
+            EXPECT_NE(ps.resolveTermField(td->lookupField(7)->getHandle()),
+                      md->resolveTermField(terms[0].lookupField(7)->getHandle()));
         }
     }
     { // combination
@@ -145,40 +128,39 @@ PhraseSplitterTest::testSplitter()
         ps.update();
         { // first term
             // fprintf(stderr, "first term\n");
-            EXPECT_EQUAL(ps.get_query_env().getTerm(0), &terms[0]);
-            TEST_DO(assertTermData(ps.get_query_env().getTerm(0), 0, 1, 4, 0));
-            TEST_DO(assertTermData(ps.get_query_env().getTerm(0), 0, 1, 7, 1));
+            EXPECT_EQ(ps.get_query_env().getTerm(0), &terms[0]);
+            assertTermData(ps.get_query_env().getTerm(0), 0, 1, 4, 0, "first term 1");
+            assertTermData(ps.get_query_env().getTerm(0), 0, 1, 7, 1, "first term 2");
 
             TermFieldHandle handle = terms[0].lookupField(4)->getHandle();
-            EXPECT_EQUAL(ps.resolveTermField(handle), md->resolveTermField(handle));
+            EXPECT_EQ(ps.resolveTermField(handle), md->resolveTermField(handle));
             handle = terms[0].lookupField(7)->getHandle();
-            EXPECT_EQUAL(ps.resolveTermField(handle), md->resolveTermField(handle));
+            EXPECT_EQ(ps.resolveTermField(handle), md->resolveTermField(handle));
         }
         for (size_t i = 0; i < 3; ++i) { // phrase
             // fprintf(stderr, "phrase term %zd\n", i);
             const ITermData *td = ps.get_query_env().getTerm(i + 1);
-            EXPECT_NOT_EQUAL(td, &terms[1]);
-            TEST_DO(assertTermData(td, 1, 1, 4, i + 11)); // skipHandles == 11
-            EXPECT_EQUAL(td->lookupField(7),  (ITermFieldData *)0);
-            EXPECT_NOT_EQUAL(ps.resolveTermField(td->lookupField(4)->getHandle()),
-                           md->resolveTermField(terms[1].lookupField(4)->getHandle()));
+            EXPECT_NE(td, &terms[1]);
+            assertTermData(td, 1, 1, 4, i + 11, "phrase term"); // skipHandles == 11
+            EXPECT_EQ(td->lookupField(7),  (ITermFieldData *)0);
+            EXPECT_NE(ps.resolveTermField(td->lookupField(4)->getHandle()),
+                      md->resolveTermField(terms[1].lookupField(4)->getHandle()));
         }
         { // last term
             // fprintf(stderr, "last term\n");
-            EXPECT_EQUAL(ps.get_query_env().getTerm(4), &terms[2]);
-            TEST_DO(assertTermData(ps.get_query_env().getTerm(4), 2, 1, 4, 4));
-            TEST_DO(assertTermData(ps.get_query_env().getTerm(4), 2, 1, 7, 5));
+            EXPECT_EQ(ps.get_query_env().getTerm(4), &terms[2]);
+            assertTermData(ps.get_query_env().getTerm(4), 2, 1, 4, 4, "last term 1");
+            assertTermData(ps.get_query_env().getTerm(4), 2, 1, 7, 5, "last term 2");
 
             // fprintf(stderr, "inspect term %p #f %zd\n", &terms[2], terms[2].numFields());
             fflush(stderr);
             TermFieldHandle handle = terms[2].lookupField(4)->getHandle();
-            EXPECT_EQUAL(ps.resolveTermField(handle), md->resolveTermField(handle));
+            EXPECT_EQ(ps.resolveTermField(handle), md->resolveTermField(handle));
         }
     }
 }
 
-void
-PhraseSplitterTest::testSplitterUpdate()
+TEST(PhraseSplitterTest, test_splitter_update)
 {
     {
         test::QueryEnvironment qe;
@@ -213,38 +195,24 @@ PhraseSplitterTest::testSplitterUpdate()
         for (size_t i = 0; i < 2; ++i) { // first phrase
             const TermFieldMatchData * tmd = ps.resolveTermField(ps.get_query_env().getTerm(i)->lookupField(0)->getHandle());
             TermFieldMatchData::PositionsIterator itr = tmd->begin();
-            EXPECT_EQUAL((itr++)->getPosition(), 10 + i);
+            EXPECT_EQ((itr++)->getPosition(), 10 + i);
             ASSERT_TRUE(itr == tmd->end());
         }
         { // first term
             TermFieldMatchData * tmd = md->resolveTermField(ps.get_query_env().getTerm(2)->lookupField(0)->getHandle());
             TermFieldMatchData::PositionsIterator itr = tmd->begin();
-            EXPECT_EQUAL((itr++)->getPosition(), 20u);
+            EXPECT_EQ((itr++)->getPosition(), 20u);
             ASSERT_TRUE(itr == tmd->end());
         }
         for (size_t i = 0; i < 2; ++i) { // second phrase
             const TermFieldMatchData * tmd = ps.resolveTermField(ps.get_query_env().getTerm(i + 3)->lookupField(0)->getHandle());
             TermFieldMatchData::PositionsIterator itr = tmd->begin();
-            EXPECT_EQUAL((itr++)->getPosition(), 30 + i);
+            EXPECT_EQ((itr++)->getPosition(), 30 + i);
             ASSERT_TRUE(itr == tmd->end());
         }
     }
 }
 
-int
-PhraseSplitterTest::Main()
-{
-
-    TEST_INIT("phrasesplitter_test");
-
-    testCopyTermFieldMatchData();
-    testSplitter();
-    testSplitterUpdate();
-
-    TEST_DONE();
 }
 
-}
-}
-
-TEST_APPHOOK(search::fef::PhraseSplitterTest);
+GTEST_MAIN_RUN_ALL_TESTS()
