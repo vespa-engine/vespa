@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("featurenameparser_test");
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/size_literals.h>
+
 #include <vespa/searchlib/fef/featurenameparser.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vector>
 #include <string>
+
+#include <vespa/log/log.h>
+LOG_SETUP("featurenameparser_test");
 
 using namespace search::fef;
 
@@ -31,20 +33,10 @@ std::ostream &operator<<(std::ostream &os, const ParamList &pl) {
     return os;
 }
 
-class Test : public vespalib::TestApp
-{
-public:
-    bool testParse(const vespalib::string &input, bool valid,
-                   const vespalib::string &base, ParamList pl,
-                   const vespalib::string &output);
-    void testFile(const vespalib::string &name);
-    int Main() override;
-};
-
 bool
-Test::testParse(const vespalib::string &input, bool valid,
-                const vespalib::string &base, ParamList pl,
-                const vespalib::string &output)
+testParse(const vespalib::string &input, bool valid,
+          const vespalib::string &base, ParamList pl,
+          const vespalib::string &output)
 {
     bool ok = true;
     FeatureNameParser parser(input);
@@ -52,15 +44,15 @@ Test::testParse(const vespalib::string &input, bool valid,
         LOG(warning, "parse error: input:'%s', rest:'%s'",
             input.c_str(), input.substr(parser.parsedBytes()).c_str());
     }
-    ok &= EXPECT_EQUAL(parser.valid(), valid);
-    ok &= EXPECT_EQUAL(parser.baseName(), base);
-    ok &= EXPECT_EQUAL(ParamList(parser.parameters()), pl);
-    ok &= EXPECT_EQUAL(parser.output(), output);
+    EXPECT_EQ(parser.valid(), valid) << (ok = false, "");
+    EXPECT_EQ(parser.baseName(), base) << (ok = false, "");
+    EXPECT_EQ(ParamList(parser.parameters()), pl) << (ok = false, "");
+    EXPECT_EQ(parser.output(), output) << (ok = false, "");
     return ok;
 }
 
 void
-Test::testFile(const vespalib::string &name)
+testFile(const vespalib::string &name)
 {
     char buf[4_Ki];
     uint32_t lineN = 0;
@@ -76,13 +68,16 @@ Test::testFile(const vespalib::string &name)
             continue;
         }
         uint32_t idx = line.find("<=>");
-        if (!EXPECT_TRUE(idx < line.size())) {
+        bool failed = false;
+        EXPECT_TRUE(idx < line.size()) << (failed = true, "");
+        if (failed) {
             LOG(error, "(%s:%u): malformed line: '%s'",
                 name.c_str(), lineN, line.c_str());
         } else {
             vespalib::string input = line.substr(0, idx);
             vespalib::string expect = line.substr(idx + strlen("<=>"));
-            if (!EXPECT_EQUAL(FeatureNameParser(input).featureName(), expect)) {
+            EXPECT_EQ(FeatureNameParser(input).featureName(), expect) << (failed = true, "");
+            if (failed) {
                 LOG(error, "(%s:%u): test failed: '%s'",
                     name.c_str(), lineN, line.c_str());
             }
@@ -92,42 +87,54 @@ Test::testFile(const vespalib::string &name)
     fclose(f);
 }
 
-int
-Test::Main()
+TEST(FeatureNameParserTest, test_normal_cases)
 {
-    TEST_INIT("featurenameparser_test");
-
     // normal cases
     EXPECT_TRUE(testParse("foo", true, "foo", ParamList(), ""));
     EXPECT_TRUE(testParse("foo.out", true, "foo", ParamList(), "out"));
     EXPECT_TRUE(testParse("foo(a)", true, "foo", ParamList().add("a"), ""));
     EXPECT_TRUE(testParse("foo(a,b)", true, "foo", ParamList().add("a").add("b"), ""));
     EXPECT_TRUE(testParse("foo(a,b).out", true, "foo", ParamList().add("a").add("b"), "out"));
+}
 
+TEST(FeatureNameParserTest, test_0_in_feature_name)
+{
     // @ in feature name (for macros)
     EXPECT_TRUE(testParse("foo@", true, "foo@", ParamList(), ""));
     EXPECT_TRUE(testParse("foo@.out", true, "foo@", ParamList(), "out"));
     EXPECT_TRUE(testParse("foo@(a)", true, "foo@", ParamList().add("a"), ""));
     EXPECT_TRUE(testParse("foo@(a,b)", true, "foo@", ParamList().add("a").add("b"), ""));
     EXPECT_TRUE(testParse("foo@(a,b).out", true, "foo@", ParamList().add("a").add("b"), "out"));
+}
 
+TEST(FeatureNameParserTest, test_dollar_in_feature_name)
+{
     // $ in feature name (for macros)
     EXPECT_TRUE(testParse("foo$", true, "foo$", ParamList(), ""));
     EXPECT_TRUE(testParse("foo$.out", true, "foo$", ParamList(), "out"));
     EXPECT_TRUE(testParse("foo$(a)", true, "foo$", ParamList().add("a"), ""));
     EXPECT_TRUE(testParse("foo$(a,b)", true, "foo$", ParamList().add("a").add("b"), ""));
     EXPECT_TRUE(testParse("foo$(a,b).out", true, "foo$", ParamList().add("a").add("b"), "out"));
+}
 
+TEST(FeatureNameParserTest, test_de_quoting_of_parameters)
+{
     // de-quoting of parameters
     EXPECT_TRUE(testParse("foo(a,\"b\")", true, "foo", ParamList().add("a").add("b"), ""));
     EXPECT_TRUE(testParse("foo(a,\" b \")", true, "foo", ParamList().add("a").add(" b "), ""));
     EXPECT_TRUE(testParse("foo( \"a\" , \" b \" )", true, "foo", ParamList().add("a").add(" b "), ""));
     EXPECT_TRUE(testParse("foo(\"\\\"\\\\\\t\\n\\r\\f\\x20\")", true, "foo", ParamList().add("\"\\\t\n\r\f "), ""));
+}
 
+TEST(FeatureNameParserTest, test_no_default_output_when_ending_with_dot)
+{
     // only default output if '.' not specified
     EXPECT_TRUE(testParse("foo.", false, "", ParamList(), ""));
     EXPECT_TRUE(testParse("foo(a,b).", false, "", ParamList(), ""));
+}
 
+TEST(FeatureNameParserTest, test_string_cannot_end_in_parmeter_list)
+{
     // string cannot end in parameter list
     EXPECT_TRUE(testParse("foo(", false, "", ParamList(), ""));
     EXPECT_TRUE(testParse("foo(a", false, "", ParamList(), ""));
@@ -135,7 +142,10 @@ Test::Main()
     EXPECT_TRUE(testParse("foo(a\\)", false, "", ParamList(), ""));
     EXPECT_TRUE(testParse("foo(a,", false, "", ParamList(), ""));
     EXPECT_TRUE(testParse("foo(a,b", false, "", ParamList(), ""));
+}
 
+TEST(FeatureNameParserTest, test_empty_parameters)
+{
     // empty parameters
     EXPECT_TRUE(testParse("foo()", true, "foo", ParamList().add(""), ""));
     EXPECT_TRUE(testParse("foo(,)", true, "foo", ParamList().add("").add(""), ""));
@@ -144,9 +154,11 @@ Test::Main()
     EXPECT_TRUE(testParse("foo(  )", true, "foo", ParamList().add(""), ""));
     EXPECT_TRUE(testParse("foo(  ,  ,  )", true, "foo", ParamList().add("").add("").add(""), ""));
     EXPECT_TRUE(testParse("foo( \t , \n , \r , \f )", true, "foo", ParamList().add("").add("").add("").add(""), ""));
-
-    testFile(TEST_PATH("parsetest.txt"));
-    TEST_DONE();
 }
 
-TEST_APPHOOK(Test);
+TEST(FeatureNameParserTest, test_cases_from_file)
+{
+    testFile(TEST_PATH("parsetest.txt"));
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()
