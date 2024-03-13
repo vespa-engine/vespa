@@ -36,16 +36,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class IndexedBackendTestCase {
     private static final String SCHEMA = "test";
     private static final String CLUSTER = "test";
+    private static final ClusterParams CLUSTER_PARAMS = new ClusterParams("testhittype", "container.0", null,
+                                                                          documentdbInfoConfig(SCHEMA), schemaInfo(SCHEMA));
 
     @Test
     void testNullQuery() {
         Logger.getLogger(IndexedBackend.class.getName()).setLevel(Level.ALL);
-        IndexedBackend fastSearcher = new IndexedBackend("container.0",
-                MockDispatcher.create(List.of()),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                documentdbInfoConfig(SCHEMA),
-                schemaInfo(SCHEMA));
+        IndexedBackend fastSearcher = new IndexedBackend(CLUSTER_PARAMS, MockDispatcher.create(List.of()));
 
         String query = "?junkparam=ignored";
         Result result = doSearch(fastSearcher, new Query(query), 0, 10);
@@ -65,12 +62,8 @@ public class IndexedBackendTestCase {
 
     @Test
     void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
-        IndexedBackend fastSearcher = new IndexedBackend("container.0",
-                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                documentdbInfoConfig(SCHEMA),
-                schemaInfo(SCHEMA));
+        IndexedBackend fastSearcher = new IndexedBackend(CLUSTER_PARAMS,
+                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))));
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -88,12 +81,8 @@ public class IndexedBackendTestCase {
 
     @Test
     void testRankProfileValidation() {
-        IndexedBackend fastSearcher = new IndexedBackend("container.0",
-                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                documentdbInfoConfig(SCHEMA),
-                schemaInfo(SCHEMA));
+        IndexedBackend fastSearcher = new IndexedBackend(CLUSTER_PARAMS,
+                MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))));
         assertFalse(searchError("?query=q", fastSearcher).contains("does not contain requested rank profile"));
         assertFalse(searchError("?query=q&ranking.profile=default", fastSearcher).contains("does not contain requested rank profile"));
         assertTrue(searchError("?query=q&ranking.profile=nosuch", fastSearcher).contains("does not contain requested rank profile"));
@@ -101,18 +90,15 @@ public class IndexedBackendTestCase {
 
     @Test
     void testSummaryNeedsQuery() {
-        var documentDb = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name(SCHEMA)));
         var schema = new Schema.Builder(SCHEMA)
                 .add(new DocumentSummary.Builder("default").build())
                 .add(new RankProfile.Builder("default").setHasRankFeatures(false)
                         .setHasSummaryFeatures(false)
                         .build());
-        IndexedBackend backend = new IndexedBackend("container.0",
-                MockDispatcher.create(Collections.singletonList(new Node(CLUSTER, 0, "host0", 0))),
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                documentDb,
-                new SchemaInfo(List.of(schema.build()), List.of()));
+        var backend = new IndexedBackend(new ClusterParams(CLUSTER_PARAMS.getSearcherName(), CLUSTER_PARAMS.getServerId(),
+                                                           CLUSTER_PARAMS.getDefaultSummary(), CLUSTER_PARAMS.getDocumentdbInfoConfig(),
+                                                           new SchemaInfo(List.of(schema.build()), List.of())),
+                                         MockDispatcher.create(Collections.singletonList(new Node(CLUSTER, 0, "host0", 0))));
         Query q = new Query("?query=foo");
         Result result = doSearch(backend, q, 0, 10);
         assertFalse(backend.summaryNeedsQuery(q));
@@ -127,12 +113,7 @@ public class IndexedBackendTestCase {
     void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
         MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0), new Node(CLUSTER, 2, "host1", 0)));
 
-        IndexedBackend fastSearcher = new IndexedBackend("container.0",
-                dispatcher,
-                new SummaryParameters(null),
-                new ClusterParams("testhittype"),
-                documentdbInfoConfig(SCHEMA),
-                schemaInfo(SCHEMA));
+        IndexedBackend fastSearcher = new IndexedBackend(CLUSTER_PARAMS, dispatcher);
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -185,12 +166,12 @@ public class IndexedBackendTestCase {
         return searcher.search(SCHEMA, new Query(query));
     }
 
-    private DocumentdbInfoConfig documentdbInfoConfig(String schemaName) {
+    private static DocumentdbInfoConfig documentdbInfoConfig(String schemaName) {
         var db = new DocumentdbInfoConfig.Documentdb.Builder().name(schemaName);
         return new DocumentdbInfoConfig.Builder().documentdb(db).build();
     }
 
-    private SchemaInfo schemaInfo(String schemaName) {
+    private static SchemaInfo schemaInfo(String schemaName) {
         var schema = new Schema.Builder(schemaName);
         schema.add(new RankProfile.Builder("default").build());
         return new SchemaInfo(List.of(schema.build()),  List.of());

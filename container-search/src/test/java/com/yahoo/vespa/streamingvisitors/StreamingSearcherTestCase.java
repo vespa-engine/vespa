@@ -9,7 +9,6 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -46,6 +45,7 @@ public class StreamingSearcherTestCase {
 
     public static final String USERDOC_ID_PREFIX = "id:namespace:mytype:n=1:userspecific";
     public static final String GROUPDOC_ID_PREFIX = "id:namespace:mytype:g=group1:userspecific";
+    private static final ClusterParams CLUSTER_PARAMS = new ClusterParams("clusterName");
 
     private static class MockVisitor implements Visitor {
         private final Query query;
@@ -229,15 +229,12 @@ public class StreamingSearcherTestCase {
     @Test
     void testBasics() {
         MockVisitorFactory factory = new MockVisitorFactory();
-        StreamingBackend searcher = new StreamingBackend(factory);
-
         var schema = new Schema.Builder("test");
         schema.add(new com.yahoo.search.schema.DocumentSummary.Builder("default").build());
-        searcher.init("container.0",
-                new SummaryParameters("default"),
-                new ClusterParams("clusterName"),
+        ClusterParams clusterParams = new ClusterParams("clusterName", "server.0", "default",
                 new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("test")).build(),
                 new SchemaInfo(List.of(schema.build()), List.of()));
+        StreamingBackend searcher = new StreamingBackend(clusterParams, "search-cluster-A", factory, "content-cluster-A");
 
         // Magic query values are used to trigger specific behaviors from mock visitor.
         checkError(searcher, "/?query=noselection",
@@ -310,7 +307,7 @@ public class StreamingSearcherTestCase {
             clock = MockUtils.mockedClockReturning(firstTimestamp, additionalTimestamps);
             options = new TracingOptions(sampler, exporter, clock, 8, 2.0);
             factory = new MockVisitorFactory();
-            searcher = new StreamingBackend(factory, options);
+            searcher = new StreamingBackend(CLUSTER_PARAMS, "search-cluster-A", factory, "content-cluster-A", options);
         }
 
         private TraceFixture() {

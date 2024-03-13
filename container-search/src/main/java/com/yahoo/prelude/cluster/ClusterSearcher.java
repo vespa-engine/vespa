@@ -12,7 +12,6 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.IndexedBackend;
-import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -92,23 +91,19 @@ public class ClusterSearcher extends Searcher {
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
-        SummaryParameters docSumParams = new SummaryParameters(qrsConfig
-                .com().yahoo().prelude().fastsearch().IndexedBackend().docsum()
-                .defaultclass());
-
-        String uniqueServerId = UUID.randomUUID().toString();
         VespaBackend streaming = null, indexed = null;
+        ClusterParams clusterParams = makeClusterParams(searchClusterIndex, qrsConfig
+                .com().yahoo().prelude().fastsearch().IndexedBackend().docsum()
+                .defaultclass(), documentDbConfig, schemaInfo);
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             if (docDb.mode() == DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX) {
                 if (indexed == null) {
-                    indexed = searchDispatch(searchClusterIndex, searchClusterName, uniqueServerId,
-                                             docSumParams, documentDbConfig, schemaInfo, dispatchers);
+                    indexed = searchDispatch(clusterParams, searchClusterName, dispatchers);
                 }
                 schema2Searcher.put(docDb.name(), indexed);
             } else if (docDb.mode() == DocumentdbInfoConfig.Documentdb.Mode.Enum.STREAMING) {
                 if (streaming == null) {
-                    streaming = streamingCluster(uniqueServerId, searchClusterIndex,
-                            searchClusterConfig, docSumParams, documentDbConfig, schemaInfo, access);
+                    streaming = streamingCluster(clusterParams, searchClusterConfig, access);
                     vipStatus.addToRotation(streaming.getName());
                 }
                 schema2Searcher.put(docDb.name(), streaming);
@@ -126,42 +121,30 @@ public class ClusterSearcher extends Searcher {
                 config.searchcluster().stream().map(QrSearchersConfig.Searchcluster::name).toList());
     }
 
-    private static ClusterParams makeClusterParams(int searchclusterIndex) {
-        return new ClusterParams("sc" + searchclusterIndex + ".num" + 0);
+    private static ClusterParams makeClusterParams(int searchclusterIndex, String defaultSummary,
+                                                   DocumentdbInfoConfig documentDbConfig, SchemaInfo schemaInfo)
+    {
+        return new ClusterParams("sc" + searchclusterIndex + ".num" + 0, UUID.randomUUID().toString(),
+                                 defaultSummary, documentDbConfig, schemaInfo);
     }
 
-    private static IndexedBackend searchDispatch(int searchclusterIndex,
+    private static IndexedBackend searchDispatch(ClusterParams clusterParams,
                                                  String searchClusterName,
-                                                 String serverId,
-                                                 SummaryParameters docSumParams,
-                                                 DocumentdbInfoConfig documentdbInfoConfig,
-                                                 SchemaInfo schemaInfo,
-                                                 ComponentRegistry<Dispatcher> dispatchers) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
+                                                 ComponentRegistry<Dispatcher> dispatchers)
+    {
         ComponentId dispatcherComponentId = new ComponentId("dispatcher." + searchClusterName);
         Dispatcher dispatcher = dispatchers.getComponent(dispatcherComponentId);
         if (dispatcher == null)
-            throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId +
-                                               " is configured");
-        return new IndexedBackend(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
+            throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId + " is configured");
+        return new IndexedBackend(clusterParams, dispatcher);
     }
 
-    private static StreamingBackend streamingCluster(String serverId,
-                                                     int searchclusterIndex,
+    private static StreamingBackend streamingCluster(ClusterParams clusterParams,
                                                      QrSearchersConfig.Searchcluster searchClusterConfig,
-                                                     SummaryParameters docSumParams,
-                                                     DocumentdbInfoConfig documentdbInfoConfig,
-                                                     SchemaInfo schemaInfo,
-                                                     VespaDocumentAccess access) {
-        if (searchClusterConfig.searchdef().size() != 1)
-            throw new IllegalArgumentException("Streaming search clusters can only contain a single schema but got " +
-                                               searchClusterConfig.searchdef());
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
-        StreamingBackend searcher = new StreamingBackend(access);
-        searcher.setSearchClusterName(searchClusterConfig.rankprofiles_configid());
-        searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
-        searcher.init(serverId, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
-        return searcher;
+                                                     VespaDocumentAccess access)
+    {
+        return new StreamingBackend(clusterParams, searchClusterConfig.rankprofiles_configid(),
+                                    access, searchClusterConfig.storagecluster().routespec());
     }
 
     /** Do not use, for internal testing purposes only. **/

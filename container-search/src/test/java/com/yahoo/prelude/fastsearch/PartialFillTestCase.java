@@ -17,9 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author havardpe
  */
 public class PartialFillTestCase {
+    private static final ClusterParams CLUSTER_PARAMS = new ClusterParams("container.0");
 
     public static class FS4 extends VespaBackend {
         public List<Result> history = new ArrayList<>();
+        FS4() {
+            super(CLUSTER_PARAMS);
+        }
         protected Result doSearch2(String schema, Query query) {
             return new Result(query);
         }
@@ -29,6 +33,9 @@ public class PartialFillTestCase {
     }
 
     public static class BadFS4 extends VespaBackend {
+        BadFS4() {
+            super(CLUSTER_PARAMS);
+        }
         protected Result doSearch2(String schema, Query query) {
             return new Result(query);
         }
