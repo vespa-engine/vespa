@@ -67,7 +67,7 @@ private:
 };
 
 template <typename Unpack, typename HEAP, typename ref_t>
-class StrictHeapOrSearch final : public OrSearch
+class StrictHeapOrSearch : public OrSearch
 {
 private:
     struct Less {
@@ -88,12 +88,12 @@ private:
             _data[i] = i;
         }
     }
-    void onRemove(size_t index) override {
+    void onRemove(size_t index) final {
         _unpacker.onRemove(index);
         _child_docid.erase(_child_docid.begin() + index);
         init_data();
     }
-    void onInsert(size_t index) override {
+    void onInsert(size_t index) final {
         _unpacker.onInsert(index);
         _child_docid.insert(_child_docid.begin() + index, getChildren()[index]->getDocId());
         init_data();
@@ -116,7 +116,8 @@ public:
         HEAP::require_left_heap();
         init_data();
     }
-    void initRange(uint32_t begin, uint32_t end) override {
+    ~StrictHeapOrSearch() override;
+    void initRange(uint32_t begin, uint32_t end) final {
         OrSearch::initRange(begin, end);
         for (size_t i = 0; i < getChildren().size(); ++i) {
             _child_docid[i] = getChildren()[i]->getDocId();
@@ -125,24 +126,26 @@ public:
             HEAP::push(data_begin(), data_pos(i), Less(_child_docid));
         }
     }
-    void doSeek(uint32_t docid) override {
+    void doSeek(uint32_t docid) final {
         while (_child_docid[HEAP::front(data_begin(), data_end())] < docid) {
             seek_child(HEAP::front(data_begin(), data_end()), docid);
             HEAP::adjust(data_begin(), data_end(), Less(_child_docid));
         }
         setDocId(_child_docid[HEAP::front(data_begin(), data_end())]);
     }
-    void doUnpack(uint32_t docid) override {
+    void doUnpack(uint32_t docid) override { // <- not final
         _unpacker.each([&](ref_t child) {
                            if (__builtin_expect(_child_docid[child] == docid, false)) {
                                getChildren()[child]->doUnpack(docid);
                            }
                        }, getChildren().size());
     }
-    bool needUnpack(size_t index) const override {
+    bool needUnpack(size_t index) const final {
         return _unpacker.needUnpack(index);
     }
-    Trinary is_strict() const override { return Trinary::True; }
+    Trinary is_strict() const final { return Trinary::True; }
 };
+template <typename Unpack, typename HEAP, typename ref_t>
+StrictHeapOrSearch<Unpack, HEAP, ref_t>::~StrictHeapOrSearch() = default;
 
 }
