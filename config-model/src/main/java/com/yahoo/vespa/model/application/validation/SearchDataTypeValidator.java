@@ -31,11 +31,15 @@ public class SearchDataTypeValidator implements Validator {
     public void validate(Context context) {
         List<SearchCluster> clusters = context.model().getSearchClusters();
         for (SearchCluster cluster : clusters) {
+            if (cluster.isStreaming()) {
+                continue;
+            }
             for (SchemaInfo spec : cluster.schemas().values()) {
                 SDDocumentType docType = spec.fullSchema().getDocument();
-                if (docType != null && spec.getIndexMode() == SchemaInfo.IndexMode.INDEX) {
-                    validateDocument(context, cluster, spec.fullSchema(), docType);
+                if (docType == null) {
+                    continue;
                 }
+                validateDocument(context, cluster, spec.fullSchema(), docType);
             }
         }
     }

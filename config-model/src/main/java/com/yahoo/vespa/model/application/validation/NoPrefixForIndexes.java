@@ -23,9 +23,10 @@ public class NoPrefixForIndexes implements Validator {
     @Override
     public void validate(Context context) {
         for (SearchCluster cluster : context.model().getSearchClusters()) {
-            for (DocumentDatabase docDb : cluster.getDocumentDbs()) {
-                DerivedConfiguration sdConfig = docDb.getDerivedConfiguration();
-                if ( ! sdConfig.isStreaming() ) {
+            if (cluster instanceof IndexedSearchCluster) {
+                IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
+                for (DocumentDatabase docDb : sc.getDocumentDbs()) {
+                    DerivedConfiguration sdConfig = docDb.getDerivedConfiguration();
                     Schema schema = sdConfig.getSchema();
                     for (ImmutableSDField field : schema.allConcreteFields()) {
                         if (field.doesIndexing()) {
