@@ -229,9 +229,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
      */
     public Boolean isStreaming() {
         if (indexedCluster == null) return false;
-        boolean hasStreaming = indexedCluster.schemas().values().stream().anyMatch(schema -> schema.getIndexMode() == SchemaInfo.IndexMode.STREAMING);
-        boolean hasIndexed = indexedCluster.schemas().values().stream().anyMatch(schema -> schema.getIndexMode() == SchemaInfo.IndexMode.INDEX);
-        if (hasIndexed == hasStreaming) return null;
+        boolean hasStreaming = indexedCluster.hasStreaming();
+        if (indexedCluster.hasIndexed() == hasStreaming) return null;
         return hasStreaming;
     }
 
@@ -404,7 +403,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             getIndexed().getConfig(builder);
         }
     }
-    public Map<String, SearchCluster> getClusters() { return clusters; }
     public IndexedSearchCluster getIndexed() { return indexedCluster; }
     public boolean hasIndexedCluster()       { return indexedCluster != null; }
     public IndexingDocproc getIndexingDocproc() { return indexingDocproc; }

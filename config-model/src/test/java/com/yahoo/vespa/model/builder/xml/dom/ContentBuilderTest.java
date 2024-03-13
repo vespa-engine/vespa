@@ -63,7 +63,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
 
         assertTrue(a.getPersistence() instanceof com.yahoo.vespa.model.content.engines.DummyPersistence.Factory);
     }
@@ -83,7 +82,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
 
         assertTrue(a.getPersistence() instanceof ProtonEngine.Factory);
 
@@ -108,7 +106,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
 
         assertTrue(a.getPersistence() instanceof ProtonEngine.Factory);
 
@@ -130,7 +127,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         ContentSearchCluster s = a.getSearch();
         assertFalse(s.hasIndexedCluster());
-        assertTrue(s.getClusters().isEmpty());
         assertNull(s.getIndexed());
 
         assertNull(a.getRootGroup().getName());
@@ -151,7 +147,6 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentCluster c = CollectionUtil.first(m.getContentClusters().values());
         ContentSearchCluster s = c.getSearch();
         assertTrue(s.hasIndexedCluster());
-        assertEquals(1, s.getClusters().size());
         assertNotNull(s.getIndexed());
         assertEquals("clu", s.getIndexed().getClusterName());
         assertEquals(7.3, s.getIndexed().getQueryTimeout(), 0.0);
@@ -197,8 +192,7 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         s = cluster.getSearch();
         assertTrue(s.hasIndexedCluster());
-        assertEquals(1, s.getClusters().size());
-        SearchCluster sc = s.getClusters().get(musicClusterId);
+        SearchCluster sc = s.getIndexed();
         assertEquals(musicClusterId, sc.getClusterName());
         assertEquals(musicClusterId, sc.getStorageRouteSpec());
 
@@ -263,7 +257,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
         s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
-        assertEquals(1, s.getClusters().size());
         assertNotNull(s.getIndexed());
         assertEquals("b", s.getIndexed().getClusterName());
 
