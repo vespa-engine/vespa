@@ -22,7 +22,6 @@ import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
-import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -179,10 +178,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             }
             scB.rankprofiles_configid(sys.getConfigId());
             scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
-            if ( ! (sys instanceof IndexedSearchCluster)) {
-                scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().
-                                           routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));
-            }
+            scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().routespec(sys.getStorageRouteSpec()));
             builder.searchcluster(scB);
         }
     }

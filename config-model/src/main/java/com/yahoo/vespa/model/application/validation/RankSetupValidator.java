@@ -69,7 +69,7 @@ public class RankSetupValidator implements Validator {
                     String schemaDir = clusterDir + schemaName + "/";
                     writeConfigs(schemaDir, docDb);
                     writeExtraVerifyRankSetupConfig(schemaDir, docDb);
-                    if (!validate(context, "dir:" + schemaDir, sc, schemaName, cfgDir, sc.isStreaming())) {
+                    if (!validate(context, "dir:" + schemaDir, sc, schemaName, cfgDir, docDb.getDerivedConfiguration().isStreaming())) {
                         return;
                     }
                 }

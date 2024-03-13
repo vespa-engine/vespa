@@ -29,7 +29,7 @@ public class StreamingValidatorTest {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/document_references_validation/")
                     .create();
         });
-        assertTrue(exception.getMessage().contains("For streaming search cluster 'content.ad': Attribute 'campaign_ref' has type 'Reference<campaign>'. " +
+        assertTrue(exception.getMessage().contains("For search cluster 'content', schema 'ad': Attribute 'campaign_ref' has type 'Reference<campaign>'. " +
                 "Document references and imported fields are not allowed in streaming search."));
     }
 
@@ -52,7 +52,7 @@ public class StreamingValidatorTest {
                     "attribute { distance-metric: euclidean } }");
         var warnings = filter(logger.warnings);
         assertEquals(1, warnings.size());
-        assertEquals("For streaming search cluster 'content.test', SD field 'nn': hnsw index is not relevant and not supported, ignoring setting",
+        assertEquals("For search cluster 'content', schema 'test', SD field 'nn': hnsw index is not relevant and not supported, ignoring setting",
                      warnings.get(0));
     }
 
