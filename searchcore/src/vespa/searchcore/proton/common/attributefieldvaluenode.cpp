@@ -40,7 +40,7 @@ std::unique_ptr<document::select::Value>
 AttributeFieldValueNode::
 getValue(const Context &context) const
 {
-    const auto &sc(static_cast<const SelectContext &>(context));
+    const auto &sc(dynamic_cast<const SelectContext &>(context));
     uint32_t docId(sc._docId); 
     assert(docId != 0u);
     const auto& v = sc.guarded_attribute_at_index(_attr_guard_index);

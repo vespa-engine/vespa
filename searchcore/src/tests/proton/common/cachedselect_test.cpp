@@ -102,7 +102,8 @@ makeDocTypeRepo()
                      addField("aa", DataType::T_INT).
                      addField("aaa", Array(DataType::T_INT)).
                      addField("aaw", Wset(DataType::T_INT)).
-                     addField("ab", DataType::T_INT));
+                     addField("ab", DataType::T_INT)).
+                     imported_field("my_imported_field");
     builder.document(doc_type_id + 1, type_name_2,
                      Struct(header_name_2), Struct(body_name_2).
                      addField("ic", DataType::T_STRING).
@@ -152,12 +153,17 @@ checkSelect(const NodeUP &sel,
 
 void
 checkSelect(const CachedSelect::SP &cs,
+            uint32_t docId,
             const Document &doc,
             const Result &exp)
 {
+    SelectContext ctx(*cs);
+    ctx._docId = docId;
+    ctx._doc = &doc;
+    ctx.getAttributeGuards();
     bool expSessionContains = (cs->preDocOnlySelect() || (exp == Result::True));
-    EXPECT_TRUE(checkSelect(cs->docSelect(), Context(doc), exp));
-    EXPECT_EQUAL(expSessionContains, cs->createSession()->contains(doc));
+    EXPECT_TRUE(checkSelect(cs->docSelect(), ctx, exp));
+    EXPECT_EQUAL(expSessionContains, cs->createSession()->contains_doc(ctx));
 }
 
 void
@@ -170,7 +176,7 @@ checkSelect(const CachedSelect::SP &cs,
     ctx._docId = docId;
     ctx.getAttributeGuards();
     EXPECT_TRUE(checkSelect((cs->preDocOnlySelect() ? cs->preDocOnlySelect() : cs->preDocSelect()), ctx, exp));
-    EXPECT_EQUAL(expSessionContains, cs->createSession()->contains(ctx));
+    EXPECT_EQUAL(expSessionContains, cs->createSession()->contains_pre_doc(ctx));
 }
 
 void
@@ -271,18 +277,22 @@ MyDB::addDoc(uint32_t lid,
     Document::UP doc(makeDoc(_repo, docId, ia, ib, aa, ab));
 
     _docIdToLid[docId] = lid;
-    _lidToDocSP[lid] = Document::SP(doc.release());
-    AttributeGuard::UP guard = _amgr.getAttribute("aa");
-    AttributeVector &av = *guard->get();
-    if (lid >= av.getNumDocs()) {
-        AttributeVector::DocId checkDocId(0u);
-        ASSERT_TRUE(av.addDoc(checkDocId));
-        ASSERT_EQUAL(lid, checkDocId);
-    }
-    IntegerAttribute &iav(static_cast<IntegerAttribute &>(av));
-    AttributeVector::largeint_t laa(aa);
-    EXPECT_TRUE(iav.update(lid, laa));
-    av.commit();
+    _lidToDocSP[lid] = std::move(doc);
+    auto add_attr_value = [lid, aa](auto guard) {
+        AttributeVector &av = *guard->get();
+        if (lid >= av.getNumDocs()) {
+            AttributeVector::DocId checkDocId(0u);
+            ASSERT_TRUE(av.addDoc(checkDocId));
+            ASSERT_EQUAL(lid, checkDocId);
+        }
+        auto &iav(dynamic_cast<IntegerAttribute &>(av));
+        AttributeVector::largeint_t laa(aa);
+        EXPECT_TRUE(iav.update(lid, laa));
+        av.commit();
+    };
+
+    add_attr_value(_amgr.getAttribute("aa"));
+    add_attr_value(_amgr.getAttribute("my_imported_field"));
 }
 
 
@@ -327,15 +337,14 @@ TestFixture::TestFixture()
     _amgr.addAttribute("aa");
     _amgr.addAttribute("aaa", AttributeFactory::createAttribute("aaa", {BasicType::INT32, CollectionType::ARRAY}));
     _amgr.addAttribute("aaw", AttributeFactory::createAttribute("aaw", {BasicType::INT32, CollectionType::WSET}));
+    // "Faked" imported attribute, as in `selectpruner_test.cpp`
+    _amgr.addAttribute("my_imported_field", AttributeFactory::createAttribute("my_imported_field", { BasicType::INT32 }));
 
-    _db.reset(new MyDB(*_repoUP, _amgr));
+    _db = std::make_unique<MyDB>(*_repoUP, _amgr);
 }
 
 
-TestFixture::~TestFixture()
-{
-}
-
+TestFixture::~TestFixture() = default;
 
 CachedSelect::SP
 TestFixture::testParse(const string &selection,
@@ -475,45 +484,45 @@ TEST_F("Test that basic select works", TestFixture)
 
     cs = f.testParse("test.ia == \"hello\"", "test");
     TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::True));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::False));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::True));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::False));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::False));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::False));
     
     cs = f.testParse("test.ia.foo == \"hello\"", "test");
     TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia[2] == \"hello\"", "test");
     TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia{foo} == \"hello\"", "test");
     TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
     
     cs = f.testParse("test.ia < \"hello\"", "test");
     TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::True));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::False));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::True));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::True));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa == 3", "test");
     TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::False));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::False));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::True));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::False));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::False));
     TEST_DO(checkSelect(cs, 1u, Result::False));
     TEST_DO(checkSelect(cs, 2u, Result::True));
     TEST_DO(checkSelect(cs, 3u, Result::False));
@@ -521,24 +530,24 @@ TEST_F("Test that basic select works", TestFixture)
 
     cs = f.testParse("test.aa.foo == 3", "test");
     TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa[2] == 3", "test");
     TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aa{4} > 3", "test");
     TEST_DO(assertEquals(Stats().allInvalid(), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
 
     cs = f.testParse("test.aaa[2] == 3", "test");
     TEST_DO(assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs));
@@ -548,10 +557,10 @@ TEST_F("Test that basic select works", TestFixture)
 
     cs = f.testParse("test.aa < 45", "test");
     TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
-    TEST_DO(checkSelect(cs, db.getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, db.getDoc(2u), Result::True));
-    TEST_DO(checkSelect(cs, db.getDoc(3u), Result::Invalid));
-    TEST_DO(checkSelect(cs, db.getDoc(4u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 1u, db.getDoc(1u), Result::False));
+    TEST_DO(checkSelect(cs, 2u, db.getDoc(2u), Result::True));
+    TEST_DO(checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid));
+    TEST_DO(checkSelect(cs, 4u, db.getDoc(4u), Result::Invalid));
     TEST_DO(checkSelect(cs, 1u, Result::False,   false));
     TEST_DO(checkSelect(cs, 2u, Result::True,    true));
     TEST_DO(checkSelect(cs, 3u, Result::Invalid, false));
@@ -580,9 +589,9 @@ TEST_F("Test that single value attribute combined with non-attribute field resul
     TEST_DO(checkSelect(cs, 1u, Result::Invalid, true));
     TEST_DO(checkSelect(cs, 2u, Result::Invalid, true));
     TEST_DO(checkSelect(cs, 3u, Result::False, false));
-    TEST_DO(checkSelect(cs, f.db().getDoc(1u), Result::True));
-    TEST_DO(checkSelect(cs, f.db().getDoc(2u), Result::False));
-    TEST_DO(checkSelect(cs, f.db().getDoc(3u), Result::False));
+    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::True));
+    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::False));
+    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
 }
 
 TEST_F("Test that single value attribute with complex attribute field results in pre-document select pruner", PreDocSelectFixture)
@@ -593,9 +602,39 @@ TEST_F("Test that single value attribute with complex attribute field results in
     TEST_DO(checkSelect(cs, 1u, Result::Invalid, true));
     TEST_DO(checkSelect(cs, 2u, Result::Invalid, true));
     TEST_DO(checkSelect(cs, 3u, Result::False, false));
-    TEST_DO(checkSelect(cs, f.db().getDoc(1u), Result::False));
-    TEST_DO(checkSelect(cs, f.db().getDoc(2u), Result::False));
-    TEST_DO(checkSelect(cs, f.db().getDoc(3u), Result::False));
+    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::False));
+    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::False));
+    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
+}
+
+TEST_F("Imported field can be used in pre-doc selections with only attribute fields", PreDocSelectFixture) {
+    auto cs = f.testParse("test.my_imported_field == 3", "test");
+    TEST_DO(assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
+
+    TEST_DO(checkSelect(cs, 1u, Result::True,  true));
+    TEST_DO(checkSelect(cs, 2u, Result::True,  true));
+    TEST_DO(checkSelect(cs, 3u, Result::False, false));
+    // Cannot match against document here since preDocOnly is set; will just return false.
+    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::False));
+    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::False));
+    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
+}
+
+TEST_F("Imported field can be used in doc selections with mixed attribute/non-attribute fields", PreDocSelectFixture) {
+    // `id.namespace` requires a doc store fetch and cannot be satisfied by attributes alone
+    auto cs = f.testParse("test.my_imported_field == 3 and id.namespace != 'foo'", "test");
+    TEST_DO(assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs));
+
+    // 2 first checks cannot be completed in pre-doc stage alone
+    TEST_DO(checkSelect(cs, 1u, Result::Invalid, true));  // -> doc eval stage
+    TEST_DO(checkSelect(cs, 2u, Result::Invalid, true));  // -> doc eval stage
+    TEST_DO(checkSelect(cs, 3u, Result::False,   false)); // short-circuited since attr value 7 != 3
+    // When matching against a concrete document, it's crucial that the selection AST contains
+    // attribute references for at least all imported fields, or we'll implicitly fall back to
+    // returning null for all imported fields (as they do not exist in the document itself).
+    TEST_DO(checkSelect(cs, 1u, f.db().getDoc(1u), Result::True));
+    TEST_DO(checkSelect(cs, 2u, f.db().getDoc(2u), Result::True));
+    TEST_DO(checkSelect(cs, 3u, f.db().getDoc(3u), Result::False));
 }
 
 TEST_F("Test performance when using attributes", TestFixture)

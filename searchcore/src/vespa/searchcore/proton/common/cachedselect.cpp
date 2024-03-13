@@ -35,13 +35,16 @@ public:
     uint32_t _mvAttrs;
     uint32_t _complexAttrs;
 
-    uint32_t getFieldNodes() const { return _fieldNodes; }
+    [[nodiscard]] uint32_t getFieldNodes() const { return _fieldNodes; }
 
-    static uint32_t invalidIdx() {
+    constexpr static uint32_t invalidIdx() noexcept {
         return std::numeric_limits<uint32_t>::max();
     }
     
     AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::AttributeVectors &attributes);
+    AttrVisitor(const search::IAttributeManager &amgr,
+                CachedSelect::AttributeVectors &attributes,
+                AttrMap existing_attr_map);
     ~AttrVisitor() override;
 
     /*
@@ -55,6 +58,18 @@ public:
 AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::AttributeVectors &attributes)
     : CloningVisitor(),
       _amap(),
+      _amgr(amgr),
+      _attributes(attributes),
+      _svAttrs(0u),
+      _mvAttrs(0u),
+      _complexAttrs(0u)
+{}
+
+AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr,
+                         CachedSelect::AttributeVectors &attributes,
+                         AttrMap existing_attr_map)
+    : CloningVisitor(),
+      _amap(std::move(existing_attr_map)),
       _amgr(amgr),
       _attributes(attributes),
       _svAttrs(0u),
@@ -130,7 +145,7 @@ CachedSelect::Session::Session(std::unique_ptr<document::select::Node> docSelect
 }
 
 bool
-CachedSelect::Session::contains(const SelectContext &context) const
+CachedSelect::Session::contains_pre_doc(const SelectContext &context) const
 {
     if (_preDocSelect && (_preDocSelect->contains(context) == document::select::Result::False)) {
         return false;
@@ -140,10 +155,10 @@ CachedSelect::Session::contains(const SelectContext &context) const
 }
 
 bool
-CachedSelect::Session::contains(const document::Document &doc) const
+CachedSelect::Session::contains_doc(const SelectContext &context) const
 {
     return (_preDocOnlySelect) ||
-            (_docSelect && (_docSelect->contains(doc) == document::select::Result::True));
+            (_docSelect && (_docSelect->contains(context) == document::select::Result::True));
 }
 
 const document::select::Node &
@@ -177,8 +192,12 @@ CachedSelect::setPreDocumentSelect(const search::IAttributeManager &attrMgr,
     if (_fieldNodes == _svAttrFieldNodes) {
         _preDocOnlySelect = std::move(allAttrVisitor.getNode());
     } else if (_svAttrFieldNodes > 0) {
-        _attributes.clear();
-        AttrVisitor someAttrVisitor(attrMgr, _attributes);
+        // Also let document-level selection use attribute wiring; otherwise imported fields
+        // would not resolve to anything, as these do not exist in the concrete document itself.
+        _docSelect = std::move(allAttrVisitor.getNode());
+        [[maybe_unused]] size_t attrs_before = _attributes.size();
+        AttrVisitor someAttrVisitor(attrMgr, _attributes, std::move(allAttrVisitor._amap));
+        assert(_attributes.size() == attrs_before);
         noDocsPruner.getNode()->visit(someAttrVisitor);
         _preDocSelect = std::move(someAttrVisitor.getNode());
     }

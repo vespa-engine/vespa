@@ -171,28 +171,31 @@ public:
         }
     }
 
-    bool willAlwaysFail() const { return _willAlwaysFail; }
+    [[nodiscard]] bool willAlwaysFail() const noexcept { return _willAlwaysFail; }
 
-    bool match(const search::DocumentMetaData & meta) const {
+    [[nodiscard]] bool match(const search::DocumentMetaData & meta) const {
         if (meta.lid >= _docidLimit) {
             return false;
         }
         if (_dscTrue || _metaOnly) {
             return true;
         }
-        if (_selectCxt) {
-            _selectCxt->_docId = meta.lid;
-        }
         if (!_gidFilter.gid_might_match_selection(meta.gid)) {
             return false;
         }
-        return _selectSession->contains(*_selectCxt);
+        assert(_selectCxt);
+        _selectCxt->_docId = meta.lid;
+        _selectCxt->_doc = nullptr;
+        return _selectSession->contains_pre_doc(*_selectCxt);
     }
-    bool match(const search::DocumentMetaData & meta, const Document * doc) const {
+    [[nodiscard]] bool match(const search::DocumentMetaData & meta, const Document * doc) const {
         if (_dscTrue || _metaOnly) {
             return true;
         }
-        return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains(*doc));
+        assert(_selectCxt);
+        _selectCxt->_docId = meta.lid;
+        _selectCxt->_doc = doc;
+        return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains_doc(*_selectCxt));
     }
 private:
     bool                           _dscTrue;
