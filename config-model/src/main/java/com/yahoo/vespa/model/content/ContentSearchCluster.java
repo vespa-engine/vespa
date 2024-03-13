@@ -21,7 +21,6 @@ import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
-import com.yahoo.vespa.model.search.StreamingSearchCluster;
 import com.yahoo.vespa.model.search.TransactionLogServer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
@@ -296,13 +295,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     public void handleRedundancy(Redundancy redundancy) {
         this.redundancy = redundancy;
-    }
-
-    public List<StreamingSearchCluster> getStreamingClusters() {
-        return getClusters().values().stream()
-                .filter(StreamingSearchCluster.class::isInstance)
-                .map(StreamingSearchCluster.class::cast)
-                .toList();
     }
 
     public List<NewDocumentType> getDocumentTypesWithStreamingCluster() { return documentTypes(this::hasIndexingModeStreaming); }
