@@ -136,13 +136,13 @@ public class ClusterSearcher extends Searcher {
                                                  SummaryParameters docSumParams,
                                                  DocumentdbInfoConfig documentdbInfoConfig,
                                                  SchemaInfo schemaInfo,
-                                                 ComponentRegistry<Dispatcher> dispatchers) {
+                                                 ComponentRegistry<Dispatcher> dispatchers)
+    {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         ComponentId dispatcherComponentId = new ComponentId("dispatcher." + searchClusterName);
         Dispatcher dispatcher = dispatchers.getComponent(dispatcherComponentId);
         if (dispatcher == null)
-            throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId +
-                                               " is configured");
+            throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId + " is configured");
         return new IndexedBackend(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
     }
 
@@ -152,10 +152,8 @@ public class ClusterSearcher extends Searcher {
                                                      SummaryParameters docSumParams,
                                                      DocumentdbInfoConfig documentdbInfoConfig,
                                                      SchemaInfo schemaInfo,
-                                                     VespaDocumentAccess access) {
-        if (searchClusterConfig.searchdef().size() != 1)
-            throw new IllegalArgumentException("Streaming search clusters can only contain a single schema but got " +
-                                               searchClusterConfig.searchdef());
+                                                     VespaDocumentAccess access)
+    {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         StreamingBackend searcher = new StreamingBackend(access);
         searcher.setSearchClusterName(searchClusterConfig.rankprofiles_configid());
