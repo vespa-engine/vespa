@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 
@@ -24,11 +25,10 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
     @Override
     public void validate(Context context) {
         for (var cluster : context.model().getSearchClusters()) {
-            if (cluster.isStreaming()) {
-                continue;
-            }
             for (var spec : cluster.schemas().values()) {
-                validateComplexFields(context, cluster.getClusterName(), spec.fullSchema());
+                if (spec.getIndexMode() == SchemaInfo.IndexMode.INDEX) {
+                    validateComplexFields(context, cluster.getClusterName(), spec.fullSchema());
+                }
             }
         }
     }

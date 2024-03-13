@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.path.Path;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -312,7 +310,7 @@ public class DocumentDatabaseTestCase {
         var tester = new SchemaTester();
         var model = tester.createModelWithMode(mode, sds);
 
-        DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.type");
+        DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test");
         assertEquals(1, dcfg.documentdb().size());
         DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
         assertEquals("type", db.name());
@@ -331,13 +329,11 @@ public class DocumentDatabaseTestCase {
         var tester = new SchemaTester();
         var model = tester.createModel(sds, "");
         DocumentdbInfoConfig indexed_cfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test");
-        assertEquals(1, indexed_cfg.documentdb().size());
+        assertEquals(2, indexed_cfg.documentdb().size());
         var db = indexed_cfg.documentdb(0);
         assertEquals("a", db.name());
         assertEquals(DocumentdbInfoConfig.Documentdb.Mode.INDEX, db.mode());
-        DocumentdbInfoConfig streaming_cfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.b");
-        assertEquals(1, streaming_cfg.documentdb().size());
-        db = streaming_cfg.documentdb(0);
+        db = indexed_cfg.documentdb(1);
         assertEquals("b", db.name());
         assertEquals(DocumentdbInfoConfig.Documentdb.Mode.STREAMING, db.mode());
     }
@@ -379,7 +375,7 @@ public class DocumentDatabaseTestCase {
     void testThatAttributesMaxUnCommittedMemoryIsControlledByFeatureFlag() {
         assertAttributesConfigIndependentOfMode("index", List.of("type1"),
                 List.of("test/search/cluster.test/type1"),
-                ImmutableMap.of("type1", List.of("f2", "f2_nfa")),
+                Map.of("type1", List.of("f2", "f2_nfa")),
                 new DeployState.Builder().properties(new TestProperties().maxUnCommittedMemory(193452)), 193452);
     }
 
@@ -387,20 +383,20 @@ public class DocumentDatabaseTestCase {
     void testThatAttributesConfigIsProducedForIndexed() {
         assertAttributesConfigIndependentOfMode("index", List.of("type1"),
                 List.of("test/search/cluster.test/type1"),
-                ImmutableMap.of("type1", List.of("f2", "f2_nfa")));
+                Map.of("type1", List.of("f2", "f2_nfa")));
     }
 
     @Test
     void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
         assertAttributesConfigIndependentOfMode("streaming", List.of("type1"),
-                List.of("test/search/type1"),
-                ImmutableMap.of("type1", List.of("f2")));
+                List.of("test/search/cluster.test/type1"),
+                Map.of("type1", List.of("f2")));
     }
 
     @Test
     void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {
         assertAttributesConfigIndependentOfMode("store-only", List.of("type1"),
-                List.of("test/search"), Collections.emptyMap());
+                List.of("test/search"), Map.of());
     }
 
 }

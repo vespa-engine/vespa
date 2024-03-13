@@ -8,14 +8,23 @@ import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.SummaryConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
+import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
+import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +44,36 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     private Double queryTimeout;
     private Double visibilityDelay = 0.0;
     private final Map<String, SchemaInfo> schemas = new LinkedHashMap<>();
-    private final List<DocumentDatabase> documentDbs = new LinkedList<>();
+    private final Map<String, DocumentDatabase> documentDbs = new LinkedHashMap<>();
+    private final List<LegacyStreamingproxy> legacyproxy = new ArrayList<>();
+
+    private static class LegacyStreamingproxy extends TreeConfigProducer<AnyConfigProducer> implements
+            AttributesConfig.Producer,
+            RankProfilesConfig.Producer,
+            RankingConstantsConfig.Producer,
+            RankingExpressionsConfig.Producer,
+            OnnxModelsConfig.Producer,
+            JuniperrcConfig.Producer,
+            SummaryConfig.Producer,
+            VsmsummaryConfig.Producer,
+            VsmfieldsConfig.Producer
+    {
+        private final DocumentDatabase db;
+        LegacyStreamingproxy(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, DocumentDatabase db) {
+            super(parent, "cluster." + clusterName + "." + db.getName());
+            this.db = new DocumentDatabase(this, db.getName(), db.getDerivedConfiguration());
+        }
+        @Override public void getConfig(SummaryConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(AttributesConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(OnnxModelsConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(RankingConstantsConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(RankProfilesConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(RankingExpressionsConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(JuniperrcConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(VsmfieldsConfig.Builder builder) { db.getConfig(builder); }
+        @Override public void getConfig(VsmsummaryConfig.Builder builder) { db.getConfig(builder); }
+
+    }
 
     public SearchCluster(TreeConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
@@ -43,29 +81,28 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         this.index = index;
     }
 
+    public String getStorageRouteSpec() { return getClusterName(); }
+
     public void add(SchemaInfo schema) {
         schemas.put(schema.name(), schema);
     }
     public void add(DocumentDatabase db) {
-        documentDbs.add(db);
+        if (db.getDerivedConfiguration().isStreaming()) {
+            legacyproxy.add(new LegacyStreamingproxy((TreeConfigProducer<AnyConfigProducer>) getParent(), clusterName, db));
+        }
+        documentDbs.put(db.getName(), db);
     }
 
     public boolean hasDocumentDB(String name) {
-        for (DocumentDatabase db : documentDbs) {
-            if (db.getName().equals(name)) {
-                return true;
-            }
-        }
-        return false;
+        return documentDbs.containsKey(name);
+    }
+    public DocumentDatabase getDocumentDB(String name) {
+        return documentDbs.get(name);
     }
 
     public String getConfigId(String name) {
-        for (DocumentDatabase db : documentDbs) {
-            if (db.getName().equals(name)) {
-                return db.getConfigId();
-            }
-        }
-        return "";
+        DocumentDatabase db = documentDbs.get(name);
+        return db != null ? db.getConfigId() : "";
     }
 
     /** Returns the schemas that should be active in this cluster. Note: These are added during processing. */
@@ -80,7 +117,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     /** Returns the document databases contained in this cluster */
     public List<DocumentDatabase> getDocumentDbs() {
-        return Collections.unmodifiableList(documentDbs);
+        return documentDbs.values().stream().toList();
     }
 
     public String getClusterName()              { return clusterName; }
@@ -97,11 +134,9 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public final int getClusterIndex() { return index; }
 
     public void fillDocumentDBConfig(String documentType, ProtonConfig.Documentdb.Builder builder) {
-        for (DocumentDatabase sdoc : documentDbs) {
-            if (sdoc.getName().equals(documentType)) {
-                fillDocumentDBConfig(sdoc, builder);
-                return;
-            }
+        DocumentDatabase db = documentDbs.get(documentType);
+        if (db != null) {
+            fillDocumentDBConfig(db, builder);
         }
     }
 
@@ -112,7 +147,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     @Override
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
-        for (DocumentDatabase db : documentDbs) {
+        for (DocumentDatabase db : documentDbs.values()) {
             var docDb = new DocumentdbInfoConfig.Documentdb.Builder()
                     .name(db.getName())
                     .mode(db.getDerivedConfiguration().isStreaming()
@@ -123,21 +158,21 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     }
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
+        new Join(documentDbs.values()).getConfig(builder);
     }
 
     @Override
     public void getConfig(SchemaInfoConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
+        new Join(documentDbs.values()).getConfig(builder);
     }
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
+        new Join(documentDbs.values()).getConfig(builder);
     }
 
     public void getConfig(AttributesConfig.Builder builder) {
-        new Join(documentDbs).getConfig(builder);
+        new Join(documentDbs.values()).getConfig(builder);
     }
 
     @Override
@@ -167,7 +202,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
      * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
      * which is the parent to this. This avoids building the config multiple times.
      */
-    private record Join(List<DocumentDatabase> docDbs) {
+    private record Join(Collection<DocumentDatabase> docDbs) {
 
         public void getConfig(IndexInfoConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {

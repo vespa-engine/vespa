@@ -47,12 +47,12 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                         TestProperties properties,
                                         ApplicationBuilder builder,
                                         DeployLogger logger) throws IOException {
-        DerivedConfiguration config = new DerivedConfiguration(builder.getSchema(schemaName),
-                                                               new DeployState.Builder().properties(properties)
-                                                                                        .deployLogger(logger)
-                                                                                        .rankProfileRegistry(builder.getRankProfileRegistry())
-                                                                                        .queryProfiles(builder.getQueryProfileRegistry())
-                                                                                        .build(), false);
+        DerivedConfiguration config = new DerivedConfiguration(new DeployState.Builder()
+                                                                              .properties(properties)
+                                                                              .deployLogger(logger)
+                                                                              .rankProfileRegistry(builder.getRankProfileRegistry())
+                                                                              .queryProfiles(builder.getQueryProfileRegistry())
+                                                                              .build(), builder.getSchema(schemaName), SchemaInfo.IndexMode.INDEX);
         return export(dirName, builder, config);
     }
 

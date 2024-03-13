@@ -65,7 +65,7 @@ public class IndexedSearchCluster extends SearchCluster implements
         for (SchemaInfo spec : schemas().values()) {
             if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
             var db = new DocumentDatabase(this, spec.fullSchema().getName(),
-                                          new DerivedConfiguration(spec.fullSchema(), deployState, false));
+                                          new DerivedConfiguration(deployState, spec.fullSchema(), spec.getIndexMode()));
             add(db);
         }
     }

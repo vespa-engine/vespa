@@ -28,7 +28,7 @@ import java.io.Writer;
 public class DerivedConfiguration {
 
     private final Schema schema;
-    private final boolean isStreaming;
+    private final SchemaInfo.IndexMode indexMode;
     private Summaries summaries;
     private Juniperrc juniperrc;
     private AttributeFields attributeFields;
@@ -57,7 +57,8 @@ public class DerivedConfiguration {
     }
 
     DerivedConfiguration(Schema schema, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
-        this(schema, new DeployState.Builder().rankProfileRegistry(rankProfileRegistry).queryProfiles(queryProfiles).build(), false);
+        this(new DeployState.Builder().rankProfileRegistry(rankProfileRegistry).queryProfiles(queryProfiles).build(),
+                schema, SchemaInfo.IndexMode.INDEX);
     }
 
     /**
@@ -67,8 +68,8 @@ public class DerivedConfiguration {
      *               argument is live. Which means that this object will be inconsistent if the given
      *               schema is later modified.
      */
-    public DerivedConfiguration(Schema schema, DeployState deployState, boolean isStreaming) {
-        this.isStreaming = isStreaming;
+    public DerivedConfiguration(DeployState deployState, Schema schema, SchemaInfo.IndexMode indexMode) {
+        this.indexMode = indexMode;
         try {
             Validator.ensureNotNull("Schema", schema);
             this.schema = schema;
@@ -81,9 +82,9 @@ public class DerivedConfiguration {
                 summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
                 juniperrc = new Juniperrc(schema);
                 rankProfileList = new RankProfileList(schema, schema.rankExpressionFiles(), attributeFields, deployState);
-                indexingScript = new IndexingScript(schema, isStreaming);
-                indexInfo = new IndexInfo(schema, isStreaming);
-                schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries);
+                indexingScript = new IndexingScript(schema, isStreaming());
+                indexInfo = new IndexInfo(schema, isStreaming());
+                schemaInfo = new SchemaInfo(schema, indexMode, deployState.rankProfileRegistry(), summaries);
                 indexSchema = new IndexSchema(schema);
                 importedFields = new ImportedFields(schema);
             }
@@ -153,7 +154,7 @@ public class DerivedConfiguration {
     }
 
     public boolean isStreaming() {
-        return isStreaming;
+        return indexMode == SchemaInfo.IndexMode.STREAMING;
     }
 
     public Summaries getSummaries() {
@@ -165,7 +166,11 @@ public class DerivedConfiguration {
     }
 
     public void getConfig(AttributesConfig.Builder builder) {
-        getConfig(builder, AttributeFields.FieldSet.ALL);
+        if (isStreaming()) {
+            getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
+        } else {
+            getConfig(builder, AttributeFields.FieldSet.ALL);
+        }
     }
 
     public void getConfig(AttributesConfig.Builder builder, AttributeFields.FieldSet fs) {
