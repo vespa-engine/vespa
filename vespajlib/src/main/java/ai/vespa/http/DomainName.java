@@ -32,4 +32,9 @@ public class DomainName extends PatternedStringWrapper<DomainName> {
         return requireMatch(label, "domain name label", labelPattern);
     }
 
+    public String leafLabel() {
+        int offset = value().lastIndexOf('.');
+        return offset == -1 ? value() : value().substring(0, offset);
+    }
+
 }
