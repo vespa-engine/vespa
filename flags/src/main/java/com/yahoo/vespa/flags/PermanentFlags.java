@@ -431,6 +431,13 @@ public class PermanentFlags {
             CLOUD_ACCOUNT
     );
 
+    public static final UnboundStringFlag REFRESH_IDENTITY_BOUNDARY = defineStringFlag(
+            "refresh-identity-after", "",
+            "Refresh the identity document and certificates issued before this timestamp. Timestamp in ISO8601 format",
+            "Takes effect on next host admin tick",
+            HOSTNAME
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
