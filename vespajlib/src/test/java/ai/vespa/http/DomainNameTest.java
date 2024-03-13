@@ -3,6 +3,7 @@ package ai.vespa.http;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -30,6 +31,9 @@ class DomainNameTest {
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("foo%"));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of(("." + "a".repeat(32)).repeat(8).substring(1, 257)));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("a".repeat(64)));
+
+        assertEquals("foo", DomainName.of("foo").leafLabel());
+        assertEquals("foo", DomainName.of("foo.com").leafLabel());
     }
 
 }
