@@ -5,6 +5,7 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.CompressionType;
+import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -118,7 +119,7 @@ public class RpcSearchInvokerTest {
     }
 
     private VespaBackend mockSearcher() {
-        return new VespaBackend() {
+        return new VespaBackend(new ClusterParams("container.0")) {
             @Override
             protected Result doSearch2(String schema, Query query) {
                 fail("Unexpected call");

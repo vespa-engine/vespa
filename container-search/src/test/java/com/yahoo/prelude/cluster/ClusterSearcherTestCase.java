@@ -7,6 +7,7 @@ import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackend;
@@ -213,6 +214,7 @@ public class ClusterSearcherTestCase {
         }
 
         MyMockBackend(boolean expectAttributePrefetch) {
+            super(new ClusterParams("container.0"));
             this.expectAttributePrefetch = expectAttributePrefetch;
             init();
         }

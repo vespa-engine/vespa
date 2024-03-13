@@ -16,15 +16,14 @@ import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.searchlib.aggregation.Grouping;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Superclass for backend searchers.
@@ -36,14 +35,14 @@ public abstract class VespaBackend {
     /** for vespa-internal use only; consider renaming the summary class */
     public static final String SORTABLE_ATTRIBUTES_SUMMARY_CLASS = "attributeprefetch";
 
-    private String serverId;
+    private final String serverId;
 
     /** The set of all document databases available in the backend handled by this searcher */
-    private final Map<String, DocumentDatabase> documentDbs = new LinkedHashMap<>();
-    private DocumentDatabase defaultDocumentDb = null;
+    private final Map<String, DocumentDatabase> documentDbs;
+    private final DocumentDatabase defaultDocumentDb;
 
     /** Default docsum class. null means "unset" and is the default value */
-    private String defaultDocsumClass = null;
+    private final String defaultDocsumClass;
 
     /** Returns an iterator which returns all hits below this result **/
     private static Iterator<Hit> hitIterator(Result result) {
@@ -51,13 +50,28 @@ public abstract class VespaBackend {
     }
 
     /** The name of this source */
-    private String name;
+    private final String name;
+
+    protected VespaBackend(ClusterParams clusterParams) {
+        this.serverId = clusterParams.getServerId();
+        this.name = clusterParams.getSearcherName();
+        this.defaultDocsumClass = clusterParams.getDefaultSummary();
+
+        Validator.ensureNotNull("Name of Vespa backend integration", name);
+
+        List<DocumentDatabase> dbs = new ArrayList<>();
+        if (clusterParams.getDocumentdbInfoConfig() != null) {
+            for (DocumentdbInfoConfig.Documentdb docDb : clusterParams.getDocumentdbInfoConfig().documentdb()) {
+                DocumentDatabase db = new DocumentDatabase(clusterParams.getSchemaInfo().schemas().get(docDb.name()));
+                dbs.add(db);
+            }
+        }
+        this.defaultDocumentDb = dbs.isEmpty() ? null : dbs.get(0);
+        this.documentDbs = dbs.stream().collect(Collectors.toMap(db -> db.schema().name(), db -> db));
+    }
 
     public final String getName() { return name; }
     protected final String getDefaultDocsumClass() { return defaultDocsumClass; }
-
-    /** Sets default document summary class. Default is null */
-    private void setDefaultDocsumClass(String docsumClass) { defaultDocsumClass = docsumClass; }
 
     /**
      * Searches a search cluster
@@ -124,25 +138,6 @@ public abstract class VespaBackend {
         DocumentDatabase docDb = getDocumentDatabase(query);
         if (docDb != null) {
             query.getModel().setDocumentDb(docDb.schema().name());
-        }
-    }
-
-    public final void init(String serverId, SummaryParameters docSumParams, ClusterParams clusterParams,
-                           DocumentdbInfoConfig documentdbInfoConfig, SchemaInfo schemaInfo) {
-        this.serverId = serverId;
-        this.name = clusterParams.searcherName;
-
-        Validator.ensureNotNull("Name of Vespa backend integration", getName());
-
-        setDefaultDocsumClass(docSumParams.defaultClass);
-
-        if (documentdbInfoConfig != null) {
-            for (DocumentdbInfoConfig.Documentdb docDb : documentdbInfoConfig.documentdb()) {
-                DocumentDatabase db = new DocumentDatabase(schemaInfo.schemas().get(docDb.name()));
-                if (documentDbs.isEmpty())
-                    defaultDocumentDb = db;
-                documentDbs.put(docDb.name(), db);
-            }
         }
     }
 

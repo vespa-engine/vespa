@@ -13,7 +13,6 @@ import com.yahoo.search.query.Ranking;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
-import com.yahoo.search.schema.SchemaInfo;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -38,23 +37,15 @@ public class IndexedBackend extends VespaBackend {
     /**
      * Creates a Fastsearcher.
      *
-     * @param serverId the resource pool used to create direct connections to the local search nodes when
-     *                        bypassing the dispatch node
      * @param dispatcher the dispatcher used (when enabled) to send summary requests over the rpc protocol.
      *                   Eventually we will move everything to this protocol and never use dispatch nodes.
      *                   At that point we won't need a cluster searcher above this to select and pass the right
      *                   backend.
-     * @param docSumParams  document summary parameters
      * @param clusterParams the cluster number, and other cluster backend parameters
-     * @param documentdbInfoConfig document database parameters
      */
-    public IndexedBackend(String serverId,
-                          Dispatcher dispatcher,
-                          SummaryParameters docSumParams,
-                          ClusterParams clusterParams,
-                          DocumentdbInfoConfig documentdbInfoConfig,
-                          SchemaInfo schemaInfo) {
-        init(serverId, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
+    public IndexedBackend(ClusterParams clusterParams, Dispatcher dispatcher)
+    {
+        super(clusterParams);
         this.dispatcher = dispatcher;
     }
 

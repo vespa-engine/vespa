@@ -11,6 +11,7 @@ import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
+import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
@@ -46,6 +47,7 @@ import java.util.logging.Logger;
  */
 public class StreamingBackend extends VespaBackend {
 
+    private static final Logger log = Logger.getLogger(StreamingBackend.class.getName());
     private static final CompoundName streamingUserid = CompoundName.from("streaming.userid");
     private static final CompoundName streamingGroupname = CompoundName.from("streaming.groupname");
     private static final CompoundName streamingSelection = CompoundName.from("streaming.selection");
@@ -53,41 +55,35 @@ public class StreamingBackend extends VespaBackend {
     static final String STREAMING_STATISTICS = "streaming.statistics";
     private final VisitorFactory visitorFactory;
     private final TracingOptions tracingOptions;
-    private static final Logger log = Logger.getLogger(StreamingBackend.class.getName());
 
-    private Route route;
+    private final Route route;
 
     /** The configId used to access the searchcluster. */
-    private String searchClusterName = null;
+    private final String searchClusterName;
 
     /** The route to the storage cluster. */
-    private String storageClusterRouteSpec = null;
+    private final String storageClusterRouteSpec;
 
-    StreamingBackend(VisitorFactory visitorFactory) {
-        this.visitorFactory = visitorFactory;
-        tracingOptions = TracingOptions.DEFAULT;
+    StreamingBackend(ClusterParams clusterParams, String searchClusterName, VisitorFactory visitorFactory, String storageClusterRouteSpec) {
+        this(clusterParams, searchClusterName, visitorFactory, storageClusterRouteSpec, TracingOptions.DEFAULT);
     }
 
-    StreamingBackend(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
+    StreamingBackend(ClusterParams clusterParams, String searchClusterName, VisitorFactory visitorFactory, String storageClusterRouteSpec, TracingOptions tracingOptions) {
+        super(clusterParams);
         this.visitorFactory = visitorFactory;
         this.tracingOptions = tracingOptions;
+        this.searchClusterName = searchClusterName;
+        this.storageClusterRouteSpec = storageClusterRouteSpec;
+        this.route = Route.parse(storageClusterRouteSpec);
     }
 
-    public StreamingBackend(VespaDocumentAccess access) {
-        this(new VespaVisitorFactory(access));
+    public StreamingBackend(ClusterParams clusterParams, String searchClusterName, VespaDocumentAccess access, String storageClusterRouteSpec) {
+        this(clusterParams, searchClusterName, new VespaVisitorFactory(access), storageClusterRouteSpec);
     }
 
     private String getSearchClusterName() { return searchClusterName; }
-    private String getStorageClusterRouteSpec() { return storageClusterRouteSpec; }
-    public final void setSearchClusterName(String clusterName) { this.searchClusterName = clusterName; }
 
-    public final void setStorageClusterRouteSpec(String storageClusterRouteSpec) {
-        this.storageClusterRouteSpec = storageClusterRouteSpec;
-    }
-
-    @Override
-    protected void doPartialFill(Result result, String summaryClass) {
-    }
+    @Override protected void doPartialFill(Result result, String summaryClass) { }
 
     private double durationInMillisFromNanoTime(long startTimeNanos) {
         return (tracingOptions.getClock().nanoTimeNow() - startTimeNanos) / (double)TimeUnit.MILLISECONDS.toNanos(1);
@@ -165,11 +161,7 @@ public class StreamingBackend extends VespaBackend {
     }
 
     private void initializeMissingQueryFields(Query query) {
-        lazyTrace(query, 7, "Routing to storage cluster ", getStorageClusterRouteSpec());
-
-        if (route == null) {
-            route = Route.parse(getStorageClusterRouteSpec());
-        }
+        lazyTrace(query, 7, "Routing to storage cluster ", storageClusterRouteSpec);
         lazyTrace(query, 8, "Route is ", route);
 
         lazyTrace(query, 7, "doSearch2(): query docsum class=",
