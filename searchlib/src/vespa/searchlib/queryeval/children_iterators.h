@@ -18,6 +18,8 @@ class ChildrenIterators {
           : _data(std::move(data)) {}
         ChildrenIterators(ChildrenIterators && other) = default;
 
+    size_t size() const noexcept { return _data.size(); }
+    
         // convenience constructors for unit tests:
         template <typename... Args>
         ChildrenIterators(SearchIterator::UP a, Args&&... args) {

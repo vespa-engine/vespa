@@ -88,6 +88,7 @@ using search::queryeval::PredicateBlueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::queryeval::SimpleLeafBlueprint;
+using search::queryeval::StrictHeapOrSearch;
 using search::queryeval::WeightedSetTermBlueprint;
 using search::queryeval::flow::btree_cost;
 using search::queryeval::flow::btree_strict_cost;
@@ -235,11 +236,11 @@ AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
-template <bool is_strict>
-struct LocationPreFilterIterator : public OrLikeSearch<is_strict, NoUnpack>
+template <bool is_strict, typename Parent>
+struct LocationPreFilterIterator : public Parent
 {
     explicit LocationPreFilterIterator(OrSearch::Children children)
-        : OrLikeSearch<is_strict, NoUnpack>(std::move(children), NoUnpack()) {}
+      : Parent(std::move(children), NoUnpack()) {}
     void doUnpack(uint32_t) override {}
 };
 
@@ -312,9 +313,16 @@ public:
             children.push_back(search->createIterator(tfmda[0], strict));
         }
         if (strict) {
-            return std::make_unique<LocationPreFilterIterator<true>>(std::move(children));
+            if (children.size() < 0x70) {
+                using Parent = StrictHeapOrSearch<NoUnpack, vespalib::LeftArrayHeap, uint8_t>;
+                return std::make_unique<LocationPreFilterIterator<true, Parent>>(std::move(children));
+            } else {
+                using Parent = StrictHeapOrSearch<NoUnpack, vespalib::LeftHeap, uint32_t>;
+                return std::make_unique<LocationPreFilterIterator<true, Parent>>(std::move(children));
+            }
         } else {
-            return std::make_unique<LocationPreFilterIterator<false>>(std::move(children));
+            using Parent = OrLikeSearch<false, NoUnpack>;
+            return std::make_unique<LocationPreFilterIterator<false, Parent>>(std::move(children));
         }
     }
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {

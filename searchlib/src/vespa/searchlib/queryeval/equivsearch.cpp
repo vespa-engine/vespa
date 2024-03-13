@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "equivsearch.h"
+#include <vespa/vespalib/util/left_right_heap.h>
 
 namespace search::queryeval {
 
-template <bool strict>
-class EquivImpl : public OrLikeSearch<strict, NoUnpack>
+template <bool strict, typename Parent>
+class EquivImpl : public Parent
 {
 private:
     fef::MatchData::UP        _inputMatchData;
@@ -27,22 +28,22 @@ public:
               const fef::TermFieldMatchDataArray &outputs);
 };
 
-template<bool strict>
-EquivImpl<strict>::EquivImpl(MultiSearch::Children children,
-                             fef::MatchData::UP inputMatchData,
-                             const fef::TermMatchDataMerger::Inputs &inputs,
-                             const fef::TermFieldMatchDataArray &outputs)
+template<bool strict, typename Parent>
+EquivImpl<strict, Parent>::EquivImpl(MultiSearch::Children children,
+                                     fef::MatchData::UP inputMatchData,
+                                     const fef::TermMatchDataMerger::Inputs &inputs,
+                                     const fef::TermFieldMatchDataArray &outputs)
 
-    : OrLikeSearch<strict, NoUnpack>(std::move(children), NoUnpack()),
-      _inputMatchData(std::move(inputMatchData)),
-      _merger(inputs, outputs),
-      _valid(outputs.valid())
+  : Parent(std::move(children), NoUnpack()),
+    _inputMatchData(std::move(inputMatchData)),
+    _merger(inputs, outputs),
+    _valid(outputs.valid())
 {
 }
 
-template<bool strict>
+template<bool strict, typename Parent>
 void
-EquivImpl<strict>::doUnpack(uint32_t docid)
+EquivImpl<strict, Parent>::doUnpack(uint32_t docid)
 {
     if (_valid) {
         MultiSearch::doUnpack(docid);
@@ -58,9 +59,16 @@ EquivSearch::create(Children children,
                     bool strict)
 {
     if (strict) {
-        return std::make_unique<EquivImpl<true>>(std::move(children), std::move(inputMatchData), inputs, outputs);
+        if (children.size() < 0x70) {
+            using Parent = StrictHeapOrSearch<NoUnpack, vespalib::LeftArrayHeap, uint8_t>;
+            return std::make_unique<EquivImpl<true, Parent>>(std::move(children), std::move(inputMatchData), inputs, outputs);
+        } else {
+            using Parent = StrictHeapOrSearch<NoUnpack, vespalib::LeftHeap, uint32_t>;
+            return std::make_unique<EquivImpl<true, Parent>>(std::move(children), std::move(inputMatchData), inputs, outputs);
+        }
     } else {
-        return std::make_unique<EquivImpl<false>>(std::move(children), std::move(inputMatchData), inputs, outputs);
+        using Parent = OrLikeSearch<false, NoUnpack>;
+        return std::make_unique<EquivImpl<false, Parent>>(std::move(children), std::move(inputMatchData), inputs, outputs);
     }
 }
 
