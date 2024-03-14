@@ -258,7 +258,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                 throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
                                                    this + " does not exist");
 
-            sc.add(new SchemaInfo(schema, deployState.rankProfileRegistry(), null));
+            sc.add(new SchemaInfo(schema, e.stringAttribute("mode"), deployState.rankProfileRegistry(), null));
         }
     }
 
