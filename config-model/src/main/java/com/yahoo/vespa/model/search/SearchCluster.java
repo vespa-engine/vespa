@@ -43,6 +43,8 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         this.index = index;
     }
 
+    public String getStorageRouteSpec() { return getClusterName(); }
+
     public void add(SchemaInfo schema) {
         schemas.put(schema.name(), schema);
     }
