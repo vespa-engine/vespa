@@ -174,7 +174,13 @@ func (s *Service) Wait(timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-	okFunc := func(status int, response []byte) (bool, error) { return isOK(status) }
+	okFunc := func(status int, response []byte) (bool, error) {
+		// Always retry 404 as /status.html may return 404 while a cluster is becoming ready
+		if status == 404 {
+			return false, nil
+		}
+		return isOK(status)
+	}
 	status, err := wait(s, okFunc, func() *http.Request { return req }, timeout, s.retryInterval)
 	if err != nil {
 		statusDesc := ""
