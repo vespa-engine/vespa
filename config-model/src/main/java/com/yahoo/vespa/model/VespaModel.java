@@ -36,6 +36,7 @@ import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.RankProfileList;
+import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -208,12 +209,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
 
         Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
                                              ? Set.of()
-                                             : content.getSearch().getIndexed().getDocumentDbs().stream()
-                                                      .filter(database -> database.getDerivedConfiguration()
-                                                                                  .getSchema()
+                                             : content.getSearch().getIndexed().schemas().values().stream()
+                                                      .filter(schemaInfo -> schemaInfo.fullSchema()
                                                                                   .allConcreteFields()
                                                                                   .stream().anyMatch(SDField::doesIndexing))
-                                                      .map(DocumentDatabase::getSchemaName)
+                                                      .map(SchemaInfo::name)
                                                       .collect(Collectors.toCollection(LinkedHashSet::new));
 
         return typesWithIndexMode.stream().filter(typesWithIndexedFields::contains)
