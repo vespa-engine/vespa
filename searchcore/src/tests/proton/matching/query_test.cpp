@@ -145,9 +145,9 @@ Fixture::getIterator(Node &node, ISearchContext &context) {
     _match_data = mdl.createMatchData();
 
     _blueprint = BlueprintBuilder::build(_requestContext, node, context);
-
-    _blueprint->fetchPostings(ExecuteInfo::TRUE);
-    SearchIterator::UP search(_blueprint->createSearch(*_match_data, true));
+    _blueprint->basic_plan(true, 1000);
+    _blueprint->fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP search(_blueprint->createSearch(*_match_data));
     search->initFullRange();
     return search;
 }
@@ -652,8 +652,8 @@ TEST("requireThatQueryGluesEverythingTogether") {
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQUAL(1u, md->getNumTermFields());
 
-    query.optimize(true);
-    query.fetchPostings(ExecuteInfo::TRUE);
+    query.optimize(true, true);
+    query.fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = query.createSearch(*md);
     ASSERT_TRUE(search);
 }
@@ -685,7 +685,8 @@ checkQueryAddsLocation(const string &loc_in, const string &loc_out) {
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQUAL(2u, md->getNumTermFields());
 
-    query.fetchPostings(ExecuteInfo::TRUE);
+    // query.optimize(true, true);
+    query.fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = query.createSearch(*md);
     ASSERT_TRUE(search);
     if (!EXPECT_NOT_EQUAL(string::npos, search->asString().find(loc_out))) {
@@ -788,15 +789,20 @@ TEST("requireThatFakeFieldSearchDumpsDiffer")
     Blueprint::UP l3(a.createBlueprint(requestContext, fields2, n3)); // field
     Blueprint::UP l4(b.createBlueprint(requestContext, fields1, n1)); // tag
 
-    l1->fetchPostings(ExecuteInfo::TRUE);
-    l2->fetchPostings(ExecuteInfo::TRUE);
-    l3->fetchPostings(ExecuteInfo::TRUE);
-    l4->fetchPostings(ExecuteInfo::TRUE);
+    l1->basic_plan(true, 1000);
+    l2->basic_plan(true, 1000);
+    l3->basic_plan(true, 1000);
+    l4->basic_plan(true, 1000);
+    
+    l1->fetchPostings(ExecuteInfo::FULL);
+    l2->fetchPostings(ExecuteInfo::FULL);
+    l3->fetchPostings(ExecuteInfo::FULL);
+    l4->fetchPostings(ExecuteInfo::FULL);
 
-    SearchIterator::UP s1(l1->createSearch(*match_data, true));
-    SearchIterator::UP s2(l2->createSearch(*match_data, true));
-    SearchIterator::UP s3(l3->createSearch(*match_data, true));
-    SearchIterator::UP s4(l4->createSearch(*match_data, true));
+    SearchIterator::UP s1(l1->createSearch(*match_data));
+    SearchIterator::UP s2(l2->createSearch(*match_data));
+    SearchIterator::UP s3(l3->createSearch(*match_data));
+    SearchIterator::UP s4(l4->createSearch(*match_data));
 
     EXPECT_NOT_EQUAL(s1->asString(), s2->asString());
     EXPECT_NOT_EQUAL(s1->asString(), s3->asString());
@@ -904,8 +910,8 @@ TEST("requireThatWhiteListBlueprintCanBeUsed")
     query.reserveHandles(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
 
-    query.optimize(true);
-    query.fetchPostings(ExecuteInfo::TRUE);
+    query.optimize(true, true);
+    query.fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = query.createSearch(*md);
     SimpleResult exp = SimpleResult().addHit(1).addHit(5).addHit(7).addHit(11);
     SimpleResult act;

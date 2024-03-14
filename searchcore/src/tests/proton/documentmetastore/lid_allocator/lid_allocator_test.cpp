@@ -103,20 +103,20 @@ protected:
         return result;
     }
     
-    Blueprint::UP make_whitelist_blueprint(uint32_t docid_limit) {
+    Blueprint::UP make_whitelist_blueprint(bool strict, uint32_t docid_limit) {
         auto blueprint = _allocator.createWhiteListBlueprint();
-        blueprint->setDocIdLimit(docid_limit);
+        blueprint->basic_plan(strict, docid_limit);
         return blueprint;
     }
     
     SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit, bool filter) {
-        auto blueprint = make_whitelist_blueprint(docid_limit);
+        auto blueprint = make_whitelist_blueprint(true, docid_limit);
         std::unique_ptr<SearchIterator> iterator;
         MatchData md(MatchData::params());
         if (filter) {
-            iterator = blueprint->createFilterSearch(true, Blueprint::FilterConstraint::UPPER_BOUND);
+            iterator = blueprint->createFilterSearch(Blueprint::FilterConstraint::UPPER_BOUND);
         } else {
-            iterator = blueprint->createSearch(md, true);
+            iterator = blueprint->createSearch(md);
         }
         SimpleResult res;
         res.search(*iterator, docid_limit);
@@ -124,8 +124,8 @@ protected:
     }
 
     Trinary filter_search_iterator_matches_any(uint32_t docid_limit) {
-        auto blueprint = make_whitelist_blueprint(docid_limit);
-        auto iterator = blueprint->createFilterSearch(true, Blueprint::FilterConstraint::UPPER_BOUND);
+        auto blueprint = make_whitelist_blueprint(true, docid_limit);
+        auto iterator = blueprint->createFilterSearch(Blueprint::FilterConstraint::UPPER_BOUND);
         return iterator->matches_any();
     }
 
@@ -180,10 +180,9 @@ TEST_F(LidAllocatorTest, whitelist_blueprint_can_maximize_relative_estimate)
     activate_lids({ 1, 2, 3, 4 }, true);
     // the number of hits are overestimated based on the number of
     // documents that could be active (100 in this test fixture)
-    // NOTE: optimize must be called in order to calculate the relative estimate
-    EXPECT_EQ(Blueprint::optimize(make_whitelist_blueprint(1000))->estimate(), 0.1);
-    EXPECT_EQ(Blueprint::optimize(make_whitelist_blueprint(200))->estimate(), 0.5);
-    EXPECT_EQ(Blueprint::optimize(make_whitelist_blueprint(5))->estimate(), 1.0);
+    EXPECT_EQ(make_whitelist_blueprint(true, 1000)->estimate(), 0.1);
+    EXPECT_EQ(make_whitelist_blueprint(true, 200)->estimate(), 0.5);
+    EXPECT_EQ(make_whitelist_blueprint(true, 5)->estimate(), 1.0);
 }
 
 class LidAllocatorPerformanceTest : public LidAllocatorTest,

@@ -59,8 +59,9 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
         data.setNeedNormalFeatures(unpack_normal_features);
         data.setNeedInterleavedFeatures(unpack_interleaved_features);
     }
-    bp->fetchPostings(ExecuteInfo::createForTest(strict));
-    SearchIterator::UP search = bp->createSearch(*md, strict);
+    bp->basic_plan(strict, 100);
+    bp->fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP search = bp->createSearch(*md);
     search->initFullRange();
 
     EXPECT_TRUE(!search->seek(3));

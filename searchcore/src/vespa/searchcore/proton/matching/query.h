@@ -26,7 +26,9 @@ private:
     using ExecuteInfo = search::queryeval::ExecuteInfo;
     using IRequestContext = search::queryeval::IRequestContext;
     using GeoLocationSpec = search::common::GeoLocationSpec;
+    using InFlow = search::queryeval::InFlow;
     search::query::Node::UP      _query_tree;
+    InFlow                       _in_flow = InFlow(true);
     Blueprint::UP                _blueprint;
     Blueprint::UP                _whiteListBlueprint;
     std::vector<GeoLocationSpec> _locations;
@@ -103,8 +105,8 @@ public:
      * testing becomes harder. Not calling this function enables the
      * test to verify the original query without optimization.
      **/
-    void optimize(bool sort_by_cost);
-    void fetchPostings(const ExecuteInfo & executeInfo) ;
+    void optimize(InFlow in_flow, bool sort_by_cost);
+    void fetchPostings(const ExecuteInfo & executeInfo);
 
     void handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,

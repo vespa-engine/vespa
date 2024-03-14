@@ -110,7 +110,7 @@ protected:
     virtual void fillArray();
     virtual void fillBitVector(const ExecuteInfo &);
 
-    void fetchPostings(const ExecuteInfo & strict) override;
+    void fetchPostings(const ExecuteInfo &exec, bool strict) override;
     // this will be called instead of the fetchPostings function in some cases
     void diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
                    size_t max_per_group, size_t cutoff_groups, bool cutoff_strict);
@@ -224,7 +224,7 @@ private:
             ? HitEstimate(limit)
             : estimate;
     }
-    void fetchPostings(const ExecuteInfo & execInfo) override {
+    void fetchPostings(const ExecuteInfo & execInfo, bool strict) override {
         if (params().diversityAttribute() != nullptr) {
             bool forward = (this->getRangeLimit() > 0);
             size_t wanted_hits = std::abs(this->getRangeLimit());
@@ -232,7 +232,7 @@ private:
                                                         *(params().diversityAttribute()), this->getMaxPerGroup(),
                                                         params().diversityCutoffGroups(), params().diversityCutoffStrict());
         } else {
-            PostingListSearchContextT<DataT>::fetchPostings(execInfo);
+            PostingListSearchContextT<DataT>::fetchPostings(execInfo, strict);
         }
     }
 

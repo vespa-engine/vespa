@@ -46,9 +46,8 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResul
 }
 
 Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
-    auto opts = Blueprint::Options::all();
-    Blueprint::UP result = Blueprint::optimize_and_sort(std::move(bp), true, opts);
-    result->fetchPostings(ExecuteInfo::createForTest(strict));
+    Blueprint::UP result = Blueprint::optimize_and_sort(std::move(bp), strict);
+    result->fetchPostings(ExecuteInfo::FULL);
     result->freeze();
     return result;
 }
@@ -56,7 +55,7 @@ Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
 SimpleResult find_matches(const std::vector<FakeResult> &children) {
     auto md = make_match_data();
     auto bp = finalize(make_blueprint(children), false);
-    auto search = bp->createSearch(*md, false);
+    auto search = bp->createSearch(*md);
     return SimpleResult().search(*search, 1000);
 }
 
@@ -85,7 +84,7 @@ TEST("require that matching elements can be identified") {
     auto b = make_result({{5, {3,5,7,10}}, {10, {4,5,6}}});
     auto bp = finalize(make_blueprint({a,b}), false);
     auto md = make_match_data();
-    auto search = bp->createSearch(*md, false);
+    auto search = bp->createSearch(*md);
     search->initRange(1, 1000);
     auto *se = dynamic_cast<SameElementSearch*>(search.get());
     ASSERT_TRUE(se != nullptr);
@@ -107,7 +106,7 @@ TEST("require that strict iterator seeks to next hit and can unpack matching doc
     auto a = make_result({{5, {1,2}}, {7, {1,2}}, {8, {1,2}}, {9, {1,2}}});
     auto b = make_result({{5, {3}}, {6, {1,2}}, {7, {2,4}}, {9, {1}}});
     auto bp = finalize(make_blueprint({a,b}), true);
-    auto search = bp->createSearch(*md, true);
+    auto search = bp->createSearch(*md);
     auto* tfmd = md->resolveTermField(0);
     search->initRange(1, 1000);
     EXPECT_LESS(search->getDocId(), 1u);
@@ -145,9 +144,9 @@ TEST("require that children are sorted") {
 TEST("require that attribute iterators are wrapped for element unpacking") {
     auto a = make_result({{5, {1,3,7}}});
     auto b = make_result({{5, {3,5,10}}});
-    auto bp = finalize(make_blueprint({a,b}, true), true);
+    auto bp = finalize(make_blueprint({a,b}, true), false);
     auto md = make_match_data();
-    auto search = bp->createSearch(*md, false);
+    auto search = bp->createSearch(*md);
     auto *se = dynamic_cast<SameElementSearch*>(search.get());
     ASSERT_TRUE(se != nullptr);
     ASSERT_EQUAL(se->children().size(), 2u);

@@ -264,7 +264,7 @@ public:
         return {rel_est, btree_cost(), btree_strict_cost(rel_est)};
     }
     
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda, bool) const override {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
         auto result = make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda);
         if (_use_bit_vector) {
             LOG(debug, "Return BooleanMatchIteratorWrapper: field_id(%u), doc_count(%zu)",
@@ -276,7 +276,7 @@ public:
         return result;
     }
 
-    SearchIterator::UP createFilterSearch(bool, FilterConstraint) const override {
+    SearchIterator::UP createFilterSearch(FilterConstraint) const override {
         auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
         auto & tfmda = wrapper->tfmda();
         wrapper->wrap(make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda));

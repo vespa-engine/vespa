@@ -279,8 +279,14 @@ PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
     }
 }
 
+void
+PredicateBlueprint::sort(InFlow in_flow, const Options &)
+{
+    strict(in_flow.strict());
+}
+
 SearchIterator::UP
-PredicateBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const {
+PredicateBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const {
     const auto &attribute = predicate_attribute();
     PredicateAttribute::MinFeatureHandle mfh = attribute.getMinFeatureVector();
     auto interval_range_vector = attribute.getIntervalRangeVector();

@@ -99,9 +99,11 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
         FieldSpecList field; // single field API is protected
         field.add(FieldSpec(_attribute_name, my_field_id, my_handle));
         _blueprint = _searchable_attributes.createBlueprint(_requestContext, field, node);
+        uint32_t dummy_docid_limit = 1337;
+        _blueprint->basic_plan(strictSearch, dummy_docid_limit);
         //TODO use_estimate must be switched to true quite soon
         //TODO Use thread_bundle once verified(soon), _requestContext.thread_bundle()
-        auto execInfo = ExecuteInfo::create(strictSearch, strictSearch ? 1.0 : hit_rate, _requestContext.getDoom(),
+        auto execInfo = ExecuteInfo::create(strictSearch ? 1.0 : hit_rate, _requestContext.getDoom(),
                                             vespalib::ThreadBundle::trivial());
         _blueprint->fetchPostings(execInfo);
         _estimatedHits.store(_blueprint->getState().estimate().estHits, std::memory_order_relaxed);
@@ -114,7 +116,7 @@ AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size, dou
 std::unique_ptr<SearchIterator>
 AttributeLimiter::create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch) {
     auto [blueprint, match_data] = create_match_data(want_hits, max_group_size, hit_rate, strictSearch);
-    return blueprint.createSearch(match_data, strictSearch);
+    return blueprint.createSearch(match_data);
 }
 
 }

@@ -229,11 +229,10 @@ Test::testNearSearch(MyQuery &query, uint32_t matchId)
         near_b->addChild(query.getTerm(i).make_blueprint(fieldId, i));
     }
     bp->setDocIdLimit(1000);
-    auto opts = search::queryeval::Blueprint::Options::all();
-    bp = search::queryeval::Blueprint::optimize_and_sort(std::move(bp), true, opts);
-    bp->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+    bp = search::queryeval::Blueprint::optimize_and_sort(std::move(bp));
+    bp->fetchPostings(search::queryeval::ExecuteInfo::FULL);
     search::fef::MatchData::UP md(layout.createMatchData());
-    search::queryeval::SearchIterator::UP near = bp->createSearch(*md, true);
+    search::queryeval::SearchIterator::UP near = bp->createSearch(*md);
     near->initFullRange();
     bool foundMatch = false;
     for (near->seek(1u); ! near->isAtEnd(); near->seek(near->getDocId() + 1)) {

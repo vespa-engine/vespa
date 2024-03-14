@@ -228,8 +228,9 @@ verifyResult(const FakeResult &expect,
     EXPECT_EQ(expect.inspect().size(), result->getState().estimate().estHits);
     EXPECT_EQ(expect.inspect().empty(), result->getState().estimate().empty);
 
-    result->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
-    SearchIterator::UP search = result->createSearch(*match_data, true);
+    result->basic_plan(true, 100);
+    result->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+    SearchIterator::UP search = result->createSearch(*match_data);
     bool valid_search = search.get() != 0;
     EXPECT_TRUE(valid_search);
     if (!valid_search) {
@@ -256,7 +257,7 @@ verifyResult(const FakeResult &expect,
     using FilterConstraint = Blueprint::FilterConstraint;
     for (auto constraint : { FilterConstraint::LOWER_BOUND, FilterConstraint::UPPER_BOUND }) {
         constexpr uint32_t docid_limit = 10u;
-        auto filter_search = result->createFilterSearch(true, constraint);
+        auto filter_search = result->createFilterSearch(constraint);
         auto act_simple = SimpleResult().search(*filter_search, docid_limit);
         if (constraint == FilterConstraint::LOWER_BOUND) {
             EXPECT_TRUE(exp_simple.contains(act_simple)) << (success = false, "");
@@ -522,8 +523,9 @@ TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
         Blueprint::UP res = searchable.createBlueprint(requestContext, fields, makeTerm(foo));
         EXPECT_TRUE(res);
 
-        res->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
-        SearchIterator::UP search = res->createSearch(*match_data, true);
+        res->basic_plan(true, 100);
+        res->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+        SearchIterator::UP search = res->createSearch(*match_data);
         EXPECT_TRUE(search);
         EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper *>(search.get()) != nullptr);
         search->initFullRange();

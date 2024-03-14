@@ -378,7 +378,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<StringAttribute>(sa);
-    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     bool retval = true;
     EXPECT_TRUE(assertIterator(exp, *sb)) << (retval = false, "");
@@ -391,7 +391,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<StringAttribute, std::string>(sa, key, false);
-    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     bool retval = true;
     EXPECT_TRUE(assertIterator(exp, *sb, &md)) << (retval = false, "");
@@ -403,7 +403,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp, IntegerAttribute 
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<IntegerAttribute, int32_t>(ia, key, false);
-    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     bool retval = true;
     EXPECT_TRUE(assertIterator(exp, *sb, &md)) << (retval = false, "");
@@ -497,7 +497,7 @@ PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool 
 {
     SearchContextPtr sc = getSearch(vec, term, false, attribute::SearchContextParams().useBitVector(useBitVector));
     EXPECT_FALSE( ! sc );
-    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     auto est = sc->calc_hit_estimate();
     uint32_t est_hits = est.est_hits();
     EXPECT_FALSE(est.is_unknown());
@@ -912,7 +912,7 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(ptr1));
-    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     sb->initFullRange();
 
@@ -937,7 +937,7 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
     EXPECT_EQ(1u, sb->getDocId());
 
     sc = getSearch2<VectorType>(as<VectorType>(ptr1));
-    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     sb = sc->createIterator(&md, true);
     sb->initFullRange();
 

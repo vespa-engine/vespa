@@ -17,13 +17,13 @@ EmptyBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
+EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &) const
 {
     return std::make_unique<EmptySearch>();
 }
 
 SearchIterator::UP
-EmptyBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* constraint */) const
+EmptyBlueprint::createFilterSearch(FilterConstraint /* constraint */) const
 {
     return std::make_unique<EmptySearch>();
 }
@@ -40,13 +40,13 @@ AlwaysTrueBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-AlwaysTrueBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
+AlwaysTrueBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &) const
 {
     return std::make_unique<FullSearch>();
 }
 
 SearchIterator::UP
-AlwaysTrueBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* constraint */) const
+AlwaysTrueBlueprint::createFilterSearch(FilterConstraint /* constraint */) const
 {
     return std::make_unique<FullSearch>();
 }
@@ -65,19 +65,19 @@ SimpleBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool strict) const
+SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &) const
 {
-    auto search = std::make_unique<SimpleSearch>(_result, strict);
+    auto search = std::make_unique<SimpleSearch>(_result, strict());
     search->tag(_tag);
     return search;
 }
 
 SearchIterator::UP
-SimpleBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+SimpleBlueprint::createFilterSearch(FilterConstraint constraint) const
 {
-    auto search = std::make_unique<SimpleSearch>(_result, strict);
+    auto search = std::make_unique<SimpleSearch>(_result, strict());
     search->tag(_tag +
-               (strict ? "<strict," : "<nostrict,") +
+               (strict() ? "<strict," : "<nostrict,") +
                (constraint == FilterConstraint::UPPER_BOUND ? "upper>" : "lower>"));
     return search;
 }
@@ -127,7 +127,7 @@ struct FakeContext : attribute::ISearchContext {
     }
     attribute::HitEstimate calc_hit_estimate() const override { return attribute::HitEstimate(0); }
     std::unique_ptr<SearchIterator> createIterator(fef::TermFieldMatchData *, bool) override { abort(); }
-    void fetchPostings(const ExecuteInfo &) override { }
+    void fetchPostings(const ExecuteInfo &, bool) override { }
     bool valid() const override { return true; }
     Int64Range getAsIntegerTerm() const override { abort(); }
     DoubleRange getAsDoubleTerm() const override { abort(); }
@@ -146,7 +146,7 @@ FakeContext::get_committed_docid_limit() const noexcept
 }
 
 SearchIterator::UP
-FakeBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
+FakeBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
 {
     auto result = std::make_unique<FakeSearch>(_tag, _field.getName(), _term, _result, tfmda);
     result->attr_ctx(_ctx.get());

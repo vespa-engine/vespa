@@ -44,6 +44,17 @@ SameElementBlueprint::addTerm(Blueprint::UP term)
     _terms.push_back(std::move(term));
 }
 
+void
+SameElementBlueprint::sort(InFlow in_flow, const Options &opts)
+{
+    strict(in_flow.strict());
+    auto flow = AndFlow(in_flow);
+    for (auto &term: _terms) {
+        term->sort(InFlow(flow.strict(), flow.flow()), opts);
+        flow.add(term->estimate());
+    }
+}
+
 FlowStats
 SameElementBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
@@ -75,19 +86,19 @@ SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
     double hit_rate = execInfo.hit_rate() * _terms[0]->estimate();
     for (size_t i = 1; i < _terms.size(); ++i) {
         Blueprint & term = *_terms[i];
-        term.fetchPostings(ExecuteInfo::create(false, hit_rate, execInfo));
+        term.fetchPostings(ExecuteInfo::create(hit_rate, execInfo));
         hit_rate = hit_rate * _terms[i]->estimate();
     }
 }
 
 std::unique_ptr<SameElementSearch>
-SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd, bool strict) const
+SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd) const
 {
     fef::MatchData::UP md = _layout.createMatchData();
     std::vector<ElementIterator::UP> children(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
-        SearchIterator::UP child = _terms[i]->createSearch(*md, (strict && (i == 0)));
+        SearchIterator::UP child = _terms[i]->createSearch(*md);
         const attribute::ISearchContext *context = _terms[i]->get_attribute_search_context();
         if (context == nullptr) {
             children[i] = std::make_unique<ElementIteratorWrapper>(std::move(child), *childState.field(0).resolve(*md));
@@ -95,20 +106,20 @@ SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData
             children[i] = std::make_unique<attribute::SearchContextElementIterator>(std::move(child), *context);
         }
     }
-    return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(children), strict);
+    return std::make_unique<SameElementSearch>(tfmd, std::move(md), std::move(children), strict());
 }
 
 SearchIterator::UP
-SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const
+SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const
 {
     assert(tfmda.size() == 1);
-    return create_same_element_search(*tfmda[0], strict);
+    return create_same_element_search(*tfmda[0]);
 }
 
 SearchIterator::UP
-SameElementBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+SameElementBlueprint::createFilterSearch(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(_terms, strict, constraint);
+    return create_atmost_and_filter(_terms, strict(), constraint);
 }
 
 void

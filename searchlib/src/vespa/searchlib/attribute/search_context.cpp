@@ -50,10 +50,10 @@ SearchContext::createFilterIterator(fef::TermFieldMatchData* matchData, bool str
 
 
 void
-SearchContext::fetchPostings(const queryeval::ExecuteInfo& execInfo)
+SearchContext::fetchPostings(const queryeval::ExecuteInfo& execInfo, bool strict)
 {
     if (_plsc != nullptr) {
-        _plsc->fetchPostings(execInfo);
+        _plsc->fetchPostings(execInfo, strict);
     }
 }
 

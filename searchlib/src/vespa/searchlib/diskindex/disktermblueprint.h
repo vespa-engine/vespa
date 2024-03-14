@@ -41,11 +41,11 @@ public:
     
     // Inherit doc from Blueprint.
     // For now, this DiskTermBlueprint instance must have longer lifetime than the created iterator.
-    std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray & tfmda, bool strict) const override;
+    std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray & tfmda) const override;
 
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
 
-    std::unique_ptr<queryeval::SearchIterator> createFilterSearch(bool strict, FilterConstraint) const override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterSearch(FilterConstraint) const override;
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
 };

@@ -426,7 +426,7 @@ BitVectorTest::checkSearch(AttributePtr v,
                            bool checkStride)
 {
     TermFieldMatchData md;
-    sc->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(search::queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     checkSearch(std::move(v), std::move(sb), md,
                 expFirstDocId, expLastDocId, expDocFreq, weights,

@@ -128,13 +128,14 @@ TEST_F("require that blueprint with zstar-compressed estimates non-empty.", Fixt
 void
 runQuery(Fixture & f, std::vector<uint32_t> expected, bool expectCachedSize, uint32_t expectedKV) {
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(ExecuteInfo::TRUE);
+    blueprint.basic_plan(true, 100);
+    blueprint.fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL(expectCachedSize, blueprint.getCachedFeatures().size());
     for (uint32_t docId : expected) {
         EXPECT_EQUAL(expectedKV, uint32_t(blueprint.getKV()[docId]));
     }
     TermFieldMatchDataArray tfmda;
-    SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
+    SearchIterator::UP it = blueprint.createLeafSearch(tfmda);
     ASSERT_TRUE(it.get());
     it->initFullRange();
     EXPECT_EQUAL(SearchIterator::beginId(), it->getDocId());
@@ -172,9 +173,10 @@ TEST_F("require that blueprint can create more advanced search", Fixture) {
     f.indexEmptyDocument(doc_id + 2);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(ExecuteInfo::TRUE);
+    blueprint.basic_plan(true, 100);
+    blueprint.fetchPostings(ExecuteInfo::FULL);
     TermFieldMatchDataArray tfmda;
-    SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
+    SearchIterator::UP it = blueprint.createLeafSearch(tfmda);
     ASSERT_TRUE(it.get());
     it->initFullRange();
     EXPECT_EQUAL(SearchIterator::beginId(), it->getDocId());
@@ -195,9 +197,10 @@ TEST_F("require that blueprint can create NOT search", Fixture) {
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(ExecuteInfo::TRUE);
+    blueprint.basic_plan(true, 100);
+    blueprint.fetchPostings(ExecuteInfo::FULL);
     TermFieldMatchDataArray tfmda;
-    SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
+    SearchIterator::UP it = blueprint.createLeafSearch(tfmda);
     ASSERT_TRUE(it.get());
     it->initFullRange();
     EXPECT_TRUE(it->seek(doc_id));
@@ -211,9 +214,10 @@ TEST_F("require that blueprint can create compressed NOT search", Fixture) {
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(ExecuteInfo::TRUE);
+    blueprint.basic_plan(true, 100);
+    blueprint.fetchPostings(ExecuteInfo::FULL);
     TermFieldMatchDataArray tfmda;
-    SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
+    SearchIterator::UP it = blueprint.createLeafSearch(tfmda);
     ASSERT_TRUE(it.get());
     it->initFullRange();
     EXPECT_TRUE(it->seek(doc_id));
@@ -235,9 +239,10 @@ TEST_F("require that blueprint can set up search with subqueries", Fixture) {
     query.getTerm()->addFeature("key2", "value", 2);
 
     PredicateBlueprint blueprint(f.field, f.guard(), query);
-    blueprint.fetchPostings(ExecuteInfo::TRUE);
+    blueprint.basic_plan(true, 100);
+    blueprint.fetchPostings(ExecuteInfo::FULL);
     TermFieldMatchDataArray tfmda;
-    SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
+    SearchIterator::UP it = blueprint.createLeafSearch(tfmda);
     ASSERT_TRUE(it.get());
     it->initFullRange();
     EXPECT_FALSE(it->seek(doc_id));

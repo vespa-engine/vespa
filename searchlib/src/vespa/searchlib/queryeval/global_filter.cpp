@@ -109,9 +109,8 @@ struct MakePart : Runnable {
     bool is_first_thread() const { return (begin == 1); }
     bool should_trace(int level) const { return trace && trace->shouldTrace(level); }
     void run() override {
-        bool strict = true;
         auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
-        auto filter = blueprint.createFilterSearch(strict, constraint);
+        auto filter = blueprint.createFilterSearch(constraint);
         if (is_first_thread() && should_trace(7)) {
             vespalib::slime::ObjectInserter inserter(trace->createCursor("iterator"), "optimized");
             filter->asSlime(inserter);

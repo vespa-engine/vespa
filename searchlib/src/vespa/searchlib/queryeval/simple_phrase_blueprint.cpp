@@ -45,6 +45,15 @@ SimplePhraseBlueprint::addTerm(Blueprint::UP term)
     _terms.push_back(std::move(term));
 }
 
+void
+SimplePhraseBlueprint::sort(InFlow in_flow, const Options &opts)
+{
+    strict(in_flow.strict());
+    for (auto &term: _terms) {
+        term->sort(in_flow, opts);
+    }
+}
+
 FlowStats
 SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
@@ -58,7 +67,7 @@ SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
+SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
 {
     assert(tfmda.size() == 1);
     fef::MatchData::UP md = _layout.createMatchData();
@@ -73,24 +82,23 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
         child_term_field_match_data->setNeedInterleavedFeatures(tfmda[0]->needs_interleaved_features());
         child_term_field_match_data->setNeedNormalFeatures(true);
         childMatch.add(child_term_field_match_data);
-        children.push_back(_terms[i]->createSearch(*md, strict));
+        children.push_back(_terms[i]->createSearch(*md));
         order_map.insert(std::make_pair(childState.estimate().estHits, i));
     }
     std::vector<uint32_t> eval_order;
     eval_order.reserve(order_map.size());
     for (const auto & child : order_map) {
         eval_order.push_back(child.second);
-    }    
-
+    }
     return std::make_unique<SimplePhraseSearch>(std::move(children),
                                                 std::move(md), std::move(childMatch),
-                                                std::move(eval_order), *tfmda[0], strict);
+                                                std::move(eval_order), *tfmda[0], strict());
 }
 
 SearchIterator::UP
-SimplePhraseBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+SimplePhraseBlueprint::createFilterSearch(FilterConstraint constraint) const
 {
-    return create_atmost_and_filter(_terms, strict, constraint);
+    return create_atmost_and_filter(_terms, strict(), constraint);
 }
 
 void

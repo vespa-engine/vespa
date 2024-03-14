@@ -298,8 +298,10 @@ WarmupTask::run()
 {
     if (_warmup->warmupEndTime() != vespalib::steady_time()) {
         LOG(debug, "Warming up %s", _bluePrint->asString().c_str());
-        _bluePrint->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
-        SearchIterator::UP it(_bluePrint->createSearch(*_matchData, true));
+        uint32_t dummy_docid_limit = 1337;
+        _bluePrint->basic_plan(true, dummy_docid_limit);
+        _bluePrint->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+        SearchIterator::UP it(_bluePrint->createSearch(*_matchData));
         it->initFullRange();
         for (uint32_t docId = it->seekFirst(1); !it->isAtEnd(); docId = it->seekNext(docId+1)) {
             if (_warmup->doUnpack()) {

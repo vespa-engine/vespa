@@ -53,6 +53,17 @@ EquivBlueprint::EquivBlueprint(FieldSpecBaseList fields,
 
 EquivBlueprint::~EquivBlueprint() = default;
 
+void
+EquivBlueprint::sort(InFlow in_flow, const Options &opts)
+{
+    strict(in_flow.strict());
+    auto flow = OrFlow(in_flow);
+    for (auto &term: _terms) {
+        term->sort(InFlow(flow.strict(), flow.flow()), opts);
+        flow.add(term->estimate());
+    }
+}
+
 FlowStats
 EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
@@ -65,7 +76,7 @@ EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bool strict) const
+EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs) const
 {
     fef::MatchData::UP md = _layout.createMatchData();
     MultiSearch::Children children;
@@ -82,15 +93,15 @@ EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bo
             unpack_needs[child_term_field_match_data->getFieldId()].notify(*child_term_field_match_data);
             childMatch.emplace_back(child_term_field_match_data, _exactness[i]);
         }
-        children.push_back(_terms[i]->createSearch(*md, strict));
+        children.push_back(_terms[i]->createSearch(*md));
     }
-    return EquivSearch::create(std::move(children), std::move(md), childMatch, outputs, strict);
+    return EquivSearch::create(std::move(children), std::move(md), childMatch, outputs, strict());
 }
 
 SearchIterator::UP
-EquivBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+EquivBlueprint::createFilterSearch(FilterConstraint constraint) const
 {
-    return create_or_filter(_terms, strict, constraint);
+    return create_or_filter(_terms, strict(), constraint);
 }
 
 void

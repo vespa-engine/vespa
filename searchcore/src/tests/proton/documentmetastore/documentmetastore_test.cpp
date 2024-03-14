@@ -187,10 +187,10 @@ assertWhiteList(const SimpleResult &exp, Blueprint::UP whiteListBlueprint, bool 
 {
     MatchDataLayout mdl;
     MatchData::UP md = mdl.createMatchData();
-    whiteListBlueprint->fetchPostings(search::queryeval::ExecuteInfo::createForTest(strict));
-    whiteListBlueprint->setDocIdLimit(docIdLimit);
+    whiteListBlueprint->basic_plan(strict, docIdLimit);
+    whiteListBlueprint->fetchPostings(search::queryeval::ExecuteInfo::FULL);
 
-    SearchIterator::UP sb = whiteListBlueprint->createSearch(*md, strict);
+    SearchIterator::UP sb = whiteListBlueprint->createSearch(*md);
     SimpleResult act;
     act.searchStrict(*sb, docIdLimit);
     EXPECT_EQ(exp, act);

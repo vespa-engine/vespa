@@ -22,12 +22,11 @@ public:
     AndNotBlueprint * asAndNot() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
-    bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
+                             fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    createFilterSearch(FilterConstraint constraint) const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
     uint8_t calculate_cost_tier() const override {
@@ -50,12 +49,11 @@ public:
     AndBlueprint * asAnd() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
-    bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
+                             fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    createFilterSearch(FilterConstraint constraint) const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
 };
@@ -75,12 +73,11 @@ public:
     OrBlueprint * asOr() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
-    bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
+                             fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    createFilterSearch(FilterConstraint constraint) const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
     uint8_t calculate_cost_tier() const override;
@@ -100,13 +97,12 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_on_cost) const override;
-    bool inheritStrict(size_t i) const override;
     bool always_needs_unpack() const override;
     WeakAndBlueprint * asWeakAnd() noexcept final { return this; }
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+                             fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
     explicit WeakAndBlueprint(uint32_t n) noexcept : _n(n) {}
     ~WeakAndBlueprint() override;
@@ -131,12 +127,11 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
-    bool inheritStrict(size_t i) const override;
-    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+                             fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
     explicit NearBlueprint(uint32_t window) noexcept : _window(window) {}
 };
@@ -154,12 +149,11 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
-    bool inheritStrict(size_t i) const override;
-    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+                             fef::MatchData &md) const override;
+    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
     explicit ONearBlueprint(uint32_t window) noexcept : _window(window) {}
 };
@@ -175,13 +169,12 @@ public:
     void optimize_self(OptimizePass pass) override;
     Blueprint::UP get_replacement() override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
-    bool inheritStrict(size_t i) const override;
     bool isRank() const noexcept final { return true; }
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
+                             fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    createFilterSearch(FilterConstraint constraint) const override;
     uint8_t calculate_cost_tier() const override {
         return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
     }
@@ -204,12 +197,11 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, bool strict, bool sort_by_cost) const override;
-    bool inheritStrict(size_t i) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const override;
+                             fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    createFilterSearch(FilterConstraint constraint) const override;
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;

@@ -22,10 +22,11 @@ public:
     // used by create visitor
     EquivBlueprint& addTerm(Blueprint::UP term, double exactness);
 
+    void sort(InFlow in_flow, const Options &opts) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
 
-    SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;

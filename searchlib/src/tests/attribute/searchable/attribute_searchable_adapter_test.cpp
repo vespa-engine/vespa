@@ -223,8 +223,9 @@ Result do_search(IAttributeManager &attribute_manager, const Node &node, bool st
     Blueprint::UP bp = source.createBlueprint(requestContext, FieldSpec(field, fieldId, handle), node);
     ASSERT_TRUE(bp);
     Result result(bp->getState().estimate().estHits, bp->getState().estimate().empty);
-    bp->fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
-    SearchIterator::UP iterator = bp->createSearch(*match_data, strict);
+    bp->basic_plan(strict, 100);
+    bp->fetchPostings(queryeval::ExecuteInfo::FULL);
+    SearchIterator::UP iterator = bp->createSearch(*match_data);
     ASSERT_TRUE(iterator);
     iterator->initRange(1, num_docs);
     extract_posting_info(result, iterator->getPostingInfo());

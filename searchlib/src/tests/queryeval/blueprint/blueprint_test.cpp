@@ -17,8 +17,6 @@ using namespace search::fef;
 
 namespace {
 
-auto opts = Blueprint::Options::all();
-
 //-----------------------------------------------------------------------------
 
 class MyOr : public IntermediateBlueprint
@@ -45,19 +43,14 @@ public:
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
 
-    bool inheritStrict(size_t i) const override {
-        (void) i;
-        return true;
-    }
-
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, MatchData &md) const override
+                             MatchData &md) const override
     {
-        return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict);
+        return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict());
     }
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
     static MyOr& create() { return *(new MyOr()); }
     MyOr& add(Blueprint *n) { addChild(UP(n)); return *this; }
@@ -71,9 +64,9 @@ private:
 public:
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, MatchData &md) const override
+                             MatchData &md) const override
     {
-        return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict);
+        return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict());
     }
 
     static OtherOr& create() { return *(new OtherOr()); }
@@ -95,15 +88,11 @@ public:
         return {};
     }
 
-    bool inheritStrict(size_t i) const override {
-        return (i == 0);
-    }
-
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, MatchData &md) const override
+                             MatchData &md) const override
     {
-        return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict);
+        return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict());
     }
 
     static MyAnd& create() { return *(new MyAnd()); }
@@ -118,9 +107,9 @@ private:
 public:
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, MatchData &md) const override
+                             MatchData &md) const override
     {
-        return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict);
+        return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict());
     }
 
     static OtherAnd& create() { return *(new OtherAnd()); }
@@ -133,9 +122,9 @@ class OtherAndNot : public AndNotBlueprint
 public:
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, MatchData &md) const override
+                             MatchData &md) const override
     {
-        return std::make_unique<MySearch>("andnot", std::move(subSearches), &md, strict);
+        return std::make_unique<MySearch>("andnot", std::move(subSearches), &md, strict());
     }
 
     static OtherAndNot& create() { return *(new OtherAndNot()); }
@@ -153,11 +142,11 @@ struct MyTerm : SimpleLeafBlueprint {
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }
-    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &) const override {
         return {};
     }
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
 };
 
@@ -187,8 +176,9 @@ public:
 SearchIterator::UP
 Fixture::create(const Blueprint &blueprint)
 {
-    const_cast<Blueprint &>(blueprint).fetchPostings(ExecuteInfo::TRUE);
-    SearchIterator::UP search = blueprint.createSearch(*_md, true);
+    const_cast<Blueprint &>(blueprint).null_plan(true, 1000);
+    const_cast<Blueprint &>(blueprint).fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP search = blueprint.createSearch(*_md);
     MySearch::verifyAndInfer(search.get(), *_md);
     return search;
 }
@@ -453,7 +443,7 @@ TEST_F("testChildAndNotCollapsing", Fixture)
                               );
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, opts);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted));
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -493,7 +483,7 @@ TEST_F("testChildAndCollapsing", Fixture)
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, opts);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted));
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -534,7 +524,7 @@ TEST_F("testChildOrCollapsing", Fixture)
     unsorted->setDocIdLimit(1000);
     // we sort non-strict here since a strict OR does not have a
     // deterministic sort order.
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), false, opts);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), false);
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
@@ -578,7 +568,7 @@ TEST_F("testChildSorting", Fixture)
 
     TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted->setDocIdLimit(1000);
-    unsorted = Blueprint::optimize_and_sort(std::move(unsorted), true, opts);
+    unsorted = Blueprint::optimize_and_sort(std::move(unsorted));
     TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 

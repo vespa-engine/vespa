@@ -137,7 +137,7 @@ PostingListSearchContextT<DataT>::fillBitVector(const ExecuteInfo & exec_info)
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::fetchPostings(const ExecuteInfo & exec_info)
+PostingListSearchContextT<DataT>::fetchPostings(const ExecuteInfo & exec_info, bool strict)
 {
     // The following constant is derived after running parts of
     // the range search performance test with 10M documents on an Apple M1 Pro with 32 GB memory.
@@ -168,7 +168,7 @@ PostingListSearchContextT<DataT>::fetchPostings(const ExecuteInfo & exec_info)
     // The threshold for when to use array merging is therefore 0.0025 (0.08 / 32).
     constexpr float threshold_for_using_array = 0.0025;
     if (!_merger.merge_done() && _uniqueValues >= 2u && this->_dictionary.get_has_btree_dictionary()) {
-        if (exec_info.is_strict() || use_posting_lists_when_non_strict(exec_info)) {
+        if (strict || use_posting_lists_when_non_strict(exec_info)) {
             size_t sum = estimated_hits_in_range();
             //TODO Honour soft_doom and forward it to merge code
             if (sum < (_docIdLimit * threshold_for_using_array)) {

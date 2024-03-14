@@ -69,8 +69,9 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
         auto bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(ExecuteInfo::createForTest(strict));
-        auto sb = bp->createSearch(*md, strict);
+        bp->basic_plan(strict, 1000);
+        bp->fetchPostings(ExecuteInfo::FULL);        
+        auto sb = bp->createSearch(*md);
         return (dynamic_cast<WeightedSetTermSearch*>(sb.get()) != nullptr);
     }
 
@@ -84,8 +85,9 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, field_is_filter));
         auto bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(ExecuteInfo::createForTest(strict));
-        auto sb = bp->createSearch(*md, strict);
+        bp->basic_plan(strict, 1000);
+        bp->fetchPostings(ExecuteInfo::FULL);
+        auto sb = bp->createSearch(*md);
         sb->initFullRange();
         FakeResult result;
         for (uint32_t docId = 1; docId < 10; ++docId) {
@@ -333,7 +335,7 @@ struct VerifyMatchData {
         VerifyMatchData &vmd;
         MyBlueprint(VerifyMatchData &vmd_in, FieldSpecBase spec_in)
             : SimpleLeafBlueprint(spec_in), vmd(vmd_in) {}
-        [[nodiscard]] SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const override {
+        [[nodiscard]] SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override {
             EXPECT_EQ(tfmda.size(), 1u);
             EXPECT_TRUE(tfmda[0] != nullptr);
             if (vmd.child_tfmd == nullptr) {
@@ -347,8 +349,8 @@ struct VerifyMatchData {
         FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
             return default_flow_stats(docid_limit, 0, 0);
         }
-        [[nodiscard]] SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-            return create_default_filter(strict, constraint);
+        [[nodiscard]] SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+            return create_default_filter(constraint);
         }
     };
     size_t child_cnt = 0;
@@ -371,7 +373,12 @@ TEST(WeightedSetTermTest, require_that_children_get_a_common_yet_separate_term_f
     }
     blueprint.complete(estimate);
     auto match_data = layout.createMatchData();
-    auto search = blueprint.createSearch(*match_data, true);
+    blueprint.basic_plan(true, 1000);
+    {
+        Blueprint &bp = blueprint;
+        bp.fetchPostings(ExecuteInfo::FULL);
+    }
+    auto search = blueprint.createSearch(*match_data);
     auto top_tfmd = match_data->resolveTermField(top_handle);
     EXPECT_EQ(vmd.child_cnt, 5u);
     EXPECT_TRUE(vmd.child_tfmd != nullptr);
