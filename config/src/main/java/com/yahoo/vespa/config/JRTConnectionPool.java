@@ -87,7 +87,7 @@ public class JRTConnectionPool implements ConnectionPool {
         List<JRTConnection> sourceCandidates = getSources();
         sourceCandidates.remove(currentConnection);
         JRTConnection newConnection = pickNewConnectionRandomly(sourceCandidates);
-        log.log(Level.INFO, () -> poolName + ": Switching from " + currentConnection + " to " + newConnection);
+        log.log(Level.FINE, () -> poolName + ": Switching from " + currentConnection + " to " + newConnection);
         return currentConnection = newConnection;
     }
 

@@ -20,6 +20,7 @@ public class TimingValues {
     private long fixedDelay = 5000;
     private final Random rand;
 
+    // TODO: Document rationale for these values
     public TimingValues() {
         successTimeout = 600000;
         errorTimeout = 20000;
@@ -27,7 +28,6 @@ public class TimingValues {
         this.rand = new Random(System.currentTimeMillis());
     }
 
-    // TODO Should add nextConfigTimeout in all constructors
     public TimingValues(long successTimeout,
                         long errorTimeout,
                         long initialTimeout,

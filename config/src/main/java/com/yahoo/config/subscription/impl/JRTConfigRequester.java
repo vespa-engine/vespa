@@ -27,7 +27,6 @@ import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.INFO;
-import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -148,7 +147,11 @@ public class JRTConfigRequester implements RequestWaiter {
             log.log(INFO, () -> "Request failed: " + jrtReq.errorMessage() +
                     "\nConnection spec: " + connection);
         } else if (timeForLastLogWarning.isBefore(Instant.now().minus(delayBetweenWarnings))) {
-            log.log(WARNING, "Request failed: " + ErrorCode.getName(jrtReq.errorCode()) +
+            // Don't log a warning when failing and there are several config servers,
+            // some of them might be down or upgrading, which is fine
+            var level = connectionPool.getSize() > 1 ? FINE : WARNING;
+            log.log(level, () ->
+                    "Request failed: " + ErrorCode.getName(jrtReq.errorCode()) +
                     ". Connection spec: " + connection.getAddress() +
                     ", error message: " + jrtReq.errorMessage());
             timeForLastLogWarning = Instant.now();
