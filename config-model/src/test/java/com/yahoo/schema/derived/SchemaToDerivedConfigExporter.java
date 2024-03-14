@@ -41,12 +41,13 @@ public class SchemaToDerivedConfigExporter {
         var props = new TestProperties();
         var logger = new TestableDeployLogger();
         var builder = ApplicationBuilder.createFromDirectory(dirPath, new MockFileRegistry(), logger, props);
-        var derived = new DerivedConfiguration(builder.getSchema(null),
+        var derived = new DerivedConfiguration(
                 new DeployState.Builder().properties(props)
                         .deployLogger(logger)
                         .rankProfileRegistry(builder.getRankProfileRegistry())
                         .queryProfiles(builder.getQueryProfileRegistry())
-                        .build(), false);
+                        .build(),
+                builder.getSchema(null), SchemaInfo.IndexMode.INDEX);
         exportConfig(dirPath, derived, builder);
     }
 }

@@ -7,6 +7,7 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.DerivedConfiguration;
+import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
@@ -64,7 +65,7 @@ public class StreamingSearchCluster extends SearchCluster implements
         if ( ! schema.getName().equals(docTypeName))
             throw new IllegalArgumentException("Document type name '" + docTypeName +
                                                "' must be the same as the schema name '" + schema.getName() + "'");
-        add(new DocumentDatabase(this, docTypeName, new DerivedConfiguration(schema, deployState, true)));
+        add(new DocumentDatabase(this, docTypeName, new DerivedConfiguration(deployState, schema, SchemaInfo.IndexMode.STREAMING)));
     }
 
     protected void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
