@@ -388,7 +388,7 @@ public class DocumentDatabaseTestCase {
     @Test
     void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
         assertAttributesConfigIndependentOfMode("streaming", List.of("type1"),
-                List.of("test/search/cluster.test/type1"),
+                List.of("test/search/type1"),
                 Map.of("type1", List.of("f2")));
     }
 
