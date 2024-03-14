@@ -6,6 +6,5 @@ vespa_define_module(
     src/apps/su
 
     TESTS
-    src/tests/messages
     src/tests/configd
 )
