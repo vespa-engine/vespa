@@ -28,10 +28,10 @@ public class ComplexFieldsWithStructFieldAttributesValidator implements Validato
     public void validate(Context context) {
         List<SearchCluster> searchClusters = context.model().getSearchClusters();
         for (SearchCluster cluster : searchClusters) {
+            if (cluster.isStreaming()) continue;
+
             for (SchemaInfo spec : cluster.schemas().values()) {
-                if (spec.getIndexMode() == SchemaInfo.IndexMode.INDEX) {
-                    validateComplexFields(context, cluster.getClusterName(), spec.fullSchema(), context.deployState().getDeployLogger());
-                }
+                validateComplexFields(context, cluster.getClusterName(), spec.fullSchema(), context.deployState().getDeployLogger());
             }
         }
     }

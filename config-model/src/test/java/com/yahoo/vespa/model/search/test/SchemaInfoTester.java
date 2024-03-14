@@ -2,11 +2,13 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.document.DataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.derived.Summaries;
 import com.yahoo.schema.document.SDDocumentType;
+import com.yahoo.schema.document.SDField;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
@@ -25,7 +27,7 @@ public class SchemaInfoTester {
     }
 
     public String schemaInfoConfig(Schema schema) {
-        var schemaInfo = new SchemaInfo(schema, SchemaInfo.IndexMode.INDEX, new RankProfileRegistry(), new Summaries(schema, new DeployLoggerStub(), new TestProperties()));
+        var schemaInfo = new SchemaInfo(schema, new RankProfileRegistry(), new Summaries(schema, new DeployLoggerStub(), new TestProperties()));
         var schemaInfoConfigBuilder = new SchemaInfoConfig.Builder();
         schemaInfo.getConfig(schemaInfoConfigBuilder);
         var schemaInfoConfig = schemaInfoConfigBuilder.build();
