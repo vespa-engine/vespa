@@ -41,7 +41,7 @@ public class StreamingValidator implements Validator {
     private static void warnStreamingGramMatching(String cluster, Schema schema, DeployLogger logger) {
         for (ImmutableSDField sd : schema.allConcreteFields()) {
             if (sd.getMatching().getType() == MatchType.GRAM) {
-                logger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster + "', schema '" + schema.getName() +
+                logger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster + "', streaming schema '" + schema.getName() +
                                                             "', SD field '" + sd.getName() +
                                                             "': n-gram matching is not supported for streaming search.");
             }
@@ -68,23 +68,20 @@ public class StreamingValidator implements Validator {
             for (var fieldAttribute : sd.getAttributes().values()) {
                 if (fieldAttribute.hnswIndexParams().isPresent()) {
                     logger.logApplicationPackage(Level.WARNING,
-                            "For search cluster '" + cluster + "', schema '" + schema +
+                            "For search cluster '" + cluster + "', streaming schema '" + schema +
                                     "', SD field '" + sd.getName() +
                                     "': hnsw index is not relevant and not supported, ignoring setting");
                 }
             }
             return;
         }
-        logger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster +
-                                                    "', SD field '" + sd.getName() +
-                                                    "': 'attribute' has same match semantics as 'index'.");
     }
 
     private static void failStreamingDocumentReferences(String cluster, DerivedConfiguration derived, Context context) {
         for (Attribute attribute : derived.getAttributeFields().attributes()) {
             DataType dataType = attribute.getDataType();
             if (dataType instanceof NewDocumentReferenceDataType) {
-                String errorMessage = String.format("For search cluster '%s', schema '%s': Attribute '%s' has type '%s'. " +
+                String errorMessage = String.format("For search cluster '%s', streaming schema '%s': Attribute '%s' has type '%s'. " +
                                                     "Document references and imported fields are not allowed in streaming search.",
                                                     cluster, derived.getSchema().getName(), attribute.getName(), dataType.getName());
                 context.illegal(errorMessage);
