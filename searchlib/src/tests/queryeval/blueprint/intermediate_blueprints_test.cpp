@@ -20,6 +20,7 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/normalize_class_name.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -34,6 +35,7 @@ using vespalib::Slime;
 using vespalib::slime::Inspector;
 using vespalib::slime::SlimeInserter;
 using vespalib::make_string_short::fmt;
+using vespalib::normalize_class_name;
 using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
 
 vespalib::string strict_equiv_name = "search::queryeval::EquivImpl<true, search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char> >";
@@ -1143,7 +1145,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(ExecuteInfo::FALSE);
     SearchIterator::UP search = top_up->createSearch(*md, true);
-    EXPECT_EQUAL(strict_equiv_name, search->getClassName());
+    EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
@@ -1153,7 +1155,7 @@ TEST("require that children does not optimize when parents refuse them to") {
 
     md->resolveTermField(12)->tagAsNotNeeded();
     search = top_up->createSearch(*md, true);
-    EXPECT_EQUAL(strict_equiv_name, search->getClassName());
+    EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
@@ -1181,7 +1183,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(ExecuteInfo::FALSE);
     SearchIterator::UP search = top_up->createSearch(*md, true);
-    EXPECT_EQUAL(strict_equiv_name, search->getClassName());
+    EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::queryeval::StrictHeapOrSearch<search::queryeval::(anonymous namespace)::FullUnpack, vespalib::LeftArrayHeap, unsigned char>",
@@ -1190,7 +1192,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
 
     md->resolveTermField(2)->tagAsNotNeeded();
     search = top_up->createSearch(*md, true);
-    EXPECT_EQUAL(strict_equiv_name, search->getClassName());
+    EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::queryeval::StrictHeapOrSearch<search::queryeval::(anonymous namespace)::SelectiveUnpack, vespalib::LeftArrayHeap, unsigned char>",
@@ -1200,7 +1202,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     md->resolveTermField(1)->tagAsNotNeeded();
     md->resolveTermField(3)->tagAsNotNeeded();
     search = top_up->createSearch(*md, true);
-    EXPECT_EQUAL(strict_equiv_name, search->getClassName());
+    EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQUAL("search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char>",
