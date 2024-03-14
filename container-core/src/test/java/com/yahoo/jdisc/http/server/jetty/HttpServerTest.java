@@ -288,6 +288,19 @@ public class HttpServerTest {
     }
 
     @Test
+    void requireThatFormPostWithInvalidDataFailsWith400() throws Exception {
+        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
+        final ResponseValidator response =
+                driver.client().newPost("/status.html")
+                        .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                        .setContent("%!Foo=bar")
+                        .execute();
+        response.expectStatusCode(is(BAD_REQUEST))
+                .expectContent(containsString("Failed to parse form parameters"));
+        assertTrue(driver.close());
+    }
+
+    @Test
     void requireThatFormPostWithCharsetSpecifiedWorks() throws Exception {
         final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final String requestContent = generateContent('a', 30);
