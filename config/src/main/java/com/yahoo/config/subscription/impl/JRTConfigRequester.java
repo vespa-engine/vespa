@@ -14,10 +14,10 @@ import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.Trace;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -27,7 +27,6 @@ import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.INFO;
-import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -92,6 +91,7 @@ public class JRTConfigRequester implements RequestWaiter {
      * @param sub a subscription
      */
     public <T extends ConfigInstance> void request(JRTConfigSubscription<T> sub) {
+        Objects.requireNonNull(sub, "sub cannot be null");
         JRTClientConfigRequest req = JRTConfigRequestFactory.createFromSub(sub);
         doRequest(sub, req);
     }
@@ -113,20 +113,13 @@ public class JRTConfigRequester implements RequestWaiter {
     @SuppressWarnings("unchecked")
     @Override
     public void handleRequestDone(Request req) {
-        JRTConfigSubscription<ConfigInstance> sub = null;
+        RequestContext context = (RequestContext) req.getContext();
+        JRTConfigSubscription<ConfigInstance> sub = context.sub;
         try {
-            RequestContext context = (RequestContext) req.getContext();
-            sub = context.sub;
             doHandle(sub, context.jrtReq, context.connection);
         } catch (RuntimeException e) {
-            if (sub != null) {
-                // Sets this field, it will get thrown from the user thread
-                sub.setException(e);
-            } else {
-                // Very unlikely
-                log.log(SEVERE, "Failed to get subscription object from JRT config callback: " +
-                        Exceptions.toMessageString(e));
-            }
+            // Sets this field, it will get thrown from the user thread
+            sub.setException(e);
         }
     }
 
@@ -137,7 +130,7 @@ public class JRTConfigRequester implements RequestWaiter {
         log.log(FINE, () -> "Response " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
-        log.log(FINEST, () -> trace.toString());
+        log.log(FINEST, trace::toString);
         if (validResponse)
             handleOKRequest(jrtReq, sub);
         else
@@ -154,7 +147,11 @@ public class JRTConfigRequester implements RequestWaiter {
             log.log(INFO, () -> "Request failed: " + jrtReq.errorMessage() +
                     "\nConnection spec: " + connection);
         } else if (timeForLastLogWarning.isBefore(Instant.now().minus(delayBetweenWarnings))) {
-            log.log(WARNING, "Request failed: " + ErrorCode.getName(jrtReq.errorCode()) +
+            // Don't log a warning when failing and there are several config servers,
+            // some of them might be down or upgrading, which is fine
+            var level = connectionPool.getSize() > 1 ? FINE : WARNING;
+            log.log(level, () ->
+                    "Request failed: " + ErrorCode.getName(jrtReq.errorCode()) +
                     ". Connection spec: " + connection.getAddress() +
                     ", error message: " + jrtReq.errorMessage());
             timeForLastLogWarning = Instant.now();
@@ -220,7 +217,7 @@ public class JRTConfigRequester implements RequestWaiter {
     private void scheduleNextRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<?> sub, long delay, long timeout) {
         long delayBeforeSendingRequest = (delay < 0) ? 0 : delay;
         JRTClientConfigRequest jrtReqNew = jrtReq.nextRequest(timeout);
-        log.log(FINEST, () -> timingValues.toString());
+        log.log(FINEST, timingValues::toString);
         log.log(FINE, () -> "Scheduling new request " + delayBeforeSendingRequest + " millis from now for " + jrtReqNew.getConfigKey());
         scheduler.schedule(new GetConfigTask(jrtReqNew, sub), delayBeforeSendingRequest, TimeUnit.MILLISECONDS);
     }
@@ -234,7 +231,7 @@ public class JRTConfigRequester implements RequestWaiter {
 
         GetConfigTask(JRTClientConfigRequest jrtReq, JRTConfigSubscription<?> sub) {
             this.jrtReq = jrtReq;
-            this.sub = sub;
+            this.sub = Objects.requireNonNull(sub, "sub cannot be null");
         }
 
         public void run() {
@@ -256,7 +253,7 @@ public class JRTConfigRequester implements RequestWaiter {
         final Connection connection;
 
         private RequestContext(JRTConfigSubscription sub, JRTClientConfigRequest jrtReq, Connection connection) {
-            this.sub = sub;
+            this.sub = Objects.requireNonNull(sub, "sub cannot be null");
             this.jrtReq = jrtReq;
             this.connection = connection;
         }
