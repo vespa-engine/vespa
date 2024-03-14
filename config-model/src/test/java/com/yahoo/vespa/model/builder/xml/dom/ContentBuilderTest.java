@@ -196,11 +196,10 @@ public class ContentBuilderTest extends DomBuilderTest {
         ContentSearchCluster s;
 
         s = cluster.getSearch();
-        assertFalse(s.hasIndexedCluster());
+        assertTrue(s.hasIndexedCluster());
         assertEquals(1, s.getClusters().size());
-        assertNull(s.getIndexed());
-        SearchCluster sc = s.getClusters().get(musicClusterId + ".music");
-        assertEquals(musicClusterId + ".music", sc.getClusterName());
+        SearchCluster sc = s.getClusters().get(musicClusterId);
+        assertEquals(musicClusterId, sc.getClusterName());
         assertEquals(musicClusterId, sc.getStorageRouteSpec());
 
         assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
@@ -236,24 +235,11 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "      <node hostalias=\"mockhost\" distribution-key=\"0\"/>" +
                         "    </group>" +
                         "</content>");
-        ContentSearchCluster s;
-
-        s = cluster.getSearch();
-        assertFalse(s.hasIndexedCluster());
-        assertEquals(2, s.getClusters().size());
-        assertNull(s.getIndexed());
-        {
-            String id = musicClusterId + ".book";
-            SearchCluster sc = s.getClusters().get(id);
-            assertEquals(id, sc.getClusterName());
-            assertEquals(musicClusterId, sc.getStorageRouteSpec());
-        }
-        {
-            String id = musicClusterId + ".music";
-            SearchCluster sc = s.getClusters().get(id);
-            assertEquals(id, sc.getClusterName());
-            assertEquals(musicClusterId, sc.getStorageRouteSpec());
-        }
+        ContentSearchCluster s = cluster.getSearch();
+        assertTrue(s.hasIndexedCluster());
+        assertEquals(2, s.getIndexed().getDocumentDbs().size());
+        assertTrue(s.getIndexed().hasDocumentDB("book"));
+        assertTrue(s.getIndexed().hasDocumentDB("music"));
 
         assertTrue(cluster.getPersistence() instanceof ProtonEngine.Factory);
         assertEquals(1, cluster.getStorageCluster().getChildren().size());
@@ -362,9 +348,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
                         "    </group>" +
                         "</content>", new TestProperties().setEnvironmentVariables(List.of("MY_1_ENV=xyz abc", "MY_2_ENV=2")));
-        ContentSearchCluster s;
-
-        s = b.getSearch();
+        ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
         assertEquals(1, b.getStorageCluster().getChildren().size());
