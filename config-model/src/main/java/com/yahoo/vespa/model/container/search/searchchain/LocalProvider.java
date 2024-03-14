@@ -73,7 +73,7 @@ public class LocalProvider extends Provider implements
 
     //TODO: ugly, restructure this
     private Set<ComponentSpecification> disableStemmingIfStreaming(Set<ComponentSpecification> searcherReferences) {
-        if (!searchCluster.isStreaming()) {
+        if (searchCluster.hasIndexed()) {
             return searcherReferences;
         } else {
             Set<ComponentSpecification> filteredSearcherReferences = new LinkedHashSet<>(searcherReferences);

@@ -285,7 +285,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         boolean hasStreaming = false;
         boolean hasIndexed = false;
         for (var cluster : clusters.values()) {
-            if (cluster.isStreaming())
+            if (cluster.hasStreaming())
                 hasStreaming = true;
             else
                 hasIndexed = true;
