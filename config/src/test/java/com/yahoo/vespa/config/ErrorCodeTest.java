@@ -29,6 +29,6 @@ public class ErrorCodeTest {
         assertThat(ErrorCode.getName(ErrorCode.INCONSISTENT_CONFIG_MD5), is("INCONSISTENT_CONFIG_MD5"));
         assertThat(ErrorCode.getName(ErrorCode.ILLEGAL_CLIENT_HOSTNAME), is("ILLEGAL_CLIENT_HOSTNAME"));
 
-        assertThat(ErrorCode.getName(12345), is("Unknown error"));
+        assertThat(ErrorCode.getName(12345), is("Unknown error (error code 12345)"));
     }
 }

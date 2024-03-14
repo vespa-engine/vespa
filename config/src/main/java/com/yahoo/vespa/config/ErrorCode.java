@@ -65,7 +65,7 @@ public final class ErrorCode {
             case INCONSISTENT_CONFIG_MD5:    return "INCONSISTENT_CONFIG_MD5";
             case UNKNOWN_VESPA_VERSION:      return "UNKNOWN_VESPA_VERSION";
             case INCOMPATIBLE_VESPA_VERSION: return "INCOMPATIBLE_VESPA_VERSION";
-            default:                         return "Unknown error";
+            default:                         return "Unknown error (error code " + error + ")";
         }
     }
 
