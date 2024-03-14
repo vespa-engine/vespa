@@ -26,7 +26,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
 import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
 
@@ -39,6 +42,8 @@ import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMP
  * @author bakksjo
  */
 class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel, DelegatedRequestHandler {
+
+    private static final Logger log = Logger.getLogger(FormPostRequestHandler.class.getName());
 
     private final ByteArrayOutputStream accumulatedRequestContent = new ByteArrayOutputStream();
     private final RequestHandler delegateHandler;
@@ -86,7 +91,14 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
             byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
             String content = new String(requestContentBytes, contentCharset);
             completionHandler.completed();
-            Map<String, List<String>> parameterMap = parseFormParameters(content);
+            Map<String, List<String>> parameterMap;
+            try {
+                parameterMap = parseFormParameters(content);
+            } catch (IllegalArgumentException e) {
+                // Log for now until this is solved properly
+                log.log(Level.INFO, "Failed to parse form parameters: %s".formatted(e.getMessage()));
+                throw new RequestException(BAD_REQUEST, "Failed to parse form parameters", e);
+            }
             mergeParameters(parameterMap, request.parameters());
             ContentChannel contentChannel = delegateHandler.handleRequest(request, responseHandler);
             if (contentChannel != null) {
