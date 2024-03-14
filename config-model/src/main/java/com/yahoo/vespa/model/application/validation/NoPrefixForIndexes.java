@@ -8,7 +8,6 @@ import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.MatchAlgorithm;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.DocumentDatabase;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.Map;
@@ -23,10 +22,9 @@ public class NoPrefixForIndexes implements Validator {
     @Override
     public void validate(Context context) {
         for (SearchCluster cluster : context.model().getSearchClusters()) {
-            if (cluster instanceof IndexedSearchCluster) {
-                IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
-                for (DocumentDatabase docDb : sc.getDocumentDbs()) {
-                    DerivedConfiguration sdConfig = docDb.getDerivedConfiguration();
+            for (DocumentDatabase docDb : cluster.getDocumentDbs()) {
+                DerivedConfiguration sdConfig = docDb.getDerivedConfiguration();
+                if ( ! sdConfig.isStreaming() ) {
                     Schema schema = sdConfig.getSchema();
                     for (ImmutableSDField field : schema.allConcreteFields()) {
                         if (field.doesIndexing()) {
