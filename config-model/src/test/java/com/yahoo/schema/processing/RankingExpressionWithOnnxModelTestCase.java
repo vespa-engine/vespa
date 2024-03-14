@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.DocumentDatabase;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +56,7 @@ public class RankingExpressionWithOnnxModelTestCase {
     }
 
     private void assertGeneratedConfig(VespaModel vespaModel) {
-        DocumentDatabase db = ((IndexedSearchCluster)vespaModel.getSearchClusters().get(0)).getDocumentDbs().get(0);
+        DocumentDatabase db = vespaModel.getSearchClusters().get(0).getDocumentDbs().get(0);
 
         RankingConstantsConfig.Builder rankingConstantsConfigBuilder = new RankingConstantsConfig.Builder();
         db.getConfig(rankingConstantsConfigBuilder);
@@ -128,7 +127,7 @@ public class RankingExpressionWithOnnxModelTestCase {
     }
 
     private void assertTransformedFeature(VespaModel model) {
-        DocumentDatabase db = ((IndexedSearchCluster)model.getSearchClusters().get(0)).getDocumentDbs().get(0);
+        DocumentDatabase db = model.getSearchClusters().get(0).getDocumentDbs().get(0);
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         ((RankProfilesConfig.Producer) db).getConfig(builder);
         RankProfilesConfig config = new RankProfilesConfig(builder);
