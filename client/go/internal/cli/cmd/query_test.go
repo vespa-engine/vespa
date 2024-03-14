@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"net/http"
 	"strconv"
 	"testing"
 
@@ -29,6 +30,16 @@ func TestQueryVerbose(t *testing.T) {
 	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "-v", "select from sources * where title contains 'foo'"))
 	assert.Equal(t, "curl 'http://127.0.0.1:8080/search/?timeout=10s&yql=select+from+sources+%2A+where+title+contains+%27foo%27'\n", stderr.String())
 	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", stdout.String())
+}
+
+func TestQueryUnformatted(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, "{\"query\":\"result\"}")
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "--format=plain", "query", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "{\"query\":\"result\"}\n", stdout.String())
 }
 
 func TestQueryNonJsonResult(t *testing.T) {
@@ -67,6 +78,66 @@ func TestIllegalQuery(t *testing.T) {
 
 func TestServerError(t *testing.T) {
 	assertQueryServiceError(t, 501, "server error message")
+}
+
+func TestStreamingQuery(t *testing.T) {
+	body := `
+event: token
+data: {"token": "The"}
+
+event: token
+data: {"token": "Manhattan"}
+
+event: token
+data: {"token": "Project"}
+
+event: end
+`
+	assertStreamingQuery(t, "The Manhattan Project\n", body)
+	assertStreamingQuery(t, body, body, "--format=plain")
+
+	bodyWithError := `
+event: token
+data: {"token": "The"}
+
+event: token
+data: Manhattan
+
+event: error
+data: {"message": "something went wrong"}
+`
+	assertStreamingQueryErr(t, "The Manhattan\n", "Error: unknown event type: \"error\"\nHint: Event parsing can be disabled with --format=plain\n", bodyWithError)
+	assertStreamingQuery(t, bodyWithError, bodyWithError, "--format=plain")
+}
+
+func assertStreamingQuery(t *testing.T, expectedOutput, body string, args ...string) {
+	t.Helper()
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "text/event-stream")
+	response.Body = []byte(body)
+	client.NextResponse(response)
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run(append(args, "-t", "http://127.0.0.1:8080", "query", "select something")...))
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, expectedOutput, stdout.String())
+}
+
+func assertStreamingQueryErr(t *testing.T, expectedOut, expectedErr, body string, args ...string) {
+	t.Helper()
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "text/event-stream")
+	response.Body = []byte(body)
+	client.NextResponse(response)
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.NotNil(t, cli.Run(append(args, "-t", "http://127.0.0.1:8080", "query", "select something")...))
+	assert.Equal(t, expectedErr, stderr.String())
+	assert.Equal(t, expectedOut, stdout.String())
 }
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
