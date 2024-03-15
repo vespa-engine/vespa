@@ -18,9 +18,8 @@ WeightedSetTerm::WeightedSetTerm(std::unique_ptr<QueryNodeResultBase> result_bas
 WeightedSetTerm::~WeightedSetTerm() = default;
 
 void
-WeightedSetTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment& index_env)
+WeightedSetTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&)
 {
-    (void) index_env;
     vespalib::hash_map<uint32_t,std::vector<double>> scores;
     HitList hl_store;
     for (const auto& term : _terms) {

@@ -34,9 +34,8 @@ WandTerm::evaluate() const
 }
 
 void
-WandTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment& index_env)
+WandTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&)
 {
-    (void) index_env;
     Scores scores;
     build_scores(scores);
     unpack_scores(scores, _score_threshold, docid, td, match_data);

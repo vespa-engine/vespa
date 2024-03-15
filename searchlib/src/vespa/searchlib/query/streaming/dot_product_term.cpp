@@ -51,9 +51,8 @@ DotProductTerm::unpack_scores(Scores& scores, std::optional<double> score_thresh
 }
 
 void
-DotProductTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment& index_env)
+DotProductTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&)
 {
-    (void) index_env;
     Scores scores;
     build_scores(scores);
     unpack_scores(scores, std::nullopt, docid, td, match_data);
