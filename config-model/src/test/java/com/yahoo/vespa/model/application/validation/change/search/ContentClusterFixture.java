@@ -44,7 +44,7 @@ public abstract class ContentClusterFixture {
     }
 
     protected DocumentDatabase currentDb() {
-        return currentCluster.getSearch().getIndexed().getDocumentDbs().get(0);
+        return currentCluster.getSearch().getSearchCluster().getDocumentDbs().get(0);
     }
 
     protected NewDocumentType currentDocType() {
@@ -52,7 +52,7 @@ public abstract class ContentClusterFixture {
     }
 
     protected DocumentDatabase nextDb() {
-        return nextCluster.getSearch().getIndexed().getDocumentDbs().get(0);
+        return nextCluster.getSearch().getSearchCluster().getDocumentDbs().get(0);
     }
 
     protected NewDocumentType nextDocType() {

@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.function.Predicate;
 
 /**
@@ -51,11 +50,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final boolean flushOnShutdown;
     private final Boolean syncTransactionLog;
 
-    /** If this is set up for streaming search, it is modelled as one search cluster per search definition */
-    private final Map<String, SearchCluster> clusters = new TreeMap<>();
-
     /** The single, indexed search cluster this sets up (supporting multiple document types), or null if none */
-    private IndexedSearchCluster indexedCluster;
+    private IndexedSearchCluster searchCluster;
     private final IndexingDocproc indexingDocproc;
     private Redundancy redundancy;
 
@@ -135,7 +131,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                 search.setVisibilityDelay(visibilityDelay);
             }
 
-            IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0, search, deployState.featureFlags());
+            var isc = new IndexedSearchCluster(search, clusterName, 0, search, deployState.featureFlags());
             search.addSearchCluster(deployState, isc, getQueryTimeout(clusterElem), docElem.subElements("document"));
         }
     }
@@ -175,12 +171,12 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     public void setVisibilityDelay(double delay) {
         this.visibilityDelay=delay;
-        if (hasIndexedCluster()) {
-            indexedCluster.setVisibilityDelay(delay);
+        if (searchCluster != null) {
+            searchCluster.setVisibilityDelay(delay);
         }
     }
 
-    private void addSearchCluster(DeployState deployState, SearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
+    private void addSearchCluster(DeployState deployState, IndexedSearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
         addSchemas(deployState, documentDefs, cluster);
 
         if (queryTimeout != null) {
@@ -206,17 +202,11 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         }
     }
 
-    private void addCluster(SearchCluster sc) {
-        if (clusters.containsKey(sc.getClusterName())) {
-            throw new IllegalArgumentException("Duplicate cluster '" + sc.getClusterName() + "'");
+    private void addCluster(IndexedSearchCluster sc) {
+        if (searchCluster != null) {
+            throw new IllegalArgumentException("Duplicate indexed cluster '" + searchCluster.getClusterName() + "'");
         }
-        if (sc instanceof IndexedSearchCluster) {
-            if (indexedCluster != null) {
-                throw new IllegalArgumentException("Duplicate indexed cluster '" + indexedCluster.getClusterName() + "'");
-            }
-            indexedCluster = (IndexedSearchCluster)sc;
-        }
-        clusters.put(sc.getClusterName(), sc);
+        searchCluster = sc;
     }
 
     /**
@@ -226,26 +216,26 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
      *         with indexing, null if it has both or none.
      */
     public Boolean isStreaming() {
-        if (indexedCluster == null) return false;
-        boolean hasStreaming = indexedCluster.hasStreaming();
-        if (indexedCluster.hasIndexed() == hasStreaming) return null;
+        if (searchCluster == null) return false;
+        boolean hasStreaming = searchCluster.hasStreaming();
+        if (searchCluster.hasIndexed() == hasStreaming) return null;
         return hasStreaming;
     }
 
     public boolean hasStreaming() {
-        return (indexedCluster != null) && indexedCluster.hasStreaming();
+        return (searchCluster != null) && searchCluster.hasStreaming();
     }
 
     public boolean hasIndexed() {
-        return (indexedCluster != null) && indexedCluster.hasIndexed();
+        return (searchCluster != null) && searchCluster.hasIndexed();
     }
 
     public List<SearchNode> getSearchNodes() {
-        return hasIndexedCluster() ? getIndexed().getSearchNodes() : nonIndexed;
+        return (searchCluster != null) ? searchCluster.getSearchNodes() : nonIndexed;
     }
 
     public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        TreeConfigProducer<AnyConfigProducer> parent = hasIndexedCluster() ? getIndexed() : this;
+        TreeConfigProducer<AnyConfigProducer> parent = (searchCluster != null) ? searchCluster : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;
@@ -267,8 +257,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
         searchNode.setTls(tls);
-        if (hasIndexedCluster()) {
-            getIndexed().addSearcher(searchNode);
+        if (searchCluster != null) {
+            searchCluster.addSearcher(searchNode);
         } else {
             nonIndexed.add(searchNode);
         }
@@ -295,7 +285,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     }
 
     public boolean usesHierarchicDistribution() {
-        return indexedCluster != null && groupToSpecMap.size() > 1;
+        return searchCluster != null && groupToSpecMap.size() > 1;
     }
 
     public void handleRedundancy(Redundancy redundancy) {
@@ -313,14 +303,14 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     }
 
     private boolean hasIndexingModeStreaming(NewDocumentType type) {
-        if (indexedCluster == null) return false;
-        var schemaInfo = indexedCluster.schemas().get(type.getName());
+        if (searchCluster == null) return false;
+        var schemaInfo = searchCluster.schemas().get(type.getName());
         return (schemaInfo != null) && (schemaInfo.getIndexMode() == SchemaInfo.IndexMode.STREAMING);
     }
 
     private boolean hasIndexingModeIndexed(NewDocumentType type) {
-        if (indexedCluster == null) return false;
-        var schemaInfo = indexedCluster.schemas().get(type.getName());
+        if (searchCluster == null) return false;
+        var schemaInfo = searchCluster.schemas().get(type.getName());
         return (schemaInfo != null) && (schemaInfo.getIndexMode() == SchemaInfo.IndexMode.INDEX);
     }
 
@@ -343,10 +333,10 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedSchema = true;
-                indexedCluster.fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                searchCluster.fillDocumentDBConfig(type.getFullName().getName(), ddbB);
                 ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STREAMING);
             } else if (hasIndexingModeIndexed(type)) {
-                indexedCluster.fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                searchCluster.fillDocumentDBConfig(type.getFullName().getName(), ddbB);
             } else {
                 hasAnyNonIndexedSchema = true;
                 ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STORE_ONLY);
@@ -400,19 +390,19 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     @Override
     public void getConfig(DispatchNodesConfig.Builder builder) {
-        if (hasIndexedCluster()) {
-            getIndexed().getConfig(builder);
+        if (searchCluster != null) {
+            searchCluster.getConfig(builder);
         }
     }
 
     @Override
     public void getConfig(DispatchConfig.Builder builder) {
-        if (hasIndexedCluster()) {
-            getIndexed().getConfig(builder);
+        if (searchCluster != null) {
+            searchCluster.getConfig(builder);
         }
     }
-    public IndexedSearchCluster getIndexed() { return indexedCluster; }
-    public boolean hasIndexedCluster()       { return indexedCluster != null; }
+    public IndexedSearchCluster getSearchCluster() { return searchCluster; }
+    public boolean hasSearchCluster()       { return searchCluster != null; }
     public IndexingDocproc getIndexingDocproc() { return indexingDocproc; }
     public String getClusterName() { return clusterName; }
 

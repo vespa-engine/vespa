@@ -136,8 +136,9 @@ public class Content extends ConfigModel {
     public static List<SearchCluster> getSearchClusters(ConfigModelRepo pc) {
         List<SearchCluster> clusters = new ArrayList<>();
         for (ContentCluster c : getContentClusters(pc)) {
-            if (c.getSearch().hasIndexedCluster()) {
-                clusters.add(c.getSearch().getIndexed());
+            SearchCluster sc = c.getSearch().getSearchCluster();
+            if (sc != null) {
+                clusters.add(sc);
             }
         }
         return clusters;
