@@ -55,7 +55,7 @@ public class GroupingValidator extends Searcher {
         var searchCluster = qrsConfig.searchcluster(clusterId);
         QrSearchersConfig.Searchcluster.Indexingmode.Enum indexingMode = searchCluster.indexingmode();
         enabled = (indexingMode != QrSearchersConfig.Searchcluster.Indexingmode.STREAMING);
-        clusterName = enabled ? searchCluster.name() : null;
+        clusterName = searchCluster.name();
         for (AttributesConfig.Attribute attr : attributesConfig.attribute()) {
             attributes.put(attr.name(), attr);
         }
@@ -97,8 +97,7 @@ public class GroupingValidator extends Searcher {
 
         @Override
         public void visitExpression(GroupingExpression exp) {
-            if (exp instanceof AttributeMapLookupValue) {
-                AttributeMapLookupValue mapLookup = (AttributeMapLookupValue) exp;
+            if (exp instanceof AttributeMapLookupValue mapLookup) {
                 verifyHasAttribute(mapLookup.getKeyAttribute());
                 verifyHasAttribute(mapLookup.getValueAttribute());
                 if (mapLookup.hasKeySourceAttribute()) {
