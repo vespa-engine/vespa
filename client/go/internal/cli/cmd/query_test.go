@@ -106,7 +106,12 @@ data: Manhattan
 event: error
 data: {"message": "something went wrong"}
 `
-	assertStreamingQueryErr(t, "The Manhattan\n", "Error: unknown event type: \"error\"\nHint: Event parsing can be disabled with --format=plain\n", bodyWithError)
+	assertStreamingQuery(t, `The Manhattan
+event: error
+data: {
+    "message": "something went wrong"
+}
+`, bodyWithError)
 	assertStreamingQuery(t, bodyWithError, bodyWithError, "--format=plain")
 }
 

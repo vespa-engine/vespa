@@ -170,7 +170,8 @@ func printResponseBody(body io.Reader, options printOptions, cli *CLI) error {
 				if writingLine {
 					fmt.Fprintln(cli.Stdout)
 				}
-				return errHint(fmt.Errorf("unknown event type: %q", event.Name), "Event parsing can be disabled with --format=plain")
+				event.Data = ioutil.StringToJSON(event.Data) // Optimistically pretty-print JSON
+				fmt.Fprint(cli.Stdout, event.String())
 			} else {
 				fmt.Fprintln(cli.Stdout)
 				break

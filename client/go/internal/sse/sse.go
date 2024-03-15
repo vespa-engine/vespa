@@ -83,7 +83,30 @@ func (d *Decoder) Decode() (*Event, error) {
 }
 
 // NewDecoder creates a new Decoder that reads from r.
-func NewDecoder(r io.Reader) *Decoder { return &Decoder{scanner: bufio.NewScanner(r)} }
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{scanner: bufio.NewScanner(r)}
+}
 
 // IsEnd returns whether this event indicates that the stream has ended.
 func (e Event) IsEnd() bool { return e.Name == "end" }
+
+// String returns the string representation of event e.
+func (e Event) String() string {
+	var sb strings.Builder
+	if e.Name != "" {
+		sb.WriteString("event: ")
+		sb.WriteString(e.Name)
+		sb.WriteString("\n")
+	}
+	if e.ID != "" {
+		sb.WriteString("id: ")
+		sb.WriteString(e.ID)
+		sb.WriteString("\n")
+	}
+	if e.Data != "" {
+		sb.WriteString("data: ")
+		sb.WriteString(e.Data)
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}

@@ -66,6 +66,9 @@ func ReaderToJSON(reader io.Reader) string {
 	return prettyJSON.String()
 }
 
+// StringToJSON returns string s as indented JSON.
+func StringToJSON(s string) string { return ReaderToJSON(strings.NewReader(s)) }
+
 // AtomicWriteFile atomically writes data to filename.
 func AtomicWriteFile(filename string, data []byte) error {
 	dir := filepath.Dir(filename)

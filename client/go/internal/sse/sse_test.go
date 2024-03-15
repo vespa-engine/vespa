@@ -60,6 +60,19 @@ bad: field
 	assertDecodeErrString(`invalid field name "bad": last read "bad: field"`, dec, t)
 }
 
+func TestString(t *testing.T) {
+	assertString(t, "event: foo\ndata: bar\n", Event{Name: "foo", Data: "bar"})
+	assertString(t, "event: foo\nid: 42\ndata: bar\n", Event{Name: "foo", ID: "42", Data: "bar"})
+}
+
+func assertString(t *testing.T, want string, event Event) {
+	t.Helper()
+	got := event.String()
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func assertDecode(want *Event, dec *Decoder, t *testing.T) {
 	t.Helper()
 	got, err := dec.Decode()
