@@ -28,11 +28,14 @@ func newQueryCmd(cli *CLI) *cobra.Command {
 		queryTimeoutSecs int
 		waitSecs         int
 		format           string
+		headers          []string
 	)
 	cmd := &cobra.Command{
-		Use:     "query query-parameters",
-		Short:   "Issue a query to Vespa",
-		Example: `$ vespa query "yql=select * from music where album contains 'head'" hits=5`,
+		Use:   "query query-parameters",
+		Short: "Issue a query to Vespa",
+		Example: `$ vespa query "yql=select * from music where album contains 'head'" hits=5
+$ vespa query --format=plain "yql=select * from music where album contains 'head'" hits=5
+$ vespa query --header="X-First-Name: Joe" "yql=select * from music where album contains 'head'" hits=5`,
 		Long: `Issue a query to Vespa.
 
 Any parameter from https://docs.vespa.ai/en/reference/query-api-reference.html
@@ -42,11 +45,12 @@ can be set by the syntax [parameter-name]=[value].`,
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return query(cli, args, queryTimeoutSecs, waitSecs, printCurl, format)
+			return query(cli, args, queryTimeoutSecs, waitSecs, printCurl, format, headers)
 		},
 	}
-	cmd.PersistentFlags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
-	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (no formatting)")
+	cmd.Flags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
+	cmd.Flags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (no formatting)")
+	cmd.Flags().StringSliceVarP(&headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
 	cmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
@@ -63,7 +67,21 @@ func printCurl(stderr io.Writer, url string, service *vespa.Service) error {
 	return err
 }
 
-func query(cli *CLI, arguments []string, timeoutSecs, waitSecs int, curl bool, format string) error {
+func parseHeaders(headers []string) (http.Header, error) {
+	h := make(http.Header)
+	for _, header := range headers {
+		kv := strings.SplitN(header, ":", 2)
+		if len(kv) < 2 {
+			return nil, fmt.Errorf("invalid header %q: missing colon separator", header)
+		}
+		k := kv[0]
+		v := strings.TrimSpace(kv[1])
+		h.Add(k, v)
+	}
+	return h, nil
+}
+
+func query(cli *CLI, arguments []string, timeoutSecs, waitSecs int, curl bool, format string, headers []string) error {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
@@ -100,7 +118,11 @@ func query(cli *CLI, arguments []string, timeoutSecs, waitSecs int, curl bool, f
 			return err
 		}
 	}
-	response, err := service.Do(&http.Request{URL: url}, deadline+time.Second) // Slightly longer than query timeout
+	header, err := parseHeaders(headers)
+	if err != nil {
+		return err
+	}
+	response, err := service.Do(&http.Request{Header: header, URL: url}, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
