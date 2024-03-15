@@ -232,6 +232,14 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         return hasStreaming;
     }
 
+    public boolean hasStreaming() {
+        return (indexedCluster != null) && indexedCluster.hasStreaming();
+    }
+
+    public boolean hasIndexed() {
+        return (indexedCluster != null) && indexedCluster.hasIndexed();
+    }
+
     public List<SearchNode> getSearchNodes() {
         return hasIndexedCluster() ? getIndexed().getSearchNodes() : nonIndexed;
     }
