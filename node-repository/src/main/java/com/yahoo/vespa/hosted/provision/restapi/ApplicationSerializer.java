@@ -79,9 +79,7 @@ public class ApplicationSerializer {
             toSlime(cluster.groupSize(), clusterObject.setObject("groupSize"));
         toSlime(currentResources, clusterObject.setObject("current"));
         if (cluster.shouldSuggestResources(currentResources)) {
-            toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
             toSlime(cluster.suggestions(), clusterObject.setArray("suggestions"));
-
         }
         toSlime(cluster.target(), clusterObject.setObject("target"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));

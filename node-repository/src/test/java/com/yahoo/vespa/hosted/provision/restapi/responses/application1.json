@@ -45,43 +45,6 @@
           "architecture":"x86_64"
         }
       },
-      "suggested" : {
-        "status" : "unavailable",
-        "description" : "",
-        "resources" : {
-          "nodes": 6,
-          "groups": 2,
-          "resources": {
-            "vcpu": 3.0,
-            "memoryGb": 20.0,
-            "diskGb": 100.0,
-            "bandwidthGbps": 1.0,
-            "diskSpeed": "fast",
-            "storageType": "any",
-            "architecture": "any"
-          }
-        },
-        "at" : 123,
-        "peak" : {
-          "cpu" : 0.0,
-          "memory" : 0.0,
-          "disk" : 0.0,
-          "gpu": 0.0,
-          "gpuMemory": 0.0
-        },
-        "ideal" : {
-          "cpu" : 0.0,
-          "memory" : 0.0,
-          "disk" : 0.0,
-          "gpu": 0.0,
-          "gpuMemory": 0.0
-        },
-        "metrics" : {
-          "queryRate" : 0.0,
-          "growthRateHeadroom" : 0.0,
-          "cpuCostPerQuery" : 0.0
-        }
-      },
       "suggestions": [
         {
           "at": 123,
