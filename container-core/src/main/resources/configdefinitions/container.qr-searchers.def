@@ -23,10 +23,6 @@ com.yahoo.prelude.searcher.JuniperSearcher.defaultdoctype string default=""
 
 com.yahoo.prelude.searcher.XMLStringSearcher.source string default=""
 
-## Default docsum class the QR server should ask the backend to
-## use for representing hints as default.
-com.yahoo.prelude.fastsearch.IndexedBackend.docsum.defaultclass string default=""
-
 com.yahoo.prelude.querytransform.PhrasingSearcher.automatonfile string default=""
 com.yahoo.prelude.querytransform.NonPhrasingSearcher.automatonfile string default=""
 com.yahoo.prelude.querytransform.TermReplacingSearcher.termlist[] string

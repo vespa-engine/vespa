@@ -8,7 +8,6 @@ import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -45,17 +44,12 @@ public class GroupingValidator extends Searcher {
     /**
      * Constructs a new instance of this searcher with the given component id and config.
      *
-     * @param qrsConfig     The shared config for all searchers.
      * @param clusterConfig The config for the cluster that this searcher is deployed for.
      */
     @Inject
-    public GroupingValidator(QrSearchersConfig qrsConfig, ClusterConfig clusterConfig,
-                             AttributesConfig attributesConfig) {
-        int clusterId = clusterConfig.clusterId();
-        var searchCluster = qrsConfig.searchcluster(clusterId);
-        QrSearchersConfig.Searchcluster.Indexingmode.Enum indexingMode = searchCluster.indexingmode();
-        enabled = (indexingMode != QrSearchersConfig.Searchcluster.Indexingmode.STREAMING);
-        clusterName = searchCluster.name();
+    public GroupingValidator(ClusterConfig clusterConfig, AttributesConfig attributesConfig) {
+        enabled = (clusterConfig.indexMode() != ClusterConfig.IndexMode.Enum.STREAMING);
+        clusterName = clusterConfig.clusterName();
         for (AttributesConfig.Attribute attr : attributesConfig.attribute()) {
             attributes.put(attr.name(), attr);
         }

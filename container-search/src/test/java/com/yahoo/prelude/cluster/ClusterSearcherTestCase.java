@@ -488,7 +488,6 @@ public class ClusterSearcherTestCase {
 
         return new ClusterSearcher(new ComponentId("test-id"),
                                    new InThreadExecutorService(),
-                                   qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
                                    new SchemaInfo(List.of(schema.build()), List.of()),

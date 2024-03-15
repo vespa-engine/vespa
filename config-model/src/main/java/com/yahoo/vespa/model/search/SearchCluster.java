@@ -7,6 +7,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.schema.DocumentOnlySchema;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.DerivedConfiguration;
+import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.AttributesConfig;
@@ -215,6 +216,30 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     public void getConfig(AttributesConfig.Builder builder) {
         new Join(documentDbs.values()).getConfig(builder);
+    }
+
+    public void getConfig(ClusterConfig.Builder builder) {
+        builder.clusterId(getClusterIndex());
+        builder.clusterName(getClusterName());
+        builder.storageRoute(getClusterName());
+        builder.configid(getConfigId());
+        if (visibilityDelay != null) {
+            builder.cacheTimeout(convertVisibilityDelay(visibilityDelay));
+        }
+        if (hasStreaming()) {
+            builder.indexMode(ClusterConfig.IndexMode.Enum.STREAMING);
+        } else {
+            builder.indexMode(ClusterConfig.IndexMode.Enum.INDEX);
+        }
+    }
+
+    // The semantics of visibility delay in search is deactivating caches if the
+    // delay is less than 1.0, in qrs the cache is deactivated if the delay is 0
+    // (or less). 1.0 seems a little arbitrary, so just doing the conversion
+    // here instead of having two totally independent implementations having to
+    // follow each other down in the modules.
+    private static Double convertVisibilityDelay(Double visibilityDelay) {
+        return (visibilityDelay < 1.0d) ? 0.0d : visibilityDelay;
     }
 
     @Override

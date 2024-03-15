@@ -2492,7 +2492,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.search.config.ClusterConfig, com.yahoo.vespa.config.search.AttributesConfig)",
+      "public void <init>(com.yahoo.search.config.ClusterConfig, com.yahoo.vespa.config.search.AttributesConfig)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
     ],
     "fields" : [
