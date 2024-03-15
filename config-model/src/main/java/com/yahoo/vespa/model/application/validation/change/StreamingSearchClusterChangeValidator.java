@@ -30,11 +30,13 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
         context.previousModel().getContentClusters().forEach((clusterName, currentCluster) -> {
             ContentCluster nextCluster = context.model().getContentClusters().get(clusterName);
             if (nextCluster != null) {
-                if (currentCluster.getSearch().getIndexed() != null && nextCluster.getSearch().getIndexed() != null) {
-                    validateStreamingCluster(currentCluster, currentCluster.getSearch().getIndexed(),
-                                             nextCluster, nextCluster.getSearch().getIndexed())
-                            .forEach(context::require);
-                }
+                var nextStreamingClusters = nextCluster.getSearch().getClusters();
+                currentCluster.getSearch().getClusters().values().forEach(currentStreamingCluster -> {
+                    SearchCluster nextStreamingCluster = nextStreamingClusters.get(currentStreamingCluster.getClusterName());
+                    if (nextStreamingCluster != null) {
+                        validateStreamingCluster(currentCluster, currentStreamingCluster, nextCluster, nextStreamingCluster).forEach(context::require);
+                    }
+                });
             }
         });
     }
