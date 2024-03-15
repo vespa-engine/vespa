@@ -17,6 +17,7 @@ import com.yahoo.vespa.model.search.SearchCluster;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -37,7 +38,7 @@ public class LocalProvider extends Provider implements
 
     @Override
     public void getConfig(ClusterConfig.Builder builder) {
-        assert (searchCluster != null) : "Null search cluster!";
+        Objects.requireNonNull(searchCluster,  "Null search cluster!");
         builder.clusterId(searchCluster.getClusterIndex());
         builder.clusterName(searchCluster.getClusterName());
 

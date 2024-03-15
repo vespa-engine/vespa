@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class CJKSearcherTestCase {
 
     private final IndexFacts indexFacts = IndexFactsFactory.newInstance("file:src/test/java/com/yahoo/prelude/" +
-                                                                        "querytransform/test/cjk-index-info.cfg", null);
+                                                                        "querytransform/test/cjk-index-info.cfg");
 
     @Test
     void testTermWeight() {
