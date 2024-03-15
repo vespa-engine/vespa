@@ -135,6 +135,7 @@ RankManager::Snapshot::initRankSetup(const BlueprintFactory & factory)
         _indexEnv.push_back(_protoEnv.current());
         IndexEnvironment & ie = _indexEnv.back();
         ie.getProperties().import(_properties[i].second);
+        ie.fixup_fields();
     }
 
     // set up individual rank setups per rank profile

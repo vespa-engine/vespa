@@ -3,6 +3,7 @@
 #pragma once
 
 #include "queryterm.h"
+#include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <algorithm>
@@ -36,7 +37,7 @@ set_interleaved_features(search::fef::TermFieldMatchData& tmd, uint32_t field_le
 
 template <typename HitListType>
 void
-QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const HitListType& hit_list, const QueryTerm& fl_term)
+QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const HitListType& hit_list, const QueryTerm& fl_term, bool term_filter, const fef::IIndexEnvironment& index_env)
 {
     (void) fl_term;
     if (!hit_list.empty()) { // only unpack if we have a hit
@@ -45,6 +46,7 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
         uint32_t last_field_length = 0;
         search::fef::TermFieldMatchData *tmd = nullptr;
         uint32_t num_occs = 0;
+        bool filter = false;
 
         // optimize for hitlist giving all hits for a single field in one chunk
         for (const auto& hit : hit_list) {
@@ -58,6 +60,8 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                     tmd = nullptr;
                 }
                 num_occs = 0;
+                auto field = index_env.getField(field_id);
+                filter = term_filter || (field != nullptr && field->isFilter());
 
                 // setup for new field that had a hit
                 const search::fef::ITermFieldData *tfd = td.lookupField(field_id);
@@ -77,7 +81,7 @@ QueryTerm::unpack_match_data_helper(uint32_t docid, const fef::ITermData& td, fe
                 }
             }
             ++num_occs;
-            if (tmd != nullptr) {
+            if (tmd != nullptr && !filter) {
                 search::fef::TermFieldMatchDataPosition pos(hit.element_id(), hit.position(),
                                                hit.element_weight(), hit.element_length());
                 tmd->appendPosition(pos);

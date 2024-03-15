@@ -78,6 +78,8 @@ public:
                   bool isAttribute,
                   search::fef::FieldInfo::DataType data_type);
 
+    void fixup_fields();
+
     search::fef::Properties & getProperties() { return _properties; }
 
     void set_ranking_assets_repo(std::shared_ptr<const search::fef::IRankingAssetsRepo> ranking_assets_repo);

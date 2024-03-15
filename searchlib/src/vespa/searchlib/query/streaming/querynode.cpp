@@ -141,6 +141,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
             qt->setRanked( ! queryRep.hasNoRankFlag());
+            qt->set_filter(queryRep.hasNoPositionDataFlag());
             if (allowRewrite && possibleFloat(*qt, ssTerm) && factory.allow_float_terms_rewrite(ssIndex)) {
                 /*
                  * Tokenize number term and make add alternative

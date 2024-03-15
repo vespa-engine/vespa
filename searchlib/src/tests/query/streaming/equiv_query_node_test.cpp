@@ -3,6 +3,7 @@
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
+#include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/streaming/phrase_query_node.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
@@ -15,6 +16,7 @@ using search::fef::MatchData;
 using search::fef::SimpleTermData;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchDataPosition;
+using search::fef::test::IndexEnvironment;
 using search::query::QueryBuilder;
 using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
@@ -167,7 +169,8 @@ TEST_F(EquivQueryNodeTest, test_equiv_evaluate_and_unpack)
     auto tfmd1 = md->resolveTermField(handle1);
     tfmd0->setNeedInterleavedFeatures(true);
     tfmd1->setNeedInterleavedFeatures(true);
-    eqn.unpack_match_data(2, td, *md);
+    IndexEnvironment ie;
+    eqn.unpack_match_data(2, td, *md, ie);
     EXPECT_EQ(2, tfmd0->getDocId());
     EXPECT_EQ(3, tfmd0->getNumOccs());
     EXPECT_EQ(3, tfmd0->end() - tfmd0->begin());

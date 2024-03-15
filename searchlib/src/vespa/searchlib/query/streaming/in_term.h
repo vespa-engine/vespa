@@ -14,7 +14,7 @@ public:
     InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string& index,
            std::unique_ptr<query::TermVector> terms, Normalizing normalize_mode);
     ~InTerm() override;
-    void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data) override;
+    void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
 };
 
 }

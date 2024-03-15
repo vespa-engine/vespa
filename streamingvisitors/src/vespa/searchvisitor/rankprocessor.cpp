@@ -292,16 +292,16 @@ void
 RankProcessor::unpackMatchData(uint32_t docId)
 {
     _docId = docId;
-    unpack_match_data(docId, *_match_data, _query);
+    unpack_match_data(docId, *_match_data, _query, _queryEnv.getIndexEnvironment());
 }
 
 void
-RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query)
+RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query, const search::fef::IIndexEnvironment& index_env)
 {
     for (auto& term : query.getTermList()) {
         auto & qtd = static_cast<QueryTermData &>(term->getQueryItem());
         const ITermData &td = qtd.getTermData();
-        term->unpack_match_data(docid, td, matchData);
+        term->unpack_match_data(docid, td, matchData, index_env);
     }
 }
 

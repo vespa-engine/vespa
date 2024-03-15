@@ -2,6 +2,7 @@
 
 #include "indexenvironment.h"
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
+#include <vespa/searchlib/fef/indexproperties.h>
 
 using namespace search::fef;
 
@@ -36,6 +37,16 @@ IndexEnvironment::addField(const vespalib::string& name,
     _fields.push_back(info);
     _fieldNames[info.name()] = info.id();
     return true;
+}
+
+void
+IndexEnvironment::fixup_fields()
+{
+    for (auto& field : _fields) {
+        if (indexproperties::IsFilterField::check(_properties, field.name())) {
+            field.setFilter(true);
+	}
+    }
 }
 
 void
