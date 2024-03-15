@@ -7843,32 +7843,46 @@
     ]
   },
   "com.yahoo.search.result.EventStream$Event" : {
-    "superClass" : "com.yahoo.search.result.Hit",
-    "interfaces" : [ ],
+    "superClass" : "com.yahoo.component.provider.ListenableFreezableClass",
+    "interfaces" : [
+      "com.yahoo.processing.response.Data"
+    ],
     "attributes" : [
       "public"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public void <init>(int, java.lang.String, java.lang.String)",
       "public java.lang.String toString()",
-      "public java.lang.String type()"
+      "public java.lang.String type()",
+      "public com.yahoo.processing.Request request()",
+      "public com.yahoo.search.result.Hit asHit()"
     ],
     "fields" : [ ]
   },
   "com.yahoo.search.result.EventStream" : {
-    "superClass" : "com.yahoo.search.result.HitGroup",
-    "interfaces" : [ ],
+    "superClass" : "com.yahoo.search.result.Hit",
+    "interfaces" : [
+      "com.yahoo.processing.response.DataList"
+    ],
     "attributes" : [
       "public"
     ],
     "methods" : [
-      "public static com.yahoo.search.result.EventStream create(java.lang.String)",
+      "public void <init>()",
       "public void add(java.lang.String)",
       "public void add(java.lang.String, java.lang.String)",
       "public void error(java.lang.String, com.yahoo.search.result.ErrorMessage)",
-      "public void markComplete()"
+      "public void markComplete()",
+      "public com.yahoo.processing.response.Data add(com.yahoo.processing.response.Data)",
+      "public com.yahoo.processing.response.Data get(int)",
+      "public java.util.List asList()",
+      "public com.yahoo.processing.response.IncomingData incoming()",
+      "public java.util.concurrent.CompletableFuture completeFuture()",
+      "public void addDataListener(java.lang.Runnable)",
+      "public void close()"
     ],
     "fields" : [
+      "public static final java.lang.String EVENT_TYPE_TOKEN",
       "public static final java.lang.String DEFAULT_EVENT_TYPE"
     ]
   },
