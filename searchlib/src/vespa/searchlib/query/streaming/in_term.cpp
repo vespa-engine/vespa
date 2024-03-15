@@ -21,7 +21,7 @@ InTerm::InTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string & 
 InTerm::~InTerm() = default;
 
 void
-InTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data)
+InTerm::unpack_match_data(uint32_t docid, const ITermData& td, MatchData& match_data, const fef::IIndexEnvironment&)
 {
     vespalib::hash_set<uint32_t> matching_field_ids;
     HitList hl_store;

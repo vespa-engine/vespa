@@ -52,8 +52,9 @@ NearestNeighborQueryNode::get_raw_score() const
 }
 
 void
-NearestNeighborQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data)
+NearestNeighborQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env)
 {
+    (void) index_env;
     auto raw_score = get_raw_score();
     if (raw_score.has_value()) {
         if (td.numFields() == 1u) {

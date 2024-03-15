@@ -74,7 +74,7 @@ public:
     void initForRanking(size_t wantedHitCount, bool use_sort_blob);
     void initForDumping(size_t wantedHitCount, bool use_sort_blob);
     void unpackMatchData(uint32_t docId);
-    static void unpack_match_data(uint32_t docid, search::fef::MatchData& matchData, QueryWrapper& query);
+    static void unpack_match_data(uint32_t docid, search::fef::MatchData& matchData, QueryWrapper& query, const search::fef::IIndexEnvironment& index_env);
     void runRankProgram(uint32_t docId);
     vespalib::FeatureSet::SP calculateFeatureSet();
     vespalib::FeatureSet::SP calculateFeatureSet(search::DocumentIdT docId);
