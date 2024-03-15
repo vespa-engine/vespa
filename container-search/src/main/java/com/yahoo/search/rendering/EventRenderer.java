@@ -60,10 +60,6 @@ public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void beginList(DataList<?> dataList) throws IOException {
-        if ( ! (dataList instanceof EventStream)) {
-            throw new IllegalArgumentException("EventRenderer currently only supports EventStreams");
-            // Todo: support results and timing and trace by delegating to JsonRenderer
-        }
     }
 
     @Override
@@ -92,6 +88,7 @@ public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator.flush();
             }
         }
+        // Todo: support other types of data such as search results (hits), timing and trace
     }
 
     @Override

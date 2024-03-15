@@ -40,6 +40,7 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.EventStream;
 import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
@@ -243,17 +244,19 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void beginList(DataList<?> list) throws IOException {
-        Preconditions.checkArgument(list instanceof HitGroup,
-                                    "Expected subclass of com.yahoo.search.result.HitGroup, got %s.",
-                                    list.getClass());
         moreChildren();
-        renderHitGroupHead((HitGroup) list);
+        if (list instanceof HitGroup) {
+            renderHitGroupHead((HitGroup) list);
+        } else if (list instanceof EventStream) {
+            renderHitGroupHead(new HitGroup("event_stream"));  // Consider waiting for all events and create a single summary hit
+        } else {
+            throw new IllegalArgumentException("Expected subclass of com.yahoo.search.result.HitGroup, got " + list.getClass());
+        }
     }
 
     protected void moreChildren() throws IOException {
         if (!renderedChildren.isEmpty())
             childrenArray();
-
         renderedChildren.push(0);
     }
 
@@ -443,10 +446,13 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void data(Data data) throws IOException {
-        Preconditions.checkArgument(data instanceof Hit,
-                                    "Expected subclass of com.yahoo.search.result.Hit, got %s.",
-                                    data.getClass());
-        renderHit((Hit) data);
+        if (data instanceof Hit) {
+            renderHit((Hit) data);
+        } else if (data instanceof EventStream.Event) {
+            renderHit(((EventStream.Event) data).asHit());
+        } else {
+            throw new IllegalArgumentException("Expected subclass of com.yahoo.search.result.Hit, got " + data.getClass());
+        }
     }
 
     @Override

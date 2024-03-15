@@ -1,38 +1,43 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
+import com.yahoo.collections.ListenableArrayList;
+import com.yahoo.component.provider.ListenableFreezableClass;
+import com.yahoo.processing.Request;
+import com.yahoo.processing.response.Data;
+import com.yahoo.processing.response.DataList;
 import com.yahoo.processing.response.DefaultIncomingData;
+import com.yahoo.processing.response.IncomingData;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A stream of events which can be rendered as Server-Sent Events (SSE).
  *
  * @author lesters
  */
-public class EventStream extends HitGroup {
+public class EventStream extends Hit implements DataList<Data> {
 
-    private int eventCount = 0;
+    private final ListenableArrayList<Data> data = new ListenableArrayList<>(16);
+    private final IncomingData<Data> incomingData;
+    private final AtomicInteger eventCount = new AtomicInteger(0);
 
-    public static final String DEFAULT_EVENT_TYPE = "token";
+    public final static String EVENT_TYPE_TOKEN = "token";
+    public final static String DEFAULT_EVENT_TYPE = EVENT_TYPE_TOKEN;
 
-    private EventStream(String id, DefaultIncomingData<Hit> incomingData) {
-        super(id, new Relevance(1), incomingData);
-        this.setOrdered(true);  // avoid hit group ordering - important as sequence as inserted should be kept
-    }
-
-    public static EventStream create(String id) {
-        DefaultIncomingData<Hit> incomingData = new DefaultIncomingData<>();
-        EventStream stream = new EventStream(id, incomingData);
-        incomingData.assignOwner(stream);
-        return stream;
+    public EventStream() {
+        super();
+        this.incomingData = new DefaultIncomingData<>(this);
     }
 
     public void add(String data) {
-        add(data, DEFAULT_EVENT_TYPE);
+        incoming().add(new Event(eventCount.incrementAndGet(), data, DEFAULT_EVENT_TYPE));
     }
 
     public void add(String data, String type) {
-        incoming().add(new Event(String.valueOf(eventCount + 1), data, type));
-        eventCount++;
+        incoming().add(new Event(eventCount.incrementAndGet(), data, type));
     }
 
     public void error(String source, ErrorMessage message) {
@@ -43,23 +48,73 @@ public class EventStream extends HitGroup {
         incoming().markComplete();
     }
 
-    public static class Event extends Hit {
+    @Override
+    public Data add(Data event) {
+        data.add(event);
+        return event;
+    }
 
+    @Override
+    public Data get(int index) {
+        return data.get(index);
+    }
+
+    @Override
+    public List<Data> asList() {
+        return data;
+    }
+
+    @Override
+    public IncomingData<Data> incoming() {
+        return incomingData;
+    }
+
+    @Override
+    public CompletableFuture<DataList<Data>> completeFuture() {
+        return incomingData.completedFuture();
+    }
+
+    @Override
+    public void addDataListener(Runnable runnable) {
+        data.addListener(runnable);
+    }
+
+    @Override
+    public void close() {
+    }
+
+    public static class Event extends ListenableFreezableClass implements Data {
+
+        private final int eventNumber;
+        private final String data;
         private final String type;
 
-        public Event(String id, String data, String type) {
-            super(id);
+        public Event(int eventNumber, String data, String type) {
+            this.eventNumber = eventNumber;
+            this.data = data;
             this.type = type;
-            setField(type, data);
         }
 
         public String toString() {
-            return getField(type).toString();
+            return data;
         }
 
         public String type() {
             return type;
         }
 
+        @Override
+        public Request request() {
+            return null;
+        }
+
+        // For json rendering
+        public Hit asHit() {
+            Hit hit = new Hit(String.valueOf(eventNumber));
+            hit.setField(type, data);
+            return hit;
+        }
+
     }
+
 }

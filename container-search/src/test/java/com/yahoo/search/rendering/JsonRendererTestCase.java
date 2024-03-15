@@ -36,6 +36,7 @@ import com.yahoo.search.grouping.result.RootGroup;
 import com.yahoo.search.grouping.result.StringId;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.EventStream;
 import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
@@ -1564,6 +1565,45 @@ public class JsonRendererTestCase {
                         "   }" +
                         "}";
         assertEqualJson(expected, summary);
+    }
+
+    @Test
+    @Timeout(600)
+    void testEventStreamRendering() throws ExecutionException, InterruptedException {
+        var tokenStream = new EventStream();
+        tokenStream.add("token1");
+        tokenStream.add("token2");
+        tokenStream.markComplete();
+
+        var hitGroup = new HitGroup("token_stream");
+        hitGroup.add(tokenStream);
+        var result = render(new Result(new Query(), hitGroup));
+
+        String expected = "{" +
+                "\"root\":{" +
+                    "\"id\":\"token_stream\"," +
+                    "\"relevance\":1.0," +
+                    "\"fields\":{" +
+                        "\"totalCount\":0" +
+                    "}," +
+                    "\"children\":[{" +
+                        "\"id\":\"event_stream\"," +
+                        "\"relevance\":1.0," +
+                        "\"children\":[{" +
+                            "\"id\":\"1\"," +
+                            "\"relevance\":1.0," +
+                            "\"fields\":{" +
+                                "\"token\":\"token1\"" +
+                            "}},{" +
+                            "\"id\":\"2\"," +
+                            "\"relevance\":1.0," +
+                            "\"fields\":{" +
+                                "\"token\":\"token2\"" +
+                            "}}" +
+                        "]}]" +
+                    "}" +
+                "}";
+        assertEqualJson(expected, result);
     }
 
     private Result newEmptyResult(String[] args) {
