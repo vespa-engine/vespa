@@ -138,7 +138,10 @@ public class CapacityPolicies {
     }
 
     private NodeResources logserverResources(Architecture architecture) {
-        if (zone.cloud().name().equals(CloudName.GCP))
+        if (zone.cloud().name() == CloudName.AZURE)
+            return new NodeResources(2, 4, 50, 0.3);
+
+        if (zone.cloud().name() == CloudName.GCP)
             return new NodeResources(1, 4, 50, 0.3);
 
         return architecture == Architecture.arm64
@@ -161,14 +164,14 @@ public class CapacityPolicies {
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
-        return (zone.cloud().name().equals(CloudName.GCP))
+        return zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(2, 8, 50, 0.3)
                 : new NodeResources(0.5, 8, 50, 0.3);
     }
 
     // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
-        return (zone.cloud().name().equals(CloudName.GCP))
+        return zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 2, 50, 0.3);
     }
