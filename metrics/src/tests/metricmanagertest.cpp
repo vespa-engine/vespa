@@ -5,19 +5,21 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/state_api_adapter.h>
 #include <vespa/metrics/textwriter.h>
+#include <vespa/metrics/prometheus_writer.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/atomic.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <mutex>
 #include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.metricmanager");
 
+using namespace ::testing;
 using namespace vespalib::atomic;
 using config::ConfigUri;
 
@@ -41,16 +43,16 @@ struct SubMetricSet : public MetricSet
     DoubleValueMetric val2;
     SumMetric<DoubleValueMetric> valsum;
 
-    SubMetricSet(const Metric::String & name, MetricSet* owner);
-    ~SubMetricSet();
+    explicit SubMetricSet(const Metric::String& name, MetricSet* owner = nullptr);
+    ~SubMetricSet() override;
 };
 
 
-SubMetricSet::SubMetricSet(const Metric::String & name, MetricSet* owner)
-    : MetricSet(name, {{"sub"}}, "sub desc", owner),
-      val1("val1", {{"tag4"},{"snaptest"}}, "val1 desc", this),
+SubMetricSet::SubMetricSet(const Metric::String& name, MetricSet* owner)
+    : MetricSet(name, {{"partofsum"}, {"sub"}}, "sub desc", owner),
+      val1("val1", {{"tag4"}, {"snaptest"}}, "val1 desc", this),
       val2("val2", {{"tag5"}}, "val2 desc", this),
-      valsum("valsum", {{"tag4"},{"snaptest"}}, "valsum desc", this)
+      valsum("valsum", {{"tag4"}, {"snaptest"}}, "valsum desc", this)
 {
     valsum.addMetricToSum(val1);
     valsum.addMetricToSum(val2);
@@ -65,7 +67,7 @@ struct MultiSubMetricSet
     SubMetricSet b;
     SumMetric<MetricSet> sum;
 
-    MultiSubMetricSet(MetricSet* owner);
+    explicit MultiSubMetricSet(MetricSet* owner);
     ~MultiSubMetricSet();
 };
 
@@ -155,13 +157,6 @@ getMatchedMetrics(const vespalib::string& config)
     mm.registerMetric(mm.getMetricLock(), mySet.set);
     mm.init(ConfigUri(config));
     MetricNameVisitor visitor;
-
-    /** Take a copy to verify clone works.
-    std::list<Metric::SP> ownerList;
-    MetricSet::UP copy(dynamic_cast<MetricSet*>(
-                mm.getMetrics().clone(ownerList)));
-    mm.visit(*copy, visitor, "consumer");
-    */
 
     MetricLockGuard g(mm.getMetricLock());
     mm.visit(g, mm.getActiveMetrics(g), visitor, "consumer");
@@ -386,8 +381,8 @@ struct BriefValuePrinter : public MetricVisitor {
 
 bool waitForTimeProcessed(const MetricManager& mm, time_point::duration processtime, uint32_t timeout = 120)
 {
-    uint32_t lastchance = time(0) + timeout;
-    while (time(0) < lastchance) {
+    uint32_t lastchance = time(nullptr) + timeout;
+    while (time(nullptr) < lastchance) {
         if (mm.getLastProcessedTime() >= time_point(processtime)) return true;
         mm.timeChangedNotification();
         std::this_thread::sleep_for(10ms);
@@ -705,6 +700,16 @@ struct MetricSnapshotTestFixture
         }
         return ss.str();
     }
+
+    std::string render_last_snapshot_as_prometheus() const {
+        vespalib::asciistream os;
+        PrometheusWriter writer(os);
+        {
+            MetricLockGuard lockGuard(manager.getMetricLock());
+            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
+        }
+        return os.str();
+    }
 };
 
 class JsonMetricWrapper
@@ -762,7 +767,7 @@ struct DimensionTestMetricSet : MetricSet
     DoubleValueMetric val1;
     LongCountMetric val2;
 
-    DimensionTestMetricSet(MetricSet* owner = nullptr);
+    explicit DimensionTestMetricSet(MetricSet* owner = nullptr);
     ~DimensionTestMetricSet() override;
 };
 
@@ -801,7 +806,7 @@ struct NestedDimensionTestMetricSet : MetricSet
     DimensionTestMetricSet nestedSet;
 
     NestedDimensionTestMetricSet();
-    ~NestedDimensionTestMetricSet();
+    ~NestedDimensionTestMetricSet() override;
 };
 
 NestedDimensionTestMetricSet::NestedDimensionTestMetricSet()
@@ -839,7 +844,7 @@ struct DimensionOverridableTestMetricSet : MetricSet
 {
     DoubleValueMetric val;
 
-    DimensionOverridableTestMetricSet(const std::string& dimValue, MetricSet* owner = nullptr);
+    explicit DimensionOverridableTestMetricSet(const std::string& dimValue, MetricSet* owner = nullptr);
     ~DimensionOverridableTestMetricSet() override;
 };
 
@@ -855,7 +860,7 @@ struct SameNamesTestMetricSet : MetricSet
     DimensionOverridableTestMetricSet set2;
 
     SameNamesTestMetricSet();
-    ~SameNamesTestMetricSet();
+    ~SameNamesTestMetricSet() override;
 };
 
 SameNamesTestMetricSet::SameNamesTestMetricSet()
@@ -894,14 +899,14 @@ TEST_F(MetricManagerTest, test_text_output)
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.registerMetric(lockGuard, mySet.set);
     }
-        // Adding metrics to have some values in them
+    // Adding metrics to have some values in them
     mySet.val6.addValue(2);
     mySet.val9.val1.addValue(4);
     mySet.val10.count.inc();
     mySet.val10.a.val1.addValue(7);
     mySet.val10.a.val2.addValue(2);
     mySet.val10.b.val1.addValue(1);
-        // Initialize metric manager to get snapshots created.
+    // Initialize metric manager to get snapshots created.
     mm.init(ConfigUri("raw:"
                       "consumer[2]\n"
                       "consumer[0].name snapper\n"
@@ -951,6 +956,137 @@ TEST_F(MetricManagerTest, text_output_supports_dimensions)
             "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val1 average=2 last=2 min=2 max=2 count=1 total=2\n"
             "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val2{baz:superbaz} count=1");
     EXPECT_EQ(expected, actual);
+}
+
+TEST_F(MetricManagerTest, prometheus_output_groups_related_time_series) {
+    SameNamesTestMetricSet mset;
+    MetricSnapshotTestFixture fixture(*this, mset);
+
+    mset.set1.val.addValue(2);
+    mset.set1.val.addValue(3);
+    mset.set2.val.addValue(5);
+    mset.set2.val.addValue(7);
+
+    fixture.takeSnapshotsOnce();
+    std::string actual = fixture.render_last_snapshot_as_prometheus();
+    std::string expected(R"(# NOTE: THIS API IS NOT INTENDED FOR PUBLIC USE
+# TYPE outer_temp_val_count untyped
+outer_temp_val_count{foo="bar",fancy="stuff"} 2 1300000
+outer_temp_val_count{foo="baz",fancy="stuff"} 2 1300000
+# TYPE outer_temp_val_max untyped
+outer_temp_val_max{foo="bar",fancy="stuff"} 3 1300000
+outer_temp_val_max{foo="baz",fancy="stuff"} 7 1300000
+# TYPE outer_temp_val_min untyped
+outer_temp_val_min{foo="bar",fancy="stuff"} 2 1300000
+outer_temp_val_min{foo="baz",fancy="stuff"} 5 1300000
+# TYPE outer_temp_val_sum untyped
+outer_temp_val_sum{foo="bar",fancy="stuff"} 5 1300000
+outer_temp_val_sum{foo="baz",fancy="stuff"} 12 1300000
+)");
+    EXPECT_EQ(expected, actual);
+}
+
+struct MetricSetWrapper : MetricSet {
+    MultiSubMetricSet sub;
+
+    MetricSetWrapper();
+    ~MetricSetWrapper() override;
+};
+
+MetricSetWrapper::MetricSetWrapper()
+    : MetricSet("top_level", {}, "stuff and junk", nullptr),
+      sub(this)
+{
+}
+
+MetricSetWrapper::~MetricSetWrapper() = default;
+
+TEST_F(MetricManagerTest, prometheus_output_only_emits_sum_metric_aggregate_values) {
+    MetricSetWrapper mset;
+    MetricSnapshotTestFixture fixture(*this, mset);
+
+    mset.sub.a.val1.addValue(21);
+    mset.sub.a.val2.addValue(17);
+    mset.sub.b.val1.addValue(7);
+    mset.sub.b.val2.addValue(3);
+
+    fixture.takeSnapshotsOnce();
+    std::string actual = fixture.render_last_snapshot_as_prometheus();
+    std::string expected = R"(# NOTE: THIS API IS NOT INTENDED FOR PUBLIC USE
+# TYPE top_level_multisub_sum_val1_count untyped
+top_level_multisub_sum_val1_count 2 1300000
+# TYPE top_level_multisub_sum_val1_max untyped
+top_level_multisub_sum_val1_max 21 1300000
+# TYPE top_level_multisub_sum_val1_min untyped
+top_level_multisub_sum_val1_min 7 1300000
+# TYPE top_level_multisub_sum_val1_sum untyped
+top_level_multisub_sum_val1_sum 56 1300000
+# TYPE top_level_multisub_sum_val2_count untyped
+top_level_multisub_sum_val2_count 2 1300000
+# TYPE top_level_multisub_sum_val2_max untyped
+top_level_multisub_sum_val2_max 17 1300000
+# TYPE top_level_multisub_sum_val2_min untyped
+top_level_multisub_sum_val2_min 3 1300000
+# TYPE top_level_multisub_sum_val2_sum untyped
+top_level_multisub_sum_val2_sum 40 1300000
+# TYPE top_level_multisub_sum_valsum_count untyped
+top_level_multisub_sum_valsum_count 4 1300000
+# TYPE top_level_multisub_sum_valsum_max untyped
+top_level_multisub_sum_valsum_max 21 1300000
+# TYPE top_level_multisub_sum_valsum_min untyped
+top_level_multisub_sum_valsum_min 3 1300000
+# TYPE top_level_multisub_sum_valsum_sum untyped
+top_level_multisub_sum_valsum_sum 192 1300000
+)";
+    EXPECT_EQ(expected, actual);
+}
+
+TEST_F(MetricManagerTest, prometheus_output_can_emit_inf_values_verbatim) {
+    SameNamesTestMetricSet mset;
+    MetricSnapshotTestFixture fixture(*this, mset);
+
+    // We have explicit guards against setting Inf/NaN directly, so we have to fudge the numbers
+    // a bit to get +/- Inf by saturating additions towards infinity. TODO how to test NaN...? :o
+    mset.set1.val.addValue(std::numeric_limits<double>::max());
+    mset.set1.val.addValue(std::numeric_limits<double>::max());
+    mset.set2.val.addValue(std::numeric_limits<double>::lowest());
+    mset.set2.val.addValue(std::numeric_limits<double>::lowest());
+
+    fixture.takeSnapshotsOnce();
+    std::string actual = fixture.render_last_snapshot_as_prometheus();
+    EXPECT_THAT(actual, HasSubstr("outer_temp_val_sum{foo=\"bar\",fancy=\"stuff\"} +Inf 1300000\n"));
+    EXPECT_THAT(actual, HasSubstr("outer_temp_val_sum{foo=\"baz\",fancy=\"stuff\"} -Inf 1300000\n"));
+}
+
+struct SneakyNamesMetricSet : public MetricSet {
+    DoubleValueMetric val1;
+    DoubleValueMetric val2;
+
+    SneakyNamesMetricSet();
+    ~SneakyNamesMetricSet() override;
+};
+
+
+SneakyNamesMetricSet::SneakyNamesMetricSet()
+    : MetricSet("sneaky/path", {}, "sub desc", nullptr),
+      val1("a.name", {{"foo.bar", "blah\nbaz\"zoid\\"}}, "", this),
+      val2("another-name", {}, "", this)
+{
+}
+
+SneakyNamesMetricSet::~SneakyNamesMetricSet() = default;
+
+TEST_F(MetricManagerTest, prometheus_output_normalizes_and_escapes_names_and_labels) {
+    SneakyNamesMetricSet mset;
+    MetricSnapshotTestFixture fixture(*this, mset);
+
+    mset.val1.addValue(123);
+    mset.val2.addValue(42);
+
+    fixture.takeSnapshotsOnce();
+    std::string actual = fixture.render_last_snapshot_as_prometheus();
+    EXPECT_THAT(actual, HasSubstr(R"(sneaky_path_a_name_count{foo_bar="blah\nbaz\"zoid\\"} 1 1300000)"));
+    EXPECT_THAT(actual, HasSubstr("sneaky_path_another_name_count 1 1300000"));
 }
 
 namespace {

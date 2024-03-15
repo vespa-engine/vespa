@@ -54,7 +54,7 @@ Tag::Tag(vespalib::stringref k, vespalib::stringref v)
 
 Tag::Tag(const Tag &) noexcept = default;
 Tag & Tag::operator = (const Tag &) = default;
-Tag::~Tag() {}
+Tag::~Tag() = default;
 
 Metric::Metric(const String& name,
                Tags dimensions,
@@ -139,11 +139,11 @@ Metric::createMangledNameWithDimensions() const
 void
 Metric::verifyConstructionParameters()
 {
-    if (getName().size() == 0) {
-        throw vespalib::IllegalArgumentException(
-                "Metric cannot have empty name", VESPA_STRLOC);
+    if (getName().empty()) {
+        throw vespalib::IllegalArgumentException("Metric cannot have empty name", VESPA_STRLOC);
     }
     const auto &name = getName();
+    // FIXME this is broken (should use std::regex_match instead, but we have metrics that will fail this test...!)
     if (!std::regex_search(name.c_str(), name.c_str() + name.size(), name_pattern_regex)) {
         throw vespalib::IllegalArgumentException(
                 "Illegal metric name '" + getName() + "'. Names must match pattern "
