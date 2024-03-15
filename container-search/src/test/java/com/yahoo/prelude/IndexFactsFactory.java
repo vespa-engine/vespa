@@ -11,15 +11,9 @@ import com.yahoo.container.QrSearchersConfig;
  */
 public abstract class IndexFactsFactory {
 
-    public static IndexFacts newInstance(String configId) {
-        return new IndexFacts(new IndexModel(resolveConfig(IndexInfoConfig.class, configId),
-                                             resolveConfig(QrSearchersConfig.class, configId)));
-
-    }
-
-    public static IndexFacts newInstance(String indexInfoConfigId, String qrSearchersConfigId) {
+    public static IndexFacts newInstance(String indexInfoConfigId) {
         return new IndexFacts(new IndexModel(resolveConfig(IndexInfoConfig.class, indexInfoConfigId),
-                                             resolveConfig(QrSearchersConfig.class, qrSearchersConfigId)));
+                                             resolveConfig(QrSearchersConfig.class, null)));
 
     }
 

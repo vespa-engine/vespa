@@ -29,7 +29,7 @@ public class StemmingSearcherTestCase {
 
     private static final Linguistics linguistics = new SimpleLinguistics();
     private final IndexFacts indexFacts = IndexFactsFactory.newInstance("dir:src/test/java/com/yahoo/prelude/" +
-                                                                        "querytransform/test/", null);
+                                                                        "querytransform/test/");
 
     @Test
     void testStemOnlySomeTerms() {
