@@ -60,16 +60,6 @@ public class IndexedSearchCluster extends SearchCluster implements
     }
     public Tuning getTuning() { return tuning; }
 
-    @Override
-    public void deriveFromSchemas(DeployState deployState) {
-        for (SchemaInfo spec : schemas().values()) {
-            if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
-            var db = new DocumentDatabase(this, spec.fullSchema().getName(),
-                                          new DerivedConfiguration(deployState, spec.fullSchema(), spec.getIndexMode()));
-            add(db);
-        }
-    }
-
     public void setSearchCoverage(SearchCoverage searchCoverage) {
         this.searchCoverage = searchCoverage;
     }
