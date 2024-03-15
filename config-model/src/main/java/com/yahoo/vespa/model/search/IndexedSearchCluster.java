@@ -45,9 +45,6 @@ public class IndexedSearchCluster extends SearchCluster implements
         summaryDecodePolicy = featureFlags.summaryDecodePolicy();
     }
 
-    @Override
-    protected IndexingMode getIndexingMode() { return IndexingMode.REALTIME; }
-
     public void addSearcher(SearchNode searcher) {
         searchNodes.add(searcher);
     }

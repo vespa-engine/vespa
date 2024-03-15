@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.schema.DocumentOnlySchema;
 import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.DerivedConfiguration;
@@ -146,7 +147,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     }
 
     public String getClusterName()              { return clusterName; }
-    public final String getIndexingModeName()   { return getIndexingMode().getName(); }
     public final boolean hasStreaming() {
         return schemas().values().stream().anyMatch(schema -> schema.getIndexMode() == SchemaInfo.IndexMode.STREAMING);
     }
@@ -157,7 +157,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public final void setQueryTimeout(Double to) { this.queryTimeout = to; }
     public final void setVisibilityDelay(double delay) { this.visibilityDelay = delay; }
 
-    protected abstract IndexingMode getIndexingMode();
     public final Double getVisibilityDelay() { return visibilityDelay; }
     public final Double getQueryTimeout() { return queryTimeout; }
     public final void setClusterIndex(int index) { this.index = index; }
@@ -175,9 +174,17 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         }
     }
 
-    protected void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
-        ddbB.inputdoctypename(sdoc.getSchemaName())
-            .configid(sdoc.getConfigId());
+    public QrSearchersConfig.Searchcluster.Builder getQrSearcherConfig() {
+        var builder = new QrSearchersConfig.Searchcluster.Builder()
+                .name(getClusterName())
+                .rankprofiles_configid(getConfigId())
+                .storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().routespec(getStorageRouteSpec()))
+                .indexingmode(hasStreaming() ? QrSearchersConfig.Searchcluster.Indexingmode.STREAMING
+                                             : QrSearchersConfig.Searchcluster.Indexingmode.REALTIME);
+        for (SchemaInfo spec : schemas().values()) {
+            builder.searchdef(spec.fullSchema().getName());
+        }
+        return builder;
     }
 
     @Override
@@ -212,24 +219,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     @Override
     public String toString() { return "search-capable cluster '" + clusterName + "'"; }
-
-    public static final class IndexingMode {
-
-        public static final IndexingMode REALTIME  = new IndexingMode("REALTIME");
-        public static final IndexingMode STREAMING = new IndexingMode("STREAMING");
-
-        private final String name;
-
-        private IndexingMode(String name) {
-            this.name = name;
-        }
-
-        public String getName() { return name; }
-
-        public String toString() {
-            return "indexingmode: " + name;
-        }
-    }
 
     /**
      * Class used to retrieve combined configuration from multiple document databases.
