@@ -164,7 +164,7 @@ public class CapacityPolicies {
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
-        return zone.cloud().name() == CloudName.GCP
+        return zone.cloud().name() == CloudName.AZURE || zone.cloud().name() == CloudName.GCP
                 ? new NodeResources(2, 8, 50, 0.3)
                 : new NodeResources(0.5, 8, 50, 0.3);
     }
