@@ -80,6 +80,26 @@ func TestServerError(t *testing.T) {
 	assertQueryServiceError(t, 501, "server error message")
 }
 
+func TestQueryHeader(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, "{\"query\":\"result\"}")
+
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query",
+		"--header", "X-Foo: bar",
+		"--header", "X-Foo: baz",
+		"--header", "X-Bar:   foo bar  ",
+		"select from sources * where title contains 'foo'"))
+	assert.Equal(t, []string{"bar", "baz"}, client.LastRequest.Header.Values("X-Foo"))
+	assert.Equal(t, "foo bar", client.LastRequest.Header.Get("X-Bar"))
+
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "query",
+		"--header", "X-Foo", "select from sources * where title contains 'foo'"))
+	assert.Equal(t, "Error: invalid header \"X-Foo\": missing colon separator\n", stderr.String())
+}
+
 func TestStreamingQuery(t *testing.T) {
 	body := `
 event: token
