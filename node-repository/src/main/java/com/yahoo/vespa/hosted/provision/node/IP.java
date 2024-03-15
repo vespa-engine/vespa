@@ -328,7 +328,7 @@ public record IP() {
 
             public NameResolver resolver() { return resolver; }
 
-            public boolean allocateFromUnusedHostname() { return exclave; }
+            public boolean allocateFromUnusedHostname() { return exclave || cloudName == CloudName.AZURE; }
 
             public boolean hasIpNotInDns(Version version) {
                 if (exclave && cloudName == CloudName.GCP && version.is4()) {
