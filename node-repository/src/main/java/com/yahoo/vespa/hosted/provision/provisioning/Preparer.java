@@ -138,7 +138,8 @@ public class Preparer {
                                                                             Optional.of(cluster.id()),
                                                                             requested.cloudAccount(),
                                                                             deficit.dueToFlavorUpgrade());
-                    Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository.nodeResourceLimits().isWithinRealLimits(resources, application, cluster);
+                    Predicate<NodeResources> realHostResourcesWithinLimits =
+                            resources -> nodeRepository.nodeResourceLimits().isWithinRealLimits(resources, cluster);
                     waiter = hostProvisioner.get().provisionHosts(request, realHostResourcesWithinLimits, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
