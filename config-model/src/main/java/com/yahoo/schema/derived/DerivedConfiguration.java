@@ -166,11 +166,7 @@ public class DerivedConfiguration {
     }
 
     public void getConfig(AttributesConfig.Builder builder) {
-        if (isStreaming()) {
-            getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
-        } else {
-            getConfig(builder, AttributeFields.FieldSet.ALL);
-        }
+        getConfig(builder, AttributeFields.FieldSet.ALL);
     }
 
     public void getConfig(AttributesConfig.Builder builder, AttributeFields.FieldSet fs) {

@@ -163,6 +163,7 @@ public class IndexedTest extends ContentBaseTest {
         //                               "transactionlogserver"};
         // DomContentBuilderTest.assertServices(h, expectedServices);
         ContentCluster s = model.getContentClusters().get("test");
+        assertFalse(s.getSearch().hasIndexedCluster());
 
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         s.getStorageCluster().getConfig(builder);
@@ -174,6 +175,7 @@ public class IndexedTest extends ContentBaseTest {
         VespaModel model = getStreamingVespaModel();
         ContentCluster s = model.getContentClusters().get("test");
         assertNotNull(s);
+        assertFalse(s.getSearch().hasIndexedCluster());
         ClusterListConfig config = model.getConfig(ClusterListConfig.class, VespaModel.ROOT_CONFIGID);
         assertEquals(1, config.storage().size());
         assertEquals("test", config.storage(0).name());
