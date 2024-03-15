@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -61,7 +62,7 @@ public class AllocationOptimizer {
             limits = atLeast(minimumNodes, limits).fullySpecified(model.current().clusterSpec(), nodeRepository, model.application().id());
         List<AllocatableResources> bestAllocations = new ArrayList<>();
         var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
-                                         ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()
+                                         ? nodeRepository.flavors().getFlavors().stream().map(Flavor::resources).toList()
                                          : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
                                                          .map(hostResources -> maxResourcesOf(hostResources, model))
                                                          .toList();

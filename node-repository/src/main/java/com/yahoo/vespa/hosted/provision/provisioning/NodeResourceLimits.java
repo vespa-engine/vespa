@@ -46,11 +46,11 @@ public class NodeResourceLimits {
     public boolean isWithinRealLimits(NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
         return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
-                                  applicationId, cluster);
+                                  cluster);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(NodeResources realResources, ClusterSpec cluster) {
         if (realResources.isUnspecified()) return true;
 
         if (realResources.vcpu() < minRealVcpu(cluster)) return false;

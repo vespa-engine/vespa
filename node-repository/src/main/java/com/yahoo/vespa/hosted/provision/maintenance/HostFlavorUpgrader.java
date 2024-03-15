@@ -71,7 +71,8 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
             if (parent.isEmpty()) continue;
             if (exhaustedFlavors.contains(parent.get().flavor().name())) continue;
             Allocation allocation = node.allocation().get();
-            Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(resources, allocation.owner(), allocation.membership().cluster());
+            Predicate<NodeResources> realHostResourcesWithinLimits =
+                    resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(resources, allocation.membership().cluster());
             if (!hostProvisioner.canUpgradeFlavor(parent.get(), node, realHostResourcesWithinLimits)) continue;
             if (parent.get().status().wantToUpgradeFlavor() && allocation.membership().retired()) continue; // Already upgrading
 
