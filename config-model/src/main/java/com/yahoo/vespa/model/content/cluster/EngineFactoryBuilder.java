@@ -13,7 +13,7 @@ public class EngineFactoryBuilder {
     public PersistenceEngine.PersistenceFactory build(ModelElement clusterElem, ContentCluster c) {
         ModelElement persistence = clusterElem.child("engine");
         if (persistence != null) {
-            if (c.getSearch().hasIndexed() && persistence.child("proton") == null) {
+            if (c.getSearch().hasIndexedCluster() && persistence.child("proton") == null) {
                 throw new IllegalArgumentException("Persistence engine does not allow for indexed search. Please use <proton> as your engine.");
             }
 

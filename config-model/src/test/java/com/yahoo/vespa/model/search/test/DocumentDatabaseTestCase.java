@@ -309,7 +309,7 @@ public class DocumentDatabaseTestCase {
         var tester = new SchemaTester();
         var model = tester.createModelWithMode(mode, sds);
 
-        DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test");
+        DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.type");
         assertEquals(1, dcfg.documentdb().size());
         DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
         assertEquals("type", db.name());
@@ -328,11 +328,13 @@ public class DocumentDatabaseTestCase {
         var tester = new SchemaTester();
         var model = tester.createModel(sds, "");
         DocumentdbInfoConfig indexed_cfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test");
-        assertEquals(2, indexed_cfg.documentdb().size());
+        assertEquals(1, indexed_cfg.documentdb().size());
         var db = indexed_cfg.documentdb(0);
         assertEquals("a", db.name());
         assertEquals(DocumentdbInfoConfig.Documentdb.Mode.INDEX, db.mode());
-        db = indexed_cfg.documentdb(1);
+        DocumentdbInfoConfig streaming_cfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.b");
+        assertEquals(1, streaming_cfg.documentdb().size());
+        db = streaming_cfg.documentdb(0);
         assertEquals("b", db.name());
         assertEquals(DocumentdbInfoConfig.Documentdb.Mode.STREAMING, db.mode());
     }
