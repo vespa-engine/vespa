@@ -493,6 +493,73 @@ public class ScriptTestCase {
                 sparseTensor.getTensor().get());
     }
 
+    /** Multiple paragraphs with sparse encoding (splade style) */
+    @Test
+    public void testArrayEmbedTo2dMappedTensor_wrongDimensionArgument() throws ParseException {
+        Map<String, Embedder> embedders = Map.of("emb1", new MockMappedEmbedder("myDocument.my2DSparseTensor"));
+
+        TensorType tensorType = TensorType.fromSpec("tensor(passage{}, token{})");
+        var expression = Expression.fromString("input myTextArray | embed emb1 doh | attribute 'my2DSparseTensor'",
+                new SimpleLinguistics(),
+                embedders);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
+        adapter.createField(new Field("my2DSparseTensor", new TensorDataType(tensorType)));
+
+        try {
+            expression.verify(new VerificationContext(adapter));
+            fail("Expected exception");
+        }
+        catch (VerificationException e) {
+            assertEquals("The dimension 'doh' given to embed is not a sparse dimension of the target type tensor(passage{},token{})",
+                    e.getMessage());
+        }
+    }
+
+    /** Multiple paragraphs with sparse encoding (splade style) */
+    @Test
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    public void testArrayEmbedTo2MappedTensor() throws ParseException {
+        Map<String, Embedder> embedders = Map.of("emb1", new MockMappedEmbedder("myDocument.my2DSparseTensor"));
+
+        TensorType tensorType = TensorType.fromSpec("tensor(passage{}, token{})");
+        var expression = Expression.fromString("input myTextArray | embed emb1 passage | attribute 'my2DSparseTensor'",
+                new SimpleLinguistics(),
+                embedders);
+        assertEquals("input myTextArray | embed emb1 passage | attribute my2DSparseTensor", expression.toString());
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
+        var tensorField = new Field("my2DSparseTensor", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
+
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("abc"));
+        array.add(new StringFieldValue("cde"));
+        adapter.setValue("myTextArray", array);
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
+
+        assertEquals(new TensorDataType(tensorType), expression.verify(new VerificationContext(adapter)));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(array);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("my2DSparseTensor"));
+        var sparse2DTensor = (TensorFieldValue)adapter.values.get("my2DSparseTensor");
+        assertEquals(Tensor.from(
+                tensorType,
+                        "tensor(passage{},token{}):" +
+                                "{{passage:0,token:97}:97.0, " +
+                                "{passage:0,token:98}:98.0, " +
+                                "{passage:0,token:99}:99.0, " +
+                                "{passage:1,token:100}:100.0, " +
+                                "{passage:1,token:101}:101.0, " +
+                                "{passage:1,token:99}:99.0}"),
+                sparse2DTensor.getTensor().get());
+    }
+
+
     private void assertThrows(Runnable r, String msg) {
         try {
             r.run();
