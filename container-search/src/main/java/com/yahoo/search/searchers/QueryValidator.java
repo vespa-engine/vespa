@@ -11,7 +11,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.schema.Field;
-import com.yahoo.search.schema.FieldInfo;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
@@ -55,7 +54,7 @@ public class QueryValidator extends Searcher {
         public boolean visit(Item item) {
             if (item instanceof HasIndexItem indexItem) {
                 var field = schema.fieldInfo(indexItem.getIndexName());
-                if (! field.isPresent()) return true;
+                if (field.isEmpty()) return true;
                 if (field.get().type().kind() == Field.Type.Kind.TENSOR)
                     throw new IllegalArgumentException("Cannot search for terms in '" + indexItem.getIndexName() +
                                                        "': It is a tensor field");
@@ -76,7 +75,7 @@ public class QueryValidator extends Searcher {
             if (schema.isStreaming()) return true; // prefix is always supported
             if (item instanceof PrefixItem prefixItem) {
                 var field = schema.fieldInfo(prefixItem.getIndexName());
-                if (! field.isPresent()) return true;
+                if (field.isEmpty()) return true;
                 if ( ! field.get().isAttribute())
                     throw new IllegalArgumentException("'" + prefixItem.getIndexName() + "' is not an attribute field: Prefix matching is not supported");
                 if (field.get().isIndex()) // index overrides attribute
