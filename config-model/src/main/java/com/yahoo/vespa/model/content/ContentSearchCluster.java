@@ -314,14 +314,12 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     private boolean hasIndexingModeStreaming(NewDocumentType type) {
         if (indexedCluster == null) return false;
-        var schemaInfo = indexedCluster.schemas().get(type.getName());
-        return (schemaInfo != null) && (schemaInfo.getIndexMode() == SchemaInfo.IndexMode.STREAMING);
+        return indexedCluster.schemas().get(type.getName()).getIndexMode() == SchemaInfo.IndexMode.STREAMING;
     }
 
     private boolean hasIndexingModeIndexed(NewDocumentType type) {
         if (indexedCluster == null) return false;
-        var schemaInfo = indexedCluster.schemas().get(type.getName());
-        return (schemaInfo != null) && (schemaInfo.getIndexMode() == SchemaInfo.IndexMode.INDEX);
+        return indexedCluster.schemas().get(type.getName()).getIndexMode() == SchemaInfo.IndexMode.INDEX;
     }
 
     private boolean hasIndexingModeStoreOnly(NewDocumentType type) {
