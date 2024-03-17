@@ -35,15 +35,15 @@ import static com.yahoo.vespa.model.container.PlatformBundles.SEARCH_AND_DOCPROC
  * @author gjoranv
  * @author Tony Vaagenes
  */
-public class ContainerSearch extends ContainerSubsystem<SearchChains>
-    implements
+public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         QrSearchersConfig.Producer,
         QueryProfilesConfig.Producer,
         SemanticRulesConfig.Producer,
         PageTemplatesConfig.Producer,
-        SchemaInfoConfig.Producer {
+        SchemaInfoConfig.Producer
+{
 
     public static final String QUERY_PROFILE_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
 
