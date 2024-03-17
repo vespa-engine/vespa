@@ -89,7 +89,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
         public Builder(Map<String, NewDocumentType> documentDefinitions,
                        Set<NewDocumentType> globallyDistributedDocuments,
-                       double fractionOfMemoryReserved, ResourceLimits resourceLimits) {
+                       double fractionOfMemoryReserved, ResourceLimits resourceLimits)
+        {
             this.documentDefinitions = documentDefinitions;
             this.globallyDistributedDocuments = globallyDistributedDocuments;
             this.fractionOfMemoryReserved = fractionOfMemoryReserved;
@@ -103,12 +104,9 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
             Boolean syncTransactionLog = clusterElem.childAsBoolean("engine.proton.sync-transactionlog");
 
-            var search = new ContentSearchCluster(ancestor, clusterName,
-                                                  deployState.getProperties().featureFlags(),
-                                                  documentDefinitions,
-                                                  globallyDistributedDocuments,
-                                                  getFlushOnShutdown(flushOnShutdownElem),
-                                                  syncTransactionLog,
+            var search = new ContentSearchCluster(ancestor, clusterName, deployState.getProperties().featureFlags(),
+                                                  documentDefinitions, globallyDistributedDocuments,
+                                                  getFlushOnShutdown(flushOnShutdownElem), syncTransactionLog,
                                                   fractionOfMemoryReserved);
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");

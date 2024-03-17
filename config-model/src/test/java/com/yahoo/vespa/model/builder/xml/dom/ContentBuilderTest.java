@@ -362,9 +362,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "      <node hostalias=\"mockhost\" distribution-key=\"0\" />" +
                         "    </group>" +
                         "</content>", new TestProperties().setEnvironmentVariables(List.of("MY_1_ENV=xyz abc", "MY_2_ENV=2")));
-        ContentSearchCluster s;
-
-        s = b.getSearch();
+        ContentSearchCluster s = b.getSearch();
         assertTrue(s.hasIndexedCluster());
         assertNotNull(s.getIndexed());
         assertEquals(1, b.getStorageCluster().getChildren().size());
