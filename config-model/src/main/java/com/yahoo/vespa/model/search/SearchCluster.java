@@ -3,32 +3,18 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.schema.DocumentOnlySchema;
-import com.yahoo.schema.derived.AttributeFields;
-import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.vespa.config.search.SummaryConfig;
-import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
-import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
-import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
-import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
-import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,50 +36,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     private Double visibilityDelay = 0.0;
     private final Map<String, SchemaInfo> schemas = new LinkedHashMap<>();
     private final Map<String, DocumentDatabase> documentDbs = new LinkedHashMap<>();
-    private final Map<String, AttributesProducer> documentDBProducerForStreaming = new HashMap<>();
-    private final List<LegacyStreamingProxy> legacyproxy = new ArrayList<>();
-
-    private static class LegacyStreamingProxy extends TreeConfigProducer<AnyConfigProducer> implements
-            AttributesConfig.Producer,
-            RankProfilesConfig.Producer,
-            RankingConstantsConfig.Producer,
-            RankingExpressionsConfig.Producer,
-            OnnxModelsConfig.Producer,
-            JuniperrcConfig.Producer,
-            SummaryConfig.Producer,
-            VsmsummaryConfig.Producer,
-            VsmfieldsConfig.Producer
-    {
-        private final DocumentDatabase db;
-        LegacyStreamingProxy(TreeConfigProducer<AnyConfigProducer> parent, String clusterName,
-                             String schemaName, DerivedConfiguration derived) {
-            super(parent, "cluster." + clusterName + "." + schemaName);
-            this.db = new DocumentDatabase(this, schemaName, derived);
-        }
-        @Override public void getConfig(SummaryConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(AttributesConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(OnnxModelsConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(RankingConstantsConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(RankProfilesConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(RankingExpressionsConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(JuniperrcConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(VsmfieldsConfig.Builder builder) { db.getConfig(builder); }
-        @Override public void getConfig(VsmsummaryConfig.Builder builder) { db.getConfig(builder); }
-    }
-
-    private static class AttributesProducer extends AnyConfigProducer implements AttributesConfig.Producer {
-        private final DerivedConfiguration derived;
-
-        AttributesProducer(TreeConfigProducer<AnyConfigProducer> parent, String docType, DerivedConfiguration derived) {
-            super(parent, docType);
-            this.derived = derived;
-        }
-
-        @Override
-        public void getConfig(AttributesConfig.Builder builder) {
-            derived.getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
-        }
-    }
 
     public SearchCluster(TreeConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
@@ -105,6 +47,9 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     public void add(SchemaInfo schema) {
         schemas.put(schema.name(), schema);
+    }
+    public void add(DocumentDatabase db) {
+        documentDbs.put(db.getName(), db);
     }
 
     public boolean hasDocumentDB(String name) {
@@ -127,19 +72,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
      * Derives the schemas from the application package.
      * Also stores the document names contained in the schemas.
      */
-    public void deriveFromSchemas(DeployState deployState) {
-        for (SchemaInfo spec : schemas().values()) {
-            if (spec.fullSchema() instanceof DocumentOnlySchema) continue; // TODO verify if this special handling is necessary
-            String schemaName = spec.fullSchema().getName();
-            var derived = new DerivedConfiguration(deployState, spec.fullSchema(), spec.getIndexMode());
-            documentDbs.put(schemaName, new DocumentDatabase(this, schemaName, derived));
-            if (spec.getIndexMode() == SchemaInfo.IndexMode.STREAMING) {
-                var parent = (TreeConfigProducer<AnyConfigProducer>)getParent();
-                documentDBProducerForStreaming.put(schemaName, new AttributesProducer(parent, schemaName, derived));
-                legacyproxy.add(new LegacyStreamingProxy(parent, clusterName, schemaName, derived));
-            }
-        }
-    }
+    public abstract void deriveFromSchemas(DeployState deployState);
 
     /** Returns the document databases contained in this cluster */
     public List<DocumentDatabase> getDocumentDbs() {
@@ -147,6 +80,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     }
 
     public String getClusterName()              { return clusterName; }
+    public final String getIndexingModeName()   { return getIndexingMode().getName(); }
     public final boolean hasStreaming() {
         return schemas().values().stream().anyMatch(schema -> schema.getIndexMode() == SchemaInfo.IndexMode.STREAMING);
     }
@@ -157,6 +91,7 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public final void setQueryTimeout(Double to) { this.queryTimeout = to; }
     public final void setVisibilityDelay(double delay) { this.visibilityDelay = delay; }
 
+    protected abstract IndexingMode getIndexingMode();
     public final Double getVisibilityDelay() { return visibilityDelay; }
     public final Double getQueryTimeout() { return queryTimeout; }
     public final void setClusterIndex(int index) { this.index = index; }
@@ -165,26 +100,13 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     public void fillDocumentDBConfig(String documentType, ProtonConfig.Documentdb.Builder builder) {
         DocumentDatabase db = documentDbs.get(documentType);
         if (db != null) {
-            builder.inputdoctypename(documentType);
-            if (db.getDerivedConfiguration().isStreaming()) {
-                builder.configid(documentDBProducerForStreaming.get(documentType).getConfigId());
-            } else {
-                builder.configid(db.getConfigId());
-            }
+            fillDocumentDBConfig(db, builder);
         }
     }
 
-    public QrSearchersConfig.Searchcluster.Builder getQrSearcherConfig() {
-        var builder = new QrSearchersConfig.Searchcluster.Builder()
-                .name(getClusterName())
-                .rankprofiles_configid(getConfigId())
-                .storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().routespec(getStorageRouteSpec()))
-                .indexingmode(hasStreaming() ? QrSearchersConfig.Searchcluster.Indexingmode.STREAMING
-                                             : QrSearchersConfig.Searchcluster.Indexingmode.REALTIME);
-        for (SchemaInfo spec : schemas().values()) {
-            builder.searchdef(spec.fullSchema().getName());
-        }
-        return builder;
+    protected void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
+        ddbB.inputdoctypename(sdoc.getSchemaName())
+            .configid(sdoc.getConfigId());
     }
 
     @Override
@@ -219,6 +141,24 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     @Override
     public String toString() { return "search-capable cluster '" + clusterName + "'"; }
+
+    public static final class IndexingMode {
+
+        public static final IndexingMode REALTIME  = new IndexingMode("REALTIME");
+        public static final IndexingMode STREAMING = new IndexingMode("STREAMING");
+
+        private final String name;
+
+        private IndexingMode(String name) {
+            this.name = name;
+        }
+
+        public String getName() { return name; }
+
+        public String toString() {
+            return "indexingmode: " + name;
+        }
+    }
 
     /**
      * Class used to retrieve combined configuration from multiple document databases.

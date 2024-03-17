@@ -92,9 +92,9 @@ public class StreamingSchemaClusterChangeValidatorTest {
     private static final String ATTRIBUTE_INT_FIELD = "field f1 type int { indexing: attribute | summary }";
     private static final String ATTRIBUTE_FAST_ACCESS_INT_FIELD = "field f1 type int { indexing: attribute | summary \n attribute: fast-access }";
     private static final List<ServiceInfo> FOO_SERVICE =
-            List.of(new ServiceInfo("searchnode", "null", null, null, "foo/search/cluster.foo/0", "null"));
+            List.of(new ServiceInfo("searchnode", "null", null, null, "foo/search/0", "null"));
     private static final List<ServiceInfo> BAR_SERVICE =
-            List.of(new ServiceInfo("searchnode2", "null", null, null, "bar/search/cluster.bar/0", "null"));
+            List.of(new ServiceInfo("searchnode2", "null", null, null, "bar/search/0", "null"));
 
     @Test
     void changing_field_type_requires_refeed() {
