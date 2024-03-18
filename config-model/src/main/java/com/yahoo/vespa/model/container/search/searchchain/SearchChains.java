@@ -41,9 +41,17 @@ public class SearchChains extends Chains<SearchChain> {
 
     private void setSearchClusterForLocalProvider(Map<String, ? extends SearchCluster> clusterIndexByName) {
         for (LocalProvider provider : localProviders()) {
-            SearchCluster cluster = clusterIndexByName.get(provider.getClusterName());
-            if (cluster == null)
-                throw new IllegalArgumentException("No searchable content cluster with id '" + provider.getClusterName() + "'");
+            String clusterName = provider.getClusterName();
+            SearchCluster cluster = clusterIndexByName.get(clusterName);
+            if (cluster == null) {
+                if (clusterName.contains(".")) { // Is there a super cluster ...
+                    String prefix = clusterName.substring(0, clusterName.indexOf('.'));
+                    cluster = clusterIndexByName.get(prefix);
+                }
+                if (cluster == null) {
+                    throw new IllegalArgumentException("No searchable content cluster with id '" + provider.getClusterName() + "'");
+                }
+            }
             provider.setSearchCluster(cluster);
         }
     }

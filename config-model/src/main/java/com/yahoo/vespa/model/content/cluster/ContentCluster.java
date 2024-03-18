@@ -140,7 +140,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             c.search.handleRedundancy(c.redundancy);
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
-            if (c.search.hasIndexedCluster() && !(c.persistenceFactory instanceof ProtonEngine.Factory) )
+            if (c.search.hasIndexed() && !(c.persistenceFactory instanceof ProtonEngine.Factory) )
                 throw new IllegalArgumentException("Indexed search requires proton as engine");
 
             if (documentsElement != null) {
