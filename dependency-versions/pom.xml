@@ -166,7 +166,7 @@
         <maven-deploy-plugin.vespa.version>3.1.1</maven-deploy-plugin.vespa.version>
         <maven-enforcer-plugin.vespa.version>3.4.1</maven-enforcer-plugin.vespa.version>
         <maven-failsafe-plugin.vespa.version>3.2.5</maven-failsafe-plugin.vespa.version>
-        <maven-gpg-plugin.vespa.version>3.2.0</maven-gpg-plugin.vespa.version>
+        <maven-gpg-plugin.vespa.version>3.2.1</maven-gpg-plugin.vespa.version>
         <maven-install-plugin.vespa.version>3.1.1</maven-install-plugin.vespa.version>
         <maven-jar-plugin.vespa.version>3.3.0</maven-jar-plugin.vespa.version>
         <maven-javadoc-plugin.vespa.version>3.6.3</maven-javadoc-plugin.vespa.version>
