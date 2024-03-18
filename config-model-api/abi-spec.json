@@ -1145,12 +1145,14 @@
     ],
     "methods" : [
       "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider[] values()",
-      "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider valueOf(java.lang.String)"
+      "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider valueOf(java.lang.String)",
+      "public boolean acme()"
     ],
     "fields" : [
       "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider digicert",
       "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider globalsign",
-      "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider zerossl"
+      "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider zerossl",
+      "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider letsencrypt"
     ]
   },
   "com.yahoo.config.model.api.EndpointCertificateMetadata" : {
