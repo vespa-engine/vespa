@@ -27,9 +27,7 @@ namespace search::streaming {
 namespace {
 
 bool disableRewrite(const QueryNode * qn) {
-    return dynamic_cast<const NearQueryNode *> (qn) ||
-           dynamic_cast<const PhraseQueryNode *> (qn) ||
-           dynamic_cast<const SameElementQueryNode *>(qn);
+    return dynamic_cast<const NearQueryNode *> (qn);
 }
 
 bool possibleFloat(const QueryTerm & qt, const QueryTerm::string & term) {
@@ -196,7 +194,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         qn = build_equiv_term(factory, queryRep, allowRewrite);
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
-        qn = build_same_element_term(factory, queryRep, allowRewrite);
+        qn = build_same_element_term(factory, queryRep);
         break;
     default:
         skip_unknown(queryRep);
@@ -337,7 +335,7 @@ QueryNode::build_equiv_term(const QueryNodeResultFactory& factory, SimpleQuerySt
 }
 
 std::unique_ptr<QueryNode>
-QueryNode::build_same_element_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep, bool allow_rewrite)
+QueryNode::build_same_element_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
 {
     auto sen = std::make_unique<SameElementQueryNode>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
     auto arity = queryRep.getArity();
@@ -345,7 +343,7 @@ QueryNode::build_same_element_term(const QueryNodeResultFactory& factory, Simple
     sen->setUniqueId(queryRep.getUniqueId());
     for (size_t i = 0; i < arity; ++i) {
         queryRep.next();
-        auto qn = Build(sen.get(), factory, queryRep, allow_rewrite);
+        auto qn = Build(sen.get(), factory, queryRep, false);
         auto qtp = dynamic_cast<QueryTerm*>(qn.get());
         assert(qtp != nullptr);
         qn.release();
