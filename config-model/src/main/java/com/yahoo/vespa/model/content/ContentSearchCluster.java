@@ -39,8 +39,6 @@ import java.util.function.Predicate;
  */
 public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> implements
         ProtonConfig.Producer,
-        DispatchNodesConfig.Producer,
-        DispatchConfig.Producer,
         Redundancy.Provider
 {
 
@@ -131,7 +129,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                 search.setVisibilityDelay(visibilityDelay);
             }
 
-            var isc = new IndexedSearchCluster(search, clusterName, 0, search, deployState.featureFlags());
+            var isc = new IndexedSearchCluster(search, clusterName, search, deployState.featureFlags());
             search.addSearchCluster(deployState, isc, getQueryTimeout(clusterElem), docElem.subElements("document"));
         }
     }
@@ -328,15 +326,16 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
-                .global(globalDocType);
-            ddbB.allocation.max_compact_buffers(defaultMaxCompactBuffers);
+                .global(globalDocType)
+                .allocation.max_compact_buffers(defaultMaxCompactBuffers);
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedSchema = true;
-                searchCluster.fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                ddbB.configid(searchCluster.getDocumentDBConfigId(type.getFullName().getName()));
                 ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STREAMING);
             } else if (hasIndexingModeIndexed(type)) {
-                searchCluster.fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+                ddbB.configid(searchCluster.getDocumentDBConfigId(type.getFullName().getName()));
+                ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.INDEX);
             } else {
                 hasAnyNonIndexedSchema = true;
                 ddbB.mode(ProtonConfig.Documentdb.Mode.Enum.STORE_ONLY);
@@ -388,14 +387,12 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         return globallyDistributedDocuments.contains(docType);
     }
 
-    @Override
     public void getConfig(DispatchNodesConfig.Builder builder) {
         if (searchCluster != null) {
             searchCluster.getConfig(builder);
         }
     }
 
-    @Override
     public void getConfig(DispatchConfig.Builder builder) {
         if (searchCluster != null) {
             searchCluster.getConfig(builder);

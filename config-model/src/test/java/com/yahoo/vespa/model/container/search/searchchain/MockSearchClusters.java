@@ -18,8 +18,8 @@ public class MockSearchClusters {
 
     private static class MockSearchCluster extends SearchCluster {
 
-        public MockSearchCluster(AbstractConfigProducerRoot root, String clusterName, int clusterIndex, boolean isStreaming) {
-            super(root, clusterName, clusterIndex);
+        public MockSearchCluster(AbstractConfigProducerRoot root, String clusterName,  boolean isStreaming) {
+            super(root, clusterName);
             streaming = isStreaming;
         }
 
@@ -36,15 +36,15 @@ public class MockSearchClusters {
 
     }
 
-    public static SearchCluster mockSearchCluster(AbstractConfigProducerRoot root, String clusterName, int clusterIndex, boolean isStreaming) {
+    public static SearchCluster mockSearchCluster(AbstractConfigProducerRoot root, String clusterName, boolean isStreaming) {
 
-        return new MockSearchCluster(root, clusterName, clusterIndex, isStreaming);
+        return new MockSearchCluster(root, clusterName, isStreaming);
     }
 
     public static Map<String, SearchCluster> twoMockClusterSpecsByName(AbstractConfigProducerRoot root) {
         Map<String, SearchCluster> result = new HashMap<>();
-        result.put("cluster1", mockSearchCluster(root, "cluster1", 1, false));
-        result.put("cluster2", mockSearchCluster(root, "cluster2", 2, true));
+        result.put("cluster1", mockSearchCluster(root, "cluster1", false));
+        result.put("cluster2", mockSearchCluster(root, "cluster2", true));
         return result;
     }
 }

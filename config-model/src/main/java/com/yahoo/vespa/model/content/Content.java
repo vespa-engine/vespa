@@ -128,8 +128,8 @@ public class Content extends ConfigModel {
     public static List<Content> getContent(ConfigModelRepo pc) {
         List<Content> contents = new ArrayList<>();
         for (ConfigModel model : pc.asMap().values())
-            if (model instanceof Content)
-                contents.add((Content)model);
+            if (model instanceof Content content)
+                contents.add(content);
         return contents;
     }
 

@@ -1,13 +1,8 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=search.config
 
-#The id of the cluster (as specified in qr-searchers)
-#Note: Use clusterName where possible instead
-clusterId int default=0
-
 #Timeout for internal searcher cache. Entries older than this number
-#of seconds will be removed from cache. 0 or less means the cache is
-#disabled.
+#of seconds will be removed from cache. 0 or less means the cache is disabled.
 cacheTimeout double default=0
 
 #The name of the cluster (as specified in qr-searchers)

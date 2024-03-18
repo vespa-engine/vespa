@@ -149,13 +149,11 @@ public class SchemaClusterTest {
         ClusterConfig.Builder clusterConfigBuilder = new ClusterConfig.Builder();
         model.getConfig(clusterConfigBuilder, "j1/searchchains/chain/normal/component/com.yahoo.prelude.cluster.ClusterSearcher");
         ClusterConfig clusterConfig = new ClusterConfig(clusterConfigBuilder);
-        assertEquals(normalIndex, clusterConfig.clusterId());
         assertEquals("normal", clusterConfig.clusterName());
 
         ClusterConfig.Builder clusterConfigBuilder2 = new ClusterConfig.Builder();
         model.getConfig(clusterConfigBuilder2, "j2/searchchains/chain/xbulk/component/com.yahoo.prelude.cluster.ClusterSearcher");
         ClusterConfig clusterConfig2 = new ClusterConfig(clusterConfigBuilder2);
-        assertEquals(xbulkIndex, clusterConfig2.clusterId());
         assertEquals("xbulk", clusterConfig2.clusterName());
 
         SearchCluster searchCluster1 = model.getSearchClusters().get(normalIndex);

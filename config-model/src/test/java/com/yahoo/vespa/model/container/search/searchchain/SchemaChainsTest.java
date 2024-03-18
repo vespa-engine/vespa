@@ -87,7 +87,6 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
 
     @Test
     void validateLocalProviderConfig() {
-        assertEquals(2, clusterConfig.clusterId());
         assertEquals("cluster2", clusterConfig.clusterName());
     }
 

@@ -21,8 +21,6 @@ import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
-import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.search.SearchCluster;
 import org.w3c.dom.Element;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -261,7 +259,6 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param configModelRepo a {@link ConfigModelRepo}
      */
     public void postProc(DeployState deployState, TreeConfigProducer<AnyConfigProducer> root, ConfigModelRepo configModelRepo) {
-        setContentSearchClusterIndexes(configModelRepo);
         createDocprocMBusServersAndClients(configModelRepo);
         if (deployState.isHosted()) validateContainerClusterIds(configModelRepo);
     }
@@ -287,17 +284,6 @@ public class VespaDomBuilder extends VespaModelBuilder {
             if (clashing != null) throw new IllegalArgumentException("container clusters '" + clashing + "' and '" + name +
                                                                      "' have clashing endpoint names, when '_' is replaced " +
                                                                      "with '-' to form valid domain names");
-        }
-    }
-
-    /**
-     * For some reason, search clusters need to be enumerated.
-     * @param configModelRepo a {@link ConfigModelRepo}
-     */
-    private void setContentSearchClusterIndexes(ConfigModelRepo configModelRepo) {
-        int index = 0;
-        for (SearchCluster sc : Content.getSearchClusters(configModelRepo)) {
-            sc.setClusterIndex(index++);
         }
     }
 

@@ -18,9 +18,7 @@ import java.util.List;
 /**
  * @author baldersheim
  */
-public class IndexedSearchCluster extends SearchCluster implements
-        DispatchConfig.Producer,
-        DispatchNodesConfig.Producer
+public class IndexedSearchCluster extends SearchCluster
 {
     private Tuning tuning;
     private SearchCoverage searchCoverage;
@@ -32,9 +30,9 @@ public class IndexedSearchCluster extends SearchCluster implements
     private final double dispatchWarmup;
     private final String summaryDecodePolicy;
 
-    public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index,
+    public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName,
                                 Redundancy.Provider redundancyProvider, ModelContext.FeatureFlags featureFlags) {
-        super(parent, clusterName, index);
+        super(parent, clusterName);
         this.redundancyProvider = redundancyProvider;
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
@@ -66,7 +64,6 @@ public class IndexedSearchCluster extends SearchCluster implements
             case LATENCY_AMORTIZED_OVER_TIME: yield DistributionPolicy.LATENCY_AMORTIZED_OVER_TIME;
         };
     }
-    @Override
     public void getConfig(DispatchNodesConfig.Builder builder) {
         for (SearchNode node : getSearchNodes()) {
             DispatchNodesConfig.Node.Builder nodeBuilder = new DispatchNodesConfig.Node.Builder();
@@ -77,7 +74,6 @@ public class IndexedSearchCluster extends SearchCluster implements
             builder.node(nodeBuilder);
         }
     }
-    @Override
     public void getConfig(DispatchConfig.Builder builder) {
         if (tuning.dispatch.getTopkProbability() != null) {
             builder.topKProbability(tuning.dispatch.getTopkProbability());
