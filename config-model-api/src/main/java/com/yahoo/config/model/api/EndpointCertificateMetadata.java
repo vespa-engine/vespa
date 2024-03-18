@@ -5,7 +5,23 @@ import java.util.Objects;
 
 public class EndpointCertificateMetadata {
 
-    public enum Provider { digicert, globalsign, zerossl }
+    public enum Provider {
+
+        digicert(false),
+        globalsign(false),
+        zerossl(true),
+        letsencrypt(true);
+
+        private final boolean acme;
+
+        Provider(boolean acme) {
+            this.acme = acme;
+        }
+
+        public boolean acme() { return acme; }
+
+    }
+
     private final String keyName;
     private final String certName;
     private final int version;
