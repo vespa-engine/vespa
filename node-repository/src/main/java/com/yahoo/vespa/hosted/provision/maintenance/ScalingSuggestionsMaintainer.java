@@ -98,8 +98,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
                                   Mutex lock) {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return;
-        applications().put(application.with(cluster.get().withSuggestions(suggestions)
-                .withSuggested(suggestions.stream().findFirst().orElse(Autoscaling.empty()))), lock);
+        applications().put(application.with(cluster.get().withSuggestions(suggestions)), lock);
     }
 
     private boolean isHigher(ClusterResources r1, ClusterResources r2) {

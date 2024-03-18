@@ -225,14 +225,6 @@ public class MockNodeRepository extends NodeRepository {
                                 null), app1Id, provisioner);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
-        cluster1 = cluster1.withSuggested(new Autoscaling(Autoscaling.Status.unavailable,
-                                                          "",
-                                                          Optional.of(new ClusterResources(6, 2,
-                                                                                           new NodeResources(3, 20, 100, 1))),
-                                                          clock().instant(),
-                                                          Load.zero(),
-                                                          Load.zero(),
-                                                          Autoscaling.Metrics.zero()));
         cluster1 = cluster1.withSuggestions(List.of(new Autoscaling(Autoscaling.Status.unavailable,
                                                           "",
                                                           Optional.of(new ClusterResources(6, 2,

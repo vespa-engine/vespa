@@ -33,7 +33,6 @@ public class Cluster {
     private final ClusterResources min, max;
     private final IntRange groupSize;
     private final boolean required;
-    private final Autoscaling suggested;
     private final List<Autoscaling> suggestions;
     private final Autoscaling target;
     private final ClusterInfo clusterInfo;
@@ -48,7 +47,6 @@ public class Cluster {
                    ClusterResources maxResources,
                    IntRange groupSize,
                    boolean required,
-                   Autoscaling suggested,
                    List<Autoscaling> suggestions,
                    Autoscaling target,
                    ClusterInfo clusterInfo,
@@ -60,7 +58,6 @@ public class Cluster {
         this.max = Objects.requireNonNull(maxResources);
         this.groupSize = Objects.requireNonNull(groupSize);
         this.required = required;
-        this.suggested = Objects.requireNonNull(suggested);
         this.suggestions = Objects.requireNonNull(suggestions);
         Objects.requireNonNull(target);
         if (target.resources().isPresent() && ! target.resources().get().isWithin(minResources, maxResources))
@@ -100,12 +97,6 @@ public class Cluster {
     public Autoscaling target() { return target; }
 
     /**
-     * The suggested resources, which may or may not be within the min and max limits,
-     * or empty if there is currently no recorded suggestion.
-     */
-    public Autoscaling suggested() { return suggested; }
-
-    /**
      * The list of suggested resources, which may or may not be within the min and max limits,
      * or empty if there is currently no recorded suggestion.
      * List is sorted by preference
@@ -143,23 +134,19 @@ public class Cluster {
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
                            capacity.minResources(), capacity.maxResources(), capacity.groupSize(), capacity.isRequired(),
-                           suggested, suggestions, target, capacity.clusterInfo(), bcpGroupInfo, scalingEvents);
-    }
-
-    public Cluster withSuggested(Autoscaling suggested) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+                           suggestions, target, capacity.clusterInfo(), bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withSuggestions(List<Autoscaling> suggestions) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withTarget(Autoscaling target) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster with(BcpGroupInfo bcpGroupInfo) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -173,7 +160,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     @Override
@@ -205,7 +192,7 @@ public class Cluster {
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
         return new Cluster(id, exclusive,
                            requested.minResources(), requested.maxResources(), requested.groupSize(), requested.isRequired(),
-                           Autoscaling.empty(), List.of(), Autoscaling.empty(), requested.clusterInfo(), BcpGroupInfo.empty(), List.of());
+                           List.of(), Autoscaling.empty(), requested.clusterInfo(), BcpGroupInfo.empty(), List.of());
     }
 
     /** The predicted time it will take to rescale this cluster. */
