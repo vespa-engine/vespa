@@ -3,7 +3,6 @@ package com.yahoo.prelude.searcher.test;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.searcher.ValidateSortingSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -30,14 +29,10 @@ public class ValidateSortingSearcherTestCase {
 
     @SuppressWarnings("deprecation")
     public ValidateSortingSearcherTestCase() {
-        QrSearchersConfig.Builder qrsCfg = new QrSearchersConfig.Builder();
-        qrsCfg.searchcluster(new QrSearchersConfig.Searchcluster.Builder().name("giraffes"));
-        ClusterConfig.Builder clusterCfg = new ClusterConfig.Builder().
-                clusterId(0).
-                clusterName("test");
+        ClusterConfig.Builder clusterCfg = new ClusterConfig.Builder()
+                .clusterName("giraffes");
         String attributesCfg = "file:src/test/java/com/yahoo/prelude/searcher/test/validate_sorting.cfg";
-        searcher = new ValidateSortingSearcher(new QrSearchersConfig(qrsCfg),
-                                               new ClusterConfig(clusterCfg),
+        searcher = new ValidateSortingSearcher(new ClusterConfig(clusterCfg),
                                                ConfigGetter.getConfig(AttributesConfig.class, attributesCfg));
     }
 
@@ -82,7 +77,6 @@ public class ValidateSortingSearcherTestCase {
         return transform(QueryTestCase.httpEncode(sorting), null);
     }
 
-    @SuppressWarnings("deprecation")
     private String transform(String sorting, String language) {
         String q = "/?query=a";
         if (sorting != null) {

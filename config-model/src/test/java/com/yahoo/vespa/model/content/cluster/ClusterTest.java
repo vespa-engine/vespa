@@ -30,7 +30,7 @@ public class ClusterTest {
                 "  <query-timeout>1.1</query-timeout>",
                 "  <visibility-delay>2.3</visibility-delay>",
                 "</search>"));
-        SearchCluster searchCluster = cluster.getSearch().getIndexed();
+        SearchCluster searchCluster = cluster.getSearch().getSearchCluster();
         assertNotNull(searchCluster);
         assertEquals(1.1, searchCluster.getQueryTimeout(), DELTA);
         assertEquals(2.3, searchCluster.getVisibilityDelay(), DELTA);

@@ -5,16 +5,10 @@ namespace=search.config
 #Note: Use clusterName where possible instead
 clusterId int default=0
 
-# Not used
-cacheSize int default=1
-
 #Timeout for internal searcher cache. Entries older than this number
 #of seconds will be removed from cache. 0 or less means the cache is
 #disabled.
 cacheTimeout double default=0
-
-#Whether or not to try another TLD if the current request fails.
-failoverToRemote bool default=false
 
 #The name of the cluster (as specified in qr-searchers)
 clusterName string
@@ -25,3 +19,12 @@ maxQueryTimeout double default=600
 #The maximum query timeout allowed before disabling the backend query cache for the given query (default 10 seconds).
 #Note that the query timeout is used as the query cache timeout in the backend if enabled.
 maxQueryCacheTimeout double default=10
+
+#The configid to use to get other clusterspecific configs.
+configid string default=""
+
+#The mbus route to the backing content cluster
+storageRoute string default=""
+
+#Indexing mode for this cluster. This is a temporary workaround until this is correctly resolved per schema all over.
+indexMode enum {INDEX, STREAMING, STORE_ONLY} default = INDEX

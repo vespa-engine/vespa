@@ -17,7 +17,6 @@ import com.yahoo.vespa.model.search.SearchCluster;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -38,12 +37,7 @@ public class LocalProvider extends Provider implements
 
     @Override
     public void getConfig(ClusterConfig.Builder builder) {
-        Objects.requireNonNull(searchCluster,  "Null search cluster!");
-        builder.clusterId(searchCluster.getClusterIndex());
-        builder.clusterName(searchCluster.getClusterName());
-
-        if (searchCluster.getVisibilityDelay() != null)
-            builder.cacheTimeout(convertVisibilityDelay(searchCluster.getVisibilityDelay()));
+        searchCluster.getConfig(builder);
     }
 
     @Override
@@ -129,15 +123,6 @@ public class LocalProvider extends Provider implements
     @Override
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
         searchCluster.getConfig(builder);
-    }
-
-    // The semantics of visibility delay in search is deactivating caches if the
-    // delay is less than 1.0, in qrs the cache is deactivated if the delay is 0
-    // (or less). 1.0 seems a little arbitrary, so just doing the conversion
-    // here instead of having two totally independent implementations having to
-    // follow each other down in the modules.
-    private static Double convertVisibilityDelay(Double visibilityDelay) {
-        return (visibilityDelay < 1.0d) ? 0.0d : visibilityDelay;
     }
 
 }

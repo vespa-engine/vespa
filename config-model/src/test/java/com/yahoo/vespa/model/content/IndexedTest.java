@@ -113,7 +113,7 @@ public class IndexedTest extends ContentBaseTest {
         VespaModelCreatorWithMockPkg creator = getIndexedVespaModelCreator();
         VespaModel model = creator.create();
         DeployState deployState = creator.deployState;
-        IndexedSearchCluster cluster = model.getContentClusters().get("test").getSearch().getIndexed();
+        IndexedSearchCluster cluster = model.getContentClusters().get("test").getSearch().getSearchCluster();
         assertEquals(3, cluster.getDocumentDbs().size());
         NewDocumentType type1 = deployState.getDocumentModel().getDocumentManager().getDocumentType("type1");
         NewDocumentType type2 = deployState.getDocumentModel().getDocumentManager().getDocumentType("type2");

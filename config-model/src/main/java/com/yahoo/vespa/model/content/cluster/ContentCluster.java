@@ -73,14 +73,14 @@ import static java.util.logging.Level.WARNING;
  * @author bratseth
  */
 public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implements
-                                                           DistributionConfig.Producer,
-                                                           StorDistributionConfig.Producer,
-                                                           StorDistributormanagerConfig.Producer,
-                                                           FleetcontrollerConfig.Producer,
-                                                           MetricsmanagerConfig.Producer,
-                                                           MessagetyperouteselectorpolicyConfig.Producer,
-                                                           BucketspacesConfig.Producer {
-
+        DistributionConfig.Producer,
+        StorDistributionConfig.Producer,
+        StorDistributormanagerConfig.Producer,
+        FleetcontrollerConfig.Producer,
+        MetricsmanagerConfig.Producer,
+        MessagetyperouteselectorpolicyConfig.Producer,
+        BucketspacesConfig.Producer
+{
     private final String documentSelection;
     private ContentSearchCluster search;
     private final boolean isHosted;
@@ -177,8 +177,9 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             if (visibilityDelay != null) {
                 csc.setVisibilityDelay(visibilityDelay);
             }
-            if (csc.hasIndexedCluster()) {
-                setupIndexedCluster(csc.getIndexed(), search, element, logger);
+            IndexedSearchCluster sc = csc.getSearchCluster();
+            if (sc != null) {
+                setupIndexedCluster(sc, search, element, logger);
             }
         }
 
@@ -530,7 +531,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         super.validate();
         if (search.usesHierarchicDistribution() && !isHosted) {
             // validate manually configured groups
-            new IndexedHierarchicDistributionValidator(rootGroup, redundancy, search.getIndexed().getTuning().dispatch.getDispatchPolicy()).validate();
+            new IndexedHierarchicDistributionValidator(rootGroup, redundancy, search.getSearchCluster().getTuning().dispatch.getDispatchPolicy()).validate();
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
         new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments);

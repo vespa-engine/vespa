@@ -2,12 +2,8 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.schema.DocumentOnlySchema;
-import com.yahoo.schema.derived.DerivedConfiguration;
-import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchConfig.DistributionPolicy;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;

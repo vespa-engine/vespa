@@ -55,7 +55,6 @@ import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.ModelName;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
 import com.yahoo.vespa.model.routing.Routing;
-import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import org.xml.sax.SAXException;
@@ -207,9 +206,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                                                 .map(type -> type.getFullName().getName())
                                                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        Set<String> typesWithIndexedFields = content.getSearch().getIndexed() == null
+        Set<String> typesWithIndexedFields = content.getSearch().getSearchCluster() == null
                                              ? Set.of()
-                                             : content.getSearch().getIndexed().schemas().values().stream()
+                                             : content.getSearch().getSearchCluster().schemas().values().stream()
                                                       .filter(schemaInfo -> schemaInfo.fullSchema()
                                                                                   .allConcreteFields()
                                                                                   .stream().anyMatch(SDField::doesIndexing))

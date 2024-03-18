@@ -2480,7 +2480,7 @@ public class ModelProvisioningTest {
 
     private long protonMemorySize(ContentCluster cluster) {
         ProtonConfig.Builder b  = new ProtonConfig.Builder();
-        cluster.getSearch().getIndexed().getSearchNode(0).getConfig(b);
+        cluster.getSearch().getSearchCluster().getSearchNode(0).getConfig(b);
         return b.build().hwinfo().memory().size();
     }
 
