@@ -89,10 +89,10 @@ SameElementQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td
     }
 }
 
-const MultiTerm*
-SameElementQueryNode::as_multi_index_multi_term() const noexcept
+bool
+SameElementQueryNode::multi_index_terms() const noexcept
 {
-    return this;
+    return true;
 }
 
 }

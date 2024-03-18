@@ -29,7 +29,12 @@ public:
               std::unique_ptr<query::TermVector> terms, Normalizing normalizing);
     ~MultiTerm() override;
     void add_term(std::unique_ptr<QueryTerm> term);
-    MultiTerm* as_multi_term() noexcept override { return this; }
+    MultiTerm* as_multi_term() noexcept override;
+    const MultiTerm* as_multi_term() const noexcept override;
+    /*
+     * Terms below search in different indexes when multi_index_terms() returns true.
+     */
+    virtual bool multi_index_terms() const noexcept;
     void reset() override;
     bool evaluate() const override;
     const std::vector<std::unique_ptr<QueryTerm>>& get_terms() const noexcept { return _terms; }
