@@ -9,6 +9,7 @@ import com.yahoo.slime.Type;
 
 import static com.yahoo.config.model.api.EndpointCertificateMetadata.Provider.digicert;
 import static com.yahoo.config.model.api.EndpointCertificateMetadata.Provider.globalsign;
+import static com.yahoo.config.model.api.EndpointCertificateMetadata.Provider.letsencrypt;
 import static com.yahoo.config.model.api.EndpointCertificateMetadata.Provider.zerossl;
 
 /**
@@ -53,6 +54,7 @@ public class EndpointCertificateMetadataSerializer {
             case "digicert" -> digicert;
             case "globalsign" -> globalsign;
             case "zerossl" -> zerossl;
+            case "letsencrypt" -> letsencrypt;
             default -> digicert;
         };
     }
@@ -62,6 +64,8 @@ public class EndpointCertificateMetadataSerializer {
             case digicert -> "digicert";
             case globalsign -> "globalsign";
             case zerossl -> "zerossl";
+            case letsencrypt -> "letsencrypt";
         };
     }
+
 }
