@@ -51,4 +51,22 @@ MultiTerm::evaluate() const
     return false;
 }
 
+MultiTerm*
+MultiTerm::as_multi_term() noexcept
+{
+    return this;
+}
+
+const MultiTerm*
+MultiTerm::as_multi_term() const noexcept
+{
+    return this;
+}
+
+bool
+MultiTerm::multi_index_terms() const noexcept
+{
+    return false;
+}
+
 }

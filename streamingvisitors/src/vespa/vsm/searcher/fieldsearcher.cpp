@@ -192,9 +192,9 @@ FieldSearcher::init()
 void
 FieldIdTSearcherMap::prepare_term(const DocumentTypeIndexFieldMapT& difm, QueryTerm* qt, FieldIdT fid, vespalib::hash_set<const void*>& seen, QueryTermList& onlyInIndex)
 {
-    auto equiv = qt->as_equiv_query_node();
-    if (equiv != nullptr) {
-        for (auto& subterm : equiv->get_terms()) {
+    auto multi_term = qt->as_multi_term();
+    if (multi_term != nullptr && multi_term->multi_index_terms()) {
+        for (auto& subterm : multi_term->get_terms()) {
             prepare_term(difm, subterm.get(), fid, seen, onlyInIndex);
         }
         return;
@@ -206,7 +206,6 @@ FieldIdTSearcherMap::prepare_term(const DocumentTypeIndexFieldMapT& difm, QueryT
             const FieldIdTList & index = found->second;
             if ((find(index.begin(), index.end(), fid) != index.end()) && !seen.contains(qt)) {
                 seen.insert(qt);
-                auto multi_term = qt->as_multi_term();
                 if (multi_term != nullptr) {
                     for (auto& subterm : multi_term->get_terms()) {
                         onlyInIndex.emplace_back(subterm.get());

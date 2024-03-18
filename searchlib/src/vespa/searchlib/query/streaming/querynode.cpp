@@ -11,6 +11,7 @@
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
+#include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/term_vector.h>
@@ -26,9 +27,7 @@ namespace search::streaming {
 namespace {
 
 bool disableRewrite(const QueryNode * qn) {
-    return dynamic_cast<const NearQueryNode *> (qn) ||
-           dynamic_cast<const PhraseQueryNode *> (qn) ||
-           dynamic_cast<const SameElementQueryNode *>(qn);
+    return dynamic_cast<const NearQueryNode *> (qn);
 }
 
 bool possibleFloat(const QueryTerm & qt, const QueryTerm::string & term) {
@@ -49,7 +48,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_OR:
     case ParseItem::ITEM_WEAK_AND:
     case ParseItem::ITEM_NOT:
-    case ParseItem::ITEM_SAME_ELEMENT:
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
     case ParseItem::ITEM_RANK:
@@ -61,9 +59,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             if (nqn) {
                 nqn->distance(queryRep.getNearDistance());
             }
-            if ((type == ParseItem::ITEM_WEAK_AND) ||
-                (type == ParseItem::ITEM_SAME_ELEMENT))
-            {
+            if (type == ParseItem::ITEM_WEAK_AND) {
                 qn->setIndex(queryRep.getIndexName());
             }
             for (size_t i=0; i < arity; i++) {
@@ -196,6 +192,9 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         break;
     case ParseItem::ITEM_EQUIV:
         qn = build_equiv_term(factory, queryRep, allowRewrite);
+        break;
+    case ParseItem::ITEM_SAME_ELEMENT:
+        qn = build_same_element_term(factory, queryRep);
         break;
     default:
         skip_unknown(queryRep);
@@ -333,6 +332,25 @@ QueryNode::build_equiv_term(const QueryNodeResultFactory& factory, SimpleQuerySt
         eqn->add_term(std::move(qt));
     }
     return eqn;
+}
+
+std::unique_ptr<QueryNode>
+QueryNode::build_same_element_term(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep)
+{
+    auto sen = std::make_unique<SameElementQueryNode>(factory.create(), queryRep.getIndexName(), queryRep.getArity());
+    auto arity = queryRep.getArity();
+    sen->setWeight(queryRep.GetWeight());
+    sen->setUniqueId(queryRep.getUniqueId());
+    for (size_t i = 0; i < arity; ++i) {
+        queryRep.next();
+        auto qn = Build(sen.get(), factory, queryRep, false);
+        auto qtp = dynamic_cast<QueryTerm*>(qn.get());
+        assert(qtp != nullptr);
+        qn.release();
+        std::unique_ptr<QueryTerm> qt(qtp);
+        sen->add_term(std::move(qt));
+    }
+    return sen;
 }
 
 void

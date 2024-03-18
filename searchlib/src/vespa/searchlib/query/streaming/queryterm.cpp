@@ -135,6 +135,12 @@ QueryTerm::as_multi_term() noexcept
     return nullptr;
 }
 
+const MultiTerm*
+QueryTerm::as_multi_term() const noexcept
+{
+    return nullptr;
+}
+
 RegexpTerm*
 QueryTerm::as_regexp_term() noexcept
 {
@@ -143,12 +149,6 @@ QueryTerm::as_regexp_term() noexcept
 
 FuzzyTerm*
 QueryTerm::as_fuzzy_term() noexcept
-{
-    return nullptr;
-}
-
-EquivQueryNode*
-QueryTerm::as_equiv_query_node() noexcept
 {
     return nullptr;
 }

@@ -1,12 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/simpletermdata.h>
+#include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+using search::fef::MatchData;
+using search::fef::SimpleTermData;
+using search::fef::TermFieldHandle;
+using search::fef::test::IndexEnvironment;
 using search::query::QueryBuilder;
 using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
@@ -44,11 +52,11 @@ TEST(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
     const QueryNode & root = q.getRoot();
     auto sameElement = dynamic_cast<const SameElementQueryNode *>(&root);
     EXPECT_TRUE(sameElement != nullptr);
-    EXPECT_EQ(2u, sameElement->size());
+    EXPECT_EQ(2u, sameElement->get_terms().size());
     EXPECT_EQ("xyz_abcdefghij_xyzxyzx", sameElement->getIndex());
-    auto term0 = dynamic_cast<const QueryTerm *>((*sameElement)[0].get());
+    auto term0 = sameElement->get_terms()[0].get();
     EXPECT_TRUE(term0 != nullptr);
-    auto term1 = dynamic_cast<const QueryTerm *>((*sameElement)[1].get());
+    auto term1 = sameElement->get_terms()[1].get();
     EXPECT_TRUE(term1 != nullptr);
 }
 
@@ -75,15 +83,17 @@ TEST(SameElementQueryNodeTest, test_same_element_evaluate)
     auto * sameElem = dynamic_cast<SameElementQueryNode *>(&q.getRoot());
     EXPECT_TRUE(sameElem != nullptr);
     EXPECT_EQ("field", sameElem->getIndex());
-    EXPECT_EQ(3u, sameElem->size());
-    verifyQueryTermNode("field.f1", (*sameElem)[0].get());
-    verifyQueryTermNode("field.f2", (*sameElem)[1].get());
-    verifyQueryTermNode("field.f3", (*sameElem)[2].get());
+    EXPECT_EQ(3u, sameElem->get_terms().size());
+    verifyQueryTermNode("field.f1", sameElem->get_terms()[0].get());
+    verifyQueryTermNode("field.f2", sameElem->get_terms()[1].get());
+    verifyQueryTermNode("field.f3", sameElem->get_terms()[2].get());
 
-    QueryTermList terms;
-    q.getLeaves(terms);
+    QueryTermList leaves;
+    q.getLeaves(leaves);
+    EXPECT_EQ(1u, leaves.size());
+    auto& terms = sameElem->get_terms();
     EXPECT_EQ(3u, terms.size());
-    for (QueryTerm * qt : terms) {
+    for (auto& qt : terms) {
         qt->resizeFieldId(3);
     }
 
@@ -130,6 +140,19 @@ TEST(SameElementQueryNodeTest, test_same_element_evaluate)
     EXPECT_EQ(160, hits[3].element_weight());
     EXPECT_EQ(0u, hits[3].position());
     EXPECT_TRUE(sameElem->evaluate());
+
+    SimpleTermData td;
+    constexpr TermFieldHandle handle0 = 27;
+    constexpr TermFieldHandle handle_max = handle0;
+    td.addField(0).setHandle(handle0);
+    auto md = MatchData::makeTestInstance(handle_max + 1, handle_max + 1);
+    auto tfmd0 = md->resolveTermField(handle0);
+    tfmd0->setNeedInterleavedFeatures(true);
+    IndexEnvironment ie;
+    sameElem->unpack_match_data(2, td, *md, ie);
+    EXPECT_EQ(2, tfmd0->getDocId());
+    EXPECT_EQ(0, tfmd0->getNumOccs());
+    EXPECT_EQ(0, tfmd0->end() - tfmd0->begin());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

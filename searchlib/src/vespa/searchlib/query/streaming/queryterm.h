@@ -104,9 +104,9 @@ public:
     void setFuzzyPrefixLength(uint32_t fuzzyPrefixLength) { _fuzzyPrefixLength = fuzzyPrefixLength; }
     virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
     virtual MultiTerm* as_multi_term() noexcept;
+    virtual const MultiTerm* as_multi_term() const noexcept;
     virtual RegexpTerm* as_regexp_term() noexcept;
     virtual FuzzyTerm* as_fuzzy_term() noexcept;
-    virtual EquivQueryNode* as_equiv_query_node() noexcept;
     virtual const EquivQueryNode* as_equiv_query_node() const noexcept;
     virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env);
 protected:
