@@ -147,8 +147,8 @@ QueryTerm::as_fuzzy_term() noexcept
     return nullptr;
 }
 
-EquivQueryNode*
-QueryTerm::as_equiv_query_node() noexcept
+const MultiTerm*
+QueryTerm::as_multi_index_multi_term() const noexcept
 {
     return nullptr;
 }

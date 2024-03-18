@@ -223,9 +223,9 @@ FieldSearchSpecMap::buildFieldsInQuery(const Query & query) const
     query.getLeaves(qtl);
 
     for (const auto & term : qtl) {
-        auto equiv = term->as_equiv_query_node();
-        if (equiv != nullptr) {
-            for (const auto& subterm : equiv->get_terms()) {
+        auto mimt = term->as_multi_index_multi_term();
+        if (mimt != nullptr) {
+            for (const auto& subterm : mimt->get_terms()) {
                 addFieldsFromIndex(subterm->index(), fieldsInQuery);
             }
         } else {

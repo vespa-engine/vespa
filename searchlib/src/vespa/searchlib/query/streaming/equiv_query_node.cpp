@@ -81,8 +81,8 @@ EquivQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef:
     unpack_match_data_helper(docid, td, match_data, hit_list, *this, is_filter(), index_env);
 }
 
-EquivQueryNode*
-EquivQueryNode::as_equiv_query_node() noexcept
+const MultiTerm*
+EquivQueryNode::as_multi_index_multi_term() const noexcept
 {
     return this;
 }

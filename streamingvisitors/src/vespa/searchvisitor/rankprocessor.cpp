@@ -56,7 +56,7 @@ getFeature(const RankProgram &rankProgram) {
 }
 
 void
-RankProcessor::resolve_fields_from_children(QueryTermData& qtd, MultiTerm& mt)
+RankProcessor::resolve_fields_from_children(QueryTermData& qtd, const MultiTerm& mt)
 {
     vespalib::hash_set<uint32_t> field_ids;
     for (auto& subterm : mt.get_terms()) {
@@ -83,7 +83,7 @@ RankProcessor::resolve_fields_from_children(QueryTermData& qtd, MultiTerm& mt)
 }
 
 void
-RankProcessor::resolve_fields_from_term(QueryTermData& qtd, search::streaming::QueryTerm& term)
+RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::streaming::QueryTerm& term)
 {
     vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term.index());
     const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
