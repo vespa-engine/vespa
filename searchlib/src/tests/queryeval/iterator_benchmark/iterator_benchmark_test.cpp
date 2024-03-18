@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "benchmark_searchable.h"
+#include "common.h"
 #include "disk_index_builder.h"
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -39,6 +39,8 @@ using search::index::DocIdAndFeatures;
 using search::index::Schema;
 using search::queryeval::test::BenchmarkSearchable;
 using search::queryeval::test::DiskIndexBuilder;
+using search::queryeval::test::FieldConfig;
+using search::queryeval::test::QueryOperator;
 
 // TODO: Re-seed for each benchmark setup
 constexpr uint32_t default_seed = 1234;
@@ -103,42 +105,6 @@ public:
     size_t size() const { return _specs.size(); }
     auto begin() const { return _specs.begin(); }
     auto end() const { return _specs.end(); }
-};
-
-vespalib::string
-to_string(const Config& attr_config)
-{
-    std::ostringstream oss;
-    auto col_type = attr_config.collectionType();
-    auto basic_type = attr_config.basicType();
-    if (col_type == CollectionType::SINGLE) {
-        oss << basic_type.asString();
-    } else {
-        oss << col_type.asString() << "<" << basic_type.asString() << ">";
-    }
-    if (attr_config.fastSearch()) {
-        oss << "(fs)";
-    }
-    return oss.str();
-}
-
-class FieldConfig {
-private:
-    std::variant<Config, Schema::IndexField> _cfg;
-
-public:
-    FieldConfig(const Config& attr_cfg_in) : _cfg(attr_cfg_in) {}
-    FieldConfig(const Schema::IndexField& index_cfg_in) : _cfg(index_cfg_in) {}
-    bool is_attr() const { return _cfg.index() == 0; }
-    const Config& attr_cfg() const { return std::get<0>(_cfg); }
-    Schema index_cfg() const {
-        Schema res;
-        res.addIndexField(std::get<1>(_cfg));
-        return res;
-    }
-    vespalib::string to_string() const {
-        return is_attr() ? ::to_string(attr_cfg()) : "diskindex";
-    }
 };
 
 template <typename AttributeType, bool is_string, bool is_multivalue>
@@ -437,29 +403,6 @@ make_leaf_blueprint(const Node& node, BenchmarkSearchable& searchable, uint32_t 
     return blueprint;
 }
 
-enum class QueryOperator {
-    Term,
-    In,
-    WeightedSet,
-    DotProduct,
-    And,
-    Or
-};
-
-vespalib::string
-to_string(QueryOperator query_op)
-{
-    switch (query_op) {
-        case QueryOperator::Term: return "Term";
-        case QueryOperator::In: return "In";
-        case QueryOperator::WeightedSet: return "WeightedSet";
-        case QueryOperator::DotProduct: return "DotProduct";
-        case QueryOperator::And: return "And";
-        case QueryOperator::Or: return "Or";
-    }
-    return "unknown";
-}
-
 vespalib::string
 to_string(bool val)
 {
@@ -577,7 +520,7 @@ struct BenchmarkCase {
           force_strict(false)
     {}
     vespalib::string to_string() const {
-        return "op=" + ::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
+        return "op=" + search::queryeval::test::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
                ", strict_context=" + ::to_string(strict_context) + (force_strict ? (", force_strict=" + ::to_string(force_strict)) : "");
     }
 };
