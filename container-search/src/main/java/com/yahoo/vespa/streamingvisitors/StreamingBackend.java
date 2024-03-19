@@ -16,6 +16,7 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.prelude.fastsearch.VespaBackend;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -29,6 +30,7 @@ import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.streamingvisitors.tracing.TraceDescription;
+import com.yahoo.yolean.Exceptions;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -131,7 +133,11 @@ public class StreamingBackend extends VespaBackend {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
-        ensureLegalSummaryClass(query, query.getPresentation().getSummary());
+        try {
+            ensureLegalSummaryClass(query, query.getPresentation().getSummary());
+        } catch (IllegalInputException e) {
+            return new Result(query, ErrorMessage.createIllegalQuery(Exceptions.toMessageString(e)));
+        }
 
         if (query.getTrace().isTraceable(4))
             query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + schema, 4);
