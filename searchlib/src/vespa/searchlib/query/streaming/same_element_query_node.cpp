@@ -95,10 +95,4 @@ SameElementQueryNode::multi_index_terms() const noexcept
     return true;
 }
 
-bool
-SameElementQueryNode::is_same_element_query_node() const noexcept
-{
-    return true;
-}
-
 }
