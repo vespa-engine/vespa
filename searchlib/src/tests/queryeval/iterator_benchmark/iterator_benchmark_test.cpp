@@ -1,14 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attribute_ctx_builder.h"
 #include "benchmark_searchable.h"
 #include "common.h"
 #include "disk_index_builder.h"
-#include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
@@ -16,171 +11,36 @@
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <cmath>
 #include <numeric>
-#include <random>
 #include <vector>
 
-using namespace search::attribute::test;
 using namespace search::attribute;
 using namespace search::fef;
 using namespace search::query;
+using namespace search::queryeval::test;
 using namespace search::queryeval;
 using namespace search;
 using namespace vespalib;
 
 using search::index::DocIdAndFeatures;
 using search::index::Schema;
-using search::queryeval::test::BenchmarkSearchable;
-using search::queryeval::test::DiskIndexBuilder;
-using search::queryeval::test::FieldConfig;
-using search::queryeval::test::QueryOperator;
 
-// TODO: Re-seed for each benchmark setup
-constexpr uint32_t default_seed = 1234;
-std::mt19937 gen(default_seed);
 const vespalib::string field_name = "myfield";
 const vespalib::string index_dir = "indexdir";
 double budget_sec = 1.0;
-
-BitVector::UP
-random_docids(uint32_t docid_limit, uint32_t count)
-{
-    auto res = BitVector::create(docid_limit);
-    if ((count + 1) == docid_limit) {
-        res->notSelf();
-        res->clearBit(0);
-        return res;
-    }
-    uint32_t docids_left = count;
-    // Bit 0 is never set since it is reserved as docid 0.
-    // All other docids have equal probability to be set.
-    for (uint32_t docid = 1; docid < docid_limit; ++docid) {
-        std::uniform_int_distribution<uint32_t> distr(0, docid_limit - docid - 1);
-        if (distr(gen) < docids_left) {
-            res->setBit(docid);
-            --docids_left;
-        }
-    }
-    res->invalidateCachedCount();
-    assert(res->countTrueBits() == count);
-    return res;
-}
-
-struct HitSpec {
-    uint32_t term_value;
-    uint32_t num_hits;
-    HitSpec(uint32_t term_value_in, uint32_t num_hits_in) : term_value(term_value_in), num_hits(num_hits_in) {}
-};
-
-namespace benchmark {
-using TermVector = std::vector<uint32_t>;
-}
-
-class HitSpecs {
-private:
-    std::vector<HitSpec> _specs;
-    uint32_t _next_term_value;
-
-public:
-    HitSpecs(uint32_t first_term_value)
-        : _specs(), _next_term_value(first_term_value)
-    {
-    }
-    benchmark::TermVector add(uint32_t num_terms, uint32_t hits_per_term) {
-        benchmark::TermVector res;
-        for (uint32_t i = 0; i < num_terms; ++i) {
-            uint32_t term_value = _next_term_value++;
-            _specs.push_back({term_value, hits_per_term});
-            res.push_back(term_value);
-        }
-        return res;
-    }
-    size_t size() const { return _specs.size(); }
-    auto begin() const { return _specs.begin(); }
-    auto end() const { return _specs.end(); }
-};
-
-template <typename AttributeType, bool is_string, bool is_multivalue>
-void
-populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hit_specs)
-{
-    for (auto spec : hit_specs) {
-        auto docids = random_docids(docid_limit, spec.num_hits);
-        docids->foreach_truebit([&](uint32_t docid) {
-            if constexpr (is_string) {
-                if constexpr (is_multivalue) {
-                    attr.append(docid, std::to_string(spec.term_value), 1);
-                } else {
-                    attr.update(docid, std::to_string(spec.term_value));
-                }
-            } else {
-                if constexpr (is_multivalue) {
-                    attr.append(docid, spec.term_value, 1);
-                } else {
-                    attr.update(docid, spec.term_value);
-                }
-            }
-        });
-    }
-}
-
-AttributeVector::SP
-make_attribute(const Config& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
-{
-    auto attr = AttributeFactory::createAttribute(field_name, cfg);
-    attr->addReservedDoc();
-    attr->addDocs(num_docs);
-    uint32_t docid_limit = attr->getNumDocs();
-    assert(docid_limit == (num_docs + 1));
-    bool is_multivalue = cfg.collectionType() != CollectionType::SINGLE;
-    if (attr->isStringType()) {
-        auto& real = dynamic_cast<StringAttribute&>(*attr);
-        if (is_multivalue) {
-            populate_attribute<StringAttribute, true, true>(real, docid_limit, hit_specs);
-        } else {
-            populate_attribute<StringAttribute, true, false>(real, docid_limit, hit_specs);
-        }
-    } else {
-        auto& real = dynamic_cast<IntegerAttribute&>(*attr);
-        if (is_multivalue) {
-            populate_attribute<IntegerAttribute, false, true>(real, docid_limit, hit_specs);
-        } else {
-            populate_attribute<IntegerAttribute, false, false>(real, docid_limit, hit_specs);
-        }
-    }
-    attr->commit(true);
-    return attr;
-}
-
-class AttributeSearchable : public BenchmarkSearchable {
-private:
-    std::unique_ptr<MockAttributeContext> _attr_ctx;
-
-public:
-    AttributeSearchable(std::unique_ptr<MockAttributeContext> attr_ctx) : _attr_ctx(std::move(attr_ctx)) {}
-    std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field_spec,
-                                                const search::query::Node& term) override {
-        AttributeBlueprintFactory factory;
-        FakeRequestContext req_ctx(_attr_ctx.get());
-        return factory.createBlueprint(req_ctx, field_spec, term);
-    }
-};
 
 std::unique_ptr<BenchmarkSearchable>
 make_searchable(const FieldConfig& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
 {
     if (cfg.is_attr()) {
-        auto attr = make_attribute(cfg.attr_cfg(), num_docs, hit_specs);
-        auto ctx = std::make_unique<MockAttributeContext>();
-        ctx->add(std::move(attr));
-        return std::make_unique<AttributeSearchable>(std::move(ctx));
+        AttributeContextBuilder builder;
+        builder.add(cfg.attr_cfg(), field_name, num_docs, hit_specs);
+        return builder.build();
     } else {
         uint32_t docid_limit = num_docs + 1;
         DiskIndexBuilder builder(cfg.index_cfg(), index_dir, docid_limit, hit_specs.size());

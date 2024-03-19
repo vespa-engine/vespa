@@ -4,6 +4,7 @@
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <variant>
 
 namespace search::queryeval::test {
@@ -42,5 +43,41 @@ enum class QueryOperator {
 };
 
 vespalib::string to_string(QueryOperator query_op);
+
+struct HitSpec {
+    uint32_t term_value;
+    uint32_t num_hits;
+    HitSpec(uint32_t term_value_in, uint32_t num_hits_in) : term_value(term_value_in), num_hits(num_hits_in) {}
+};
+
+namespace benchmark {
+using TermVector = std::vector<uint32_t>;
+}
+
+class HitSpecs {
+private:
+    std::vector<HitSpec> _specs;
+    uint32_t _next_term_value;
+
+public:
+    HitSpecs(uint32_t first_term_value)
+        : _specs(), _next_term_value(first_term_value)
+    {
+    }
+    benchmark::TermVector add(uint32_t num_terms, uint32_t hits_per_term) {
+        benchmark::TermVector res;
+        for (uint32_t i = 0; i < num_terms; ++i) {
+            uint32_t term_value = _next_term_value++;
+            _specs.push_back({term_value, hits_per_term});
+            res.push_back(term_value);
+        }
+        return res;
+    }
+    size_t size() const { return _specs.size(); }
+    auto begin() const { return _specs.begin(); }
+    auto end() const { return _specs.end(); }
+};
+
+BitVector::UP random_docids(uint32_t docid_limit, uint32_t count);
 
 }

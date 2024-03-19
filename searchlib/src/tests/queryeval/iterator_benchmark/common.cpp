@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "common.h"
+#include <random>
 #include <sstream>
 
 using search::attribute::CollectionType;
@@ -36,6 +37,38 @@ to_string(QueryOperator query_op)
         case QueryOperator::Or: return "Or";
     }
     return "unknown";
+}
+
+namespace {
+
+// TODO: Make seed configurable.
+constexpr uint32_t default_seed = 1234;
+std::mt19937 gen(default_seed);
+
+}
+
+BitVector::UP
+random_docids(uint32_t docid_limit, uint32_t count)
+{
+    auto res = BitVector::create(docid_limit);
+    if ((count + 1) == docid_limit) {
+        res->notSelf();
+        res->clearBit(0);
+        return res;
+    }
+    uint32_t docids_left = count;
+    // Bit 0 is never set since it is reserved as docid 0.
+    // All other docids have equal probability to be set.
+    for (uint32_t docid = 1; docid < docid_limit; ++docid) {
+        std::uniform_int_distribution<uint32_t> distr(0, docid_limit - docid - 1);
+        if (distr(gen) < docids_left) {
+            res->setBit(docid);
+            --docids_left;
+        }
+    }
+    res->invalidateCachedCount();
+    assert(res->countTrueBits() == count);
+    return res;
 }
 
 }
