@@ -12,7 +12,6 @@ import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
-import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
@@ -23,7 +22,6 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.BinaryView;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -72,13 +70,6 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
-        if (summaryClass != null) {
-            if (summaryClass.equals("")) {
-                summaryClass = null;
-            } else if (! documentDb.getDocsumDefinitionSet().hasDocsum(summaryClass)) {
-                throw new IllegalInputException("invalid presentation.summary=" + summaryClass);
-            }
-        }
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
 
         result.getQuery().trace(false, 5, "Sending ", hitsByNode.size(), " summary fetch requests with jrt/protobuf");

@@ -131,6 +131,7 @@ public class StreamingBackend extends VespaBackend {
             return new Result(query, ErrorMessage.createIllegalQuery("Streaming search requires either " +
                                                                      "streaming.groupname or streaming.selection"));
         }
+        ensureLegalSummaryClass(query, query.getPresentation().getSummary());
 
         if (query.getTrace().isTraceable(4))
             query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + schema, 4);

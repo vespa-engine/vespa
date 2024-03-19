@@ -9,6 +9,7 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.prelude.querytransform.QueryRewrite;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -212,12 +213,25 @@ public abstract class VespaBackend {
         List<Result> parts = partitionHits(result, summaryClass);
         if (!parts.isEmpty()) { // anything to fill at all?
             for (Result r : parts) {
-                doPartialFill(r, summaryClass);
+                doPartialFill(r, ensureLegalSummaryClass(r.getQuery(), summaryClass));
                 mergeErrorsInto(result, r);
             }
             result.hits().setSorted(false);
             result.analyzeHits();
         }
+    }
+    protected String ensureLegalSummaryClass(Query query, String summaryClass) {
+        if (summaryClass != null) {
+            if (summaryClass.isEmpty()) {
+                return null;
+            } else {
+                var db = getDocumentDatabase(query);
+                if (db != null && ! db.getDocsumDefinitionSet().hasDocsum(summaryClass)) {
+                    throw new IllegalInputException("invalid presentation.summary=" + summaryClass);
+                }
+            }
+        }
+        return summaryClass;
     }
 
     private void mergeErrorsInto(Result destination, Result source) {
