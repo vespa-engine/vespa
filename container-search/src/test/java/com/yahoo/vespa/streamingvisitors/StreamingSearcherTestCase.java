@@ -229,11 +229,13 @@ public class StreamingSearcherTestCase {
     @Test
     void testBasics() {
         MockVisitorFactory factory = new MockVisitorFactory();
-        var schema = new Schema.Builder("test");
-        schema.add(new com.yahoo.search.schema.DocumentSummary.Builder("default").build());
+        var schema = new Schema.Builder("test")
+                .add(new com.yahoo.search.schema.DocumentSummary.Builder("default").build())
+                .add(new com.yahoo.search.schema.DocumentSummary.Builder("summary").build())
+                .build();
         ClusterParams clusterParams = new ClusterParams("clusterName", "server.0", "default",
                 new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("test")).build(),
-                new SchemaInfo(List.of(schema.build()), List.of()));
+                new SchemaInfo(List.of(schema), List.of()));
         StreamingBackend searcher = new StreamingBackend(clusterParams, "search-cluster-A", factory, "content-cluster-A");
 
         // Magic query values are used to trigger specific behaviors from mock visitor.
