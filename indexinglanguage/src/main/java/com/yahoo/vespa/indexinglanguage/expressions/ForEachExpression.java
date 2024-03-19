@@ -47,6 +47,7 @@ public final class ForEachExpression extends CompositeExpression {
             FieldValue next = new MyConverter(context, exp).convert(input);
             if (next == null) {
                 VerificationContext vctx = new VerificationContext(context);
+                context.fillVariableTypes(vctx);
                 vctx.setValueType(input.getDataType()).execute(this);
                 next = vctx.getValueType().createFieldValue();
             }

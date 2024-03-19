@@ -132,4 +132,10 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
         return this;
     }
 
+    void fillVariableTypes(VerificationContext vctx) {
+        for (var entry : variables.entrySet()) {
+            vctx.setVariable(entry.getKey(), entry.getValue().getDataType());
+        }
+    }
+
 }

@@ -59,7 +59,7 @@ public class ExpressionOptimizer extends ExpressionConverter {
     }
 
     static boolean ignoresInput(Expression exp) {
-        if (exp instanceof SwitchExpression || exp instanceof ScriptExpression) {
+        if (exp instanceof SwitchExpression || exp instanceof ScriptExpression || exp instanceof ForEachExpression ) {
             return false;  // Switch and script never ignores input.
         }
         if (exp instanceof CompositeExpression) {
