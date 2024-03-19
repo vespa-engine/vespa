@@ -11,6 +11,7 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
@@ -1027,7 +1028,7 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
     vespalib::NBOSerializer is(iss);
     uint32_t numGroupings(0);
     is >> numGroupings;
-    for(size_t i(0); i < numGroupings; i++) {
+    for (size_t i(0); i < numGroupings; i++) {
         auto ag = std::make_unique<Grouping>();
         ag->deserialize(is);
         GroupingList::value_type groupingPtr(ag.release());
@@ -1049,8 +1050,10 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
             } else {
                 LOG(warning, "You can not collect hits with an all aggregator yet.");
             }
+        } catch (const document::FieldNotFoundException & e) {
+            LOG(warning, "Could not locate field for grouping number %ld : %s", i, e.getMessage().c_str());
         } catch (const std::exception & e) {
-            LOG(error, "Could not locate attribute for grouping number %ld : %s", i, e.what());
+            LOG(error, "Unknown issue for grouping number %ld : %s", i, e.what());
         }
     }
 }
