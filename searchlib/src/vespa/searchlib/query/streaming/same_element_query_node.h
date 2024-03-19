@@ -18,6 +18,7 @@ public:
     const HitList & evaluateHits(HitList & hl) const override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env) override;
     bool multi_index_terms() const noexcept override;
+    bool is_same_element_query_node() const noexcept override;
 };
 
 }

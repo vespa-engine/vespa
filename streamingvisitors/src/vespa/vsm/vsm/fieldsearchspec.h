@@ -5,6 +5,8 @@
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 
+namespace search::fef { class IIndexEnvironment; }
+
 namespace vsm {
 
 class FieldSearchSpec
@@ -67,7 +69,7 @@ public:
      * and a mapping from field name to field id. It then iterates over all document types and index names
      * and creates a mapping from index name to list of field ids for each document type.
      **/
-    void buildFromConfig(const VsmfieldsHandle & conf);
+    void buildFromConfig(const VsmfieldsHandle & conf, const search::fef::IIndexEnvironment& index_env);
 
     /**
      * Iterates over the given field name vector adding extra elements to the mapping from field name to field id.

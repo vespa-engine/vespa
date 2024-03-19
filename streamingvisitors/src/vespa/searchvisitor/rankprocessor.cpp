@@ -7,6 +7,7 @@
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <algorithm>
 #include <cmath>
 #include <vespa/log/log.h>
@@ -61,7 +62,7 @@ RankProcessor::resolve_fields_from_children(QueryTermData& qtd, const MultiTerm&
     vespalib::hash_set<uint32_t> field_ids;
     for (auto& subterm : mt.get_terms()) {
         vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(subterm->index());
-        const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
+        const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName, false);
         if (view != nullptr) {
             for (auto field_id : *view) {
                 field_ids.insert(field_id);
@@ -86,7 +87,7 @@ void
 RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::streaming::QueryTerm& term)
 {
     vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term.index());
-    const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
+    const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName, term.is_same_element_query_node());
     if (view != nullptr) {
         for (auto field_id : *view) {
             qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
