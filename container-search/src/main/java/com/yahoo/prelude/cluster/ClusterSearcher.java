@@ -80,7 +80,6 @@ public class ClusterSearcher extends Searcher {
         super(id);
         this.executor = executor;
         this.schemaInfo = schemaInfo;
-        int searchClusterIndex = clusterConfig.clusterId();
         searchClusterName = clusterConfig.clusterName();
         this.globalPhaseRanker = globalPhaseRanker;
         schema2Searcher = new LinkedHashMap<>();
@@ -89,7 +88,7 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
         VespaBackend streaming = null, indexed = null;
-        ClusterParams clusterParams = makeClusterParams(searchClusterIndex, documentDbConfig, schemaInfo);
+        ClusterParams clusterParams = makeClusterParams(searchClusterName, documentDbConfig, schemaInfo);
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             if (docDb.mode() == DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX) {
                 if (indexed == null) {
@@ -106,9 +105,9 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    private static ClusterParams makeClusterParams(int searchclusterIndex, DocumentdbInfoConfig documentDbConfig, SchemaInfo schemaInfo)
+    private static ClusterParams makeClusterParams(String searchclusterName, DocumentdbInfoConfig documentDbConfig, SchemaInfo schemaInfo)
     {
-        return new ClusterParams("sc" + searchclusterIndex + ".num" + 0, UUID.randomUUID().toString(),
+        return new ClusterParams(searchclusterName + ".num" + 0, UUID.randomUUID().toString(),
                                  null, documentDbConfig, schemaInfo);
     }
 

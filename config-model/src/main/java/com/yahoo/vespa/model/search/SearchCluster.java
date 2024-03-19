@@ -16,7 +16,6 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.config.search.summary.JuniperrcConfig;
@@ -46,7 +45,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         SchemaInfoConfig.Producer {
 
     private final String clusterName;
-    private int index;
     private Double queryTimeout;
     private Double visibilityDelay = 0.0;
     private final Map<String, SchemaInfo> schemas = new LinkedHashMap<>();
@@ -96,10 +94,9 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
         }
     }
 
-    public SearchCluster(TreeConfigProducer<?> parent, String clusterName, int index) {
+    public SearchCluster(TreeConfigProducer<?> parent, String clusterName) {
         super(parent, "cluster." + clusterName);
         this.clusterName = clusterName;
-        this.index = index;
     }
 
     public String getStorageRouteSpec() { return getClusterName(); }
@@ -160,19 +157,17 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
 
     public final Double getVisibilityDelay() { return visibilityDelay; }
     public final Double getQueryTimeout() { return queryTimeout; }
-    public final void setClusterIndex(int index) { this.index = index; }
-    public final int getClusterIndex() { return index; }
 
-    public void fillDocumentDBConfig(String documentType, ProtonConfig.Documentdb.Builder builder) {
+    public String getDocumentDBConfigId(String documentType) {
         DocumentDatabase db = documentDbs.get(documentType);
         if (db != null) {
-            builder.inputdoctypename(documentType);
             if (db.getDerivedConfiguration().isStreaming()) {
-                builder.configid(documentDBProducerForStreaming.get(documentType).getConfigId());
+                return documentDBProducerForStreaming.get(documentType).getConfigId();
             } else {
-                builder.configid(db.getConfigId());
+                return db.getConfigId();
             }
         }
+        return "";
     }
 
     public QrSearchersConfig.Searchcluster.Builder getQrSearcherConfig() {
@@ -219,7 +214,6 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     }
 
     public void getConfig(ClusterConfig.Builder builder) {
-        builder.clusterId(getClusterIndex());
         builder.clusterName(getClusterName());
         builder.storageRoute(getClusterName());
         builder.configid(getConfigId());

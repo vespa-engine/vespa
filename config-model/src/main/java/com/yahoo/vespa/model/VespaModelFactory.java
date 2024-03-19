@@ -11,7 +11,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -31,7 +30,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
-import com.yahoo.yolean.Exceptions;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
