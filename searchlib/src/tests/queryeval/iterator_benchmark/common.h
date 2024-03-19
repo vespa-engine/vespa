@@ -50,9 +50,7 @@ struct HitSpec {
     HitSpec(uint32_t term_value_in, uint32_t num_hits_in) : term_value(term_value_in), num_hits(num_hits_in) {}
 };
 
-namespace benchmark {
 using TermVector = std::vector<uint32_t>;
-}
 
 class HitSpecs {
 private:
@@ -64,8 +62,8 @@ public:
         : _specs(), _next_term_value(first_term_value)
     {
     }
-    benchmark::TermVector add(uint32_t num_terms, uint32_t hits_per_term) {
-        benchmark::TermVector res;
+    TermVector add(uint32_t num_terms, uint32_t hits_per_term) {
+        TermVector res;
         for (uint32_t i = 0; i < num_terms; ++i) {
             uint32_t term_value = _next_term_value++;
             _specs.push_back({term_value, hits_per_term});

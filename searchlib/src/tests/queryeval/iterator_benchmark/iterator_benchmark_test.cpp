@@ -1,18 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_ctx_builder.h"
-#include "benchmark_searchable.h"
+#include "benchmark_blueprint_factory.h"
 #include "common.h"
-#include "disk_index_builder.h"
-#include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/searchlib/query/tree/integer_term_vector.h>
-#include <vespa/searchlib/query/tree/node.h>
-#include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/queryeval/field_spec.h>
-#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <cmath>
@@ -21,37 +12,15 @@
 
 using namespace search::attribute;
 using namespace search::fef;
-using namespace search::query;
 using namespace search::queryeval::test;
 using namespace search::queryeval;
 using namespace search;
 using namespace vespalib;
 
-using search::index::DocIdAndFeatures;
 using search::index::Schema;
 
 const vespalib::string field_name = "myfield";
-const vespalib::string index_dir = "indexdir";
 double budget_sec = 1.0;
-
-std::unique_ptr<BenchmarkSearchable>
-make_searchable(const FieldConfig& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
-{
-    if (cfg.is_attr()) {
-        AttributeContextBuilder builder;
-        builder.add(cfg.attr_cfg(), field_name, num_docs, hit_specs);
-        return builder.build();
-    } else {
-        uint32_t docid_limit = num_docs + 1;
-        DiskIndexBuilder builder(cfg.index_cfg(), index_dir, docid_limit, hit_specs.size());
-        for (auto spec : hit_specs) {
-            // TODO: make number of occurrences configurable.
-            uint32_t num_occs = 1;
-            builder.add_word(std::to_string(spec.term_value), *random_docids(docid_limit, spec.num_hits), num_occs);
-        }
-        return builder.build();
-    }
-}
 
 struct BenchmarkResult {
     double time_ms;
@@ -253,77 +222,10 @@ benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict_cont
     }
 }
 
-Blueprint::UP
-make_leaf_blueprint(const Node& node, BenchmarkSearchable& searchable, uint32_t docid_limit)
-{
-    auto blueprint = searchable.create_blueprint(FieldSpec(field_name, 0, 0), node);
-    assert(blueprint.get());
-    blueprint->setDocIdLimit(docid_limit);
-    blueprint->update_flow_stats(docid_limit);
-    return blueprint;
-}
-
 vespalib::string
 to_string(bool val)
 {
     return val ? "true" : "false";
-}
-
-std::unique_ptr<Node>
-make_query_node(QueryOperator query_op, const benchmark::TermVector& terms)
-{
-    if (query_op == QueryOperator::Term) {
-        assert(terms.size() == 1);
-        return std::make_unique<SimpleStringTerm>(std::to_string(terms[0]), field_name, 0, Weight(1));
-    } else if (query_op == QueryOperator::In) {
-        auto termv = std::make_unique<IntegerTermVector>(terms.size());
-        for (auto term : terms) {
-            termv->addTerm(term);
-        }
-        return std::make_unique<SimpleInTerm>(std::move(termv), MultiTerm::Type::INTEGER, field_name, 0, Weight(1));
-    } else if (query_op == QueryOperator::WeightedSet) {
-        auto res = std::make_unique<SimpleWeightedSetTerm>(terms.size(), field_name, 0, Weight(1));
-        for (auto term : terms) {
-            res->addTerm(term, Weight(1));
-        }
-        return res;
-    } else if (query_op == QueryOperator::DotProduct) {
-        auto res = std::make_unique<SimpleDotProduct>(terms.size(), field_name, 0, Weight(1));
-        for (auto term : terms) {
-            res->addTerm(term, Weight(1));
-        }
-        return res;
-    }
-    return {};
-}
-
-template <typename BlueprintType>
-Blueprint::UP
-make_intermediate_blueprint(BenchmarkSearchable& searchable, const benchmark::TermVector& terms, uint32_t docid_limit)
-{
-    auto blueprint = std::make_unique<BlueprintType>();
-    for (auto term : terms) {
-        SimpleStringTerm sterm(std::to_string(term), field_name, 0, Weight(1));
-        auto child = make_leaf_blueprint(sterm, searchable, docid_limit);
-        blueprint->addChild(std::move(child));
-    }
-    blueprint->setDocIdLimit(docid_limit);
-    blueprint->update_flow_stats(docid_limit);
-    return blueprint;
-}
-
-BenchmarkResult
-run_benchmark(BenchmarkSearchable& searchable, QueryOperator query_op, const benchmark::TermVector& terms, uint32_t docid_limit, bool strict_context, bool force_strict, double filter_hit_ratio)
-{
-    if (query_op == QueryOperator::And) {
-        return benchmark_search(make_intermediate_blueprint<AndBlueprint>(searchable, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
-    } else if (query_op == QueryOperator::Or) {
-        return benchmark_search(make_intermediate_blueprint<OrBlueprint>(searchable, terms, docid_limit), docid_limit, strict_context, force_strict, filter_hit_ratio);
-    } else {
-        auto query_node = make_query_node(query_op, terms);
-        auto blueprint = make_leaf_blueprint(*query_node, searchable, docid_limit);
-        return benchmark_search(std::move(blueprint), docid_limit, strict_context, force_strict, filter_hit_ratio);
-    }
 }
 
 void
@@ -333,10 +235,10 @@ print_result_header()
 }
 
 void
-print_result(const BenchmarkResult& res, const benchmark::TermVector& terms, double op_hit_ratio, double filter_hit_ratio, uint32_t num_docs)
+print_result(const BenchmarkResult& res, uint32_t children, double op_hit_ratio, double filter_hit_ratio, uint32_t num_docs)
 {
     std::cout << std::fixed << std::setprecision(4)
-              << "| " << std::setw(4) << terms.size()
+              << "| " << std::setw(4) << children
               << " | " << std::setw(7) << filter_hit_ratio
               << " | " << std::setw(7) << op_hit_ratio
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
@@ -517,18 +419,6 @@ struct BenchmarkSetup {
 
 BenchmarkSetup::~BenchmarkSetup() = default;
 
-uint32_t
-calc_hits_per_term(uint32_t num_docs, double op_hit_ratio, uint32_t children, QueryOperator query_op)
-{
-    if (query_op == QueryOperator::And) {
-        double child_hit_ratio = std::pow(op_hit_ratio, (1.0/(double)children));
-        return num_docs * child_hit_ratio;
-    } else {
-        uint32_t op_num_hits = num_docs * op_hit_ratio;
-        return op_num_hits / children;
-    }
-}
-
 BenchmarkCaseResult
 run_benchmark_case(const BenchmarkCaseSetup& setup)
 {
@@ -537,16 +427,13 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
     print_result_header();
     for (double op_hit_ratio : setup.op_hit_ratios) {
         for (uint32_t children : setup.child_counts) {
-            uint32_t hits_per_term = calc_hits_per_term(setup.num_docs, op_hit_ratio, children, setup.bcase.query_op);
-            HitSpecs hit_specs(55555);
-            hit_specs.add(setup.default_values_per_document, setup.num_docs);
-            auto terms = hit_specs.add(children, hits_per_term);
-            auto searchable = make_searchable(setup.bcase.field_cfg, setup.num_docs, hit_specs);
+            auto factory = make_blueprint_factory(setup.bcase.field_cfg, setup.bcase.query_op,
+                                                  setup.num_docs, setup.default_values_per_document,
+                                                  op_hit_ratio, children);
             for (double filter_hit_ratio : setup.filter_hit_ratios) {
                 if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
-                    auto res = run_benchmark(*searchable, setup.bcase.query_op, terms, setup.num_docs + 1,
-                                             setup.bcase.strict_context, setup.bcase.force_strict, filter_hit_ratio);
-                    print_result(res, terms, op_hit_ratio, filter_hit_ratio, setup.num_docs);
+                    auto res = benchmark_search(factory->make_blueprint(), setup.num_docs + 1, setup.bcase.strict_context, setup.bcase.force_strict, filter_hit_ratio);
+                    print_result(res, children, op_hit_ratio, filter_hit_ratio, setup.num_docs);
                     result.add(res);
                 }
             }
