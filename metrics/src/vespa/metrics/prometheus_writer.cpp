@@ -206,17 +206,17 @@ void PrometheusWriter::doneVisitingMetricSet(const MetricSet& set) {
 bool PrometheusWriter::visitCountMetric(const AbstractCountMetric& m, bool) {
     auto full_path = metric_to_path_ref(m.getName());
     auto labels    = as_prometheus_labels(m);
-    _samples.emplace_back(TimeSeriesSample{full_path, "count", labels, {m.getLongValue("count")}});
+    _samples.emplace_back(full_path, "count", labels, m.getLongValue("count"));
     return true;
 }
 
 bool PrometheusWriter::visitValueMetric(const AbstractValueMetric& m, bool) {
     auto full_path = metric_to_path_ref(m.getName());
     auto labels    = as_prometheus_labels(m);
-    _samples.emplace_back(TimeSeriesSample{full_path, "count", labels, {m.getLongValue("count")}});
-    _samples.emplace_back(TimeSeriesSample{full_path, "sum",   labels, {m.getDoubleValue("total")}});
-    _samples.emplace_back(TimeSeriesSample{full_path, "min",   labels, {m.getDoubleValue("min")}});
-    _samples.emplace_back(TimeSeriesSample{full_path, "max",   labels, {m.getDoubleValue("max")}});
+    _samples.emplace_back(full_path, "count", labels, m.getLongValue("count"));
+    _samples.emplace_back(full_path, "sum",   labels, m.getDoubleValue("total"));
+    _samples.emplace_back(full_path, "min",   labels, m.getDoubleValue("min"));
+    _samples.emplace_back(full_path, "max",   labels, m.getDoubleValue("max"));
     return true;
 }
 
