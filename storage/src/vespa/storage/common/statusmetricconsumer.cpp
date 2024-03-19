@@ -5,6 +5,7 @@
 #include <boost/lexical_cast.hpp>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>
+#include <vespa/metrics/prometheus_writer.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -39,6 +40,10 @@ StatusMetricConsumer::getReportContentType(const framework::HttpUrlPath& path) c
         return "text/plain";
     }
 
+    if (path.getAttribute("format") == "prometheus") {
+        return "text/plain; version=0.0.4";
+    }
+
     if (path.getAttribute("format") == "json") {
         return "application/json";
     }
@@ -53,7 +58,8 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
     _manager.updateMetrics();
 
     vespalib::system_time currentTime = _component.getClock().getSystemTime();
-    bool json = (path.getAttribute("format") == "json");
+    const bool json = (path.getAttribute("format") == "json");
+    const bool prometheus = (path.getAttribute("format") == "prometheus");
 
     int verbosity(path.get("verbosity", 0));
         // We have to copy unset values if using HTML as HTML version gathers
@@ -126,6 +132,11 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
             stream << End();
             stream.finalize();
             out << jsonStreamData.str();
+        } else if (prometheus) {
+            vespalib::asciistream ps;
+            metrics::PrometheusWriter pw(ps);
+            _manager.visit(metricLock, *snapshot, pw, consumer);
+            out << ps.str();
         } else {
             std::string pattern = path.getAttribute("pattern", ".*");
             metrics::TextWriter textWriter(out, snapshot->getPeriod(), pattern, verbosity > 0);

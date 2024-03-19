@@ -12,6 +12,7 @@ vespa_add_library(metrics
     metrictimer.cpp
     metricvalueset.cpp
     name_repo.cpp
+    prometheus_writer.cpp
     state_api_adapter.cpp
     summetric.cpp
     textwriter.cpp
