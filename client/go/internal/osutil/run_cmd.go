@@ -5,9 +5,11 @@ package osutil
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 )
@@ -20,6 +22,26 @@ const (
 	BackTicksForwardStderr
 	SystemCommand
 )
+
+func analyzeError(err error) string {
+	exitErr, wasEe := err.(*exec.ExitError)
+	if !wasEe {
+		return ""
+	}
+	status, wasWs := exitErr.ProcessState.Sys().(syscall.WaitStatus)
+	if !wasWs {
+		return err.Error()
+	}
+	if !status.Signaled() {
+		return ""
+	}
+	msg := "died with signal: " + status.Signal().String()
+	switch status.Signal() {
+	case syscall.SIGILL:
+		msg = msg + " (you probably have an older CPU than required)"
+	}
+	return msg
+}
 
 func (b BackTicks) Run(program string, args ...string) (string, error) {
 	cmd := exec.Command(program, args...)
@@ -38,5 +60,8 @@ func (b BackTicks) Run(program string, args ...string) (string, error) {
 	}
 	trace.Debug("running command:", program, strings.Join(args, " "))
 	err := cmd.Run()
+	if extraMsg := analyzeError(err); extraMsg != "" {
+		fmt.Fprintln(os.Stderr, "Problem running program", program, "=>", extraMsg)
+	}
 	return out.String(), err
 }

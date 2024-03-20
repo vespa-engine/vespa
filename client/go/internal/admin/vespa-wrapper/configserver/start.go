@@ -70,8 +70,11 @@ func runConfigserverWithRunserver() int {
 		ServiceName: SERVICE_NAME,
 		Args:        []string{"just-start-configserver"},
 	}
-	rs.Exec("libexec/vespa/vespa-wrapper")
-	return 1
+	if rs.WouldRun() {
+		rs.Exec("libexec/vespa/vespa-wrapper")
+		return 1
+	}
+	return 0
 }
 
 func StartConfigserverEtc() int {
