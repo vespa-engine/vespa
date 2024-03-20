@@ -186,11 +186,12 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
     @Override
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
         for (DocumentDatabase db : documentDbs.values()) {
-            var docDb = new DocumentdbInfoConfig.Documentdb.Builder()
-                    .name(db.getName())
-                    .mode(db.getDerivedConfiguration().isStreaming()
-                            ? DocumentdbInfoConfig.Documentdb.Mode.Enum.STREAMING
-                            : DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX);
+            var docDb = new DocumentdbInfoConfig.Documentdb.Builder().name(db.getName());
+            switch (db.getDerivedConfiguration().getIndexMode()) {
+                case INDEX -> docDb.mode(DocumentdbInfoConfig.Documentdb.Mode.Enum.INDEX);
+                case STREAMING -> docDb.mode(DocumentdbInfoConfig.Documentdb.Mode.Enum.STREAMING);
+                case STORE_ONLY -> docDb.mode(DocumentdbInfoConfig.Documentdb.Mode.Enum.STORE_ONLY);
+            }
             builder.documentdb(docDb);
         }
     }
