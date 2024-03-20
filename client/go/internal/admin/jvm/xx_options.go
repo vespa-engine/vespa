@@ -18,4 +18,6 @@ func (opts *Options) AddCommonXX() {
 	opts.AddOption("-XX:+ExitOnOutOfMemoryError")
 	// not common after all:
 	opts.AddOption("-XX:MaxJavaStackTraceDepth=1000000")
+	// Aid debugging for slight cost in performance
+	opts.AddOption("-XX:+OmitStackTraceInFastThrow")
 }
