@@ -931,7 +931,7 @@ void
 SearchVisitor::setupAttributeVectors()
 {
     for (const FieldPath & fieldPath : *_fieldPathMap) {
-        if ( ! fieldPath.empty() ) {
+        if ( ! fieldPath.empty() && fieldPath.back().getFieldValueToSetPtr() != nullptr) {
             setupAttributeVector(fieldPath);
         }
     }
