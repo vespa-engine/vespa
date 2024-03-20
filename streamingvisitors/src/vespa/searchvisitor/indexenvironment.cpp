@@ -3,6 +3,7 @@
 #include "indexenvironment.h"
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 using namespace search::fef;
 
@@ -37,6 +38,37 @@ IndexEnvironment::addField(const vespalib::string& name,
     _fields.push_back(info);
     _fieldNames[info.name()] = info.id();
     return true;
+}
+
+/*
+ * Ensure that array and map fields are known by the index
+ * environment, allowing the matches features to be used with the
+ * sameElement query operator. FieldSearchSpecMap::buildFromConfig()
+ * propagates the name to field id mapping for the added virtual
+ * fields.
+ */
+void
+IndexEnvironment::add_virtual_fields()
+{
+    vespalib::hash_set<vespalib::string> vfields;
+    for (auto& field : _fields) {
+        vespalib::stringref name(field.name());
+        auto pos = name.rfind('.');
+        while (pos != vespalib::string::npos) {
+            name = name.substr(0, pos);
+            if (_fieldNames.contains(name)) {
+                break;
+            }
+            vfields.insert(name);
+            pos = name.rfind('.');
+        }
+    }
+    for (auto& vfield : vfields) {
+        FieldInfo info(FieldType::VIRTUAL, FieldInfo::CollectionType::ARRAY, vfield, _fields.size());
+        info.set_data_type(FieldInfo::DataType::COMBINED);
+        _fields.push_back(info);
+        _fieldNames[vfield] = info.id();
+    }
 }
 
 void

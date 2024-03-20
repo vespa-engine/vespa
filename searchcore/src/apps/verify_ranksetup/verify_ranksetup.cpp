@@ -220,10 +220,12 @@ VerifyRankSetup::verifyConfig(const VerifyRanksetupConfig &myCfg,
     if (_searchMode == SearchMode::STREAMING) {
         streamingProto.set_ranking_assets_repo(repo);
         streamingProto.detectFields(vsmFieldsCfg);
+        streamingProto.add_virtual_fields();
         factory = [&](const search::fef::Properties &properties)
                   {
                       auto indexEnv = streamingProto.clone();
                       indexEnv->getProperties().import(properties);
+                      indexEnv->fixup_fields();
                       return indexEnv;
                   };
     } else {

@@ -19,6 +19,7 @@ private:
 public:
     IndexEnvPrototype();
     void detectFields(const vespa::config::search::vsm::VsmfieldsConfig &fields);
+    void add_virtual_fields();
     void set_ranking_assets_repo(std::shared_ptr<const search::fef::IRankingAssetsRepo> repo) {
         _prototype.set_ranking_assets_repo(std::move(repo));
     }
@@ -53,9 +54,11 @@ public:
         std::vector<std::shared_ptr<const search::fef::RankSetup>> _rankSetup;  // rank setup per rank profile
         Map                                       _rpmap;
         ViewMap                                   _views;
+        ViewMap                                   _same_element_views;
 
         void addProperties(const vespa::config::search::RankProfilesConfig & cfg);
-        void buildFieldMappings(const vsm::VsmfieldsHandle & fields);
+        void build_field_mappings(const vsm::VsmfieldsHandle& fields, ViewMap& views, bool prefer_virtual_fields);
+        void build_field_mappings(const vsm::VsmfieldsHandle& fields);
         bool initRankSetup(const search::fef::BlueprintFactory & factory);
         bool setup(const RankManager & manager);
         int getIndex(const vespalib::string & key) const {
@@ -74,9 +77,13 @@ public:
         const IndexEnvironment & getIndexEnvironment(const vespalib::string &rankProfile) const {
             return _indexEnv[getIndex(rankProfile)];
         }
-        const View *getView(const vespalib::string & index) const {
-            auto itr = _views.find(index);
-            if (itr != _views.end()) {
+        const IndexEnvironment& get_proto_index_environment() const {
+            return _protoEnv.current();
+        }
+        const View *getView(const vespalib::string & index, bool is_same_element) const {
+            auto&  views = is_same_element ? _same_element_views : _views;
+            auto itr = views.find(index);
+            if (itr != views.end()) {
                 return &itr->second;
             }
             return nullptr;
