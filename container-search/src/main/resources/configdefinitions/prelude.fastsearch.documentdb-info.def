@@ -6,4 +6,4 @@ namespace=prelude.fastsearch
 
 ## The name of the schema/document database
 documentdb[].name string
-documentdb[].mode enum {INDEX, STREAMING, STORE_ONLY} default=INDEX
+documentdb[].mode enum {INDEX, STREAMING, STORE_ONLY} default=STORE_ONLY

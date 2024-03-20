@@ -153,17 +153,12 @@ public class DerivedConfiguration {
         }
     }
 
-    public boolean isStreaming() {
-        return indexMode == SchemaInfo.IndexMode.STREAMING;
-    }
+    public boolean isStreaming() { return indexMode == SchemaInfo.IndexMode.STREAMING; }
 
-    public Summaries getSummaries() {
-        return summaries;
-    }
+    public SchemaInfo.IndexMode getIndexMode() { return indexMode; }
 
-    public AttributeFields getAttributeFields() {
-        return attributeFields;
-    }
+    public Summaries getSummaries() { return summaries; }
+    public AttributeFields getAttributeFields() { return attributeFields; }
 
     public void getConfig(AttributesConfig.Builder builder) {
         getConfig(builder, AttributeFields.FieldSet.ALL);
@@ -173,46 +168,17 @@ public class DerivedConfiguration {
         attributeFields.getConfig(builder, fs, maxUncommittedMemory);
     }
 
-    public IndexingScript getIndexingScript() {
-        return indexingScript;
-    }
-
-    public IndexInfo getIndexInfo() {
-        return indexInfo;
-    }
-
+    public IndexingScript getIndexingScript() { return indexingScript; }
+    public IndexInfo getIndexInfo() { return indexInfo; }
     public SchemaInfo getSchemaInfo() { return schemaInfo; }
-
-    public void setIndexingScript(IndexingScript script) {
-        this.indexingScript = script;
-    }
-
+    public void setIndexingScript(IndexingScript script) { this.indexingScript = script; }
     public Schema getSchema() { return schema; }
-
-    public RankProfileList getRankProfileList() {
-        return rankProfileList;
-    }
-
-    public VsmSummary getVsmSummary() {
-        return streamingSummary;
-    }
-
-    public VsmFields getVsmFields() {
-        return streamingFields;
-    }
-
-    public IndexSchema getIndexSchema() {
-        return indexSchema;
-    }
-
-    public Juniperrc getJuniperrc() {
-        return juniperrc;
-    }
-
-    public ImportedFields getImportedFields() {
-        return importedFields;
-    }
-
+    public RankProfileList getRankProfileList() { return rankProfileList; }
+    public VsmSummary getVsmSummary() { return streamingSummary; }
+    public VsmFields getVsmFields() { return streamingFields; }
+    public IndexSchema getIndexSchema() { return indexSchema; }
+    public Juniperrc getJuniperrc() { return juniperrc; }
+    public ImportedFields getImportedFields() { return importedFields; }
     public QueryProfileRegistry getQueryProfiles() { return queryProfiles; }
 
 }

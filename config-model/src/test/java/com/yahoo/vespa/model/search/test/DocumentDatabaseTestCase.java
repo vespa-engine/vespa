@@ -324,17 +324,22 @@ public class DocumentDatabaseTestCase {
     @Test
     void testMixedModeCluster() {
         // Will soon change
-        List<DocType> sds = List.of(DocType.create("a", "index"), DocType.create("b", "streaming"));
+        List<DocType> sds = List.of(DocType.create("a", "index"),
+                                    DocType.create("b", "streaming"),
+                                    DocType.create("c", "store-only"));
         var tester = new SchemaTester();
         var model = tester.createModel(sds, "");
         DocumentdbInfoConfig indexed_cfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test");
-        assertEquals(2, indexed_cfg.documentdb().size());
+        assertEquals(3, indexed_cfg.documentdb().size());
         var db = indexed_cfg.documentdb(0);
         assertEquals("a", db.name());
         assertEquals(DocumentdbInfoConfig.Documentdb.Mode.INDEX, db.mode());
         db = indexed_cfg.documentdb(1);
         assertEquals("b", db.name());
         assertEquals(DocumentdbInfoConfig.Documentdb.Mode.STREAMING, db.mode());
+        db = indexed_cfg.documentdb(2);
+        assertEquals("c", db.name());
+        assertEquals(DocumentdbInfoConfig.Documentdb.Mode.STORE_ONLY, db.mode());
     }
 
     private void assertAttributesConfigIndependentOfMode(String mode, List<String> sds,
