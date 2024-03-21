@@ -42,7 +42,6 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -95,7 +94,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     // for testing
-    public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver,
+    public FederationSearcher(SearchChainResolver searchChainResolver,
                               Map<String, List<String>> schema2Clusters) {
         this(searchChainResolver, VirtualSourceResolver.of(), null, schema2Clusters);
     }
@@ -151,7 +150,9 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static void addSearchChain(SearchChainResolver.Builder builder,
-                                       FederationConfig.Target target, FederationConfig.Target.SearchChain searchChain) {
+                                       FederationConfig.Target target,
+                                       FederationConfig.Target.SearchChain searchChain)
+    {
         if (!target.id().equals(searchChain.searchChainId()))
             throw new RuntimeException("Invalid federation config, " + target.id() + " != " + searchChain.searchChainId());
 
@@ -160,7 +161,8 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static void addSourceForProvider(SearchChainResolver.Builder builder, FederationConfig.Target target,
-                                             FederationConfig.Target.SearchChain searchChain, boolean isDefaultProvider) {
+                                             FederationConfig.Target.SearchChain searchChain, boolean isDefaultProvider)
+    {
         builder.addSourceForProvider(
                 ComponentId.fromString(target.id()),
                 ComponentId.fromString(searchChain.providerId()),
@@ -181,14 +183,12 @@ public class FederationSearcher extends ForkingSearcher {
     public Result search(Query query, Execution execution) {
         Result mergedResults = execution.search(query);
 
-        Results<SearchChainInvocationSpec, UnresolvedSearchChainException> targets =
-                getTargets(query.getModel().getSources(), query.properties());
+        var targets = getTargets(query.getModel().getSources(), query.properties());
         warnIfUnresolvedSearchChains(targets.errors(), mergedResults.hits());
 
-        Collection<SearchChainInvocationSpec> prunedTargets =
-                pruneTargetsWithoutDocumentTypes(query.getModel().getRestrict(), targets.data());
+        var prunedTargets = pruneTargetsWithoutDocumentTypes(query.getModel().getRestrict(), targets.data());
 
-        Results<Target, ErrorMessage> regularTargetHandlers = resolveSearchChains(prunedTargets, execution.searchChainRegistry());
+        var regularTargetHandlers = resolveSearchChains(prunedTargets, execution.searchChainRegistry());
         query.errors().addAll(regularTargetHandlers.errors());
 
         Set<Target> targetHandlers = new LinkedHashSet<>(regularTargetHandlers.data());
@@ -359,8 +359,7 @@ public class FederationSearcher extends ForkingSearcher {
     public void fill(Result result, String summaryClass, Execution execution) {
         UniqueExecutionsToResults uniqueExecutionsToResults = new UniqueExecutionsToResults();
         addResultsToFill(result.hits(), result, summaryClass, uniqueExecutionsToResults);
-        Set<Entry<Chain<Searcher>, Map<Query, Result>>> resultsForAllChains = 
-                uniqueExecutionsToResults.resultsToFill.entrySet();
+        var resultsForAllChains = uniqueExecutionsToResults.resultsToFill.entrySet();
         int numberOfCallsToFillNeeded = 0;
 
         for (Entry<Chain<Searcher>, Map<Query, Result>> resultsToFillForAChain : resultsForAllChains) {
@@ -563,7 +562,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private static <T> List<Target> getAdditionalTargets(Query query, Execution execution, TargetSelector<T> targetSelector) {
-        if (targetSelector == null) return Collections.emptyList();
+        if (targetSelector == null) return List.of();
 
         ArrayList<Target> result = new ArrayList<>();
         for (FederationTarget<T> target: targetSelector.getTargets(query, execution.searchChainRegistry()))
@@ -707,12 +706,6 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private record Window(int hits, int offset) {
-
-        public Integer get(CompoundName parameterName) {
-            if (parameterName.equals(Query.HITS)) return hits;
-            if (parameterName.equals(Query.OFFSET)) return offset;
-            return null;
-        }
 
         public static Window from(Query query) {
             return new Window(query.getHits(), query.getOffset());

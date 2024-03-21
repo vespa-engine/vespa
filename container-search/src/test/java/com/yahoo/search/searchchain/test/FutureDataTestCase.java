@@ -39,11 +39,11 @@ public class FutureDataTestCase {
         Searcher syncProviderSearcher = new SyncProviderSearcher();
         Chain<Searcher> asyncSource = new Chain<>(new ComponentId("async"), asyncProviderSearcher);
         Chain<Searcher> syncSource = new Chain<>(new ComponentId("sync"), syncProviderSearcher);
-        SearchChainResolver searchChainResolver =
-                new SearchChainResolver.Builder().addSearchChain(new ComponentId("sync"), new FederationOptions().setUseByDefault(true)).
-                        addSearchChain(new ComponentId("async"), new FederationOptions().setUseByDefault(true)).
-                        build();
-        Chain<Searcher> main = new Chain<>(new FederationSearcher(new ComponentId("federator"), searchChainResolver, Map.of()));
+        var searchChainResolver = new SearchChainResolver.Builder()
+                .addSearchChain(new ComponentId("sync"), new FederationOptions().setUseByDefault(true))
+                .addSearchChain(new ComponentId("async"), new FederationOptions().setUseByDefault(true))
+                .build();
+        Chain<Searcher> main = new Chain<>(new FederationSearcher(searchChainResolver, Map.of()));
         SearchChainRegistry searchChainRegistry = new SearchChainRegistry();
         searchChainRegistry.register(main);
         searchChainRegistry.register(syncSource);

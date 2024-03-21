@@ -37,8 +37,7 @@ public class DuplicateSourceTestCase {
         SearchChainResolver resolver = new SearchChainResolver.Builder()
                 .addSearchChain(new ComponentId(chain1), List.of(schema1, schema2))
                 .build();
-        FederationSearcher searcher = new FederationSearcher(new ComponentId("test"), resolver,
-                                                             Map.of(schema1, List.of(chain1), schema2, List.of(chain1)));
+        var searcher = new FederationSearcher(resolver, Map.of(schema1, List.of(chain1), schema2, List.of(chain1)));
 
         Result result = searcher.search(new Query("?query=test&sources=doc1%2cdoc2"),
                 new Execution(Execution.Context.createContextStub(searchChains)));
