@@ -4,15 +4,16 @@
 #include "metrics_manager.h"
 #include "json_formatter.h"
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 Producer::Producer(std::shared_ptr<MetricsManager> m)
-    : _manager(m)
+    : _manager(std::move(m))
 {}
 
+Producer::~Producer() = default;
+
 vespalib::string
-Producer::getMetrics(const vespalib::string &)
+Producer::getMetrics(const vespalib::string &, ExpositionFormat /*ignored*/)
 {
     Snapshot snap = _manager->snapshot();
     JsonFormatter fmt(snap);
@@ -20,14 +21,11 @@ Producer::getMetrics(const vespalib::string &)
 }
 
 vespalib::string
-Producer::getTotalMetrics(const vespalib::string &)
+Producer::getTotalMetrics(const vespalib::string &, ExpositionFormat /*ignored*/)
 {
     Snapshot snap = _manager->totalSnapshot();
     JsonFormatter fmt(snap);
     return fmt.asString();
 }
 
-
-
 } // namespace vespalib::metrics
-} // namespace vespalib

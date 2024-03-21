@@ -47,7 +47,8 @@ vespalib::string getPage(int port, const vespalib::string &path, const vespalib:
 
 vespalib::string getFull(int port, const vespalib::string &path) { return getPage(port, path, "-D -"); }
 
-vespalib::string get_json(const JsonGetHandler &handler,
+std::pair<vespalib::string, vespalib::string>
+get_body_and_content_type(const JsonGetHandler &handler,
                           const vespalib::string &host,
                           const vespalib::string &path,
                           const std::map<vespalib::string,vespalib::string> &params)
@@ -55,9 +56,17 @@ vespalib::string get_json(const JsonGetHandler &handler,
     net::ConnectionAuthContext dummy_ctx(net::tls::PeerCredentials(), net::tls::CapabilitySet::all());
     auto res = handler.get(host, path, params, dummy_ctx);
     if (res.ok()) {
-        return res.payload();
+        return {res.payload(), res.content_type()};
     }
     return {};
+}
+
+vespalib::string get_json(const JsonGetHandler &handler,
+                          const vespalib::string &host,
+                          const vespalib::string &path,
+                          const std::map<vespalib::string,vespalib::string> &params)
+{
+    return get_body_and_content_type(handler, host, path, params).first;
 }
 
 //-----------------------------------------------------------------------------
@@ -208,7 +217,7 @@ TEST_FFFF("require that the state server wires the appropriate url prefixes",
           SimpleHealthProducer(), SimpleMetricsProducer(), SimpleComponentConfigProducer(),
           StateServer(0, f1, f2, f3))
 {
-    f2.setTotalMetrics("{}"); // avoid empty result
+    f2.setTotalMetrics("{}", MetricsProducer::ExpositionFormat::JSON); // avoid empty result
     int port = f4.getListenPort();
     EXPECT_TRUE(getFull(port, short_root_path).find("HTTP/1.1 200 OK") == 0);
     EXPECT_TRUE(getFull(port, total_metrics_path).find("HTTP/1.1 200 OK") == 0);
@@ -282,7 +291,7 @@ TEST_FFFF("require that state api responds to the expected paths",
           SimpleHealthProducer(), SimpleMetricsProducer(), SimpleComponentConfigProducer(),
           StateApi(f1, f2, f3))
 {
-    f2.setTotalMetrics("{}"); // avoid empty result
+    f2.setTotalMetrics("{}", MetricsProducer::ExpositionFormat::JSON); // avoid empty result
     EXPECT_TRUE(!get_json(f4, host_tag, short_root_path, empty_params).empty());
     EXPECT_TRUE(!get_json(f4, host_tag, root_path, empty_params).empty());
     EXPECT_TRUE(!get_json(f4, host_tag, health_path, empty_params).empty());
@@ -340,9 +349,20 @@ TEST_FFFF("require that metrics resource works as expected",
     EXPECT_EQUAL("{\"status\":{\"code\":\"down\",\"message\":\"FAIL MSG\"}}",
                  get_json(f4, host_tag, metrics_path, empty_params));
     f1.setOk();
-    f2.setMetrics("{\"foo\":\"bar\"}");
-    EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":{\"foo\":\"bar\"}}",
-                 get_json(f4, host_tag, metrics_path, empty_params));
+    f2.setMetrics(R"({"foo":"bar"})", MetricsProducer::ExpositionFormat::JSON);
+    f2.setMetrics(R"(cool_stuff{hello="world"} 1 23456)", MetricsProducer::ExpositionFormat::Prometheus);
+
+    auto result = get_body_and_content_type(f4, host_tag, metrics_path, empty_params);
+    EXPECT_EQUAL(R"({"status":{"code":"up"},"metrics":{"foo":"bar"}})", result.first);
+    EXPECT_EQUAL("application/json", result.second);
+
+    result = get_body_and_content_type(f4, host_tag, metrics_path, {{"format", "json"}}); // Explicit JSON
+    EXPECT_EQUAL(R"({"status":{"code":"up"},"metrics":{"foo":"bar"}})", result.first);
+    EXPECT_EQUAL("application/json", result.second);
+
+    result = get_body_and_content_type(f4, host_tag, metrics_path, {{"format", "prometheus"}}); // Explicit Prometheus
+    EXPECT_EQUAL(R"(cool_stuff{hello="world"} 1 23456)", result.first);
+    EXPECT_EQUAL("text/plain; version=0.0.4", result.second);
 }
 
 TEST_FFFF("require that config resource works as expected",
@@ -367,9 +387,12 @@ TEST_FFFF("require that state api also can return total metric",
           SimpleHealthProducer(), SimpleMetricsProducer(), SimpleComponentConfigProducer(),
           StateApi(f1, f2, f3))
 {
-    f2.setTotalMetrics("{\"foo\":\"bar\"}");
-    EXPECT_EQUAL("{\"foo\":\"bar\"}",
+    f2.setTotalMetrics(R"({"foo":"bar"})", MetricsProducer::ExpositionFormat::JSON);
+    f2.setTotalMetrics(R"(cool_stuff{hello="world"} 1 23456)", MetricsProducer::ExpositionFormat::Prometheus);
+    EXPECT_EQUAL(R"({"foo":"bar"})",
                  get_json(f4, host_tag, total_metrics_path, empty_params));
+    EXPECT_EQUAL(R"(cool_stuff{hello="world"} 1 23456)",
+                 get_json(f4, host_tag, total_metrics_path, {{"format", "prometheus"}}));
 }
 
 TEST_FFFFF("require that custom handlers can be added to the state server",
@@ -384,12 +407,25 @@ TEST_FFFFF("require that custom handlers can be added to the state server",
 }
 
 struct EchoConsumer : MetricsProducer {
-    ~EchoConsumer() override;
-    vespalib::string getMetrics(const vespalib::string &consumer) override {
-        return "[\"" + consumer + "\"]";
+    static constexpr const char* to_string(ExpositionFormat format) noexcept {
+        switch (format) {
+        case ExpositionFormat::JSON: return "JSON";
+        case ExpositionFormat::Prometheus: return "Prometheus";
+        }
+        abort();
     }
-    vespalib::string getTotalMetrics(const vespalib::string &consumer) override {
-        return "[\"" + consumer + "\"]";
+
+    static vespalib::string stringify_params(const vespalib::string &consumer, ExpositionFormat format) {
+        // Not semantically meaningful output if format == Prometheus, but doesn't really matter here.
+        return vespalib::make_string(R"(["%s", "%s"])", to_string(format), consumer.c_str());
+    }
+
+    ~EchoConsumer() override;
+    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override {
+        return stringify_params(consumer, format);
+    }
+    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override {
+        return stringify_params(consumer, format);
     }
 };
 
@@ -399,17 +435,17 @@ TEST_FFFF("require that empty v1 metrics consumer defaults to 'statereporter'",
           SimpleHealthProducer(), EchoConsumer(), SimpleComponentConfigProducer(),
           StateApi(f1, f2, f3))
 {
-    std::map<vespalib::string,vespalib::string> my_params;
-    EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":[\"statereporter\"]}",
+    EXPECT_EQUAL(R"({"status":{"code":"up"},"metrics":["JSON", "statereporter"]})",
                  get_json(f4, host_tag, metrics_path, empty_params));
+    EXPECT_EQUAL(R"(["Prometheus", "statereporter"])",
+                 get_json(f4, host_tag, metrics_path, {{"format", "prometheus"}}));
 }
 
 TEST_FFFF("require that empty total metrics consumer defaults to the empty string",
           SimpleHealthProducer(), EchoConsumer(), SimpleComponentConfigProducer(),
           StateApi(f1, f2, f3))
 {
-    std::map<vespalib::string,vespalib::string> my_params;
-    EXPECT_EQUAL("[\"\"]", get_json(f4, host_tag, total_metrics_path, empty_params));
+    EXPECT_EQUAL(R"(["JSON", ""])", get_json(f4, host_tag, total_metrics_path, empty_params));
 }
 
 TEST_FFFF("require that metrics consumer is passed correctly",
@@ -418,8 +454,10 @@ TEST_FFFF("require that metrics consumer is passed correctly",
 {
     std::map<vespalib::string,vespalib::string> my_params;
     my_params["consumer"] = "ME";
-    EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":[\"ME\"]}", get_json(f4, host_tag, metrics_path, my_params));
-    EXPECT_EQUAL("[\"ME\"]", get_json(f4, host_tag, total_metrics_path, my_params));
+    EXPECT_EQUAL(R"({"status":{"code":"up"},"metrics":["JSON", "ME"]})", get_json(f4, host_tag, metrics_path, my_params));
+    EXPECT_EQUAL(R"(["JSON", "ME"])", get_json(f4, host_tag, total_metrics_path, my_params));
+    my_params["format"] = "prometheus";
+    EXPECT_EQUAL(R"(["Prometheus", "ME"])", get_json(f4, host_tag, total_metrics_path, my_params));
 }
 
 void check_json(const vespalib::string &expect_json, const vespalib::string &actual_json) {

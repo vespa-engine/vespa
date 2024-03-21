@@ -4,6 +4,7 @@
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/metrics/prometheus_writer.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
@@ -74,7 +75,7 @@ StateReporter::reportStatus(std::ostream& out,
 }
 
 vespalib::string
-StateReporter::getMetrics(const vespalib::string &consumer)
+StateReporter::getMetrics(const vespalib::string &consumer, ExpositionFormat format)
 {
     metrics::MetricLockGuard guard(_manager.getMetricLock());
     auto periods = _manager.getSnapshotPeriods(guard);
@@ -92,18 +93,30 @@ StateReporter::getMetrics(const vespalib::string &consumer)
     snapshot.reset();
     _manager.getMetricSnapshot(guard, interval).addToSnapshot(snapshot, _component.getClock().getSystemTime());
 
-    vespalib::asciistream json;
-    vespalib::JsonStream stream(json);
-    metrics::JsonWriter metricJsonWriter(stream);
-    _manager.visit(guard, snapshot, metricJsonWriter, consumer);
-    stream.finalize();
-    return json.str();
+    vespalib::asciistream out;
+    switch (format) {
+    case ExpositionFormat::JSON:
+        {
+            vespalib::JsonStream stream(out);
+            metrics::JsonWriter metricJsonWriter(stream);
+            _manager.visit(guard, snapshot, metricJsonWriter, consumer);
+            stream.finalize();
+            break;
+        }
+    case ExpositionFormat::Prometheus:
+        {
+            metrics::PrometheusWriter writer(out);
+            _manager.visit(guard, snapshot, writer, consumer);
+            break;
+        }
+    }
+    return out.str();
 }
 
 vespalib::string
-StateReporter::getTotalMetrics(const vespalib::string &consumer)
+StateReporter::getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format)
 {
-    return _metricsAdapter.getTotalMetrics(consumer);
+    return _metricsAdapter.getTotalMetrics(consumer, format);
 }
 
 vespalib::HealthProducer::Health

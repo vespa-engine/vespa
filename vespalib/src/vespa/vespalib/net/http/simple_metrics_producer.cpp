@@ -7,38 +7,38 @@ namespace vespalib {
 SimpleMetricsProducer::SimpleMetricsProducer()
     : _lock(),
       _metrics(),
-      _totalMetrics()
+      _total_metrics()
 {
 }
 
 SimpleMetricsProducer::~SimpleMetricsProducer() = default;
 
 void
-SimpleMetricsProducer::setMetrics(const vespalib::string &metrics)
+SimpleMetricsProducer::setMetrics(const vespalib::string &metrics, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
-    _metrics = metrics;
+    _metrics[format] = metrics;
 }
 
 vespalib::string
-SimpleMetricsProducer::getMetrics(const vespalib::string &)
+SimpleMetricsProducer::getMetrics(const vespalib::string &, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
-    return _metrics;
+    return _metrics[format]; // May implicitly create entry, but that's fine here.
 }
 
 void
-SimpleMetricsProducer::setTotalMetrics(const vespalib::string &metrics)
+SimpleMetricsProducer::setTotalMetrics(const vespalib::string &metrics, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
-    _totalMetrics = metrics;
+    _total_metrics[format] = metrics;
 }
 
 vespalib::string
-SimpleMetricsProducer::getTotalMetrics(const vespalib::string &)
+SimpleMetricsProducer::getTotalMetrics(const vespalib::string &, ExpositionFormat format)
 {
     std::lock_guard guard(_lock);
-    return _totalMetrics;
+    return _total_metrics[format];
 }
 
 } // namespace vespalib

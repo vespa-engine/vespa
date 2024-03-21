@@ -57,8 +57,8 @@ private:
     ApplicationGenerationFetcher& _generationFetcher;
     std::string _name;
 
-    vespalib::string getMetrics(const vespalib::string &consumer) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
+    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
+    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
     Health getHealth() const override;
     void getComponentConfig(Consumer &consumer) override;
 };

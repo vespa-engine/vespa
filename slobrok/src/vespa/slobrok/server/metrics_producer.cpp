@@ -2,6 +2,7 @@
 
 #include "metrics_producer.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
 
@@ -11,9 +12,12 @@ using namespace std::chrono;
 
 namespace {
 
-time_t
-secondsSinceEpoch() {
-    return duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+[[nodiscard]] constexpr seconds seconds_since_epoch(std::chrono::system_clock::time_point tp) noexcept {
+    return duration_cast<seconds>(tp.time_since_epoch());
+}
+
+[[nodiscard]] constexpr milliseconds ms_since_epoch(std::chrono::system_clock::time_point tp) noexcept {
+    return duration_cast<milliseconds>(tp.time_since_epoch());
 }
 
 class MetricsSnapshotter : public FNET_Task
@@ -32,7 +36,7 @@ public:
         Schedule(60.0);
     }
 
-    ~MetricsSnapshotter() { Kill(); }
+    ~MetricsSnapshotter() override { Kill(); }
 };
 
 class MetricSnapshot
@@ -45,7 +49,7 @@ private:
     double _snapLen;
 
 public:
-    MetricSnapshot(uint32_t prevTime, uint32_t currTime);
+    MetricSnapshot(system_clock::time_point prevTime, system_clock::time_point currTime);
     void addCount(const char *name, const char *desc, uint32_t count);
 
     vespalib::string asString() const {
@@ -53,15 +57,15 @@ public:
     }
 };
 
-MetricSnapshot::MetricSnapshot(uint32_t prevTime, uint32_t currTime)
+MetricSnapshot::MetricSnapshot(system_clock::time_point prevTime, system_clock::time_point currTime)
     : _data(),
       _metrics(_data.setObject()),
       _snapshot(_metrics.setObject("snapshot")),
       _values(_metrics.setArray("values")),
-      _snapLen(currTime - prevTime)
+      _snapLen(static_cast<double>(seconds_since_epoch(currTime).count() - seconds_since_epoch(prevTime).count()))
 {
-    _snapshot.setLong("from", prevTime);
-    _snapshot.setLong("to",   currTime);
+    _snapshot.setLong("from", seconds_since_epoch(prevTime).count());
+    _snapshot.setLong("to",   seconds_since_epoch(currTime).count());
     if (_snapLen < 1.0) {
         _snapLen = 1.0;
     }
@@ -81,8 +85,8 @@ MetricSnapshot::addCount(const char *name, const char *desc, uint32_t count)
 }
 
 vespalib::string
-makeSnapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
-             uint32_t prevTime, uint32_t currTime)
+make_json_snapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
+                   system_clock::time_point prevTime, system_clock::time_point currTime)
 {
     MetricSnapshot snapshot(prevTime, currTime);
     snapshot.addCount("slobrok.heartbeats.failed",
@@ -103,44 +107,90 @@ makeSnapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
     return snapshot.asString();
 }
 
+void emit_prometheus_counter(vespalib::asciistream &out, vespalib::stringref name,
+                             vespalib::stringref description, uint64_t value,
+                             system_clock::time_point now)
+{
+    // Prometheus naming conventions state that "_total" should be used for counter metrics.
+    out << "# HELP " << name << "_total " << description << '\n';
+    out << "# TYPE " << name << "_total counter\n";
+    out << name << "_total " << value << ' ' << ms_since_epoch(now).count() << '\n';
+}
+
+void emit_prometheus_gauge(vespalib::asciistream &out, vespalib::stringref name,
+                           vespalib::stringref description, uint64_t value,
+                           system_clock::time_point now)
+{
+    // Gauge metrics do not appear to have any convention for name suffixes, so emit name verbatim.
+    out << "# HELP " << name << ' ' << description << '\n';
+    out << "# TYPE " << name << " gauge\n";
+    out << name << ' ' << value << ' ' << ms_since_epoch(now).count() << '\n';
+}
+
+vespalib::string
+make_prometheus_snapshot(const RPCHooks::Metrics &curr, system_clock::time_point now)
+{
+    vespalib::asciistream out;
+    emit_prometheus_counter(out, "slobrok_heartbeats_failed",
+                            "count of failed heartbeat requests",
+                            curr.heartBeatFails, now);
+    emit_prometheus_counter(out, "slobrok_requests_register",
+                            "count of register requests received",
+                            curr.registerReqs, now);
+    emit_prometheus_counter(out, "slobrok_requests_mirror",
+                            "count of mirroring requests received",
+                            curr.mirrorReqs, now);
+    emit_prometheus_counter(out, "slobrok_requests_admin",
+                            "count of administrative requests received",
+                            curr.adminReqs, now);
+    emit_prometheus_gauge(out, "slobrok_missing_consensus",
+                          "number of seconds without full consensus with all other brokers",
+                          curr.missingConsensusTime, now);
+    return out.str();
+}
+
 } // namespace <unnamed>
 
 
-MetricsProducer::MetricsProducer(const RPCHooks &hooks,
-                                               FNET_Transport &transport)
+MetricsProducer::MetricsProducer(const RPCHooks &hooks, FNET_Transport &transport)
     : _rpcHooks(hooks),
       _lastMetrics(RPCHooks::Metrics::zero()),
       _producer(),
-      _startTime(secondsSinceEpoch()),
+      _startTime(system_clock::now()),
       _lastSnapshotStart(_startTime),
-      _snapshotter(new MetricsSnapshotter(transport, *this))
+      _snapshotter(std::make_unique<MetricsSnapshotter>(transport, *this))
 {
 }
 
 MetricsProducer::~MetricsProducer() = default;
 
 vespalib::string
-MetricsProducer::getMetrics(const vespalib::string &consumer)
+MetricsProducer::getMetrics(const vespalib::string &consumer, ExpositionFormat format)
 {
-    return _producer.getMetrics(consumer);
+    return _producer.getMetrics(consumer, format);
 }
 
 vespalib::string
-MetricsProducer::getTotalMetrics(const vespalib::string &)
+MetricsProducer::getTotalMetrics(const vespalib::string &, ExpositionFormat format)
 {
-    uint32_t now = secondsSinceEpoch();
+    const auto now = system_clock::now();
     RPCHooks::Metrics current = _rpcHooks.getMetrics();
-    RPCHooks::Metrics start = RPCHooks::Metrics::zero();
-    return makeSnapshot(start, current, _startTime, now);
+    if (format == ExpositionFormat::Prometheus) {
+        return make_prometheus_snapshot(current, now);
+    } else {
+        RPCHooks::Metrics start = RPCHooks::Metrics::zero();
+        return make_json_snapshot(start, current, _startTime, now);
+    }
 }
 
 
 void
 MetricsProducer::snapshot()
 {
-    uint32_t now = secondsSinceEpoch();
+    const auto now = system_clock::now();
     RPCHooks::Metrics current = _rpcHooks.getMetrics();
-    _producer.setMetrics(makeSnapshot(_lastMetrics, current, _lastSnapshotStart, now));
+    _producer.setMetrics(make_json_snapshot(_lastMetrics, current, _lastSnapshotStart, now), ExpositionFormat::JSON);
+    _producer.setMetrics(make_prometheus_snapshot(current, now), ExpositionFormat::Prometheus);
     _lastMetrics = current;
     _lastSnapshotStart = now;
 }

@@ -13,7 +13,7 @@ HttpServer::get(Portal::GetRequest req)
     if (response.failed()) {
         req.respond_with_error(response.status_code(), response.status_message());
     } else {
-        req.respond_with_content("application/json", response.payload());
+        req.respond_with_content(response.content_type(), response.payload());
     }
 }
 

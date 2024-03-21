@@ -15,9 +15,10 @@ class Producer : public vespalib::MetricsProducer {
 private:
     std::shared_ptr<MetricsManager> _manager;
 public:
-    Producer(std::shared_ptr<MetricsManager> m);
-    vespalib::string getMetrics(const vespalib::string &consumer) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
+    explicit Producer(std::shared_ptr<MetricsManager> m);
+    ~Producer() override;
+    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
+    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
 };
 
 }
