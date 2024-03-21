@@ -125,9 +125,8 @@ ParallelWeakAndBlueprint::createFilterSearch(FilterConstraint constraint) const
 void
 ParallelWeakAndBlueprint::fetchPostings(const ExecuteInfo & execInfo)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo);
     for (const auto & _term : _terms) {
-        _term->fetchPostings(childInfo);
+        _term->fetchPostings(execInfo);
     }
 }
 
