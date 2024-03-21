@@ -6,6 +6,7 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
 #include <numeric>
 #include <vector>
@@ -18,6 +19,8 @@ using namespace search;
 using namespace vespalib;
 
 using search::index::Schema;
+
+using vespalib::make_string_short::fmt;
 
 const vespalib::string field_name = "myfield";
 double budget_sec = 1.0;
@@ -43,10 +46,12 @@ struct BenchmarkResult {
           iterator_name(iterator_name_in),
           blueprint_name(blueprint_name_in)
     {}
+    ~BenchmarkResult();
     double ns_per_seek() const { return (time_ms / seeks) * 1000.0 * 1000.0; }
     double ms_per_actual_cost() const { return (time_ms / actual_cost); }
     double ms_per_alt_cost() const { return (time_ms / alt_cost); }
 };
+BenchmarkResult::~BenchmarkResult() = default;
 
 struct Stats {
     double average;
@@ -176,11 +181,11 @@ struct MatchLoopContext {
 MatchLoopContext::~MatchLoopContext() = default;
 
 MatchLoopContext
-make_match_loop_context(BenchmarkBlueprintFactory& factory, bool strict, uint32_t docid_limit)
+make_match_loop_context(BenchmarkBlueprintFactory& factory, InFlow in_flow, uint32_t docid_limit)
 {
     auto blueprint = factory.make_blueprint();
     assert(blueprint);
-    blueprint->basic_plan(strict, docid_limit);
+    blueprint->basic_plan(in_flow, docid_limit);
     blueprint->fetchPostings(ExecuteInfo::FULL);
     // Note: All blueprints get the same TermFieldMatchData instance.
     //       This is OK as long as we don't do unpacking and only use 1 thread.
@@ -232,7 +237,7 @@ non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, doub
     uint32_t docid_skip = 1.0 / filter_hit_ratio;
     MatchLoopContext ctx;
     while (timer.has_budget()) {
-        ctx = make_match_loop_context(factory, force_strict, docid_limit);
+        ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit);
         auto* itr = ctx.iterator.get();
         timer.before();
         seeks = 0;
@@ -273,6 +278,131 @@ benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, bool 
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+
+double est_forced_strict_cost(double estimate, double strict_cost, double rate) {
+    return (rate - estimate) * 0.2 + strict_cost;
+}
+
+struct Sample {
+    double value;
+    double other;
+    bool forced_strict;
+    Sample(double v) noexcept : value(v), other(v), forced_strict(false) {}
+    Sample(double v, double o, bool fs) noexcept : value(v), other(o), forced_strict(fs) {}
+    bool operator<(const Sample &rhs) const noexcept { return value < rhs.value; }
+    vespalib::string str() const noexcept {
+        if (other == value) {
+            return fmt("%g", value);
+        }
+        auto fs = [](bool forced){ return forced ? "_FS" : ""; };
+        return fmt("%g%s(%g%s)", value, fs(forced_strict), other, fs(!forced_strict));
+    }
+};
+
+double find_crossover(const char *type, const auto &calculate_at, double delta) {
+    double min = delta;
+    double max = 1.0;
+    fprintf(stderr, "looking for %s crossover in the range [%g, %g]...\n", type, min, max);
+    auto at_min = calculate_at(min);
+    auto at_max = calculate_at(max);
+    fprintf(stderr, "  before: [%s, %s], after: [%s, %s]\n",
+            at_min.first.str().c_str(), at_max.first.str().c_str(),
+            at_min.second.str().c_str(), at_max.second.str().c_str());
+    auto best_before = [](auto values) { return (values.first < values.second); };
+    if (best_before(at_min) == best_before(at_max)) {
+        fprintf(stderr, "  NO %s CROSSOVER FOUND\n", type);
+        return 0.0;
+    }
+    while (max > (min + delta)) {
+        double x = (min + max) / 2.0;
+        auto at_x = calculate_at(x);
+        fprintf(stderr, "  best@%g: %s (%s vs %s)\n", x, best_before(at_x) ? "before" : "after",
+                at_x.first.str().c_str(), at_x.second.str().c_str());
+        if (best_before(at_min) == best_before(at_x)) {
+            min = x;
+            at_min = at_x;
+        } else {
+            max = x;
+            at_max = at_x;
+        }
+    }
+    double result = (min + max) / 2.0;
+    fprintf(stderr, "  %s CROSSOVER AT %g\n", type, result);
+    return result;
+}
+
+void sample_at(const char *type, const auto &calculate_at, const std::vector<double> &values, const std::vector<const char *> &names) {
+    assert(values.size() == names.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        double x = values[i];
+        const char *x_name = names[i];
+        auto at_x = calculate_at(x);
+        fprintf(stderr, "%s@%s(%g): before: %s, after: %s\n", type, x_name, x,
+                at_x.first.str().c_str(), at_x.second.str().c_str());
+    }
+}
+
+void analyze_crossover(BenchmarkBlueprintFactory &fixed, std::function<std::unique_ptr<BenchmarkBlueprintFactory>(double arg)> variable,
+                       uint32_t docid_limit, bool allow_force_strict, double delta)
+{
+    auto estimate_AND_time_ms = [&](auto &first, auto &last) {
+                                    auto a = first.make_blueprint();
+                                    a->basic_plan(true, docid_limit);
+                                    double est_a = a->estimate();
+                                    double a_ms = benchmark_search(first, docid_limit, true, false, false, 1.0).time_ms;
+                                    double b_ms = benchmark_search(last, docid_limit, false, false, false, est_a).time_ms;
+                                    if (!allow_force_strict) {
+                                        return Sample(a_ms + b_ms);
+                                    }
+                                    double c_ms = benchmark_search(last, docid_limit, false, true, false, est_a).time_ms;
+                                    if (c_ms < b_ms) {
+                                        return Sample(a_ms + c_ms, a_ms + b_ms, true);
+                                    }
+                                    return Sample(a_ms + b_ms, a_ms + c_ms, false);
+                                };
+    auto calculate_AND_cost = [&](auto &first, auto &last) {
+                                  auto a = first.make_blueprint();
+                                  auto b = last.make_blueprint();
+                                  a->basic_plan(true, docid_limit);
+                                  double a_cost = a->strict_cost();
+                                  b->basic_plan(a->estimate(), docid_limit);
+                                  double b_cost = b->cost() * a->estimate();
+                                  if (!allow_force_strict) {
+                                      return Sample(a_cost + b_cost);
+                                  }
+                                  auto c = last.make_blueprint();
+                                  c->basic_plan(true, docid_limit);
+                                  double c_cost = est_forced_strict_cost(c->estimate(), c->strict_cost(), a->estimate());
+                                  if (c_cost < b_cost) {
+                                      return Sample(a_cost + c_cost, a_cost + b_cost, true);
+                                  }
+                                  return Sample(a_cost + b_cost, a_cost + c_cost, false);
+                              };
+    auto first_abs_est = [&](auto &first, auto &) {
+                             auto a = first.make_blueprint();
+                             return Sample(a->getState().estimate().estHits);
+                         };
+    auto combine = [&](auto &fun) {
+                       return [&](double rate) {
+                                  auto variable_at_rate = variable(rate);
+                                  return std::make_pair(fun(*variable_at_rate, fixed), fun(fixed, *variable_at_rate));
+                              };
+                   };
+    std::vector<double> results;
+    std::vector<const char *> names;
+    names.push_back("time crossover");
+    results.push_back(find_crossover("TIME", combine(estimate_AND_time_ms), delta));
+    names.push_back("cost crossover");
+    results.push_back(find_crossover("COST", combine(calculate_AND_cost), delta));
+    names.push_back("abs_est crossover");
+    results.push_back(find_crossover("ABS_EST", combine(first_abs_est), delta));
+    sample_at("COST", combine(calculate_AND_cost), results, names);
+    sample_at("TIME", combine(estimate_AND_time_ms), results, names);
+}
+
+//-----------------------------------------------------------------------------
 
 vespalib::string
 to_string(bool val)
@@ -630,6 +760,24 @@ TEST(IteratorBenchmark, or_benchmark)
 {
     BenchmarkSetup setup(num_docs, {int32_array_fs}, {QueryOperator::Or}, {true, false}, base_hit_ratios, {1, 10, 100, 1000});
     run_benchmarks(setup);
+}
+
+TEST(IteratorBenchmark, or_vs_filter_crossover)
+{
+    auto fixed_or = make_blueprint_factory(int32_array_fs, QueryOperator::Or, num_docs, 0, 0.1, 100);
+    auto variable_term = [](double rate) {
+                             return make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, rate, 1);
+                         };
+    analyze_crossover(*fixed_or, variable_term, num_docs + 1, false, 0.0001);
+}
+
+TEST(IteratorBenchmark, or_vs_filter_crossover_with_allow_force_strict)
+{
+    auto fixed_or = make_blueprint_factory(int32_array_fs, QueryOperator::Or, num_docs, 0, 0.1, 100);
+    auto variable_term = [](double rate) {
+                             return make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, rate, 1);
+                         };
+    analyze_crossover(*fixed_or, variable_term, num_docs + 1, true, 0.0001);
 }
 
 int main(int argc, char **argv) {
