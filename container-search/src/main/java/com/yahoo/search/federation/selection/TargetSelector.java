@@ -5,7 +5,6 @@ import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.federation.selection.FederationTarget;
 
 import java.util.Collection;
 
@@ -25,7 +24,7 @@ public interface TargetSelector<T> {
     Collection<FederationTarget<T>> getTargets(Query query, ChainRegistry<Searcher> searcherChainRegistry);
 
     /**
-     * For modifying the query before sending it to a the target
+     * For modifying the query before sending it to the target
      */
     void modifyTargetQuery(FederationTarget<T> target, Query query);
 

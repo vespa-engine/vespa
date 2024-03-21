@@ -284,7 +284,7 @@ public class FederationSearcherTestCase {
         builder.addSourceForProvider(news, provider1, provider1, true, options, List.of());
         builder.addSourceForProvider(news, provider2, provider2, false, options, List.of());
 
-        return new FederationSearcher(new ComponentId("federation"), builder.build(), Map.of());
+        return new FederationSearcher(builder.build(), Map.of());
     }
 
     private static class MockProvider extends Searcher {
@@ -302,32 +302,6 @@ public class FederationSearcherTestCase {
             return result;
         }
 
-    }
-
-    private static class QueryCheckSearcher extends Searcher {
-
-        private static final String STATUS = "status";
-        public static final String FEDERATION_SEARCHER_HAS_CLONED_THE_QUERY = "FederationSearcher has cloned the query.";
-        public static final String OK = "Got the correct query.";
-        private final Query query;
-
-        QueryCheckSearcher(Query query) {
-            this.query = query;
-        }
-
-        @Override
-        public Result search(Query query, Execution execution) {
-            Result result = new Result(query);
-            if (query != this.query) {
-                result.hits().addError(ErrorMessage
-                        .createErrorInPluginSearcher(FEDERATION_SEARCHER_HAS_CLONED_THE_QUERY));
-            } else {
-                final Hit h = new Hit("QueryCheckSearcher status hit");
-                h.setField(STATUS, OK);
-                result.hits().add(h);
-            }
-            return result;
-        }
     }
 
 }

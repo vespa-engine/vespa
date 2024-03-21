@@ -47,7 +47,7 @@ class FederationTester {
     }
 
     FederationSearcher buildFederationSearcher() {
-        return new FederationSearcher(ComponentId.fromString("federation"), builder.build(), Map.of());
+        return new FederationSearcher(builder.build(), Map.of());
     }
 
     public Result search() {
