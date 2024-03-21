@@ -25,6 +25,12 @@
 #include <vespa/vespalib/util/malloc_mmap_guard.h>
 #include <limits>
 
+#if LLVM_VERSION_MAJOR < 18
+using CodeGenOptLevel = llvm::CodeGenOpt::Level;
+#else
+using llvm::CodeGenOptLevel;
+#endif
+
 double vespalib_eval_ldexp(double a, double b) { return std::ldexp(a, b); }
 double vespalib_eval_min(double a, double b) { return std::min(a, b); }
 double vespalib_eval_max(double a, double b) { return std::max(a, b); }
@@ -718,7 +724,7 @@ LLVMWrapper::compile(llvm::raw_ostream * dumpStream)
         _module->print(*dumpStream, nullptr);
     }
     // Set relocation model to silence valgrind on CentOS 8 / aarch64
-    _engine.reset(llvm::EngineBuilder(std::move(_module)).setOptLevel(llvm::CodeGenOpt::Aggressive).setRelocationModel(llvm::Reloc::Static).create());
+    _engine.reset(llvm::EngineBuilder(std::move(_module)).setOptLevel(CodeGenOptLevel::Aggressive).setRelocationModel(llvm::Reloc::Static).create());
     assert(_engine && "llvm jit not available for your platform");
 
     MallocMmapGuard largeAllocsAsMMap(1_Mi);
