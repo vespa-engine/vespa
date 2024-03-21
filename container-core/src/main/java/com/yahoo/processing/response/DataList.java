@@ -80,7 +80,7 @@ public interface DataList<DATATYPE extends Data> extends Data {
     void addDataListener(Runnable runnable);
 
     /**
-     * Notify this list that is will never be accessed again, neither for read nor write.
+     * Notify this list that it will never be accessed again, neither for read nor write.
      * Implementations can override this as an optimization to release any data held in the list
      * for garbage collection.
      *

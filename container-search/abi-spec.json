@@ -7460,6 +7460,25 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.rendering.EventRenderer" : {
+    "superClass" : "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.util.concurrent.Executor)",
+      "public void beginResponse(java.io.OutputStream)",
+      "public void beginList(com.yahoo.processing.response.DataList)",
+      "public void data(com.yahoo.processing.response.Data)",
+      "public void endList(com.yahoo.processing.response.DataList)",
+      "public void endResponse()",
+      "public java.lang.String getEncoding()",
+      "public java.lang.String getMimeType()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.rendering.JsonRenderer$FieldConsumer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -7554,6 +7573,7 @@
       "public static final com.yahoo.component.ComponentId xmlRendererId",
       "public static final com.yahoo.component.ComponentId pageRendererId",
       "public static final com.yahoo.component.ComponentId jsonRendererId",
+      "public static final com.yahoo.component.ComponentId eventRendererId",
       "public static final com.yahoo.component.ComponentId defaultRendererId"
     ]
   },
@@ -7820,6 +7840,50 @@
       "public static final int NULL_QUERY",
       "public static final int timeoutCode",
       "public static final int emptyDocsumsCode"
+    ]
+  },
+  "com.yahoo.search.result.EventStream$Event" : {
+    "superClass" : "com.yahoo.component.provider.ListenableFreezableClass",
+    "interfaces" : [
+      "com.yahoo.processing.response.Data"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(int, java.lang.String, java.lang.String)",
+      "public java.lang.String toString()",
+      "public java.lang.String type()",
+      "public com.yahoo.processing.Request request()",
+      "public com.yahoo.search.result.Hit asHit()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.result.EventStream" : {
+    "superClass" : "com.yahoo.search.result.Hit",
+    "interfaces" : [
+      "com.yahoo.processing.response.DataList"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void add(java.lang.String)",
+      "public void add(java.lang.String, java.lang.String)",
+      "public void error(java.lang.String, com.yahoo.search.result.ErrorMessage)",
+      "public void markComplete()",
+      "public com.yahoo.processing.response.Data add(com.yahoo.processing.response.Data)",
+      "public com.yahoo.processing.response.Data get(int)",
+      "public java.util.List asList()",
+      "public com.yahoo.processing.response.IncomingData incoming()",
+      "public java.util.concurrent.CompletableFuture completeFuture()",
+      "public void addDataListener(java.lang.Runnable)",
+      "public void close()"
+    ],
+    "fields" : [
+      "public static final java.lang.String EVENT_TYPE_TOKEN",
+      "public static final java.lang.String DEFAULT_EVENT_TYPE"
     ]
   },
   "com.yahoo.search.result.FeatureData" : {
