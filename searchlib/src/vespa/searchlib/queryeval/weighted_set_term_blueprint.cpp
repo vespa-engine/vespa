@@ -153,9 +153,8 @@ WeightedSetTermBlueprint::create_matching_elements_search(const MatchingElements
 void
 WeightedSetTermBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo);
     for (const auto & _term : _terms) {
-        _term->fetchPostings(childInfo);
+        _term->fetchPostings(execInfo);
     }
 }
 
