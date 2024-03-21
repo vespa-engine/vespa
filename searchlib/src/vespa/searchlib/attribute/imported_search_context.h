@@ -66,7 +66,7 @@ public:
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
     HitEstimate calc_hit_estimate() const override;
-    void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
+    void fetchPostings(const queryeval::ExecuteInfo &execInfo, bool strict) override;
     bool valid() const override;
     Int64Range getAsIntegerTerm() const override;
     DoubleRange getAsDoubleTerm() const override;

@@ -111,8 +111,9 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, ac.getAttribute(field)->getIsFilter()));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
-        SearchIterator::UP sb = bp->createSearch(*md, strict);
+        bp->basic_plan(strict, 100);
+        bp->fetchPostings(queryeval::ExecuteInfo::FULL);
+        SearchIterator::UP sb = bp->createSearch(*md);
         return sb;
     }
     bool isWeightedSetTermSearch(Searchable &searchable, const std::string &field, bool strict) const {
@@ -127,8 +128,9 @@ struct WS {
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
-        SearchIterator::UP sb = bp->createSearch(*md, strict);
+        bp->basic_plan(strict, 100);
+        bp->fetchPostings(queryeval::ExecuteInfo::FULL);
+        SearchIterator::UP sb = bp->createSearch(*md);
         FakeResult result;
         sb->initRange(1, 10);
         for (uint32_t docId = 1; docId < 10; ++docId) {

@@ -121,6 +121,12 @@ AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context,
     _contexts.push_back(context.release());
 }
 
+void
+AttributeWeightedSetBlueprint::sort(queryeval::InFlow in_flow, const Options &)
+{
+    strict(in_flow.strict());
+}
+
 queryeval::FlowStats
 AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
@@ -141,16 +147,16 @@ AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 queryeval::SearchIterator::UP
-AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
+AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
 {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0];
     bool field_is_filter = getState().fields()[0].isFilter();
     if ((tfmd.isNotNeeded() || field_is_filter) && (_contexts.size() == 1)) {
-        return _contexts[0]->createIterator(&tfmd, strict);
+        return _contexts[0]->createIterator(&tfmd, strict());
     }
-    if (strict) { // use generic weighted set search
+    if (strict()) { // use generic weighted set search
         fef::MatchDataLayout layout;
         auto handle = layout.allocTermField(tfmd.getFieldId());
         auto match_data = layout.createMatchData();
@@ -174,24 +180,24 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
 }
 
 queryeval::SearchIterator::UP
-AttributeWeightedSetBlueprint::createFilterSearch(bool strict, FilterConstraint) const
+AttributeWeightedSetBlueprint::createFilterSearch(FilterConstraint) const
 {
     std::vector<std::unique_ptr<queryeval::SearchIterator>> children;
     children.reserve(_contexts.size());
     for (auto& context : _contexts) {
         auto wrapper = std::make_unique<queryeval::FilterWrapper>(1);
-        wrapper->wrap(context->createIterator(wrapper->tfmda()[0], strict));
+        wrapper->wrap(context->createIterator(wrapper->tfmda()[0], strict()));
         children.emplace_back(std::move(wrapper));
     }
-    return queryeval::OrSearch::create(std::move(children), strict, queryeval::UnpackInfo());
+    return queryeval::OrSearch::create(std::move(children), strict(), queryeval::UnpackInfo());
 }
 
 void
 AttributeWeightedSetBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
-    if (execInfo.is_strict()) {
+    if (strict()) {
         for (auto * context : _contexts) {
-            context->fetchPostings(execInfo);
+            context->fetchPostings(execInfo, strict());
         }
     }
 }

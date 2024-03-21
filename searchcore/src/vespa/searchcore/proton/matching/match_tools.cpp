@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/diversity.h>
+#include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
@@ -33,6 +34,7 @@ namespace {
 using search::fef::Properties;
 using search::fef::RankSetup;
 using search::fef::IIndexEnvironment;
+using search::queryeval::InFlow;
 
 using namespace vespalib::literals;
 
@@ -204,10 +206,11 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         trace.addEvent(5, "Optimize query execution plan");
         bool sort_by_cost = SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
-        _query.optimize(sort_by_cost);
-        trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
-        _query.fetchPostings(ExecuteInfo::create(is_search, hitRate, _requestContext.getDoom(), thread_bundle));
+        auto in_flow = InFlow(is_search, hitRate);
+        _query.optimize(in_flow, sort_by_cost);
+        trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
+        _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
         if (is_search) {
             _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
                                         _attribute_blueprint_params.global_filter_lower_limit,

@@ -62,10 +62,11 @@ public:
         set_tree_size(_terms.size() + 1);
     }
 
+    void sort(InFlow in_flow, const Options &opts) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     
-    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
-    std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
+    std::unique_ptr<SearchIterator> createFilterSearch(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     bool always_needs_unpack() const override;

@@ -49,15 +49,16 @@ public:
     ~PredicateBlueprint();
     void fetchPostings(const ExecuteInfo &execInfo) override;
 
+    void sort(InFlow in_flow, const Options &opts) override;
     FlowStats calculate_flow_stats(uint32_t) const override {
         return default_flow_stats(_interval_btree_iterators.size() + _interval_vector_iterators.size() +
                                   _bounds_btree_iterators.size() + _bounds_vector_iterators.size() + 2);
     }
 
     SearchIterator::UP
-    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
 
     // Exposed for testing

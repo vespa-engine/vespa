@@ -164,20 +164,20 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(con
 
 template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
 {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
-    return create_search_helper<SearchType::filter_search>(tfmda, strict);
+    return create_search_helper<SearchType::filter_search>(tfmda, strict());
 }
 
 template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearch(bool strict, FilterConstraint) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearch(FilterConstraint) const
 {
     assert(getState().numFields() == 1);
     auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
-    wrapper->wrap(create_search_helper<true>(wrapper->tfmda(), strict));
+    wrapper->wrap(create_search_helper<true>(wrapper->tfmda(), strict()));
     return wrapper;
 }
 

@@ -156,7 +156,7 @@ get_class_name(const auto& obj)
 BenchmarkResult
 strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit)
 {
-    auto itr = blueprint.createSearch(md, true);
+    auto itr = blueprint.createSearch(md);
     assert(itr.get());
     BenchmarkTimer timer(budget_sec);
     uint32_t hits = 0;
@@ -176,9 +176,9 @@ strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit)
 }
 
 BenchmarkResult
-non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, double filter_hit_ratio, bool force_strict)
+non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, double filter_hit_ratio)
 {
-    auto itr = blueprint.createSearch(md, force_strict);
+    auto itr = blueprint.createSearch(md);
     assert(itr.get());
     BenchmarkTimer timer(budget_sec);
     uint32_t seeks = 0;
@@ -209,16 +209,15 @@ non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, dou
 BenchmarkResult
 benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict_context, bool force_strict, double filter_hit_ratio)
 {
-    auto opts = Blueprint::Options::all();
-    blueprint->sort(strict_context || force_strict, opts);
-    blueprint->fetchPostings(ExecuteInfo::createForTest(strict_context || force_strict));
+    blueprint->basic_plan(strict_context || force_strict, docid_limit);
+    blueprint->fetchPostings(ExecuteInfo::FULL);
     // Note: All blueprints get the same TermFieldMatchData instance.
     //       This is OK as long as we don't do unpacking and only use 1 thread.
     auto md = MatchData::makeTestInstance(1, 1);
     if (strict_context) {
         return strict_search(*blueprint, *md, docid_limit);
     } else {
-        return non_strict_search(*blueprint, *md, docid_limit, filter_hit_ratio, force_strict);
+        return non_strict_search(*blueprint, *md, docid_limit, filter_hit_ratio);
     }
 }
 

@@ -125,8 +125,14 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
     }
 }
 
+void
+NearestNeighborBlueprint::sort(InFlow in_flow, const Options &)
+{
+    strict(in_flow.strict());
+}
+
 std::unique_ptr<SearchIterator>
-NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda, bool strict) const
+NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const
 {
     assert(tfmda.size() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0]; // always search in only one field
@@ -137,7 +143,7 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     default:
         ;
     }
-    return NearestNeighborIterator::create(strict, tfmd,
+    return NearestNeighborIterator::create(strict(), tfmd,
                                            std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
                                            _distance_heap, *_global_filter);
 }

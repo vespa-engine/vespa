@@ -59,6 +59,7 @@ public:
     private:
         bool _sort_by_cost;
         bool _allow_force_strict;
+        bool _keep_order;
     public:
         constexpr Options() noexcept 
           : _sort_by_cost(false),
@@ -73,8 +74,13 @@ public:
             _allow_force_strict = value;
             return *this;
         }
-        static constexpr Options all() noexcept {
-            return Options().sort_by_cost(true).allow_force_strict(true);
+        constexpr bool keep_order() const noexcept { return _keep_order; }
+        constexpr Options &keep_order(bool value) noexcept {
+            _keep_order = value;
+            return *this;
+        }
+        static Options default_options() noexcept {
+            return Options().sort_by_cost(true);
         }
     };
 
@@ -205,6 +211,7 @@ private:
     FlowStats  _flow_stats;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
+    bool       _strict;
     bool       _frozen;
 
 protected:
@@ -217,6 +224,12 @@ protected:
         getState();
         _frozen = true;
     }
+
+    // Should be called by sort; sort is responsible for propagating
+    // strict tagging throughout the blueprint tree. Note that calling
+    // this directly breaks some tests using leaf proxy decorators
+    // that are not able to forward the non-virtual call.
+    void strict(bool value) noexcept { _strict = value; }
 
 public:
     class IPredicate {
@@ -246,12 +259,43 @@ public:
     virtual void setDocIdLimit(uint32_t limit) noexcept { _docid_limit = limit; }
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
+    bool strict() const noexcept { return _strict; }
+
+    virtual void each_node_post_order(const std::function<void(Blueprint&)> &f);
+
+    // The combination of 'optimize' (2 passes bottom-up) and 'sort'
+    // (1 pass top-down) is considered 'planning'. Flow stats are
+    // calculated during the last optimize pass (which itself requires
+    // knowledge about the docid limit) and strict tagging is done
+    // during sorting. Strict tagging is needed for fetchPostings
+    // (which also needs the estimate part of the flow stats),
+    // createSearch and createFilterSearch to work correctly. This
+    // means we always need to perform some form of planning.
+    //
+    // This function will perform basic planning. The docid limit will
+    // be tagged on all nodes, flow stats will be calculated for all
+    // nodes, sorting will be performed based on optimal flow cost and
+    // strict tagging will be conservative. The only structural change
+    // allowed is child node reordering.
+    void basic_plan(InFlow in_flow, uint32_t docid_limit);
+
+    // Similar to basic_plan, but will not reorder children. Note that
+    // this means that flow stats will be misleading as they assume
+    // optimal ordering. Used for testing.
+    void null_plan(InFlow in_flow, uint32_t docid_limit);
+
     static Blueprint::UP optimize(Blueprint::UP bp);
-    virtual double sort(InFlow in_flow, const Options &opts) = 0;
+    virtual void sort(InFlow in_flow, const Options &opts) = 0;
     static Blueprint::UP optimize_and_sort(Blueprint::UP bp, InFlow in_flow, const Options &opts) {
         auto result = optimize(std::move(bp));
         result->sort(in_flow, opts);
         return result;
+    }
+    static Blueprint::UP optimize_and_sort(Blueprint::UP bp, InFlow in_flow) {
+        return optimize_and_sort(std::move(bp), in_flow, Options::default_options());
+    }
+    static Blueprint::UP optimize_and_sort(Blueprint::UP bp) {
+        return optimize_and_sort(std::move(bp), true, Options::default_options());
     }
     virtual void optimize(Blueprint* &self, OptimizePass pass) = 0;
     virtual void optimize_self(OptimizePass pass);
@@ -308,15 +352,15 @@ public:
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
 
-    virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
-    virtual SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const = 0;
+    virtual SearchIteratorUP createSearch(fef::MatchData &md) const = 0;
+    virtual SearchIteratorUP createFilterSearch(FilterConstraint constraint) const = 0;
     static SearchIteratorUP create_and_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_or_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_atmost_and_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_atmost_or_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_andnot_filter(const Children &children, bool strict, FilterConstraint constraint);
-    static SearchIteratorUP create_first_child_filter(const Children &children, bool strict, FilterConstraint constraint);
-    static SearchIteratorUP create_default_filter(bool strict, FilterConstraint constraint);
+    static SearchIteratorUP create_first_child_filter(const Children &children, FilterConstraint constraint);
+    static SearchIteratorUP create_default_filter(FilterConstraint constraint);
 
     // for debug dumping
     vespalib::string asString() const;
@@ -406,9 +450,10 @@ public:
     ~IntermediateBlueprint() override;
 
     void setDocIdLimit(uint32_t limit) noexcept final;
+    void each_node_post_order(const std::function<void(Blueprint&)> &f) override;
 
     void optimize(Blueprint* &self, OptimizePass pass) final;
-    double sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow, const Options &opts) override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
@@ -420,15 +465,13 @@ public:
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
-    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md) const override;
     
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(Children &children, bool strict, bool sort_by_cost) const = 0;
-    virtual bool inheritStrict(size_t i) const = 0;
     virtual SearchIteratorUP
-    createIntermediateSearch(MultiSearch::Children subSearches,
-                             bool strict, fef::MatchData &md) const = 0;
+    createIntermediateSearch(MultiSearch::Children subSearches, fef::MatchData &md) const = 0;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
@@ -445,7 +488,6 @@ private:
     State _state;
 protected:
     void optimize(Blueprint* &self, OptimizePass pass) final;
-    double sort(InFlow in_flow, const Options &opts) override;
     void setEstimate(HitEstimate est) {
         _state.estimate(est);
         notifyChange();
@@ -480,11 +522,11 @@ public:
     const State &getState() const final { return _state; }
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
-    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md) const override;
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
     virtual bool getRange(vespalib::string & from, vespalib::string & to) const;
-    virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const = 0;
+    virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const = 0;
 };
 
 // for leaf nodes representing a single term
@@ -492,6 +534,7 @@ struct SimpleLeafBlueprint : LeafBlueprint {
     explicit SimpleLeafBlueprint() noexcept : LeafBlueprint(true) {}
     explicit SimpleLeafBlueprint(FieldSpecBase field) noexcept : LeafBlueprint(field, true) {}
     explicit SimpleLeafBlueprint(FieldSpecBaseList fields) noexcept: LeafBlueprint(std::move(fields), true) {}
+    void sort(InFlow in_flow, const Options &opts) override;
 };
 
 // for leaf nodes representing more complex structures like wand/phrase

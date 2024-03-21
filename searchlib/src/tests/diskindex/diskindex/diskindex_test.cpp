@@ -313,49 +313,53 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
     auto upper_bound = Blueprint::FilterConstraint::UPPER_BOUND;
     { // bit vector due to isFilter
         b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, true), makeTerm("w2"));
-        b->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+        b->basic_plan(true, 1000);
+        b->fetchPostings(search::queryeval::ExecuteInfo::FULL);
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
-        s = leaf_b.createLeafSearch(mda, true);
+        s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
     { // bit vector due to no ranking needed
         b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, false), makeTerm("w2"));
-        b->fetchPostings(ExecuteInfo::TRUE);
+        b->basic_plan(true, 1000);
+        b->fetchPostings(ExecuteInfo::FULL);
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
-        s = leaf_b.createLeafSearch(mda, true);
+        s = leaf_b.createLeafSearch(mda);
         EXPECT_FALSE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
         TermFieldMatchData md2;
         md2.tagAsNotNeeded();
         TermFieldMatchDataArray mda2;
         mda2.add(&md2);
         EXPECT_TRUE(mda2[0]->isNotNeeded());
-        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda2, true);
+        s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda2);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
     { // fake bit vector
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0, true), makeTerm("w2"));
 //        std::cerr << "BP = " << typeid(*b).name() << std::endl;
-        b->fetchPostings(ExecuteInfo::TRUE);
+        b->basic_plan(true, 1000);
+        b->fetchPostings(ExecuteInfo::FULL);
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
-        s = leaf_b.createLeafSearch(mda, true);
+        s = leaf_b.createLeafSearch(mda);
 //        std::cerr << "SI = " << typeid(*s).name() << std::endl;
         EXPECT_TRUE((dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != NULL) ||
                     dynamic_cast<EmptySearch *>(s.get()));
         EXPECT_EQ(result_f1_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f1_w2, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
+        EXPECT_EQ(result_f1_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
     { // posting list iterator
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
-        b->fetchPostings(ExecuteInfo::TRUE);
+        b->basic_plan(true, 1000);
+        b->fetchPostings(ExecuteInfo::FULL);
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
-        s = leaf_b.createLeafSearch(mda, true);
+        s = leaf_b.createLeafSearch(mda);
         ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != NULL));
         EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
-        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(true, upper_bound)));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
 }
 

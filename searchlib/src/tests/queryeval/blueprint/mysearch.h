@@ -109,9 +109,9 @@ class MyLeaf : public SimpleLeafBlueprint
 
 public:
     SearchIterator::UP
-    createLeafSearch(const TFMDA &tfmda, bool strict) const override
+    createLeafSearch(const TFMDA &tfmda) const override
     {
-        return std::make_unique<MySearch>("leaf", tfmda, strict);
+        return std::make_unique<MySearch>("leaf", tfmda, strict());
     }
 
     MyLeaf() : SimpleLeafBlueprint() {}
@@ -141,8 +141,8 @@ public:
     // make public
     using LeafBlueprint::set_want_global_filter;
 
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
 };
 

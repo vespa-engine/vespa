@@ -121,11 +121,40 @@ Blueprint::Blueprint() noexcept
       _flow_stats(0.0, 0.0, 0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
+      _strict(false),
       _frozen(false)
 {
 }
 
 Blueprint::~Blueprint() = default;
+
+void
+Blueprint::each_node_post_order(const std::function<void(Blueprint&)> &f)
+{
+    f(*this);
+}
+
+void
+Blueprint::basic_plan(InFlow in_flow, uint32_t docid_limit)
+{
+    setDocIdLimit(docid_limit);
+    each_node_post_order([docid_limit](Blueprint &bp){
+                             bp.update_flow_stats(docid_limit);
+                         });
+    auto opts = Options().sort_by_cost(true);
+    sort(in_flow, opts);
+}
+
+void
+Blueprint::null_plan(InFlow in_flow, uint32_t docid_limit)
+{
+    setDocIdLimit(docid_limit);
+    each_node_post_order([docid_limit](Blueprint &bp){
+                             bp.update_flow_stats(docid_limit);
+                         });
+    auto opts = Options().sort_by_cost(true).keep_order(true);
+    sort(in_flow, opts);
+}
 
 Blueprint::UP
 Blueprint::optimize(Blueprint::UP bp) {
@@ -194,10 +223,6 @@ Blueprint::FilterConstraint invert(Blueprint::FilterConstraint constraint) {
     abort();
 }
 
-template <typename Op> bool inherit_strict(size_t);
-template <> bool inherit_strict<AndSearch>(size_t i) { return (i == 0); }
-template <> bool inherit_strict<OrSearch>(size_t) { return true; }
-
 template <typename Op> bool should_short_circuit(Trinary);
 template <> bool should_short_circuit<AndSearch>(Trinary matches_any) { return (matches_any == Trinary::False); }
 template <> bool should_short_circuit<OrSearch>(Trinary matches_any) { return (matches_any == Trinary::True); }
@@ -217,8 +242,7 @@ create_op_filter(const Blueprint::Children &children, bool strict, Blueprint::Fi
     std::unique_ptr<SearchIterator> spare;
     list.reserve(children.size());
     for (size_t i = 0; i < children.size(); ++i) {
-        auto strict_child = strict && inherit_strict<Op>(i);
-        auto filter = children[i]->createFilterSearch(strict_child, constraint);
+        auto filter = children[i]->createFilterSearch(constraint);
         auto matches_any = filter->matches_any();
         if (should_short_circuit<Op>(matches_any)) {
             return filter;
@@ -281,14 +305,14 @@ Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint
     MultiSearch::Children list;
     list.reserve(children.size());
     {
-        auto filter = children[0]->createFilterSearch(strict, constraint);
+        auto filter = children[0]->createFilterSearch(constraint);
         if (filter->matches_any() == Trinary::False) {
             return filter;
         }
         list.push_back(std::move(filter));
     }
     for (size_t i = 1; i < children.size(); ++i) {
-        auto filter = children[i]->createFilterSearch(false, invert(constraint));
+        auto filter = children[i]->createFilterSearch(invert(constraint));
         auto matches_any = filter->matches_any();
         if (matches_any == Trinary::True) {
             return std::make_unique<EmptySearch>();
@@ -305,14 +329,14 @@ Blueprint::create_andnot_filter(const Children &children, bool strict, Blueprint
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_first_child_filter(const Children &children, bool strict, Blueprint::FilterConstraint constraint)
+Blueprint::create_first_child_filter(const Children &children, Blueprint::FilterConstraint constraint)
 {
     REQUIRE(!children.empty());
-    return children[0]->createFilterSearch(strict, constraint);
+    return children[0]->createFilterSearch(constraint);
 }
 
 std::unique_ptr<SearchIterator>
-Blueprint::create_default_filter(bool, FilterConstraint constraint)
+Blueprint::create_default_filter(FilterConstraint constraint)
 {
     if (constraint == FilterConstraint::UPPER_BOUND) {
         return std::make_unique<FullSearch>();
@@ -374,6 +398,7 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.visitFloat("strict_cost", strict_cost());
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
+    // visitor.visitBool("strict", _strict);
 }
 
 namespace blueprint {
@@ -410,6 +435,15 @@ IntermediateBlueprint::setDocIdLimit(uint32_t limit) noexcept
     for (Blueprint::UP &child : _children) {
         child->setDocIdLimit(limit);
     }
+}
+
+void
+IntermediateBlueprint::each_node_post_order(const std::function<void(Blueprint&)> &f)
+{
+    for (Blueprint::UP &child : _children) {
+        f(*child);
+    }
+    f(*this);
 }
 
 Blueprint::HitEstimate
@@ -568,17 +602,18 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
     maybe_eliminate_self(self, get_replacement());
 }
 
-double
+void
 IntermediateBlueprint::sort(InFlow in_flow, const Options &opts)
 {
-    sort(_children, in_flow.strict(), opts.sort_by_cost());
+    strict(in_flow.strict()); // authorative strict tag (->fetchPostings,->createSearch,->createFilterSearch)
+    if (!opts.keep_order()) [[likely]] {
+        sort(_children, in_flow.strict(), opts.sort_by_cost());
+    }
     auto flow = my_flow(in_flow);
     for (size_t i = 0; i < _children.size(); ++i) {
         _children[i]->sort(InFlow(flow.strict(), flow.flow()), opts);
         flow.add(_children[i]->estimate());
     }
-    // TODO: better cost estimate (due to known in-flow and eagerness)
-    return in_flow.strict() ? strict_cost() : in_flow.rate() * cost();
 }
 
 void
@@ -592,15 +627,14 @@ IntermediateBlueprint::set_global_filter(const GlobalFilter &global_filter, doub
 }
 
 SearchIterator::UP
-IntermediateBlueprint::createSearch(fef::MatchData &md, bool strict) const
+IntermediateBlueprint::createSearch(fef::MatchData &md) const
 {
     MultiSearch::Children subSearches;
     subSearches.reserve(_children.size());
     for (size_t i = 0; i < _children.size(); ++i) {
-        bool strictChild = (strict && inheritStrict(i));
-        subSearches.push_back(_children[i]->createSearch(md, strictChild));
+        subSearches.push_back(_children[i]->createSearch(md));
     }
-    return createIntermediateSearch(std::move(subSearches), strict, md);
+    return createIntermediateSearch(std::move(subSearches), md);
 }
 
 IntermediateBlueprint::IntermediateBlueprint() noexcept = default;
@@ -645,11 +679,11 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    auto flow = my_flow(InFlow(execInfo.is_strict(), execInfo.hit_rate()));
+    auto flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
     for (size_t i = 0; i < _children.size(); ++i) {
         double nextHitRate = flow.flow();
         Blueprint & child = *_children[i];
-        child.fetchPostings(ExecuteInfo::create(execInfo.is_strict() && inheritStrict(i), nextHitRate, execInfo));
+        child.fetchPostings(ExecuteInfo::create(nextHitRate, execInfo));
         flow.add(child.estimate());
     }
 }
@@ -738,7 +772,7 @@ LeafBlueprint::freeze()
 }
 
 SearchIterator::UP
-LeafBlueprint::createSearch(fef::MatchData &md, bool strict) const
+LeafBlueprint::createSearch(fef::MatchData &md) const
 {
     const State &state = getState();
     fef::TermFieldMatchDataArray tfmda;
@@ -746,7 +780,7 @@ LeafBlueprint::createSearch(fef::MatchData &md, bool strict) const
     for (size_t i = 0; i < state.numFields(); ++i) {
         tfmda.add(state.field(i).resolve(md));
     }
-    return createLeafSearch(tfmda, strict);
+    return createLeafSearch(tfmda);
 }
 
 bool
@@ -763,13 +797,6 @@ LeafBlueprint::optimize(Blueprint* &self, OptimizePass pass)
         update_flow_stats(get_docid_limit());
     }
     maybe_eliminate_self(self, get_replacement());
-}
-
-double
-LeafBlueprint::sort(InFlow in_flow, const Options &)
-{
-    // TODO: better cost estimate (due to known in-flow and eagerness)
-    return in_flow.strict() ? strict_cost() : in_flow.rate() * cost();
 }
 
 void
@@ -795,6 +822,12 @@ LeafBlueprint::set_tree_size(uint32_t value)
 }
 
 //-----------------------------------------------------------------------------
+
+void
+SimpleLeafBlueprint::sort(InFlow in_flow, const Options &)
+{
+    strict(in_flow.strict()); // authorative strict tag (->fetchPostings,->createSearch,->createFilterSearch)
+}
 
 }
 

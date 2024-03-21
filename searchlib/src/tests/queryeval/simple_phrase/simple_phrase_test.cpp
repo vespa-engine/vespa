@@ -38,11 +38,11 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }
-    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &) const override {
         return {};
     }
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
 };
 
@@ -146,12 +146,14 @@ public:
     void
     fetchPostings(bool useBlueprint)
     {
-        ExecuteInfo execInfo = ExecuteInfo::createForTest(_strict);
+        ExecuteInfo execInfo = ExecuteInfo::FULL;
         if (useBlueprint) {
+            _phrase.basic_plan(_strict, 100);
             _phrase.fetchPostings(execInfo);
             return;
         }
         for (const auto & i : _children) {
+            i->basic_plan(_strict, 100);
             i->fetchPostings(execInfo);
         }
     }
@@ -160,7 +162,7 @@ public:
     SearchIterator *createSearch(bool useBlueprint) {
         SearchIterator::UP search;
         if (useBlueprint) {
-            search = _phrase.createSearch(*_md, _strict);
+            search = _phrase.createSearch(*_md);
         } else {
             search::fef::TermFieldMatchDataArray childMatch;
             for (size_t i = 0; i < _children.size(); ++i) {
@@ -171,7 +173,7 @@ public:
             }
             SimplePhraseSearch::Children children;
             for (const auto & i : _children) {
-                children.push_back(i->createSearch(*_md, _strict));
+                children.push_back(i->createSearch(*_md));
             }
             search = std::make_unique<SimplePhraseSearch>(std::move(children),
                                                           MatchData::UP(), childMatch, _order,

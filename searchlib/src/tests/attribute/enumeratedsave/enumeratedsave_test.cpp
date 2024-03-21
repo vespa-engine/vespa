@@ -665,7 +665,7 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
 
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(v));
-    sc->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(search::queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     sb->initFullRange();
     sb->seek(1u);

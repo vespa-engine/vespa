@@ -76,8 +76,9 @@ TEST(SourceBlenderTest, test_strictness)
         blend_b->addChild(std::move(a_b));
         blend_b->addChild(std::move(b_b));
         Blueprint::UP bp(blend_b);
-        bp->fetchPostings(ExecuteInfo::createForTest(strict));
-        SearchIterator::UP search = bp->createSearch(*md, strict);
+        bp->basic_plan(strict, 100);
+        bp->fetchPostings(ExecuteInfo::FULL);
+        SearchIterator::UP search = bp->createSearch(*md);
         search->initFullRange();
         SearchIterator &blend = *search;
 

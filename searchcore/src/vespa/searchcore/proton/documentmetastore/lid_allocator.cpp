@@ -209,11 +209,11 @@ private:
         return default_flow_stats(docid_limit, _activeLids.size(), 0);
     }
     SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
+    createLeafSearch(const TermFieldMatchDataArray &tfmda) const override
     {
         assert(tfmda.size() == 0);
         (void) tfmda;
-        return create_search_helper(strict);
+        return create_search_helper(strict());
     }
 public:
     WhiteListBlueprint(const search::BitVector &activeLids, bool all_lids_active)
@@ -228,11 +228,11 @@ public:
 
     bool isWhiteList() const noexcept final { return true; }
 
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint) const override {
+    SearchIterator::UP createFilterSearch(FilterConstraint) const override {
         if (_all_lids_active) {
             return std::make_unique<FullSearch>();
         }
-        return create_search_helper(strict);
+        return create_search_helper(strict());
     }
 
     ~WhiteListBlueprint() override {

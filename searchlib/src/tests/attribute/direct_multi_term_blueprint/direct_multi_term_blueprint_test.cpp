@@ -222,7 +222,6 @@ public:
         } else {
             validate_posting_lists<StringKey>(*store);
         }
-        blueprint->setDocIdLimit(doc_id_limit);
         if (need_term_field_match_data) {
             tfmd.needs_normal_features();
         } else {
@@ -263,8 +262,9 @@ public:
             add_term(value);
         }
     }
-    std::unique_ptr<SearchIterator> create_leaf_search(bool strict = true) const {
-        return blueprint->createLeafSearch(tfmda, strict);
+    std::unique_ptr<SearchIterator> create_leaf_search(bool strict = true) {
+        blueprint->basic_plan(strict, doc_id_limit);
+        return blueprint->createLeafSearch(tfmda);
     }
     vespalib::string resolve_iterator_with_unpack() const {
         if (in_operator) {

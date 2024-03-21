@@ -78,18 +78,18 @@ struct MockBlueprint : SimpleLeafBlueprint {
     search::queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, 756, 0);
     }
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda) const override
     {
         if (postings_fetched) {
-            EXPECT_EQUAL(postings_strict, strict);
+            EXPECT_EQUAL(postings_strict, strict());
         }
-        return std::make_unique<MockSearch>(spec, term, strict, tfmda, postings_fetched);
+        return std::make_unique<MockSearch>(spec, term, strict(), tfmda, postings_fetched);
     }
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
-    void fetchPostings(const search::queryeval::ExecuteInfo &execInfo) override {
-        postings_strict = execInfo.is_strict();
+    void fetchPostings(const search::queryeval::ExecuteInfo &) override {
+        postings_strict = strict();
         postings_fetched = true;
     }
 };

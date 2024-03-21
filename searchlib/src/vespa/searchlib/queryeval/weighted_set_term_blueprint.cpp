@@ -34,7 +34,7 @@ WeightedSetTermMatchingElementsSearch::WeightedSetTermMatchingElementsSearch(con
       _search()
 {
     _tfmda.add(&_tfmd);
-    _search.reset(static_cast<WeightedSetTermSearch *>(bp.createLeafSearch(_tfmda, false).release()));
+    _search.reset(static_cast<WeightedSetTermSearch *>(bp.createLeafSearch(_tfmda).release()));
 
 }
 
@@ -93,6 +93,15 @@ WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimat
     _terms.push_back(std::move(term));
 }
 
+void
+WeightedSetTermBlueprint::sort(InFlow, const Options &opts)
+{
+    strict(true);
+    for (auto &term: _terms) {
+        term->sort(true, opts);
+    }
+}
+
 FlowStats
 WeightedSetTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
@@ -105,14 +114,14 @@ WeightedSetTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
+WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
 {
     assert(tfmda.size() == 1);
     if ((_terms.size() == 1) && tfmda[0]->isNotNeeded()) {
         if (const LeafBlueprint * leaf = _terms[0]->asLeaf(); leaf != nullptr) {
             // Always returnin a strict iterator independently of what was required,
             // as that is what we do with all the children when there are more.
-            return leaf->createLeafSearch(tfmda, true);
+            return leaf->createLeafSearch(tfmda);
         }
     }
     fef::MatchData::UP md = _layout.createMatchData();
@@ -120,15 +129,15 @@ WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &t
     children.reserve(_terms.size());
     for (const auto & _term : _terms) {
         // TODO: pass ownership with unique_ptr
-        children.push_back(_term->createSearch(*md, true).release());
+        children.push_back(_term->createSearch(*md).release());
     }
     return WeightedSetTermSearch::create(children, *tfmda[0], _children_field.isFilter(), _weights, std::move(md));
 }
 
 SearchIterator::UP
-WeightedSetTermBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
+WeightedSetTermBlueprint::createFilterSearch(FilterConstraint constraint) const
 {
-    return create_or_filter(_terms, strict, constraint);
+    return create_or_filter(_terms, strict(), constraint);
 }
 
 std::unique_ptr<MatchingElementsSearch>

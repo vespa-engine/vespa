@@ -29,7 +29,7 @@ protected:
     virtual ~IPostingListSearchContext() { }
 
 public:
-    virtual void fetchPostings(const queryeval::ExecuteInfo & execInfo) = 0;
+    virtual void fetchPostings(const queryeval::ExecuteInfo & execInfo, bool strict) = 0;
     virtual std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
     virtual HitEstimate calc_hit_estimate() const = 0;
 };

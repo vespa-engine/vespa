@@ -305,10 +305,10 @@ ImportedSearchContext::considerAddSearchCacheEntry()
 }
 
 void
-ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
+ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo, bool strict) {
     if (!_searchCacheLookup) {
-        _target_search_context->fetchPostings(execInfo);
-        if (!_merger.merge_done() && (execInfo.is_strict() || (_target_attribute.getIsFastSearch() && execInfo.hit_rate() > 0.01))) {
+        _target_search_context->fetchPostings(execInfo, strict);
+        if (!_merger.merge_done() && (strict || (_target_attribute.getIsFastSearch() && execInfo.hit_rate() > 0.01))) {
                 makeMergedPostings(_target_attribute.getIsFilter());
                 considerAddSearchCacheEntry();
         }

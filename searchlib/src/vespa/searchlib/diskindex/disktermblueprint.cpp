@@ -76,12 +76,12 @@ DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 }
 
 SearchIterator::UP
-DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool strict) const
+DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
 {
     if (_bitVector && (_useBitVector || tfmda[0]->isNotNeeded())) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);
-        return BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict);
+        return BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict());
     }
     SearchIterator::UP search(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
     if (_useBitVector) {
@@ -95,12 +95,12 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool 
 }
 
 SearchIterator::UP
-DiskTermBlueprint::createFilterSearch(bool strict, FilterConstraint) const
+DiskTermBlueprint::createFilterSearch(FilterConstraint) const
 {
     auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
     auto & tfmda = wrapper->tfmda();
     if (_bitVector) {
-        wrapper->wrap(BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict));
+        wrapper->wrap(BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict()));
     } else {
         wrapper->wrap(_postingHandle->createIterator(_lookupRes->counts, tfmda, _useBitVector));
     }

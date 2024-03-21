@@ -48,7 +48,7 @@ public:
      * Create temporary posting lists.
      * Should be called before createIterator() is called.
      */
-    virtual void fetchPostings(const queryeval::ExecuteInfo &execInfo) = 0;
+    virtual void fetchPostings(const queryeval::ExecuteInfo &execInfo, bool strict) = 0;
 
     virtual bool valid() const = 0;
     virtual Int64Range getAsIntegerTerm() const = 0;

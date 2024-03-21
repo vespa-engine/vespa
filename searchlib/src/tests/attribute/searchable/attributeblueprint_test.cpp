@@ -127,9 +127,9 @@ do_search(const Node &node, IAttributeManager &attribute_manager, bool expect_at
     } else {
         EXPECT_TRUE(result->get_attribute_search_context() == nullptr);
     }
-    result->fetchPostings(queryeval::ExecuteInfo::TRUE);
-    result->setDocIdLimit(DOCID_LIMIT);
-    SearchIterator::UP iterator = result->createSearch(*md, true);
+    result->basic_plan(true, DOCID_LIMIT);
+    result->fetchPostings(queryeval::ExecuteInfo::FULL);
+    SearchIterator::UP iterator = result->createSearch(*md);
     assert((bool)iterator);
     iterator->initRange(1, DOCID_LIMIT);
     EXPECT_TRUE(!iterator->seek(1));
@@ -313,8 +313,8 @@ public:
     ~BlueprintFactoryFixture() {}
     Blueprint::UP create_blueprint(const Node& term) {
         auto result = source.createBlueprint(request_ctx, FieldSpec(attr_name, 0, 0), term);
-        result->fetchPostings(queryeval::ExecuteInfo::TRUE);
-        result->setDocIdLimit(DOCID_LIMIT);
+        result->basic_plan(true, DOCID_LIMIT);
+        result->fetchPostings(queryeval::ExecuteInfo::FULL);
         return result;
     }
     void expect_document_weight_attribute() {
@@ -325,14 +325,14 @@ public:
     }
     void expect_filter_search(const SimpleResult& upper, const SimpleResult& lower, const Node& term) {
         auto blueprint = create_blueprint(term);
-        auto upper_itr = blueprint->createFilterSearch(true, BFC::UPPER_BOUND);
-        auto lower_itr = blueprint->createFilterSearch(true, BFC::LOWER_BOUND);
+        auto upper_itr = blueprint->createFilterSearch(BFC::UPPER_BOUND);
+        auto lower_itr = blueprint->createFilterSearch(BFC::LOWER_BOUND);
         EXPECT_EQ(upper, SimpleResult().search(*upper_itr, DOCID_LIMIT));
         EXPECT_EQ(lower, SimpleResult().search(*lower_itr, DOCID_LIMIT));
     }
     void expect_filter_wrapper(const Node& term) {
         auto blueprint = create_blueprint(term);
-        auto itr = blueprint->createFilterSearch(true, BFC::UPPER_BOUND);
+        auto itr = blueprint->createFilterSearch(BFC::UPPER_BOUND);
         downcast<FilterWrapper>(*itr);
     }
 };

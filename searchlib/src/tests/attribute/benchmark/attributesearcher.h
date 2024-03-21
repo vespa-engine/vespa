@@ -140,7 +140,7 @@ AttributeFindSearcher<T>::doRun()
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
-        searchContext->fetchPostings(queryeval::ExecuteInfo::TRUE);
+        searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);
         std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 
@@ -218,7 +218,7 @@ AttributeRangeSearcher::doRun()
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
-        searchContext->fetchPostings(queryeval::ExecuteInfo::TRUE);
+        searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);
         std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 
@@ -257,7 +257,7 @@ AttributePrefixSearcher::doRun()
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
-        searchContext->fetchPostings(queryeval::ExecuteInfo::TRUE);
+        searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);
         std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 

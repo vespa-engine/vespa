@@ -220,8 +220,9 @@ TEST(QueryEvalTest, test_and) {
     auto and_b = std::make_unique<AndBlueprint>();
     and_b->addChild(std::make_unique<SimpleBlueprint>(a));
     and_b->addChild(std::make_unique<SimpleBlueprint>(b));
-    and_b->fetchPostings(ExecuteInfo::TRUE);
-    SearchIterator::UP and_ab = and_b->createSearch(*md, true);
+    and_b->basic_plan(true, 1000);
+    and_b->fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP and_ab = and_b->createSearch(*md);
 
     EXPECT_TRUE(dynamic_cast<const AndSearch *>(and_ab.get()) != nullptr);
     EXPECT_EQ(4u, dynamic_cast<AndSearch &>(*and_ab).estimate());
@@ -231,14 +232,16 @@ TEST(QueryEvalTest, test_and) {
     expect.addHit(5).addHit(30);
     EXPECT_EQ(res, expect);
 
-    SearchIterator::UP filter_ab = and_b->createFilterSearch(true, upper_bound);
+    SearchIterator::UP filter_ab = and_b->createFilterSearch(upper_bound);
     SimpleResult filter_res;
     filter_res.search(*filter_ab);
     EXPECT_EQ(res, expect);
     std::string dump = filter_ab->asString();
     expect_match(dump, "upper");
     expect_match(dump, "AndSearchStrict.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
-    filter_ab = and_b->createFilterSearch(false, lower_bound);
+    and_b->basic_plan(false, 1000);
+    and_b->fetchPostings(ExecuteInfo::FULL);
+    filter_ab = and_b->createFilterSearch(lower_bound);
     dump = filter_ab->asString();
     expect_match(dump, "lower");
     expect_match(dump, "AndSearchNoStrict.*NoUnpack.*SimpleSearch.*lower.*SimpleSearch.*lower");
@@ -256,8 +259,9 @@ TEST(QueryEvalTest, test_or)
         auto or_b = std::make_unique<OrBlueprint>();
         or_b->addChild(std::make_unique<SimpleBlueprint>(a));
         or_b->addChild(std::make_unique<SimpleBlueprint>(b));
-        or_b->fetchPostings(ExecuteInfo::TRUE);
-        SearchIterator::UP or_ab = or_b->createSearch(*md, true);
+        or_b->basic_plan(true, 1000);
+        or_b->fetchPostings(ExecuteInfo::FULL);
+        SearchIterator::UP or_ab = or_b->createSearch(*md);
 
         SimpleResult res;
         res.search(*or_ab);
@@ -265,14 +269,16 @@ TEST(QueryEvalTest, test_or)
         expect.addHit(5).addHit(10).addHit(17).addHit(30);
         EXPECT_EQ(res, expect);
 
-        SearchIterator::UP filter_ab = or_b->createFilterSearch(true, upper_bound);
+        SearchIterator::UP filter_ab = or_b->createFilterSearch(upper_bound);
         SimpleResult filter_res;
         filter_res.search(*filter_ab);
         EXPECT_EQ(res, expect);
         std::string dump = filter_ab->asString();
         expect_match(dump, "upper");
         expect_match(dump, "StrictHeapOrSearch.*NoUnpack.*SimpleSearch.*upper.*SimpleSearch.*upper");
-        filter_ab = or_b->createFilterSearch(false, lower_bound);
+        or_b->basic_plan(false, 1000);
+        or_b->fetchPostings(ExecuteInfo::FULL);
+        filter_ab = or_b->createFilterSearch(lower_bound);
         dump = filter_ab->asString();
         expect_match(dump, "lower");
         expect_match(dump, "OrLikeSearch.false.*NoUnpack.*SimpleSearch.*lower.*SimpleSearch.*lower");
@@ -365,13 +371,13 @@ public:
             : default_flow_stats(docid_limit, est.est_hits(), 0);
     }
     SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
+    createLeafSearch(const TermFieldMatchDataArray &tfmda) const override
     {
         (void) tfmda;
-        return _sc->createIterator(&_tfmd, strict);
+        return _sc->createIterator(&_tfmd, strict());
     }
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
 private:
     search::SingleBoolAttribute     _a;
@@ -392,8 +398,9 @@ TEST(QueryEvalTest, test_andnot)
         auto andnot_b = std::make_unique<AndNotBlueprint>();
         andnot_b->addChild(std::make_unique<SimpleBlueprint>(a));
         andnot_b->addChild(std::make_unique<SimpleBlueprint>(b));
-        andnot_b->fetchPostings(ExecuteInfo::TRUE);
-        SearchIterator::UP andnot_ab = andnot_b->createSearch(*md, true);
+        andnot_b->basic_plan(true, 1000);
+        andnot_b->fetchPostings(ExecuteInfo::FULL);
+        SearchIterator::UP andnot_ab = andnot_b->createSearch(*md);
 
         SimpleResult res;
         res.search(*andnot_ab);
@@ -401,14 +408,16 @@ TEST(QueryEvalTest, test_andnot)
         expect.addHit(10);
         EXPECT_EQ(res, expect);
 
-        SearchIterator::UP filter_ab = andnot_b->createFilterSearch(true, upper_bound);
+        SearchIterator::UP filter_ab = andnot_b->createFilterSearch(upper_bound);
         SimpleResult filter_res;
         filter_res.search(*filter_ab);
         EXPECT_EQ(res, expect);
         std::string dump = filter_ab->asString();
         expect_match(dump, "upper");
         expect_match(dump, "AndNotSearch.*SimpleSearch.*<strict,upper>.*SimpleSearch.*<nostrict,lower>");
-        filter_ab = andnot_b->createFilterSearch(false, lower_bound);
+        andnot_b->basic_plan(false, 1000);
+        andnot_b->fetchPostings(ExecuteInfo::FULL);
+        filter_ab = andnot_b->createFilterSearch(lower_bound);
         dump = filter_ab->asString();
         expect_match(dump, "lower");
         expect_match(dump, "AndNotSearch.*SimpleSearch.*<nostrict,lower>.*SimpleSearch.*<nostrict,upper>");
@@ -423,8 +432,9 @@ TEST(QueryEvalTest, test_andnot)
         auto andnot_b = std::make_unique<AndNotBlueprint>();
         andnot_b->addChild(std::make_unique<SimpleBlueprint>(a));
         andnot_b->addChild(std::make_unique<DummySingleValueBitNumericAttributeBlueprint>(b));
-        andnot_b->fetchPostings(ExecuteInfo::TRUE);
-        SearchIterator::UP andnot_ab = andnot_b->createSearch(*md, true);
+        andnot_b->basic_plan(true, 1000);
+        andnot_b->fetchPostings(ExecuteInfo::FULL);
+        SearchIterator::UP andnot_ab = andnot_b->createSearch(*md);
 
         SimpleResult res;
         res.search(*andnot_ab);
@@ -449,8 +459,9 @@ TEST(QueryEvalTest, test_andnot)
         auto and_b = std::make_unique<AndBlueprint>();
         and_b->addChild(std::make_unique<SimpleBlueprint>(c));
         and_b->addChild(std::move(andnot_b));
-        and_b->fetchPostings(ExecuteInfo::TRUE);
-        SearchIterator::UP and_cab = and_b->createSearch(*md, true);
+        and_b->basic_plan(true, 1000);
+        and_b->fetchPostings(ExecuteInfo::FULL);
+        SearchIterator::UP and_cab = and_b->createSearch(*md);
 
         SimpleResult res;
         res.search(*and_cab);
@@ -475,8 +486,9 @@ TEST(QueryEvalTest, test_rank)
         auto rank_b = std::make_unique<RankBlueprint>();
         rank_b->addChild(std::make_unique<SimpleBlueprint>(a));
         rank_b->addChild(std::make_unique<SimpleBlueprint>(b));
-        rank_b->fetchPostings(ExecuteInfo::TRUE);
-        SearchIterator::UP rank_ab = rank_b->createSearch(*md, true);
+        rank_b->basic_plan(true, 1000);
+        rank_b->fetchPostings(ExecuteInfo::FULL);
+        SearchIterator::UP rank_ab = rank_b->createSearch(*md);
 
         SimpleResult res;
         res.search(*rank_ab);

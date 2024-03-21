@@ -241,7 +241,7 @@ protected:
     // test search iterator unpacking
     void fillForSearchIteratorUnpackingTest(IntegerAttribute * ia, bool extra);
     void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc, bool extra, bool strict) {
-        sc.fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
+        sc.fetchPostings(queryeval::ExecuteInfo::FULL, true);
         for (bool withElementId : {false, true}) {
             testSearchIteratorUnpacking(ptr, sc, extra, strict, withElementId);
         }
@@ -469,7 +469,7 @@ template <typename V, typename T>
 ResultSetPtr
 SearchContextTest::performSearch(const V & vec, const T & term)
 {
-    return performSearch(queryeval::ExecuteInfo::TRUE, vec, term, TermType::WORD);
+    return performSearch(queryeval::ExecuteInfo::FULL, vec, term, TermType::WORD);
 }
 
 template <typename V, typename T>
@@ -478,7 +478,7 @@ SearchContextTest::performSearch(const queryeval::ExecuteInfo & executeInfo, con
 {
     TermFieldMatchData dummy;
     SearchContextPtr sc = getSearch(vec, term, termType);
-    sc->fetchPostings(executeInfo);
+    sc->fetchPostings(executeInfo, true);
     SearchBasePtr sb = sc->createIterator(&dummy, true);
     ResultSetPtr rs = performSearch(*sb, vec.getNumDocs());
     return rs;
@@ -504,7 +504,7 @@ void
 SearchContextTest::performSearch(const V & vec, const vespalib::string & term,
                                  const DocSet & expected, TermType termType)
 {
-    performSearch(queryeval::ExecuteInfo::TRUE, vec, term, expected, termType);
+    performSearch(queryeval::ExecuteInfo::FULL, vec, term, expected, termType);
 }
 
 void
@@ -547,7 +547,7 @@ SearchContextTest::testFind(const PostingList<V, T> & pl, bool verify_hit_estima
             EXPECT_EQ(exp_est.est_hits(), act_est.est_hits());
             EXPECT_EQ(exp_est.is_unknown(), act_est.is_unknown());
         }
-        sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
+        sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
         TermFieldMatchData dummy;
         SearchBasePtr sb = sc->createIterator(&dummy, true);
         ResultSetPtr rs = performSearch(*sb, pl.getAttribute().getNumDocs());
@@ -676,7 +676,7 @@ public:
     ~Verifier() override;
     SearchIterator::UP
     create(bool strict) const override {
-        _sc->fetchPostings(queryeval::ExecuteInfo::createForTest(strict));
+        _sc->fetchPostings(queryeval::ExecuteInfo::FULL, strict);
         return _sc->createIterator(&_dummy, strict);
     }
 private:
@@ -784,7 +784,7 @@ SearchContextTest::testStrictSearchIterator(SearchContext & threeHits,
 {
     TermFieldMatchData dummy;
     { // search for value with 3 hits
-        threeHits.fetchPostings(queryeval::ExecuteInfo::TRUE);
+        threeHits.fetchPostings(queryeval::ExecuteInfo::FULL, true);
         SearchBasePtr sb = threeHits.createIterator(&dummy, true);
         sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
         EXPECT_TRUE(typeTester.matches(*sb));
@@ -805,7 +805,7 @@ SearchContextTest::testStrictSearchIterator(SearchContext & threeHits,
     }
 
     { // search for value with no hits
-        noHits.fetchPostings(queryeval::ExecuteInfo::TRUE);
+        noHits.fetchPostings(queryeval::ExecuteInfo::FULL, true);
         SearchBasePtr sb = noHits.createIterator(&dummy, true);
         sb->initRange(1, noHits.attribute().getCommittedDocIdLimit());
         ASSERT_TRUE(typeTester.matches(*sb));
@@ -823,7 +823,7 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
 {
     TermFieldMatchData dummy;
     { // search for value with three hits
-        threeHits.fetchPostings(queryeval::ExecuteInfo::FALSE);
+        threeHits.fetchPostings(queryeval::ExecuteInfo::FULL, false);
         SearchBasePtr sb = threeHits.createIterator(&dummy, false);
         sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
         EXPECT_TRUE(typeTester.matches(*sb));
@@ -841,7 +841,7 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
         EXPECT_TRUE(sb->getDocId() == 5u || sb->isAtEnd());
     }
     { // search for value with no hits
-        noHits.fetchPostings(queryeval::ExecuteInfo::FALSE);
+        noHits.fetchPostings(queryeval::ExecuteInfo::FULL, false);
         SearchBasePtr sb = noHits.createIterator(&dummy, false);
         sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
 
@@ -1118,7 +1118,7 @@ SearchContextTest::performRangeSearch(const VectorType & vec, const vespalib::st
 {
     for (size_t num_threads : {1,3}) {
         vespalib::SimpleThreadBundle thread_bundle(num_threads);
-        auto executeInfo = queryeval::ExecuteInfo::create(true, 1.0, vespalib::Doom::never(), thread_bundle);
+        auto executeInfo = queryeval::ExecuteInfo::create(1.0, vespalib::Doom::never(), thread_bundle);
         performSearch(executeInfo, vec, term, expected, TermType::WORD);
     }
 }

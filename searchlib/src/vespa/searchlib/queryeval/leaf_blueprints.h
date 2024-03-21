@@ -14,24 +14,24 @@ namespace search::queryeval {
 class EmptyBlueprint : public SimpleLeafBlueprint
 {
 protected:
-    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
 public:
     EmptyBlueprint(FieldSpecBaseList fields);
     EmptyBlueprint(FieldSpecBase field) : SimpleLeafBlueprint(field) {}
     EmptyBlueprint() = default;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
     EmptyBlueprint *as_empty() noexcept final override { return this; }
 };
 
 class AlwaysTrueBlueprint : public SimpleLeafBlueprint
 {
 protected:
-    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
 public:
     AlwaysTrueBlueprint();
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -44,14 +44,14 @@ private:
 
 protected:
     SearchIterator::UP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
 public:
     SimpleBlueprint(const SimpleResult &result);
     ~SimpleBlueprint() override;
     SimpleBlueprint &tag(const vespalib::string &tag);
     const vespalib::string &tag() const { return _tag; }
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ private:
 
 protected:
     SearchIterator::UP
-    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
 
 public:
     FakeBlueprint(const FieldSpec &field, const FakeResult &result);
@@ -95,8 +95,8 @@ public:
         return default_flow_stats(docid_limit, _result.inspect().size(), 0);
     }
 
-    SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
-        return create_default_filter(strict, constraint);
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        return create_default_filter(constraint);
     }
 };
 

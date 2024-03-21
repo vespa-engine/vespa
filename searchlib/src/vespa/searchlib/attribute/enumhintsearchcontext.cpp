@@ -41,7 +41,7 @@ EnumHintSearchContext::lookupRange(const vespalib::datastore::EntryComparator &l
 }
 
 void
-EnumHintSearchContext::fetchPostings(const queryeval::ExecuteInfo &)
+EnumHintSearchContext::fetchPostings(const queryeval::ExecuteInfo &, bool)
 {
 }
 

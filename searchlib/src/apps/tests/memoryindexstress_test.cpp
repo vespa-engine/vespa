@@ -63,7 +63,7 @@ const vespalib::string bar("bar");
 const vespalib::string doc_type_name = "test";
 const vespalib::string header_name = doc_type_name + ".header";
 const vespalib::string body_name = doc_type_name + ".body";
-
+uint32_t docid_limit = 100; // needed for relative estimates
 
 Schema
 makeSchema()
@@ -332,13 +332,14 @@ Fixture::readWork(uint32_t cnt)
             LOG(error, "Did not get blueprint");
             break;
         }
+        result->basic_plan(true, docid_limit);
         if (result->getState().estimate().empty) {
             ++emptyCount;
         } else {
             ++nonEmptyCount;
         }
-        result->fetchPostings(ExecuteInfo::TRUE);
-        SearchIterator::UP search = result->createSearch(*match_data, true);
+        result->fetchPostings(ExecuteInfo::FULL);
+        SearchIterator::UP search = result->createSearch(*match_data);
         if (!EXPECT_TRUE(search)) {
             LOG(error, "Did not get search iterator");
             break;
@@ -429,11 +430,12 @@ verifyResult(const FakeResult &expect,
     if (!EXPECT_TRUE(result.get() != 0)) {
         return false;
     }
+    result->basic_plan(true, docid_limit);
     EXPECT_EQUAL(expect.inspect().size(), result->getState().estimate().estHits);
     EXPECT_EQUAL(expect.inspect().empty(), result->getState().estimate().empty);
 
-    result->fetchPostings(ExecuteInfo::TRUE);
-    SearchIterator::UP search = result->createSearch(*match_data, true);
+    result->fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP search = result->createSearch(*match_data);
     if (!EXPECT_TRUE(search.get() != 0)) {
         return false;
     }

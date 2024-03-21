@@ -55,15 +55,13 @@ struct WeightOrder {
 };
 
 struct RememberExecuteInfo : public MyLeaf {
-    bool   is_strict;
     double hit_rate;
 
-    RememberExecuteInfo() : MyLeaf(), is_strict(false), hit_rate(0.0) {}
-    RememberExecuteInfo(FieldSpecBaseList fields) : MyLeaf(std::move(fields)), is_strict(false), hit_rate(0.0) {}
+    RememberExecuteInfo() : MyLeaf(), hit_rate(0.0) {}
+    RememberExecuteInfo(FieldSpecBaseList fields) : MyLeaf(std::move(fields)), hit_rate(0.0) {}
 
     void fetchPostings(const ExecuteInfo &execInfo) override {
         LeafBlueprint::fetchPostings(execInfo);
-        is_strict = execInfo.is_strict();
         hit_rate = execInfo.hit_rate();
     }
 };
@@ -75,16 +73,19 @@ bool got_global_filter(Blueprint &b) {
     return (static_cast<MyLeaf &>(b)).got_global_filter();
 }
 
-void check_sort_order(IntermediateBlueprint &self, BlueprintVector children, std::vector<size_t> order) {
+void check_sort_order_and_strictness(std::unique_ptr<IntermediateBlueprint> self, bool self_strict, BlueprintVector children, std::vector<size_t> order, std::vector<bool> strict) {
     ASSERT_EQUAL(children.size(), order.size());
+    ASSERT_EQUAL(children.size(), strict.size());
     std::vector<const Blueprint *> unordered;
-    for (const auto & child: children) {
+    for (auto &&child: children) {
         unordered.push_back(child.get());
+        self->addChild(std::move(child));
     }
-    // TODO: sort by cost (requires both setDocIdLimit and optimize to be called)
-    self.sort(children, true, false);
-    for (size_t i = 0; i < children.size(); ++i) {
-        EXPECT_EQUAL(children[i].get(), unordered[order[i]]);
+    self->basic_plan(self_strict, 1000);
+    for (size_t i = 0; i < self->childCnt(); ++i) {
+        const auto &child = self->getChild(i);
+        EXPECT_EQUAL(&child, unordered[order[i]]);
+        EXPECT_EQUAL(child.strict(), strict[i]);
     }
 }
 
@@ -126,18 +127,18 @@ TEST("test AndNot Blueprint") {
         EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
-    check_sort_order(b, createLeafs({10, 20, 40, 30}), {0, 2, 3, 1});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(false, b.inheritStrict(1));
-    EXPECT_EQUAL(false, b.inheritStrict(2));
-    EXPECT_EQUAL(false, b.inheritStrict(-1));
+    check_sort_order_and_strictness(std::make_unique<AndNotBlueprint>(), false,
+                                    createLeafs({10, 20, 40, 30}), {0, 2, 3, 1},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<AndNotBlueprint>(), true,
+                                    createLeafs({10, 20, 40, 30}), {0, 2, 3, 1},
+                                    {true, false, false, false});
     // createSearch tested by iterator unit test
 }
 
 template <typename BP>
 void optimize(std::unique_ptr<BP> &ref, bool strict) {
-    auto opts = Blueprint::Options::all();
-    auto optimized = Blueprint::optimize_and_sort(std::move(ref), strict, opts);
+    auto optimized = Blueprint::optimize_and_sort(std::move(ref), strict);
     ref.reset(dynamic_cast<BP*>(optimized.get()));
     ASSERT_TRUE(ref);
     optimized.release();
@@ -151,11 +152,11 @@ TEST("test And propagates updated histestimate") {
     bp->addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->setDocIdLimit(5000);
     optimize(bp, true);
-    bp->fetchPostings(ExecuteInfo::TRUE);
+    bp->fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL(3u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
         const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
-        EXPECT_EQUAL((i == 0), child.is_strict);
+        EXPECT_EQUAL((i == 0), child.strict());
     }
     EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).hit_rate);
     EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate);
@@ -170,25 +171,25 @@ TEST("test Or propagates updated histestimate") {
     bp->addChild(ap(MyLeafSpec(800).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
     bp->setDocIdLimit(5000);
-    // NOTE: use non-strict OR ordering since strict OR ordering is non-deterministic
-    optimize(bp, false);
     //--- execute info when non-strict:
-    bp->fetchPostings(ExecuteInfo::FALSE);
+    optimize(bp, false);
+    bp->fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL(4u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
         const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
-        EXPECT_FALSE(child.is_strict);
+        EXPECT_FALSE(child.strict());
     }
     EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).hit_rate);
     EXPECT_APPROX(0.5, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate, 1e-6);
     EXPECT_APPROX(0.5*3.0/5.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).hit_rate, 1e-6);
     EXPECT_APPROX(0.5*3.0*42.0/(5.0*50.0), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).hit_rate, 1e-6);
     //--- execute info when strict:
-    bp->fetchPostings(ExecuteInfo::TRUE);
+    optimize(bp, true);
+    bp->fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL(4u, bp->childCnt());
     for (uint32_t i = 0; i < bp->childCnt(); i++) {
         const auto & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
-        EXPECT_TRUE(child.is_strict);
+        EXPECT_TRUE(child.strict());
     }
     EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).hit_rate);
     EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate);
@@ -227,12 +228,12 @@ TEST("test And Blueprint") {
         EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
-    check_sort_order(b, createLeafs({20, 40, 10, 30}), {2, 0, 3, 1});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(false, b.inheritStrict(1));
-    EXPECT_EQUAL(false, b.inheritStrict(2));
-    EXPECT_EQUAL(false, b.inheritStrict(-1));
-
+    check_sort_order_and_strictness(std::make_unique<AndBlueprint>(), false,
+                                    createLeafs({20, 40, 10, 30}), {2, 0, 3, 1},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<AndBlueprint>(), true,
+                                    createLeafs({20, 40, 10, 30}), {2, 0, 3, 1},
+                                    {true, false, false, false});
     // createSearch tested by iterator unit test
 }
 
@@ -291,11 +292,12 @@ TEST("test Or Blueprint") {
         EXPECT_EQUAL(false, got_global_filter(o.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(o.getChild(o.childCnt() - 1)));
     }
-    check_sort_order(b, createLeafs({10, 20, 40, 30}), {2, 3, 1, 0});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(true, b.inheritStrict(1));
-    EXPECT_EQUAL(true, b.inheritStrict(2));
-    EXPECT_EQUAL(true, b.inheritStrict(-1));
+    check_sort_order_and_strictness(std::make_unique<OrBlueprint>(), false,
+                                    createLeafs({10, 20, 40, 30}), {2, 3, 1, 0},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<OrBlueprint>(), true,
+                                    createLeafs({10, 20, 40, 30}), {0, 1, 2, 3},
+                                    {true, true, true, true});
     // createSearch tested by iterator unit test
 }
 
@@ -323,11 +325,12 @@ TEST("test Near Blueprint") {
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
     }
-    check_sort_order(b, createLeafs({40, 10, 30, 20}), {1, 3, 2, 0});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(false, b.inheritStrict(1));
-    EXPECT_EQUAL(false, b.inheritStrict(2));
-    EXPECT_EQUAL(false, b.inheritStrict(-1));
+    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7), false,
+                                    createLeafs({40, 10, 30, 20}), {1, 3, 2, 0},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7), true,
+                                    createLeafs({40, 10, 30, 20}), {1, 3, 2, 0},
+                                    {true, false, false, false});
     // createSearch tested by iterator unit test
 }
 
@@ -355,11 +358,12 @@ TEST("test ONear Blueprint") {
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
     }
-    check_sort_order(b, createLeafs({20, 10, 40, 30}), {0, 1, 2, 3});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(false, b.inheritStrict(1));
-    EXPECT_EQUAL(false, b.inheritStrict(2));
-    EXPECT_EQUAL(false, b.inheritStrict(-1));
+    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7), false,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7), true,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {true, false, false, false});
     // createSearch tested by iterator unit test
 }
 
@@ -395,11 +399,12 @@ TEST("test Rank Blueprint") {
         EXPECT_EQUAL(false, got_global_filter(a.getChild(0)));
         EXPECT_EQUAL(true,  got_global_filter(a.getChild(1)));
     }
-    check_sort_order(b, createLeafs({20, 10, 40, 30}), {0, 1, 2, 3});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(false, b.inheritStrict(1));
-    EXPECT_EQUAL(false, b.inheritStrict(2));
-    EXPECT_EQUAL(false, b.inheritStrict(-1));
+    check_sort_order_and_strictness(std::make_unique<RankBlueprint>(), false,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<RankBlueprint>(), true,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {true, false, false, false});
     // createSearch tested by iterator unit test
 }
 
@@ -451,11 +456,12 @@ TEST("test SourceBlender Blueprint") {
         o.addChild(ap(MyLeafSpec(0, true).create()));
         EXPECT_EQUAL(0u, a->getState().numFields());
     }
-    check_sort_order(b, createLeafs({20, 10, 40, 30}), {0, 1, 2, 3});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(true, b.inheritStrict(1));
-    EXPECT_EQUAL(true, b.inheritStrict(2));
-    EXPECT_EQUAL(true, b.inheritStrict(-1));
+    check_sort_order_and_strictness(std::make_unique<SourceBlenderBlueprint>(*selector), false,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<SourceBlenderBlueprint>(*selector), true,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {true, true, true, true});
     // createSearch tested by iterator unit test
 }
 
@@ -573,7 +579,7 @@ optimize_and_compare(Blueprint::UP top, Blueprint::UP expect, bool strict = true
     top->setDocIdLimit(1000);
     expect->setDocIdLimit(1000);
     TEST_DO(compare(*top, *expect, false));
-    auto opts = Blueprint::Options::all().sort_by_cost(sort_by_cost);
+    auto opts = Blueprint::Options::default_options().sort_by_cost(sort_by_cost);
     top = Blueprint::optimize_and_sort(std::move(top), strict, opts);
     TEST_DO(compare(*top, *expect, true));
     expect = Blueprint::optimize_and_sort(std::move(expect), strict, opts);
@@ -705,12 +711,11 @@ TEST("test empty root node optimization and safeness") {
 
     //-------------------------------------------------------------------------
     auto expect_up = std::make_unique<EmptyBlueprint>();
-    auto opts = Blueprint::Options::all();
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top1), true, opts), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top2), true, opts), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top3), true, opts), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top4), true, opts), true);
-    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top5), true, opts), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top1)), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top2)), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top3)), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top4)), true);
+    compare(*expect_up, *Blueprint::optimize_and_sort(std::move(top5)), true);
 }
 
 TEST("and with one empty child is optimized away") {
@@ -718,8 +723,7 @@ TEST("and with one empty child is optimized away") {
     Blueprint::UP top = ap((new SourceBlenderBlueprint(*selector))->
                            addChild(ap(MyLeafSpec(10).create())).
                            addChild(addLeafs(std::make_unique<AndBlueprint>(), {{0, true}, 10, 20})));
-    auto opts = Blueprint::Options::all();
-    top = Blueprint::optimize_and_sort(std::move(top), true, opts);
+    top = Blueprint::optimize_and_sort(std::move(top));
     Blueprint::UP expect_up(ap((new SourceBlenderBlueprint(*selector))->
                           addChild(ap(MyLeafSpec(10).create())).
                           addChild(std::make_unique<EmptyBlueprint>())));
@@ -896,9 +900,8 @@ TEST("require that replaced blueprints retain source id") {
                              addChild(ap(MyLeafSpec(30).create()->setSourceId(55)))));
     Blueprint::UP expect2_up(ap(MyLeafSpec(30).create()->setSourceId(42)));
     //-------------------------------------------------------------------------
-    auto opts = Blueprint::Options::all();
-    top1_up = Blueprint::optimize_and_sort(std::move(top1_up), true, opts);
-    top2_up = Blueprint::optimize_and_sort(std::move(top2_up), true, opts);
+    top1_up = Blueprint::optimize_and_sort(std::move(top1_up));
+    top2_up = Blueprint::optimize_and_sort(std::move(top2_up));
     compare(*expect1_up, *top1_up, true);
     compare(*expect2_up, *top2_up, true);
     EXPECT_EQUAL(13u, top1_up->getSourceId());
@@ -960,11 +963,12 @@ TEST("test WeakAnd Blueprint") {
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQUAL(0u, a.exposeFields().size());
     }
-    check_sort_order(b, createLeafs({20, 10, 40, 30}), {0, 1, 2, 3});
-    EXPECT_EQUAL(true, b.inheritStrict(0));
-    EXPECT_EQUAL(true, b.inheritStrict(1));
-    EXPECT_EQUAL(true, b.inheritStrict(2));
-    EXPECT_EQUAL(true, b.inheritStrict(-1));
+    check_sort_order_and_strictness(std::make_unique<WeakAndBlueprint>(1000), false,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {false, false, false, false});
+    check_sort_order_and_strictness(std::make_unique<WeakAndBlueprint>(1000), true,
+                                    createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
+                                    {true, true, true, true});
     {
         FieldSpec field("foo", 1, 1);
         FakeResult x = FakeResult().doc(1).doc(2).doc(5);
@@ -977,8 +981,9 @@ TEST("test WeakAnd Blueprint") {
             wa.addTerm(std::make_unique<FakeBlueprint>(field, z), 140);
             wa.addTerm(std::make_unique<FakeBlueprint>(field, y), 130);
             {
-                wa.fetchPostings(ExecuteInfo::TRUE);
-                SearchIterator::UP search = wa.createSearch(*md, true);
+                wa.basic_plan(true, 1000);
+                wa.fetchPostings(ExecuteInfo::FULL);
+                SearchIterator::UP search = wa.createSearch(*md);
                 EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != nullptr);
                 auto &s = dynamic_cast<WeakAndSearch&>(*search);
                 EXPECT_EQUAL(456u, s.getN());
@@ -999,8 +1004,9 @@ TEST("test WeakAnd Blueprint") {
                 EXPECT_EQUAL(0u, terms[2].maxScore); // NB: not set
             }
             {
-                wa.fetchPostings(ExecuteInfo::FALSE);
-                SearchIterator::UP search = wa.createSearch(*md, false);
+                wa.basic_plan(false, 1000);
+                wa.fetchPostings(ExecuteInfo::FULL);
+                SearchIterator::UP search = wa.createSearch(*md);
                 EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != nullptr);
                 EXPECT_TRUE(search->seek(1));
                 EXPECT_TRUE(search->seek(2));
@@ -1029,23 +1035,24 @@ TEST("require_that_unpack_of_or_over_multisearch_is_optimized") {
                        addChild(std::move(child1)).
                        addChild(std::move(child2))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->basic_plan(false, 1000);
+    top_up->fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(1)->tagAsNotNeeded();
     md->resolveTermField(3)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::SelectiveUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(4)->tagAsNotNeeded();
     md->resolveTermField(6)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::SelectiveUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(5)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::NoUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
 }
 
 TEST("require_that_unpack_of_or_is_optimized") {
@@ -1055,16 +1062,17 @@ TEST("require_that_unpack_of_or_is_optimized") {
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->basic_plan(false, 1000);
+    top_up->fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::SelectiveUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(1)->tagAsNotNeeded();
     md->resolveTermField(3)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::NoUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
 }
 
 TEST("require_that_unpack_of_and_is_optimized") {
@@ -1074,16 +1082,17 @@ TEST("require_that_unpack_of_and_is_optimized") {
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->basic_plan(false, 1000);
+    top_up->fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::FullUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::SelectiveUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(1)->tagAsNotNeeded();
     md->resolveTermField(3)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::NoUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
 }
 
 TEST("require_that_unpack_optimization_is_honoured_by_parents") {
@@ -1094,16 +1103,17 @@ TEST("require_that_unpack_optimization_is_honoured_by_parents") {
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->basic_plan(false, 1000);
+    top_up->fetchPostings(ExecuteInfo::FULL);
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::FullUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::FullUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
     md->resolveTermField(1)->tagAsNotNeeded();
     md->resolveTermField(3)->tagAsNotNeeded();
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::NoUnpack>",
-                 top_up->createSearch(*md, false)->getClassName());
+                 top_up->createSearch(*md)->getClassName());
 }
 
 namespace {
@@ -1143,8 +1153,9 @@ TEST("require that children does not optimize when parents refuse them to") {
                                                         FieldSpec("f2", 2, idxth21), makeTerm("w2")),
                        1.0)));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
-    SearchIterator::UP search = top_up->createSearch(*md, true);
+    top_up->basic_plan(true, 1000);
+    top_up->fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP search = top_up->createSearch(*md);
     EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
@@ -1154,7 +1165,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     }
 
     md->resolveTermField(12)->tagAsNotNeeded();
-    search = top_up->createSearch(*md, true);
+    search = top_up->createSearch(*md);
     EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
@@ -1181,8 +1192,9 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
                           addChild(ap(MyLeafSpec(10).addField(3,idxth3).create()))),
                        1.0)));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
-    SearchIterator::UP search = top_up->createSearch(*md, true);
+    top_up->basic_plan(true, 1000);
+    top_up->fetchPostings(ExecuteInfo::FULL);
+    SearchIterator::UP search = top_up->createSearch(*md);
     EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
@@ -1191,7 +1203,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
     }
 
     md->resolveTermField(2)->tagAsNotNeeded();
-    search = top_up->createSearch(*md, true);
+    search = top_up->createSearch(*md);
     EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
@@ -1201,7 +1213,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
 
     md->resolveTermField(1)->tagAsNotNeeded();
     md->resolveTermField(3)->tagAsNotNeeded();
-    search = top_up->createSearch(*md, true);
+    search = top_up->createSearch(*md);
     EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
@@ -1213,8 +1225,7 @@ TEST("require_that_unpack_optimization_is_not_overruled_by_equiv") {
 TEST("require that ANDNOT without children is optimized to empty search") {
     Blueprint::UP top_up = std::make_unique<AndNotBlueprint>();
     auto expect_up = std::make_unique<EmptyBlueprint>();
-    auto opts = Blueprint::Options::all();
-    top_up = Blueprint::optimize_and_sort(std::move(top_up), true, opts);
+    top_up = Blueprint::optimize_and_sort(std::move(top_up));
     compare(*expect_up, *top_up, true);
 }
 

@@ -205,8 +205,9 @@ public:
         MatchData::UP match_data = mdl.createMatchData();
 
         Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
-        blueprint->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
-        return blueprint->createSearch(*match_data, true)->asString();
+        blueprint->basic_plan(true, 1000);
+        blueprint->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+        return blueprint->createSearch(*match_data)->asString();
     }
 
     template <typename Tag> string getIteratorAsString();
