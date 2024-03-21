@@ -58,14 +58,15 @@ void build_health_status(JSONStringer &json, const HealthProducer &healthProduce
     json.endObject();
 }
 
-vespalib::string get_consumer(const std::map<vespalib::string,vespalib::string> &params,
-                              vespalib::stringref default_consumer)
+vespalib::string get_param(const std::map<vespalib::string,vespalib::string> &params,
+                           vespalib::stringref param_name,
+                           vespalib::stringref default_value)
 {
-    auto consumer_lookup = params.find("consumer");
-    if (consumer_lookup == params.end()) {
-        return default_consumer;
+    auto maybe_value = params.find(param_name);
+    if (maybe_value == params.end()) {
+        return default_value;
     }
-    return consumer_lookup->second;
+    return maybe_value->second;
 }
 
 void render_link(JSONStringer &json, const vespalib::string &host, const vespalib::string &path) {
@@ -99,15 +100,15 @@ vespalib::string respond_health(const HealthProducer &healthProducer) {
     return json.toString();
 }
 
-vespalib::string respond_metrics(const vespalib::string &consumer,
-                                 const HealthProducer &healthProducer,
-                                 MetricsProducer &metricsProducer)
+vespalib::string respond_json_metrics(const vespalib::string &consumer,
+                                      const HealthProducer &healthProducer,
+                                      MetricsProducer &metricsProducer)
 {
     JSONStringer json;
     json.beginObject();
     build_health_status(json, healthProducer);
     { // metrics
-        vespalib::string metrics = metricsProducer.getMetrics(consumer);
+        vespalib::string metrics = metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::JSON);
         if (!metrics.empty()) {
             json.appendKey("metrics");
             json.appendJSON(metrics);
@@ -115,6 +116,22 @@ vespalib::string respond_metrics(const vespalib::string &consumer,
     }
     json.endObject();
     return json.toString();
+}
+
+JsonGetHandler::Response cap_check_and_respond_metrics(
+        const net::ConnectionAuthContext &auth_ctx,
+        const std::map<vespalib::string,vespalib::string> &params,
+        const vespalib::string& default_consumer,
+        std::function<JsonGetHandler::Response(const vespalib::string&, MetricsProducer::ExpositionFormat)> response_fn)
+{
+    if (!auth_ctx.capabilities().contains(Capability::content_metrics_api())) {
+        return JsonGetHandler::Response::make_failure(403, "Forbidden");
+    }
+    auto consumer   = get_param(params, "consumer", default_consumer);
+    auto format_str = get_param(params, "format", "json");
+    auto format     = (format_str == "prometheus" ? MetricsProducer::ExpositionFormat::Prometheus
+                                                  : MetricsProducer::ExpositionFormat::JSON);
+    return response_fn(consumer, format);
 }
 
 vespalib::string respond_config(ComponentConfigProducer &componentConfigProducer) {
@@ -154,6 +171,10 @@ JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
     return cap_checked(auth_ctx, CapabilitySet::of({required_cap}), std::move(fn));
 }
 
+constexpr const char* prometheus_content_type() noexcept {
+    return "text/plain; version=0.0.4";
+}
+
 } // namespace vespalib::<unnamed>
 
 JsonGetHandler::Response
@@ -172,17 +193,30 @@ StateApi::get(const vespalib::string &host,
         });
     } else if (path == "/state/v1/metrics") {
         // Using a 'statereporter' consumer by default removes many uninteresting per-thread
-        // metrics but retains their aggregates.
-        return cap_checked(auth_ctx, Capability::content_metrics_api(), [&] {
-            return respond_metrics(get_consumer(params, "statereporter"), _healthProducer, _metricsProducer);
+        // metrics but retains their aggregates (side note: per-thread metrics are NOT included
+        // in Prometheus metrics regardless of the specified consumer).
+        return cap_check_and_respond_metrics(auth_ctx, params, "statereporter", [&](auto& consumer, auto format) {
+            if (format == MetricsProducer::ExpositionFormat::Prometheus) {
+                auto metrics_text = _metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
+                return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
+            } else {
+                auto json = respond_json_metrics(consumer, _healthProducer, _metricsProducer);
+                return JsonGetHandler::Response::make_ok_with_json(std::move(json));
+            }
         });
     } else if (path == "/state/v1/config") {
         return cap_checked(auth_ctx, Capability::content_state_api(), [&] {
             return respond_config(_componentConfigProducer);
         });
     } else if (path == "/metrics/total") {
-        return cap_checked(auth_ctx, Capability::content_metrics_api(), [&] {
-            return _metricsProducer.getTotalMetrics(get_consumer(params, ""));
+        return cap_check_and_respond_metrics(auth_ctx, params, "", [&](auto& consumer, auto format) {
+            if (format == MetricsProducer::ExpositionFormat::Prometheus) {
+                auto metrics_text = _metricsProducer.getTotalMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
+                return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
+            } else {
+                auto json = _metricsProducer.getTotalMetrics(consumer, vespalib::MetricsProducer::ExpositionFormat::JSON);
+                return JsonGetHandler::Response::make_ok_with_json(std::move(json));
+            }
         });
     } else {
         // Assume this is for the nested state v1 stuff; may delegate capability check to handler later if desired.

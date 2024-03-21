@@ -4,6 +4,7 @@
 #include "rpchooks.h"
 #include <vespa/vespalib/net/http/metrics_producer.h>
 #include <vespa/vespalib/net/http/simple_metrics_producer.h>
+#include <chrono>
 
 class FNET_Transport;
 
@@ -15,13 +16,13 @@ private:
     const RPCHooks &_rpcHooks;
     RPCHooks::Metrics _lastMetrics;
     vespalib::SimpleMetricsProducer _producer;
-    uint32_t _startTime;
-    uint32_t _lastSnapshotStart;
+    std::chrono::system_clock::time_point _startTime;
+    std::chrono::system_clock::time_point _lastSnapshotStart;
     std::unique_ptr<FNET_Task> _snapshotter;
 
 public:
-    vespalib::string getMetrics(const vespalib::string &consumer) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
+    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
+    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
 
     void snapshot();
 

@@ -13,8 +13,11 @@ struct JsonGetHandler {
     class Response {
         int              _status_code;
         vespalib::string _status_or_payload;
+        vespalib::string _content_type_override;
 
-        Response(int status_code, vespalib::string status_or_payload);
+        Response(int status_code,
+                 vespalib::string status_or_payload,
+                 vespalib::string content_type_override);
     public:
         Response(); // By default, 500 Internal Server Error
         ~Response();
@@ -40,8 +43,16 @@ struct JsonGetHandler {
                 return {};
             }
         }
+        [[nodiscard]] vespalib::stringref content_type() const noexcept {
+            if (_content_type_override.empty()) {
+                return "application/json";
+            } else {
+                return _content_type_override;
+            }
+        }
 
         [[nodiscard]] static Response make_ok_with_json(vespalib::string json);
+        [[nodiscard]] static Response make_ok_with_content_type(vespalib::string payload, vespalib::string content_type);
         [[nodiscard]] static Response make_failure(int status_code, vespalib::string status_message);
         [[nodiscard]] static Response make_not_found();
     };

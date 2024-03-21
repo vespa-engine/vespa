@@ -572,7 +572,7 @@ TEST_F(MetricManagerTest, test_json_output)
         // No snapshots have been taken yet, so the non-total getMetrics call should return
         // the empty string (i.e. no metrics produced).
         metrics::StateApiAdapter adapter(mm);
-        auto json_str = adapter.getMetrics("snapper");
+        auto json_str = adapter.getMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
         EXPECT_EQ(json_str, "");
     }
 
@@ -635,9 +635,9 @@ TEST_F(MetricManagerTest, test_json_output)
     EXPECT_EQ(10.0, slime.get()["values"][10]["values"]["last"].asDouble()) << jsonData;
 
     metrics::StateApiAdapter adapter(mm);
-    vespalib::string normal = adapter.getMetrics("snapper");
+    vespalib::string normal = adapter.getMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
     EXPECT_EQ(vespalib::string(jsonData), normal);
-    vespalib::string total = adapter.getTotalMetrics("snapper");
+    vespalib::string total = adapter.getTotalMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::JSON);
     EXPECT_GT(total.size(), 0);
     EXPECT_NE(total, normal);
 }
@@ -1056,6 +1056,18 @@ TEST_F(MetricManagerTest, prometheus_output_can_emit_inf_values_verbatim) {
     std::string actual = fixture.render_last_snapshot_as_prometheus();
     EXPECT_THAT(actual, HasSubstr("outer_temp_val_sum{foo=\"bar\",fancy=\"stuff\"} +Inf 1300000\n"));
     EXPECT_THAT(actual, HasSubstr("outer_temp_val_sum{foo=\"baz\",fancy=\"stuff\"} -Inf 1300000\n"));
+}
+
+TEST_F(MetricManagerTest, state_adapter_can_output_prometheus_format) {
+    SameNamesTestMetricSet mset;
+    mset.set1.val.addValue(2);
+    mset.set2.val.addValue(3);
+    MetricSnapshotTestFixture fixture(*this, mset);
+    fixture.takeSnapshotsOnce();
+    metrics::StateApiAdapter adapter(fixture.manager);
+    auto metrics = adapter.getMetrics("snapper", vespalib::MetricsProducer::ExpositionFormat::Prometheus);
+    EXPECT_THAT(metrics, HasSubstr("outer_temp_val_sum{foo=\"bar\",fancy=\"stuff\"} 2 1300000\n"));
+    EXPECT_THAT(metrics, HasSubstr("outer_temp_val_sum{foo=\"baz\",fancy=\"stuff\"} 3 1300000\n"));
 }
 
 struct SneakyNamesMetricSet : public MetricSet {

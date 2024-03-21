@@ -11,7 +11,7 @@ class MetricManager;
 /**
  * This is an adapter class that implements the metrics producer
  * interface defined by the state api implementation in vespalib by
- * extracting metrics in json format from a metric manager.
+ * extracting metrics in JSON or Prometheus format from a metric manager.
  **/
 class StateApiAdapter : public vespalib::MetricsProducer
 {
@@ -19,10 +19,10 @@ private:
     MetricManager &_manager;
 
 public:
-    StateApiAdapter(MetricManager &manager) : _manager(manager) {}
+    explicit StateApiAdapter(MetricManager &manager) : _manager(manager) {}
 
-    vespalib::string getMetrics(const vespalib::string &consumer) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
+    vespalib::string getMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
+    vespalib::string getTotalMetrics(const vespalib::string &consumer, ExpositionFormat format) override;
 };
 
 } // namespace metrics
