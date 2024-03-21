@@ -1015,7 +1015,9 @@ public class QueryTestCase {
     @Test
     void testImplicitPhraseIsDefault() {
         Query query = new Query(httpEncode("?query=it's fine"));
-        assertEquals("WEAKAND(100) (SAND it s) fine", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) it s fine", query.getModel().getQueryTree().toString());
+        query = new Query(httpEncode("?query=\"it s\" fine"));
+        assertEquals("WEAKAND(100) \"it s\" fine", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -1034,7 +1036,7 @@ public class QueryTestCase {
     }
 
     @Test
-    void testImplicitAnd() {
+    void testImplicitConnectivityInsideWeakAnd() {
         Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
 
         SearchDefinition test = new SearchDefinition("test");
@@ -1045,9 +1047,38 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("WEAKAND(100) (SAND myfield:it myfield:s) (AND myfield:a myfield:b) myfield:c", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) myfield:it myfield:s myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
         // 'it' and 's' should have connectivity 1
         WeakAndItem root = (WeakAndItem) query.getModel().getQueryTree().getRoot();
+        WordItem it = (WordItem) root.getItem(0);
+        assertEquals("it", it.getWord());
+        WordItem s = (WordItem) root.getItem(1);
+        assertEquals("s", s.getWord());
+        assertEquals(s, it.getConnectedItem());
+        assertEquals(1.0, it.getConnectivity(), 0.00000001);
+        assertEquals(0.0, s.getConnectivity(), 0.00000001);
+        WordItem a = (WordItem) root.getItem(2);
+        assertEquals(1.0, a.getConnectivity(), 0.00000001);
+        WordItem b = (WordItem) root.getItem(3);
+        assertEquals(0.0, b.getConnectivity(), 0.00000001);
+        WordItem c = (WordItem) root.getItem(4);
+    }
+
+    @Test
+    void testImplicitAnd() {
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c&type=all"));
+
+        SearchDefinition test = new SearchDefinition("test");
+        Index myField = new Index("myfield");
+        myField.addCommand("phrase-segmenting false");
+        assertFalse(myField.getPhraseSegmenting());
+        test.addIndex(myField);
+        IndexModel indexModel = new IndexModel(test);
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+
+        assertEquals("AND (SAND myfield:it myfield:s) myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
+        // 'it' and 's' should have connectivity 1
+        AndItem root = (AndItem) query.getModel().getQueryTree().getRoot();
         AndSegmentItem sand = (AndSegmentItem) root.getItem(0);
         WordItem it = (WordItem) sand.getItem(0);
         assertEquals("it", it.getWord());
@@ -1066,14 +1097,13 @@ public class QueryTestCase {
         IndexModel indexModel = new IndexModel(test);
 
         {
-            Query query = new Query(httpEncode("?query=myfield:b.c.d"));
+            Query query = new Query(httpEncode("?query=myfield:b.c.d&type=all"));
             query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-            assertEquals("WEAKAND(100) (AND myfield:b myfield:c myfield:d)", query.getModel().getQueryTree().toString());
-            WeakAndItem root = (WeakAndItem) query.getModel().getQueryTree().getRoot();
-            AndItem and = (AndItem) root.getItem(0);
-            WordItem b = (WordItem) and.getItem(0);
-            WordItem c = (WordItem) and.getItem(1);
-            WordItem d = (WordItem) and.getItem(2);
+            assertEquals("AND myfield:b myfield:c myfield:d", query.getModel().getQueryTree().toString());
+            AndItem root = (AndItem) query.getModel().getQueryTree().getRoot();
+            WordItem b = (WordItem) root.getItem(0);
+            WordItem c = (WordItem) root.getItem(1);
+            WordItem d = (WordItem) root.getItem(2);
             assertEquals(c, b.getConnectedItem());
             assertEquals(1.0, b.getConnectivity(), 0.00000001);
             assertEquals(d, c.getConnectedItem());
@@ -1081,16 +1111,15 @@ public class QueryTestCase {
         }
 
         {
-            Query query = new Query(httpEncode("?query=myfield:a myfield:b.c.d myfield:e"));
+            Query query = new Query(httpEncode("?query=myfield:a myfield:b.c.d myfield:e&type=all"));
             query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-            assertEquals("WEAKAND(100) myfield:a (AND myfield:b myfield:c myfield:d) myfield:e", query.getModel().getQueryTree().toString());
-            WeakAndItem root = (WeakAndItem) query.getModel().getQueryTree().getRoot();
+            assertEquals("AND myfield:a myfield:b myfield:c myfield:d myfield:e", query.getModel().getQueryTree().toString());
+            AndItem root = (AndItem) query.getModel().getQueryTree().getRoot();
             WordItem a = (WordItem) root.getItem(0);
-            AndItem and = (AndItem) root.getItem(1);
-            WordItem b = (WordItem) and.getItem(0);
-            WordItem c = (WordItem) and.getItem(1);
-            WordItem d = (WordItem) and.getItem(2);
-            WordItem e = (WordItem) root.getItem(2);
+            WordItem b = (WordItem) root.getItem(1);
+            WordItem c = (WordItem) root.getItem(2);
+            WordItem d = (WordItem) root.getItem(3);
+            WordItem e = (WordItem) root.getItem(4);
             assertNull(a.getConnectedItem());
             assertEquals(c, b.getConnectedItem());
             assertEquals(1.0, b.getConnectivity(), 0.00000001);
