@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldsearchspec.h"
+#include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
@@ -284,7 +286,7 @@ normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode) {
 }
 
 void
-FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
+FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf, const search::fef::IIndexEnvironment& index_env)
 {
     LOG(spam, "Parsing %zd fields", conf->fieldspec.size());
     for(const VsmfieldsConfig::Fieldspec & cfs : conf->fieldspec) {
@@ -294,6 +296,15 @@ FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
         _specMap[fieldId] = std::move(fss);
         _nameIdMap.add(cfs.name, fieldId);
         LOG(spam, "M in %d = %s", fieldId, cfs.name.c_str());
+    }
+    /*
+     * Index env is based on same vsm fields config but has additional
+     * virtual fields, cf. IndexEnvironment::add_virtual_fields().
+     */
+    for (uint32_t field_id = specMap().size(); field_id < index_env.getNumFields(); ++field_id) {
+        auto& field = *index_env.getField(field_id);
+        assert(field.type() == search::fef::FieldType::VIRTUAL);
+        _nameIdMap.add(field.name(), field_id);
     }
 
     LOG(spam, "Parsing %zd document types", conf->documenttype.size());

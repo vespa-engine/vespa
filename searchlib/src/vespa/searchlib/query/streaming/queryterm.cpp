@@ -159,4 +159,10 @@ QueryTerm::as_equiv_query_node() const noexcept
     return nullptr;
 }
 
+bool
+QueryTerm::is_same_element_query_node() const noexcept
+{
+    return false;
+}
+
 }

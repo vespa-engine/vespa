@@ -78,6 +78,8 @@ public:
                   bool isAttribute,
                   search::fef::FieldInfo::DataType data_type);
 
+    void add_virtual_fields();
+
     void fixup_fields();
 
     search::fef::Properties & getProperties() { return _properties; }

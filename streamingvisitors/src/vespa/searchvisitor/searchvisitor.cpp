@@ -499,7 +499,7 @@ SearchVisitor::init(const Parameters & params)
             VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
             // Create mapping from field name to field id, from field id to search spec,
             // and from index name to list of field ids
-            _fieldSearchSpecMap.buildFromConfig(_env->get_vsm_fields_config());
+            _fieldSearchSpecMap.buildFromConfig(_env->get_vsm_fields_config(), _env->get_rank_manager_snapshot()->get_proto_index_environment());
             auto additionalFields = registerAdditionalFields(_env->get_docsum_tools()->getFieldSpecs());
             // Add extra elements to mapping from field name to field id
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
@@ -931,7 +931,7 @@ void
 SearchVisitor::setupAttributeVectors()
 {
     for (const FieldPath & fieldPath : *_fieldPathMap) {
-        if ( ! fieldPath.empty() ) {
+        if ( ! fieldPath.empty() && fieldPath.back().getFieldValueToSetPtr() != nullptr) {
             setupAttributeVector(fieldPath);
         }
     }

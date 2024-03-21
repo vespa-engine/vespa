@@ -108,6 +108,7 @@ public:
     virtual RegexpTerm* as_regexp_term() noexcept;
     virtual FuzzyTerm* as_fuzzy_term() noexcept;
     virtual const EquivQueryNode* as_equiv_query_node() const noexcept;
+    virtual bool is_same_element_query_node() const noexcept;
     virtual void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env);
 protected:
     template <typename HitListType>
