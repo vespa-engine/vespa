@@ -6,8 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 /**
  * utility for converting a snapshot to JSON format
@@ -26,12 +25,11 @@ private:
     void handle(const CounterSnapshot &snapshot, Cursor &target);
     void handle(const GaugeSnapshot &snapshot,   Cursor &target);
 public:
-    JsonFormatter(const Snapshot &snapshot);
+    explicit JsonFormatter(const Snapshot &snapshot);
 
-    vespalib::string asString() const {
+    [[nodiscard]] vespalib::string asString() const {
         return _data.toString();
     }
 };
 
 } // namespace vespalib::metrics
-} // namespace vespalib

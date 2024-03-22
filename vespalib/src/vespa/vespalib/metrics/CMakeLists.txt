@@ -23,6 +23,7 @@ vespa_add_library(vespalib_vespalib_metrics OBJECT
     point_map_collection.cpp
     point_map.cpp
     producer.cpp
+    prometheus_formatter.cpp
     simple_metrics.cpp
     simple_metrics_manager.cpp
     simple_tick.cpp
