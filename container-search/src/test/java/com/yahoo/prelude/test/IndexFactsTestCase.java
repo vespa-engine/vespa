@@ -50,7 +50,7 @@ public class IndexFactsTestCase {
         Query q = newQuery("?query=a:b", indexFacts);
         assertEquals("WEAKAND(100) a:b", q.getModel().getQueryTree().getRoot().toString());
         q = newQuery("?query=notarealindex:b", indexFacts);
-        assertEquals("WEAKAND(100) notarealindex b",  q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) (AND notarealindex b)",  q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -277,8 +277,8 @@ public class IndexFactsTestCase {
         IndexFacts.Session session2 = indexFacts.newSession(query2.getModel().getSources(), query2.getModel().getRestrict());
         assertTrue(session1.getIndex("url").isUriIndex());
         assertTrue(session2.getIndex("url").isUriIndex());
-        assertEquals("WEAKAND(100) url:https url:foo url:bar", query1.getModel().getQueryTree().toString());
-        assertEquals("WEAKAND(100) url:https url:foo url:bar", query2.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND url:https url:foo url:bar)", query1.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND url:https url:foo url:bar)", query2.getModel().getQueryTree().toString());
     }
 
     @Test
