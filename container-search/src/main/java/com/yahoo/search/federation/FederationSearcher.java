@@ -43,6 +43,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -54,6 +55,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.yahoo.collections.CollectionUtil.first;
@@ -88,7 +90,7 @@ public class FederationSearcher extends ForkingSearcher {
     public FederationSearcher(FederationConfig config, SchemaInfo schemaInfo,
                               ComponentRegistry<TargetSelector> targetSelectors) {
         this(createResolver(config),
-             VirtualSourceResolver.of(config),
+             createVirtualSourceResolver(config),
              resolveSelector(config.targetSelector(), targetSelectors),
              createSchema2Clusters(schemaInfo));
     }
@@ -107,6 +109,10 @@ public class FederationSearcher extends ForkingSearcher {
         sourceRefResolver = new SourceRefResolver(searchChainResolver, schema2Clusters);
         this.targetSelector = targetSelector;
         this.virtualSourceResolver = virtualSourceResolver;
+    }
+
+    private static VirtualSourceResolver createVirtualSourceResolver(FederationConfig config) {
+        return VirtualSourceResolver.of(config.target().stream().map(FederationConfig.Target::id).collect(Collectors.toUnmodifiableSet()));
     }
 
     private static TargetSelector resolveSelector(String selectorId,

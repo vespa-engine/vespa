@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation.sourceref;
 
-import com.yahoo.search.federation.FederationConfig;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,9 +41,7 @@ public class VirtualSourceResolver {
         }
         return virtualSourceMap;
     }
-    public static VirtualSourceResolver of(FederationConfig config) {
-        return of(config.target().stream().map(FederationConfig.Target::id).collect(Collectors.toUnmodifiableSet()));
-    }
+
     public Set<String> resolve(Set<String> sourcesInQuery) {
         boolean hasMapping = sourcesInQuery.stream().anyMatch(virtualSources::containsKey);
         if (hasMapping) {
