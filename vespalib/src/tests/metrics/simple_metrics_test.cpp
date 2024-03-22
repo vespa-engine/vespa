@@ -6,6 +6,7 @@
 #include <vespa/vespalib/metrics/simple_metrics_manager.h>
 #include <vespa/vespalib/metrics/stable_store.h>
 #include <vespa/vespalib/metrics/json_formatter.h>
+#include <vespa/vespalib/metrics/prometheus_formatter.h>
 #include "mock_tick.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -116,6 +117,25 @@ void check_json(const vespalib::string &actual)
     EXPECT_TRUE(compare_json(expect, actual));
 }
 
+void check_prometheus(const vespalib::string &actual) {
+    vespalib::string expect = R"(foo 17 4500
+foo{chain="default",documenttype="music",thread="0"} 4 4500
+bar_count 4 4500
+bar_count{chain="vespa",documenttype="blogpost",thread="1"} 1 4500
+bar_count{chain="vespa",documenttype="blogpost",thread="2"} 1 4500
+bar_sum 168 4500
+bar_sum{chain="vespa",documenttype="blogpost",thread="1"} 14 4500
+bar_sum{chain="vespa",documenttype="blogpost",thread="2"} 11 4500
+bar_min 41 4500
+bar_min{chain="vespa",documenttype="blogpost",thread="1"} 14 4500
+bar_min{chain="vespa",documenttype="blogpost",thread="2"} 11 4500
+bar_max 43 4500
+bar_max{chain="vespa",documenttype="blogpost",thread="1"} 14 4500
+bar_max{chain="vespa",documenttype="blogpost",thread="2"} 11 4500
+)";
+    EXPECT_EQUAL(expect, actual);
+}
+
 
 TEST("use simple_metrics_collector")
 {
@@ -188,6 +208,9 @@ TEST("use simple_metrics_collector")
 
     JsonFormatter fmt2(snap2);
     check_json(fmt2.asString());
+
+    PrometheusFormatter fmt3(snap2);
+    check_prometheus(fmt3.as_text_formatted());
 
     // flush sliding window
     for (int i = 5; i <= 10; ++i) {
