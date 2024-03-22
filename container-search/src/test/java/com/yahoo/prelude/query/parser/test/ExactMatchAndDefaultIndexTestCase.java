@@ -35,7 +35,7 @@ public class ExactMatchAndDefaultIndexTestCase {
         q.getModel().setExecution(new Execution(Execution.Context.createContextStub(facts)));
         assertEquals("WEAKAND(100) testexact:a/b testexact:foo.com", q.getModel().getQueryTree().getRoot().toString());
         q = new Query("?query=" + enc("a/b foo.com"));
-        assertEquals("WEAKAND(100) a b foo com", q.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) (AND a b) (AND foo com)", q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test

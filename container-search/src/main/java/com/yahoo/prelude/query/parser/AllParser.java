@@ -11,7 +11,6 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RankItem;
-import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
@@ -99,29 +98,10 @@ public class AllParser extends SimpleParser {
         return root.getRoot() instanceof NullItem ? null : root.getRoot();
     }
 
-    private boolean foldIntoAnd(CompositeItem other) {
-        if (other instanceof AndItem) {
-            return true;
-        }
-        if (weakAnd && other instanceof SegmentItem) {
-            return true;
-        }
-        if (weakAnd && other instanceof PhraseItem phrase) {
-            return ! phrase.isExplicit();
-        }
-        return false;
-    }
-
     protected CompositeItem addAnd(Item item, CompositeItem and) {
         if (and == null)
             and = createAnd();
-        if (item instanceof CompositeItem composite && foldIntoAnd(composite)) {
-            for (var subItem : composite.items()) {
-                addAnd(subItem, and);
-            }
-        } else {
-            and.addItem(item);
-        }
+        and.addItem(item);
         return and;
     }
 
