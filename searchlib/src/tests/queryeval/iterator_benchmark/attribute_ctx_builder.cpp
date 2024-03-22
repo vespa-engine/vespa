@@ -25,13 +25,13 @@ populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hi
         docids->foreach_truebit([&](uint32_t docid) {
             if constexpr (is_string) {
                 if constexpr (is_multivalue) {
-                    attr.append(docid, std::to_string(spec.term_value), 1);
+                    attr.append(docid, std::to_string(spec.term_value), random_int(1, 100));
                 } else {
                     attr.update(docid, std::to_string(spec.term_value));
                 }
             } else {
                 if constexpr (is_multivalue) {
-                    attr.append(docid, spec.term_value, 1);
+                    attr.append(docid, spec.term_value, random_int(1, 100));
                 } else {
                     attr.update(docid, spec.term_value);
                 }

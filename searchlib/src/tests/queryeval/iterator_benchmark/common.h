@@ -39,7 +39,9 @@ enum class QueryOperator {
     WeightedSet,
     DotProduct,
     And,
-    Or
+    Or,
+    WeakAnd,
+    ParallelWeakAnd
 };
 
 vespalib::string to_string(QueryOperator query_op);
@@ -77,5 +79,7 @@ public:
 };
 
 BitVector::UP random_docids(uint32_t docid_limit, uint32_t count);
+
+int32_t random_int(int32_t a, int32_t b);
 
 }
