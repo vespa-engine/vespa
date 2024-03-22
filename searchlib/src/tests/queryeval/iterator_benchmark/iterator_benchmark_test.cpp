@@ -153,40 +153,87 @@ get_class_name(const auto& obj)
     return res;
 }
 
-BenchmarkResult
-strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit)
+struct MatchLoopContext {
+    Blueprint::UP blueprint;
+    MatchData::UP match_data;
+    SearchIterator::UP iterator;
+    MatchLoopContext() : blueprint(), match_data(), iterator() {}
+    MatchLoopContext(Blueprint::UP blueprint_in,
+                     MatchData::UP match_data_in,
+                     SearchIterator::UP iterator_in)
+        : blueprint(std::move(blueprint_in)),
+          match_data(std::move(match_data_in)),
+          iterator(std::move(iterator_in))
+    {}
+    void operator=(MatchLoopContext&& rhs) {
+        blueprint = std::move(rhs.blueprint);
+        match_data = std::move(rhs.match_data);
+        iterator = std::move(rhs.iterator);
+    }
+    ~MatchLoopContext();
+};
+
+MatchLoopContext::~MatchLoopContext() = default;
+
+MatchLoopContext
+make_match_loop_context(BenchmarkBlueprintFactory& factory, bool strict, uint32_t docid_limit)
 {
-    auto itr = blueprint.createSearch(md);
-    assert(itr.get());
+    auto blueprint = factory.make_blueprint();
+    assert(blueprint);
+    blueprint->basic_plan(strict, docid_limit);
+    blueprint->fetchPostings(ExecuteInfo::FULL);
+    // Note: All blueprints get the same TermFieldMatchData instance.
+    //       This is OK as long as we don't do unpacking and only use 1 thread.
+    auto md = MatchData::makeTestInstance(1, 1);
+    auto itr = blueprint->createSearch(*md);
+    assert(itr);
+    return {std::move(blueprint), std::move(md), std::move(itr)};
+}
+
+template <bool do_unpack>
+BenchmarkResult
+strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit)
+{
     BenchmarkTimer timer(budget_sec);
     uint32_t hits = 0;
+    MatchLoopContext ctx;
     while (timer.has_budget()) {
+        ctx = make_match_loop_context(factory, true, docid_limit);
+        auto* itr = ctx.iterator.get();
         timer.before();
         hits = 0;
         itr->initRange(1, docid_limit);
         uint32_t docid = itr->seekFirst(1);
+        if constexpr (do_unpack) {
+            itr->unpack(docid);
+        }
         while (docid < docid_limit) {
             ++hits;
             docid = itr->seekNext(docid + 1);
+            if constexpr (do_unpack) {
+                itr->unpack(docid);
+            }
         }
         timer.after();
     }
-    FlowStats flow(blueprint.estimate(), blueprint.cost(), blueprint.strict_cost());
-    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, flow.strict_cost, get_class_name(*itr), get_class_name(blueprint)};
+    FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
+    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, flow.strict_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
 }
 
+template <bool do_unpack>
 BenchmarkResult
-non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, double filter_hit_ratio)
+non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, double filter_hit_ratio, bool force_strict)
 {
-    auto itr = blueprint.createSearch(md);
-    assert(itr.get());
     BenchmarkTimer timer(budget_sec);
     uint32_t seeks = 0;
     uint32_t hits = 0;
     // This simulates a filter that is evaluated before this iterator.
     // The filter returns 'filter_hit_ratio' amount of the document corpus.
     uint32_t docid_skip = 1.0 / filter_hit_ratio;
+    MatchLoopContext ctx;
     while (timer.has_budget()) {
+        ctx = make_match_loop_context(factory, force_strict, docid_limit);
+        auto* itr = ctx.iterator.get();
         timer.before();
         seeks = 0;
         hits = 0;
@@ -195,29 +242,35 @@ non_strict_search(Blueprint& blueprint, MatchData& md, uint32_t docid_limit, dou
             ++seeks;
             if (itr->seek(docid)) {
                 ++hits;
+                if constexpr (do_unpack) {
+                    itr->unpack(docid);
+                }
             }
         }
         timer.after();
     }
-    FlowStats flow(blueprint.estimate(), blueprint.cost(), blueprint.strict_cost());
+    FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double actual_cost = flow.cost * filter_hit_ratio;
     // This is an attempt to calculate an alternative actual cost for strict / posting list iterators that are used in a non-strict context.
     double alt_cost = flow.strict_cost + 0.5 * filter_hit_ratio;
-    return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, alt_cost, get_class_name(*itr), get_class_name(blueprint)};
+    return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, alt_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
 }
 
 BenchmarkResult
-benchmark_search(Blueprint::UP blueprint, uint32_t docid_limit, bool strict_context, bool force_strict, double filter_hit_ratio)
+benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, bool strict_context, bool force_strict, bool unpack_iterator, double filter_hit_ratio)
 {
-    blueprint->basic_plan(strict_context || force_strict, docid_limit);
-    blueprint->fetchPostings(ExecuteInfo::FULL);
-    // Note: All blueprints get the same TermFieldMatchData instance.
-    //       This is OK as long as we don't do unpacking and only use 1 thread.
-    auto md = MatchData::makeTestInstance(1, 1);
     if (strict_context) {
-        return strict_search(*blueprint, *md, docid_limit);
+        if (unpack_iterator) {
+            return strict_search<true>(factory, docid_limit);
+        } else {
+            return strict_search<false>(factory, docid_limit);
+        }
     } else {
-        return non_strict_search(*blueprint, *md, docid_limit, filter_hit_ratio);
+        if (unpack_iterator) {
+            return non_strict_search<true>(factory, docid_limit, filter_hit_ratio, force_strict);
+        } else {
+            return non_strict_search<false>(factory, docid_limit, filter_hit_ratio, force_strict);
+        }
     }
 }
 
@@ -230,18 +283,19 @@ to_string(bool val)
 void
 print_result_header()
 {
-    std::cout << "|  chn | f_ratio | o_ratio | a_ratio |  f.est |  f.cost | f.scost |     hits |    seeks |  time_ms | act_cost | alt_cost | ns_per_seek | ms_per_act_cost | ms_per_alt_cost | iterator | blueprint |" << std::endl;
+    std::cout << "|  chn | f_ratio | o_ratio | a_ratio |   f.est |  f.cost | f.scost |     hits |    seeks |  time_ms | act_cost | alt_cost | ns_per_seek | ms_per_act_cost | ms_per_alt_cost | iterator | blueprint |" << std::endl;
 }
 
 void
 print_result(const BenchmarkResult& res, uint32_t children, double op_hit_ratio, double filter_hit_ratio, uint32_t num_docs)
 {
-    std::cout << std::fixed << std::setprecision(4)
+    std::cout << std::fixed << std::setprecision(5)
               << "| " << std::setw(4) << children
               << " | " << std::setw(7) << filter_hit_ratio
               << " | " << std::setw(7) << op_hit_ratio
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
               << " | " << std::setw(6) << res.flow.estimate
+              << std::setprecision(4)
               << " | " << std::setw(7) << res.flow.cost
               << " | " << std::setw(7) << res.flow.strict_cost
               << " | " << std::setw(8) << res.hits
@@ -274,11 +328,13 @@ struct BenchmarkCase {
     QueryOperator query_op;
     bool strict_context;
     bool force_strict;
+    bool unpack_iterator;
     BenchmarkCase(const FieldConfig& field_cfg_in, QueryOperator query_op_in, bool strict_context_in)
         : field_cfg(field_cfg_in),
           query_op(query_op_in),
           strict_context(strict_context_in),
-          force_strict(false)
+          force_strict(false),
+          unpack_iterator(false)
     {}
     vespalib::string to_string() const {
         return "op=" + search::queryeval::test::to_string(query_op) + ", cfg=" + field_cfg.to_string() +
@@ -359,7 +415,7 @@ struct BenchmarkCaseSetup {
           child_counts(child_counts_in),
           filter_hit_ratios({1.0}),
           default_values_per_document(0),
-          filter_crossover_factor(1.0)
+          filter_crossover_factor(0.0)
     {}
     ~BenchmarkCaseSetup() {}
 };
@@ -373,6 +429,7 @@ struct BenchmarkSetup {
     std::vector<uint32_t> child_counts;
     std::vector<double> filter_hit_ratios;
     bool force_strict;
+    bool unpack_iterator;
     uint32_t default_values_per_document;
     double filter_crossover_factor;
     BenchmarkSetup(uint32_t num_docs_in,
@@ -389,8 +446,9 @@ struct BenchmarkSetup {
           child_counts(child_counts_in),
           filter_hit_ratios({1.0}),
           force_strict(false),
+          unpack_iterator(false),
           default_values_per_document(0),
-          filter_crossover_factor(1.0)
+          filter_crossover_factor(0.0)
     {}
     BenchmarkSetup(uint32_t num_docs_in,
                    const std::vector<FieldConfig>& field_cfgs_in,
@@ -402,6 +460,7 @@ struct BenchmarkSetup {
     BenchmarkCaseSetup make_case_setup(const BenchmarkCase& bcase) const {
         BenchmarkCaseSetup res(num_docs, bcase, op_hit_ratios, child_counts);
         res.bcase.force_strict = force_strict;
+        res.bcase.unpack_iterator = unpack_iterator;
         res.default_values_per_document = default_values_per_document;
         if (!bcase.strict_context) {
             // Simulation of a filter is only relevant in a non-strict context.
@@ -431,7 +490,8 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
                                                   op_hit_ratio, children);
             for (double filter_hit_ratio : setup.filter_hit_ratios) {
                 if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
-                    auto res = benchmark_search(factory->make_blueprint(), setup.num_docs + 1, setup.bcase.strict_context, setup.bcase.force_strict, filter_hit_ratio);
+                    auto res = benchmark_search(*factory, setup.num_docs + 1,
+                                                setup.bcase.strict_context, setup.bcase.force_strict, setup.bcase.unpack_iterator, filter_hit_ratio);
                     print_result(res, children, op_hit_ratio, filter_hit_ratio, setup.num_docs);
                     result.add(res);
                 }
@@ -542,6 +602,15 @@ TEST(IteratorBenchmark, analyze_complex_leaf_operators)
     std::vector<QueryOperator> query_ops = {QueryOperator::In, QueryOperator::DotProduct};
     const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
     BenchmarkSetup setup(num_docs, field_cfgs, query_ops, {true, false}, hit_ratios, {1, 2, 10, 100});
+    run_benchmarks(setup);
+}
+
+TEST(IteratorBenchmark, analyze_weak_and_operators)
+{
+    std::vector<FieldConfig> field_cfgs = {int32_wset_fs};
+    std::vector<QueryOperator> query_ops = {QueryOperator::WeakAnd, QueryOperator::ParallelWeakAnd};
+    BenchmarkSetup setup(num_docs, field_cfgs, query_ops, {true, false}, base_hit_ratios, {1, 2, 10, 100});
+    setup.unpack_iterator = true;
     run_benchmarks(setup);
 }
 

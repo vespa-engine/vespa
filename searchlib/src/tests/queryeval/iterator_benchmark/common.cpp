@@ -35,6 +35,8 @@ to_string(QueryOperator query_op)
         case QueryOperator::DotProduct: return "DotProduct";
         case QueryOperator::And: return "And";
         case QueryOperator::Or: return "Or";
+        case QueryOperator::WeakAnd: return "WeakAnd";
+        case QueryOperator::ParallelWeakAnd: return "ParallelWeakAnd";
     }
     return "unknown";
 }
@@ -69,6 +71,13 @@ random_docids(uint32_t docid_limit, uint32_t count)
     res->invalidateCachedCount();
     assert(res->countTrueBits() == count);
     return res;
+}
+
+int32_t
+random_int(int32_t a, int32_t b)
+{
+    std::uniform_int_distribution<int32_t> distr(a, b);
+    return distr(gen);
 }
 
 }

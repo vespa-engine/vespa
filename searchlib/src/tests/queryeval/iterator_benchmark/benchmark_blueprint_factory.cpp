@@ -18,6 +18,7 @@ using search::query::Node;
 using search::query::SimpleDotProduct;
 using search::query::SimpleInTerm;
 using search::query::SimpleStringTerm;
+using search::query::SimpleWandTerm;
 using search::query::SimpleWeightedSetTerm;
 using search::query::Weight;
 
@@ -83,6 +84,17 @@ make_query_node(QueryOperator query_op, const TermVector& terms)
             res->addTerm(term, Weight(1));
         }
         return res;
+    } else if (query_op == QueryOperator::ParallelWeakAnd) {
+        // These config values match the defaults (see WandItem.java):
+        uint32_t target_hits = 100;
+        int64_t score_threshold = 0;
+        double threshold_boost_factor = 1.0;
+        auto res = std::make_unique<SimpleWandTerm>(terms.size(), field_name, 0, Weight(1),
+                                                    target_hits, score_threshold, threshold_boost_factor);
+        for (auto term : terms) {
+            res->addTerm(term, Weight(random_int(1, 100)));
+        }
+        return res;
     }
     return {};
 }
@@ -97,15 +109,18 @@ make_leaf_blueprint(const Node& node, BenchmarkSearchable& searchable, uint32_t 
     return blueprint;
 }
 
-template <typename BlueprintType>
 Blueprint::UP
-make_intermediate_blueprint(BenchmarkSearchable& searchable, const TermVector& terms, uint32_t docid_limit)
+make_intermediate_blueprint(std::unique_ptr<IntermediateBlueprint> blueprint, BenchmarkSearchable& searchable, const TermVector& terms, uint32_t docid_limit)
 {
-    auto blueprint = std::make_unique<BlueprintType>();
+    auto* weak_and = blueprint->asWeakAnd();
     for (auto term : terms) {
         SimpleStringTerm sterm(std::to_string(term), field_name, 0, Weight(1));
         auto child = make_leaf_blueprint(sterm, searchable, docid_limit);
-        blueprint->addChild(std::move(child));
+        if (weak_and != nullptr) {
+            weak_and->addTerm(std::move(child), random_int(1, 100));
+        } else {
+            blueprint->addChild(std::move(child));
+        }
     }
     blueprint->setDocIdLimit(docid_limit);
     blueprint->update_flow_stats(docid_limit);
@@ -116,9 +131,12 @@ Blueprint::UP
 make_blueprint_helper(BenchmarkSearchable& searchable, QueryOperator query_op, const TermVector& terms, uint32_t docid_limit)
 {
     if (query_op == QueryOperator::And) {
-        return make_intermediate_blueprint<AndBlueprint>(searchable, terms, docid_limit);
+        return make_intermediate_blueprint(std::make_unique<AndBlueprint>(), searchable, terms, docid_limit);
     } else if (query_op == QueryOperator::Or) {
-        return make_intermediate_blueprint<OrBlueprint>(searchable, terms, docid_limit);
+        return make_intermediate_blueprint(std::make_unique<OrBlueprint>(), searchable, terms, docid_limit);
+    } else if (query_op == QueryOperator::WeakAnd) {
+        uint32_t target_hits = 100;
+        return make_intermediate_blueprint(std::make_unique<WeakAndBlueprint>(target_hits), searchable, terms, docid_limit);
     } else {
         auto query_node = make_query_node(query_op, terms);
         return make_leaf_blueprint(*query_node, searchable, docid_limit);
