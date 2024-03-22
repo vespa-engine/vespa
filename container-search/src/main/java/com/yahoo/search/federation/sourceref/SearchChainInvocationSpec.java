@@ -2,6 +2,8 @@
 package com.yahoo.search.federation.sourceref;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
 import java.util.List;
@@ -13,7 +15,7 @@ import java.util.Objects;
  *
  * @author Tony Vaagenes
  */
-public class SearchChainInvocationSpec implements Cloneable {
+public class SearchChainInvocationSpec implements ModifyQueryAndResult, Cloneable {
 
     public final ComponentId searchChainId;
 
@@ -23,16 +25,20 @@ public class SearchChainInvocationSpec implements Cloneable {
     public final ComponentId provider;
 
     public final FederationOptions federationOptions;
-    public final List<String> documentTypes;
+    public final List<String> schemas;
 
-    SearchChainInvocationSpec(ComponentId searchChainId,
-                              ComponentId source, ComponentId provider, FederationOptions federationOptions,
-                              List<String> documentTypes) {
+    public SearchChainInvocationSpec(ComponentId searchChainId, FederationOptions federationOptions, List<String> schemas) {
+        this(searchChainId, null, null, federationOptions, schemas);
+    }
+
+
+    SearchChainInvocationSpec(ComponentId searchChainId, ComponentId source, ComponentId provider,
+                              FederationOptions federationOptions, List<String> schemas) {
         this.searchChainId = searchChainId;
         this.source = source;
         this.provider = provider;
         this.federationOptions = federationOptions;
-        this.documentTypes = List.copyOf(documentTypes);
+        this.schemas = List.copyOf(schemas);
     }
 
     @Override
@@ -49,13 +55,16 @@ public class SearchChainInvocationSpec implements Cloneable {
         if ( ! Objects.equals(this.source, other.source)) return false;
         if ( ! Objects.equals(this.provider, other.provider)) return false;
         if ( ! Objects.equals(this.federationOptions, other.federationOptions)) return false;
-        if ( ! Objects.equals(this.documentTypes, other.documentTypes)) return false;
+        if ( ! Objects.equals(this.schemas, other.schemas)) return false;
         return true;
     }
 
     @Override
     public int hashCode() { 
-        return Objects.hash(searchChainId, source, provider, federationOptions, documentTypes);
+        return Objects.hash(searchChainId, source, provider, federationOptions, schemas);
     }
+
+    public void modifyTargetQuery(Query query) { }
+    public void modifyTargetResult(Result result) {}
 
 }

@@ -120,17 +120,10 @@ public class FederationResultTest {
             this.timeout = timeout;
         }
 
-        @Override
-        Chain<Searcher> getChain() { return chain; }
-
-        @Override
-        void modifyTargetQuery(Query query) { }
-
-        @Override
-        void modifyTargetResult(Result result) { }
-
-        @Override
-        public FederationOptions federationOptions() {
+        @Override Chain<Searcher> getChain() { return chain; }
+        @Override public void modifyTargetQuery(Query query) { }
+        @Override public void modifyTargetResult(Result result) { }
+        @Override public FederationOptions federationOptions() {
             return new FederationOptions(false, timeout, true);
         }
 

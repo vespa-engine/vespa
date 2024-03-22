@@ -18,6 +18,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.federation.selection.FederationTarget;
 import com.yahoo.search.federation.selection.TargetSelector;
+import com.yahoo.search.federation.sourceref.ModifyQueryAndResult;
 import com.yahoo.search.federation.sourceref.SearchChainInvocationSpec;
 import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.federation.sourceref.SingleTarget;
@@ -43,7 +44,6 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -155,15 +155,36 @@ public class FederationSearcher extends ForkingSearcher {
         return builder.build();
     }
 
+    private static class SearchChaininvocationProxy extends SearchChainInvocationSpec {
+        SearchChaininvocationProxy(ComponentId searchChainId, FederationOptions federationOptions, String schema) {
+            super(searchChainId, federationOptions, List.of(schema));
+        }
+
+        @Override
+        public void modifyTargetQuery(Query query) {
+            query.getModel().setSources(searchChainId.getName());
+            query.getModel().setRestrict(schemas.get(0));
+        }
+    }
+
     private static void addSearchChain(SearchChainResolver.Builder builder,
                                        FederationConfig.Target target,
                                        FederationConfig.Target.SearchChain searchChain)
     {
-        if (!target.id().equals(searchChain.searchChainId()))
-            throw new RuntimeException("Invalid federation config, " + target.id() + " != " + searchChain.searchChainId());
+        String id = target.id();
+        if (!id.equals(searchChain.searchChainId()))
+            throw new RuntimeException("Invalid federation config, " + id + " != " + searchChain.searchChainId());
 
-        builder.addSearchChain(ComponentId.fromString(searchChain.searchChainId()),
-                               federationOptions(searchChain), searchChain.documentTypes());
+        ComponentId searchChainId = ComponentId.fromString(id);
+        builder.addSearchChain(searchChainId, federationOptions(searchChain), searchChain.documentTypes());
+        // Here we make synthetic SearchChain proxies for all cluster.schema combinations possible
+        // Given a source on the form saerchcluster.schema will rewrite it to source=searchcluster and restrict to schema.
+        // TODO Consider solving this in the config model by making many synthetic search clusters
+        for (String schema : searchChain.documentTypes()) {
+            String virtualChainId = id + "." + schema;
+            builder.addSearchChain(ComponentId.fromString(virtualChainId),
+                    new SearchChaininvocationProxy(searchChainId, federationOptions(searchChain).setUseByDefault(false), schema));
+        }
     }
 
     private static void addSourceForProvider(SearchChainResolver.Builder builder, FederationConfig.Target target,
@@ -215,7 +236,6 @@ public class FederationSearcher extends ForkingSearcher {
 
     private void search(Query query, Execution execution, Target target, Result mergedResults) {
         mergeResult(query, target, mergedResults, search(query, execution, target).orElse(createSearchChainTimedOutResult(query, target)));
-
     }
 
     private void search(Query query, Execution execution, Collection<Target> targets, Result mergedResults) {
@@ -583,7 +603,7 @@ public class FederationSearcher extends ForkingSearcher {
         Collection<SearchChainInvocationSpec> prunedTargets = new ArrayList<>();
 
         for (SearchChainInvocationSpec target : targets) {
-            if (target.documentTypes.isEmpty() || documentTypeIntersectionIsNonEmpty(restrict, target))
+            if (target.schemas.isEmpty() || documentTypeIntersectionIsNonEmpty(restrict, target))
                 prunedTargets.add(target);
         }
 
@@ -591,7 +611,7 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private boolean documentTypeIntersectionIsNonEmpty(Set<String> restrict, SearchChainInvocationSpec target) {
-        for (String documentType : target.documentTypes) {
+        for (String documentType : target.schemas) {
             if (restrict.contains(documentType))
                 return true;
         }
@@ -621,11 +641,9 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     /** A target for federation, containing a chain to which a federation query can be forwarded. */
-    static abstract class Target {
+    static abstract class Target implements ModifyQueryAndResult {
 
         abstract Chain<Searcher> getChain();
-        abstract void modifyTargetQuery(Query query);
-        abstract void modifyTargetResult(Result result);
 
         ComponentId getId() {
             return getChain().getId();
@@ -656,9 +674,9 @@ public class FederationSearcher extends ForkingSearcher {
         Chain<Searcher> getChain() { return chain; }
 
         @Override
-        void modifyTargetQuery(Query query) {}
+        public void modifyTargetQuery(Query query) { target.modifyTargetQuery(query); }
         @Override
-        void modifyTargetResult(Result result) {}
+        public void modifyTargetResult(Result result) { target.modifyTargetResult(result); }
 
         @Override
         public FederationOptions federationOptions() { return target.federationOptions; }
