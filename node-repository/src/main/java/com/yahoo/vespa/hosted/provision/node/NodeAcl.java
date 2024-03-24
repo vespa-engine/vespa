@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -80,6 +81,13 @@ public record NodeAcl(Node node,
                 // - proxy nodes
                 trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), ipSpace));
                 trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy), ipSpace));
+
+                // AZURE does not support proxy protocol, but instead passes through the source IP address.
+                // Which means we must accept any source IP.
+                if (zone.cloud().name().equals(CloudName.AZURE) &&
+                    node.allocation().map(a -> a.membership().cluster().type().isContainer()).orElse(false)) {
+                    trustedPorts.add(4443);
+                }
             }
             case config -> {
                 // Config servers trust:
