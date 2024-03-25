@@ -63,7 +63,8 @@ public:
     public:
         constexpr Options() noexcept 
           : _sort_by_cost(false),
-            _allow_force_strict(false) {}
+            _allow_force_strict(false),
+            _keep_order(false) {}
         constexpr bool sort_by_cost() const noexcept { return _sort_by_cost; }
         constexpr Options &sort_by_cost(bool value) noexcept {
             _sort_by_cost = value;
