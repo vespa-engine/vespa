@@ -62,7 +62,7 @@ public:
         set_tree_size(_terms.size() + 1);
     }
 
-    void sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;

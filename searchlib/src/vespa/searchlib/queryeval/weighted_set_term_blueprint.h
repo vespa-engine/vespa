@@ -35,7 +35,7 @@ public:
         setEstimate(estimate);
     }
 
-    void sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
 
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;

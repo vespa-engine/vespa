@@ -280,7 +280,7 @@ PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
 }
 
 void
-PredicateBlueprint::sort(InFlow in_flow, const Options &)
+PredicateBlueprint::sort(InFlow in_flow)
 {
     strict(in_flow.strict());
 }

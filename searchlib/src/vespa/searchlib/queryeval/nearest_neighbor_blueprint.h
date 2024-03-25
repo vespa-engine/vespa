@@ -69,7 +69,7 @@ public:
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _distance_threshold; }
 
-    void sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         return default_flow_stats(docid_limit, getState().estimate().estHits, 0);
     }

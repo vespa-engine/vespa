@@ -72,7 +72,7 @@ public:
         setEstimate(estimate);
     }
 
-    void sort(queryeval::InFlow in_flow, const Options &) override {
+    void sort(queryeval::InFlow in_flow) override {
         strict(in_flow.strict());
     }
 

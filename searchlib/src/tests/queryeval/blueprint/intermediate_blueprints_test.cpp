@@ -579,7 +579,7 @@ optimize_and_compare(Blueprint::UP top, Blueprint::UP expect, bool strict = true
     top->setDocIdLimit(1000);
     expect->setDocIdLimit(1000);
     TEST_DO(compare(*top, *expect, false));
-    auto opts = Blueprint::Options::default_options().sort_by_cost(sort_by_cost);
+    auto opts = Blueprint::Options().sort_by_cost(sort_by_cost);
     top = Blueprint::optimize_and_sort(std::move(top), strict, opts);
     TEST_DO(compare(*top, *expect, true));
     expect = Blueprint::optimize_and_sort(std::move(expect), strict, opts);

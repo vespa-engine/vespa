@@ -54,12 +54,12 @@ EquivBlueprint::EquivBlueprint(FieldSpecBaseList fields,
 EquivBlueprint::~EquivBlueprint() = default;
 
 void
-EquivBlueprint::sort(InFlow in_flow, const Options &opts)
+EquivBlueprint::sort(InFlow in_flow)
 {
     strict(in_flow.strict());
     auto flow = OrFlow(in_flow);
     for (auto &term: _terms) {
-        term->sort(InFlow(flow.strict(), flow.flow()), opts);
+        term->sort(InFlow(flow.strict(), flow.flow()));
         flow.add(term->estimate());
     }
 }

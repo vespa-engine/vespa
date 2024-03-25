@@ -61,7 +61,7 @@ public:
         bool _allow_force_strict;
         bool _keep_order;
     public:
-        constexpr Options() noexcept 
+        constexpr Options() noexcept
           : _sort_by_cost(false),
             _allow_force_strict(false),
             _keep_order(false) {}
@@ -80,10 +80,38 @@ public:
             _keep_order = value;
             return *this;
         }
-        static Options default_options() noexcept {
-            return Options().sort_by_cost(true);
-        }
     };
+
+private:
+    static Options &thread_opts() noexcept {
+        thread_local Options opts;
+        return opts;
+    }
+    struct BindOpts {
+        Options prev;
+        BindOpts(Options opts) noexcept : prev(thread_opts()) {
+            thread_opts() = opts;
+        }
+        ~BindOpts() noexcept {
+            thread_opts() = prev;
+        }
+        BindOpts(BindOpts &&) = delete;
+        BindOpts(const BindOpts &) = delete;
+        BindOpts &operator=(BindOpts &&) = delete;
+        BindOpts &operator=(const BindOpts &) = delete;
+    };
+
+public:
+    // thread local Options are used during query planning (calculate_flow_stats/sort)
+    //
+    // The optimize_and_sort function will handle this for you by
+    // binding the given options to the current thread before calling
+    // optimize and sort. If you do low-level stuff directly, make
+    // sure to keep the relevant options bound while doing so.
+    static BindOpts bind_opts(Options opts) noexcept { return BindOpts(opts); }
+    static bool opt_sort_by_cost() noexcept { return thread_opts().sort_by_cost(); }
+    static bool opt_allow_force_strict() noexcept { return thread_opts().allow_force_strict(); }
+    static bool opt_keep_order() noexcept { return thread_opts().keep_order(); }
 
     struct HitEstimate {
         uint32_t estHits;
@@ -286,17 +314,18 @@ public:
     void null_plan(InFlow in_flow, uint32_t docid_limit);
 
     static Blueprint::UP optimize(Blueprint::UP bp);
-    virtual void sort(InFlow in_flow, const Options &opts) = 0;
+    virtual void sort(InFlow in_flow) = 0;
     static Blueprint::UP optimize_and_sort(Blueprint::UP bp, InFlow in_flow, const Options &opts) {
+        auto opts_guard = bind_opts(opts);
         auto result = optimize(std::move(bp));
-        result->sort(in_flow, opts);
+        result->sort(in_flow);
         return result;
     }
     static Blueprint::UP optimize_and_sort(Blueprint::UP bp, InFlow in_flow) {
-        return optimize_and_sort(std::move(bp), in_flow, Options::default_options());
+        return optimize_and_sort(std::move(bp), in_flow, Options().sort_by_cost(true));
     }
     static Blueprint::UP optimize_and_sort(Blueprint::UP bp) {
-        return optimize_and_sort(std::move(bp), true, Options::default_options());
+        return optimize_and_sort(std::move(bp), true);
     }
     virtual void optimize(Blueprint* &self, OptimizePass pass) = 0;
     virtual void optimize_self(OptimizePass pass);
@@ -454,7 +483,7 @@ public:
     void each_node_post_order(const std::function<void(Blueprint&)> &f) override;
 
     void optimize(Blueprint* &self, OptimizePass pass) final;
-    void sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow) override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
@@ -535,7 +564,7 @@ struct SimpleLeafBlueprint : LeafBlueprint {
     explicit SimpleLeafBlueprint() noexcept : LeafBlueprint(true) {}
     explicit SimpleLeafBlueprint(FieldSpecBase field) noexcept : LeafBlueprint(field, true) {}
     explicit SimpleLeafBlueprint(FieldSpecBaseList fields) noexcept: LeafBlueprint(std::move(fields), true) {}
-    void sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow) override;
 };
 
 // for leaf nodes representing more complex structures like wand/phrase

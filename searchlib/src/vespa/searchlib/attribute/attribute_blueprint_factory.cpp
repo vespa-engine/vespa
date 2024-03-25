@@ -287,7 +287,7 @@ public:
 
     bool should_use() const { return _should_use; }
 
-    void sort(queryeval::InFlow in_flow, const Options &) override {
+    void sort(queryeval::InFlow in_flow) override {
         strict(in_flow.strict());
     }
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
@@ -374,7 +374,7 @@ public:
 
     const common::Location &location() const { return _location; }
 
-    void sort(queryeval::InFlow in_flow, const Options &) override {
+    void sort(queryeval::InFlow in_flow) override {
         strict(in_flow.strict());
     }
 
@@ -507,7 +507,7 @@ public:
         setEstimate(estimate);
     }
 
-    void sort(queryeval::InFlow in_flow, const Options &) override {
+    void sort(queryeval::InFlow in_flow) override {
         strict(in_flow.strict());
     }
 
