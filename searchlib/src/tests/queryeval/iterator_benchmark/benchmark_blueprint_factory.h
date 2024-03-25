@@ -24,4 +24,3 @@ make_blueprint_factory(const FieldConfig& field_cfg, QueryOperator query_op,
                        double op_hit_ratio, uint32_t children);
 
 }
-
