@@ -219,7 +219,7 @@ public class Json implements Iterable<Json> {
                 SlimeUtils.copyObject(object.cursor, cursor.addObject()); return this;
             }
             public Builder.Array add(Json json) {
-                SlimeUtils.addValue(json.inspector, cursor.addObject()); return this;
+                SlimeUtils.addValue(json.inspector, cursor); return this;
             }
             public Builder.Array add(Json.Builder builder) { return add(builder.build()); }
 
