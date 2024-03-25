@@ -35,7 +35,6 @@
     <dependency>
       <groupId>de.kherud</groupId>
       <artifactId>llama</artifactId>
-      <version>${java-llama.vespa.version}</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
