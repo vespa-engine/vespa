@@ -258,7 +258,9 @@ public class Json implements Iterable<Json> {
             public Builder.Object set(String field, long value) { cursor.setLong(field, value); return this; }
             public Builder.Object set(String field, double value) { cursor.setDouble(field, value); return this; }
             public Builder.Object set(String field, boolean value) { cursor.setBool(field, value); return this; }
-            public Builder.Object set(String field, BigDecimal value) { cursor.setString(field, value.toPlainString()); return this; }
+            public Builder.Object set(String field, BigDecimal value) {
+                cursor.setString(field, value.stripTrailingZeros().toPlainString()); return this;
+            }
             public Builder.Object set(String field, Instant timestamp) { cursor.setString(field, timestamp.toString()); return this; }
         }
 
