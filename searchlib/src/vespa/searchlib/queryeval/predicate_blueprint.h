@@ -49,7 +49,7 @@ public:
     ~PredicateBlueprint();
     void fetchPostings(const ExecuteInfo &execInfo) override;
 
-    void sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t) const override {
         return default_flow_stats(_interval_btree_iterators.size() + _interval_vector_iterators.size() +
                                   _bounds_btree_iterators.size() + _bounds_vector_iterators.size() + 2);

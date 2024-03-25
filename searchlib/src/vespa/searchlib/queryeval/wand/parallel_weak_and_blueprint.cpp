@@ -67,12 +67,12 @@ ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimat
 }
 
 void
-ParallelWeakAndBlueprint::sort(InFlow in_flow, const Options &opts)
+ParallelWeakAndBlueprint::sort(InFlow in_flow)
 {
     strict(in_flow.strict());
     auto flow = OrFlow(in_flow);
     for (auto &term: _terms) {
-        term->sort(InFlow(flow.strict(), flow.flow()), opts);
+        term->sort(InFlow(flow.strict(), flow.flow()));
         flow.add(term->estimate());
     }
 }

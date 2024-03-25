@@ -137,23 +137,23 @@ Blueprint::each_node_post_order(const std::function<void(Blueprint&)> &f)
 void
 Blueprint::basic_plan(InFlow in_flow, uint32_t docid_limit)
 {
+    auto opts_guard = bind_opts(Options().sort_by_cost(true));
     setDocIdLimit(docid_limit);
     each_node_post_order([docid_limit](Blueprint &bp){
                              bp.update_flow_stats(docid_limit);
                          });
-    auto opts = Options().sort_by_cost(true);
-    sort(in_flow, opts);
+    sort(in_flow);
 }
 
 void
 Blueprint::null_plan(InFlow in_flow, uint32_t docid_limit)
 {
+    auto opts_guard = bind_opts(Options().keep_order(true));
     setDocIdLimit(docid_limit);
     each_node_post_order([docid_limit](Blueprint &bp){
                              bp.update_flow_stats(docid_limit);
                          });
-    auto opts = Options().sort_by_cost(true).keep_order(true);
-    sort(in_flow, opts);
+    sort(in_flow);
 }
 
 Blueprint::UP
@@ -603,15 +603,15 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 }
 
 void
-IntermediateBlueprint::sort(InFlow in_flow, const Options &opts)
+IntermediateBlueprint::sort(InFlow in_flow)
 {
     strict(in_flow.strict()); // authorative strict tag (->fetchPostings,->createSearch,->createFilterSearch)
-    if (!opts.keep_order()) [[likely]] {
-        sort(_children, in_flow.strict(), opts.sort_by_cost());
+    if (!opt_keep_order()) [[likely]] {
+        sort(_children, in_flow.strict(), opt_sort_by_cost());
     }
     auto flow = my_flow(in_flow);
     for (size_t i = 0; i < _children.size(); ++i) {
-        _children[i]->sort(InFlow(flow.strict(), flow.flow()), opts);
+        _children[i]->sort(InFlow(flow.strict(), flow.flow()));
         flow.add(_children[i]->estimate());
     }
 }
@@ -824,7 +824,7 @@ LeafBlueprint::set_tree_size(uint32_t value)
 //-----------------------------------------------------------------------------
 
 void
-SimpleLeafBlueprint::sort(InFlow in_flow, const Options &)
+SimpleLeafBlueprint::sort(InFlow in_flow)
 {
     strict(in_flow.strict()); // authorative strict tag (->fetchPostings,->createSearch,->createFilterSearch)
 }

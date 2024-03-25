@@ -94,11 +94,11 @@ WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimat
 }
 
 void
-WeightedSetTermBlueprint::sort(InFlow, const Options &opts)
+WeightedSetTermBlueprint::sort(InFlow)
 {
     strict(true);
     for (auto &term: _terms) {
-        term->sort(true, opts);
+        term->sort(true);
     }
 }
 

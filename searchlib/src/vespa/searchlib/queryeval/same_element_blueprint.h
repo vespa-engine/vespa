@@ -34,7 +34,7 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term);
 
-    void sort(InFlow in_flow, const Options &opts) override;
+    void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     
     void optimize_self(OptimizePass pass) override;

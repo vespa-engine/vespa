@@ -45,12 +45,12 @@ SameElementBlueprint::addTerm(Blueprint::UP term)
 }
 
 void
-SameElementBlueprint::sort(InFlow in_flow, const Options &opts)
+SameElementBlueprint::sort(InFlow in_flow)
 {
     strict(in_flow.strict());
     auto flow = AndFlow(in_flow);
     for (auto &term: _terms) {
-        term->sort(InFlow(flow.strict(), flow.flow()), opts);
+        term->sort(InFlow(flow.strict(), flow.flow()));
         flow.add(term->estimate());
     }
 }

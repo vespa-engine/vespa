@@ -794,6 +794,30 @@ TEST("Control object sizes") {
     EXPECT_EQUAL(88u, sizeof(LeafBlueprint));
 }
 
+Blueprint::Options make_opts(bool sort_by_cost, bool allow_force_strict, bool keep_order) {
+    return Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(allow_force_strict).keep_order(keep_order);
+}
+
+void check_opts(bool sort_by_cost, bool allow_force_strict, bool keep_order) {
+    EXPECT_EQUAL(Blueprint::opt_sort_by_cost(), sort_by_cost);
+    EXPECT_EQUAL(Blueprint::opt_allow_force_strict(), allow_force_strict);
+    EXPECT_EQUAL(Blueprint::opt_keep_order(), keep_order);
+}
+
+TEST("Options binding and nesting") {
+    check_opts(false, false, false);
+    {
+        auto opts_guard1 = Blueprint::bind_opts(make_opts(true, true, false));
+        check_opts(true, true, false);
+        {
+            auto opts_guard2 = Blueprint::bind_opts(make_opts(false, false, true));
+            check_opts(false, false, true);
+        }
+        check_opts(true, true, false);
+    }
+    check_opts(false, false, false);
+}
+
 TEST_MAIN() {
     TEST_DEBUG("lhs.out", "rhs.out");
     TEST_RUN_ALL();
