@@ -125,7 +125,7 @@ public class EntityBindingsMapper {
             try (OutputStream outputStream = Files.newOutputStream(tempFile)) {
                 mapper.writeValue(outputStream, entity);
             }
-            Files.move(tempFile, file, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tempFile, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
