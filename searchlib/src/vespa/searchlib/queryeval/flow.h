@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <functional>
+#include <limits>
 
 // Model how boolean result decisions flow through intermediate nodes
 // of different types based on relative estimates for sub-expressions
@@ -34,7 +35,10 @@ struct FlowStats {
     double strict_cost;
     constexpr FlowStats(double estimate_in, double cost_in, double strict_cost_in) noexcept
       : estimate(estimate_in), cost(cost_in), strict_cost(strict_cost_in) {}
-    auto operator <=>(const FlowStats &rhs) const noexcept = default;
+    constexpr auto operator <=>(const FlowStats &rhs) const noexcept = default;
+    static constexpr FlowStats from(auto adapter, const auto &child) noexcept {
+        return {adapter.estimate(child), adapter.cost(child), adapter.strict_cost(child)};
+    }
 };
 
 namespace flow {
@@ -117,6 +121,23 @@ struct MinOrCost {
     }
 };
 
+// estimate the cost of evaluating a strict child in a non-strict context
+inline double forced_strict_cost(double estimate, double strict_cost, double rate) {
+    return 0.2 * (rate - estimate) + strict_cost;
+}
+
+// estimate the absolute cost of evaluating a child with a specific in flow
+inline double min_child_cost(InFlow in_flow, const FlowStats &stats, bool allow_force_strict) {
+    if (in_flow.strict()) {
+        return stats.strict_cost;
+    }
+    if (!allow_force_strict) {
+        return stats.cost * in_flow.rate();
+    }
+    return std::min(forced_strict_cost(stats.estimate, stats.strict_cost, in_flow.rate()),
+                    stats.cost * in_flow.rate());
+}
+
 template <typename ADAPTER, typename T>
 double estimate_of_and(ADAPTER adapter, const T &children) {
     double flow = children.empty() ? 0.0 : adapter.estimate(children[0]);
@@ -157,41 +178,57 @@ void sort_partial(ADAPTER adapter, T &children, size_t offset) {
 }
 
 template <typename ADAPTER, typename T, typename F>
-double ordered_cost_of(ADAPTER adapter, const T &children, F flow) {
+double ordered_cost_of(ADAPTER adapter, const T &children, F flow, bool allow_force_strict) {
     double total_cost = 0.0;
     for (const auto &child: children) {
-        double child_cost = flow.strict() ? adapter.strict_cost(child) : (flow.flow() * adapter.cost(child));
+        FlowStats stats(adapter.estimate(child), adapter.cost(child), adapter.strict_cost(child));
+        double child_cost = min_child_cost(InFlow(flow.strict(), flow.flow()), stats, allow_force_strict);
         flow.update_cost(total_cost, child_cost);
-        flow.add(adapter.estimate(child));
+        flow.add(stats.estimate);
     }
     return total_cost;
 }
 
-template <typename ADAPTER, typename T>
-size_t select_strict_and_child(ADAPTER adapter, const T &children) {
-    size_t idx = 0;
+size_t select_strict_and_child(auto adapter, const auto &children) {
+    double est = 1.0;
     double cost = 0.0;
     size_t best_idx = 0;
-    double best_diff = 0.0;
-    double est = 1.0;
-    for (const auto &child: children) {
-        double child_cost = est * adapter.cost(child);
-        double child_strict_cost = adapter.strict_cost(child);
-        double child_est = adapter.estimate(child);
-        if (idx == 0) {
-            best_diff = child_strict_cost - child_cost;
-        } else {
-            double my_diff = (child_strict_cost + child_est * cost) - (cost + child_cost);
-            if (my_diff < best_diff) {
-                best_diff = my_diff;
-                best_idx = idx;
-            }
+    double best_diff = std::numeric_limits<double>::max();
+    for (size_t idx = 0; idx < children.size(); ++idx) {
+        auto child = FlowStats::from(adapter, children[idx]);
+        double child_abs_cost = est * child.cost;
+        double my_diff = (child.strict_cost + child.estimate * cost) - (cost + child_abs_cost);
+        if (my_diff < best_diff) {
+            best_diff = my_diff;
+            best_idx = idx;
         }
-        cost += child_cost;
-        est *= child_est;
-        ++idx;
+        cost += child_abs_cost;
+        est *= child.estimate;
     }
     return best_idx;
+}
+
+auto select_forced_strict_and_child(auto adapter, const auto &children, size_t first) {
+    double est = 1.0;
+    double cost = 0.0;
+    size_t best_idx = 0;
+    double best_diff = std::numeric_limits<double>::max();
+    for (size_t idx = 0; idx < first && idx < children.size(); ++idx) {
+        est *= adapter.estimate(children[idx]);
+    }
+    for (size_t idx = first; idx < children.size(); ++idx) {
+        auto child = FlowStats::from(adapter, children[idx]);
+        double child_abs_cost = est * child.cost;
+        double forced_cost = forced_strict_cost(child.estimate, child.strict_cost, est);
+        double my_diff = (forced_cost + child.estimate * cost) - (cost + child_abs_cost);
+        if (my_diff < best_diff) {
+            best_diff = my_diff;
+            best_idx = idx;
+        }
+        cost += child_abs_cost;
+        est *= child.estimate;
+    }
+    return std::make_pair(best_idx, best_diff);
 }
 
 } // flow
@@ -202,7 +239,7 @@ struct FlowMixin {
         auto my_adapter = flow::IndirectAdapter(adapter, children);
         auto order = flow::make_index(children.size());
         FLOW::sort(my_adapter, order, strict);
-        return flow::ordered_cost_of(my_adapter, order, FLOW(strict));
+        return flow::ordered_cost_of(my_adapter, order, FLOW(strict), false);
     }
     static double cost_of(const auto &children, bool strict) {
         return cost_of(flow::make_adapter(children), children, strict);
