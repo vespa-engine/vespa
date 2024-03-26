@@ -132,7 +132,7 @@ public class PredicateDataTypeTestCase {
             String sd = searchSd(predicateFieldSd("indexing: summary | index | attribute\nindex { arity: 2 }"));
             ApplicationBuilder.createFromString(sd);
         });
-        assertTrue(exception.getMessage().contains("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded."));
+        assertTrue(exception.getMessage().contains("For schema 'p', field 'pf': Use 'attribute' instead of 'index'."));
     }
 
     @Test
@@ -141,7 +141,7 @@ public class PredicateDataTypeTestCase {
             String sd = searchSd(predicateFieldSd("indexing: summary | index \nindex { arity: 2 }"));
             ApplicationBuilder.createFromString(sd);
         });
-        assertTrue(exception.getMessage().contains("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded."));
+        assertTrue(exception.getMessage().contains("For schema 'p', field 'pf': Use 'attribute' instead of 'index'."));
     }
 
 
