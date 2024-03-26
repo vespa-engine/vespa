@@ -31,6 +31,7 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A handler which returns state (health) information from this container instance: Status, metrics and vespa version.
@@ -121,7 +123,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     }
 
     private String resolveContentType(URI requestUri) {
-        if (resolvePath(requestUri).equals(HISTOGRAMS_PATH)) {
+        if (resolvePath(requestUri).equals(HISTOGRAMS_PATH) || isPrometheusRequest(requestUri.getQuery())) {
             return "text/plain; charset=utf-8";
         } else {
             return "application/json";
@@ -135,9 +137,9 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
                 case "" -> ByteBuffer.wrap(apiLinks(requestUri));
                 case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(config));
                 case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
-                case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix));
+                case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix, requestUri.getQuery()));
                 case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
-                default -> ByteBuffer.wrap(buildMetricOutput(suffix)); // XXX should possibly do something else here
+                default -> ByteBuffer.wrap(buildMetricOutput(suffix, requestUri.getQuery())); // XXX should possibly do something else here
             };
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction", e);
@@ -192,7 +194,9 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
                 .put("version", Vtag.currentVersion.toString()));
     }
 
-    private byte[] buildMetricOutput(String consumer) throws JsonProcessingException {
+    private byte[] buildMetricOutput(String consumer, String query) throws JsonProcessingException {
+        if (isPrometheusRequest(query))
+            return buildPrometheusForConsumer(consumer);
         return toPrettyString(buildJsonForConsumer(consumer));
     }
 
@@ -210,6 +214,56 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         ret.set("status", jsonMapper.createObjectNode().put("code", getStatus().name()));
         ret.set(METRICS_PATH, buildJsonForSnapshot(consumer, getSnapshot()));
         return ret;
+    }
+
+    private byte[] buildPrometheusForConsumer(String consumer) {
+        var snapshot = getSnapshot();
+        if (snapshot == null)
+            return new byte[0];
+
+        var timestamp = snapshot.getToTime(TimeUnit.MILLISECONDS);
+        var builder = new StringBuilder();
+        builder.append("# NOTE: THIS API IS NOT INTENDED FOR PUBLIC USE\n");
+        for (var tuple : collapseMetrics(snapshot, consumer)) {
+            var dims = toPrometheusDimensions(tuple.dim);
+            var metricName = prometheusSanitizedName(tuple.key) + "_";
+            if (tuple.val instanceof GaugeMetric gauge) {
+                appendPrometheusEntry(builder, metricName + "max", dims, gauge.getMax(), timestamp);
+                appendPrometheusEntry(builder, metricName + "sum", dims, gauge.getSum(), timestamp);
+                appendPrometheusEntry(builder, metricName + "count", dims, gauge.getCount(), timestamp);
+                if (gauge.getPercentiles().isPresent()) {
+                    for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
+                        appendPrometheusEntry(builder, metricName + prefixAndValue.first + "percentile", dims, prefixAndValue.second, timestamp);
+                    }
+                }
+            } else if (tuple.val instanceof CountMetric count) {
+                appendPrometheusEntry(builder, metricName + "count", dims, count.getCount(), timestamp);
+            }
+        }
+        return builder.toString().getBytes(UTF_8);
+    }
+
+    private void appendPrometheusEntry(StringBuilder builder, String metricName, String dimension, Number value, long timeStamp) {
+        builder.append("# HELP ")
+                .append(metricName)
+                .append("\n# TYPE ")
+                .append(metricName)
+                .append(" untyped\n");
+
+        builder.append(metricName)
+                .append("{").append(dimension).append("}")
+                .append(" ").append(sanitizeIfDouble(value)).append(" ")
+                .append(timeStamp).append("\n");
+    }
+
+    private String toPrometheusDimensions(MetricDimensions dimensions) {
+        if (dimensions == null) return "";
+        StringBuilder builder = new StringBuilder();
+        dimensions.forEach(entry -> {
+            var sanitized = prometheusSanitizedName(entry.getKey()) + "=\"" + entry.getValue() + "\",";
+            builder.append(sanitized);
+        });
+        return builder.toString();
     }
 
     private MetricSnapshot getSnapshot() {
@@ -320,6 +374,19 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
             }
         }
         return metrics;
+    }
+
+    private boolean isPrometheusRequest(String query) {
+        if (query == null) return false;
+        return Arrays.asList(query.split("&")).contains("format=prometheus");
+    }
+
+    private String prometheusSanitizedName(String name) {
+        return name.replaceAll("\\.", "_");
+    }
+
+    private Number sanitizeIfDouble(Number num) {
+        return num instanceof Double d ? sanitizeDouble(d) : num;
     }
 
     private static byte[] toPrettyString(JsonNode resources) throws JsonProcessingException {

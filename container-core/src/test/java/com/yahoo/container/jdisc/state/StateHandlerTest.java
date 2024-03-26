@@ -77,6 +77,35 @@ public class StateHandlerTest extends StateHandlerTestBase {
         assertEquals(2, metricValues.get("count").asInt(), json.toString());
     }
 
+    @Test
+    public void testPrometheusFormat() {
+        var counterContext = StateMetricContext.newInstance(Map.of("label1", "val1", "label2", "val2"));
+        var snapshot = new MetricSnapshot(0L, SNAPSHOT_INTERVAL, TimeUnit.MILLISECONDS);
+        snapshot.set(null, "bar", 20);
+        snapshot.set(null, "bar", 40);
+        snapshot.add(counterContext, "some.counter", 10);
+        snapshot.add(counterContext, "some.counter", 20);
+        snapshotProvider.setSnapshot(snapshot);
+
+        var response = requestAsString(V1_URI + "metrics?format=prometheus");
+        var expectedResponse = """
+                # NOTE: THIS API IS NOT INTENDED FOR PUBLIC USE
+                # HELP bar_max
+                # TYPE bar_max untyped
+                bar_max{} 40.0 300000
+                # HELP bar_sum
+                # TYPE bar_sum untyped
+                bar_sum{} 60.0 300000
+                # HELP bar_count
+                # TYPE bar_count untyped
+                bar_count{} 2 300000
+                # HELP some_counter_count
+                # TYPE some_counter_count untyped
+                some_counter_count{label1="val1",label2="val2",} 30 300000
+                """;
+        assertEquals(expectedResponse, response);
+    }
+
     private JsonNode getFirstMetricValueNode(JsonNode root) {
         assertEquals(1, root.get("metrics").get("values").size(), root.toString());
         JsonNode metricValues = root.get("metrics").get("values").get(0).get("values");
