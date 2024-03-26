@@ -45,7 +45,7 @@ public class PredicateProcessor extends Processor {
         for (SDField field : schema.allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 if (validate && field.doesIndexing()) {
-                    fail(schema, field, "Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
+                    fail(schema, field, "Use 'attribute' instead of 'index'.");
                 }
                 if (field.doesAttributing()) {
                     Attribute attribute = field.getAttributes().get(field.getName());

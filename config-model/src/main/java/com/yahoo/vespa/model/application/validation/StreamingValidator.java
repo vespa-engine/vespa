@@ -31,6 +31,7 @@ public class StreamingValidator implements Validator {
                 if (schemaInfo.getIndexMode() == SchemaInfo.IndexMode.STREAMING) {
                     var deployLogger = context.deployState().getDeployLogger();
                     warnStreamingAttributes(cluster.getClusterName(), schemaInfo.fullSchema(), deployLogger);
+                    warnStreamingIndexFields(cluster.getClusterName(), schemaInfo.fullSchema(), deployLogger);
                     warnStreamingGramMatching(cluster.getClusterName(), schemaInfo.fullSchema(), deployLogger);
                     failStreamingDocumentReferences(cluster.getClusterName(), cluster.getDocumentDB(schemaInfo.name()).getDerivedConfiguration(), context);
                 }
@@ -74,6 +75,11 @@ public class StreamingValidator implements Validator {
                 }
             }
             return;
+        } else if (sd.getDataType() == DataType.PREDICATE) {
+            logger.logApplicationPackage(Level.WARNING,
+                    "For search cluster '" + cluster + "', streaming schema '" + schema +
+                            "', SD field '" + sd.getName() +
+                            "': field type predicate is not supported for streaming search");
         }
     }
 
@@ -89,4 +95,21 @@ public class StreamingValidator implements Validator {
         }
     }
 
+    private static void warnStreamingIndexFields(String cluster, Schema schema, DeployLogger logger) {
+        for (ImmutableSDField sd : schema.allConcreteFields()) {
+            if (sd.doesIndexing()) {
+                warnStreamingIndexField(cluster, schema.getName(), sd, logger);
+            }
+        }
+    }
+
+    private static void warnStreamingIndexField(String cluster, String schema, ImmutableSDField sd, DeployLogger logger) {
+        if (sd.getDataType() == DataType.URI) {
+            logger.logApplicationPackage(Level.WARNING,
+                    "For search cluster '" + cluster + "', streaming schema '" + schema +
+                            "', SD field '" + sd.getName() +
+                            "': field type uri is not supported for streaming search, it will be handled as a string field");
+
+        }
+    }
 }
