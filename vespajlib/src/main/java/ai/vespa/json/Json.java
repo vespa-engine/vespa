@@ -219,7 +219,7 @@ public class Json implements Iterable<Json> {
                 SlimeUtils.copyObject(object.cursor, cursor.addObject()); return this;
             }
             public Builder.Array add(Json json) {
-                SlimeUtils.addValue(json.inspector, cursor.addObject()); return this;
+                SlimeUtils.addValue(json.inspector, cursor); return this;
             }
             public Builder.Array add(Json.Builder builder) { return add(builder.build()); }
 
@@ -258,7 +258,9 @@ public class Json implements Iterable<Json> {
             public Builder.Object set(String field, long value) { cursor.setLong(field, value); return this; }
             public Builder.Object set(String field, double value) { cursor.setDouble(field, value); return this; }
             public Builder.Object set(String field, boolean value) { cursor.setBool(field, value); return this; }
-            public Builder.Object set(String field, BigDecimal value) { cursor.setString(field, value.toPlainString()); return this; }
+            public Builder.Object set(String field, BigDecimal value) {
+                cursor.setString(field, value.stripTrailingZeros().toPlainString()); return this;
+            }
             public Builder.Object set(String field, Instant timestamp) { cursor.setString(field, timestamp.toString()); return this; }
         }
 
