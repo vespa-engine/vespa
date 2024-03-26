@@ -4077,6 +4077,26 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.llm.InferenceParameters" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.function.Function)",
+      "public void <init>(java.lang.String, java.util.function.Function)",
+      "public void setApiKey(java.lang.String)",
+      "public java.util.Optional getApiKey()",
+      "public void setEndpoint(java.lang.String)",
+      "public java.util.Optional getEndpoint()",
+      "public java.util.Optional get(java.lang.String)",
+      "public java.util.Optional getDouble(java.lang.String)",
+      "public java.util.Optional getInt(java.lang.String)",
+      "public void ifPresent(java.lang.String, java.util.function.Consumer)"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.llm.LanguageModel" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -4086,23 +4106,20 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.util.List complete(ai.vespa.llm.completion.Prompt)",
-      "public abstract java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, java.util.function.Consumer)"
+      "public abstract java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public abstract java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.client.openai.OpenAiClient$Builder" : {
-    "superClass" : "java.lang.Object",
+  "ai.vespa.llm.LanguageModelException" : {
+    "superClass" : "java.lang.RuntimeException",
     "interfaces" : [ ],
     "attributes" : [
       "public"
     ],
     "methods" : [
-      "public void <init>(java.lang.String)",
-      "public ai.vespa.llm.client.openai.OpenAiClient$Builder model(java.lang.String)",
-      "public ai.vespa.llm.client.openai.OpenAiClient$Builder temperature(double)",
-      "public ai.vespa.llm.client.openai.OpenAiClient$Builder maxTokens(long)",
-      "public ai.vespa.llm.client.openai.OpenAiClient build()"
+      "public void <init>(int, java.lang.String)",
+      "public int code()"
     ],
     "fields" : [ ]
   },
@@ -4115,8 +4132,9 @@
       "public"
     ],
     "methods" : [
-      "public java.util.List complete(ai.vespa.llm.completion.Prompt)",
-      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, java.util.function.Consumer)"
+      "public void <init>()",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   },
@@ -4135,7 +4153,8 @@
     "fields" : [
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason length",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason stop",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason none"
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason none",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason error"
     ]
   },
   "ai.vespa.llm.completion.Completion" : {
@@ -4151,6 +4170,7 @@
       "public java.lang.String text()",
       "public ai.vespa.llm.completion.Completion$FinishReason finishReason()",
       "public static ai.vespa.llm.completion.Completion from(java.lang.String)",
+      "public static ai.vespa.llm.completion.Completion from(java.lang.String, ai.vespa.llm.completion.Completion$FinishReason)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)"
@@ -4212,8 +4232,8 @@
     ],
     "methods" : [
       "public void <init>(ai.vespa.llm.test.MockLanguageModel$Builder)",
-      "public java.util.List complete(ai.vespa.llm.completion.Prompt)",
-      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, java.util.function.Consumer)"
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   }

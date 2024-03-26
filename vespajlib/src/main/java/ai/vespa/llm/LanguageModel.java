@@ -17,8 +17,10 @@ import java.util.function.Consumer;
 @Beta
 public interface LanguageModel {
 
-    List<Completion> complete(Prompt prompt);
+    List<Completion> complete(Prompt prompt, InferenceParameters options);
 
-    CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, Consumer<Completion> action);
+    CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
+                                                             InferenceParameters options,
+                                                             Consumer<Completion> consumer);
 
 }

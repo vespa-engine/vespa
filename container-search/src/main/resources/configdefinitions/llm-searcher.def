@@ -1,0 +1,11 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package=ai.vespa.llm
+
+# Query propertry prefix for options
+propertyPrefix string default="llm"
+
+# Should the searcher stream tokens or wait for the entire thing?
+stream bool default=true
+
+# The external LLM provider - the id of a LanguageModel component
+providerId string default=""

@@ -2,6 +2,7 @@
 package ai.vespa.llm.test;
 
 import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.api.annotations.Beta;
@@ -24,12 +25,14 @@ public class MockLanguageModel implements LanguageModel {
     }
 
     @Override
-    public List<Completion> complete(Prompt prompt) {
+    public List<Completion> complete(Prompt prompt, InferenceParameters options) {
         return completer.apply(prompt);
     }
 
     @Override
-    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, Consumer<Completion> action) {
+    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
+                                                                    InferenceParameters options,
+                                                                    Consumer<Completion> action) {
         throw new RuntimeException("Not implemented");
     }
 
