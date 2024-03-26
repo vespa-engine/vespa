@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 /**
  * @author yj-jtakagi
  * @author gjoranv
@@ -53,6 +56,15 @@ public class PrometheusUtil {
                     }
                     sampleList.add(new Sample(metricName, labels, labelValues, metric.getValue().doubleValue(), packet.timestamp * 1000));
                 }
+            }
+            if (!packets.isEmpty()) {
+                var firstPacket = packets.get(0);
+                var statusMetricName = serviceName + "_status";
+                // MetricsPacket status 0 means OK, but it's the opposite in Prometheus.
+                var statusMetricValue = (firstPacket.statusCode == 0) ? 1 : 0;
+                var sampleList = singletonList(new Sample(statusMetricName, emptyList(), emptyList(),
+                        statusMetricValue, firstPacket.timestamp * 1000));
+                metricFamilySamples.add(new MetricFamilySamples(statusMetricName, Collector.Type.UNKNOWN, "status of service", sampleList));
             }
         }));
 

@@ -83,6 +83,12 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
         assertTrue(dummy0.contains("vespa_service=\"vespa_dummy\""));
     }
 
+    @Test
+    public void response_contains_service_status() {
+        assertTrue(valuesResponse.contains("vespa_dummy_status 1.0"));
+        assertTrue(valuesResponse.contains("vespa_down_service_status 0.0"));
+    }
+
     // Find the first line that contains the given string
     private String getLine(String raw, String searchString) {
         for (var s : raw.split("\\n")) {
