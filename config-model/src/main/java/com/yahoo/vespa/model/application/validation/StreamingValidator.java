@@ -39,12 +39,15 @@ public class StreamingValidator implements Validator {
         }
     }
 
+    private static void logWarning(String cluster, Schema schema, ImmutableSDField sd, DeployLogger logger, String message) {
+        logger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster +
+                "', streaming schema '" + schema.getName() + "', SD field '" + sd.getName() + "': " + message);
+    }
+
     private static void warnStreamingGramMatching(String cluster, Schema schema, DeployLogger logger) {
         for (ImmutableSDField sd : schema.allConcreteFields()) {
             if (sd.getMatching().getType() == MatchType.GRAM) {
-                logger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster + "', streaming schema '" + schema.getName() +
-                                                            "', SD field '" + sd.getName() +
-                                                            "': n-gram matching is not supported for streaming search.");
+                logWarning(cluster, schema, sd, logger, "n-gram matching is not supported for streaming search.");
             }
         }
     }
@@ -55,12 +58,12 @@ public class StreamingValidator implements Validator {
     private static void warnStreamingAttributes(String cluster, Schema schema, DeployLogger logger) {
         for (ImmutableSDField sd : schema.allConcreteFields()) {
             if (sd.doesAttributing()) {
-                warnStreamingAttribute(cluster, schema.getName(), sd, logger);
+                warnStreamingAttribute(cluster, schema, sd, logger);
             }
         }
     }
 
-    private static void warnStreamingAttribute(String cluster, String schema, ImmutableSDField sd, DeployLogger logger) {
+    private static void warnStreamingAttribute(String cluster, Schema schema, ImmutableSDField sd, DeployLogger logger) {
         // If the field is numeric, we can't print this, because we may have converted the field to
         // attribute indexing ourselves (IntegerIndex2Attribute)
         if (sd.getDataType() instanceof NumericDataType) return;
@@ -68,18 +71,13 @@ public class StreamingValidator implements Validator {
         if (sd.getDataType() instanceof TensorDataType) {
             for (var fieldAttribute : sd.getAttributes().values()) {
                 if (fieldAttribute.hnswIndexParams().isPresent()) {
-                    logger.logApplicationPackage(Level.WARNING,
-                            "For search cluster '" + cluster + "', streaming schema '" + schema +
-                                    "', SD field '" + sd.getName() +
-                                    "': hnsw index is not relevant and not supported, ignoring setting");
+                    logWarning(cluster, schema, sd, logger,
+                            "hnsw index is not relevant and not supported, ignoring setting");
                 }
             }
             return;
         } else if (sd.getDataType() == DataType.PREDICATE) {
-            logger.logApplicationPackage(Level.WARNING,
-                    "For search cluster '" + cluster + "', streaming schema '" + schema +
-                            "', SD field '" + sd.getName() +
-                            "': field type predicate is not supported for streaming search");
+            logWarning(cluster, schema, sd, logger, "field type predicate is not supported for streaming search");
         }
     }
 
@@ -98,17 +96,15 @@ public class StreamingValidator implements Validator {
     private static void warnStreamingIndexFields(String cluster, Schema schema, DeployLogger logger) {
         for (ImmutableSDField sd : schema.allConcreteFields()) {
             if (sd.doesIndexing()) {
-                warnStreamingIndexField(cluster, schema.getName(), sd, logger);
+                warnStreamingIndexField(cluster, schema, sd, logger);
             }
         }
     }
 
-    private static void warnStreamingIndexField(String cluster, String schema, ImmutableSDField sd, DeployLogger logger) {
+    private static void warnStreamingIndexField(String cluster, Schema schema, ImmutableSDField sd, DeployLogger logger) {
         if (sd.getDataType() == DataType.URI) {
-            logger.logApplicationPackage(Level.WARNING,
-                    "For search cluster '" + cluster + "', streaming schema '" + schema +
-                            "', SD field '" + sd.getName() +
-                            "': field type uri is not supported for streaming search, it will be handled as a string field");
+            logWarning(cluster, schema, sd, logger,
+                    "field type uri is not supported for streaming search, it will be handled as a string field");
 
         }
     }
