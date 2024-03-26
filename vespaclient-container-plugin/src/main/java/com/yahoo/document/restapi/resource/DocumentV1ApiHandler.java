@@ -843,7 +843,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                     ackDocuments();
                 }
                 @Override public void failed(Throwable t) {
-                    log.log(WARNING, "Error writing documents", t);
+                    // This is typically caused by the client closing the connection during production of the response content.
+                    log.log(FINE, "Error writing documents", t);
                     completed();
                 }
             });
