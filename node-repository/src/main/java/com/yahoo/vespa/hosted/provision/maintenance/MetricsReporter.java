@@ -169,8 +169,6 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
      * NB: Keep this metric set in sync with internal configserver metric pre-aggregation
      */
     private void updateNodeMetrics(Node node, ServiceModel serviceModel) {
-        if (node.state() != State.active)
-            return;
         Metric.Context context;
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent()) {
@@ -235,7 +233,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     long suspendedSeconds = info.suspendedSince()
                             .map(suspendedSince -> Duration.between(suspendedSince, clock().instant()).getSeconds())
                             .orElse(0L);
-                    metric.set(ConfigServerMetrics.SUSPENDED_SECONDS.baseName(), suspendedSeconds, context);
+                    metric.add(ConfigServerMetrics.SUSPENDED_SECONDS.baseName(), suspendedSeconds, context);
                 });
 
         long numberOfServices;
