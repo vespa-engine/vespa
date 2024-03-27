@@ -101,6 +101,7 @@ public:
 
     static vespalib::string stripNonFields(vespalib::stringref rawIndex);
     search::attribute::DistanceMetric get_distance_metric(const vespalib::string& name) const;
+    static search::Normalizing convert_normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode);
 
 private:
     FieldSearchSpecMapT         _specMap;         // mapping from field id to field search spec

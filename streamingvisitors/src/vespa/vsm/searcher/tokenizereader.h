@@ -43,6 +43,10 @@ public:
         _q = _q_start;
         return token_len;
     }
+    template <bool exact_match>
+    size_t tokenize_helper(Normalizing norm_mode);
+    size_t tokenize(Normalizing norm_mode) { return tokenize_helper<false>(norm_mode); }
+    size_t tokenize_exact_match(Normalizing norm_mode) { return tokenize_helper<true>(norm_mode); }
 private:
     void fold(ucs4_t c);
     const byte *_p;

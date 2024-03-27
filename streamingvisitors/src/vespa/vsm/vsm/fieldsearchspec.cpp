@@ -273,16 +273,17 @@ buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const FieldSearch
     return ifm;
 }
 
+}
+
 search::Normalizing
-normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode) {
+FieldSearchSpecMap::convert_normalize_mode(VsmfieldsConfig::Fieldspec::Normalize normalize_mode)
+{
     switch (normalize_mode) {
         case VsmfieldsConfig::Fieldspec::Normalize::NONE: return search::Normalizing::NONE;
         case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE: return search::Normalizing::LOWERCASE;
         case VsmfieldsConfig::Fieldspec::Normalize::LOWERCASE_AND_FOLD: return search::Normalizing::LOWERCASE_AND_FOLD;
     }
     return search::Normalizing::LOWERCASE_AND_FOLD;
-}
-
 }
 
 void
@@ -292,7 +293,7 @@ FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf, const search::
     for(const VsmfieldsConfig::Fieldspec & cfs : conf->fieldspec) {
         LOG(spam, "Parsing %s", cfs.name.c_str());
         FieldIdT fieldId = specMap().size();
-        FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, normalize_mode(cfs.normalize), cfs.arg1, cfs.maxlength);
+        FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, convert_normalize_mode(cfs.normalize), cfs.arg1, cfs.maxlength);
         _specMap[fieldId] = std::move(fss);
         _nameIdMap.add(cfs.name, fieldId);
         LOG(spam, "M in %d = %s", fieldId, cfs.name.c_str());

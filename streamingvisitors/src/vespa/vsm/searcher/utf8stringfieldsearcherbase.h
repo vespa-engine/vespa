@@ -60,9 +60,6 @@ public:
 protected:
     SharedSearcherBuf _buf;
 
-    template<typename Reader>
-    void tokenize(Reader & reader);
-
     /**
      * Matches the given query term against the words in the given field reference
      * using exact or prefix match strategy.
