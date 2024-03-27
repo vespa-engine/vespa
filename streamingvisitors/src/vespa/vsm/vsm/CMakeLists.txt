@@ -8,6 +8,8 @@ vespa_add_library(vsm_vsmbase OBJECT
     flattendocsumwriter.cpp
     query_term_filter_factory.cpp
     snippetmodifier.cpp
+    tokens_converter.cpp
+    tokens_dfw.cpp
     vsm-adapter.cpp
     DEPENDS
     vsm_vconfig
