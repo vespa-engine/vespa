@@ -25,10 +25,10 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Tests roundtrip serialization (JSON -> DocumentUpdate -> Buffer -> DocumentUpdate -> JSON) of document updates.
@@ -104,11 +104,7 @@ public class DocumentUpdateJsonSerializerTest {
         DocumentUpdateJsonSerializer serializer = new DocumentUpdateJsonSerializer(outputStream);
         serializer.serialize(update);
 
-        try {
-            return new String(outputStream.toByteArray(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return outputStream.toString(UTF_8);
     }
 
     private static void roundtripSerializeJsonAndMatch(String jsonDoc, String expectedJsonDoc) {
@@ -188,6 +184,29 @@ public class DocumentUpdateJsonSerializerTest {
                 "            'assign': {",
                 "                'meow': 218478,",
                 "                'slurp': 2123",
+                "            }",
+                "        }",
+                "    }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void testAddWeightedSet() {
+        roundtripSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fields': {",
+                "        'int_set': {",
+                "            'add': {",
+                "                '123': 2,",
+                "                '789': 3",
+                "            }",
+                "        },",
+                "        'string_set': {",
+                "            'add': {",
+                "                'meow': 4,",
+                "                'slurp': 5",
                 "            }",
                 "        }",
                 "    }",

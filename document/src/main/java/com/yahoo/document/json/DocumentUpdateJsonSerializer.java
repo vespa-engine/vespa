@@ -9,6 +9,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.FieldPath;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReference;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -135,8 +136,7 @@ public class DocumentUpdateJsonSerializer {
                 if (writeArithmeticFieldPathUpdate(update, generator)) continue;
                 generator.writeFieldName(update.getUpdateType().name().toLowerCase());
 
-                if (update instanceof AssignFieldPathUpdate) {
-                    AssignFieldPathUpdate assignUp = (AssignFieldPathUpdate) update;
+                if (update instanceof AssignFieldPathUpdate assignUp) {
                     if (assignUp.getExpression() != null) {
                         throw new RuntimeException("Unable to parse expression: " + assignUp.getExpression());
                     } else {
@@ -176,11 +176,11 @@ public class DocumentUpdateJsonSerializer {
             wrapIOException(() -> {
                 generator.writeObjectFieldStart(fieldUpdate.getField().getName());
 
-                ArrayList<ValueUpdate> removeValueUpdates = new ArrayList<>();
-                ArrayList<ValueUpdate> addValueUpdates = new ArrayList<>();
+                ArrayList<ValueUpdate<?>> removeValueUpdates = new ArrayList<>();
+                ArrayList<ValueUpdate<?>> addValueUpdates = new ArrayList<>();
 
-                final DataType dataType = fieldUpdate.getField().getDataType();
-                for (ValueUpdate valueUpdate : fieldUpdate.getValueUpdates()) {
+                DataType dataType = fieldUpdate.getField().getDataType();
+                for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
                     if (valueUpdate instanceof RemoveValueUpdate) {
                         removeValueUpdates.add(valueUpdate);
                     } else if (valueUpdate instanceof AddValueUpdate) {
@@ -197,19 +197,44 @@ public class DocumentUpdateJsonSerializer {
             });
         }
 
-        private void writeAddOrRemoveValueUpdates(String arrayFieldName, ArrayList<ValueUpdate> valueUpdates, DataType dataType) throws IOException {
-            if (!valueUpdates.isEmpty()) {
-                generator.writeArrayFieldStart(arrayFieldName);
-                for (ValueUpdate valueUpdate : valueUpdates) {
-                    valueUpdate.serialize(this, dataType);
-                }
-                generator.writeEndArray();
+        private void writeAddOrRemoveValueUpdates(String operation, ArrayList<ValueUpdate<?>> valueUpdates, DataType dataType) throws IOException {
+            if (valueUpdates.isEmpty()) return;
+
+            if (dataType instanceof WeightedSetDataType)
+                writeAddOrRemoveValueUpdatesForWeightedSet(operation, valueUpdates, dataType);
+            else
+                writeAddOrRemoveValueUpdatesForArray(operation, valueUpdates, dataType);
+        }
+
+        private void writeAddOrRemoveValueUpdatesForArray(String operation, ArrayList<ValueUpdate<?>> valueUpdates, DataType dataType) throws IOException {
+            generator.writeArrayFieldStart(operation);
+            for (ValueUpdate<?> valueUpdate : valueUpdates) {
+                valueUpdate.serialize(this, dataType);
             }
+            generator.writeEndArray();
+        }
+
+        private void writeAddOrRemoveValueUpdatesForWeightedSet(String operation, ArrayList<ValueUpdate<?>> valueUpdates, DataType dataType) throws IOException {
+            generator.writeObjectFieldStart(operation);
+            for (ValueUpdate<?> valueUpdate : valueUpdates) {
+                valueUpdate.serialize(this, dataType);
+            }
+            generator.writeEndObject();
         }
 
         @Override
         public void write(AddValueUpdate update, DataType superType) {
-            update.getValue().serialize(this);
+            if (superType instanceof WeightedSetDataType)
+                writeWeightedSet(update);
+            else
+                update.getValue().serialize(this);
+        }
+
+        private void writeWeightedSet(AddValueUpdate update) {
+            wrapIOException(() -> {
+                generator.writeFieldName(update.getValue().toString());
+                generator.writeNumber(update.getWeight());
+            });
         }
 
         /* This is the 'match' operation */
@@ -226,25 +251,13 @@ public class DocumentUpdateJsonSerializer {
 
         @Override
         public void write(ArithmeticValueUpdate update) {
-            final ArithmeticValueUpdate.Operator operator = update.getOperator();
-            final String operationKey;
-
-            switch (operator) {
-                case ADD:
-                    operationKey = "increment";
-                    break;
-                case DIV:
-                    operationKey = "divide";
-                    break;
-                case MUL:
-                    operationKey = "multiply";
-                    break;
-                case SUB:
-                    operationKey = "decrement";
-                    break;
-                default:
-                    throw new RuntimeException("Unrecognized arithmetic operator '%s'".formatted(operator.name));
-            }
+            ArithmeticValueUpdate.Operator operator = update.getOperator();
+            String operationKey = switch (operator) {
+                case ADD -> "increment";
+                case DIV -> "divide";
+                case MUL -> "multiply";
+                case SUB -> "decrement";
+            };
 
             wrapIOException(() -> generator.writeFieldName(operationKey));
             update.getValue().serialize(this);
