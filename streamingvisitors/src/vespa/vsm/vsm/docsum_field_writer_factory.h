@@ -8,7 +8,7 @@
 namespace vsm {
 
 /*
- * Factory interface class for creating docsum field writers, adjusted for
+ * Factory class for creating docsum field writers, adjusted for
  * streaming search.
  */
 class DocsumFieldWriterFactory : public search::docsummary::DocsumFieldWriterFactory
