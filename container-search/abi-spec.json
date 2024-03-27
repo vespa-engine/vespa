@@ -9148,5 +9148,60 @@
       "public int getTo()"
     ],
     "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.ConfigurableLanguageModel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.LlmClientConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
+      "protected java.lang.String getApiKey(ai.vespa.llm.InferenceParameters)",
+      "protected void setApiKey(ai.vespa.llm.InferenceParameters)",
+      "protected java.lang.String getEndpoint()",
+      "protected void setEndpoint(ai.vespa.llm.InferenceParameters)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.OpenAI" : {
+    "superClass" : "ai.vespa.llm.clients.ConfigurableLanguageModel",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.LlmClientConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.search.LLMSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [ ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.search.RAGSearcher" : {
+    "superClass" : "ai.vespa.llm.search.LLMSearcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "protected ai.vespa.llm.completion.Prompt buildPrompt(com.yahoo.search.Query, com.yahoo.search.Result)"
+    ],
+    "fields" : [ ]
   }
 }

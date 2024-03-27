@@ -22,7 +22,10 @@ public record Completion(String text, FinishReason finishReason) {
         stop,
 
         /** The completion is not finished yet, more tokens are incoming. */
-        none
+        none,
+
+        /** An error occurred while generating the completion */
+        error
     }
 
     public Completion(String text, FinishReason finishReason) {
@@ -37,7 +40,11 @@ public record Completion(String text, FinishReason finishReason) {
     public FinishReason finishReason() { return finishReason; }
 
     public static Completion from(String text) {
-        return new Completion(text, FinishReason.stop);
+        return from(text, FinishReason.stop);
+    }
+
+    public static Completion from(String text, FinishReason reason) {
+        return new Completion(text, reason);
     }
 
 }

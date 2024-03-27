@@ -1,0 +1,8 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package=ai.vespa.llm
+
+# The name of the secret containing the api key
+apiKeySecretName string default=""
+
+# Endpoint for LLM client - if not set reverts to default for client
+endpoint string default=""
