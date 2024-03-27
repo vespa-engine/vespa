@@ -26,8 +26,7 @@ UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, size_t mintsz)
 
     TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), fn);
     while ( reader.hasNext() ) {
-        tokenize(reader);
-        size_t fl = reader.complete();
+        size_t fl = reader.tokenize(normalize_mode());
         for (auto qt : _qtl) {
             const cmptype_t * term;
             termsize_t tsz = qt->term(term);

@@ -26,8 +26,7 @@ UTF8SuffixStringFieldSearcher::matchTerms(const FieldRef & f, size_t mintsz)
 
     TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), dstbuf);
     while ( reader.hasNext() ) {
-        tokenize(reader);
-        size_t tokenlen = reader.complete();
+        size_t tokenlen = reader.tokenize(normalize_mode());
         for (auto qt : _qtl) {
             const cmptype_t * term;
             termsize_t tsz = qt->term(term);

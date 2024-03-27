@@ -10,21 +10,6 @@ using search::byte;
 
 namespace vsm {
 
-template<typename Reader>
-void
-UTF8StringFieldSearcherBase::tokenize(Reader & reader) {
-    ucs4_t c(0);
-    Normalizing norm_mode = normalize_mode();
-    while (reader.hasNext() && ! Fast_UnicodeUtil::IsWordChar(c = reader.next()));
-
-    if (Fast_UnicodeUtil::IsWordChar(c)) {
-        reader.normalize(c, norm_mode);
-        while (reader.hasNext() && Fast_UnicodeUtil::IsWordChar(c = reader.next())) {
-            reader.normalize(c, norm_mode);
-        }
-    }
-}
-
 size_t
 UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt)
 {
@@ -38,8 +23,7 @@ UTF8StringFieldSearcherBase::matchTermRegular(const FieldRef & f, QueryTerm & qt
 
     TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), fn);
     while ( reader.hasNext() ) {
-        tokenize(reader);
-        size_t fl = reader.complete();
+        size_t fl = reader.tokenize(normalize_mode());
         if ((tsz <= fl) && (prefix() || qt.isPrefix() || (tsz == fl))) {
             const cmptype_t *tt=term, *et=term+tsz;
             for (const cmptype_t *fnt=fn; (tt < et) && (*tt == *fnt); tt++, fnt++);
@@ -127,8 +111,7 @@ UTF8StringFieldSearcherBase::matchTermSuffix(const FieldRef & f, QueryTerm & qt)
 
     TokenizeReader reader(reinterpret_cast<const byte *> (f.data()), f.size(), dstbuf);
     while ( reader.hasNext() ) {
-        tokenize(reader);
-        size_t tokenlen = reader.complete();
+        size_t tokenlen = reader.tokenize(normalize_mode());
         if (matchTermSuffix(term, tsz, dstbuf, tokenlen)) {
             addHit(qt, words);
         }
