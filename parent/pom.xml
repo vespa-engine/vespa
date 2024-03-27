@@ -594,6 +594,11 @@
                 <version>${onnxruntime.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>de.kherud</groupId>
+                <artifactId>llama</artifactId>
+                <version>${kherud.llama.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-cert-refresher</artifactId>
                 <version>${athenz.vespa.version}</version>
