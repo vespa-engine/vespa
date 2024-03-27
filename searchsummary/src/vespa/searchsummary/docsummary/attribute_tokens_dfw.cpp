@@ -170,8 +170,12 @@ AttributeTokensDFW::insertField(uint32_t docid, const IDocsumStoreDocument*, Get
 {
     auto& field_writer_state = state._fieldWriterStates[_state_index];
     if (!field_writer_state) {
-        const auto& attr = *state.getAttribute(getIndex());
-        field_writer_state = make_field_writer_state(attr, state.get_stash());
+        const auto attr = state.getAttribute(getIndex());
+        if (attr != nullptr) {
+            field_writer_state = make_field_writer_state(*attr, state.get_stash());
+        } else {
+            field_writer_state = &state.get_stash().create<EmptyDocsumFieldWriterState>();
+        }
     }
     field_writer_state->insertField(docid, target);
 }
