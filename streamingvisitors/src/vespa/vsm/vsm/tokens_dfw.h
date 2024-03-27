@@ -8,8 +8,9 @@
 namespace vsm {
 
 /*
- * Class for writing annotated string field values from document as
- * arrays containing the tokens.
+ * Class for writing string field values from document as
+ * arrays containing the tokens. Tokenization is performed
+ * on the fly using the exact_match and normalize_mode settings.
  */
 class TokensDFW : public search::docsummary::DocsumFieldWriter
 {
