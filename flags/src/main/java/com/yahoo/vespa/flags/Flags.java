@@ -406,7 +406,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static UnboundBooleanFlag CALYPSO_ENABLED = defineFeatureFlag(
-            "calypso-enabled", false,
+            "calypso-enabled", true,
             List.of("mortent"), "2024-02-19", "2024-05-01",
             "Whether to enable calypso for host",
             "Takes effect immediately", HOSTNAME);
