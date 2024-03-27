@@ -96,10 +96,10 @@ public class ConfigurableLanguageModelTest {
         return new InferenceParameters(MockLLMClient.ACCEPTED_API_KEY, s -> lookupParameter(s, Collections.emptyMap()));
     }
 
-    private LlmClientConfig modelParams(String apiKey, String endpoint) {
+    private LlmClientConfig modelParams(String apiKeySecretName, String endpoint) {
         var config = new LlmClientConfig.Builder();
-        if (apiKey != null) {
-            config.apiKey(apiKey);
+        if (apiKeySecretName != null) {
+            config.apiKeySecretName(apiKeySecretName);
         }
         if (endpoint != null) {
             config.endpoint(endpoint);

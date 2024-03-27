@@ -197,28 +197,28 @@ public class LLMSearcherTest {
     }
 
     static MockLLMClient createLLMClient() {
-        var config = new LlmClientConfig.Builder().apiKey("api-key").build();
+        var config = new LlmClientConfig.Builder().apiKeySecretName("api-key").build();
         var secretStore = ConfigurableLanguageModelTest.createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
         var generator = createGenerator();
         return new MockLLMClient(config, secretStore, generator, null);
     }
 
     static MockLLMClient createLLMClient(String id) {
-        var config = new LlmClientConfig.Builder().apiKey("api-key").build();
+        var config = new LlmClientConfig.Builder().apiKeySecretName("api-key").build();
         var secretStore = ConfigurableLanguageModelTest.createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
         var generator = createIdGenerator(id);
         return new MockLLMClient(config, secretStore, generator, null);
     }
 
     static MockLLMClient createLLMClient(ExecutorService executor) {
-        var config = new LlmClientConfig.Builder().apiKey("api-key").build();
+        var config = new LlmClientConfig.Builder().apiKeySecretName("api-key").build();
         var secretStore = ConfigurableLanguageModelTest.createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
         var generator = createGenerator();
         return new MockLLMClient(config, secretStore, generator, executor);
     }
 
     static MockLLMClient createLLMClientWithoutSecretStore() {
-        var config = new LlmClientConfig.Builder().apiKey("api-key").build();
+        var config = new LlmClientConfig.Builder().apiKeySecretName("api-key").build();
         var secretStore = new SecretStoreProvider();
         var generator = createGenerator();
         return new MockLLMClient(config, secretStore.get(), generator, null);

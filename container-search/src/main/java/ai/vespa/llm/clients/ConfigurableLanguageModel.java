@@ -28,7 +28,7 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
 
     @Inject
     public ConfigurableLanguageModel(LlmClientConfig config, SecretStore secretStore) {
-        this.apiKey = findApiKeyInSecretStore(config.apiKey(), secretStore);  // is this implicitly assuming external store?
+        this.apiKey = findApiKeyInSecretStore(config.apiKeySecretName(), secretStore);
         this.endpoint = config.endpoint();
     }
 
@@ -67,6 +67,5 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
     protected void setEndpoint(InferenceParameters params) {
         params.setEndpoint(endpoint);
     }
-
 
 }
