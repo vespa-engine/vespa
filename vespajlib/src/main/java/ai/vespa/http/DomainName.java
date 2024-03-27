@@ -33,7 +33,7 @@ public class DomainName extends PatternedStringWrapper<DomainName> {
     }
 
     public String leafLabel() {
-        int offset = value().lastIndexOf('.');
+        int offset = value().indexOf('.');
         return offset == -1 ? value() : value().substring(0, offset);
     }
 
