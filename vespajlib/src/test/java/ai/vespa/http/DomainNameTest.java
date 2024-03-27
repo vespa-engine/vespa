@@ -34,6 +34,7 @@ class DomainNameTest {
 
         assertEquals("foo", DomainName.of("foo").leafLabel());
         assertEquals("foo", DomainName.of("foo.com").leafLabel());
+        assertEquals("foo", DomainName.of("foo.bar.baz.com").leafLabel());
     }
 
 }
