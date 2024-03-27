@@ -50,12 +50,12 @@ throw_if_nullptr(const std::unique_ptr<DocsumFieldWriter>& writer,
     }
 }
 
-void
-throw_missing_source(const vespalib::string& command)
-{
-    throw IllegalArgumentException("Missing source for command '" + command + "'.");
 }
 
+void
+DocsumFieldWriterFactory::throw_missing_source(const vespalib::string& command)
+{
+    throw IllegalArgumentException("Missing source for command '" + command + "'.");
 }
 
 std::unique_ptr<DocsumFieldWriter>

@@ -20,6 +20,7 @@ class DocsumFieldWriterFactory : public IDocsumFieldWriterFactory
     const IDocsumEnvironment& _env;
     const IQueryTermFilterFactory& _query_term_filter_factory;
 protected:
+    static void throw_missing_source(const vespalib::string& command);
     const IDocsumEnvironment& getEnvironment() const noexcept { return _env; }
     bool has_attribute_manager() const noexcept;
 public:

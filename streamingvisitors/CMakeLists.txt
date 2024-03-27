@@ -30,4 +30,5 @@ vespa_define_module(
     src/tests/searcher
     src/tests/searchvisitor
     src/tests/textutil
+    src/tests/tokens_converter
 )
