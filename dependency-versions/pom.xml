@@ -36,7 +36,7 @@
         <error-prone-annotations.vespa.version>2.26.1</error-prone-annotations.vespa.version>
         <guava.vespa.version>33.0.0-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
-        <jackson2.vespa.version>2.16.2</jackson2.vespa.version>
+        <jackson2.vespa.version>2.17.0</jackson2.vespa.version>
         <jackson-databind.vespa.version>${jackson2.vespa.version}</jackson-databind.vespa.version>
         <jakarta.inject.vespa.version>2.0.1</jakarta.inject.vespa.version>
         <javax.inject.vespa.version>1</javax.inject.vespa.version>
