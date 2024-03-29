@@ -15,7 +15,6 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 import java.nio.file.Paths;
 import java.util.BitSet;
