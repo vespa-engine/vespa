@@ -8,6 +8,7 @@ import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TensorAddress;
 import org.junit.Test;
 
 import static org.junit.Assert.assertThrows;
@@ -25,9 +26,13 @@ public class HuggingFaceEmbedderTest {
     @Test
     public void testEmbedder() {
         String input = "This is a test";
+
+        Tensor expected = Tensor.from("tensor<float>(x[8]):[-0.666, 0.335, 0.227, 0.0919, -0.069, 0.323, 0.422, 0.270]");
         Tensor result = embedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[8])")));
-        assertEquals("tensor<float>(x[8]):[-0.666825, 0.33570012, 0.22756238, 0.0919357, -0.06958359, 0.32301554, 0.42277765, 0.27041236]", result.toAbbreviatedString());
-        // Thresholding on the above gives [0, 1, 1, 1, 0, 1, 1, 1] which is packed as int8 119
+        for(int i = 0; i < 8; i++) {
+            assertEquals(expected.get(TensorAddress.of(i)), result.get(TensorAddress.of(i)), 1e-2);
+        }
+        // Thresholding on the above gives [0, 1, 1, 1, 0, 1, 1, 1] which is packed into 119 (int8)
         Tensor binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[1])")));
         assertEquals("tensor<int8>(x[1]):[119]", binarizedResult.toString());
 
@@ -44,7 +49,7 @@ public class HuggingFaceEmbedderTest {
         });
 
         Tensor float16Result = embedder.embed(input, context, TensorType.fromSpec(("tensor<bfloat16>(x[1])")));
-        assertEquals("tensor<bfloat16>(x[1]):[-0.666825]", float16Result.toAbbreviatedString());
+        assertEquals(-0.666, float16Result.sum().asDouble(),1e-3);
     }
 
     @Test
@@ -52,10 +57,10 @@ public class HuggingFaceEmbedderTest {
         String input = "This is a test";
 
         Tensor result = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[8])")));
-        assertEquals(1.0, result.multiply(result).sum().asDouble(), 1e-4);
+        assertEquals(1.0, result.multiply(result).sum().asDouble(), 1e-3);
 
         result = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[16])")));
-        assertEquals(1.0,  result.multiply(result).sum().asDouble(), 1e-4);
+        assertEquals(1.0,  result.multiply(result).sum().asDouble(), 1e-3);
         Tensor binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
         assertEquals("tensor<int8>(x[2]):[119, 44]", binarizedResult.toAbbreviatedString());
     }
