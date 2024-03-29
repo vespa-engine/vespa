@@ -383,8 +383,7 @@ public class StemmingSearcher extends Searcher {
     }
 
     private int getWeight(Item block) {
-        if (block instanceof AndSegmentItem
-                && ((AndSegmentItem) block).getItemCount() > 0) {
+        if (block instanceof AndSegmentItem && ((AndSegmentItem) block).getItemCount() > 0) {
             return ((AndSegmentItem) block).getItem(0).getWeight();
         } else {
             return block.getWeight();

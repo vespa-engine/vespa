@@ -30,7 +30,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * tests query profiles with/and types
+ * Tests query profiles with/and types
  *
  * @author bratseth
  */
@@ -496,7 +496,7 @@ public class QueryProfileTypeTestCase {
         assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
         assertEmbedQuery("embed(emb1, \"" + text + "\")", embedding1, embedders);
         assertEmbedQueryFails("embed(emb2, \"" + text + "\")", embedding1, embedders,
-                "Can't find embedder 'emb2'. Valid embedders are emb1");
+                "Can't find embedder 'emb2'. Available embedder ids are 'emb1'.");
 
         embedders = Map.of(
                 "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1),
@@ -504,8 +504,11 @@ public class QueryProfileTypeTestCase {
         );
         assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
         assertEmbedQuery("embed(emb2, '" + text + "')", embedding2, embedders);
+        assertEmbedQueryFails("embed(emb2, text)", embedding1, embedders,
+                              "Multiple embedders are provided but the string to embed is not quoted. " +
+                              "Usage: embed(embedder-id, 'text'). Available embedder ids are 'emb1', 'emb2'.");
         assertEmbedQueryFails("embed(emb3, \"" + text + "\")", embedding1, embedders,
-                "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
+                "Can't find embedder 'emb3'. Available embedder ids are 'emb1', 'emb2'.");
 
         // And with specified language
         embedders = Map.of(

@@ -70,10 +70,13 @@ public class TensorConverter {
                 embedder = requireEmbedder(embedderId);
                 argument = matcher.group(2);
         } else if (embedders.isEmpty()) {
-            throw new IllegalStateException("No embedders provided");  // should never happen
+            throw new IllegalArgumentException("No embedders provided");  // should never happen
         } else if (embedders.size() > 1) {
-            throw new IllegalArgumentException("Multiple embedders are provided but no embedder id is given. " +
-                                               "Valid embedders are " + validEmbedders(embedders));
+            String usage = "Usage: embed(embedder-id, 'text'). " + embedderIds(embedders);
+            if (! argument.contains("\"") && ! argument.contains("'"))
+                throw new IllegalArgumentException("Multiple embedders are provided but the string to embed is not quoted. " + usage);
+            else
+                throw new IllegalArgumentException("Multiple embedders are provided but no embedder id is given. " + usage);
         } else {
             var entry = embedders.entrySet().stream().findFirst().get();
             embedderId = entry.getKey();
@@ -84,8 +87,7 @@ public class TensorConverter {
 
     private Embedder requireEmbedder(String embedderId) {
         if ( ! embedders.containsKey(embedderId))
-            throw new IllegalArgumentException("Can't find embedder '" + embedderId + "'. " +
-                                               "Valid embedders are " + validEmbedders(embedders));
+            throw new IllegalArgumentException("Can't find embedder '" + embedderId + "'. " + embedderIds(embedders));
         return embedders.get(embedderId);
     }
 
@@ -108,11 +110,11 @@ public class TensorConverter {
         return referencedValue.toString();
     }
 
-    private static String validEmbedders(Map<String, Embedder> embedders) {
+    private static String embedderIds(Map<String, Embedder> embedders) {
         List<String> embedderIds = new ArrayList<>();
-        embedders.forEach((key, value) -> embedderIds.add(key));
+        embedders.forEach((key, value) -> embedderIds.add("'" + key + "'"));
         embedderIds.sort(null);
-        return String.join(",", embedderIds);
+        return "Available embedder ids are " + String.join(", ", embedderIds) + ".";
     }
 
 }
