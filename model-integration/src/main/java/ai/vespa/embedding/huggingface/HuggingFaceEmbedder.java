@@ -178,7 +178,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    Tensor binarize(IndexedTensor embedding, TensorType tensorType) {
+    static public Tensor binarize(IndexedTensor embedding, TensorType tensorType) {
         Tensor.Builder builder = Tensor.Builder.of(tensorType);
         BitSet bitSet = new BitSet(8);
         int index = 0;
