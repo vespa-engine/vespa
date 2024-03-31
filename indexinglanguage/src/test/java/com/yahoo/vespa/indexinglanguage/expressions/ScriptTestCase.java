@@ -75,6 +75,20 @@ public class ScriptTestCase {
     }
 
     @Test
+    public void testCache() {
+        SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("field1", DataType.STRING));
+        var script = newScript(newStatement(new InputExpression("field1"),
+                                            new PutCacheExpression("myCacheKey", "myCacheValue")),
+                               newStatement(new ClearStateExpression()), // inserted by config model
+                               newStatement(new InputExpression("field1"),
+                                            new AssertCacheExpression("myCacheKey", "myCacheValue")));
+        adapter.setValue("field1", new StringFieldValue("foo1"));
+        ExecutionContext context = new ExecutionContext(adapter);
+        script.execute(context);
+        assertEquals("myCacheValue", context.getCachedValue("myCacheKey"));
+    }
+
+    @Test
     public void requireThatStatementsProcessingMissingInputsAreSkipped() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("foo", DataType.STRING),
                                                           new Field("bar", DataType.STRING));
@@ -145,6 +159,54 @@ public class ScriptTestCase {
         @Override
         protected void doExecute(ExecutionContext context) {
             throw new RuntimeException();
+        }
+
+        @Override
+        protected void doVerify(VerificationContext context) {}
+
+        @Override
+        public DataType createdOutputType() { return null; }
+
+    }
+
+    private static class PutCacheExpression extends Expression {
+
+        private final String keyToSet;
+        private final String valueToSet;
+
+        public PutCacheExpression(String keyToSet, String valueToSet) {
+            super(null);
+            this.keyToSet = keyToSet;
+            this.valueToSet = valueToSet;
+        }
+
+        @Override
+        protected void doExecute(ExecutionContext context) {
+            context.putCachedValue(keyToSet, valueToSet);
+        }
+
+        @Override
+        protected void doVerify(VerificationContext context) {}
+
+        @Override
+        public DataType createdOutputType() { return null; }
+
+    }
+
+    private static class AssertCacheExpression extends Expression {
+
+        private final String expectedKey;
+        private final String expectedValue;
+
+        public AssertCacheExpression(String expectedKey, String expectedValue) {
+            super(null);
+            this.expectedKey = expectedKey;
+            this.expectedValue = expectedValue;
+        }
+
+        @Override
+        protected void doExecute(ExecutionContext context) {
+            assertEquals(expectedValue, context.getCachedValue(expectedKey));
         }
 
         @Override

@@ -21,6 +21,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
     private final FieldValueAdapter adapter;
     private FieldValue value;
     private Language language;
+    private Map<String, Object> cache = null;
 
     public ExecutionContext() {
         this(null);
@@ -118,6 +119,19 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
         return this;
     }
 
+    public void putCachedValue(String key, Object value) {
+        if (cache == null)
+            cache = new HashMap<>();
+        cache.put(key, value);
+    }
+
+    /** Returns a cached value, or null if not present. */
+    public Object getCachedValue(String key) {
+        if (cache == null) return null;
+        return cache.get(key);
+    }
+
+    /** Clears all state in this except the cache. */
     public ExecutionContext clear() {
         variables.clear();
         value = null;

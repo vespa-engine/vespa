@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * An indexing language script derived from a search definition. An indexing script contains a set of indexing
+ * An indexing language script derived from a schema. An indexing script contains a set of indexing
  * statements, organized in a composite structure of indexing code snippets.
  *
  * @author bratseth
@@ -62,12 +62,8 @@ public final class IndexingScript extends Derived {
         if (field.hasFullIndexingDocprocRights())
             docFields.add(field.getName());
 
-        if (field.usesStructOrMap() && ! GeoPos.isAnyPos(field)) {
-            return; // unsupported
-        }
-
-        if (fieldsSettingLanguage.size() == 1 && fieldsSettingLanguage.get(0).equals(field))
-            return; // Already added
+        if (field.usesStructOrMap() && ! GeoPos.isAnyPos(field)) return; // unsupported
+        if (fieldsSettingLanguage.size() == 1 && fieldsSettingLanguage.get(0).equals(field)) return; // Already added
 
         addExpression(field.getIndexingScript());
     }
