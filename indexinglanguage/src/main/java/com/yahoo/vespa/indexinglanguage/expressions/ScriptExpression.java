@@ -51,7 +51,8 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
         for (StatementExpression statement : this) {
             if (context.isComplete() ||
                 (statement.getInputFields().isEmpty() || containsAtLeastOneInputFrom(statement.getInputFields(), context))) {
-                context.setValue(input).execute(statement);
+                context.setValue(input);
+                context.execute(statement);
             }
         }
         context.setValue(input);

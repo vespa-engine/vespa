@@ -15,10 +15,11 @@ import java.lang.Integer;
  * @author baldersheim
  */
 public class JsonBenchmark {
-    private static byte [] createJson(int numElements) {
+
+    private static byte[] createJson(int numElements) {
         Slime slime = new Slime();
         Cursor a = slime.setArray();
-        for (int i=0; i < numElements; i++) {
+        for (int i = 0; i < numElements; i++) {
             Cursor e = a.addObject();
             e.setString("key", "i");
             e.setLong("weight", i);
@@ -32,12 +33,13 @@ public class JsonBenchmark {
         }
         return bs.toByteArray();
     }
-    private static long benchmarkJacksonStreaming(byte [] json, int numIterations) {
+
+    private static long benchmarkJacksonStreaming(byte[] json, int numIterations) {
         long count = 0;
         JsonFactory jsonFactory = new JsonFactory();
 
         try {
-            for (int i=0; i < numIterations; i++) {
+            for (int i = 0; i < numIterations; i++) {
                 try (JsonParser jsonParser = jsonFactory.createParser(json)) {
                     JsonToken array = jsonParser.nextToken();
                     for (JsonToken token = jsonParser.nextToken(); !JsonToken.END_ARRAY.equals(token); token = jsonParser.nextToken()) {
@@ -53,12 +55,13 @@ public class JsonBenchmark {
         }
         return count;
     }
-    private static long benchmarkJacksonTree(byte [] json, int numIterations) {
+
+    private static long benchmarkJacksonTree(byte[] json, int numIterations) {
         long count = 0;
         // use the ObjectMapper to read the json string and create a tree
         var mapper = Jackson.mapper();
         try {
-            for (int i=0; i < numIterations; i++) {
+            for (int i = 0; i < numIterations; i++) {
                 JsonNode node = mapper.readTree(json);
                 for(JsonNode item : node) {
                     count += item.get("weight").asLong();
@@ -69,9 +72,10 @@ public class JsonBenchmark {
         }
         return count;
     }
-    private static long benchmarkSlime(byte [] json, int numIterations) {
+
+    private static long benchmarkSlime(byte[] json, int numIterations) {
         long count = 0;
-        for (int i=0; i < numIterations; i++) {
+        for (int i = 0; i < numIterations; i++) {
             JsonDecoder decoder = new JsonDecoder();
             Slime slime = decoder.decode(new Slime(), json);
 
@@ -83,7 +87,7 @@ public class JsonBenchmark {
         }
         return count;
     }
-    private static void warmup(byte [] json) {
+    private static void warmup(byte[] json) {
         System.out.println(System.currentTimeMillis() + " Warming up");
         benchmarkSlime(json, 5000);
         System.out.println(System.currentTimeMillis() + " Done Warming up");
@@ -95,9 +99,9 @@ public class JsonBenchmark {
      * slime 1000 40000  = 17.5 seconds
      * @param argv type, num elements in weigted set, num iterations
      */
-    static public void main(String [] argv) {
+    static public void main(String[] argv) {
         String type = argv[0];
-        byte [] json = createJson(Integer.parseInt(argv[1]));
+        byte[] json = createJson(Integer.parseInt(argv[1]));
         warmup(json);
         int count = Integer.parseInt(argv[2]);
         System.out.println(System.currentTimeMillis() + " Start");
@@ -112,4 +116,5 @@ public class JsonBenchmark {
         }
         System.out.println(System.currentTimeMillis() + " End with " + numValues + " values in " + (System.currentTimeMillis() - start) + " milliseconds.");
     }
+
 }

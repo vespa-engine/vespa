@@ -10,11 +10,12 @@ import com.yahoo.language.detect.Detection;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cloneable {
+public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
 
     private final Map<String, FieldValue> variables = new HashMap<>();
     private final FieldValueAdapter adapter;
@@ -40,7 +41,9 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
      * Returns whether this is for a complete execution of all statements of a script,
      * or a partial execution of only the statements accessing the available data.
      */
-    public boolean isComplete() { return adapter == null ? false : adapter.isComplete(); }
+    public boolean isComplete() {
+        return adapter != null && adapter.isComplete();
+    }
 
     @Override
     public DataType getInputType(Expression exp, String fieldName) {
@@ -89,37 +92,26 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
         return this;
     }
 
-    public Language getLanguage() {
-        return language;
-    }
+    public Language getLanguage() { return language; }
 
     public ExecutionContext setLanguage(Language language) {
-        language.getClass();
-        this.language = language;
+        this.language = Objects.requireNonNull(language);
         return this;
     }
 
     public Language resolveLanguage(Linguistics linguistics) {
-        if (language != null && language != Language.UNKNOWN) {
-            return language;
-        }
-        if (linguistics == null) {
-            return Language.ENGLISH;
-        }
+        if (language != null && language != Language.UNKNOWN) return language;
+        if (linguistics == null) return Language.ENGLISH;
+
         Detection detection = linguistics.getDetector().detect(String.valueOf(value), null);
-        if (detection == null) {
-            return Language.ENGLISH;
-        }
+        if (detection == null) return Language.ENGLISH;
+
         Language detected = detection.getLanguage();
-        if (detected == Language.UNKNOWN) {
-            return Language.ENGLISH;
-        }
+        if (detected == Language.UNKNOWN) return Language.ENGLISH;
         return detected;
     }
 
-    public FieldValue getValue() {
-        return value;
-    }
+    public FieldValue getValue() { return value; }
 
     public ExecutionContext setValue(FieldValue value) {
         this.value = value;
