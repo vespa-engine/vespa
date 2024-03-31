@@ -636,7 +636,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
 
     /**
      * Returns the stemming setting of this field.
-     * Default is determined by the owning search definition.
+     * Default is determined by the owning schema.
      *
      * @return the stemming setting of this, or null, to use the default
      */
@@ -644,7 +644,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
     public Stemming getStemming() { return stemming; }
 
     /**
-     * Whether this field should be stemmed in this search definition
+     * Whether this field should be stemmed in this schema
      */
     @Override
     public Stemming getStemming(Schema schema) {
