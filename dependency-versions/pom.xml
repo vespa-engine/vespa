@@ -140,7 +140,7 @@
         <surefire.vespa.version>3.2.5</surefire.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
-        <wiremock.vespa.version>3.4.2</wiremock.vespa.version>
+        <wiremock.vespa.version>3.5.2</wiremock.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
         <zookeeper.client.vespa.version>3.9.2</zookeeper.client.vespa.version>
