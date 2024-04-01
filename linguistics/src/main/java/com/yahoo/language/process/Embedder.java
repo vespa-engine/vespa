@@ -2,12 +2,15 @@
 package com.yahoo.language.process;
 
 import com.yahoo.api.annotations.Beta;
+import com.yahoo.collections.LazyMap;
 import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * An embedder converts a text string to a tensor
@@ -88,15 +91,26 @@ public interface Embedder {
         private Language language = Language.UNKNOWN;
         private String destination;
         private String embedderId = "unknown";
+        private final Map<String, Object> cache;
 
         public Context(String destination) {
+            this(destination, LazyMap.newHashMap());
+        }
+
+        /**
+         * @param destination the name of the recipient of this tensor
+         * @param cache a cache shared between all embed invocations for a single request
+         */
+        public Context(String destination, Map<String, Object> cache) {
             this.destination = destination;
+            this.cache = Objects.requireNonNull(cache);
         }
 
         private Context(Context other) {
             language = other.language;
             destination = other.destination;
             embedderId = other.embedderId;
+            this.cache = other.cache;
         }
 
         public Context copy() { return new Context(this); }
@@ -137,6 +151,15 @@ public interface Embedder {
         public Context setEmbedderId(String embedderId) {
             this.embedderId = embedderId;
             return this;
+        }
+
+        public void putCachedValue(String key, Object value) {
+            cache.put(key, value);
+        }
+
+        /** Returns a cached value, or null if not present. */
+        public Object getCachedValue(String key) {
+            return cache.get(key);
         }
 
     }
