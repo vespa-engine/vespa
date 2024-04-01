@@ -338,13 +338,16 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.util.Map)",
       "public com.yahoo.language.process.Embedder$Context copy()",
       "public com.yahoo.language.Language getLanguage()",
       "public com.yahoo.language.process.Embedder$Context setLanguage(com.yahoo.language.Language)",
       "public java.lang.String getDestination()",
       "public com.yahoo.language.process.Embedder$Context setDestination(java.lang.String)",
       "public java.lang.String getEmbedderId()",
-      "public com.yahoo.language.process.Embedder$Context setEmbedderId(java.lang.String)"
+      "public com.yahoo.language.process.Embedder$Context setEmbedderId(java.lang.String)",
+      "public void putCachedValue(java.lang.String, java.lang.Object)",
+      "public java.lang.Object getCachedValue(java.lang.String)"
     ],
     "fields" : [ ]
   },

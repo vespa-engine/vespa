@@ -490,7 +490,9 @@ public class ScriptTestCase {
         assertTrue(adapter.values.containsKey("mySparseTensor"));
         var sparseTensor = (TensorFieldValue)adapter.values.get("mySparseTensor");
         assertEquals(Tensor.from(tensorType, "tensor(t{}):{97:97.0, 98:98.0, 99:99.0}"),
-                sparseTensor.getTensor().get());
+                     sparseTensor.getTensor().get());
+        assertEquals("Cached value always set by MockMappedEmbedder is present",
+                     "myCachedValue", context.getCachedValue("myCacheKey"));
     }
 
     /** Multiple paragraphs with sparse encoding (splade style) */
@@ -626,6 +628,7 @@ public class ScriptTestCase {
         @Override
         public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
             verifyDestination(context);
+            context.putCachedValue("myCacheKey", "myCachedValue");
             var b = Tensor.Builder.of(tensorType);
             for (int i = 0; i < text.length(); i++)
                 b.cell().label(tensorType.dimensions().get(0).name(), text.charAt(i)).value(text.charAt(i) + addition);

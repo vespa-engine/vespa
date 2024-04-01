@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.collections.LazyMap;
 import com.yahoo.document.DataType;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
@@ -21,7 +22,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
     private final FieldValueAdapter adapter;
     private FieldValue value;
     private Language language;
-    private Map<String, Object> cache = null;
+    private final Map<String, Object> cache = LazyMap.newHashMap();
 
     public ExecutionContext() {
         this(null);
@@ -120,15 +121,17 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
     }
 
     public void putCachedValue(String key, Object value) {
-        if (cache == null)
-            cache = new HashMap<>();
         cache.put(key, value);
     }
 
     /** Returns a cached value, or null if not present. */
     public Object getCachedValue(String key) {
-        if (cache == null) return null;
         return cache.get(key);
+    }
+
+    /** Returns a mutable reference to the cache of this. */
+    public Map<String, Object> getCache() {
+        return cache;
     }
 
     /** Clears all state in this except the cache. */
