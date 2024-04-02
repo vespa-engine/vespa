@@ -72,7 +72,7 @@ EquivBlueprint::calculate_flow_stats(uint32_t docid_limit) const
     }
     double est = OrFlow::estimate_of(_terms);
     return {est, OrFlow::cost_of(_terms, false),
-            OrFlow::cost_of(_terms, true) + flow::array_cost(est, _terms.size())};
+            OrFlow::cost_of(_terms, true) + flow::heap_cost(est, _terms.size())};
 }
 
 SearchIterator::UP
