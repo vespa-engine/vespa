@@ -123,8 +123,10 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     }
 
     private String resolveContentType(URI requestUri) {
-        if (resolvePath(requestUri).equals(HISTOGRAMS_PATH) || isPrometheusRequest(requestUri.getQuery())) {
+        if (resolvePath(requestUri).equals(HISTOGRAMS_PATH)) {
             return "text/plain; charset=utf-8";
+        } else if (isPrometheusRequest(requestUri.getQuery())) {
+            return "text/plain; version=0.0.4";
         } else {
             return "application/json";
         }
@@ -224,45 +226,38 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         var timestamp = snapshot.getToTime(TimeUnit.MILLISECONDS);
         var builder = new StringBuilder();
         builder.append("# NOTE: THIS API IS NOT INTENDED FOR PUBLIC USE\n");
+        var metrics = new ArrayList<PrometheusEntry>();
+
         for (var tuple : collapseMetrics(snapshot, consumer)) {
             var dims = toPrometheusDimensions(tuple.dim);
             var metricName = prometheusSanitizedName(tuple.key) + "_";
             if (tuple.val instanceof GaugeMetric gauge) {
-                appendPrometheusEntry(builder, metricName + "max", dims, gauge.getMax(), timestamp);
-                appendPrometheusEntry(builder, metricName + "sum", dims, gauge.getSum(), timestamp);
-                appendPrometheusEntry(builder, metricName + "count", dims, gauge.getCount(), timestamp);
+                metrics.add(new PrometheusEntry(metricName + "max", dims, gauge.getMax()));
+                metrics.add(new PrometheusEntry(metricName + "sum", dims, gauge.getSum()));
+                metrics.add(new PrometheusEntry(metricName + "count", dims, gauge.getCount()));
                 if (gauge.getPercentiles().isPresent()) {
                     for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
-                        appendPrometheusEntry(builder, metricName + prefixAndValue.first + "percentile", dims, prefixAndValue.second, timestamp);
+                        metrics.add(new PrometheusEntry(metricName + prefixAndValue.first + "percentile", dims, prefixAndValue.second));
                     }
                 }
             } else if (tuple.val instanceof CountMetric count) {
-                appendPrometheusEntry(builder, metricName + "count", dims, count.getCount(), timestamp);
+                metrics.add(new PrometheusEntry(metricName + "count", dims, count.getCount()));
             }
         }
+        Collections.sort(metrics);
+        metrics.forEach(prometheusEntry -> prometheusEntry.appendPrometheusEntry(builder, timestamp));
         return builder.toString().getBytes(UTF_8);
     }
 
-    private void appendPrometheusEntry(StringBuilder builder, String metricName, String dimension, Number value, long timeStamp) {
-        builder.append("# HELP ")
-                .append(metricName)
-                .append("\n# TYPE ")
-                .append(metricName)
-                .append(" untyped\n");
-
-        builder.append(metricName)
-                .append("{").append(dimension).append("}")
-                .append(" ").append(sanitizeIfDouble(value)).append(" ")
-                .append(timeStamp).append("\n");
-    }
-
     private String toPrometheusDimensions(MetricDimensions dimensions) {
-        if (dimensions == null) return "";
+        if (dimensions == null || !dimensions.iterator().hasNext()) return "";
         StringBuilder builder = new StringBuilder();
+        builder.append("{");
         dimensions.forEach(entry -> {
-            var sanitized = prometheusSanitizedName(entry.getKey()) + "=\"" + entry.getValue() + "\",";
+            var sanitized = prometheusSanitizedName(entry.getKey()) + "=\"" + escapedLabelValue(entry.getValue()) + "\",";
             builder.append(sanitized);
         });
+        builder.append("}");
         return builder.toString();
     }
 
@@ -385,8 +380,33 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         return name.replaceAll("\\.", "_");
     }
 
-    private Number sanitizeIfDouble(Number num) {
-        return num instanceof Double d ? sanitizeDouble(d) : num;
+    private String sanitizeIfDouble(Number num) {
+        return num instanceof Double d ? prettyDouble(d) : num.toString();
+    }
+
+    private String escapedLabelValue(String labelValue) {
+        var builder = new StringBuilder();
+        for (int i = 0; i < labelValue.length(); i++) {
+            var c = labelValue.charAt(i);
+            switch (c) {
+                case '\n':
+                    builder.append("\\n");
+                    break;
+                case '\\':
+                case '"':
+                    builder.append("\\")
+                           .append(c);
+                    break;
+                default:
+                    builder.append(c);
+            }
+        }
+        return builder.toString();
+    }
+
+    private String prettyDouble(Double d) {
+        if (Double.isFinite(d) || d.isNaN()) return d.toString();
+        return d.equals(Double.NEGATIVE_INFINITY) ? "-Inf" : "Inf";
     }
 
     private static byte[] toPrettyString(JsonNode resources) throws JsonProcessingException {
@@ -416,6 +436,31 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
             } else {
                 this.val.add(val);
             }
+        }
+    }
+
+    class PrometheusEntry implements Comparable<PrometheusEntry> {
+        final String metricName;
+        final String dimensions;
+        final Number value;
+
+        public PrometheusEntry(String metricName, String dimensions, Number value) {
+            this.metricName = metricName;
+            this.dimensions = dimensions;
+            this.value = value;
+        }
+
+        @Override
+        public int compareTo(PrometheusEntry o) {
+            int comparison = this.metricName.compareTo(o.metricName);
+            return comparison != 0 ? comparison : this.dimensions.compareTo(o.dimensions);
+        }
+
+        public void appendPrometheusEntry(StringBuilder builder, long timestamp) {
+            builder.append(metricName)
+                    .append(dimensions)
+                    .append(" ").append(sanitizeIfDouble(value)).append(" ")
+                    .append(timestamp).append("\n");
         }
     }
 
