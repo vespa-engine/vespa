@@ -3,7 +3,6 @@ package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.LlmClientConfig;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.secretstore.SecretStore;

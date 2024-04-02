@@ -3,9 +3,8 @@ package ai.vespa.llm.search;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.LlmClientConfig;
-import ai.vespa.llm.LlmSearcherConfig;
 import ai.vespa.llm.clients.ConfigurableLanguageModelTest;
+import ai.vespa.llm.clients.LlmClientConfig;
 import ai.vespa.llm.clients.MockLLMClient;
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.ComponentId;

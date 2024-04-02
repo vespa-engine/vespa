@@ -4,7 +4,6 @@ package ai.vespa.llm.search;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
 import ai.vespa.llm.LanguageModelException;
-import ai.vespa.llm.LlmSearcherConfig;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;

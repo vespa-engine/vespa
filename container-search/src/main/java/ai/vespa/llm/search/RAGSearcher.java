@@ -2,7 +2,6 @@
 package ai.vespa.llm.search;
 
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.LlmSearcherConfig;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.api.annotations.Beta;

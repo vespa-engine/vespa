@@ -2,7 +2,6 @@
 package ai.vespa.llm.search;
 
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.LlmSearcherConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
