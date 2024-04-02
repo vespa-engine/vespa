@@ -175,9 +175,7 @@ func printResponseBody(body io.Reader, options printOptions, cli *CLI) error {
 				return err
 			}
 			if event.Name == "token" {
-				if writingLine {
-					fmt.Fprint(cli.Stdout, " ")
-				} else {
+				if !writingLine {
 					writingLine = true
 				}
 				var token struct {
