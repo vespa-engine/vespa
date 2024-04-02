@@ -555,6 +555,13 @@ void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
                                 check_value(a.asDouble());
                                 check_value(b.asDouble());
                                 return true;
+                            } else if (field == "strict") {
+                                // ignore strict-tagging differences between optimized and unoptimized blueprint trees
+                                if (a.type().getId() == vespalib::slime::BOOL::ID &&
+                                    b.type().getId() == vespalib::slime::BOOL::ID)
+                                {
+                                    return true;
+                                }
                             }
                         }
                         if (expect_eq) {

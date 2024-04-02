@@ -398,7 +398,7 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.visitFloat("strict_cost", strict_cost());
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
-    // visitor.visitBool("strict", _strict);
+    visitor.visitBool("strict", _strict);
 }
 
 namespace blueprint {

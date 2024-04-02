@@ -658,6 +658,7 @@ getExpectedBlueprint()
            "    strict_cost: 0\n"
            "    sourceId: 4294967295\n"
            "    docid_limit: 0\n"
+           "    strict: false\n"
            "    children: std::vector {\n"
            "        [0]: (anonymous namespace)::MyTerm {\n"
            "            isTermLike: true\n"
@@ -680,6 +681,7 @@ getExpectedBlueprint()
            "            strict_cost: 0\n"
            "            sourceId: 4294967295\n"
            "            docid_limit: 0\n"
+           "            strict: false\n"
            "        }\n"
            "    }\n"
            "}\n";
@@ -712,6 +714,7 @@ getExpectedSlimeBlueprint() {
            "    strict_cost: 0.0,"
            "    sourceId: 4294967295,"
            "    docid_limit: 0,"
+           "    strict: false,"
            "    children: {"
            "        '[type]': 'std::vector',"
            "        '[0]': {"
@@ -738,7 +741,8 @@ getExpectedSlimeBlueprint() {
            "            cost: 0.0,"
            "            strict_cost: 0.0,"
            "            sourceId: 4294967295,"
-           "            docid_limit: 0"
+           "            docid_limit: 0,"
+           "            strict: false"
            "        }"
            "    }"
            "}";
