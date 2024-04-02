@@ -18,7 +18,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.EventStream;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
@@ -123,7 +122,6 @@ public class LLMSearcherTest {
     }
 
     @Test
-    @Disabled
     public void testAsyncGeneration() {
         var executor = Executors.newFixedThreadPool(2);
         var sb = new StringBuilder();
