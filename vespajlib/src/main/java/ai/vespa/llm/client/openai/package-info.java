@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 @ExportPackage
 @PublicApi
-package ai.vespa.languagemodels;
+package ai.vespa.llm.client.openai;
 
 import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;
 
 /**
- * API for working with large language models.
+ * Client to OpenAi's large language models.
  */

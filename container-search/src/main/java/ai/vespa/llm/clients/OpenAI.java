@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.clients;
 
-import ai.vespa.languagemodels.InferenceParameters;
+import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LlmClientConfig;
-import ai.vespa.languagemodels.client.openai.OpenAiClient;
-import ai.vespa.languagemodels.completion.Completion;
-import ai.vespa.languagemodels.completion.Prompt;
+import ai.vespa.llm.client.openai.OpenAiClient;
+import ai.vespa.llm.completion.Completion;
+import ai.vespa.llm.completion.Prompt;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
