@@ -105,10 +105,10 @@ event: token
 data: {"token": "The"}
 
 event: token
-data: {"token": "Manhattan"}
+data: {"token": " Manhattan"}
 
 event: token
-data: {"token": "Project"}
+data: {"token": " Project"}
 
 event: end
 `
@@ -120,7 +120,7 @@ event: token
 data: {"token": "The"}
 
 event: token
-data: Manhattan
+data:  Manhattan
 
 event: error
 data: {"message": "something went wrong"}
