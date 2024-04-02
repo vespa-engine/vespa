@@ -126,6 +126,11 @@ inline double forced_strict_cost(double estimate, double strict_cost, double rat
     return 0.2 * (rate - estimate) + strict_cost;
 }
 
+// would it be faster to force a non-strict child to be strict
+inline bool should_force_strict(double estimate, double cost, double strict_cost, double rate) {
+    return forced_strict_cost(estimate, strict_cost, rate) < (cost * rate);
+}
+
 // estimate the absolute cost of evaluating a child with a specific in flow
 inline double min_child_cost(InFlow in_flow, const FlowStats &stats, bool allow_force_strict) {
     if (in_flow.strict()) {
@@ -231,6 +236,54 @@ auto select_forced_strict_and_child(auto adapter, const auto &children, size_t f
     return std::make_pair(best_idx, best_diff);
 }
 
+auto select_forced_strict_and_child_with_order(auto adapter, const auto &children, size_t first) {
+    auto est_until = [&](size_t limit)noexcept{
+                         double my_est = 1.0;
+                         for (size_t i = 0; i < limit; ++i) {
+                             my_est *= adapter.estimate(children[i]);
+                         }
+                         return my_est;
+                     };
+    double est = est_until(first);
+    double cost = 0.0;
+    size_t best_idx = 0;
+    size_t best_target = 0;
+    double best_diff = std::numeric_limits<double>::max();
+    for (size_t idx = first; idx < children.size(); ++idx) {
+        auto child = FlowStats::from(adapter, children[idx]);
+        double child_abs_cost = est * child.cost;
+        double forced_cost = forced_strict_cost(child.estimate, child.strict_cost, est);
+        double my_diff = (forced_cost + child.estimate * cost) - (cost + child_abs_cost);
+        size_t target = first;
+        while (target > 0) {
+            size_t candidate = target - 1;
+            auto other = FlowStats::from(adapter, children[candidate]);
+            if (other.estimate < child.estimate) {
+                // do not move past someone with lower estimate
+                break;
+            }
+            if (!should_force_strict(other.estimate, other.cost, other.strict_cost, (est_until(candidate) * child.estimate))) {
+                // no not move past someone who will lose strictness
+                break;
+            }
+            target = candidate;
+            my_diff += (0.2 * child.estimate - 0.2 * other.estimate);
+            if (candidate == 0) {
+                // the first iterator produces its own in-flow
+                my_diff += (0.2 * child.estimate - 0.2 * other.estimate);
+            }
+        }
+        if (my_diff < best_diff) {
+            best_diff = my_diff;
+            best_idx = idx;
+            best_target = target;
+        }
+        cost += child_abs_cost;
+        est *= child.estimate;
+    }
+    return std::make_tuple(best_idx, best_target, best_diff);
+}
+
 } // flow
 
 template <typename FLOW>
@@ -270,12 +323,8 @@ public:
     static void sort(auto adapter, auto &children, bool strict) {
         flow::sort<flow::MinAndCost>(adapter, children);
         if (strict && children.size() > 1) {
-            size_t idx = flow::select_strict_and_child(adapter, children);
-            auto the_one = std::move(children[idx]);
-            for (; idx > 0; --idx) {
-                children[idx] = std::move(children[idx-1]);
-            }
-            children[0] = std::move(the_one);
+            auto pos = children.begin() + flow::select_strict_and_child(adapter, children);
+            std::rotate(children.begin(), pos, pos + 1);
         }
     }
     static void sort(auto &children, bool strict) {
