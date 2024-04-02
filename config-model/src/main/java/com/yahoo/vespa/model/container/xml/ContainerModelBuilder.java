@@ -25,7 +25,6 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
@@ -599,7 +598,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state))
-                .proxyProtocol(useProxyProtocol(state.zone()))
+                .proxyProtocol(true, state.getProperties().featureFlags().enableProxyProtocolMixedMode())
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl());
         var endpointCert = state.endpointCertificateSecrets().orElse(null);
@@ -634,10 +633,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         server.addConnector(connectorFactory);
     }
 
-    private static boolean useProxyProtocol(Zone zone) {
-        return !zone.cloud().name().equals(CloudName.AZURE);
-    }
-
     private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
         var server = cluster.getHttp().getHttpServer().get();
         if (!enableTokenSupport(state)) return;
@@ -662,7 +657,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Setup dedicated connector
         var connector = HostedSslConnectorFactory.builder(server.getComponentId().getName()+"-token", tokenPort)
                 .tokenEndpoint(true)
-                .proxyProtocol(useProxyProtocol(state.zone()))
+                .proxyProtocol(false, false)
                 .endpointCertificate(endpointCert)
                 .remoteAddressHeader("X-Forwarded-For")
                 .remotePortHeader("X-Forwarded-Port")
