@@ -54,6 +54,11 @@ public class Zone {
         this.region = region;
     }
 
+    // TODO(mpolden): For compatibility with older config models. Remove when versions < 8.327 are gone
+    public Cloud getCloud() {
+        return cloud();
+    }
+
     /** Returns the current cloud */
     public Cloud cloud() { return cloud; }
 
@@ -97,10 +102,5 @@ public class Zone {
         return Objects.hash(environment, region);
     }
 
-    // TODO(mpolden): For compatibility with older config models. Remove when versions < 8.327 are gone
-    @Deprecated(forRemoval = true)
-    public Cloud getCloud() {
-        return cloud();
-    }
 }
 
