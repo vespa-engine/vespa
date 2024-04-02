@@ -998,8 +998,18 @@
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-archiver</artifactId>
+                <version>${plexus-archiver.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-interpolation</artifactId>
                 <version>${plexus-interpolation.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-io</artifactId>
+                <version>${plexus-io.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>

@@ -45,12 +45,12 @@ org.apache.maven:maven-resolver-provider:${maven-core.vespa.version}
 org.apache.maven:maven-settings-builder:${maven-core.vespa.version}
 org.apache.maven:maven-settings:${maven-core.vespa.version}
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
-org.codehaus.plexus:plexus-archiver:4.8.0
+org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
 org.codehaus.plexus:plexus-cipher:2.0
 org.codehaus.plexus:plexus-classworlds:2.7.0
 org.codehaus.plexus:plexus-component-annotations:2.1.0
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
-org.codehaus.plexus:plexus-io:${maven-enforcer-plugin.vespa.version}
+org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}
 org.codehaus.plexus:plexus-sec-dispatcher:2.0
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
 org.codehaus.plexus:plexus-xml:${plexus-xml.vespa.version}
