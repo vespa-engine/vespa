@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.llm.client.openai;
+package ai.vespa.languagemodels.client.openai;
 
-import ai.vespa.llm.InferenceParameters;
-import ai.vespa.llm.completion.Completion;
-import ai.vespa.llm.completion.StringPrompt;
+import ai.vespa.languagemodels.InferenceParameters;
+import ai.vespa.languagemodels.completion.StringPrompt;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

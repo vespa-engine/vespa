@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.search;
 
-import ai.vespa.llm.InferenceParameters;
-import ai.vespa.llm.LanguageModel;
+import ai.vespa.languagemodels.InferenceParameters;
+import ai.vespa.languagemodels.LanguageModel;
 import ai.vespa.llm.LlmClientConfig;
 import ai.vespa.llm.LlmSearcherConfig;
 import ai.vespa.llm.clients.ConfigurableLanguageModelTest;
 import ai.vespa.llm.clients.MockLLMClient;
-import ai.vespa.llm.completion.Prompt;
-import ai.vespa.llm.completion.StringPrompt;
+import ai.vespa.languagemodels.completion.Prompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -229,26 +228,14 @@ public class LLMSearcherTest {
         ComponentRegistry<LanguageModel> models = new ComponentRegistry<>();
         llms.forEach((key, value) -> models.register(ComponentId.fromString(key), value));
         models.freeze();
-        return new LLMSearcherImpl(config, models);
+        return new LLMSearcher(config, models);
     }
 
     private static Searcher createLLMSearcher(LlmSearcherConfig config, Map<String, LanguageModel> llms) {
         ComponentRegistry<LanguageModel> models = new ComponentRegistry<>();
         llms.forEach((key, value) -> models.register(ComponentId.fromString(key), value));
         models.freeze();
-        return new LLMSearcherImpl(config, models);
-    }
-
-    public static class LLMSearcherImpl extends LLMSearcher {
-
-        public LLMSearcherImpl(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
-            super(config, languageModels);
-        }
-
-        @Override
-        public Result search(Query query, Execution execution) {
-            return complete(query, StringPrompt.from(getPrompt(query)));
-        }
+        return new LLMSearcher(config, models);
     }
 
 }

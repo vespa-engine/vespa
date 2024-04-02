@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.search;
 
-import ai.vespa.llm.InferenceParameters;
-import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.LanguageModelException;
+import ai.vespa.languagemodels.InferenceParameters;
+import ai.vespa.languagemodels.LanguageModel;
+import ai.vespa.languagemodels.LanguageModelException;
 import ai.vespa.llm.LlmSearcherConfig;
-import ai.vespa.llm.completion.Completion;
-import ai.vespa.llm.completion.Prompt;
+import ai.vespa.languagemodels.completion.Completion;
+import ai.vespa.languagemodels.completion.Prompt;
+import ai.vespa.languagemodels.completion.StringPrompt;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.annotation.Inject;
@@ -17,6 +18,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.EventStream;
 import com.yahoo.search.result.HitGroup;
+import com.yahoo.search.searchchain.Execution;
 
 import java.util.List;
 import java.util.function.Function;
@@ -29,7 +31,7 @@ import java.util.stream.Collectors;
  * @author lesters
  */
 @Beta
-public abstract class LLMSearcher extends Searcher {
+public class LLMSearcher extends Searcher {
 
     private static Logger log = Logger.getLogger(LLMSearcher.class.getName());
 
@@ -43,11 +45,16 @@ public abstract class LLMSearcher extends Searcher {
     private final String languageModelId;
 
     @Inject
-    LLMSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
+    public LLMSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.stream = config.stream();
         this.languageModelId = config.providerId();
         this.languageModel = findLanguageModel(languageModelId, languageModels);
         this.propertyPrefix = config.propertyPrefix();
+    }
+
+    @Override
+    public Result search(Query query, Execution execution) {
+        return complete(query, StringPrompt.from(getPrompt(query)));
     }
 
     private LanguageModel findLanguageModel(String providerId, ComponentRegistry<LanguageModel> languageModels)
@@ -74,7 +81,7 @@ public abstract class LLMSearcher extends Searcher {
         return languageModel;
     }
 
-    Result complete(Query query, Prompt prompt) {
+    protected Result complete(Query query, Prompt prompt) {
         var options = new InferenceParameters(getApiKeyHeader(query), s -> lookupProperty(s, query));
         var stream = lookupPropertyBool(STREAM_PROPERTY, query, this.stream);  // query value overwrites config
         return stream ? completeAsync(query, prompt, options) : completeSync(query, prompt, options);
@@ -122,7 +129,7 @@ public abstract class LLMSearcher extends Searcher {
         return new Result(query, hitGroup);
     }
 
-    String getPrompt(Query query) {
+    public String getPrompt(Query query) {
         // Look for prompt with or without prefix
         String prompt = lookupPropertyWithOrWithoutPrefix(PROMPT_PROPERTY, p -> query.properties().getString(p));
         if (prompt != null)
@@ -138,28 +145,28 @@ public abstract class LLMSearcher extends Searcher {
                 "'" + propertyPrefix + "." + PROMPT_PROPERTY + "', '" + PROMPT_PROPERTY + "' or '@query'.");
     }
 
-    String getPropertyPrefix() {
+    public String getPropertyPrefix() {
         return this.propertyPrefix;
     }
 
-    String lookupProperty(String property, Query query) {
+    public String lookupProperty(String property, Query query) {
         String propertyWithPrefix = this.propertyPrefix + "." + property;
         return query.properties().getString(propertyWithPrefix, null);
     }
 
-    Boolean lookupPropertyBool(String property, Query query, boolean defaultValue) {
+    public Boolean lookupPropertyBool(String property, Query query, boolean defaultValue) {
         String propertyWithPrefix = this.propertyPrefix + "." + property;
         return query.properties().getBoolean(propertyWithPrefix, defaultValue);
     }
 
-    String lookupPropertyWithOrWithoutPrefix(String property, Function<String, String> lookup) {
+    public String lookupPropertyWithOrWithoutPrefix(String property, Function<String, String> lookup) {
         String value = lookup.apply(getPropertyPrefix() + "." + property);
         if (value != null)
             return value;
         return lookup.apply(property);
     }
 
-    String getApiKeyHeader(Query query) {
+    public String getApiKeyHeader(Query query) {
         return lookupPropertyWithOrWithoutPrefix(API_KEY_HEADER, p -> query.getHttpRequest().getHeader(p));
     }
 

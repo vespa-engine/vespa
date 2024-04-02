@@ -9152,7 +9152,7 @@
   "ai.vespa.llm.clients.ConfigurableLanguageModel" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
-      "ai.vespa.llm.LanguageModel"
+      "ai.vespa.languagemodels.LanguageModel"
     ],
     "attributes" : [
       "public",
@@ -9161,10 +9161,10 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(ai.vespa.llm.LlmClientConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
-      "protected java.lang.String getApiKey(ai.vespa.llm.InferenceParameters)",
-      "protected void setApiKey(ai.vespa.llm.InferenceParameters)",
+      "protected java.lang.String getApiKey(ai.vespa.languagemodels.InferenceParameters)",
+      "protected void setApiKey(ai.vespa.languagemodels.InferenceParameters)",
       "protected java.lang.String getEndpoint()",
-      "protected void setEndpoint(ai.vespa.llm.InferenceParameters)"
+      "protected void setEndpoint(ai.vespa.languagemodels.InferenceParameters)"
     ],
     "fields" : [ ]
   },
@@ -9176,8 +9176,8 @@
     ],
     "methods" : [
       "public void <init>(ai.vespa.llm.LlmClientConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
-      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
-      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+      "public java.util.List complete(ai.vespa.languagemodels.completion.Prompt, ai.vespa.languagemodels.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.languagemodels.completion.Prompt, ai.vespa.languagemodels.InferenceParameters, java.util.function.Consumer)"
     ],
     "fields" : [ ]
   },
@@ -9185,10 +9185,19 @@
     "superClass" : "com.yahoo.search.Searcher",
     "interfaces" : [ ],
     "attributes" : [
-      "public",
-      "abstract"
+      "public"
     ],
-    "methods" : [ ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "protected com.yahoo.search.Result complete(com.yahoo.search.Query, ai.vespa.languagemodels.completion.Prompt)",
+      "public java.lang.String getPrompt(com.yahoo.search.Query)",
+      "public java.lang.String getPropertyPrefix()",
+      "public java.lang.String lookupProperty(java.lang.String, com.yahoo.search.Query)",
+      "public java.lang.Boolean lookupPropertyBool(java.lang.String, com.yahoo.search.Query, boolean)",
+      "public java.lang.String lookupPropertyWithOrWithoutPrefix(java.lang.String, java.util.function.Function)",
+      "public java.lang.String getApiKeyHeader(com.yahoo.search.Query)"
+    ],
     "fields" : [ ]
   },
   "ai.vespa.llm.search.RAGSearcher" : {
@@ -9200,7 +9209,7 @@
     "methods" : [
       "public void <init>(ai.vespa.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
-      "protected ai.vespa.llm.completion.Prompt buildPrompt(com.yahoo.search.Query, com.yahoo.search.Result)"
+      "protected ai.vespa.languagemodels.completion.Prompt buildPrompt(com.yahoo.search.Query, com.yahoo.search.Result)"
     ],
     "fields" : [ ]
   }
