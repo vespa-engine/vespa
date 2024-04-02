@@ -131,12 +131,12 @@ org.assertj:assertj-core:${assertj.vespa.version}
 org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}
 org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}
 org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}
-org.codehaus.plexus:plexus-archiver:4.8.0
+org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
 org.codehaus.plexus:plexus-classworlds:2.7.0
 org.codehaus.plexus:plexus-component-annotations:2.1.0
 org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
-org.codehaus.plexus:plexus-io:${maven-enforcer-plugin.vespa.version}
+org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
 org.eclipse.angus:angus-activation:${eclipse-angus.vespa.version}
 org.eclipse.collections:eclipse-collections-api:${eclipse-collections.vespa.version}
