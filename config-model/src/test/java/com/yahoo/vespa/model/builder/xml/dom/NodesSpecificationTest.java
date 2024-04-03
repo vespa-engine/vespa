@@ -91,6 +91,8 @@ public class NodesSpecificationTest {
                      () -> nodesSpecification("<nodes><resources memory='b' /></nodes>"));
         assertThrows(IllegalArgumentException.class,
                      () -> nodesSpecification("<nodes><resources memory='Yb' /></nodes>"));
+        assertThrows(IllegalArgumentException.class,
+                     () -> nodesSpecification("<nodes count='[0, 1]'></nodes>"));
     }
 
     @Test
