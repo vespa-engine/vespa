@@ -124,7 +124,7 @@ AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context,
 void
 AttributeWeightedSetBlueprint::sort(queryeval::InFlow in_flow)
 {
-    strict(in_flow.strict());
+    resolve_strict(in_flow);
 }
 
 queryeval::FlowStats

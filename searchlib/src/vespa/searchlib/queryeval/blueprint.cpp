@@ -129,6 +129,18 @@ Blueprint::Blueprint() noexcept
 Blueprint::~Blueprint() = default;
 
 void
+Blueprint::resolve_strict(InFlow &in_flow) noexcept
+{
+    if (!in_flow.strict() && opt_allow_force_strict()) {
+        auto stats = FlowStats::from(flow::DefaultAdapter(), this);
+        if (flow::should_force_strict(stats, in_flow.rate())) {
+            in_flow.force_strict();
+        }
+    }
+    _strict = in_flow.strict();
+}
+
+void
 Blueprint::each_node_post_order(const std::function<void(Blueprint&)> &f)
 {
     f(*this);
@@ -605,7 +617,7 @@ IntermediateBlueprint::optimize(Blueprint* &self, OptimizePass pass)
 void
 IntermediateBlueprint::sort(InFlow in_flow)
 {
-    strict(in_flow.strict()); // authorative strict tag (->fetchPostings,->createSearch,->createFilterSearch)
+    resolve_strict(in_flow);
     if (!opt_keep_order()) [[likely]] {
         sort(_children, in_flow.strict(), opt_sort_by_cost());
     }
@@ -826,7 +838,7 @@ LeafBlueprint::set_tree_size(uint32_t value)
 void
 SimpleLeafBlueprint::sort(InFlow in_flow)
 {
-    strict(in_flow.strict()); // authorative strict tag (->fetchPostings,->createSearch,->createFilterSearch)
+    resolve_strict(in_flow);
 }
 
 }

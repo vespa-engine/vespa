@@ -479,7 +479,7 @@ TEST(FlowTest, strict_and_with_allow_force_strict_partitioning) {
                        size_t a = 0;
                        for (size_t b = 0; b < data.size(); ++b) {
                            double est = data[b].estimate;
-                           if (flow::should_force_strict(est, data[b].cost, data[b].strict_cost, rate)) {
+                           if (flow::should_force_strict(data[b], rate)) {
                                auto pos = data.begin() + b;
                                std::rotate(data.begin() + a, pos, pos + 1);
                                ++a;
@@ -551,7 +551,7 @@ TEST(FlowTest, strict_and_with_allow_force_strict_assume_strict_then_partition_a
                                               if (i == 0) {
                                                   return data[i].strict_cost < data[i].cost;
                                               } else {
-                                                  return flow::should_force_strict(data[i].estimate, data[i].cost, data[i].strict_cost, est);
+                                                  return flow::should_force_strict(data[i], est);
                                               }
                                           };
                        for (size_t i = 0; i < last; ++i) {

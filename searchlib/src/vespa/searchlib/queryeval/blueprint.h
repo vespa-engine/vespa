@@ -254,11 +254,11 @@ protected:
         _frozen = true;
     }
 
-    // Should be called by sort; sort is responsible for propagating
-    // strict tagging throughout the blueprint tree. Note that calling
-    // this directly breaks some tests using leaf proxy decorators
-    // that are not able to forward the non-virtual call.
-    void strict(bool value) noexcept { _strict = value; }
+    // Call this first inside sort implementations to handle 2 things:
+    //
+    // (1) force in_flow to be strict if allowed and better.
+    // (2) tag blueprint with the strictness of the in_flow.
+    void resolve_strict(InFlow &in_flow) noexcept;
 
 public:
     class IPredicate {
