@@ -45,6 +45,10 @@ std::vector<FlowStats> gen_data(size_t size) {
 }
 void re_seed() { gen_data(0); }
 
+size_t count_perms(size_t n) {
+    return (n <= 1) ? 1 : count_perms(n-1) * n;
+};
+
 template <typename T, typename F>
 void each_perm(std::vector<T> &data, size_t k, F fun) {
     if (k <= 1) {
@@ -392,33 +396,48 @@ TEST(FlowTest, optimal_and_not_flow) {
 
 void test_strict_AND_sort_strategy(auto my_sort) {
     re_seed();
-    size_t cnt = 64;
-    double max_rel_err = 0.0;
-    double sum_rel_err = 0.0;
-    for (size_t i = 0; i < cnt; ++i) {
-        auto data = gen_data(7);
-        double ref_est = AndFlow::estimate_of(data);
-        double min_cost = 1'000'000.0;
-        double max_cost = 0.0;
-        my_sort(data);
-        double est_cost = ordered_cost_of<AndFlow>(data, true, true);
-        auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
-                         double my_cost = ordered_cost_of<AndFlow>(my_data, true, true);
-                         min_cost = std::min(min_cost, my_cost);
-                         max_cost = std::max(max_cost, my_cost);
-                     };
-        each_perm(data, check);
-        double rel_err = 0.0;
-        double cost_range = (max_cost - min_cost);
-        if (cost_range > 1e-9) {
-            rel_err = (est_cost - min_cost) / cost_range;
+    // size_t max_work = 500'000'000;
+    size_t max_work = 1;
+    for (size_t child_cnt: {2, 3, 5, 7, 9}) {
+        size_t cnt = std::max(size_t(10), std::min(size_t(128'000), (max_work / count_perms(child_cnt))));
+        double max_rel_err = 0.0;
+        double sum_rel_err = 0.0;
+        std::vector<double> errs;
+        errs.reserve(cnt);
+        auto p = [&](double arg){
+                     size_t idx = std::lround(arg * (errs.size() - 1));
+                     if (idx < errs.size()) {
+                         return errs[idx];
+                     }
+                     return errs.back();
+                 };
+        for (size_t i = 0; i < cnt; ++i) {
+            auto data = gen_data(child_cnt);
+            double ref_est = AndFlow::estimate_of(data);
+            double min_cost = 1'000'000.0;
+            double max_cost = 0.0;
+            my_sort(data);
+            double est_cost = ordered_cost_of<AndFlow>(data, true, true);
+            auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
+                             double my_cost = ordered_cost_of<AndFlow>(my_data, true, true);
+                             min_cost = std::min(min_cost, my_cost);
+                             max_cost = std::max(max_cost, my_cost);
+                         };
+            each_perm(data, check);
+            double rel_err = 0.0;
+            double cost_range = (max_cost - min_cost);
+            if (cost_range > 1e-9) {
+                rel_err = (est_cost - min_cost) / cost_range;
+            }
+            max_rel_err = std::max(max_rel_err, rel_err);
+            sum_rel_err += rel_err;
+            errs.push_back(rel_err);
+            EXPECT_NEAR(ref_est, AndFlow::estimate_of(data), 1e-9);
         }
-        max_rel_err = std::max(max_rel_err, rel_err);
-        sum_rel_err += rel_err;
-        EXPECT_NEAR(ref_est, AndFlow::estimate_of(data), 1e-9);
+        std::sort(errs.begin(), errs.end());
+        fprintf(stderr, "  AND/%zu: avg: %10f, p90: %10f, p99: %10f, p99.9: %10f, max: %10f\n",
+                child_cnt, (sum_rel_err / cnt), p(0.9), p(0.99), p(0.999), max_rel_err);
     }
-    fprintf(stderr, "  strict AND allow_force_strict: avg rel_err: %g, max rel_err: %g\n",
-            sum_rel_err / cnt, max_rel_err);
 }
 
 TEST(FlowTest, strict_and_with_allow_force_strict_basic_order) {
@@ -427,8 +446,8 @@ TEST(FlowTest, strict_and_with_allow_force_strict_basic_order) {
 }
 
 void greedy_sort(std::vector<FlowStats> &data, auto flow, auto score_of) {
+    InFlow in_flow = InFlow(flow.strict(), flow.flow());
     for (size_t next = 0; (next + 1) < data.size(); ++next) {
-        InFlow in_flow = InFlow(flow.strict(), flow.flow());
         size_t best_idx = next;
         double best_score = score_of(in_flow, data[next]);
         for (size_t i = next + 1; i < data.size(); ++i) {
@@ -453,6 +472,27 @@ TEST(FlowTest, strict_and_with_allow_force_strict_greedy_reduction_efficiency) {
     test_strict_AND_sort_strategy(my_sort);
 }
 
+TEST(FlowTest, strict_and_with_allow_force_strict_partitioning) {
+    auto my_sort = [](auto &data) {
+                       AndFlow::sort(data, false);
+                       double rate = 1.0;
+                       size_t a = 0;
+                       for (size_t b = 0; b < data.size(); ++b) {
+                           double est = data[b].estimate;
+                           if (flow::should_force_strict(est, data[b].cost, data[b].strict_cost, rate)) {
+                               auto pos = data.begin() + b;
+                               std::rotate(data.begin() + a, pos, pos + 1);
+                               ++a;
+                           }
+                           rate *= est;
+                       }
+                       if (a == 0) { // need at least 1 strict child
+                           AndFlow::sort(data, true);
+                       }
+                   };
+    test_strict_AND_sort_strategy(my_sort);
+}
+
 TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection) {
     auto my_sort = [](auto &data) {
                        AndFlow::sort(data, true);
@@ -461,11 +501,8 @@ TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection) 
                            if (score >= 0.0) {
                                break;
                            }
-                           auto the_one = data[idx];
-                           for (; idx > next; --idx) {
-                               data[idx] = data[idx-1];
-                           }
-                           data[next] = the_one;
+                           auto pos = data.begin() + idx;
+                           std::rotate(data.begin() + next, pos, pos + 1);
                        }
                    };
     test_strict_AND_sort_strategy(my_sort);
@@ -475,19 +512,60 @@ TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_w
     auto my_sort = [](auto &data) {
                        AndFlow::sort(data, true);
                        size_t strict_cnt = 1;
-                       while (strict_cnt < data.size()) {
+                       for (; strict_cnt < data.size(); ++strict_cnt) {
                            auto [idx, score] = flow::select_forced_strict_and_child(flow::DirectAdapter(), data, strict_cnt);
                            if (score >= 0.0) {
                                break;
                            }
-                           auto the_one = data[idx];
-                           for (; idx > strict_cnt; --idx) {
-                               data[idx] = data[idx-1];
-                           }
-                           data[strict_cnt++] = the_one;
+                           auto pos = data.begin() + idx;
+                           std::rotate(data.begin() + strict_cnt, pos, pos + 1);
                        }
                        std::sort(data.begin(), data.begin() + strict_cnt,
                                  [](const auto &a, const auto &b){ return (a.estimate < b.estimate); });
+                   };
+    test_strict_AND_sort_strategy(my_sort);
+}
+
+TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_with_order) {
+    auto my_sort = [](auto &data) {
+                       AndFlow::sort(data, true);
+                       for (size_t next = 1; next < data.size(); ++next) {
+                           auto [idx, target, score] = flow::select_forced_strict_and_child_with_order(flow::DirectAdapter(), data, next);
+                           if (score >= 0.0) {
+                               break;
+                           }
+                           auto pos = data.begin() + idx;
+                           std::rotate(data.begin() + target, pos, pos + 1);
+                       }
+                   };
+    test_strict_AND_sort_strategy(my_sort);
+}
+
+TEST(FlowTest, strict_and_with_allow_force_strict_assume_strict_then_partition_and_re_sort_non_strict) {
+    auto my_sort = [](auto &data) {
+                       std::sort(data.begin(), data.end(),
+                                 [](const auto &a, const auto &b){ return (a.estimate < b.estimate); });
+                       double est = 1.0;
+                       size_t last = data.size();
+                       auto best_strict = [&](size_t i)noexcept{
+                                              if (i == 0) {
+                                                  return data[i].strict_cost < data[i].cost;
+                                              } else {
+                                                  return flow::should_force_strict(data[i].estimate, data[i].cost, data[i].strict_cost, est);
+                                              }
+                                          };
+                       for (size_t i = 0; i < last; ++i) {
+                           while (i < last && !best_strict(i)) {
+                               std::rotate(data.begin()+i, data.begin()+i+1, data.begin()+last);
+                               --last;
+                           }
+                           est *= data[i].estimate;
+                       }
+                       if (last > 0) {
+                           std::sort(data.begin() + last, data.end(), flow::MinAndCost(flow::DirectAdapter()));
+                       } else {
+                           AndFlow::sort(data, true);
+                       }
                    };
     test_strict_AND_sort_strategy(my_sort);
 }
