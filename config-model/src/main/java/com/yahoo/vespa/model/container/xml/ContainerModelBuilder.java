@@ -657,7 +657,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Setup dedicated connector
         var connector = HostedSslConnectorFactory.builder(server.getComponentId().getName()+"-token", tokenPort)
                 .tokenEndpoint(true)
-                .proxyProtocol(state.zone().cloud().useProxyProtocol())
+                .proxyProtocol(false)
                 .endpointCertificate(endpointCert)
                 .remoteAddressHeader("X-Forwarded-For")
                 .remotePortHeader("X-Forwarded-Port")
