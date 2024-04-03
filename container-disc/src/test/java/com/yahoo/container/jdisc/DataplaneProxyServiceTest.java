@@ -67,7 +67,7 @@ public class DataplaneProxyServiceTest {
 
     @Test
     public void retries_reload_errors() throws IOException {
-        Mockito.doThrow(new RuntimeException("IO error")).doNothing().when(proxyCommandsMock).reload();
+        Mockito.doThrow(new RuntimeException("IO error")).doNothing().when(proxyCommandsMock).reload(any());
         when(proxyCommandsMock.isRunning()).thenReturn(false);
         DataplaneProxyService service = dataplaneProxyService(proxyCommandsMock);
 
@@ -83,7 +83,7 @@ public class DataplaneProxyServiceTest {
         assertEquals(DataplaneProxyService.NginxState.RELOAD_REQUIRED, service.state());
         service.converge();
         assertEquals(DataplaneProxyService.NginxState.RUNNING, service.state());
-        verify(proxyCommandsMock, times(2)).reload();
+        verify(proxyCommandsMock, times(2)).reload(any());
     }
 
     @Test
@@ -98,7 +98,7 @@ public class DataplaneProxyServiceTest {
         assertTrue(proxyCommands.isRunning());
 
         // Simulate nginx process dying
-        proxyCommands.stop();
+        proxyCommands.stop(null);
         assertFalse(proxyCommands.isRunning());
         service.converge();
         assertTrue(proxyCommands.isRunning());
@@ -136,7 +136,7 @@ public class DataplaneProxyServiceTest {
         reset(proxyCommandsMock);
 
         when(mockProxyCommands.isRunning()).thenReturn(true).thenReturn(false);
-        doThrow(new RuntimeException("Failed to stop proxy")).when(proxyCommandsMock).stop();
+        doThrow(new RuntimeException("Failed to stop proxy")).when(proxyCommandsMock).stop(any());
         Thread thread = new Thread(service::deconstruct);// deconstruct will block until nginx is stopped
         thread.start();
 
@@ -151,7 +151,7 @@ public class DataplaneProxyServiceTest {
         assertEquals(service.state(), DataplaneProxyService.NginxState.STOPPED);
         thread.join();
 
-        verify(mockProxyCommands, times(1)).stop();
+        verify(mockProxyCommands, times(1)).stop(any());
     }
 
     private DataplaneProxyService dataplaneProxyService(DataplaneProxyService.ProxyCommands proxyCommands) throws IOException {
@@ -190,12 +190,12 @@ public class DataplaneProxyServiceTest {
         }
 
         @Override
-        public void stop() {
+        public void stop(Path configFile) {
             running = false;
         }
 
         @Override
-        public void reload() {
+        public void reload(Path configFile) {
 
         }
 
