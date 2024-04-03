@@ -149,6 +149,7 @@ TOKEN :
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
+    <BUSY_WAIT: "busy_wait"> |
     <CASE: "case"> |
     <CASE_DEFAULT: "default"> |
     <CLEAR_STATE: "clear_state"> |
@@ -183,6 +184,7 @@ TOKEN :
     <SELECT_INPUT: "select_input"> |
     <SET_LANGUAGE: "set_language"> |
     <SET_VAR: "set_var"> |
+    <SLEEP: "sleep"> |
     <SPLIT: "split"> |
     <STEM: "stem"> |
     <SUBSTRING: "substring"> |
@@ -296,6 +298,7 @@ Expression value() :
     ( val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
+      val = busy_waitExp()          |
       val = clearStateExp()         |
       val = echoExp()               |
       val = embedExp()              |
@@ -325,6 +328,7 @@ Expression value() :
       val = setLanguageExp()        |
       val = setValueExp()           |
       val = setVarExp()             |
+      val = sleepExp()              |
       val = splitExp()              |
       val = substringExp()          |
       val = summaryExp()            |
@@ -369,6 +373,12 @@ Expression base64EncodeExp() : { }
 {
     ( <BASE64_ENCODE> )
     { return new Base64EncodeExpression(); }
+}
+
+Expression busy_waitExp() : { }
+{
+    ( <BUSY_WAIT> )
+    { return new BusyWaitExpression(); }
 }
 
 Expression clearStateExp() : { }
@@ -608,6 +618,12 @@ Expression setVarExp() :
     { return new SetVarExpression(val); }
 }
 
+Expression sleepExp() : { }
+{
+    ( <SLEEP> )
+    { return new SleepExpression(); }
+}
+
 Expression splitExp() :
 {
     String val;
@@ -783,6 +799,7 @@ String identifier() :
       ( <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
+        <BUSY_WAIT>                   |
         <CASE>                   |
         <CASE_DEFAULT>           |
         <CLEAR_STATE>            |
@@ -817,6 +834,7 @@ String identifier() :
         <SELECT_INPUT>           |
         <SET_LANGUAGE>           |
         <SET_VAR>                |
+        <SLEEP>                  |
         <SPLIT>                  |
         <STEM>                   |
         <SUBSTRING>              |

@@ -27,7 +27,7 @@ public final class EchoExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        out.println(String.valueOf(context.getValue()));
+        out.println(context.getValue());
     }
 
     @Override
@@ -47,14 +47,9 @@ public final class EchoExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof EchoExpression)) {
-            return false;
-        }
-        EchoExpression rhs = (EchoExpression)obj;
-        if (out != rhs.out) {
-            return false;
-        }
-        return true;
+        if (!(obj instanceof EchoExpression rhs)) return false;
+
+        return out == rhs.out;
     }
 
     @Override
