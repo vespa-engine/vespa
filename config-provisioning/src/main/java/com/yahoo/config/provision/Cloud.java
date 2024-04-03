@@ -57,6 +57,11 @@ public class Cloud {
         return account;
     }
 
+    /** Returns whether load balancers use proxy protocol v1 or not (e.g. use source NAT). */
+    public boolean useProxyProtocol() {
+        return !name.equals(CloudName.AZURE);
+    }
+
     /** For testing purposes only */
     public static Cloud defaultCloud() {
         return new Builder().build();
