@@ -46,12 +46,13 @@ public:
 private:
     const std::vector<Lookup> _lookup;
     const bool                _is_cased;
+    const bool                _is_prefix;
 
     static std::vector<Lookup> make_lookup(const std::vector<uint32_t> &str);
     
 public:
     using MatchResult = LevenshteinDfa::MatchResult;
-    TableDfa(std::vector<uint32_t> str, bool is_cased);
+    TableDfa(std::vector<uint32_t> str, bool is_cased, bool is_prefix);
     ~TableDfa() override;
     [[nodiscard]] MatchResult match(std::string_view source) const override;
     [[nodiscard]] MatchResult match(std::string_view source, std::string& successor_out) const override;

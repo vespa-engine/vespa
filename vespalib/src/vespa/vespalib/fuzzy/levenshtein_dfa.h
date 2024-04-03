@@ -265,6 +265,33 @@ public:
         Cased
     };
 
+    enum class Matching {
+        /**
+         * Edit distance is computed based on the _entire_ source string. Matching is
+         * symmetric between source and target strings, i.e. match(x, y) and match(y, x)
+         * will yield the same result.
+         */
+        FullString,
+        /**
+         * Edit distance is computed based on a _prefix_ of the source string, as compared
+         * against the target string. Matching is therefore _asymmetric_ between source and
+         * target strings.
+         *
+         * Example of matching source strings against the target 'ban' (i.e. the prefix query)
+         * and 1 max edit distance:
+         *   'bananas'  - 0 edits (source prefix 'ban' exact-matches 'ban')
+         *   'balloons' - 1 edit ('bal' vs 'ban')
+         *   '2bananas' - 1 edit ('2ban' vs 'ban')
+         *   'boonanas' - mismatch (2 edits)
+         *
+         * Note that Prefix matching will match a lot more strings than FullString, so in
+         * practice it should be combined with prefix _locking_ to constrain the candidate
+         * result set to a more reasonable cardinality. In particular, max edits >= |target|
+         * will match _every_ source string trivially.
+         */
+        Prefix
+    };
+
     /**
      * Builds and returns a Levenshtein DFA that matches all strings within `max_edits`
      * edits of `target_string`. The type of DFA returned is specified by dfa_type.
@@ -273,6 +300,9 @@ public:
      *
      * `target_string` must not contain any null UTF-8 chars.
      */
+    [[nodiscard]] static LevenshteinDfa build(std::string_view target_string, uint8_t max_edits,
+                                              Casing casing, DfaType dfa_type, Matching matching);
+
     [[nodiscard]] static LevenshteinDfa build(std::string_view target_string, uint8_t max_edits,
                                               Casing casing, DfaType dfa_type);
 
@@ -301,5 +331,6 @@ public:
 std::ostream& operator<<(std::ostream& os, const LevenshteinDfa::MatchResult& mos);
 std::ostream& operator<<(std::ostream& os, LevenshteinDfa::DfaType dt);
 std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Casing c);
+std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Matching m);
 
 }

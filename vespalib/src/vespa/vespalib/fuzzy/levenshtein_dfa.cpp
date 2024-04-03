@@ -41,32 +41,38 @@ void LevenshteinDfa::dump_as_graphviz(std::ostream& out) const {
     _impl->dump_as_graphviz(out);
 }
 
-LevenshteinDfa LevenshteinDfa::build(std::string_view target_string, uint8_t max_edits, Casing casing, DfaType dfa_type) {
+LevenshteinDfa LevenshteinDfa::build(std::string_view target_string, uint8_t max_edits,
+                                     Casing casing, DfaType dfa_type, Matching matching) {
     if (max_edits != 1 && max_edits != 2) {
         throw std::invalid_argument(make_string("Levenshtein DFA max_edits must be in {1, 2}, was %u", max_edits));
     }
-    const bool is_cased = (casing == Casing::Cased);
+    const bool is_cased    = (casing == Casing::Cased);
+    const bool is_prefix   = (matching == Matching::Prefix);
     auto target_string_u32 = is_cased ? utf8_string_to_utf32(target_string)
                                       : utf8_string_to_utf32_lowercased(target_string);
     if (dfa_type == DfaType::Implicit) {
         if (max_edits == 1) {
-            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<1>>>(std::move(target_string_u32), is_cased));
+            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<1>>>(std::move(target_string_u32), is_cased, is_prefix));
         } else { // max_edits == 2
-            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<2>>>(std::move(target_string_u32), is_cased));
+            return LevenshteinDfa(std::make_unique<ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<2>>>(std::move(target_string_u32), is_cased, is_prefix));
         }
     } else if(dfa_type == DfaType::Explicit) {
         if (max_edits == 1) {
-            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<1>>(std::move(target_string_u32), is_cased).build_dfa();
+            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<1>>(std::move(target_string_u32), is_cased, is_prefix).build_dfa();
         } else { // max_edits == 2
-            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<2>>(std::move(target_string_u32), is_cased).build_dfa();
+            return ExplicitLevenshteinDfaBuilder<FixedMaxEditDistanceTraits<2>>(std::move(target_string_u32), is_cased, is_prefix).build_dfa();
         }
     } else { // DfaType::Table
         if (max_edits == 1) {
-            return LevenshteinDfa(std::make_unique<TableDfa<1>>(std::move(target_string_u32), is_cased));
+            return LevenshteinDfa(std::make_unique<TableDfa<1>>(std::move(target_string_u32), is_cased, is_prefix));
         } else { // max_edits == 2
-            return LevenshteinDfa(std::make_unique<TableDfa<2>>(std::move(target_string_u32), is_cased));
+            return LevenshteinDfa(std::make_unique<TableDfa<2>>(std::move(target_string_u32), is_cased, is_prefix));
         }
     }
+}
+
+LevenshteinDfa LevenshteinDfa::build(std::string_view target_string, uint8_t max_edits, Casing casing, DfaType dfa_type) {
+    return build(target_string, max_edits, casing, dfa_type, Matching::FullString);
 }
 
 LevenshteinDfa LevenshteinDfa::build(std::string_view target_string, uint8_t max_edits, Casing casing) {
@@ -110,6 +116,14 @@ std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Casing c) {
         os << "Cased";
     }
     return os;
+}
+
+std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Matching m) {
+    switch (m) {
+    case LevenshteinDfa::Matching::FullString: os << "FullString"; return os;
+    case LevenshteinDfa::Matching::Prefix:     os << "Prefix"; return os;
+    }
+    abort();
 }
 
 }

@@ -97,9 +97,11 @@ public:
 private:
     std::vector<DfaNodeType> _nodes;
     const bool               _is_cased;
+    const bool               _is_prefix;
 public:
-    explicit ExplicitLevenshteinDfaImpl(bool is_cased) noexcept
-        : _is_cased(is_cased)
+    ExplicitLevenshteinDfaImpl(bool is_cased, bool is_prefix) noexcept
+        : _is_cased(is_cased),
+          _is_prefix(is_prefix)
     {}
     ~ExplicitLevenshteinDfaImpl() override;
 
@@ -140,10 +142,12 @@ template <typename Traits>
 class ExplicitLevenshteinDfaBuilder {
     const std::vector<uint32_t> _u32_str_buf; // TODO std::u32string
     const bool                  _is_cased;
+    const bool                  _is_prefix;
 public:
-    ExplicitLevenshteinDfaBuilder(std::vector<uint32_t> str, bool is_cased) noexcept
+    ExplicitLevenshteinDfaBuilder(std::vector<uint32_t> str, bool is_cased, bool is_prefix) noexcept
         : _u32_str_buf(std::move(str)),
-          _is_cased(is_cased)
+          _is_cased(is_cased),
+          _is_prefix(is_prefix)
     {}
 
     [[nodiscard]] LevenshteinDfa build_dfa() const;
