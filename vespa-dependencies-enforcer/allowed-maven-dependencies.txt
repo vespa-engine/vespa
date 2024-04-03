@@ -31,7 +31,6 @@ com.google.protobuf:protobuf-java:${protobuf.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
 de.kherud:llama:${kherud.llama.vespa.version}
-org.jetbrains:annotations:24.0.1
 com.sun.activation:javax.activation:1.2.0
 com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}
