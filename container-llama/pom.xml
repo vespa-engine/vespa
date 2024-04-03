@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>container-llama</artifactId>
+  <packaging>container-plugin</packaging>
+  <version>8-SNAPSHOT</version>
+  <parent>
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>parent</artifactId>
+    <version>8-SNAPSHOT</version>
+    <relativePath>../parent/pom.xml</relativePath>
+  </parent>
+  <properties>
+    <maven.javadoc.skip>true</maven.javadoc.skip> <!-- Javadoc plugin fails because of no source code in module -->
+  </properties>
+  <dependencies>
+    <!-- provided -->
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>annotations</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <!-- Not directly used in this module, but needed to get Import-Packages for JDK packages it exports. -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jdisc_core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- compile -->
+    <dependency>
+      <groupId>de.kherud</groupId>
+      <artifactId>llama</artifactId>
+      <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jetbrains</groupId>
+          <artifactId>annotations</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+	 <bundleType>CORE</bundleType>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+	 <execution>
+	   <phase>package</phase>
+	   <goals>
+	     <goal>shade</goal>
+	   </goals>
+	   <configuration>
+	     <minimizeJar>false</minimizeJar>
+	     <createDependencyReducedPom>false</createDependencyReducedPom>
+	     <filters>
+	       <filter>
+		<artifact>de.kherud:*</artifact>
+		<excludes>
+		  <exclude>de/kherud/llama/Linux-Android//**</exclude>
+		  <exclude>de/kherud/llama/Linux/**</exclude>
+		  <exclude>de/kherud/llama/Mac/**</exclude>
+		  <exclude>de/kherud/llama/Windows/**</exclude>
+		</excludes>
+	       </filter>
+	     </filters>
+	     <transformers>
+	       <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+		<manifestEntries>
+		  <Bundle-Activator>ai.vespa.llama.LlamaBundleActivator</Bundle-Activator>
+		</manifestEntries>
+	       </transformer>
+	     </transformers>
+	   </configuration>
+	 </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
