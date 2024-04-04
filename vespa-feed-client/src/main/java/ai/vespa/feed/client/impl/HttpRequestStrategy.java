@@ -158,7 +158,6 @@ class HttpRequestStrategy implements RequestStrategy {
             return false;
         }
 
-
         if (response.code() == 429) { // Throttling; reduce target inflight.
             logResponse(FINER, response, request, attempt);
             throttler.throttled((inflight.get() - delayedCount.get()));
