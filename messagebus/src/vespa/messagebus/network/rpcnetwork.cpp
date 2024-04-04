@@ -154,7 +154,7 @@ RPCNetwork::flushTargetPool()
 const vespalib::Version &
 RPCNetwork::getVersion() const
 {
-    static vespalib::Version reported_version(8, 310) // _Allows_ new protobuf protocol;
+    static vespalib::Version reported_version(8, 310); // _Allows_ new protobuf protocol
     return reported_version;
 }
 
