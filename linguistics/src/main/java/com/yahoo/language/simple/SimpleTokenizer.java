@@ -64,20 +64,28 @@ public class SimpleTokenizer implements Tokenizer {
         int nextCode = input.codePointAt(0);
         TokenType prevType = SimpleTokenType.valueOf(nextCode);
         TokenType tokenType = prevType;
+        TokenScript prevScript  = SimpleTokenScript.valueOf(nextCode);
+        TokenScript tokenScript = prevScript;
         for (int prev = 0, next = Character.charCount(nextCode); next <= input.length(); ) {
             nextCode = next < input.length() ? input.codePointAt(next) : SPACE_CODE;
             TokenType nextType = SimpleTokenType.valueOf(nextCode);
+            TokenScript nextScript = SimpleTokenScript.valueOf(nextCode);
+
             if (isAtTokenBoundary(prevType, nextType)) {
                 String original = input.substring(prev, next);
                 tokens.add(new SimpleToken(original).setOffset(prev)
                                                     .setType(tokenType)
-                                                    .setTokenString(tokenProcessor.apply(original)));
+                                                    .setTokenString(tokenProcessor.apply(original))
+                                                    .setScript(tokenScript));
                 prev = next;
                 prevType = nextType;
+                prevScript = nextScript;
                 tokenType = prevType;
+                tokenScript = prevScript;
             }
             else {
                 tokenType = determineType(tokenType, nextType);
+                tokenScript = determineScript(tokenScript, nextScript);
             }
             next += Character.charCount(nextCode);
         }
@@ -93,6 +101,12 @@ public class SimpleTokenizer implements Tokenizer {
     private TokenType determineType(TokenType tokenType, TokenType characterType) {
         if (characterType == TokenType.ALPHABETIC) return TokenType.ALPHABETIC;
         return tokenType;
+    }
+
+    private TokenScript determineScript(TokenScript tokenScript, TokenScript characterScript) {
+        // if any character is LATIN, use that as token script; otherwise use script of first character seen.
+        if (characterScript == TokenScript.LATIN) return TokenScript.LATIN;
+        return tokenScript;
     }
 
     private String processToken(String token, Language language, StemMode stemMode, boolean removeAccents) {

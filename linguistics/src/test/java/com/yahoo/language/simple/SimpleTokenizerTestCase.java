@@ -5,6 +5,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.process.AbstractTokenizerTestCase;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
+import com.yahoo.language.process.TokenScript;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -52,4 +53,21 @@ public class SimpleTokenizerTestCase extends AbstractTokenizerTestCase {
         tester.assertTokens(emoji1 + emoji2, emoji1, emoji2);
     }
 
+    @Test public void testTokenizeScripts() {
+        TokenizerTester tester = new TokenizerTester().setStemMode(StemMode.NONE);
+
+        tester.assertTokenScripts("anyone is արևելահայերեն by ancient कार्य",
+                TokenScript.LATIN,
+                TokenScript.COMMON,
+                TokenScript.LATIN,
+                TokenScript.COMMON,
+                TokenScript.ARMENIAN,
+                TokenScript.COMMON,
+                TokenScript.LATIN,
+                TokenScript.COMMON,
+                TokenScript.LATIN,
+                TokenScript.COMMON,
+                TokenScript.DEVANAGARI);
+    }
 }
+
