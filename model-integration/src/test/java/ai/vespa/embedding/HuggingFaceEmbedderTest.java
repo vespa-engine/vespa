@@ -12,6 +12,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorAddress;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,7 +27,6 @@ public class HuggingFaceEmbedderTest {
 
     static HuggingFaceEmbedder embedder = getEmbedder();
     static HuggingFaceEmbedder normalizedEmbedder = getNormalizedEmbedder();
-    static Embedder.Context context = new Embedder.Context("schema.indexing");
 
     @Test
     public void testBinarization() {
@@ -55,9 +55,26 @@ public class HuggingFaceEmbedderTest {
     }
 
     @Test
-    public void testEmbedder() {
-        String input = "This is a test";
+    public void testCaching() {
+        var context = new Embedder.Context("schema.indexing");
 
+        var input = "This is a test string to embed";
+        embedder.embed(input, context,TensorType.fromSpec("tensor<float>(x[8])"));
+        var modelOuput = context.getCachedValue(input);
+
+        embedder.embed(input, context,TensorType.fromSpec("tensor<float>(x[4])"));
+        var modelOuput2 = context.getCachedValue(input);
+        assertEquals(modelOuput, modelOuput2);
+
+        var input2 = "This is a different test string to embed";
+        embedder.embed(input2, context,TensorType.fromSpec("tensor<float>(x[4])"));
+        var modelOuput3 = context.getCachedValue(input2);
+        assertNotEquals(modelOuput, modelOuput3);
+    }
+    @Test
+    public void testEmbedder() {
+        var context = new Embedder.Context("schema.indexing");
+        String input = "This is a test";
         Tensor expected = Tensor.from("tensor<float>(x[8]):[-0.666, 0.335, 0.227, 0.0919, -0.069, 0.323, 0.422, 0.270]");
         Tensor result = embedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[8])")));
         for(int i = 0; i < 8; i++) {
@@ -85,10 +102,9 @@ public class HuggingFaceEmbedderTest {
     @Test
     public void testEmbedderWithNormalization() {
         String input = "This is a test";
-
+        var context = new Embedder.Context("schema.indexing");
         Tensor result = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[8])")));
         assertEquals(1.0, result.multiply(result).sum().asDouble(), 1e-3);
-
         result = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[16])")));
         assertEquals(1.0,  result.multiply(result).sum().asDouble(), 1e-3);
         Tensor binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));

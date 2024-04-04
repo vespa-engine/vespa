@@ -104,6 +104,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         tokenizer.close();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Tensor embed(String s, Context context, TensorType tensorType) {
         var start = System.nanoTime();
@@ -112,7 +113,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
         Tensor tokenTypeIds = tokenTypeIdsName.isEmpty() ? null : createTensorRepresentation(encoding.typeIds(), "d1");
-
 
         Map<String, Tensor> inputs;
         if (tokenTypeIdsName.isEmpty() || tokenTypeIds.isEmpty()) {
@@ -123,9 +123,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                             attentionMaskName, attentionMask.expand("d0"),
                             tokenTypeIdsName, tokenTypeIds.expand("d0"));
         }
-
-        Map<String, Tensor> outputs = evaluator.evaluate(inputs);
-        IndexedTensor tokenEmbeddings = (IndexedTensor) outputs.get(outputName);
+        IndexedTensor tokenEmbeddings = (IndexedTensor) evaluateIfNotPresent(inputs,context,s).get(outputName);
         long[] resultShape = tokenEmbeddings.shape();
         //shape batch, sequence, embedding dimensionality
         if (resultShape.length != 3) {
@@ -134,24 +132,23 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                     outputName + "': [batch, sequence, embedding], got " + resultShape.length);
         }
         Tensor result;
-        if (tensorType.valueType() == TensorType.Value.INT8) {
+        if (tensorType.valueType() == TensorType.Value.INT8) { // binary quantization
             long outputDimensions = resultShape[2];
             long targetDim = tensorType.dimensions().get(0).size().get();
-
-            if(targetDim * 8 > outputDimensions) {
+            //🪆 flexibility - packing only the first 8*targetDim float values from the model output
+            long floatDimensions = 8 * targetDim;
+            if(floatDimensions > outputDimensions) {
                 throw new IllegalArgumentException("Cannot pack " + outputDimensions + " into " + targetDim + " int8s");
             }
-            //Dimensionality flexibility 🪆 - packing only the first 8*targetDim values from the model output
-            long firstDimensions = 8 * targetDim;
-            String name = tensorType.indexedSubtype().dimensions().get(0).name();
-            //perform pooling and normalizing using floating point embeddings before binarizing
-            //using the firstDimensions as the target dimensionality
-            TensorType poolingType = new TensorType.Builder(TensorType.Value.FLOAT).indexed(name, firstDimensions).build();
+            //perform pooling and normalizing using float version before binary quantization
+            TensorType poolingType = new TensorType.Builder(TensorType.Value.FLOAT).
+                    indexed(tensorType.indexedSubtype().dimensions().get(0).name(),
+                            floatDimensions).build();
             result = poolingStrategy.toSentenceEmbedding(poolingType, tokenEmbeddings, attentionMask);
             result = normalize? normalize(result, poolingType) : result;
             result = binarize((IndexedTensor) result, tensorType);
 
-        } else { // regular floating points embeddings
+        } else { // regular float embeddings up to the target dimensionality
             result = poolingStrategy.toSentenceEmbedding(tensorType, tokenEmbeddings, attentionMask);
             result = normalize ? normalize(result, tensorType) : result;
         }
@@ -178,6 +175,30 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
+    /**
+     * Evaluate the model if the result is not present in the context cache.
+     * @param inputs the tensor inputs
+     * @param context the context accompanying the request, a singleton per embedder instance and request
+     * @param hashKey the key to the cached value
+     * @return the model output
+     */
+    @SuppressWarnings("unchecked")
+    protected Map<String, Tensor> evaluateIfNotPresent(Map<String, Tensor> inputs, Context context, String hashKey) {
+        if (context.getCachedValue(hashKey) == null) {
+            Map<String, Tensor> outputs = evaluator.evaluate(inputs);
+            context.putCachedValue(hashKey, outputs);
+            return outputs;
+        } else {
+            return (Map<String, Tensor>) context.getCachedValue(hashKey);
+        }
+    }
+
+    /**
+     * Binary quantization of the embedding into a tensor of type int8 with the specified dimensions.
+     * @param embedding
+     * @param tensorType
+     * @return
+     */
     static public Tensor binarize(IndexedTensor embedding, TensorType tensorType) {
         Tensor.Builder builder = Tensor.Builder.of(tensorType);
         BitSet bitSet = new BitSet(8);
