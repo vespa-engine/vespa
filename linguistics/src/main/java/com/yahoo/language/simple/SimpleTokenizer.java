@@ -104,6 +104,7 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     private TokenScript determineScript(TokenScript tokenScript, TokenScript characterScript) {
+        // if any character is LATIN, use that as token script; otherwise use script of first character seen.
         if (characterScript == TokenScript.LATIN) return TokenScript.LATIN;
         return tokenScript;
     }
