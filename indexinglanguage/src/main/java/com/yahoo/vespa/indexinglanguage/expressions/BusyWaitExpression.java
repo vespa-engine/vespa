@@ -5,7 +5,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 
 /**
- * Utility expression that will sleep the amount of time given in the numeric field.
+ * Utility expression that will busy-wait the amount of time given in the numeric field.
  * Non-numeric fields will be ignored
  * @author baldersheim
  */
@@ -37,7 +37,7 @@ public final class BusyWaitExpression extends Expression {
 
     @Override protected void doVerify(VerificationContext context) { }
     @Override public DataType createdOutputType() { return null; }
-    @Override public String toString() { return "sleep"; }
+    @Override public String toString() { return "busy_wait"; }
     @Override public boolean equals(Object obj) { return obj instanceof BusyWaitExpression; }
     @Override public int hashCode() { return getClass().hashCode(); }
 }
