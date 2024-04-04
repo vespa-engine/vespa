@@ -106,11 +106,11 @@ public final class SessionCache extends AbstractComponent {
         return new SharedMessageBus(bus);
     }
 
-    ReferencedResource<SharedIntermediateSession> retainIntermediate(final IntermediateSessionParams p) {
+    ReferencedResource<SharedIntermediateSession> retainIntermediate(IntermediateSessionParams p) {
         return intermediatesCreator.retain(intermediateLock, intermediates, p);
     }
 
-    public ReferencedResource<SharedSourceSession> retainSource(final SourceSessionParams p) {
+    public ReferencedResource<SharedSourceSession> retainSource(SourceSessionParams p) {
         return sourcesCreator.retain(sourceLock, sources, p);
     }
 
@@ -137,7 +137,7 @@ public final class SessionCache extends AbstractComponent {
                     try {
                         sessionReference = session.refer(this);
                         logReuse(session);
-                    } catch (final IllegalStateException e) {
+                    } catch (IllegalStateException e) {
                         session = createAndStore(registry, p, key);
                         sessionReference = References.fromResource(session);
                     }
@@ -169,7 +169,7 @@ public final class SessionCache extends AbstractComponent {
         }
 
         @Override
-        void logReuse(final SharedSourceSession session) {
+        void logReuse(SharedSourceSession session) {
             log.log(Level.FINE, "Reusing source session.");
         }
     }
@@ -179,7 +179,7 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         SharedIntermediateSession create(IntermediateSessionParams p) {
-            log.log(Level.FINE, "Creating new intermediate session " + p.getName() + "");
+            log.log(Level.FINE, "Creating new intermediate session " + p.getName());
             return bus().newIntermediateSession(p);
         }
 
@@ -190,7 +190,7 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         void logReuse(SharedIntermediateSession session) {
-            log.log(Level.FINE, "Reusing intermediate session " + session.name() + "");
+            log.log(Level.FINE, "Reusing intermediate session " + session.name());
         }
     }
 
@@ -203,12 +203,12 @@ public final class SessionCache extends AbstractComponent {
 
     }
 
-    static class StaticThrottlePolicySignature extends ThrottlePolicySignature {
+    static final class StaticThrottlePolicySignature extends ThrottlePolicySignature {
 
         private final int maxPendingCount;
         private final long maxPendingSize;
 
-        StaticThrottlePolicySignature(final StaticThrottlePolicy policy) {
+        StaticThrottlePolicySignature(StaticThrottlePolicy policy) {
             maxPendingCount = policy.getMaxPendingCount();
             maxPendingSize = policy.getMaxPendingSize();
         }
@@ -224,26 +224,15 @@ public final class SessionCache extends AbstractComponent {
         }
 
         @Override
-        public boolean equals(final Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final StaticThrottlePolicySignature other = (StaticThrottlePolicySignature) obj;
-            if (maxPendingCount != other.maxPendingCount) {
-                return false;
-            }
-            if (maxPendingSize != other.maxPendingSize) {
-                return false;
-            }
-            return true;
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (! (obj instanceof StaticThrottlePolicySignature other)) return false;
+            return (maxPendingCount == other.maxPendingCount) && (maxPendingSize == other.maxPendingSize);
         }
 
     }
 
-    static class DynamicThrottlePolicySignature extends ThrottlePolicySignature {
+    static final class DynamicThrottlePolicySignature extends ThrottlePolicySignature {
 
         private final int maxPending;
         private final double maxWindowSize;
@@ -251,7 +240,7 @@ public final class SessionCache extends AbstractComponent {
         private final double windowSizeBackoff;
         private final double windowSizeIncrement;
 
-        DynamicThrottlePolicySignature(final DynamicThrottlePolicy policy) {
+        DynamicThrottlePolicySignature(DynamicThrottlePolicy policy) {
             maxPending = policy.getMaxPendingCount();
             maxWindowSize = policy.getMaxWindowSize();
             minWindowSize = policy.getMinWindowSize();
@@ -278,29 +267,13 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            DynamicThrottlePolicySignature other = (DynamicThrottlePolicySignature) obj;
-            if (maxPending != other.maxPending) {
-                return false;
-            }
-            if (Double.doubleToLongBits(maxWindowSize) != Double.doubleToLongBits(other.maxWindowSize)) {
-                return false;
-            }
-            if (Double.doubleToLongBits(minWindowSize) != Double
-                    .doubleToLongBits(other.minWindowSize)) {
-                return false;
-            }
-            if (Double.doubleToLongBits(windowSizeBackoff) != Double.doubleToLongBits(other.windowSizeBackoff)) {
-                return false;
-            }
-            if (Double.doubleToLongBits(windowSizeIncrement) != Double.doubleToLongBits(other.windowSizeIncrement)) {
-                return false;
-            }
+            if (this == obj) return true;
+            if (! (obj instanceof DynamicThrottlePolicySignature other)) return false;
+            if (maxPending != other.maxPending) return false;
+            if (Double.doubleToLongBits(maxWindowSize) != Double.doubleToLongBits(other.maxWindowSize)) return false;
+            if (Double.doubleToLongBits(minWindowSize) != Double.doubleToLongBits(other.minWindowSize)) return false;
+            if (Double.doubleToLongBits(windowSizeBackoff) != Double.doubleToLongBits(other.windowSizeBackoff)) return false;
+            if (Double.doubleToLongBits(windowSizeIncrement) != Double.doubleToLongBits(other.windowSizeIncrement)) return false;
             return true;
         }
 
