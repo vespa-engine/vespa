@@ -9242,14 +9242,14 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.search.LLMSearcher" : {
+  "ai.vespa.search.llm.LLMSearcher" : {
     "superClass" : "com.yahoo.search.Searcher",
     "interfaces" : [ ],
     "attributes" : [
       "public"
     ],
     "methods" : [
-      "public void <init>(ai.vespa.llm.search.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
+      "public void <init>(ai.vespa.search.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
       "protected com.yahoo.search.Result complete(com.yahoo.search.Query, ai.vespa.llm.completion.Prompt)",
       "public java.lang.String getPrompt(com.yahoo.search.Query)",
@@ -9261,7 +9261,7 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.search.LlmSearcherConfig$Builder" : {
+  "ai.vespa.search.llm.LlmSearcherConfig$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.config.ConfigInstance$Builder"
@@ -9272,21 +9272,21 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public void <init>(ai.vespa.llm.search.LlmSearcherConfig)",
-      "public ai.vespa.llm.search.LlmSearcherConfig$Builder propertyPrefix(java.lang.String)",
-      "public ai.vespa.llm.search.LlmSearcherConfig$Builder stream(boolean)",
-      "public ai.vespa.llm.search.LlmSearcherConfig$Builder providerId(java.lang.String)",
+      "public void <init>(ai.vespa.search.llm.LlmSearcherConfig)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder propertyPrefix(java.lang.String)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder stream(boolean)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder providerId(java.lang.String)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
       "public final java.lang.String getDefNamespace()",
       "public final boolean getApplyOnRestart()",
       "public final void setApplyOnRestart(boolean)",
-      "public ai.vespa.llm.search.LlmSearcherConfig build()"
+      "public ai.vespa.search.llm.LlmSearcherConfig build()"
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.search.LlmSearcherConfig$Producer" : {
+  "ai.vespa.search.llm.LlmSearcherConfig$Producer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.config.ConfigInstance$Producer"
@@ -9297,11 +9297,11 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract void getConfig(ai.vespa.llm.search.LlmSearcherConfig$Builder)"
+      "public abstract void getConfig(ai.vespa.search.llm.LlmSearcherConfig$Builder)"
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.search.LlmSearcherConfig" : {
+  "ai.vespa.search.llm.LlmSearcherConfig" : {
     "superClass" : "com.yahoo.config.ConfigInstance",
     "interfaces" : [ ],
     "attributes" : [
@@ -9312,7 +9312,7 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public void <init>(ai.vespa.llm.search.LlmSearcherConfig$Builder)",
+      "public void <init>(ai.vespa.search.llm.LlmSearcherConfig$Builder)",
       "public java.lang.String propertyPrefix()",
       "public boolean stream()",
       "public java.lang.String providerId()"
@@ -9324,14 +9324,14 @@
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "ai.vespa.llm.search.RAGSearcher" : {
-    "superClass" : "ai.vespa.llm.search.LLMSearcher",
+  "ai.vespa.search.llm.RAGSearcher" : {
+    "superClass" : "ai.vespa.search.llm.LLMSearcher",
     "interfaces" : [ ],
     "attributes" : [
       "public"
     ],
     "methods" : [
-      "public void <init>(ai.vespa.llm.search.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
+      "public void <init>(ai.vespa.search.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
       "protected ai.vespa.llm.completion.Prompt buildPrompt(com.yahoo.search.Query, com.yahoo.search.Result)"
     ],
