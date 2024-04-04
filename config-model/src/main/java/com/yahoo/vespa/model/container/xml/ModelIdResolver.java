@@ -25,6 +25,7 @@ public class ModelIdResolver {
     public static final String HF_TOKENIZER = "huggingface-tokenizer";
     public static final String ONNX_MODEL = "onnx-model";
     public static final String BERT_VOCAB = "bert-vocabulary";
+    public static final String SIGNIFICANCE_MODEL = "significance-model";
 
     private static Map<String, ProvidedModel> setupProvidedModels() {
         var m = new HashMap<String, ProvidedModel>();
