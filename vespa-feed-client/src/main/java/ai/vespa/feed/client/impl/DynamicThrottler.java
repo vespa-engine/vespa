@@ -69,11 +69,6 @@ public class DynamicThrottler extends StaticThrottler {
     }
 
     @Override
-    public void throttled(long inflight) {
-        super.throttled(inflight);
-    }
-
-    @Override
     public long targetInflight() {
         return min(super.targetInflight(), targetInflight.get());
     }
