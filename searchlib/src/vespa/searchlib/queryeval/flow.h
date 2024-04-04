@@ -25,8 +25,9 @@ public:
       : _value(strict ? -1.0 : std::max(rate, 0.0)) {}
     constexpr InFlow(bool strict) noexcept : InFlow(strict, 1.0) {}
     constexpr InFlow(double rate) noexcept : InFlow(false, rate) {}
-    constexpr bool strict() noexcept { return _value < 0.0; }
-    constexpr double rate() noexcept { return strict() ? 1.0 : _value; }
+    constexpr void force_strict() noexcept { _value = -1.0; }
+    constexpr bool strict() const noexcept { return _value < 0.0; }
+    constexpr double rate() const noexcept { return strict() ? 1.0 : _value; }
 };
 
 struct FlowStats {
@@ -122,13 +123,13 @@ struct MinOrCost {
 };
 
 // estimate the cost of evaluating a strict child in a non-strict context
-inline double forced_strict_cost(double estimate, double strict_cost, double rate) {
-    return 0.2 * (rate - estimate) + strict_cost;
+inline double forced_strict_cost(const FlowStats &stats, double rate) {
+    return 0.2 * (rate - stats.estimate) + stats.strict_cost;
 }
 
 // would it be faster to force a non-strict child to be strict
-inline bool should_force_strict(double estimate, double cost, double strict_cost, double rate) {
-    return forced_strict_cost(estimate, strict_cost, rate) < (cost * rate);
+inline bool should_force_strict(const FlowStats &stats, double rate) {
+    return forced_strict_cost(stats, rate) < (stats.cost * rate);
 }
 
 // estimate the absolute cost of evaluating a child with a specific in flow
@@ -139,7 +140,7 @@ inline double min_child_cost(InFlow in_flow, const FlowStats &stats, bool allow_
     if (!allow_force_strict) {
         return stats.cost * in_flow.rate();
     }
-    return std::min(forced_strict_cost(stats.estimate, stats.strict_cost, in_flow.rate()),
+    return std::min(forced_strict_cost(stats, in_flow.rate()),
                     stats.cost * in_flow.rate());
 }
 
@@ -186,7 +187,7 @@ template <typename ADAPTER, typename T, typename F>
 double ordered_cost_of(ADAPTER adapter, const T &children, F flow, bool allow_force_strict) {
     double total_cost = 0.0;
     for (const auto &child: children) {
-        FlowStats stats(adapter.estimate(child), adapter.cost(child), adapter.strict_cost(child));
+        auto stats = FlowStats::from(adapter, child);
         double child_cost = min_child_cost(InFlow(flow.strict(), flow.flow()), stats, allow_force_strict);
         flow.update_cost(total_cost, child_cost);
         flow.add(stats.estimate);
@@ -224,7 +225,7 @@ auto select_forced_strict_and_child(auto adapter, const auto &children, size_t f
     for (size_t idx = first; idx < children.size(); ++idx) {
         auto child = FlowStats::from(adapter, children[idx]);
         double child_abs_cost = est * child.cost;
-        double forced_cost = forced_strict_cost(child.estimate, child.strict_cost, est);
+        double forced_cost = forced_strict_cost(child, est);
         double my_diff = (forced_cost + child.estimate * cost) - (cost + child_abs_cost);
         if (my_diff < best_diff) {
             best_diff = my_diff;
@@ -252,7 +253,7 @@ auto select_forced_strict_and_child_with_order(auto adapter, const auto &childre
     for (size_t idx = first; idx < children.size(); ++idx) {
         auto child = FlowStats::from(adapter, children[idx]);
         double child_abs_cost = est * child.cost;
-        double forced_cost = forced_strict_cost(child.estimate, child.strict_cost, est);
+        double forced_cost = forced_strict_cost(child, est);
         double my_diff = (forced_cost + child.estimate * cost) - (cost + child_abs_cost);
         size_t target = first;
         while (target > 0) {
@@ -262,7 +263,7 @@ auto select_forced_strict_and_child_with_order(auto adapter, const auto &childre
                 // do not move past someone with lower estimate
                 break;
             }
-            if (!should_force_strict(other.estimate, other.cost, other.strict_cost, (est_until(candidate) * child.estimate))) {
+            if (!should_force_strict(other, (est_until(candidate) * child.estimate))) {
                 // no not move past someone who will lose strictness
                 break;
             }

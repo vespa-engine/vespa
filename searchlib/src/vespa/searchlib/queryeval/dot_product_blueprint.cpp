@@ -40,11 +40,12 @@ DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimate & e
 }
 
 void
-DotProductBlueprint::sort(InFlow)
+DotProductBlueprint::sort(InFlow in_flow)
 {
-    strict(true);
+    in_flow.force_strict();
+    resolve_strict(in_flow);
     for (auto &term: _terms) {
-        term->sort(true);
+        term->sort(in_flow);
     }
 }
 

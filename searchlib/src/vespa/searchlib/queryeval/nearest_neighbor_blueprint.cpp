@@ -128,7 +128,7 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
 void
 NearestNeighborBlueprint::sort(InFlow in_flow)
 {
-    strict(in_flow.strict());
+    resolve_strict(in_flow);
 }
 
 std::unique_ptr<SearchIterator>

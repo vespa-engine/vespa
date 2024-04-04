@@ -282,7 +282,7 @@ PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
 void
 PredicateBlueprint::sort(InFlow in_flow)
 {
-    strict(in_flow.strict());
+    resolve_strict(in_flow);
 }
 
 SearchIterator::UP

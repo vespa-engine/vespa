@@ -48,7 +48,7 @@ SimplePhraseBlueprint::addTerm(Blueprint::UP term)
 void
 SimplePhraseBlueprint::sort(InFlow in_flow)
 {
-    strict(in_flow.strict());
+    resolve_strict(in_flow);
     for (auto &term: _terms) {
         term->sort(in_flow);
     }

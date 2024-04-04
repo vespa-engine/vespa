@@ -822,6 +822,36 @@ TEST("Options binding and nesting") {
     check_opts(false, false, false);
 }
 
+TEST("self strict resolving during sort") {
+    uint32_t docs = 1000;
+    uint32_t hits = 250;
+    auto leaf = std::unique_ptr<Blueprint>(MyLeafSpec(hits).create());
+    leaf->setDocIdLimit(docs);
+    leaf->update_flow_stats(docs);
+    EXPECT_EQUAL(leaf->estimate(), 0.25);
+    EXPECT_EQUAL(leaf->cost(), 1.0);
+    EXPECT_EQUAL(leaf->strict_cost(), 0.25);
+    EXPECT_EQUAL(leaf->strict(), false); // starting value
+    { // do not allow force strict
+        auto guard = Blueprint::bind_opts(make_opts(true, false, false));
+        leaf->sort(true);
+        EXPECT_EQUAL(leaf->strict(), true);
+        leaf->sort(false);
+        EXPECT_EQUAL(leaf->strict(), false);
+    }
+    { // allow force strict
+        auto guard = Blueprint::bind_opts(make_opts(true, true, false));
+        leaf->sort(true);
+        EXPECT_EQUAL(leaf->strict(), true);
+        leaf->sort(false);
+        EXPECT_EQUAL(leaf->strict(), true);
+        leaf->sort(0.30);
+        EXPECT_EQUAL(leaf->strict(), true);
+        leaf->sort(0.20);
+        EXPECT_EQUAL(leaf->strict(), false);
+    }
+}
+
 TEST_MAIN() {
     TEST_DEBUG("lhs.out", "rhs.out");
     TEST_RUN_ALL();

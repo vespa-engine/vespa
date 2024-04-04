@@ -73,7 +73,7 @@ public:
     }
 
     void sort(queryeval::InFlow in_flow) override {
-        strict(in_flow.strict());
+        resolve_strict(in_flow);
     }
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
