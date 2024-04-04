@@ -1,7 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+
+import com.yahoo.vespa.indexinglanguage.expressions.CompositeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.GetVarExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.HostNameExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.NowExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.RandomExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SetVarExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SwitchExpression;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +74,7 @@ public class ExpressionOptimizer extends ExpressionConverter {
     }
 
     static boolean ignoresInput(Expression exp) {
-        if (exp instanceof SwitchExpression || exp instanceof ScriptExpression || exp instanceof ForEachExpression ) {
+        if (exp instanceof SwitchExpression || exp instanceof ScriptExpression || exp instanceof ForEachExpression) {
             return false;  // Switch and script never ignores input.
         }
         if (exp instanceof CompositeExpression) {

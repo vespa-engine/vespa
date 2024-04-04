@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 )
 
@@ -106,10 +105,10 @@ event: token
 data: {"token": "The"}
 
 event: token
-data: {"token": "Manhattan"}
+data: {"token": " Manhattan"}
 
 event: token
-data: {"token": "Project"}
+data: {"token": " Project"}
 
 event: end
 `
@@ -121,7 +120,7 @@ event: token
 data: {"token": "The"}
 
 event: token
-data: Manhattan
+data:  Manhattan
 
 event: error
 data: {"message": "something went wrong"}
@@ -177,8 +176,7 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 		"{\n    \"query\": \"result\"\n}\n",
 		stdout.String(),
 		"query output")
-	queryURL, err := queryServiceURL(client)
-	require.Nil(t, err)
+	queryURL := "http://127.0.0.1:8080"
 	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.LastRequest.URL.String())
 }
 
@@ -204,8 +202,4 @@ func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 		"Error: Status "+strconv.Itoa(status)+" from container at 127.0.0.1:8080\n"+errorMessage+"\n",
 		stderr.String(),
 		"error output")
-}
-
-func queryServiceURL(client *mock.HTTPClient) (string, error) {
-	return "http://127.0.0.1:8080", nil
 }

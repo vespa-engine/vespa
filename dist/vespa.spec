@@ -629,6 +629,7 @@ fi
 %{_prefix}/lib/jars/config-provisioning-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-apache-http-client-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-disc-jar-with-dependencies.jar
+%{_prefix}/lib/jars/container-llama.jar
 %{_prefix}/lib/jars/container-onnxruntime.jar
 %{_prefix}/lib/jars/container-search-and-docproc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-spifly.jar

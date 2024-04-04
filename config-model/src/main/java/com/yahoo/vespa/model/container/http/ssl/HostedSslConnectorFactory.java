@@ -24,7 +24,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final SslClientAuth clientAuth;
     private final List<String> tlsCiphersOverride;
     private final boolean proxyProtocolEnabled;
-    private final boolean proxyProtocolMixedMode;
     private final Duration endpointConnectionTtl;
     private final List<String> remoteAddressHeaders;
     private final List<String> remotePortHeaders;
@@ -37,7 +36,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.clientAuth = builder.clientAuth;
         this.tlsCiphersOverride = List.copyOf(builder.tlsCiphersOverride);
         this.proxyProtocolEnabled = builder.proxyProtocolEnabled;
-        this.proxyProtocolMixedMode = builder.proxyProtocolMixedMode;
         this.endpointConnectionTtl = builder.endpointConnectionTtl;
         this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
         this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
@@ -70,7 +68,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         }
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
-                                       .enabled(proxyProtocolEnabled).mixedMode(proxyProtocolMixedMode))
+                                       .enabled(proxyProtocolEnabled))
                 .idleTimeout(Duration.ofSeconds(30).toSeconds())
                 .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0)
                 .accessLog(new ConnectorConfig.AccessLog.Builder()
@@ -89,7 +87,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         SslClientAuth clientAuth;
         List<String> tlsCiphersOverride = List.of();
         boolean proxyProtocolEnabled;
-        boolean proxyProtocolMixedMode;
         Duration endpointConnectionTtl;
         EndpointCertificateSecrets endpointCertificate;
         String tlsCaCertificatesPem;
@@ -101,7 +98,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         public Builder clientAuth(SslClientAuth auth) { clientAuth = auth; return this; }
         public Builder endpointConnectionTtl(Duration ttl) { endpointConnectionTtl = ttl; return this; }
         public Builder tlsCiphersOverride(Collection<String> ciphers) { tlsCiphersOverride = List.copyOf(ciphers); return this; }
-        public Builder proxyProtocol(boolean enabled, boolean mixedMode) { proxyProtocolEnabled = enabled; proxyProtocolMixedMode = mixedMode; return this; }
+        public Builder proxyProtocol(boolean enabled) { proxyProtocolEnabled = enabled; return this; }
         public Builder endpointCertificate(EndpointCertificateSecrets cert) { this.endpointCertificate = cert; return this; }
         public Builder tlsCaCertificatesPath(String path) { this.tlsCaCertificatesPath = path; return this; }
         public Builder tlsCaCertificatesPem(String pem) { this.tlsCaCertificatesPem = pem; return this; }

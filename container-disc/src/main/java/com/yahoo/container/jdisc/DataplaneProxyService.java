@@ -134,7 +134,7 @@ public class DataplaneProxyService extends AbstractComponent {
             } else {
                 if (state == NginxState.RELOAD_REQUIRED) {
                     try {
-                        proxyCommands.reload();
+                        proxyCommands.reload(nginxConf);
                         changeState(convergeTo);
                     } catch (Exception e) {
                         logger.log(Level.INFO, "Failed to reconfigure nginx, will retry.");
@@ -148,7 +148,7 @@ public class DataplaneProxyService extends AbstractComponent {
         } else if (convergeTo == NginxState.STOPPED) {
             if (proxyCommands.isRunning()) {
                 try {
-                    proxyCommands.stop();
+                    proxyCommands.stop(nginxConf);
                 } catch (Exception e) {
                     logger.log(Level.INFO, "Failed to stop nginx, will retry");
                     logger.log(Level.FINE, "Exception from nginx stop", e);
@@ -240,8 +240,8 @@ public class DataplaneProxyService extends AbstractComponent {
 
     public interface ProxyCommands {
         void start(Path configFile);
-        void stop();
-        void reload();
+        void stop(Path configFile);
+        void reload(Path configFile);
         boolean isRunning();
     }
 
@@ -264,11 +264,12 @@ public class DataplaneProxyService extends AbstractComponent {
         }
 
         @Override
-        public void stop() {
+        public void stop(Path configFile) {
             try {
                 Process stopCommand = new ProcessBuilder().command(
                         "nginx",
-                        "-s", "stop"
+                        "-s", "stop",
+                        "-c", configFile.toString()
                 ).start();
                 int exitCode = stopCommand.waitFor();
                 if (exitCode != 0) {
@@ -281,11 +282,12 @@ public class DataplaneProxyService extends AbstractComponent {
         }
 
         @Override
-        public void reload() {
+        public void reload(Path configFile) {
             try {
                 Process reloadCommand = new ProcessBuilder().command(
                         "nginx",
-                        "-s", "reload"
+                        "-s", "reload",
+                        "-c", configFile.toString()
                 ).start();
                 int exitCode = reloadCommand.waitFor();
                 if (exitCode != 0) {

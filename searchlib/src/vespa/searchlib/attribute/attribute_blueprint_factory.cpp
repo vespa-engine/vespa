@@ -305,7 +305,7 @@ public:
         };
         double est = OrFlow::estimate_of(MyAdapter(docid_limit), _estimates);
         return {est, OrFlow::cost_of(MyAdapter(docid_limit), _estimates, false),
-                OrFlow::cost_of(MyAdapter(docid_limit), _estimates, true) + queryeval::flow::array_cost(est, _estimates.size())};
+                OrFlow::cost_of(MyAdapter(docid_limit), _estimates, true) + queryeval::flow::heap_cost(est, _estimates.size())};
     }
 
     SearchIterator::UP

@@ -1,32 +1,31 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.provision.ClusterInfo;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
-import java.util.logging.Level;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -77,8 +76,10 @@ public class NodesSpecification {
                                Optional<CloudAccount> cloudAccount,
                                boolean hasCountAttribute) {
         if (max.smallerThan(min))
-            throw new IllegalArgumentException("Min resources must be larger or equal to max resources, but " +
+            throw new IllegalArgumentException("Max resources must be larger or equal to min resources, but " +
                                                max + " is smaller than " + min);
+        if (min.nodes() < 1)
+            throw new IllegalArgumentException("Min node count cannot be less than 1, but is " + min.nodes());
 
         // Non-scaled resources must be equal
         if ( ! min.nodeResources().justNonNumbers().equals(max.nodeResources().justNonNumbers()))
@@ -127,6 +128,9 @@ public class NodesSpecification {
         var nodes =  rangeFrom(nodesElement, "count");
         var groups =  rangeFrom(nodesElement, "groups");
         var groupSize =  rangeFrom(nodesElement, "group-size");
+
+        if (nodes.from().orElse(1) < 1)
+            throw new IllegalArgumentException("Min node resources cannot be less than 1, but is " + nodes.from().getAsInt());
 
         // Find the tightest possible limits for groups to avoid falsely concluding we are autoscaling
         // when only specifying group size

@@ -121,7 +121,7 @@ public class LLMSearcherTest {
 
     @Test
     public void testAsyncGeneration() {
-        var executor = Executors.newFixedThreadPool(1);
+        var executor = Executors.newFixedThreadPool(2);
         var sb = new StringBuilder();
         try {
             var config = new LlmSearcherConfig.Builder().stream(false).providerId("mock").build(); // config says don't stream...

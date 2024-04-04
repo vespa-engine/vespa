@@ -66,7 +66,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     public void success() {
         failingSinceMillis.set(NEVER);
         if ( ! open.get() && halfOpen.compareAndSet(true, false))
-            log.log(FINE, "Circuit breaker is now closed");
+            log.log(INFO, "Circuit breaker is now closed, after a request was successful");
     }
 
     @Override

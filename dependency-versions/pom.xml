@@ -66,8 +66,8 @@
         <assertj.vespa.version>3.25.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.691</aws-sdk.vespa.version>
-        <athenz.vespa.version>1.11.54</athenz.vespa.version>
+        <aws-sdk.vespa.version>1.12.693</aws-sdk.vespa.version>
+        <athenz.vespa.version>1.11.55</athenz.vespa.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -115,9 +115,10 @@
         <junit.vespa.version>5.10.2</junit.vespa.version>
         <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
-        <luben.zstd.vespa.version>1.5.5-11</luben.zstd.vespa.version>
+        <kherud.llama.vespa.version>2.3.5</kherud.llama.vespa.version>
+        <luben.zstd.vespa.version>1.5.6-1</luben.zstd.vespa.version>
         <lucene.vespa.version>9.10.0</lucene.vespa.version>
-        <maven-archiver.vespa.version>3.6.1</maven-archiver.vespa.version>
+        <maven-archiver.vespa.version>3.6.2</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.11.0</mockito.vespa.version>
@@ -130,7 +131,9 @@
         <org.json.vespa.version>20240303</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
+        <plexus-archiver.vespa.version>4.9.2</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
+        <plexus-io.vespa.version>3.4.2</plexus-io.vespa.version>
         <plexus-utils.vespa.version>3.5.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>3.0.0</plexus-xml.vespa.version>
         <protobuf.vespa.version>3.25.3</protobuf.vespa.version>
