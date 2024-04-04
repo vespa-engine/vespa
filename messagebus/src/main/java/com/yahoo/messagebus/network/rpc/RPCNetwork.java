@@ -300,21 +300,7 @@ public class RPCNetwork implements Network, MethodHandler {
         return false;
     }
 
-    private static Version deriveSupportedProtocolVersion() {
-        // This is a very leaky abstraction, but since MessageBus only exchanges versions
-        // (and not a set of supported protocols), we have to do this workaround.
-        // Disallow-version MUST be lower than that used as a protocol lower bound in
-        // DocumentProtocol.java and the exact same as that used in C++ for the same purposes.
-        // ... Or else!
-        // TODO remove this glorious hack once protobuf protocol is enabled by default
-        var maybeEnvVal = System.getenv("VESPA_MBUS_DOCUMENTAPI_USE_PROTOBUF");
-        if ("true".equals(maybeEnvVal) || "yes".equals(maybeEnvVal)) {
-            return new Version(8, 310); // _Allows_ new protobuf protocol
-        }
-        return new Version(8, 309); // _Disallows_ new protobuf protocol
-    }
-
-    private static final Version REPORTED_VERSION = deriveSupportedProtocolVersion();
+    private static final Version REPORTED_VERSION = new Version(8, 310);
 
     /**
      * Returns the (protocol) version of this network. This gets called when the "mbus.getVersion" method is invoked
