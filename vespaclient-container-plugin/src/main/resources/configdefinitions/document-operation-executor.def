@@ -7,3 +7,5 @@ resendDelayMillis     int default=10
 # Bound on number of document operations to keep in retry queue — further operations are rejected
 maxThrottled          int default=4096
 
+# Max age in seconds of message in throttled Q.
+maxThrottledAge       double default=3.0

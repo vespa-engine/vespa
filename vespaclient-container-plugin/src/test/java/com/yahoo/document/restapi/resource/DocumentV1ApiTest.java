@@ -113,6 +113,7 @@ public class DocumentV1ApiTest {
             .build();
     final DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()
             .maxThrottled(2)
+            .maxThrottledAge(1.0)
             .resendDelayMillis(1 << 30)
             .build();
     final DocumentmanagerConfig docConfig = Deriver.getDocumentManagerConfig("src/test/cfg/music.sd")
@@ -186,6 +187,59 @@ public class DocumentV1ApiTest {
                      DocumentV1ApiHandler.resolveBucket(cluster, Optional.of("music"), List.of(), Optional.empty()));
         assertEquals(FixedBucketSpaces.globalSpace(),
                      DocumentV1ApiHandler.resolveBucket(cluster, Optional.empty(), List.of(FixedBucketSpaces.globalSpace()), Optional.of("global")));
+    }
+
+    @Test
+    public void testOverLoadBySize() {
+        RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
+        // OVERLOAD is a 429
+        access.session.expect((id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, Result.toError(Result.ResultType.TRANSIENT_ERROR)));
+        var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
+        var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
+        var response3 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                "  \"message\": \"Rejecting execution due to overload: 2 requests already enqueued\"" +
+                "}", response3.readAll());
+        assertEquals(429, response3.getStatus());
+
+        access.session.expect((id, parameters) -> new Result(Result.ResultType.FATAL_ERROR, Result.toError(Result.ResultType.FATAL_ERROR)));
+        handler.dispatchEnqueued();
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
+                "}", response1.readAll());
+        assertEquals(500, response1.getStatus());
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
+                "}", response2.readAll());
+        assertEquals(500, response2.getStatus());
+        driver.close();
+    }
+
+    @Test
+    public void testOverLoadByAge() {
+        RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
+        // OVERLOAD is a 429
+        access.session.expect((id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, Result.toError(Result.ResultType.TRANSIENT_ERROR)));
+        var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
+        try { Thread.sleep(3_000); } catch (InterruptedException e) {}
+        var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                "  \"message\": \"Rejecting execution due to overload: 1.0 seconds worth of work enqueued\"" +
+                "}", response2.readAll());
+        assertEquals(429, response2.getStatus());
+
+        access.session.expect((id, parameters) -> new Result(Result.ResultType.FATAL_ERROR, Result.toError(Result.ResultType.FATAL_ERROR)));
+        handler.dispatchEnqueued();
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
+                "}", response1.readAll());
+        assertEquals(500, response1.getStatus());
+        driver.close();
     }
 
     @Test
@@ -922,29 +976,6 @@ public class DocumentV1ApiTest {
                        "  \"message\": \"'PATCH' not allowed at '/document/v1/space/music/docid/one'. Allowed methods are: GET, POST, PUT, DELETE\"" +
                        "}", response.readAll());
         assertEquals(405, response.getStatus());
-
-        // OVERLOAD is a 429
-        access.session.expect((id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, Result.toError(Result.ResultType.TRANSIENT_ERROR)));
-        var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
-        var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
-        var response3 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"Rejecting execution due to overload: 2 requests already enqueued\"" +
-                       "}", response3.readAll());
-        assertEquals(429, response3.getStatus());
-        access.session.expect((id, parameters) -> new Result(Result.ResultType.FATAL_ERROR, Result.toError(Result.ResultType.FATAL_ERROR)));
-        handler.dispatchEnqueued();
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
-                       "}", response1.readAll());
-        assertEquals(500, response1.getStatus());
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
-                       "}", response2.readAll());
-        assertEquals(500, response2.getStatus());
 
         // Request response does not arrive before timeout has passed.
         AtomicReference<ResponseHandler> handler = new AtomicReference<>();
