@@ -188,6 +188,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final DocumentApiMetrics metrics;
     private final DocumentOperationParser parser;
     private final long maxThrottled;
+    private final long maxThrottledAgeNS;
     private final DocumentAccess access;
     private final AsyncSession asyncSession;
     private final Map<String, StorageCluster> clusters;
@@ -221,6 +222,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.metric = metric;
         this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
         this.maxThrottled = executorConfig.maxThrottled();
+        this.maxThrottledAgeNS = (long) (executorConfig.maxThrottledAge() * 1_000_000_000.0);
         this.access = access;
         this.asyncSession = access.createAsyncSession(new AsyncParameters());
         this.clusters = parseClusters(clusterListConfig, bucketSpacesConfig);
@@ -470,7 +472,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             enqueueAndDispatch(request, handler, () -> {
                 ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
                 DocumentPut put = (DocumentPut)parsed.operation();
-                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(c -> put.setCondition(c));
+                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(put::setCondition);
                 getProperty(request, CREATE, booleanParser).ifPresent(put::setCreateIfNonExistent);
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
@@ -596,15 +598,33 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         return false;
     }
 
+    private long qAgeNS(HttpRequest request) {
+        Operation oldest = operations.peek();
+        return (oldest != null)
+                ? (request.relativeCreatedAtNanoTime() - oldest.request.relativeCreatedAtNanoTime())
+                : 0;
+    }
+
     /**
      * Enqueues the given request and operation, or responds with "overload" if the queue is full,
      * and then attempts to dispatch an enqueued operation from the head of the queue.
      */
     private void enqueueAndDispatch(HttpRequest request, ResponseHandler handler, Supplier<BooleanSupplier> operationParser) {
-        if (enqueued.incrementAndGet() > maxThrottled) {
+        long numQueued = enqueued.incrementAndGet();
+        if (numQueued > maxThrottled) {
             enqueued.decrementAndGet();
-            overload(request, "Rejecting execution due to overload: " + maxThrottled + " requests already enqueued", handler);
+            overload(request, "Rejecting execution due to overload: "
+                    + maxThrottled + " requests already enqueued", handler);
             return;
+        }
+        if (numQueued > 1) {
+            long ageNS = qAgeNS(request);
+            if (ageNS > maxThrottledAgeNS) {
+                enqueued.decrementAndGet();
+                overload(request, "Rejecting execution due to overload: "
+                        + maxThrottledAgeNS / 1_000_000_000.0 + " seconds worth of work enqueued", handler);
+                return;
+            }
         }
         operations.offer(new Operation(request, handler, operationParser));
         dispatchFirst();
