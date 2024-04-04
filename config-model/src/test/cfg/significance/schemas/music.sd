@@ -1,0 +1,12 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+search music      {
+        document music    {
+                field f1 type string    {
+                        indexing: summary | index
+                }
+                field f2 type string    {
+                        indexing: summary | index
+                }
+        }
+}
+
