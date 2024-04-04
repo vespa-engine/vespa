@@ -180,7 +180,7 @@
         <maven-resolver.vespa.version>1.9.18</maven-resolver.vespa.version>
         <maven-shade-plugin.vespa.version>3.5.2</maven-shade-plugin.vespa.version>
         <maven-site-plugin.vespa.version>3.12.1</maven-site-plugin.vespa.version>
-        <maven-source-plugin.vespa.version>3.3.0</maven-source-plugin.vespa.version>
+        <maven-source-plugin.vespa.version>3.3.1</maven-source-plugin.vespa.version>
         <properties-maven-plugin.vespa.version>1.2.1</properties-maven-plugin.vespa.version>
         <versions-maven-plugin.vespa.version>2.16.2</versions-maven-plugin.vespa.version>
     </properties>
