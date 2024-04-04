@@ -182,22 +182,12 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
      * @param hashKey the key to the cached value
      * @return the model output
      */
-    @SuppressWarnings("unchecked")
     protected Map<String, Tensor> evaluateIfNotPresent(Map<String, Tensor> inputs, Context context, String hashKey) {
-        if (context.getCachedValue(hashKey) == null) {
-            Map<String, Tensor> outputs = evaluator.evaluate(inputs);
-            context.putCachedValue(hashKey, outputs);
-            return outputs;
-        } else {
-            return (Map<String, Tensor>) context.getCachedValue(hashKey);
-        }
+        return context.computeCachedValueIfAbsent(hashKey, () -> evaluator.evaluate(inputs));
     }
 
     /**
      * Binary quantization of the embedding into a tensor of type int8 with the specified dimensions.
-     * @param embedding
-     * @param tensorType
-     * @return
      */
     static public Tensor binarize(IndexedTensor embedding, TensorType tensorType) {
         Tensor.Builder builder = Tensor.Builder.of(tensorType);

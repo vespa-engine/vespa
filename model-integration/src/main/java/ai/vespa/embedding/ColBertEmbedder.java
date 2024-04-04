@@ -196,7 +196,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
         return resultTensor;
     }
-    @SuppressWarnings("unchecked")
+
     protected Tensor embedDocument(String text, Context context, TensorType tensorType) {
         var start = System.nanoTime();
 
@@ -228,15 +228,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
      * @param hashKey the key to the cached value
      * @return the model output
      */
-    @SuppressWarnings("unchecked")
     protected Map<String, Tensor> evaluateIfNotPresent(Map<String, Tensor> inputs, Context context, String hashKey) {
-        if (context.getCachedValue(hashKey) == null) {
-            Map<String, Tensor> outputs = evaluator.evaluate(inputs);
-            context.putCachedValue(hashKey, outputs);
-            return outputs;
-        } else {
-            return (Map<String, Tensor>) context.getCachedValue(hashKey);
-        }
+        return context.computeCachedValueIfAbsent(hashKey, () -> evaluator.evaluate(inputs));
     }
 
     public static Tensor toFloatTensor(IndexedTensor result, TensorType type, int nTokens) {

@@ -7,10 +7,10 @@ import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * An embedder converts a text string to a tensor
@@ -160,6 +160,12 @@ public interface Embedder {
         /** Returns a cached value, or null if not present. */
         public Object getCachedValue(String key) {
             return cache.get(key);
+        }
+
+        /** Returns the cached value, or computes and caches it if not present. */
+        @SuppressWarnings("unchecked")
+        public <T> T computeCachedValueIfAbsent(String key, Supplier<? extends T> supplier) {
+            return (T) cache.computeIfAbsent(key, __ -> supplier.get());
         }
 
     }
