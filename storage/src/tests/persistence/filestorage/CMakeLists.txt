@@ -4,6 +4,7 @@ vespa_add_executable(storage_filestorage_gtest_runner_app TEST
     SOURCES
     deactivatebucketstest.cpp
     deletebuckettest.cpp
+    feed_operation_batching_test.cpp
     filestormanagertest.cpp
     filestormodifiedbucketstest.cpp
     mergeblockingtest.cpp

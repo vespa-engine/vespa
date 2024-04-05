@@ -239,6 +239,7 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(config, _threads.size());
         _filestorHandler->reconfigure_dynamic_throttler(updated_dyn_throttle_params);
     }
+    _filestorHandler->set_max_feed_op_batch_size(std::max(1, config.maxFeedOpBatchSize));
     // TODO remove once desired throttling behavior is set in stone
     {
         _filestorHandler->use_dynamic_operation_throttling(use_dynamic_throttling);
