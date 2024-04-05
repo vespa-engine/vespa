@@ -210,6 +210,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     @Override
     public GetConfigBuilder getConfig() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
+    @Deprecated
     @Override
     public CuratorTransaction inTransaction() {
         return new MockCuratorTransactionFinal();
@@ -221,6 +222,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     @Override
     public TransactionOp transactionOp() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
+    @Deprecated
     @Override
     public RemoveWatchesBuilder watches() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
@@ -309,6 +311,7 @@ public class MockCuratorFramework implements CuratorFramework  {
         return new EnsurePath(path);
     }
 
+    @Deprecated
     @Override
     public void clearWatcherReferences(Watcher watcher) {
         throw new UnsupportedOperationException("Not implemented in MockCurator");

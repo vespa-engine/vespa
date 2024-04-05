@@ -18,12 +18,15 @@ import java.util.concurrent.ExecutorService;
  */
 class PathChildrenCacheWrapper implements Curator.DirectoryCache {
 
+    @SuppressWarnings("deprecation")
     private final PathChildrenCache wrapped;
 
+    @SuppressWarnings("deprecation")
     public PathChildrenCacheWrapper(CuratorFramework curatorFramework, String path, boolean cacheData, boolean dataIsCompressed, ExecutorService executorService) {
         wrapped = new PathChildrenCache(curatorFramework, path, cacheData, dataIsCompressed, executorService);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void start() {
         try {

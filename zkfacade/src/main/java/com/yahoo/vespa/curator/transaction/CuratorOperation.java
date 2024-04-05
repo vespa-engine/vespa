@@ -20,6 +20,7 @@ public interface CuratorOperation extends Transaction.Operation {
      * @return the transaction, for chaining.
      * @throws Exception if unable to create transaction for this operation.
      */
+    @SuppressWarnings("deprecation")
     CuratorTransaction and(CuratorTransaction transaction) throws Exception;
 
     /**
