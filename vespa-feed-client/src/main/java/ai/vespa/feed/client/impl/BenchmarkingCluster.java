@@ -26,7 +26,9 @@ public class BenchmarkingCluster implements Cluster {
         return thread;
     });
 
+    private final AtomicLong timeOfFirstDispatch = new AtomicLong(0);
     private final AtomicLong requests = new AtomicLong();
+    private final Throttler throttler;
     private long results = 0;
     private long responses = 0;
     private final long[] responsesByCode = new long[600];
@@ -37,14 +39,18 @@ public class BenchmarkingCluster implements Cluster {
     private long bytesSent = 0;
     private long bytesReceived = 0;
 
-    public BenchmarkingCluster(Cluster delegate) {
+    public BenchmarkingCluster(Cluster delegate, Throttler throttler) {
         this.delegate = requireNonNull(delegate);
+        this.throttler = throttler;
     }
 
     @Override
     public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         requests.incrementAndGet();
         long startNanos = System.nanoTime();
+        if (timeOfFirstDispatch.get() == 0) {
+            timeOfFirstDispatch.set(startNanos);
+        }
         delegate.dispatch(request, vessel);
         vessel.whenCompleteAsync((response, thrown) -> {
                                      results++;
@@ -88,15 +94,13 @@ public class BenchmarkingCluster implements Cluster {
             if (responsesByCode[code] > 0)
                 responses.put(code, responsesByCode[code]);
 
-        return new OperationStats(requests,
-                                  responses,
-                                  exceptions,
-                                  requests - results,
+        double duration = (System.nanoTime() - timeOfFirstDispatch.get())*1e-9;
+        return new  OperationStats(duration, requests, responses, exceptions,
+                                  requests - results, throttler.targetInflight(),
                                   this.responses == 0 ? -1 : totalLatencyMillis / this.responses,
                                   this.responses == 0 ? -1 : minLatencyMillis,
                                   this.responses == 0 ? -1 : maxLatencyMillis,
-                                  bytesSent,
-                                  bytesReceived);
+                                  bytesSent, bytesReceived);
     }
 
     @Override

@@ -67,10 +67,10 @@ class HttpRequestStrategy implements RequestStrategy {
     });
 
     HttpRequestStrategy(FeedClientBuilderImpl builder, Cluster cluster) {
-        this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster) : cluster;
+        this.throttler = new DynamicThrottler(builder);
+        this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster, throttler) : cluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
-        this.throttler = new DynamicThrottler(builder);
 
         Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
         dispatcher.setDaemon(true);
@@ -92,7 +92,7 @@ class HttpRequestStrategy implements RequestStrategy {
             while (breaker.state() != OPEN && ! destroyed.get()) {
                 while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
-                Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
+                Thread.sleep(breaker.state() == HALF_OPEN ? 100 : 1);
             }
         }
         catch (Throwable t) {
