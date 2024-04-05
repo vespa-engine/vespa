@@ -18,8 +18,13 @@ echo -e "urls:\n    - en/vespa-quick-start.html" > test/_quick-start.yaml
 
 # Get the required vespa CLI
 VESPA_CLI_VERSION=$(curl -fsSL https://api.github.com/repos/vespa-engine/vespa/releases/latest | grep -Po '"tag_name": "v\K.*?(?=")')
-curl -fsSL https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64.tar.gz | tar -zxf - -C /opt
-ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
+if [[ $(arch) == x86_64 ]]; then
+  GO_ARCH=amd64
+else
+  GO_ARCH=arm64
+fi
+curl -fsSL https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}.tar.gz | tar -zxf - -C /opt
+ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}/bin/vespa /usr/local/bin/
 
 # Run test
 python3 test/test.py -v -c test/_quick-start.yaml
