@@ -1,6 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-find_package(Protobuf REQUIRED)
+set(PROTOBUF_GENERATE_CPP_APPEND_PATH ON)
 PROTOBUF_GENERATE_CPP(storage_storageserver_rpc_PROTOBUF_SRCS storage_storageserver_rpc_PROTOBUF_HDRS
     protobuf/rpc_envelope.proto
 )

@@ -6,6 +6,7 @@ vespa_add_library(documentapi
     $<TARGET_OBJECTS:documentapi_documentapipolicies>
     INSTALL lib64
     DEPENDS
+    protobuf::libprotobuf
 )
 
 vespa_add_target_package_dependency(documentapi Protobuf)

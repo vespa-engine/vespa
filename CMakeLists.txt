@@ -51,7 +51,7 @@ find_package(JNI REQUIRED)
 
 find_package(GTest REQUIRED)
 
-find_package(Protobuf REQUIRED)
+find_package(Protobuf REQUIRED CONFIG)
 
 include(build_settings.cmake)
 

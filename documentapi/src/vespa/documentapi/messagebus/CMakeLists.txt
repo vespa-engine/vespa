@@ -1,9 +1,8 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-find_package(Protobuf REQUIRED)
-
 # .proto files are in a higher-level directory as they are shared across languages
 set(documentapi_messagebus_PROTOBUF_REL_PATH "../../../protobuf")
+set(PROTOBUF_GENERATE_CPP_APPEND_PATH ON)
 PROTOBUF_GENERATE_CPP(documentapi_messagebus_PROTOBUF_SRCS documentapi_messagebus_PROTOBUF_HDRS
     "${documentapi_messagebus_PROTOBUF_REL_PATH}/docapi_common.proto"
     "${documentapi_messagebus_PROTOBUF_REL_PATH}/docapi_feed.proto"

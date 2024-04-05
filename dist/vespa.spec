@@ -32,7 +32,12 @@
 %define _create_vespa_service 1
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake3
-%global _vespa_build_depencencies_version 1.2.7
+%global _vespa_abseil_cpp_version 20240116.1
+%global _vespa_build_depencencies_version 1.3.0
+%global _vespa_gtest_version 1.14.0
+%global _vespa_protobuf_version 5.26.1
+%global _use_vespa_abseil_cpp 1
+%global _use_vespa_protobuf 1
 
 Name:           vespa
 Version:        _VESPA_VERSION_
@@ -74,33 +79,35 @@ Requires: zstd
 %define _use_vespa_gtest 1
 %define _use_vespa_openblas 1
 %define _use_vespa_openssl 1
-%define _use_vespa_protobuf 1
 
 %if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 %define _command_cmake cmake
 %endif
 
-Requires: vespa-gtest = 1.13.0
+Requires: vespa-gtest = %{_vespa_gtest_version}
 
 %endif
 
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 %define _devtoolset_enable /opt/rh/gcc-toolset/enable
-%define _use_vespa_protobuf 1
 
-Requires: gtest
+%define _use_vespa_gtest 1
+
+Requires: vespa-gtest = %{_vespa_gtest_version}
 %endif
 
 %if 0%{?amzn2023}
 %define _java_home /usr/lib/jvm/java-17-amazon-corretto
+%define _use_vespa_gtest 1
 %define _use_vespa_re2 1
 %define _use_vespa_xxhash 1
 
+Requires: vespa-gtest = %{_vespa_gtest_version}
 Requires: vespa-xxhash >= 0.8.1
 %endif
 
-%if 0%{?fedora}
+%if 0%{?fedora} && !0%{?amzn2023}
 Requires: gtest
 %endif
 
@@ -115,7 +122,7 @@ Requires: xxhash-libs >= 0.8.1
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function.
 # Exclude automated requires for libraries in /opt/vespa-deps/lib64.
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(lz4%{?_use_vespa_protobuf:|protobuf}|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash}%{?_use_vespa_gtest:|(gtest|gmock)(_main)?})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(lz4%{?_use_vespa_protobuf:|protobuf}|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash}%{?_use_vespa_gtest:|(gtest|gmock)(_main)?}%{?_use_vespa_abseil_cpp:|absl_[a-z_0-9]*})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
 
 %description
 
@@ -187,14 +194,14 @@ Requires: openssl-libs
 %endif
 %if 0%{?el8}
 Requires: llvm-libs
-Requires: vespa-protobuf = 3.21.12
+Requires: vespa-protobuf = %{_vespa_protobuf_version}
 %endif
 %if 0%{?el9}
 Requires: llvm-libs
-Requires: vespa-protobuf = 3.21.12
+Requires: vespa-protobuf = %{_vespa_protobuf_version}
 %endif
 %if 0%{?fedora}
-Requires: protobuf
+Requires: vespa-protobuf = %{_vespa_protobuf_version}
 Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.17.1
