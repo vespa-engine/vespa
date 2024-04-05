@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
  */
 public class OperationStats {
 
+    private final double duration;
     private final long requests;
     private final Map<Integer, Long> responsesByCode;
     private final long inflight;
@@ -22,9 +23,10 @@ public class OperationStats {
     private final long bytesSent;
     private final long bytesReceived;
 
-    public OperationStats(long requests, Map<Integer, Long> responsesByCode, long exceptions, long inflight,
-                          long averageLatencyMillis, long minLatencyMillis, long maxLatencyMillis,
+    public OperationStats(double duration, long requests, Map<Integer, Long> responsesByCode, long exceptions,
+                          long inflight, long averageLatencyMillis, long minLatencyMillis, long maxLatencyMillis,
                           long bytesSent, long bytesReceived) {
+        this.duration = duration;
         this.requests = requests;
         this.responsesByCode = responsesByCode;
         this.exceptions = exceptions;
@@ -38,9 +40,10 @@ public class OperationStats {
 
     /** Returns the difference between this and the initial. Min and max latency are not modified. */
     public OperationStats since(OperationStats initial) {
-        return new OperationStats(requests - initial.requests,
+        return new OperationStats(duration - initial.duration,
+                         requests - initial.requests,
                                   responsesByCode.entrySet().stream()
-                                                 .collect(Collectors.toMap(entry -> entry.getKey(),
+                                                 .collect(Collectors.toMap(Map.Entry::getKey,
                                                                            entry -> entry.getValue() - initial.responsesByCode.getOrDefault(entry.getKey(), 0L))),
                                   exceptions - initial.exceptions,
                                   inflight - initial.inflight,
@@ -123,9 +126,12 @@ public class OperationStats {
 
     @Override
     public String toString() {
+        Map<Integer, Double> rateByCode = responsesByCode.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()/duration));
         return "Stats{" +
                "requests=" + requests +
                ", responsesByCode=" + responsesByCode +
+               ", responseRateByCode=" + rateByCode +
                ", exceptions=" + exceptions +
                ", inflight=" + inflight +
                ", averageLatencyMillis=" + averageLatencyMillis +

@@ -26,6 +26,7 @@ public class BenchmarkingCluster implements Cluster {
         return thread;
     });
 
+    private final AtomicLong timeOfFirstDispatch = new AtomicLong(0);
     private final AtomicLong requests = new AtomicLong();
     private long results = 0;
     private long responses = 0;
@@ -45,6 +46,9 @@ public class BenchmarkingCluster implements Cluster {
     public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         requests.incrementAndGet();
         long startNanos = System.nanoTime();
+        if (timeOfFirstDispatch.get() == 0) {
+            timeOfFirstDispatch.set(startNanos);
+        }
         delegate.dispatch(request, vessel);
         vessel.whenCompleteAsync((response, thrown) -> {
                                      results++;
@@ -88,15 +92,13 @@ public class BenchmarkingCluster implements Cluster {
             if (responsesByCode[code] > 0)
                 responses.put(code, responsesByCode[code]);
 
-        return new OperationStats(requests,
-                                  responses,
-                                  exceptions,
+        double duration = (System.nanoTime() - timeOfFirstDispatch.get())*1e-9;
+        return new  OperationStats(duration, requests, responses, exceptions,
                                   requests - results,
                                   this.responses == 0 ? -1 : totalLatencyMillis / this.responses,
                                   this.responses == 0 ? -1 : minLatencyMillis,
                                   this.responses == 0 ? -1 : maxLatencyMillis,
-                                  bytesSent,
-                                  bytesReceived);
+                                  bytesSent, bytesReceived);
     }
 
     @Override
