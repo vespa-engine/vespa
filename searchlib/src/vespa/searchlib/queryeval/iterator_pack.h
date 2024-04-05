@@ -9,7 +9,8 @@ namespace search::fef { class MatchData; }
 
 namespace search::queryeval {
 
-class SearchIteratorPack
+template <typename RefType>
+class SearchIteratorPackT
 {
 private:
     using MatchDataUP = std::unique_ptr<fef::MatchData>;
@@ -18,19 +19,21 @@ private:
     MatchDataUP                            _md;
 
 public:
-    using ref_t = uint16_t;
-    SearchIteratorPack();
-    ~SearchIteratorPack();
-    SearchIteratorPack(SearchIteratorPack &&rhs) noexcept;
-    SearchIteratorPack &operator=(SearchIteratorPack &&rhs) noexcept;
+    using ref_t = RefType;
+    SearchIteratorPackT();
+    ~SearchIteratorPackT();
+    SearchIteratorPackT(SearchIteratorPackT<RefType> &&rhs) noexcept;
+    SearchIteratorPackT<RefType> &operator=(SearchIteratorPackT<RefType> &&rhs) noexcept;
 
     // TODO: use MultiSearch::Children to pass ownership
-    SearchIteratorPack(const std::vector<SearchIterator*> &children,
-                       const std::vector<fef::TermFieldMatchData*> &childMatch,
-                       MatchDataUP md);
+    SearchIteratorPackT(const std::vector<SearchIterator*> &children,
+                        const std::vector<fef::TermFieldMatchData*> &childMatch,
+                        MatchDataUP md);
 
     // TODO: use MultiSearch::Children to pass ownership
-    SearchIteratorPack(const std::vector<SearchIterator*> &children, MatchDataUP md);
+    SearchIteratorPackT(const std::vector<SearchIterator*> &children, MatchDataUP md);
+
+    static bool can_handle_iterators(size_t num_iterators);
 
     uint32_t get_docid(ref_t ref) const {
         return _children[ref]->getDocId();
@@ -59,6 +62,9 @@ public:
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id, uint32_t end_id) const;
     void or_hits_into(BitVector &result, uint32_t begin_id) const;
 };
+
+using SearchIteratorPack = SearchIteratorPackT<uint16_t>;
+using SearchIteratorPackUint32 = SearchIteratorPackT<uint32_t>;
 
 }
 

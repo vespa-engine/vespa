@@ -435,4 +435,13 @@ TEST_P(DirectMultiTermBlueprintTest, hash_filter_with_string_folding_used_for_no
     expect_hits({30, 31, 40, 41}, *itr);
 }
 
+TEST_P(DirectMultiTermBlueprintTest, supports_more_than_64k_btree_iterators) {
+    setup(false, true);
+    std::vector<int64_t> term_values(std::numeric_limits<uint16_t>::max() + 1, 3);
+    add_terms(term_values);
+    auto itr = create_leaf_search();
+    EXPECT_THAT(itr->asString(), StartsWith(resolve_iterator_with_unpack()));
+    expect_hits({30, 31}, *itr);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

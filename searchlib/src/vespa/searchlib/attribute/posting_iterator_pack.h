@@ -12,19 +12,21 @@ class BitVector;
 /**
  * Class that wraps a set of underlying low-level posting lists and provides an API to search in them.
  */
-template <typename IteratorType>
+template <typename IteratorType, typename RefType>
 class PostingIteratorPack {
 private:
     std::vector<IteratorType> _children;
 
 public:
-    using ref_t = uint16_t;
+    using ref_t = RefType;
     PostingIteratorPack() noexcept : _children() {}
     PostingIteratorPack(PostingIteratorPack &&rhs) noexcept = default;
     PostingIteratorPack &operator=(PostingIteratorPack &&rhs) noexcept = default;
 
     explicit PostingIteratorPack(std::vector<IteratorType> &&children);
     ~PostingIteratorPack();
+
+    static bool can_handle_iterators(size_t num_iterators);
 
     uint32_t get_docid(ref_t ref) const {
         return _children[ref].valid() ? _children[ref].getKey() : endDocId;
@@ -59,8 +61,10 @@ private:
     }
 };
 
-using DocidIteratorPack = PostingIteratorPack<DocidIterator>;
-using DocidWithWeightIteratorPack = PostingIteratorPack<DocidWithWeightIterator>;
+using DocidIteratorPack = PostingIteratorPack<DocidIterator, uint16_t>;
+using DocidIteratorPackUint32 = PostingIteratorPack<DocidIterator, uint32_t>;
+using DocidWithWeightIteratorPack = PostingIteratorPack<DocidWithWeightIterator, uint16_t>;
+using DocidWithWeightIteratorPackUint32 = PostingIteratorPack<DocidWithWeightIterator, uint32_t>;
 
 }
 
