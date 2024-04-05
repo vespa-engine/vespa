@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -44,9 +44,9 @@ class HttpRequestStrategyTest {
         HttpRequest request = new HttpRequest("PUT", "/", null, null, null);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS));
+        Cluster cluster = (__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS);
 
-        HttpRequestStrategy strategy = new HttpRequestStrategy( new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy.com:123")))
+        HttpRequestStrategy strategy = new HttpRequestStrategy( new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
                                                                                 .setConnectionsPerEndpoint(1 << 10)
                                                                                 .setMaxStreamPerConnection(1 << 12),
                                                                cluster);
@@ -66,7 +66,7 @@ class HttpRequestStrategyTest {
         latch.countDown();
         executor.shutdown();
         cluster.close();
-        OperationStats stats = cluster.stats();
+        OperationStats stats = strategy.stats();
         long successes = stats.responsesByCode().get(200);
         System.err.println(successes + " successes in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
         System.err.println(stats);
@@ -86,7 +86,7 @@ class HttpRequestStrategyTest {
         MockCluster cluster = new MockCluster();
         AtomicLong now = new AtomicLong(0);
         CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
-        HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy.com:123")))
+        HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
                                                                                 .setRetryStrategy(new FeedClient.RetryStrategy() {
                                                                                     @Override public boolean retry(FeedClient.OperationType type) { return type == FeedClient.OperationType.PUT; }
                                                                                     @Override public int retries() { return 1; }
@@ -94,7 +94,7 @@ class HttpRequestStrategyTest {
                                                                                 .setCircuitBreaker(breaker)
                                                                                 .setConnectionsPerEndpoint(1)
                                                                                 .setMaxStreamPerConnection(minStreams),
-                                                               new BenchmarkingCluster(cluster));
+                                                               cluster);
         OperationStats initial = strategy.stats();
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
@@ -195,13 +195,13 @@ class HttpRequestStrategyTest {
         MockCluster cluster = new MockCluster();
         AtomicLong now = new AtomicLong(0);
         CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
-        HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy.com:123")))
+        HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
                                                                                 .setRetryStrategy(new FeedClient.RetryStrategy() {
                                                                                     @Override public int retries() { return 1; }
                                                                                 })
                                                                                 .setCircuitBreaker(breaker)
                                                                                 .setConnectionsPerEndpoint(1),
-                                                               new BenchmarkingCluster(cluster));
+                                                               cluster);
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");

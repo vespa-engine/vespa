@@ -67,10 +67,10 @@ class HttpRequestStrategy implements RequestStrategy {
     });
 
     HttpRequestStrategy(FeedClientBuilderImpl builder, Cluster cluster) {
-        this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster) : cluster;
+        this.throttler = new DynamicThrottler(builder);
+        this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster, throttler) : cluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
-        this.throttler = new DynamicThrottler(builder);
 
         Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
         dispatcher.setDaemon(true);

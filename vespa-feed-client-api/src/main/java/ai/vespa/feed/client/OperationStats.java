@@ -16,6 +16,7 @@ public class OperationStats {
     private final long requests;
     private final Map<Integer, Long> responsesByCode;
     private final long inflight;
+    private final long targetInflight;
     private final long exceptions;
     private final long averageLatencyMillis;
     private final long minLatencyMillis;
@@ -24,13 +25,14 @@ public class OperationStats {
     private final long bytesReceived;
 
     public OperationStats(double duration, long requests, Map<Integer, Long> responsesByCode, long exceptions,
-                          long inflight, long averageLatencyMillis, long minLatencyMillis, long maxLatencyMillis,
-                          long bytesSent, long bytesReceived) {
+                          long inflight, long targetInFlight, long averageLatencyMillis, long minLatencyMillis,
+                          long maxLatencyMillis, long bytesSent, long bytesReceived) {
         this.duration = duration;
         this.requests = requests;
         this.responsesByCode = responsesByCode;
         this.exceptions = exceptions;
         this.inflight = inflight;
+        this.targetInflight = targetInFlight;
         this.averageLatencyMillis = averageLatencyMillis;
         this.minLatencyMillis = minLatencyMillis;
         this.maxLatencyMillis = maxLatencyMillis;
@@ -38,7 +40,9 @@ public class OperationStats {
         this.bytesReceived = bytesReceived;
     }
 
-    /** Returns the difference between this and the initial. Min and max latency are not modified. */
+    /** Returns the difference between this and the initial.
+     *  Min and max latency, inflight and targetInflight are not modified.
+     */
     public OperationStats since(OperationStats initial) {
         return new OperationStats(duration - initial.duration,
                          requests - initial.requests,
@@ -46,7 +50,8 @@ public class OperationStats {
                                                  .collect(Collectors.toMap(Map.Entry::getKey,
                                                                            entry -> entry.getValue() - initial.responsesByCode.getOrDefault(entry.getKey(), 0L))),
                                   exceptions - initial.exceptions,
-                                  inflight - initial.inflight,
+                                  inflight,
+                                  targetInflight,
                                   responsesByCode.size() == initial.responsesByCode.size() ? 0 :
                                     (averageLatencyMillis * responsesByCode.size() - initial.averageLatencyMillis * initial.responsesByCode.size())
                                   / (responsesByCode.size() - initial.responsesByCode.size()),
@@ -134,6 +139,7 @@ public class OperationStats {
                ", responseRateByCode=" + rateByCode +
                ", exceptions=" + exceptions +
                ", inflight=" + inflight +
+               ", targetInflight=" + targetInflight +
                ", averageLatencyMillis=" + averageLatencyMillis +
                ", minLatencyMillis=" + minLatencyMillis +
                ", maxLatencyMillis=" + maxLatencyMillis +
