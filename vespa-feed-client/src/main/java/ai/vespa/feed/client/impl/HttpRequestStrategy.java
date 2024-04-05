@@ -92,7 +92,7 @@ class HttpRequestStrategy implements RequestStrategy {
             while (breaker.state() != OPEN && ! destroyed.get()) {
                 while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
-                Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
+                Thread.sleep(breaker.state() == HALF_OPEN ? 100 : 1);
             }
         }
         catch (Throwable t) {
