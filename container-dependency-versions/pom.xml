@@ -124,7 +124,7 @@
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>com.sun.activation</groupId>
                 <artifactId>javax.activation</artifactId>
-                <version>1.2.0</version>
+                <version>${sun.javax.activation.vespa.version}</version>
             </dependency>
             <!-- jaxb end -->
 

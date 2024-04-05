@@ -31,7 +31,7 @@ com.google.protobuf:protobuf-java:${protobuf.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
 de.kherud:llama:${kherud.llama.vespa.version}
-com.sun.activation:javax.activation:1.2.0
+com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}
 com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}
 com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}
@@ -74,7 +74,7 @@ io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
-javax.activation:javax.activation-api:1.2.0
+javax.activation:javax.activation-api:${javax.activation-api.vespa.version}
 javax.annotation:javax.annotation-api:${javax.annotation.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
 javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}

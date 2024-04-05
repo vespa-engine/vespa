@@ -40,6 +40,7 @@
         <jackson2.vespa.version>2.16.2</jackson2.vespa.version>
         <jackson-databind.vespa.version>${jackson2.vespa.version}</jackson-databind.vespa.version>
         <jakarta.inject.vespa.version>2.0.1</jakarta.inject.vespa.version>
+        <javax.activation-api.vespa.version>1.2.0</javax.activation-api.vespa.version>
         <javax.inject.vespa.version>1</javax.inject.vespa.version>
         <javax.servlet-api.vespa.version>3.1.0</javax.servlet-api.vespa.version>
         <javax.ws.rs-api.vespa.version>2.1.1</javax.ws.rs-api.vespa.version>
@@ -47,6 +48,7 @@
         <jaxb-core.vespa.version>2.3.0.1</jaxb-core.vespa.version>
         <jaxb-impl.vespa.version>2.3.0</jaxb-impl.vespa.version>
         <slf4j.vespa.version>1.7.36</slf4j.vespa.version>
+        <sun.javax.activation.vespa.version>1.2.0</sun.javax.activation.vespa.version>
 
         <!-- END Dependencies available from the Jdisc container -->
 
