@@ -196,11 +196,21 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
                               fef::MatchData::UP match_data)
 {
     if (children.size() < 128) {
-        return create_helper<vespalib::LeftArrayHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
-                                                                          SearchIteratorPack(children, std::move(match_data)));
+        if (SearchIteratorPack::can_handle_iterators(children.size())) {
+            return create_helper<vespalib::LeftArrayHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
+                                                                              SearchIteratorPack(children, std::move(match_data)));
+        } else {
+            return create_helper<vespalib::LeftArrayHeap, SearchIteratorPackUint32>(tmd, is_filter_search, std::cref(weights),
+                                                                                    SearchIteratorPackUint32(children, std::move(match_data)));
+        }
     }
-    return create_helper<vespalib::LeftHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
-                                                                 SearchIteratorPack(children, std::move(match_data)));
+    if (SearchIteratorPack::can_handle_iterators(children.size())) {
+        return create_helper<vespalib::LeftHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
+                                                                     SearchIteratorPack(children, std::move(match_data)));
+    } else {
+        return create_helper<vespalib::LeftHeap, SearchIteratorPackUint32>(tmd, is_filter_search, std::cref(weights),
+                                                                           SearchIteratorPackUint32(children, std::move(match_data)));
+    }
 }
 
 namespace {
@@ -228,7 +238,11 @@ WeightedSetTermSearch::create(fef::TermFieldMatchData& tmd,
                               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
                               std::vector<DocidIterator>&& iterators)
 {
-    return create_helper_resolve_pack<DocidIterator, DocidIteratorPack>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    if (DocidIteratorPack::can_handle_iterators(iterators.size())) {
+        return create_helper_resolve_pack<DocidIterator, DocidIteratorPack>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    } else {
+        return create_helper_resolve_pack<DocidIterator, DocidIteratorPackUint32>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    }
 }
 
 SearchIterator::UP
@@ -237,7 +251,11 @@ WeightedSetTermSearch::create(fef::TermFieldMatchData &tmd,
                               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
                               std::vector<DocidWithWeightIterator> &&iterators)
 {
-    return create_helper_resolve_pack<DocidWithWeightIterator, DocidWithWeightIteratorPack>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    if (DocidWithWeightIteratorPack::can_handle_iterators(iterators.size())) {
+        return create_helper_resolve_pack<DocidWithWeightIterator, DocidWithWeightIteratorPack>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    } else {
+        return create_helper_resolve_pack<DocidWithWeightIterator, DocidWithWeightIteratorPackUint32>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    }
 }
 
 namespace {
