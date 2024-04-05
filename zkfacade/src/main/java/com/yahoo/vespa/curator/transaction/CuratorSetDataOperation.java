@@ -28,6 +28,7 @@ class CuratorSetDataOperation implements CuratorOperation {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public CuratorTransaction and(CuratorTransaction transaction) throws Exception {
         return transaction.setData().forPath(path, data).and();
     }

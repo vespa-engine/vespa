@@ -100,7 +100,7 @@ class SingletonManager {
     }
 
     public synchronized CompletableFuture<?> shutdown() {
-        CompletableFuture<?>[] futures = new CompletableFuture[registrations.size()];
+        CompletableFuture<?>[] futures = new CompletableFuture<?>[registrations.size()];
         int i = 0;
         for (SingletonWorker singleton : List.copyOf(registrations.keySet())) {
             String id = registrations.get(singleton);

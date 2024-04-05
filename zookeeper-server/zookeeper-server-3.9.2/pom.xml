@@ -66,17 +66,18 @@
       <artifactId>snappy-java</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <!-- Included to suppress warning on missing annotation 'edu.umd.cs.findbugs.annotations.SuppressFBWarnings' at compile time -->
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <arg>-Xlint:all</arg>
-          </compilerArgs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
