@@ -72,7 +72,7 @@ class JettyCluster implements Cluster {
 
     JettyCluster(FeedClientBuilderImpl b) throws IOException {
         this.client = createHttpClient(b);
-        this.endpoints = b.endpoints.stream().map(Endpoint::new).toList();
+        this.endpoints = b.endpoints.stream().map(Endpoint::new).collect(Collectors.toList());
         this.compression = b.compression;
     }
 
@@ -239,7 +239,11 @@ class JettyCluster implements Cluster {
         return String.format("%s://%s:%s", uri.getScheme(), uri.getHost(), portOf(uri));
     }
 
-    private record JettyResponse(Response response, byte[] content) implements HttpResponse {
+    private static class JettyResponse implements HttpResponse {
+        final Response response;
+        final byte[] content;
+
+        JettyResponse(Response response, byte[] content) { this.response = response; this.content = content; }
 
         @Override public int code() { return response.getStatus(); }
         @Override public byte[] body() { return content; }
