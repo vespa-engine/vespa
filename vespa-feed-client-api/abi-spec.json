@@ -308,7 +308,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(long, java.util.Map, long, long, long, long, long, long, long)",
+      "public void <init>(double, long, java.util.Map, long, long, long, long, long, long, long, long)",
       "public ai.vespa.feed.client.OperationStats since(ai.vespa.feed.client.OperationStats)",
       "public long requests()",
       "public long responses()",
