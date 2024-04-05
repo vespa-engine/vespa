@@ -411,6 +411,12 @@ public class Flags {
             "Whether to enable calypso for host",
             "Takes effect immediately", HOSTNAME);
 
+    public static UnboundBooleanFlag ATHENZ_PROVIDER = defineFeatureFlag(
+            "athenz-provider", false,
+            List.of("mortent"), "2024-02-19", "2024-05-01",
+            "Whether to use athenz as node identity provider",
+            "Takes effect on next identity refresh", HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
