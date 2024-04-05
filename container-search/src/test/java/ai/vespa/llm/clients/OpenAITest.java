@@ -2,7 +2,6 @@
 package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
-import ai.vespa.llm.LlmClientConfig;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.container.jdisc.SecretStoreProvider;
 import org.junit.jupiter.api.Disabled;

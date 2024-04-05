@@ -3,7 +3,6 @@ package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.LlmClientConfig;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -19,7 +18,7 @@ import java.util.logging.Logger;
 @Beta
 public abstract class ConfigurableLanguageModel implements LanguageModel {
 
-    private static Logger log = Logger.getLogger(ai.vespa.llm.clients.ConfigurableLanguageModel.class.getName());
+    private static Logger log = Logger.getLogger(ConfigurableLanguageModel.class.getName());
 
     private final String apiKey;
     private final String endpoint;
@@ -68,7 +67,9 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
     }
 
     protected void setEndpoint(InferenceParameters params) {
-        params.setEndpoint(endpoint);
+        if (endpoint != null && ! endpoint.isEmpty()) {
+            params.setEndpoint(endpoint);
+        }
     }
 
 }

@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.completion;
 
-import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.test.MockLanguageModel;
+import ai.vespa.llm.InferenceParameters;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

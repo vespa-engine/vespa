@@ -1,8 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.llm.search;
+package ai.vespa.search.llm;
 
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.LlmSearcherConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
