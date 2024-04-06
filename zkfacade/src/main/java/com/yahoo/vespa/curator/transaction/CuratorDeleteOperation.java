@@ -33,7 +33,6 @@ class CuratorDeleteOperation implements CuratorOperation {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public CuratorTransaction and(CuratorTransaction transaction) throws Exception {
         return transaction.delete().forPath(path).and();

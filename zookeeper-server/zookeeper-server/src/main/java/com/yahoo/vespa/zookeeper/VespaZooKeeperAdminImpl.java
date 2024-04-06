@@ -26,7 +26,6 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
     private static final Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperAdminImpl.class.getName());
 
-    @SuppressWarnings("try")
     @Override
     public void reconfigure(String connectionSpec, String servers) throws ReconfigException {
         try (ZooKeeperAdmin zooKeeperAdmin = createAdmin(connectionSpec)) {
@@ -59,7 +58,6 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
     }
 
     /** Creates a node in zookeeper, with hostname as part of node name, this ensures that server is up and working before returning */
-    @SuppressWarnings("try")
     void createDummyNode(ZookeeperServerConfig zookeeperServerConfig) {
         int sleepTime = 2_000;
         try (ZooKeeperAdmin zooKeeperAdmin = createAdmin(localConnectionSpec(zookeeperServerConfig))) {

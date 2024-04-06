@@ -34,7 +34,6 @@ class CuratorCreateOperation implements CuratorOperation {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public CuratorTransaction and(CuratorTransaction transaction) throws Exception {
         if (data.isPresent()) {
             return transaction.create().forPath(path, data.get()).and();
