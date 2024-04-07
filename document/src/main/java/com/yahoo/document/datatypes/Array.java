@@ -141,7 +141,7 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Array<? extends FieldValue> a)) return false;
+        if (!(o instanceof Array a)) return false;
         if (!super.equals(o)) return false;
         if (values.size() != a.values.size()) return false;
         if (values instanceof ListWrapper && !(a.values instanceof ListWrapper)) {
@@ -348,13 +348,13 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
      * TODO: Remove this class and only allow instance of Array to be added.
      */
     class ListWrapper<E> implements List<E>, RandomAccess {
-        private final List<E> myvalues;
+        private final List myvalues;
 
         private Object unwrap(Object o) {
-            return (o instanceof FieldValue fv) ? fv.getWrappedValue() : o;
+            return (o instanceof FieldValue ? ((FieldValue) o).getWrappedValue() : o);
         }
 
-        public ListWrapper(List<E> wrapped) {
+        public ListWrapper(List wrapped) {
             myvalues = wrapped;
         }
 
@@ -467,7 +467,7 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
 
         public ListIterator<E> listIterator(final int index) {
             return new ListIterator<E>() {
-                ListIterator<E> it = myvalues.listIterator(index);
+                ListIterator it = myvalues.listIterator(index);
 
                 public boolean hasNext() {
                     return it.hasNext();
@@ -516,9 +516,9 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         }
 
         @Override
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings("deprecation, unchecked")
         public boolean equals(Object o) {
-            return this == o || o instanceof ListWrapper<E> list && myvalues.equals(list.myvalues);
+            return this == o || o instanceof ListWrapper && myvalues.equals(((ListWrapper) o).myvalues);
         }
 
         @Override
@@ -546,7 +546,7 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         }
 
         //types are equal, this must be of this type
-        Array<T> otherValue = (Array<T>) fieldValue;
+        Array otherValue = (Array) fieldValue;
         return CollectionComparator.compare(values, otherValue.values);
     }
 }
