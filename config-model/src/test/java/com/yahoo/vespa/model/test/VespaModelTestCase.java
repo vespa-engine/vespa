@@ -313,7 +313,7 @@ public class VespaModelTestCase {
     }
 
     @Test
-    void testNoNodesCountInDev() {
+    void testNoNodesCount() {
          var services =
                 """
                         <services version='1.0'>
@@ -328,7 +328,6 @@ public class VespaModelTestCase {
         var app = new MockApplicationPackage.Builder().withServices(services).build();
         var deployState = new DeployState.Builder()
                 .applicationPackage(app)
-                .zone(new Zone(Environment.dev, RegionName.from("test")))
                 .properties(new TestProperties()
                                     .setHostedVespa(true)
                                     .setApplicationId(ApplicationId.from("foo", "bar", "default-t")))
