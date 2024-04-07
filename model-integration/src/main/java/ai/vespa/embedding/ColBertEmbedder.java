@@ -149,7 +149,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
     }
 
     protected TransformerInput buildTransformerInput(List<Long> tokens, int maxTokens, boolean isQuery) {
-        if(!isQuery) {
+        if (!isQuery) {
             tokens = tokens.stream().filter(token -> !skipTokens.contains(token)).toList();
         }
         List<Long> inputIds = new ArrayList<>(maxTokens);
@@ -172,7 +172,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
             attentionMask.add((long) 1);
 
         for (int i = 0; i < padding; i++)
-            attentionMask.add((long) 0);//Do not attend to mask paddings
+            attentionMask.add((long) 0); // Do not attend to mask paddings
 
         return new TransformerInput(inputIds, attentionMask);
     }
@@ -181,55 +181,44 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         if (tensorType.valueType() == TensorType.Value.INT8)
             throw new IllegalArgumentException("ColBert query embed does not accept int8 tensor value type");
 
-        var start = System.nanoTime();
-        var encoding = tokenizer.encode(text, context.getLanguage());
-        runtime.sampleSequenceLength(encoding.ids().size(), context);
-
-        TransformerInput input = buildTransformerInput(encoding.ids(), maxQueryTokens, true);
-        Tensor inputIdsTensor = createTensorRepresentation(input.inputIds, "d1");
-        Tensor attentionMaskTensor = createTensorRepresentation(input.attentionMask, "d1");
-
-        var inputs = Map.of(inputIdsName, inputIdsTensor.expand("d0"),
-                attentionMaskName, attentionMaskTensor.expand("d0"));
-        IndexedTensor modelOutput = (IndexedTensor) evaluateIfNotPresent(inputs, context, text).get(outputName);
-        Tensor resultTensor = toFloatTensor(modelOutput, tensorType, input.inputIds.size());
-        runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
-        return resultTensor;
+        EmbeddingResult result = lookupOrEvaluate(context, text, true);
+        return toFloatTensor((IndexedTensor)result.outputs.get(outputName), tensorType, result.inputIdSize);
     }
 
     protected Tensor embedDocument(String text, Context context, TensorType tensorType) {
-        var start = System.nanoTime();
-
-        var encoding = tokenizer.encode(text, context.getLanguage());
-        runtime.sampleSequenceLength(encoding.ids().size(), context);
-
-        TransformerInput input = buildTransformerInput(encoding.ids(), maxDocumentTokens, false);
-        Tensor inputIdsTensor = createTensorRepresentation(input.inputIds, "d1");
-        Tensor attentionMaskTensor = createTensorRepresentation(input.attentionMask, "d1");
-
-        var inputs = Map.of(inputIdsName, inputIdsTensor.expand("d0"),
-                            attentionMaskName, attentionMaskTensor.expand("d0"));
-        IndexedTensor modelOutput = (IndexedTensor) evaluateIfNotPresent(inputs, context, text).get(outputName);
-        Tensor resultEmbeddings;
-        int maxTokens = input.inputIds.size();
-        if (tensorType.valueType() == TensorType.Value.INT8) {
-            resultEmbeddings = toBitTensor(modelOutput, tensorType, maxTokens);
-        } else {
-            resultEmbeddings = toFloatTensor(modelOutput, tensorType, maxTokens);
-        }
-        runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
-        return resultEmbeddings;
+        EmbeddingResult result = lookupOrEvaluate(context, text, false);
+        var modelOutput = (IndexedTensor)result.outputs.get(outputName);
+        if (tensorType.valueType() == TensorType.Value.INT8)
+            return toBitTensor(modelOutput, tensorType, result.inputIdSize);
+        else
+            return toFloatTensor(modelOutput, tensorType, result.inputIdSize);
     }
 
     /**
-     * Evaluate the model if the result is not present in the context cache.
-     * @param inputs the tensor inputs
-     * @param context the context accompanying the request, a singleton per embedder instance and request
-     * @param hashKey the key to the cached value
+     * Evaluate the embedding model if the result is not present in the context cache.
+     *
+     * @param context the context accompanying the request
+     * @param text the text that is embedded
      * @return the model output
      */
-    protected Map<String, Tensor> evaluateIfNotPresent(Map<String, Tensor> inputs, Context context, String hashKey) {
-        return context.computeCachedValueIfAbsent(hashKey, () -> evaluator.evaluate(inputs));
+    protected EmbeddingResult lookupOrEvaluate(Context context, String text, boolean isQuery) {
+        var key = new EmbedderCacheKey(context.getEmbedderId(), text);
+        return context.computeCachedValueIfAbsent(key, () -> evaluate(context, text, isQuery));
+    }
+
+    private EmbeddingResult evaluate(Context context, String text, boolean isQuery) {
+        var start = System.nanoTime();
+        var encoding = tokenizer.encode(text, context.getLanguage());
+        runtime.sampleSequenceLength(encoding.ids().size(), context);
+        TransformerInput input = buildTransformerInput(encoding.ids(), isQuery ? maxQueryTokens : maxDocumentTokens, isQuery);
+        Tensor inputIdsTensor = createTensorRepresentation(input.inputIds, "d1");
+        Tensor attentionMaskTensor = createTensorRepresentation(input.attentionMask, "d1");
+        var inputs = Map.of(inputIdsName,
+                            inputIdsTensor.expand("d0"),
+                            attentionMaskName, attentionMaskTensor.expand("d0"));
+        Map<String, Tensor> outputs = evaluator.evaluate(inputs);
+        runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
+        return new EmbeddingResult(input.inputIds.size(), outputs);
     }
 
     public static Tensor toFloatTensor(IndexedTensor result, TensorType type, int nTokens) {
@@ -319,5 +308,9 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         }
         return builder.build();
     }
+
+    record EmbedderCacheKey(String embedderId, Object embeddedValue) { }
+
+    record EmbeddingResult(int inputIdSize, Map<String, Tensor> outputs) { }
 
 }

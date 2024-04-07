@@ -75,14 +75,15 @@ public class ColBertEmbedderTest {
 
     @Test
     public void testCachingFloat() {
+        int initialEmbeddingsDone = runtime.embeddingsDone;
         var context = new Embedder.Context("schema.indexing");
+
         var input = "This is a test string to embed";
         var t1 = (MixedTensor) embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[8])"));
-        var modelOuput = context.getCachedValue(input);
+        assertEquals(initialEmbeddingsDone + 1, runtime.embeddingsDone);
 
         var t2 = (MixedTensor)embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[4])"));
-        var modelOuput2 = context.getCachedValue(input);
-        assertEquals(modelOuput, modelOuput2);
+        assertEquals("Cached value was used", initialEmbeddingsDone + 1, runtime.embeddingsDone);
 
         assertNotEquals(t1,t2);
         for(int token = 0; token < 7; token ++) {
@@ -90,39 +91,38 @@ public class ColBertEmbedderTest {
                 assertEquals(t1.get(TensorAddress.of(token,dim)),t2.get(TensorAddress.of(token,dim)), 1e-6);
             }
         }
-        //t2 only has 4 dimensions so this should be out of bounds which returns 0
+        // t2 only has 4 dimensions so this should be out of bounds which returns 0
         assertEquals(0, t2.get(TensorAddress.of(1,4)), 1e-6);
 
         input = "This is a different test string to embed";
         embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[8])"));
-        var modelOuput3 = context.getCachedValue(input);
-        assertNotEquals(modelOuput, modelOuput3);
-        assertNotEquals(modelOuput2, modelOuput3);
+        assertEquals(initialEmbeddingsDone + 2, runtime.embeddingsDone);
     }
 
     @Test
     public void testCachingInt() {
+        int initialEmbeddingsDone = runtime.embeddingsDone;
         var context = new Embedder.Context("schema.indexing");
-        var input = "This is a test string to embed";
-        var t1 = (MixedTensor) embedder.embed(input, context,TensorType.fromSpec("tensor<int8>(dt{},x[8])"));
-        var modelOuput = context.getCachedValue(input);
 
-        var t2 = (MixedTensor)embedder.embed(input, context,TensorType.fromSpec("tensor<int8>(dt{},x[4])"));
-        var modelOuput2 = context.getCachedValue(input);
-        assertEquals(modelOuput, modelOuput2);
-        assertNotEquals(t1,t2);
+        var input = "This is a test string to embed";
+        var t1 = (MixedTensor) embedder.embed(input, context, TensorType.fromSpec("tensor<int8>(dt{},x[8])"));
+        assertEquals(initialEmbeddingsDone + 1, runtime.embeddingsDone);
+
+        var t2 = (MixedTensor)embedder.embed(input, context, TensorType.fromSpec("tensor<int8>(dt{},x[4])"));
+        assertEquals("Cached value was used", initialEmbeddingsDone + 1, runtime.embeddingsDone);
+
+        assertNotEquals(t1, t2);
         for(int token = 0; token < 7; token ++) {
             for(int dim = 0; dim < 4; dim++) { // the four first should be equal
-                assertEquals(t1.get(TensorAddress.of(token,dim)),t2.get(TensorAddress.of(token,dim)), 1e-6);
+                assertEquals(t1.get(TensorAddress.of(token,dim)), t2.get(TensorAddress.of(token,dim)), 1e-6);
             }
         }
-        //t2 only has 4 dimensions so this should be out of bounds which returns 0
+        // t2 only has 4 dimensions so this should be out of bounds which returns 0
         assertEquals(0, t2.get(TensorAddress.of(0,4)), 1e-6);
+
         input = "This is a different test string to embed";
         embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[8])"));
-        var modelOuput3 = context.getCachedValue(input);
-        assertNotEquals(modelOuput, modelOuput3);
-        assertNotEquals(modelOuput2, modelOuput3);
+        assertEquals(initialEmbeddingsDone + 2, runtime.embeddingsDone);
     }
 
 
@@ -274,15 +274,16 @@ public class ColBertEmbedderTest {
     }
 
     static final ColBertEmbedder embedder;
-
     static final ColBertEmbedder multiLingualEmbedder;
+    static final CountingRuntime runtime;
 
     static {
-        embedder = getEmbedder();
-        multiLingualEmbedder = getMultiLingualEmbedder();
+        runtime = new CountingRuntime();
+        embedder = createEmbedder(runtime);
+        multiLingualEmbedder = getMultiLingualEmbedder(runtime);
     }
 
-    private static ColBertEmbedder getEmbedder() {
+    private static ColBertEmbedder createEmbedder(Embedder.Runtime runtime) {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
@@ -290,10 +291,10 @@ public class ColBertEmbedderTest {
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
-        return  new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new ColBertEmbedder(new OnnxRuntime(), runtime, builder.build());
     }
 
-    private static ColBertEmbedder getMultiLingualEmbedder() {
+    private static ColBertEmbedder getMultiLingualEmbedder(Embedder.Runtime runtime) {
         String vocabPath = "src/test/models/onnx/transformer/sentence_piece_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
@@ -309,7 +310,21 @@ public class ColBertEmbedderTest {
         builder.queryTokenId(3);
         builder.documentTokenId(4);
 
-        return  new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+    }
+
+    private static class CountingRuntime implements Embedder.Runtime {
+
+        int embeddingsDone = 0;
+
+        @Override
+        public void sampleEmbeddingLatency(double millis, Embedder.Context ctx) {
+            embeddingsDone++;
+        }
+
+        @Override
+        public void sampleSequenceLength(long length, Embedder.Context ctx) { }
+
     }
 
 }

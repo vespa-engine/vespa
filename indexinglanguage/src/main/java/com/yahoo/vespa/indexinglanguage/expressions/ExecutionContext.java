@@ -22,7 +22,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
     private final FieldValueAdapter adapter;
     private FieldValue value;
     private Language language;
-    private final Map<String, Object> cache = LazyMap.newHashMap();
+    private final Map<Object, Object> cache = LazyMap.newHashMap();
 
     public ExecutionContext() {
         this(null);
@@ -125,12 +125,12 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter {
     }
 
     /** Returns a cached value, or null if not present. */
-    public Object getCachedValue(String key) {
+    public Object getCachedValue(Object key) {
         return cache.get(key);
     }
 
     /** Returns a mutable reference to the cache of this. */
-    public Map<String, Object> getCache() {
+    public Map<Object, Object> getCache() {
         return cache;
     }
 
