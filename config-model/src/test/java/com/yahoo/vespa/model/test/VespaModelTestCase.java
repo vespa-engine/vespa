@@ -20,6 +20,9 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
@@ -307,6 +310,30 @@ public class VespaModelTestCase {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         new Validation().validate(model, new ValidationParameters(), deployState);
         assertContainsWarning(logger.msgs, "Directory searchdefinitions/ should not be used for schemas, use schemas/ instead");
+    }
+
+    @Test
+    void testNoNodesCount() {
+         var services =
+                """
+                        <services version='1.0'>
+                          <container version='1.0' id='default'>
+                            <search/>
+                            <nodes>
+                              <resources disk="24Gb" />
+                            </nodes>
+                          </container>
+                        </services>""";
+
+        var app = new MockApplicationPackage.Builder().withServices(services).build();
+        var deployState = new DeployState.Builder()
+                .applicationPackage(app)
+                .properties(new TestProperties()
+                                    .setHostedVespa(true)
+                                    .setApplicationId(ApplicationId.from("foo", "bar", "default-t")))
+                .build();
+        var model = new TestDriver(true).buildModel(deployState);
+        assertEquals(1, model.getHosts().size()); // node count 1 if not specified
     }
 
     private void assertContainsWarning(List<Pair<Level,String>> msgs, String text) {

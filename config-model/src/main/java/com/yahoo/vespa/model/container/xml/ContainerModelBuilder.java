@@ -1002,7 +1002,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return containers;
         } else if (nodesElement.hasAttribute("count")) // regular, hosted node spec
             return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
-        else if (cluster.isHostedVespa() && cluster.getZone().environment().isManuallyDeployed()) // default to 1 in manual zones
+        else if (cluster.isHostedVespa()) // default to 1 if node count is not specified
             return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
