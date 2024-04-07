@@ -6,6 +6,7 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
+import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
@@ -254,25 +255,16 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "        <server port='8080' id='default'>",
                 "        </server>",
                 "    </http>",
-                multiNode,
+                " <nodes count='1' />",
                 "",
                 "</container>");
 
-        String hostsxml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<hosts>\n" +
-                "  <host name=\"mockhost-1\">\n" +
-                "    <alias>mockhost1</alias>\n" +
-                "  </host>\n" +
-                "  <host name=\"mockhost-2\">\n" +
-                "    <alias>mockhost2</alias>\n" +
-                "  </host>\n" +
-                "</hosts>\n";
         DeployState deployState = new DeployState.Builder()
                 .properties(
                         new TestProperties()
                                 .setHostedVespa(true)
                                 .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
-                .modelHostProvisioner(new HostsXmlProvisioner(new StringReader(hostsxml)))
+                .modelHostProvisioner(new InMemoryProvisioner(1, true))
                 .build();
         MockRoot root = new MockRoot("root", deployState);
         createModel(root, deployState, null, clusterElem);
