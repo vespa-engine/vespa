@@ -77,8 +77,6 @@
         <configuration>
           <compilerArgs>
             <arg>-Xlint:all</arg>
-            <arg>-Xlint:-serial</arg>
-            <arg>-Xlint:-try</arg>
           </compilerArgs>
         </configuration>
       </plugin>

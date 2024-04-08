@@ -15,8 +15,10 @@ import java.io.IOException;
  */
 class NodeCacheWrapper implements Curator.FileCache {
 
+    @SuppressWarnings("deprecation")
     private final NodeCache wrapped;
 
+    @SuppressWarnings("deprecation")
     public NodeCacheWrapper(CuratorFramework curatorFramework, String path, boolean dataIsCompressed) {
         wrapped = new NodeCache(curatorFramework, path, dataIsCompressed);
     }

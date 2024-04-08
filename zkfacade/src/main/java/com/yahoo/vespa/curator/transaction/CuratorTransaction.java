@@ -52,6 +52,7 @@ public class CuratorTransaction extends AbstractTransaction {
 
     /** Commits this transaction. If it is not already prepared this will prepare it first */
     @Override
+    @SuppressWarnings("deprecation")
     public void commit() {
         try {
             if ( ! prepared)
