@@ -1325,7 +1325,8 @@
       "public int searchHandlerThreadpool()",
       "public boolean alwaysMarkPhraseExpensive()",
       "public boolean sortBlueprintsByCost()",
-      "public int persistenceThreadMaxFeedOpBatchSize()"
+      "public int persistenceThreadMaxFeedOpBatchSize()",
+      "public boolean logserverOtelCol()"
     ],
     "fields" : [ ]
   },

@@ -5,6 +5,8 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.model.admin.otel.OpenTelemetryCollector;
+import com.yahoo.vespa.model.admin.otel.OpenTelemetryConfigGenerator;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -29,6 +31,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
         if (isHostedVespa())
             addAccessLog(getName());
+
     }
 
     @Override
