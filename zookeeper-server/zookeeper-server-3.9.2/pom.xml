@@ -74,7 +74,10 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <compilerArgs>
+            <!-- Turn off classfile warnings where spotbugs is pulled in transitively. -->
             <arg>-Xlint:all</arg>
+            <arg>-Xlint:-classfile</arg>
+            <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
       </plugin>

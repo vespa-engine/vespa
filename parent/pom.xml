@@ -518,14 +518,6 @@
                 <version>${luben.zstd.vespa.version}</version>
             </dependency>
             <dependency>
-                <!-- Needed by zookeeper, which has an optional dependency.
-                     Version must be the same as the one zk uses - check the zk pom file.
-                     https://github.com/apache/zookeeper/blob/master/pom.xml -->
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-annotations</artifactId>
-                <version>${spotbugs.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.vafer</groupId>
                 <artifactId>jdependency</artifactId>
                 <version>${vafer.jdependency.vespa.version}</version>
