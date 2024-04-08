@@ -206,6 +206,7 @@ public class ModelContextImpl implements ModelContext {
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
         private final int searchHandlerThreadpool;
+        private final boolean logserverOtelCol;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -248,6 +249,7 @@ public class ModelContextImpl implements ModelContext {
             this.searchHandlerThreadpool = flagValue(source, appId, version, Flags.SEARCH_HANDLER_THREADPOOL);
             this.alwaysMarkPhraseExpensive =  flagValue(source, appId, version, Flags.ALWAYS_MARK_PHRASE_EXPENSIVE);
             this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
+            this.logserverOtelCol = flagValue(source, appId, version, Flags.LOGSERVER_OTELCOL_AGENT);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -298,6 +300,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
         @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
+        @Override public boolean logserverOtelCol() { return logserverOtelCol; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

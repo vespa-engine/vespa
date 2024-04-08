@@ -422,6 +422,12 @@ public class Flags {
             "Role definitions for the system",
             "Takes effect immediately");
 
+    public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
+            "logserver-otelcol-agent", false,
+            List.of("olaa"), "2024-04-03", "2024-12-31",
+            "Whether logserver container should run otel agent",
+            "Takes effect at redeployment", INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

@@ -212,6 +212,27 @@ public class DedicatedAdminV4Test {
                 METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
     }
 
+    @Test
+    void testOtelServiceWhenFeatureFlagEnabled() throws Exception {
+        String services = "<services>" +
+                "  <admin version='4.0'>" +
+                "    <logservers>" +
+                "      <nodes count='1' dedicated='true'/>" +
+                "    </logservers>" +
+                "  </admin>" +
+                "</services>";
+
+        VespaModel model = createModel(hosts, services, new DeployState.Builder()
+                .zone(new Zone(SystemName.Public, Environment.dev, RegionName.defaultName()))
+                .properties(new TestProperties()
+                        .setLogserverOtelCol(true)
+                        .setHostedVespa(true)));
+        assertEquals(1, model.getHosts().size());
+        // Should create a logserver container on the same node as logserver
+        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", "opentelemetrycollector",
+                METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
+    }
+
     private Set<String> serviceNames(VespaModel model, String hostname) {
         SentinelConfig config = model.getConfig(SentinelConfig.class, hostname);
         return config.service().stream().map(SentinelConfig.Service::name).collect(Collectors.toSet());
