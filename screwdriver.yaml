@@ -206,7 +206,7 @@ jobs:
                        --tag docker.io/vespaengine/vespa-systemtest-el8:latest .
       - verify-test-image: |
           docker run --rm -ti --entrypoint bash docker.io/vespaengine/vespa-systemtest-el8:$VESPA_VERSION -lc \
-          "/opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__ELASTIC"
+          "/opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__INDEXED"
       - publish-test-image: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             OPT_STATE="$(set +o)"
