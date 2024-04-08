@@ -4,6 +4,7 @@ aopalliance:aopalliance:${aopalliance.vespa.version}
 com.fasterxml.jackson.core:jackson-annotations:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
+com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:${failureaccess.vespa.version}
@@ -33,6 +34,8 @@ org.apache.maven.resolver:maven-resolver-spi:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-util:${maven-resolver.vespa.version}
 org.apache.maven.shared:maven-dependency-tree:3.2.1
 org.apache.maven.shared:maven-shared-utils:3.3.4
+org.apache.maven:maven-api-meta:${maven-xml-impl.vespa.version}
+org.apache.maven:maven-api-xml:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-archiver:${maven-archiver.vespa.version}
 org.apache.maven:maven-artifact:${maven-core.vespa.version}
 org.apache.maven:maven-builder-support:${maven-core.vespa.version}
@@ -44,6 +47,7 @@ org.apache.maven:maven-repository-metadata:${maven-core.vespa.version}
 org.apache.maven:maven-resolver-provider:${maven-core.vespa.version}
 org.apache.maven:maven-settings-builder:${maven-core.vespa.version}
 org.apache.maven:maven-settings:${maven-core.vespa.version}
+org.apache.maven:maven-xml-impl:${maven-xml-impl.vespa.version}
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
 org.codehaus.plexus:plexus-cipher:2.0
@@ -54,6 +58,7 @@ org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}
 org.codehaus.plexus:plexus-sec-dispatcher:2.0
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
 org.codehaus.plexus:plexus-xml:${plexus-xml.vespa.version}
+org.codehaus.woodstox:stax2-api:${stax2-api.vespa.version}
 org.eclipse.aether:aether-api:1.0.0.v20140518
 org.eclipse.aether:aether-util:1.0.0.v20140518
 org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}

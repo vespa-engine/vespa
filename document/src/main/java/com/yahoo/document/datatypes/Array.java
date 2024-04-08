@@ -516,7 +516,7 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         }
 
         @Override
-        @SuppressWarnings("deprecation, unchecked")
+        @SuppressWarnings("unchecked")
         public boolean equals(Object o) {
             return this == o || o instanceof ListWrapper && myvalues.equals(((ListWrapper) o).myvalues);
         }

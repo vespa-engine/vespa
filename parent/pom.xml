@@ -896,6 +896,11 @@
                 <version>2.2.1</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-xml-impl</artifactId>
+                <version>${maven-xml-impl.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.enforcer</groupId>
                 <artifactId>enforcer-api</artifactId>
                 <version>${maven-enforcer-plugin.vespa.version}</version>
@@ -1240,6 +1245,18 @@
                 <groupId>org.twdata.maven</groupId>
                 <artifactId>mojo-executor</artifactId>
                 <version>${mojo-executor.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <!-- Force fresh woodstox-core without security issue -->
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${woodstox.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <!-- Force fresh woodstox-core without security issue -->
+                <groupId>org.codehaus.woodstox</groupId>
+                <artifactId>stax2-api</artifactId>
+                <version>${stax2-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>

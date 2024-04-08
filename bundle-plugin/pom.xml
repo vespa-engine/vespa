@@ -87,6 +87,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-xml-impl</artifactId>
+            <scope>provided</scope> <!-- maven complains if not provided scope. Reason unknown.-->
+        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
