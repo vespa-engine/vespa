@@ -69,11 +69,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <!-- Not used by this module, but compilation fails without it because zookeeper uses these annotations.
-           Provided scoped here to avoid dependents getting it transitively. -->
+      <!-- Not used by this module, but compilation fails without it because zookeeper uses these annotations. -->
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
   <build>
