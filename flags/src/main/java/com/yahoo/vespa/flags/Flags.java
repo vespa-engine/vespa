@@ -422,6 +422,12 @@ public class Flags {
             "Role definitions for the system",
             "Takes effect immediately");
 
+    public static UnboundBooleanFlag NEW_PATH_FOR_DISK_ENCRYPTION_KEY_METADATA  = defineFeatureFlag(
+            "new-path-for-disk-encryption-key-metadata", false,
+            List.of("hmusum"), "2024-04-08", "2024-06-01",
+            "Whether to read and write disk encryption key to new path",
+            "Will be read only on boot.");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
