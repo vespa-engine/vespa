@@ -426,7 +426,7 @@ public class Flags {
             "new-path-for-disk-encryption-key-metadata", false,
             List.of("hmusum"), "2024-04-08", "2024-06-01",
             "Whether to read and write disk encryption key to new path",
-            "Takes effect on next host admin tick.");
+            "Will be read only on boot.");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
