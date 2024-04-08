@@ -1,6 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-find_package(Protobuf REQUIRED)
+set(PROTOBUF_GENERATE_CPP_APPEND_PATH ON)
 protobuf_generate_cpp(searchlib_engine_PROTOBUF_SRCS searchlib_engine_PROTOBUF_HDRS ../../../../src/protobuf/search_protocol.proto)
 
 vespa_add_source_target(protobufgen_searchlib_engine DEPENDS ${searchlib_engine_PROTOBUF_SRCS} ${searchlib_engine_PROTOBUF_HDRS})

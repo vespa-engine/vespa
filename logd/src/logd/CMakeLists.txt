@@ -3,7 +3,8 @@
 # logd is the only cpp module using the protobuf files for the log protocol.
 # We have choosen to generate the cpp code where it is used, instead of changing the java logserver module to also generate and export cpp code just for this case.
 # If more cpp modules requires the cpp protobuf files we should move code generation to a common place.
-find_package(Protobuf REQUIRED)
+
+set(PROTOBUF_GENERATE_CPP_APPEND_PATH ON)
 protobuf_generate_cpp(logd_PROTOBUF_SRCS logd_PROTOBUF_HDRS ../../../logserver/src/protobuf/log_protocol.proto)
 
 vespa_add_source_target(protobufgen_logd DEPENDS ${logd_PROTOBUF_SRCS} ${logd_PROTOBUF_HDRS})
@@ -22,6 +23,7 @@ vespa_add_library(logd STATIC
     ${logd_PROTOBUF_SRCS}
 
     DEPENDS
+    protobuf::libprotobuf
 )
 
 vespa_generate_config(logd ../main/resources/configdefinitions/logd.def)

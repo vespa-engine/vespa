@@ -33,6 +33,7 @@ vespa_add_library(storage
     $<TARGET_OBJECTS:storageapi_mbusprot>
     INSTALL lib64
     DEPENDS
+    protobuf::libprotobuf
 )
 
 vespa_add_target_package_dependency(storage Protobuf)

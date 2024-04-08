@@ -7,6 +7,7 @@ vespa_add_executable(storageserver_storaged_app
     INSTALL sbin
     DEPENDS
     storageserver_storageapp
+    protobuf::libprotobuf
 )
 
 vespa_add_target_package_dependency(storageserver_storaged_app Protobuf)

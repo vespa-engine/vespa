@@ -39,6 +39,7 @@ vespa_add_library(searchlib
     vespalib
     ICU::i18n
     ICU::uc
+    protobuf::libprotobuf
     ${VESPA_ATOMIC_LIB}
 )
 
