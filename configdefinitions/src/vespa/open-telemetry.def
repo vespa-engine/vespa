@@ -2,4 +2,7 @@
 namespace=cloud.config
 
 # For now - store entire config in one string
-config string
+yaml string
+
+# Referenced paths
+refPaths[] string

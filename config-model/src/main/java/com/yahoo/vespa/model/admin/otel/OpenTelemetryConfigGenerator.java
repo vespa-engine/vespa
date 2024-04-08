@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.otel;
 
+import com.yahoo.config.model.ApplicationConfigProducerRoot.StatePortInfo;
+import java.util.List;
+
 /**
  * @author olaa
  */
@@ -13,7 +16,7 @@ public class OpenTelemetryConfigGenerator {
         2. Processing with mapping/filtering from metric sets
         3. Exporter to correct endpoint (alternatively amended)
      */
-    public static String generate() {
+    public String generate() {
 
         return """
                 receivers:
@@ -24,7 +27,7 @@ public class OpenTelemetryConfigGenerator {
                     params:
                       format: 'prometheus'
                     tls:
-                      ca_file: '/opt/vespa/var/vespa//trust-store.pem'
+                      ca_file: '/opt/vespa/var/vespa/trust-store.pem'
                       cert_file: '/var/lib/sia/certs/vespa.external.cd.tenant.cert.pem'
                       insecure_skip_verify: true
                       key_file: '/var/lib/sia/keys/vespa.external.cd.tenant.key.pem'
@@ -42,5 +45,14 @@ public class OpenTelemetryConfigGenerator {
                       processors: [ ]
                       exporters: [ file ]
                 """;
+    }
+
+    void addStatePorts(List<StatePortInfo> portList) {
+        // XXX not used yet
+    }
+
+    List<String> referencedPaths() {
+        return List.of("/var/lib/sia/certs/vespa.external.cd.tenant.cert.pem",
+                       "/var/lib/sia/keys/vespa.external.cd.tenant.key.pem");
     }
 }

@@ -2,21 +2,22 @@
 package com.yahoo.vespa.model.admin.otel;
 
 import com.yahoo.cloud.config.OpenTelemetryConfig;
+import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 
+import com.yahoo.cloud.config.ModelConfig;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+
 import java.util.Optional;
 
-public class OpenTelemetryCollector extends AbstractService implements OpenTelemetryConfig.Producer  {
+public class OpenTelemetryCollector extends AbstractService implements OpenTelemetryConfig.Producer {
 
-    private final String config;
-
-    public OpenTelemetryCollector(TreeConfigProducer<?> parent, String config) {
+    public OpenTelemetryCollector(TreeConfigProducer<?> parent) {
         super(parent, "otelcol");
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
-        this.config = config;
     }
 
     /**
@@ -24,9 +25,8 @@ public class OpenTelemetryCollector extends AbstractService implements OpenTelem
      */
     @Override
     public Optional<String> getStartupCommand() {
-        return Optional.of("exec $ROOT/bin/vespa-otelcol-start");
+        return Optional.of("exec $ROOT/bin/vespa-otelcol-start -c " + getConfigId());
     }
-
 
     @Override
     public void allocatePorts(int start, PortAllocBridge from) {}
@@ -38,6 +38,18 @@ public class OpenTelemetryCollector extends AbstractService implements OpenTelem
 
     @Override
     public void getConfig(OpenTelemetryConfig.Builder builder) {
-        builder.config(config);
+        var generator = new OpenTelemetryConfigGenerator();
+        AnyConfigProducer pp = this;
+        AnyConfigProducer p = pp.getParent();
+        while (p != null && p != pp) {
+            if (pp instanceof ApplicationConfigProducerRoot root) {
+                generator.addStatePorts(root.getStatePorts());
+                break;
+            }
+            pp = p;
+            p = pp.getParent();
+        }
+        builder.yaml(generator.generate());
+        builder.refPaths(generator.referencedPaths());
     }
 }

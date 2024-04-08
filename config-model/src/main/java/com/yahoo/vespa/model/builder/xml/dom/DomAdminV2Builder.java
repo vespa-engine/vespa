@@ -7,6 +7,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
@@ -15,6 +16,8 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.admin.otel.OpenTelemetryCollector;
+import com.yahoo.vespa.model.admin.otel.OpenTelemetryConfigGenerator;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilderBase;
 import com.yahoo.vespa.model.container.Container;
 import org.w3c.dom.Element;
@@ -38,10 +41,21 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         super(applicationType, multitenant, configServerSpecs);
     }
 
+    private void addOtelcol(TreeConfigProducer<?> parent, DeployState deployState, HostResource hostResource) {
+        var otelcol = new OpenTelemetryCollector(parent);
+        otelcol.setHostResource(hostResource);
+        otelcol.initService(deployState);
+    }
+
     @Override
     protected void doBuildAdmin(DeployState deployState, Admin admin, Element adminE) {
         List<Configserver> configservers = parseConfigservers(deployState, admin, adminE);
-        admin.setLogserver(parseLogserver(deployState, admin, adminE));
+        var logserver = parseLogserver(deployState, admin, adminE);
+        admin.setLogserver(logserver);
+        if (deployState.featureFlags().logserverOtelCol()) {
+            // for manual testing
+            addOtelcol(admin, deployState, logserver.getHostResource());
+        }
         admin.addConfigservers(configservers);
         admin.addSlobroks(getSlobroks(deployState, admin, XML.getChild(adminE, "slobroks")));
         if ( ! admin.multitenant())
