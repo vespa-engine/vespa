@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.RoleList;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -14,8 +15,6 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
-import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
-import static com.yahoo.vespa.flags.Dimension.CLAVE;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
@@ -416,6 +415,12 @@ public class Flags {
             List.of("mortent"), "2024-02-19", "2024-05-01",
             "Whether to use athenz as node identity provider",
             "Takes effect on next identity refresh", HOSTNAME);
+
+    public static UnboundJacksonFlag<RoleList> ROLE_DEFINITIONS = defineJacksonFlag(
+            "role-definitions", RoleList.empty(), RoleList.class,
+            List.of("mortent"), "2024-04-05", "2024-10-01",
+            "Role definitions for the system",
+            "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
