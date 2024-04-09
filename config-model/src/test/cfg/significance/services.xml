@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services>
+  <admin version="2.0">
+    <adminserver hostalias="node0"/>
+    <logserver hostalias="node0"/>
+  </admin>
+  <container version="1.0">
+    <search>
+        <significance>
+            <model language="en" model-id="idf-wiki-english" path="models/idf-english-wiki.json.zst"/>
+            <model language="no" path="models/idf-norwegian-wiki.json.zst" />
+            <model language="ru" url="https://some/uri/blob.json" />
+        </significance>
+    </search>
+  </container>
+</services>
+

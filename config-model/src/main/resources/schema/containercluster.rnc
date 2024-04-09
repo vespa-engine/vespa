@@ -137,6 +137,10 @@ Threadpool = element threadpool {
     ))
 }
 
+Significance = element significance {
+    element model { attribute language { xsd:string } & ModelReference }*
+}
+
 Clients = element clients {
     Client*
 }
@@ -161,7 +165,8 @@ SearchInContainer = element search {
     Provider* &
     Renderer* &
     GenericConfig* &
-    Threadpool?
+    Threadpool? &
+    Significance?
 }
 
 SearchChain = element chain {

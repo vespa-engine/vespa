@@ -83,6 +83,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
+import com.yahoo.vespa.model.container.component.SignificanceModelRegistry;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.AccessControl;
@@ -765,6 +766,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addSearchHandler(deployState, cluster, searchElement, context);
 
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
+
+        addSignificance(deployState, searchElement, cluster);
+    }
+
+    private void addSignificance(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        Element significanceElement = XML.getChild(spec, "significance");
+        if (significanceElement == null) return;
+
+        SignificanceModelRegistry significanceModelRegistry = new SignificanceModelRegistry(deployState, significanceElement);
+        cluster.addComponent(significanceModelRegistry);
+
     }
 
     private void addModelEvaluation(Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
