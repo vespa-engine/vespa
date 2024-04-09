@@ -1027,11 +1027,11 @@ constexpr bool is_batchable_feed_op(api::MessageType::Id id) noexcept {
 document::GlobalId gid_from_feed_op(const api::StorageMessage& msg) {
     switch (msg.getType().getId()) {
     case api::MessageType::PUT_ID:
-        return dynamic_cast<const api::PutCommand&>(msg).getDocumentId().getGlobalId();
+        return static_cast<const api::PutCommand&>(msg).getDocumentId().getGlobalId();
     case api::MessageType::REMOVE_ID:
-        return dynamic_cast<const api::RemoveCommand&>(msg).getDocumentId().getGlobalId();
+        return static_cast<const api::RemoveCommand&>(msg).getDocumentId().getGlobalId();
     case api::MessageType::UPDATE_ID:
-        return dynamic_cast<const api::UpdateCommand&>(msg).getDocumentId().getGlobalId();
+        return static_cast<const api::UpdateCommand&>(msg).getDocumentId().getGlobalId();
     default: abort();
     }
 }
