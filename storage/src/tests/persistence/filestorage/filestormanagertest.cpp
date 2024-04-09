@@ -407,30 +407,19 @@ TEST_F(FileStorManagerTest, put) {
 }
 
 TEST_F(FileStorManagerTest, feed_op_batch_updates_bucket_db_and_reply_bucket_info) {
-    TestFileStorComponents c(*this);
-    c.manager->getFileStorHandler().set_max_feed_op_batch_size(10);
+    PersistenceHandlerComponents c(*this);
+    c.filestorHandler->set_max_feed_op_batch_size(10);
     BucketId bucket_id(16, 1);
     createBucket(bucket_id);
-    // The persistence thread is already running at this point, and may not have observed the max
-    // batch size configuration change. Trigger an implicit thread barrier by roundtripping a message.
-    {
-        auto get = make_get_command(120, "id:foo:testdoctype1:n=1:0");
-        get->setAddress(_storage3);
-        c.top.sendDown(get);
-        c.top.waitForMessages(1, _waitTime);
-        (void)c.top.getRepliesOnce();
-    }
     constexpr uint32_t n = 10;
-    {
-        // Explicit barrier to prevent any messages from being processed until we've enqueued all puts
-        auto guard = c.manager->getFileStorHandler().lock(makeDocumentBucket(bucket_id), LockingRequirements::Exclusive);
-        for (uint32_t i = 0; i < n; ++i) {
-            auto put = make_put_command(120, vespalib::make_string("id:foo:testdoctype1:n=1:%u", i), Timestamp(1000) + i);
-            put->setAddress(_storage3);
-            c.top.sendDown(put);
-        }
+    // No persistence thread started yet, so no chance of racing
+    for (uint32_t i = 0; i < n; ++i) {
+        auto put = make_put_command(120, vespalib::make_string("id:foo:testdoctype1:n=1:%u", i), Timestamp(1000) + i);
+        put->setAddress(_storage3);
+        c.filestorHandler->schedule(put);
     }
-    // All 10 puts shall now be visible and waiting for the persistence thread to fetch as a single batch.
+    auto pt = c.make_disk_thread();
+    c.filestorHandler->flush(true);
     c.top.waitForMessages(n, _waitTime);
     api::BucketInfo expected_bucket_info;
     {
@@ -445,6 +434,7 @@ TEST_F(FileStorManagerTest, feed_op_batch_updates_bucket_db_and_reply_bucket_inf
         auto actual_bucket_info = dynamic_cast<api::PutReply&>(*reply).getBucketInfo();
         EXPECT_EQ(actual_bucket_info, expected_bucket_info);
     }
+    c.filestorHandler->close(); // Ensure persistence thread is no longer in message fetch code
 }
 
 TEST_F(FileStorManagerTest, running_task_against_unknown_bucket_fails) {
