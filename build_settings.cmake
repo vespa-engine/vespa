@@ -55,9 +55,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_G
   endif()
 endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0)
-    # Turn off maybe uninitialized warning when compiling with
-    # gcc 14 or newer.
-    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-maybe-uninitialized")
+    # Turn off maybe uninitialized warning and don't promote inline warning
+    # to error when compiling with gcc 14 or newer.
+    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-maybe-uninitialized -Wno-error=inline")
 endif()
 
 # Warnings that are specific to C++ compilation
