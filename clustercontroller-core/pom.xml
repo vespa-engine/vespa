@@ -103,13 +103,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <!-- Not used by this module, but compilation fails without it because zookeeper uses these annotations.
-                 Provided scoped here to avoid dependents getting it transitively. -->
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <scope>provided</scope>
@@ -130,6 +123,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                  <compilerArgs>
+                    <!-- Turn off classfile warnings where spotbugs is pulled in transitively. -->
+                    <arg>-Xlint:all</arg>
+                    <arg>-Xlint:-classfile</arg>
+                    <arg>-Xlint:-serial</arg>
+                    <arg>-Werror</arg>
+                  </compilerArgs>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

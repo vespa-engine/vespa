@@ -19,7 +19,6 @@ com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.versio
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
-com.github.spotbugs:spotbugs-annotations:${spotbugs.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:${failureaccess.vespa.version}
@@ -30,7 +29,6 @@ com.google.jimfs:jimfs:${jimfs.vespa.version}
 com.google.protobuf:protobuf-java:${protobuf.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
-de.kherud:llama:${kherud.llama.vespa.version}
 com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}
 com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}
@@ -46,6 +44,7 @@ commons-cli:commons-cli:${commons-cli.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-io:commons-io:${commons-io.vespa.version}
 commons-logging:commons-logging:${commons-logging.vespa.version}
+de.kherud:llama:${kherud.llama.vespa.version}
 io.airlift:aircompressor:${aircompressor.vespa.version}
 io.airlift:airline:${airline.vespa.version}
 io.dropwizard.metrics:metrics-core:${dropwizard.metrics.vespa.version}

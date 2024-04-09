@@ -57,11 +57,6 @@
       <artifactId>log4j-over-slf4j</artifactId>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <!-- Needed by zookeeper, which only has an optional dependency. -->
-      <groupId>com.github.spotbugs</groupId>
-      <artifactId>spotbugs-annotations</artifactId>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -81,6 +76,18 @@
         </executions>
         <configuration>
           <mainClass>com.yahoo.vespa.zookeeper.cli.Main</mainClass>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <!-- Turn off classfile warnings where spotbugs is pulled in transitively. -->
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-classfile</arg>
+            <arg>-Werror</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
     </plugins>
