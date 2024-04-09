@@ -47,6 +47,13 @@ if (VESPA_USE_SANITIZER)
     set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-tsan")
   endif()
 endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0 AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+  if(VESPA_OS_DISTRO_COMBINED STREQUAL "debian 12" OR VESPA_OS_DISTRO_COMBINED STREQUAL "ubuntu 22.04")
+    # Turn off restrict warnings when compiling with gcc 12 on Debian 12 or
+    # Ubuntu 22.04
+    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-restrict")
+  endif()
+endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0)
     # Turn off maybe uninitialized warning when compiling with
     # gcc 14 or newer.
