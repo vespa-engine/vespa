@@ -214,30 +214,7 @@ size_t select_strict_and_child(auto adapter, const auto &children) {
     return best_idx;
 }
 
-auto select_forced_strict_and_child(auto adapter, const auto &children, size_t first) {
-    double est = 1.0;
-    double cost = 0.0;
-    size_t best_idx = 0;
-    double best_diff = std::numeric_limits<double>::max();
-    for (size_t idx = 0; idx < first && idx < children.size(); ++idx) {
-        est *= adapter.estimate(children[idx]);
-    }
-    for (size_t idx = first; idx < children.size(); ++idx) {
-        auto child = FlowStats::from(adapter, children[idx]);
-        double child_abs_cost = est * child.cost;
-        double forced_cost = forced_strict_cost(child, est);
-        double my_diff = (forced_cost + child.estimate * cost) - (cost + child_abs_cost);
-        if (my_diff < best_diff) {
-            best_diff = my_diff;
-            best_idx = idx;
-        }
-        cost += child_abs_cost;
-        est *= child.estimate;
-    }
-    return std::make_pair(best_idx, best_diff);
-}
-
-auto select_forced_strict_and_child_with_order(auto adapter, const auto &children, size_t first) {
+auto select_forced_strict_and_child_impl(auto adapter, const auto &children, size_t first, auto ordered, auto destructive) {
     auto est_until = [&](size_t limit)noexcept{
                          double my_est = 1.0;
                          for (size_t i = 0; i < limit; ++i) {
@@ -247,8 +224,8 @@ auto select_forced_strict_and_child_with_order(auto adapter, const auto &childre
                      };
     double est = est_until(first);
     double cost = 0.0;
-    size_t best_idx = 0;
-    size_t best_target = 0;
+    size_t best_idx = first;
+    size_t best_target = first;
     double best_diff = std::numeric_limits<double>::max();
     for (size_t idx = first; idx < children.size(); ++idx) {
         auto child = FlowStats::from(adapter, children[idx]);
@@ -256,15 +233,17 @@ auto select_forced_strict_and_child_with_order(auto adapter, const auto &childre
         double forced_cost = forced_strict_cost(child, est);
         double my_diff = (forced_cost + child.estimate * cost) - (cost + child_abs_cost);
         size_t target = first;
-        while (target > 0) {
+        while (ordered && target > 0) {
             size_t candidate = target - 1;
             auto other = FlowStats::from(adapter, children[candidate]);
             if (other.estimate < child.estimate) {
                 // do not move past someone with lower estimate
                 break;
             }
-            if (!should_force_strict(other, (est_until(candidate) * child.estimate))) {
-                // no not move past someone who will lose strictness
+            if (!destructive && !should_force_strict(other, (est_until(candidate) * child.estimate))) {
+                // no not move past someone who will lose strictness,
+                // unless it is explicitly allowed by enabling
+                // destructive (re-)ordering
                 break;
             }
             target = candidate;
@@ -283,6 +262,19 @@ auto select_forced_strict_and_child_with_order(auto adapter, const auto &childre
         est *= child.estimate;
     }
     return std::make_tuple(best_idx, best_target, best_diff);
+}
+
+auto select_forced_strict_and_child(auto adapter, const auto &children, size_t first) {
+    auto [idx, target, diff] = select_forced_strict_and_child_impl(adapter, children, first, std::false_type{}, std::false_type{});
+    return std::make_pair(idx, diff);
+}
+
+auto select_forced_strict_and_child_with_order(auto adapter, const auto &children, size_t first) {
+    return select_forced_strict_and_child_impl(adapter, children, first, std::true_type{}, std::false_type{});
+}
+
+auto select_forced_strict_and_child_with_destructive_order(auto adapter, const auto &children, size_t first) {
+    return select_forced_strict_and_child_impl(adapter, children, first, std::true_type{}, std::true_type{});
 }
 
 } // flow
