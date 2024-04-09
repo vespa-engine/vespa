@@ -1058,6 +1058,7 @@ FileStorHandlerImpl::Stripe::fill_feed_op_batch(monitor_guard& guard, LockedMess
                                                 uint32_t max_batch_size, vespalib::steady_time now)
 {
     assert(batch.size() == 1);
+    assert(guard.owns_lock());
     BucketIdx& idx = bmi::get<2>(*_queue);
     auto bucket_msgs = idx.equal_range(batch.lock->getBucket());
     // Process in FIFO order (_not_ priority order) until we hit the end, a non-batchable operation
@@ -1136,7 +1137,6 @@ FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx
         auto locker = std::make_unique<BucketLock>(guard, *this, bucket, msg->getPriority(),
                                                    msg->getType().getId(), msg->getMsgId(),
                                                    msg->lockingRequirements());
-        guard.unlock();
         return {std::move(locker), std::move(msg), std::move(throttle_token)};
     } else {
         std::shared_ptr<api::StorageReply> msgReply(makeQueueTimeoutReply(*msg));
