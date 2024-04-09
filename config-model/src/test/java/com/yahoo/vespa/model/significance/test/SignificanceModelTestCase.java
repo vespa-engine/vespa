@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.jupiter.api.Test;
 
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author MariusArhaug

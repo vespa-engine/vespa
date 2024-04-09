@@ -14,16 +14,5 @@
         </significance>
     </search>
   </container>
-  <content version="1.0">
-    <redundancy>1</redundancy>
-
-    <documents>
-      <document type="music" mode="index"/>
-    </documents>
-
-    <group name="mycluster">
-      <node hostalias="node0" distribution-key="0" capacity="0.79"/>
-    </group>
-  </content>
 </services>
 
