@@ -213,7 +213,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addProcessing(deployState, spec, cluster, context);
         addSearch(deployState, spec, cluster, context);
-        addSignificance(deployState, spec, cluster);
         addDocproc(deployState, spec, cluster);
         addDocumentApi(deployState, spec, cluster, context);  // NOTE: Must be done after addSearch
 
@@ -767,6 +766,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addSearchHandler(deployState, cluster, searchElement, context);
 
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
+
+        addSignificance(deployState, searchElement, cluster);
     }
 
     private void addSignificance(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
