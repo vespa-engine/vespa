@@ -774,5 +774,49 @@
       "public abstract java.lang.String accentDrop(java.lang.String, com.yahoo.language.Language)"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.language.significance.DocumentFrequency" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(long, long)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public long frequency()",
+      "public long corpusSize()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.significance.SignificanceModel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract com.yahoo.language.significance.DocumentFrequency documentFrequency(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.significance.SignificanceModelRegistry" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract com.yahoo.language.significance.SignificanceModel getModel(com.yahoo.language.Language)"
+    ],
+    "fields" : [ ]
   }
 }

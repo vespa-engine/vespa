@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.language.significance;
+package com.yahoo.language.significance.impl;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.language.significance.DocumentFrequency;
+import com.yahoo.language.significance.SignificanceModel;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -25,25 +27,26 @@ public class DefaultSignificanceModel implements SignificanceModel {
         private final String description;
         private final long corpusSize;
         private final String language;
+
+        private final long wordCount;
         private final HashMap<String, Long> frequencies;
-        private final long tokenCount;
 
         @JsonCreator
         public SignificanceModelFile(
                 @JsonProperty("version") String version,
                 @JsonProperty("id") String id,
                 @JsonProperty("description") String description,
-                @JsonProperty("corpus_size") long corpusSize,
+                @JsonProperty("corpus-size") long corpusSize,
                 @JsonProperty("language") String language,
-                @JsonProperty("frequencies") HashMap<String, Long> frequencies,
-                @JsonProperty("token_count") long tokenCount) {
+                @JsonProperty("word-count") long wordCount,
+                @JsonProperty("frequencies") HashMap<String, Long> frequencies) {
             this.version = version;
             this.id = id;
             this.description = description;
             this.corpusSize = corpusSize;
             this.language = language;
+            this.wordCount = wordCount;
             this.frequencies = frequencies;
-            this.tokenCount = tokenCount;
         }
 
         @JsonProperty("version")
@@ -55,7 +58,7 @@ public class DefaultSignificanceModel implements SignificanceModel {
         @JsonProperty("description")
         public String description() { return description; }
 
-        @JsonProperty("corpus_size")
+        @JsonProperty("corpus-size")
         public long corpusSize() { return corpusSize; }
 
         @JsonProperty("language")
@@ -64,8 +67,8 @@ public class DefaultSignificanceModel implements SignificanceModel {
         @JsonProperty("frequencies")
         public HashMap<String, Long> frequencies() { return frequencies; }
 
-        @JsonProperty("token_count")
-        public long tokenCount() { return tokenCount; }
+        @JsonProperty("word-count")
+        public long wordCount() { return wordCount; }
 
     }
 

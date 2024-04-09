@@ -2,13 +2,15 @@
 package com.yahoo.language.significance;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry;
 import org.junit.Test;
 
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 
 /**
  * @author MariusArhaug
@@ -35,6 +37,9 @@ public class DefaultSignificanceModelRegistryTest {
 
         assertEquals(3, norwegianModel.documentFrequency("nei").frequency());
         assertEquals(20, norwegianModel.documentFrequency("nei").corpusSize());
+
+        assertEquals(1, norwegianModel.documentFrequency("non-existent-word").frequency());
+        assertEquals(20, norwegianModel.documentFrequency("non-existent-word").corpusSize());
 
     }
 }

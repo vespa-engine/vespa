@@ -2,13 +2,13 @@
   "version" : "1.0",
   "id" : "test::1",
   "description" : "desc",
-  "corpus_size" : 10,
+  "corpus-size" : 10,
   "language" : "en",
+  "word-count" : 4,
   "frequencies" : {
     "usa" : 2,
     "hello": 3,
     "world": 5,
     "test": 2
-  },
-  "token_count" : 4
+  }
 }
