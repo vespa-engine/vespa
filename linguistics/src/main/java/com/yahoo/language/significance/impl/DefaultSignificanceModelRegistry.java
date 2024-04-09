@@ -43,7 +43,11 @@ public class DefaultSignificanceModelRegistry implements SignificanceModelRegist
 
 
     @Override
-    public SignificanceModel getModel(Language language) {
+    public SignificanceModel getModel(Language language) throws IllegalArgumentException {
+        if (!models.containsKey(language))
+        {
+            throw new IllegalArgumentException("No model for language " + language);
+        }
         return models.get(language);
     }
 
