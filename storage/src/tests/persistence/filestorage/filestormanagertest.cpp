@@ -421,6 +421,7 @@ TEST_F(FileStorManagerTest, feed_op_batch_updates_bucket_db_and_reply_bucket_inf
     auto pt = c.make_disk_thread();
     c.filestorHandler->flush(true);
     c.top.waitForMessages(n, _waitTime);
+    c.executor.sync_all(); // Ensure all async reply processing tasks must have completed.
     api::BucketInfo expected_bucket_info;
     {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bucket_id, "foo"));
