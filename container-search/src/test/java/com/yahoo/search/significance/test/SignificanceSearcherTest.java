@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.significance.test;
 
 import com.yahoo.component.chain.Chain;
@@ -18,6 +19,11 @@ import java.util.HashMap;
 
 import static com.yahoo.test.JunitCompat.assertEquals;
 
+/**
+ * Tests significance term in the search chain.
+ *
+ * @author MariusArhaug
+ */
 public class SignificanceSearcherTest {
     SignificanceModelRegistry significanceModelRegistry;
     SignificanceSearcher searcher;

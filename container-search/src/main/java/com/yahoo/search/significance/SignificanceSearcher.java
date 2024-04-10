@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.significance;
 
 import com.yahoo.component.annotation.Inject;
@@ -16,6 +17,12 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 
 import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
+
+/**
+ * Sets significance values on word items in the query tree.
+ *
+ * @author MariusArhaug
+ */
 
 @Provides(SignificanceSearcher.SIGNIFICANCE)
 @Before(STEMMING)
