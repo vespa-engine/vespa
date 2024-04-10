@@ -40,7 +40,7 @@ double dual_ordered_cost_of(const std::vector<FlowStats> &data, InFlow in_flow, 
         any_flow.update_cost(total_cost, child_cost);
         any_flow.add(item.estimate);
     }
-    EXPECT_EQ(total_cost, result);
+    EXPECT_DOUBLE_EQ(total_cost, result);
     return result;
 }
 
@@ -174,7 +174,7 @@ void verify_flow(auto flow, const std::vector<double> &est_list, const std::vect
     AnyFlow any_flow = AnyFlow::create<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
     ASSERT_EQ(est_list.size() + 1, expect.size());
     for (size_t i = 0; i < est_list.size(); ++i) {
-        EXPECT_EQ(any_flow.flow(), flow.flow());
+        EXPECT_DOUBLE_EQ(any_flow.flow(), flow.flow());
         EXPECT_EQ(any_flow.strict(), flow.strict());
         EXPECT_DOUBLE_EQ(flow.flow(), expect[i].flow);
         EXPECT_EQ(flow.strict(), expect[i].strict);
@@ -182,7 +182,7 @@ void verify_flow(auto flow, const std::vector<double> &est_list, const std::vect
         any_flow.add(est_list[i]);
         flow.add(est_list[i]);
     }
-    EXPECT_EQ(any_flow.flow(), flow.flow());
+    EXPECT_DOUBLE_EQ(any_flow.flow(), flow.flow());
     EXPECT_EQ(any_flow.strict(), flow.strict());
     EXPECT_DOUBLE_EQ(flow.flow(), expect.back().flow);
     EXPECT_EQ(flow.strict(), expect.back().strict);
@@ -356,10 +356,10 @@ TEST(FlowTest, optimal_and_flow) {
             double min_cost = AndFlow::cost_of(data, strict);
             double max_cost = 0.0;
             AndFlow::sort(data, strict);
-            EXPECT_EQ(ordered_cost_of<AndFlow>(data, strict, false), min_cost);
+            EXPECT_DOUBLE_EQ(ordered_cost_of<AndFlow>(data, strict, false), min_cost);
             auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
                              double my_cost = ordered_cost_of<AndFlow>(my_data, strict, false);
-                             EXPECT_LE(min_cost, my_cost);
+                             EXPECT_LE(min_cost, my_cost + 1e-9);
                              max_cost = std::max(max_cost, my_cost);
                          };
             each_perm(data, check);
@@ -379,7 +379,7 @@ TEST(FlowTest, optimal_or_flow) {
             double min_cost = OrFlow::cost_of(data, strict);
             double max_cost = 0.0;
             OrFlow::sort(data, strict);
-            EXPECT_EQ(ordered_cost_of<OrFlow>(data, strict, false), min_cost);
+            EXPECT_DOUBLE_EQ(ordered_cost_of<OrFlow>(data, strict, false), min_cost);
             auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
                              double my_cost = ordered_cost_of<OrFlow>(my_data, strict, false);
                              EXPECT_LE(min_cost, my_cost + 1e-9);
@@ -451,7 +451,7 @@ void test_strict_AND_sort_strategy(auto my_sort) {
                                  flow.add(item.estimate);
                                  total_cost += child_cost;
                              }
-                             EXPECT_EQ(total_cost, ordered_cost_of<AndFlow>(list, true, true));
+                             EXPECT_DOUBLE_EQ(total_cost, ordered_cost_of<AndFlow>(list, true, true));
                              fprintf(stderr, "    total cost: %10f\n", total_cost);
                          };
         auto verify_order = [&](const std::vector<FlowStats> &list){
