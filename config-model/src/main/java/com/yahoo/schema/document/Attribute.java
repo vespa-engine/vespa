@@ -279,9 +279,6 @@ public final class Attribute implements Cloneable, Serializable {
         if (fieldType instanceof ArrayDataType arrayType && arrayType.getNestedType() instanceof StructDataType nestedType) {
             failDataType(schemaName, fieldName, "array<" + nestedType.getName() + ">");
         }
-        if (fieldType instanceof StructDataType structType) {
-            failDataType(schemaName, fieldName, structType.getName());
-        }
     }
 
     /** Converts to the right attribute type from a field datatype */

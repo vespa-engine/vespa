@@ -137,11 +137,6 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
         run_bad_struct_or_map_attribute("array<s>");
     }
 
-    @Test
-    void bad_struct_attribute() throws ParseException {
-        run_bad_struct_or_map_attribute("s");
-    }
-
     private void run_bad_struct_or_map_attribute(String type) throws ParseException {
         run_bad_struct_or_map_attribute(type, false, true);
         run_bad_struct_or_map_attribute(type, true, false);
