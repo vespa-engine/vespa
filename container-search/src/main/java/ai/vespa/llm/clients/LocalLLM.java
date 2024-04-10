@@ -36,20 +36,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
     @Inject
     public LocalLLM(LlmLocalClientConfig config) {
-        this.executor = new ThreadPoolExecutor(config.parallelRequests(), config.parallelRequests(),
-                0L, TimeUnit.MILLISECONDS,
-                config.maxQueueSize() > 0 ? new ArrayBlockingQueue<>(config.maxQueueSize()) : new SynchronousQueue<>(),
-                new ThreadPoolExecutor.AbortPolicy());
-
-        String modelFile;
-        if ( ! config.localLlmFile().isEmpty()) {  // for testing
-            modelFile = config.localLlmFile();
-        } else if (config.modelUrl().exists()){
-            modelFile = config.modelUrl().getAbsolutePath();
-        } else {
-            throw new IllegalArgumentException("Local LLM model not set. " +
-                    "Either set 'localLlmFile' or 'modelUrl' in 'llm-local-client' config.");
-        }
+        executor = createExecutor(config);
 
         // Maximum number of tokens to generate - need this since some models can just generate infinitely
         maxTokens = config.maxTokens();
@@ -57,6 +44,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // Only used if GPU is not used
         var defaultThreadCount = Runtime.getRuntime().availableProcessors() - 2;
 
+        var modelFile = selectModelFile(config);
         var modelParams = new ModelParameters()
                 .setModelFilePath(modelFile)
                 .setContinuousBatching(true)
@@ -71,7 +59,24 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         logger.info(String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
 
         // Todo: handle prompt context size - such as give a warning when prompt exceeds context size
-        this.contextSize = config.contextSize();
+        contextSize = config.contextSize();
+    }
+
+    private ThreadPoolExecutor createExecutor(LlmLocalClientConfig config) {
+        return new ThreadPoolExecutor(config.parallelRequests(), config.parallelRequests(),
+                0L, TimeUnit.MILLISECONDS,
+                config.maxQueueSize() > 0 ? new ArrayBlockingQueue<>(config.maxQueueSize()) : new SynchronousQueue<>(),
+                new ThreadPoolExecutor.AbortPolicy());
+    }
+
+    private String selectModelFile(LlmLocalClientConfig config) {
+        if ( ! config.localLlmFile().isEmpty()) {  // primarily for testing
+            return config.localLlmFile();
+        } else if (config.modelUrl().exists()) {
+            return config.modelUrl().getAbsolutePath();
+        }
+        throw new IllegalArgumentException("Local LLM model not set. " +
+                "Either set 'localLlmFile' or 'modelUrl' in 'llm-local-client' config.");
     }
 
     @Override
