@@ -151,7 +151,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     void requireThatMaxTermOccurrencesIsPropagated() {
         var field = new SDField("test", DataType.STRING);
         field.getMatching().maxTermOccurrences(10);
-        field.parseIndexingScript("{ summary | index }");
+        field.parseIndexingScript("test", "{ summary | index }");
         assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" max-occurrences:10 | summary test | index test; }",
                 field);
     }
@@ -173,14 +173,14 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
 
     private static SDField createField(String name, DataType type, String script) {
         SDField field = new SDField(null, name, type);
-        field.parseIndexingScript(script);
+        field.parseIndexingScript("test", script);
         return field;
     }
 
     private static SDField createPredicateField(
             String name, DataType type, String script, int arity, OptionalLong lower_bound, OptionalLong upper_bound) {
         SDField field = new SDField(null, name, type);
-        field.parseIndexingScript(script);
+        field.parseIndexingScript("test", script);
         Index index = new Index("foo");
         index.setBooleanIndexDefiniton(new BooleanIndexDefinition(
                 OptionalInt.of(arity), lower_bound, upper_bound, OptionalDouble.empty()));

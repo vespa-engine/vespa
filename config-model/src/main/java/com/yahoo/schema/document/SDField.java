@@ -398,22 +398,23 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
     }
 
     /** Parse an indexing expression which will use the simple linguistics implementation suitable for testing */
-    public void parseIndexingScript(String script) {
-        parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+    public void parseIndexingScript(String schemaName, String script) {
+        parseIndexingScript(schemaName, script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
-    public void parseIndexingScript(String script, Linguistics linguistics, Map<String, Embedder> embedders) {
+    public void parseIndexingScript(String schemaName, String script, Linguistics linguistics, Map<String, Embedder> embedders) {
         try {
             ScriptParserContext config = new ScriptParserContext(linguistics, embedders);
             config.setInputStream(new IndexingInput(script));
-            setIndexingScript(ScriptExpression.newInstance(config));
+            setIndexingScript(schemaName, ScriptExpression.newInstance(config));
         } catch (ParseException e) {
             throw new IllegalArgumentException("Failed to parse script '" + script + "'", e);
         }
     }
 
     /** Sets the indexing script of this, or null to not use a script */
-    public void setIndexingScript(ScriptExpression exp) {
+
+    public void setIndexingScript(String schemaName, ScriptExpression exp) {
         if (exp == null) {
             exp = new ScriptExpression();
         }
@@ -441,13 +442,13 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
                     }
                     Attribute attribute = attributes.get(fieldName);
                     if (attribute == null) {
-                        addAttribute(new Attribute(fieldName, getDataType()));
+                        addAttribute(new Attribute(schemaName, fieldName, fieldName, getDataType()));
                     }
                 }
             }.visit(indexingScript);
         }
         for (SDField structField : getStructFields()) {
-            structField.setIndexingScript(exp);
+            structField.setIndexingScript(schemaName, exp);
         }
     }
 

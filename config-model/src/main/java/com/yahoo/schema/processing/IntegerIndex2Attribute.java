@@ -38,7 +38,7 @@ public class IntegerIndex2Attribute extends Processor {
                 ScriptExpression script = field.getIndexingScript();
                 Set<String> attributeNames = new HashSet<>();
                 new MyVisitor(attributeNames).visit(script);
-                field.setIndexingScript((ScriptExpression)new MyConverter(attributeNames).convert(script));
+                field.setIndexingScript(schema.getName(), (ScriptExpression)new MyConverter(attributeNames).convert(script));
                 warn(schema, field, "Changed to attribute because numerical indexes (field has type " +
                                     field.getDataType().getName() + ") is not currently supported." +
                                     " Index-only settings may fail. Ignore this warning for streaming search.");

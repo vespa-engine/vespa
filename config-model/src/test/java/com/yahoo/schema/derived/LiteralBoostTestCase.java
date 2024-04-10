@@ -36,7 +36,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
         SDField field1 = document.addField("a", DataType.STRING);
-        field1.parseIndexingScript("{ index }");
+        field1.parseIndexingScript(schema.getName(), "{ index }");
         field1.setLiteralBoost(20);
         RankProfile other = new RankProfile("other", schema, rankProfileRegistry);
         rankProfileRegistry.add(other);
@@ -69,7 +69,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
         SDField field1 = document.addField("a", DataType.STRING);
-        field1.parseIndexingScript("{ index }");
+        field1.parseIndexingScript(schema.getName(), "{ index }");
         RankProfile other = new RankProfile("other", schema, rankProfileRegistry);
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
@@ -95,10 +95,10 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDDocumentType document = new SDDocumentType("msb");
         schema.addDocument(document);
         SDField field1 = document.addField("title", DataType.STRING);
-        field1.parseIndexingScript("{ summary | index }");
+        field1.parseIndexingScript(schema.getName(), "{ summary | index }");
         field1.setLiteralBoost(20);
         SDField field2 = document.addField("body", DataType.STRING);
-        field2.parseIndexingScript("{ summary | index }");
+        field2.parseIndexingScript(schema.getName(), "{ summary | index }");
         field2.setLiteralBoost(20);
 
         schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());

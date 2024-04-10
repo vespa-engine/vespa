@@ -27,7 +27,7 @@ public class OptimizeIlscript extends Processor {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
 
-            field.setIndexingScript((ScriptExpression)new ExpressionOptimizer().convert(script));
+            field.setIndexingScript(schema.getName(), (ScriptExpression)new ExpressionOptimizer().convert(script));
             if ( ! field.getIndexingScript().toString().equals(script.toString())) {
                 info(schema, field, "Rewrote ilscript from:\n" + script.toString() +
                                     "\nto\n" + field.getIndexingScript().toString());

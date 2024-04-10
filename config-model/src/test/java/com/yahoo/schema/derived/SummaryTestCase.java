@@ -172,7 +172,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         schema.addDocument(document);
         String fieldName = "location";
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
-        field.parseIndexingScript("{ attribute | summary }");
+        field.parseIndexingScript(schema.getName(), "{ attribute | summary }");
         new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
                 true, false, Set.of());
 

@@ -159,7 +159,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         Schema parentSchema = new Schema("parent", MockApplicationPackage.createEmpty());
         parentSchema.addDocument(parent);
         SDField prefixed = parent.addField("prefixed", DataType.STRING);
-        prefixed.parseIndexingScript("{ index }");
+        prefixed.parseIndexingScript(parentSchema.getName(), "{ index }");
         prefixed.addIndex(new Index("prefixed", true));
 
         SDDocumentType child = new SDDocumentType("child");

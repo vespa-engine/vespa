@@ -8,8 +8,8 @@ import com.yahoo.schema.document.SDField;
  */
 public class AttributeUtils {
 
-    public static void addAttributeAspect(SDField field) {
-        field.parseIndexingScript("{ attribute }");
+    public static void addAttributeAspect(String schemaName, SDField field) {
+        field.parseIndexingScript(schemaName, "{ attribute }");
     }
 
 }

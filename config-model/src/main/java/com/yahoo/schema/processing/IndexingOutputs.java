@@ -37,7 +37,7 @@ public class IndexingOutputs extends Processor {
             Set<String> summaryFields = new TreeSet<>();
             findSummaryTo(schema, field, summaryFields, summaryFields);
             MyConverter converter = new MyConverter(schema, field, summaryFields, validate);
-            field.setIndexingScript((ScriptExpression)converter.convert(script));
+            field.setIndexingScript(schema.getName(), (ScriptExpression)converter.convert(script));
         }
     }
 

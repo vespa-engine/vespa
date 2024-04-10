@@ -2,6 +2,7 @@
 package com.yahoo.schema.parser;
 
 import com.yahoo.document.DataType;
+import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.parser.ConvertParsedTypes.TypeResolver;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;
@@ -49,10 +50,10 @@ public class ConvertParsedFields {
             (exactMatchTerminator -> field.getMatching().setExactMatchTerminator(exactMatchTerminator));
     }
 
-    void convertSorting(SDField field, ParsedSorting parsed, String name) {
+    void convertSorting(Schema schema, SDField field, ParsedSorting parsed, String name) {
         Attribute attribute = field.getAttributes().get(name);
         if (attribute == null) {
-            attribute = new Attribute(name, field.getDataType());
+            attribute = new Attribute(schema.getName(), field.getName(), name, field.getDataType());
             field.addAttribute(attribute);
         }
         Sorting sorting = attribute.getSorting();
@@ -66,7 +67,7 @@ public class ConvertParsedFields {
         parsed.getLocale().ifPresent(locale -> sorting.setLocale(locale));
     }
 
-    void convertAttribute(SDField field, ParsedAttribute parsed) {
+    void convertAttribute(Schema schema, SDField field, ParsedAttribute parsed) {
         String name = parsed.name();
         String fieldName = field.getName();
         Attribute attribute = null;
@@ -76,7 +77,7 @@ public class ConvertParsedFields {
         if (attribute == null) {
             attribute = field.getAttributes().get(name);
             if (attribute == null) {
-                attribute = new Attribute(name, field.getDataType());
+                attribute = new Attribute(schema.getName(), field.getName(), name, field.getDataType());
                 field.addAttribute(attribute);
             }
         }
@@ -102,7 +103,7 @@ public class ConvertParsedFields {
         }
         var sorting = parsed.getSorting();
         if (sorting.isPresent()) {
-            convertSorting(field, sorting.get(), name);
+            convertSorting(schema, field, sorting.get(), name);
         }
     }
 
@@ -143,13 +144,16 @@ public class ConvertParsedFields {
         convertMatchSettings(field, parsed.matchSettings());
         var indexing = parsed.getIndexing();
         if (indexing.isPresent()) {
-            field.setIndexingScript(indexing.get().script());
+            field.setIndexingScript(schema.getName(), indexing.get().script());
+        }
+        if (field.doesAttributing() && !GeoPos.isAnyPos(field.getDataType())) {
+            Attribute.validateDataType(schema.getName(), field.getName(), field.getDataType());
         }
         parsed.getWeight().ifPresent(value -> field.setWeight(value));
         parsed.getStemming().ifPresent(value -> field.setStemming(value));
         parsed.getNormalizing().ifPresent(value -> convertNormalizing(field, value));
         for (var attribute : parsed.getAttributes()) {
-            convertAttribute(field, attribute);
+            convertAttribute(schema, field, attribute);
         }
         for (var summaryField : parsed.getSummaryFields()) {
             var dataType = field.getDataType();
@@ -190,7 +194,7 @@ public class ConvertParsedFields {
         convertCommonFieldSettings(schema, structField, parsed);
     }
 
-    private void convertExtraFieldSettings(SDField field, ParsedField parsed) {
+    private void convertExtraFieldSettings(Schema schema, SDField field, ParsedField parsed) {
         String name = parsed.name();
         for (var dictOp : parsed.getDictionaryOptions()) {
             var dictionary = field.getOrSetDictionary();
@@ -208,7 +212,7 @@ public class ConvertParsedFields {
             field.getAliasToName().put(alias, parsed.lookupAliasedFrom(alias));
         }
         parsed.getRankTypes().forEach((indexName, rankType) -> convertRankType(field, indexName, rankType));
-        parsed.getSorting().ifPresent(sortInfo -> convertSorting(field, sortInfo, name));
+        parsed.getSorting().ifPresent(sortInfo -> convertSorting(schema, field, sortInfo, name));
         if (parsed.hasBolding()) {
             // TODO must it be so ugly:
             SummaryField summaryField = field.getSummaryField(name, true);
@@ -288,7 +292,7 @@ public class ConvertParsedFields {
         DataType dataType = context.resolveType(parsed.getType());
         var field = new SDField(document, name, dataType);
         convertCommonFieldSettings(schema, field, parsed);
-        convertExtraFieldSettings(field, parsed);
+        convertExtraFieldSettings(schema, field, parsed);
         document.addField(field);
         return field;
     }
@@ -298,7 +302,7 @@ public class ConvertParsedFields {
         DataType dataType = context.resolveType(parsed.getType());
         var field = new SDField(schema.getDocument(), name, dataType);
         convertCommonFieldSettings(schema, field, parsed);
-        convertExtraFieldSettings(field, parsed);
+        convertExtraFieldSettings(schema, field, parsed);
         schema.addExtraField(field);
     }
 

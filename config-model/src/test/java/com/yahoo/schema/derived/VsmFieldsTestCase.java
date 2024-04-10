@@ -46,7 +46,7 @@ public class VsmFieldsTestCase {
      void reference_type_field_is_unsearchable() {
          Schema schema = createSchema();
          SDField field = new TemporarySDField(schema.getDocument(), "ref_field", NewDocumentReferenceDataType.forDocumentName("parent_type"));
-         field.parseIndexingScript("{ summary }");
+         field.parseIndexingScript(schema.getName(), "{ summary }");
          schema.getDocument().addField(field);
          VsmfieldsConfig cfg = vsmfieldsConfig(schema);
 
@@ -59,7 +59,7 @@ public class VsmFieldsTestCase {
      private void testIndexMatching(Matching matching, VsmfieldsConfig.Fieldspec.Normalize.Enum normalize, String arg1) {
          Schema schema = createSchema();
          SDField field = new TemporarySDField(schema.getDocument(), "f", DataType.STRING);
-         field.parseIndexingScript("{ index }");
+         field.parseIndexingScript(schema.getName(), "{ index }");
          field.setMatching(matching);
          schema.getDocument().addField(field);
          VsmfieldsConfig cfg = vsmfieldsConfig(schema);
