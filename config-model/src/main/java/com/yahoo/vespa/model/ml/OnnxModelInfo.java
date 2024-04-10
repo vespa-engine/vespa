@@ -17,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,8 +50,8 @@ public class OnnxModelInfo {
                           Map<String, OnnxTypeInfo> outputs, Set<String> initializers, String defaultOutput) {
         this.app = app;
         this.modelPath = path;
-        this.inputs = Collections.unmodifiableMap(inputs);
-        this.outputs = Collections.unmodifiableMap(outputs);
+        this.inputs = Map.copyOf(inputs);
+        this.outputs = Map.copyOf(outputs);
         this.defaultOutput = defaultOutput;
         this.initializers = Set.copyOf(initializers);
     }

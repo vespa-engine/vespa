@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -63,7 +62,7 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
     private static Schema createSchema(String name, Map<String, Schema> schemas) {
         Schema schema = new Schema(name, MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType(name);
-        document.setDocumentReferences(new DocumentReferences(emptyMap()));
+        document.setDocumentReferences(new DocumentReferences(Map.of()));
         schema.addDocument(document);
         schemas.put(schema.getName(), schema);
         return schema;
@@ -74,7 +73,7 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
     }
 
     private static void assertOrder(List<String> expectedSearchOrder, List<String> inputNames) {
-        inputNames.sort((a, b) -> a.compareTo(b));
+        inputNames.sort(String::compareTo);
         Map<String, Schema> schemas = createSchemas();
         List<Schema> inputSchemas = inputNames.stream()
                                               .map(schemas::get)
@@ -88,7 +87,6 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
         assertEquals(expectedSearchOrder, actualSearchOrder);
     }
 
-    @SuppressWarnings("deprecation")
     private static void createDocumentReference(Schema from, Schema to, String refFieldName) {
         SDDocumentType fromDocument = from.getDocument();
         SDField refField = new TemporarySDField(fromDocument, refFieldName, NewDocumentReferenceDataType.forDocumentName(to.getName()));

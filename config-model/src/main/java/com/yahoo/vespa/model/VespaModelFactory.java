@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -96,7 +95,7 @@ public class VespaModelFactory implements ModelFactory {
         } else {
             this.configModelRegistry = configModelRegistry;
         }
-        this.modelImporters = Collections.emptyList();
+        this.modelImporters = List.of();
         this.additionalValidators = List.of();
         this.zone = zone;
         this.clock = clock;

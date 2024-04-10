@@ -35,7 +35,6 @@ import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -195,7 +194,7 @@ public class Content extends ConfigModel {
 
     public static class Builder extends ConfigModelBuilder<Content> {
     
-        public static final List<ConfigModelId> configModelIds = Collections.singletonList(ConfigModelId.fromName("content"));
+        public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName("content"));
     
         public Builder() {
             super(Content.class);

@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -210,8 +210,8 @@ public class DocumentTypeChangeValidatorTest {
                 new NewDocumentType.Name("mydoc"),
                 headerfields,
                 new FieldSets(Optional.empty()),
-                Collections.emptySet(),
-                Collections.emptySet());
+                Set.of(),
+                Set.of());
     }
 
 }

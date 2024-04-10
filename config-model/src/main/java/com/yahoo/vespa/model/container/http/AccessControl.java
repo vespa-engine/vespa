@@ -48,7 +48,7 @@ public class AccessControl {
         private final String domain;
         private ClientAuthentication clientAuthentication = ClientAuthentication.need;
         private final Set<BindingPattern> excludeBindings = new LinkedHashSet<>();
-        private Collection<Handler> handlers = Collections.emptyList();
+        private Collection<Handler> handlers = List.of();
         public Builder(String domain) {
             this.domain = domain;
         }

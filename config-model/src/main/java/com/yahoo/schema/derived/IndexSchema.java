@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.search.IndexschemaConfig;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -147,7 +146,7 @@ public class IndexSchema extends Derived {
     static List<Field> flattenField(Field field) {
         DataType fieldType = field.getDataType();
         if (fieldType.getPrimitiveType() != null){
-            return Collections.singletonList(field);
+            return List.of(field);
         }
         if (fieldType instanceof ArrayDataType) {
             List<Field> ret = new LinkedList<>();

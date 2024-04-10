@@ -18,7 +18,7 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -65,7 +65,7 @@ public class ValidateFieldTypesTest {
         SDField targetField = new SDField(targetSchema.getDocument(), "target_field", dataType);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSchema);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
-        return new ImportedFields(Collections.singletonMap(fieldName, importedField));
+        return new ImportedFields(Map.of(fieldName, importedField));
     }
 
     private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType, Schema schema) {

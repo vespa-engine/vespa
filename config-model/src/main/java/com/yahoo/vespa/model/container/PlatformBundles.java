@@ -69,7 +69,7 @@ public class PlatformBundles {
     private static Set<Path> toBundlePaths(String... bundleNames) {
         return Stream.of(bundleNames)
                 .map(PlatformBundles::absoluteBundlePath)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     public static Path absoluteBundlePath(String fileName) {

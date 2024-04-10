@@ -7,7 +7,6 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -29,7 +28,7 @@ public class BlockFeedGlobalEndpointsFilterTest {
 
     @Test
     void does_not_setup_blocking_rule_when_endpoints_empty() {
-        var filter = new BlockFeedGlobalEndpointsFilter(Collections.emptySet(), true);
+        var filter = new BlockFeedGlobalEndpointsFilter(Set.of(), true);
         var config = getConfig(filter);
         assertEquals(0, config.rule().size());
     }

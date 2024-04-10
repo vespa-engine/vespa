@@ -8,10 +8,9 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -40,7 +39,7 @@ public class DocumentReferenceResolverTest {
         fooDocument.addField(irrelevantField);
         fooSchema.addDocument(fooDocument);
 
-        DocumentReferenceResolver resolver = new DocumentReferenceResolver(asList(fooSchema, barSchema));
+        DocumentReferenceResolver resolver = new DocumentReferenceResolver(List.of(fooSchema, barSchema));
         resolver.resolveReferences(fooDocument);
         assertTrue(fooDocument.getDocumentReferences().isPresent());
 
@@ -50,7 +49,6 @@ public class DocumentReferenceResolverTest {
         assertSame(fooRefToBarField, fooReferenceMap.get("bar_ref").referenceField());
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     void throws_user_friendly_exception_if_referenced_document_does_not_exist() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -64,7 +62,7 @@ public class DocumentReferenceResolverTest {
             fooDocument.addField(fooRefToBarField);
             fooSchema.addDocument(fooDocument);
 
-            DocumentReferenceResolver resolver = new DocumentReferenceResolver(singletonList(fooSchema));
+            DocumentReferenceResolver resolver = new DocumentReferenceResolver(List.of(fooSchema));
             resolver.resolveReferences(fooDocument);
         });
         assertTrue(exception.getMessage().contains("Invalid document reference 'bar_ref': Could not find document type 'bar'"));
@@ -86,7 +84,7 @@ public class DocumentReferenceResolverTest {
             fooDocument.addField(fooRefToBarField);
             fooSchema.addDocument(fooDocument);
 
-            DocumentReferenceResolver resolver = new DocumentReferenceResolver(asList(fooSchema, barSchema));
+            DocumentReferenceResolver resolver = new DocumentReferenceResolver(List.of(fooSchema, barSchema));
             resolver.resolveReferences(fooDocument);
         });
         assertTrue(exception.getMessage().contains("The field 'bar_ref' is an invalid document reference. The field must be an attribute."));
