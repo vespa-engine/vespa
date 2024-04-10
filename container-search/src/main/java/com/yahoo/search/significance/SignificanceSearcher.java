@@ -1,7 +1,9 @@
 package com.yahoo.search.significance;
 
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.language.Language;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.prelude.query.CompositeItem;
@@ -13,7 +15,10 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 
+import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
+
 @Provides(SignificanceSearcher.SIGNIFICANCE)
+@Before(STEMMING)
 public class SignificanceSearcher extends Searcher {
 
     public final static String SIGNIFICANCE = "Significance";
@@ -29,33 +34,31 @@ public class SignificanceSearcher extends Searcher {
     public Result search(Query query, Execution execution) {
         if (significanceModelRegistry == null) return execution.search(query);
 
-
-        setIDF(query.getModel().getQueryTree().getRoot());
+        Language language = query.getModel().getParsingLanguage();
+        setIDF(query.getModel().getQueryTree().getRoot(), significanceModelRegistry.getModel(language));
 
         return execution.search(query);
     }
 
-    private void setIDF(Item root) {
+    private void setIDF(Item root, SignificanceModel significanceModel) {
         if (root == null || root instanceof NullItem) return;
 
         if (root instanceof WordItem) {
 
-            SignificanceModel significanceModel = significanceModelRegistry.getModel(root.getLanguage());
-
             var documentFrequency = significanceModel.documentFrequency(((WordItem) root).getWord());
-            long nq_i             = documentFrequency.frequency();
             long N                = documentFrequency.corpusSize();
+            long nq_i             = documentFrequency.frequency();
             double idf            = calculateIDF(N, nq_i);
 
             ((WordItem) root).setSignificance(idf);
         } else if (root instanceof CompositeItem) {
             for (int i = 0; i < ((CompositeItem) root).getItemCount(); i++) {
-                setIDF(((CompositeItem) root).getItem(i));
+                setIDF(((CompositeItem) root).getItem(i), significanceModel);
             }
         }
     }
 
-    private static double calculateIDF(long N, long nq_i) {
+    public static double calculateIDF(long N, long nq_i) {
         return Math.log(1 + (N - nq_i + 0.5) / (nq_i + 0.5));
     }
 }
