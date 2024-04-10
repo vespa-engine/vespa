@@ -8,6 +8,7 @@ vespa_add_executable(storageserver_storaged_app
     DEPENDS
     storageserver_storageapp
     protobuf::libprotobuf
+    absl::failure_signal_handler
 )
 
 vespa_add_target_package_dependency(storageserver_storaged_app Protobuf)

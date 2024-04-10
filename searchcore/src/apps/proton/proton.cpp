@@ -12,6 +12,7 @@
 #include <vespa/config/common/configcontext.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/file.h>
+#include <absl/debugging/failure_signal_handler.h>
 #include <filesystem>
 #include <iostream>
 #include <thread>
@@ -53,6 +54,20 @@ public:
 void
 App::setupSignals()
 {
+    absl::FailureSignalHandlerOptions opts;
+    // Sanitizers set up their own signal handler, so we must ensure that the failure signal
+    // handler calls this when it's done, or we won't get a proper report.
+    opts.call_previous_handler = true;
+    // Ideally we'd use an alternate stack to have well-defined reporting when a
+    // thread runs out of stack space (infinite recursion bug etc.), but for some
+    // reason this seems to negatively affect stack walking and give very incomplete
+    // traces. So until this is resolved, use the thread's own stack.
+    opts.use_alternate_stack = false;
+    absl::InstallFailureSignalHandler(opts);
+
+    // Install our own signal handlers _after_ the failure handler, as the sentinel uses
+    // SIGTERM as a "friendly poke for shutdown" signal and the Abseil failure handler
+    // always dumps stack when intercepting this signal (since it's considered fatal).
     SIG::PIPE.ignore();
     SIG::INT.hook();
     SIG::TERM.hook();
