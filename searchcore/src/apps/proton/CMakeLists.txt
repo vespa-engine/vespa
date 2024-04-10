@@ -23,4 +23,5 @@ vespa_add_executable(searchcore_proton_app
     searchcore_grouping
     searchcore_proton_metrics
     storageserver_storageapp
+    absl::failure_signal_handler
 )
