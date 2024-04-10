@@ -113,6 +113,7 @@
             model-evaluation-jar-with-dependencies.jar,
             model-integration-jar-with-dependencies.jar,
             container-onnxruntime.jar,
+            container-llama.jar,
             <!-- END config-model dependencies -->
           </discPreInstallBundle>
         </configuration>

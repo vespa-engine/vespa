@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.EVALUATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.LINGUISTICS_BUNDLE_NAME;
+import static com.yahoo.vespa.model.container.ContainerModelEvaluation.LLAMA_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_NAME;
 
 /**
@@ -63,7 +64,8 @@ public class PlatformBundles {
             "lucene-linguistics",
             EVALUATION_BUNDLE_NAME,
             INTEGRATION_BUNDLE_NAME,
-            ONNXRUNTIME_BUNDLE_NAME
+            ONNXRUNTIME_BUNDLE_NAME,
+            LLAMA_BUNDLE_NAME
     );
 
     private static Set<Path> toBundlePaths(String... bundleNames) {
@@ -148,7 +150,8 @@ public class PlatformBundles {
             com.yahoo.vespa.streamingvisitors.StreamingBackend.class.getName(),
             ai.vespa.search.llm.LLMSearcher.class.getName(),
             ai.vespa.search.llm.RAGSearcher.class.getName(),
-            ai.vespa.llm.clients.OpenAI.class.getName()
+            ai.vespa.llm.clients.OpenAI.class.getName(),
+            ai.vespa.llm.clients.LocalLLM.class.getName()
     );
 
 }

@@ -86,24 +86,34 @@ public class LLMSearcher extends Searcher {
         return stream ? completeAsync(query, prompt, options) : completeSync(query, prompt, options);
     }
 
-    private Result completeAsync(Query query, Prompt prompt, InferenceParameters options) {
-        EventStream eventStream = new EventStream();
+    private boolean shouldAddPrompt(Query query) {
+        return query.getTrace().getLevel() >= 1;
+    }
 
-        if (query.getTrace().getLevel() >= 1) {
+    private boolean shouldAddTokenStats(Query query) {
+        return query.getTrace().getLevel() >= 1;
+    }
+
+    private Result completeAsync(Query query, Prompt prompt, InferenceParameters options) {
+        final EventStream eventStream = new EventStream();
+
+        if (shouldAddPrompt(query)) {
             eventStream.add(prompt.asString(), "prompt");
         }
 
-        languageModel.completeAsync(prompt, options, token -> {
-            eventStream.add(token.text());
+        final TokenStats tokenStats = new TokenStats();
+        languageModel.completeAsync(prompt, options, completion -> {
+            tokenStats.onToken();
+            handleCompletion(eventStream, completion);
         }).exceptionally(exception -> {
-            int errorCode = 400;
-            if (exception instanceof LanguageModelException languageModelException) {
-                errorCode = languageModelException.code();
-            }
-            eventStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage()));
+            handleException(eventStream, exception);
             eventStream.markComplete();
             return Completion.FinishReason.error;
         }).thenAccept(finishReason -> {
+            tokenStats.onCompletion();
+            if (shouldAddTokenStats(query)) {
+                eventStream.add(tokenStats.report(), "stats");
+            }
             eventStream.markComplete();
         });
 
@@ -112,10 +122,26 @@ public class LLMSearcher extends Searcher {
         return new Result(query, hitGroup);
     }
 
+    private void handleCompletion(EventStream eventStream, Completion completion) {
+        if (completion.finishReason() == Completion.FinishReason.error) {
+            eventStream.add(completion.text(), "error");
+        } else {
+            eventStream.add(completion.text());
+        }
+    }
+
+    private void handleException(EventStream eventStream, Throwable exception) {
+        int errorCode = 400;
+        if (exception instanceof LanguageModelException languageModelException) {
+            errorCode = languageModelException.code();
+        }
+        eventStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage()));
+    }
+
     private Result completeSync(Query query, Prompt prompt, InferenceParameters options) {
         EventStream eventStream = new EventStream();
 
-        if (query.getTrace().getLevel() >= 1) {
+        if (shouldAddPrompt(query)) {
             eventStream.add(prompt.asString(), "prompt");
         }
 
@@ -167,6 +193,37 @@ public class LLMSearcher extends Searcher {
 
     public String getApiKeyHeader(Query query) {
         return lookupPropertyWithOrWithoutPrefix(API_KEY_HEADER, p -> query.getHttpRequest().getHeader(p));
+    }
+
+    private static class TokenStats {
+
+        private long start;
+        private long timeToFirstToken;
+        private long timeToLastToken;
+        private long tokens = 0;
+
+        TokenStats() {
+            start = System.currentTimeMillis();
+        }
+
+        void onToken() {
+            if (tokens == 0) {
+                timeToFirstToken = System.currentTimeMillis() - start;
+            }
+            tokens++;
+        }
+
+        void onCompletion() {
+            timeToLastToken = System.currentTimeMillis() - start;
+        }
+
+        String report() {
+            return "Time to first token: " + timeToFirstToken + " ms, " +
+                   "Generation time: " + timeToLastToken + " ms, " +
+                   "Generated tokens: " + tokens + " " +
+                   String.format("(%.2f tokens/sec)", tokens / (timeToLastToken / 1000.0));
+        }
+
     }
 
 }

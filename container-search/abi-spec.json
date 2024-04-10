@@ -9229,6 +9229,97 @@
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
+  "ai.vespa.llm.clients.LlmLocalClientConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder modelUrl(com.yahoo.config.UrlReference)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder localLlmFile(java.lang.String)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder parallelRequests(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxQueueSize(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder useGpu(boolean)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder gpuLayers(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder threads(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder contextSize(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxTokens(int)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmLocalClientConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void getConfig(ai.vespa.llm.clients.LlmLocalClientConfig$Builder)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmLocalClientConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig$Builder)",
+      "public java.io.File modelUrl()",
+      "public java.lang.String localLlmFile()",
+      "public int parallelRequests()",
+      "public int maxQueueSize()",
+      "public boolean useGpu()",
+      "public int gpuLayers()",
+      "public int threads()",
+      "public int contextSize()",
+      "public int maxTokens()"
+    ],
+    "fields" : [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "ai.vespa.llm.clients.LocalLLM" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig)",
+      "public void deconstruct()",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.llm.clients.OpenAI" : {
     "superClass" : "ai.vespa.llm.clients.ConfigurableLanguageModel",
     "interfaces" : [ ],
