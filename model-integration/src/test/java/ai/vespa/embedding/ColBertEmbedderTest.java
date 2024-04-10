@@ -61,27 +61,94 @@ public class ColBertEmbedderTest {
                 TensorType.fromSpec("tensor<int8>(dt{},x[2])"),
                 "tensor<int8>(dt{},x[2]):{0:[1.0, -128.0], 1:[5.0, 1.0]}",2
         );
+        assertPackedRight(
+                "" +
+                        "tensor<float>(d0[1],d1[2],d2[16]):" +
+                        "[[" +
+                        "[0, 0, 0, 0, 0, 0, 0, 1,   1, 0, 0, 0, 0, 0, 0, 0]," +
+                        "[0, 0, 0, 0, 0, 1, 0, 1,   0, 0, 0, 0, 0, 0, 0, 1]" +
+                        "]]",
+                TensorType.fromSpec("tensor<int8>(dt{},x[1])"),
+                "tensor<int8>(dt{},x[1]):{0:1.0, 1:5.0}",2
+        );
     }
 
     @Test
+    public void testCachingFloat() {
+        int initialEmbeddingsDone = runtime.embeddingsDone;
+        var context = new Embedder.Context("schema.indexing");
+
+        var input = "This is a test string to embed";
+        var t1 = (MixedTensor) embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[8])"));
+        assertEquals(initialEmbeddingsDone + 1, runtime.embeddingsDone);
+
+        var t2 = (MixedTensor)embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[4])"));
+        assertEquals("Cached value was used", initialEmbeddingsDone + 1, runtime.embeddingsDone);
+
+        assertNotEquals(t1,t2);
+        for(int token = 0; token < 7; token ++) {
+            for(int dim = 0; dim < 4; dim++) { // the four first should be equal
+                assertEquals(t1.get(TensorAddress.of(token,dim)),t2.get(TensorAddress.of(token,dim)), 1e-6);
+            }
+        }
+        // t2 only has 4 dimensions so this should be out of bounds which returns 0
+        assertEquals(0, t2.get(TensorAddress.of(1,4)), 1e-6);
+
+        input = "This is a different test string to embed";
+        embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[8])"));
+        assertEquals(initialEmbeddingsDone + 2, runtime.embeddingsDone);
+    }
+
+    @Test
+    public void testCachingInt() {
+        int initialEmbeddingsDone = runtime.embeddingsDone;
+        var context = new Embedder.Context("schema.indexing");
+
+        var input = "This is a test string to embed";
+        var t1 = (MixedTensor) embedder.embed(input, context, TensorType.fromSpec("tensor<int8>(dt{},x[8])"));
+        assertEquals(initialEmbeddingsDone + 1, runtime.embeddingsDone);
+
+        var t2 = (MixedTensor)embedder.embed(input, context, TensorType.fromSpec("tensor<int8>(dt{},x[4])"));
+        assertEquals("Cached value was used", initialEmbeddingsDone + 1, runtime.embeddingsDone);
+
+        assertNotEquals(t1, t2);
+        for(int token = 0; token < 7; token ++) {
+            for(int dim = 0; dim < 4; dim++) { // the four first should be equal
+                assertEquals(t1.get(TensorAddress.of(token,dim)), t2.get(TensorAddress.of(token,dim)), 1e-6);
+            }
+        }
+        // t2 only has 4 dimensions so this should be out of bounds which returns 0
+        assertEquals(0, t2.get(TensorAddress.of(0,4)), 1e-6);
+
+        input = "This is a different test string to embed";
+        embedder.embed(input, context,TensorType.fromSpec("tensor<float>(dt{},x[8])"));
+        assertEquals(initialEmbeddingsDone + 2, runtime.embeddingsDone);
+    }
+
+
+    @Test
     public void testEmbedder() {
-        assertEmbed("tensor<float>(dt{},x[128])", "this is a document", indexingContext);
-        assertEmbed("tensor<int8>(dt{},x[16])", "this is a document", indexingContext);
-        assertEmbed("tensor<float>(qt{},x[128])", "this is a query", queryContext);
+        var indexingContext = new Embedder.Context("schema.indexing");
+        assertEmbed("tensor<float>(dt{},x[128])", "this is a document", indexingContext,128);
+        assertEmbed("tensor<float>(dt{},x[64])", "this is a document", indexingContext,64);
+
+        assertEmbed("tensor<int8>(dt{},x[16])", "this is a document", indexingContext,16);
+        assertEmbed("tensor<int8>(dt{},x[8])", "this is a document", indexingContext,8);
+        assertEmbed("tensor<int8>(dt{},x[4])", "this is a document", indexingContext,4);
+        assertEmbed("tensor<int8>(dt{},x[3])", "this is a document", indexingContext,3);
+
+        var queryContext = new Embedder.Context("query(qt{})");
+        assertEmbed("tensor<float>(qt{},x[128])", "this is a query", queryContext,128);
+        assertEmbed("tensor<float>(qt{},x[64])", "this is a query", queryContext,64);
 
         assertThrows(IllegalArgumentException.class, () -> {
             // throws because int8 is not supported for query context
-            assertEmbed("tensor<int8>(qt{},x[16])", "this is a query", queryContext);
+            assertEmbed("tensor<int8>(qt{},x[16])", "this is a query", queryContext,16);
         });
 
         assertThrows(IllegalArgumentException.class, () -> {
-            // throws because 16 is less than model output (128) and we want float
-            assertEmbed("tensor<float>(qt{},x[16])", "this is a query", queryContext);
-        });
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            // throws because 128/8 does not fit into 15
-            assertEmbed("tensor<int8>(qt{},x[15])", "this is a query", indexingContext);
+            // throws because 8*32 is larger than (128)
+            assertEmbed("tensor<int8>(qt{},x[32])", "this is a query", queryContext,32);
         });
     }
 
@@ -130,26 +197,32 @@ public class ColBertEmbedderTest {
     }
 
     @Test
-    public void testLenghtLimits() {
+    public void testLengthLimits() {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < 1024; i++) {
             sb.append("annoyance");
             sb.append(" ");
         }
         String text = sb.toString();
-        Tensor fullFloat = assertEmbed("tensor<float>(dt{},x[128])", text, indexingContext);
+        var indexingContext = new Embedder.Context("schema.indexing");
+
+        Tensor fullFloat = assertEmbed("tensor<float>(dt{},x[128])", text, indexingContext,128);
         assertEquals(512*128,fullFloat.size());
 
-        Tensor query = assertEmbed("tensor<float>(dt{},x[128])", text, queryContext);
-        assertEquals(32*128,query.size());
-
-        Tensor binaryRep = assertEmbed("tensor<int8>(dt{},x[16])", text, indexingContext);
+        Tensor binaryRep = assertEmbed("tensor<int8>(dt{},x[16])", text, indexingContext,16);
         assertEquals(512*16,binaryRep.size());
 
-        Tensor shortDoc = assertEmbed("tensor<int8>(dt{},x[16])", "annoyance", indexingContext);
+        Tensor shortDoc = assertEmbed("tensor<int8>(dt{},x[16])", "annoyance", indexingContext,16);
         // 4 tokens, 16 bytes each = 64 bytes
         //CLS [unused1] sequence
         assertEquals(4*16,shortDoc.size());;
+
+        var queryContext = new Embedder.Context("query(qt{})");
+        Tensor query = assertEmbed("tensor<float>(dt{},x[128])", text, queryContext,128);
+        assertEquals(32*128,query.size());
+
+        Tensor shortQuery = assertEmbed("tensor<float>(dt{},x[64])", text, queryContext,64);
+        assertEquals(32*64,shortQuery.size());
     }
 
     @Ignore
@@ -163,18 +236,19 @@ public class ColBertEmbedderTest {
         long now = System.currentTimeMillis();
         int n = 1000;
         for (int i = 0; i < n; i++) {
-            assertEmbed("tensor<float>(dt{},x[128])", text, indexingContext);
+            assertEmbed("tensor<float>(dt{},x[128])", text, new Embedder.Context("schema.indexing"),128);
         }
         long elapsed = (System.currentTimeMillis() - now);
         System.out.println("Elapsed time: " + elapsed + " ms");
     }
 
-    static Tensor assertEmbed(String tensorSpec, String text, Embedder.Context context) {
+    static Tensor assertEmbed(String tensorSpec, String text, Embedder.Context context, int dimSize) {
         TensorType destType = TensorType.fromSpec(tensorSpec);
         Tensor result = embedder.embed(text, context, destType);
         assertEquals(destType,result.type());
         MixedTensor mixedTensor = (MixedTensor) result;
-        if (context == queryContext) {
+        assertEquals(dimSize,mixedTensor.denseSubspaceSize());
+        if (context.getDestination().startsWith("query")) {
             assertEquals(32*mixedTensor.denseSubspaceSize(),mixedTensor.size());
         }
         return result;
@@ -182,12 +256,12 @@ public class ColBertEmbedderTest {
 
     static void assertPackedRight(String numbers, TensorType destination, String expected, int size) {
         var in = (IndexedTensor) Tensor.from(numbers);
+        int targetDim = destination.indexedSubtype().dimensions().get(0).size().get().intValue();
         Tensor packed = ColBertEmbedder.toBitTensor(in, destination, size);
         assertEquals(expected, packed.toString());
         Tensor unpacked = ColBertEmbedder.expandBitTensor(packed);
-        assertEquals(in.shape()[2], unpacked.type().indexedSubtype().dimensions().get(0).size().get().longValue());
         for (int dOuter = 0; dOuter < size; dOuter++) {
-            for (int dInner = 0; dInner < in.shape()[2]; dInner++) {
+            for (int dInner = 0; dInner < targetDim*8; dInner++) {
                 var addr = TensorAddress.of(dOuter, dInner);
                 double oldVal = in.get(TensorAddress.of(0,dOuter, dInner));
                 if (oldVal > 0) {
@@ -200,19 +274,16 @@ public class ColBertEmbedderTest {
     }
 
     static final ColBertEmbedder embedder;
-
     static final ColBertEmbedder multiLingualEmbedder;
-    static final Embedder.Context indexingContext;
-    static final Embedder.Context queryContext;
+    static final CountingRuntime runtime;
 
     static {
-        indexingContext = new Embedder.Context("schema.indexing");
-        queryContext = new Embedder.Context("query(qt)");
-        embedder = getEmbedder();
-        multiLingualEmbedder = getMultiLingualEmbedder();
+        runtime = new CountingRuntime();
+        embedder = createEmbedder(runtime);
+        multiLingualEmbedder = getMultiLingualEmbedder(runtime);
     }
 
-    private static ColBertEmbedder getEmbedder() {
+    private static ColBertEmbedder createEmbedder(Embedder.Runtime runtime) {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
@@ -220,10 +291,10 @@ public class ColBertEmbedderTest {
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
-        return  new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new ColBertEmbedder(new OnnxRuntime(), runtime, builder.build());
     }
 
-    private static ColBertEmbedder getMultiLingualEmbedder() {
+    private static ColBertEmbedder getMultiLingualEmbedder(Embedder.Runtime runtime) {
         String vocabPath = "src/test/models/onnx/transformer/sentence_piece_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
@@ -239,7 +310,21 @@ public class ColBertEmbedderTest {
         builder.queryTokenId(3);
         builder.documentTokenId(4);
 
-        return  new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+    }
+
+    private static class CountingRuntime implements Embedder.Runtime {
+
+        int embeddingsDone = 0;
+
+        @Override
+        public void sampleEmbeddingLatency(double millis, Embedder.Context ctx) {
+            embeddingsDone++;
+        }
+
+        @Override
+        public void sampleSequenceLength(long length, Embedder.Context ctx) { }
+
     }
 
 }

@@ -7,10 +7,10 @@ import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * An embedder converts a text string to a tensor
@@ -73,9 +73,10 @@ public interface Embedder {
      */
     @Beta
     interface Runtime {
-        /** Sample latency metric for embedding */
+
+        /** Add a sample embedding latency to this */
         void sampleEmbeddingLatency(double millis, Context ctx);
-        /** Sample sequence length metric for embedding */
+        /** Add a sample embedding length to this */
         void sampleSequenceLength(long length, Context ctx);
 
         static Runtime testInstance() {
@@ -91,7 +92,7 @@ public interface Embedder {
         private Language language = Language.UNKNOWN;
         private String destination;
         private String embedderId = "unknown";
-        private final Map<String, Object> cache;
+        private final Map<Object, Object> cache;
 
         public Context(String destination) {
             this(destination, LazyMap.newHashMap());
@@ -101,7 +102,7 @@ public interface Embedder {
          * @param destination the name of the recipient of this tensor
          * @param cache a cache shared between all embed invocations for a single request
          */
-        public Context(String destination, Map<String, Object> cache) {
+        public Context(String destination, Map<Object, Object> cache) {
             this.destination = destination;
             this.cache = Objects.requireNonNull(cache);
         }
@@ -153,13 +154,19 @@ public interface Embedder {
             return this;
         }
 
-        public void putCachedValue(String key, Object value) {
+        public void putCachedValue(Object key, Object value) {
             cache.put(key, value);
         }
 
         /** Returns a cached value, or null if not present. */
-        public Object getCachedValue(String key) {
+        public Object getCachedValue(Object key) {
             return cache.get(key);
+        }
+
+        /** Returns the cached value, or computes and caches it if not present. */
+        @SuppressWarnings("unchecked")
+        public <T> T computeCachedValueIfAbsent(Object key, Supplier<? extends T> supplier) {
+            return (T) cache.computeIfAbsent(key, __ -> supplier.get());
         }
 
     }

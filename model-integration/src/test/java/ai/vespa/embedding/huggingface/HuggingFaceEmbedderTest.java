@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.embedding;
+package ai.vespa.embedding.huggingface;
 
-import ai.vespa.embedding.huggingface.HuggingFaceEmbedder;
+
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
@@ -12,10 +12,10 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorAddress;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -26,7 +26,6 @@ public class HuggingFaceEmbedderTest {
 
     static HuggingFaceEmbedder embedder = getEmbedder();
     static HuggingFaceEmbedder normalizedEmbedder = getNormalizedEmbedder();
-    static Embedder.Context context = new Embedder.Context("schema.indexing");
 
     @Test
     public void testBinarization() {
@@ -48,16 +47,48 @@ public class HuggingFaceEmbedderTest {
     private void assertPackRight(String input, String expected, TensorType type) {
         Tensor inputTensor = Tensor.from(input);
         Tensor result = HuggingFaceEmbedder.binarize((IndexedTensor) inputTensor, type);
-        assertEquals(expected.toString(), result.toString());
-        //Verify against what is done in ranking with unpack_bits
+        assertEquals(expected, result.toString());
+        //Verify that the unpack_bits ranking feature produce compatible output
         Tensor unpacked = expandBitTensor(result);
         assertEquals(inputTensor.toString(), unpacked.toString());
     }
 
     @Test
-    public void testEmbedder() {
-        String input = "This is a test";
+    public void testCaching() {
+        var context = new Embedder.Context("schema.indexing");
+        var myEmbedderId = "my-hf-embedder";
+        context.setEmbedderId(myEmbedderId);
 
+        var input = "This is a test string to embed";
+        Tensor result = embedder.embed(input, context,TensorType.fromSpec("tensor<float>(x[8])"));
+        HuggingFaceEmbedder.HFEmbedderCacheKey key = new HuggingFaceEmbedder.HFEmbedderCacheKey(myEmbedderId, input);
+        var modelOuput = context.getCachedValue(key);
+        assertNotNull(modelOuput);
+
+        Tensor binaryResult = embedder.embed(input, context,TensorType.fromSpec("tensor<int8>(x[4])"));
+        var modelOuput2 = context.getCachedValue(key);
+        assertEquals(modelOuput, modelOuput2);
+        assertNotEquals(result, binaryResult);
+
+        var anotherInput = "This is a different test string to embed with the same embedder";
+        embedder.embed(anotherInput, context,TensorType.fromSpec("tensor<float>(x[4])"));
+        key = new HuggingFaceEmbedder.HFEmbedderCacheKey(myEmbedderId, anotherInput);
+        var modelOuput3 = context.getCachedValue(key);
+        assertNotEquals(modelOuput, modelOuput3);
+
+        //context cache is shared
+        var copyContext = context.copy();
+        var anotherEmbedderId = "another-hf-embedder";
+        copyContext.setEmbedderId(anotherEmbedderId);
+        key = new HuggingFaceEmbedder.HFEmbedderCacheKey(anotherEmbedderId, input);
+        assertNull(copyContext.getCachedValue(key));
+        embedder.embed(input, copyContext,TensorType.fromSpec("tensor<int8>(x[2])"));
+        assertNotEquals(modelOuput, copyContext.getCachedValue(key));
+    }
+    @Test
+    public void testEmbedder() {
+        var context = new Embedder.Context("schema.indexing");
+        String input = "This is a test";
         Tensor expected = Tensor.from("tensor<float>(x[8]):[-0.666, 0.335, 0.227, 0.0919, -0.069, 0.323, 0.422, 0.270]");
         Tensor result = embedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[8])")));
         for(int i = 0; i < 8; i++) {
@@ -85,14 +116,31 @@ public class HuggingFaceEmbedderTest {
     @Test
     public void testEmbedderWithNormalization() {
         String input = "This is a test";
-
+        var context = new Embedder.Context("schema.indexing");
         Tensor result = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[8])")));
         assertEquals(1.0, result.multiply(result).sum().asDouble(), 1e-3);
-
         result = normalizedEmbedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[16])")));
         assertEquals(1.0,  result.multiply(result).sum().asDouble(), 1e-3);
         Tensor binarizedResult = embedder.embed(input, context, TensorType.fromSpec(("tensor<int8>(x[2])")));
         assertEquals("tensor<int8>(x[2]):[119, 44]", binarizedResult.toAbbreviatedString());
+    }
+
+    @Test
+    public void testThatWrongTensorTypeThrows() {
+        var context = new Embedder.Context("schema.indexing");
+        String input = "This is a test";
+        assertThrows(IllegalArgumentException.class, () -> {
+            // throws because the target tensor type is mapped
+           embedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x{})")));
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            // throws because the target tensor is 0d
+            embedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x[0]")));
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            // throws because the target tensor is 2d
+            embedder.embed(input, context, TensorType.fromSpec(("tensor<float>(x{}, y[2])")));
+        });
     }
 
     private static HuggingFaceEmbedder getEmbedder() {

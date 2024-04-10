@@ -346,8 +346,9 @@
       "public com.yahoo.language.process.Embedder$Context setDestination(java.lang.String)",
       "public java.lang.String getEmbedderId()",
       "public com.yahoo.language.process.Embedder$Context setEmbedderId(java.lang.String)",
-      "public void putCachedValue(java.lang.String, java.lang.Object)",
-      "public java.lang.Object getCachedValue(java.lang.String)"
+      "public void putCachedValue(java.lang.Object, java.lang.Object)",
+      "public java.lang.Object getCachedValue(java.lang.Object)",
+      "public java.lang.Object computeCachedValueIfAbsent(java.lang.Object, java.util.function.Supplier)"
     ],
     "fields" : [ ]
   },
