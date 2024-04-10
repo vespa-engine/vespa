@@ -36,8 +36,11 @@ public class ParentChildSearchModel {
     }
 
     protected static TemporarySDField createField(SDDocumentType repo, String name, DataType dataType, String indexingScript) {
+        return createField(repo, repo.getName(), name, dataType, indexingScript);
+    }
+    protected static TemporarySDField createField(SDDocumentType repo, String schemaName, String name, DataType dataType, String indexingScript) {
         TemporarySDField result = new TemporarySDField(repo, name, dataType);
-        result.parseIndexingScript(indexingScript);
+        result.parseIndexingScript(schemaName, indexingScript);
         return result;
     }
 

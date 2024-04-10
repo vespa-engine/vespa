@@ -46,7 +46,7 @@ public class NGramMatch extends Processor {
         field.getNormalizing().inferCodepoint();
         field.setStemming(Stemming.NONE); // not compatible with stemming and normalizing
         field.addQueryCommand("ngram " + n);
-        field.setIndexingScript((ScriptExpression)new MyProvider(schema, n).convert(field.getIndexingScript()));
+        field.setIndexingScript(schema.getName(), (ScriptExpression)new MyProvider(schema, n).convert(field.getIndexingScript()));
     }
 
     private static class MyProvider extends TypedTransformProvider {

@@ -34,7 +34,7 @@ public class DocumentReferenceResolverTest {
         SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         SDField fooRefToBarField = new SDField
                 (fooDocument, "bar_ref", new NewDocumentReferenceDataType(barDocument.getDocumentType()));
-        AttributeUtils.addAttributeAspect(fooRefToBarField);
+        AttributeUtils.addAttributeAspect(fooSchema.getName(), fooRefToBarField);
         SDField irrelevantField = new SDField(fooDocument, "irrelevant_stuff", DataType.INT);
         fooDocument.addField(fooRefToBarField);
         fooDocument.addField(irrelevantField);
@@ -60,7 +60,7 @@ public class DocumentReferenceResolverTest {
             SDField fooRefToBarField = new SDField(
                     fooDocument,
                     "bar_ref", NewDocumentReferenceDataType.forDocumentName("bar"));
-            AttributeUtils.addAttributeAspect(fooRefToBarField);
+            AttributeUtils.addAttributeAspect(fooSchema.getName(), fooRefToBarField);
             fooDocument.addField(fooRefToBarField);
             fooSchema.addDocument(fooDocument);
 

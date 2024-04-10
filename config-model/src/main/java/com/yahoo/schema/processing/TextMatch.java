@@ -48,7 +48,7 @@ public class TextMatch extends Processor {
             if ( ! visitor.requiresTokenize) continue;
 
             ExpressionConverter converter = new MyStringTokenizer(schema, findAnnotatorConfig(schema, field));
-            field.setIndexingScript((ScriptExpression)converter.convert(script));
+            field.setIndexingScript(schema.getName(), (ScriptExpression)converter.convert(script));
         }
     }
 

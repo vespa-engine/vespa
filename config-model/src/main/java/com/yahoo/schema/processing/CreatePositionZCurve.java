@@ -86,14 +86,14 @@ public class CreatePositionZCurve extends Processor {
                                         SummaryTransform.DISTANCE, summaryTo, validate);
             }
             // clear indexing script
-            field.setIndexingScript(null);
+            field.setIndexingScript(schema.getName(), null);
             SDField posX = field.getStructField(PositionDataType.FIELD_X);
             if (posX != null) {
-                posX.setIndexingScript(null);
+                posX.setIndexingScript(schema.getName(), null);
             }
             SDField posY = field.getStructField(PositionDataType.FIELD_Y);
             if (posY != null) {
-                posY.setIndexingScript(null);
+                posY.setIndexingScript(schema.getName(), null);
             }
             if (doesSummary) ensureCompatibleSummary(field, zName,
                                                      field.getName(),
@@ -118,7 +118,7 @@ public class CreatePositionZCurve extends Processor {
         ScriptExpression script = inputField.getIndexingScript();
         script = (ScriptExpression)new RemoveSummary(inputField.getName()).convert(script);
         script = (ScriptExpression)new PerformZCurve(field, fieldName).convert(script);
-        field.setIndexingScript(script);
+        field.setIndexingScript(schema.getName(), script);
         return field;
     }
 

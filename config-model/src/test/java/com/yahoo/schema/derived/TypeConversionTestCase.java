@@ -32,7 +32,7 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
         SDDocumentType document = new SDDocumentType("test");
         schema.addDocument(document);
         SDField a = new SDField(document, "a", DataType.STRING);
-        a.parseIndexingScript("{ index }");
+        a.parseIndexingScript(schema.getName(), "{ index }");
         document.addField(a);
 
         new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
