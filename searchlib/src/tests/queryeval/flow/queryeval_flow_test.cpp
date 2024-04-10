@@ -7,6 +7,7 @@
 
 constexpr size_t loop_cnt = 64;
 constexpr size_t max_work = 1; // 500'000'000;
+constexpr bool dump_unexpected = false;
 constexpr bool verbose = false;
 
 using namespace search::queryeval;
@@ -515,10 +516,7 @@ void test_strict_AND_sort_strategy(auto my_sort) {
                          };
             each_perm(data, check);
             double rel_err = 0.0;
-            double cost_range = (max_cost - min_cost);
-            if (cost_range > 1e-9) {
-                rel_err = (est_cost - min_cost) / cost_range;
-            }
+            rel_err = (est_cost - min_cost) / min_cost;
             if (rel_err > max_rel_err) {
                 max_rel_err = rel_err;
                 my_worst_order = my_order;
@@ -526,7 +524,7 @@ void test_strict_AND_sort_strategy(auto my_sort) {
             }
             sum_rel_err += rel_err;
             errs.push_back(rel_err);
-            if (verbose && !verify_order(best_order)) {
+            if (dump_unexpected && !verify_order(best_order)) {
                 fprintf(stderr, "  BEST ORDER IS UNEXPECTED:\n");
                 dump_flow(best_order, best_order);
                 fprintf(stderr, "  UNEXPECTED case, my_order:\n");
@@ -551,60 +549,12 @@ TEST(FlowTest, strict_and_with_allow_force_strict_basic_order) {
     test_strict_AND_sort_strategy(my_sort);
 }
 
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection) {
+TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_destructive_order_max_3_extra_strict) {
     auto my_sort = [](auto &data) {
                        AndFlow::sort(data, true);
-                       for (size_t next = 1; (next + 1) < data.size(); ++next) {
-                           auto [idx, score] = flow::select_forced_strict_and_child(flow::DirectAdapter(), data, next);
-                           if (score >= 0.0) {
-                               break;
-                           }
-                           auto pos = data.begin() + idx;
-                           std::rotate(data.begin() + next, pos, pos + 1);
-                       }
-                   };
-    test_strict_AND_sort_strategy(my_sort);
-}
-
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_with_strict_re_sorting) {
-    auto my_sort = [](auto &data) {
-                       AndFlow::sort(data, true);
-                       size_t strict_cnt = 1;
-                       for (; strict_cnt < data.size(); ++strict_cnt) {
-                           auto [idx, score] = flow::select_forced_strict_and_child(flow::DirectAdapter(), data, strict_cnt);
-                           if (score >= 0.0) {
-                               break;
-                           }
-                           auto pos = data.begin() + idx;
-                           std::rotate(data.begin() + strict_cnt, pos, pos + 1);
-                       }
-                       std::sort(data.begin(), data.begin() + strict_cnt,
-                                 [](const auto &a, const auto &b){ return (a.estimate < b.estimate); });
-                   };
-    test_strict_AND_sort_strategy(my_sort);
-}
-
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_with_order) {
-    auto my_sort = [](auto &data) {
-                       AndFlow::sort(data, true);
-                       for (size_t next = 1; next < data.size(); ++next) {
-                           auto [idx, target, score] = flow::select_forced_strict_and_child_with_order(flow::DirectAdapter(), data, next);
-                           if (score >= 0.0) {
-                               break;
-                           }
-                           auto pos = data.begin() + idx;
-                           std::rotate(data.begin() + target, pos, pos + 1);
-                       }
-                   };
-    test_strict_AND_sort_strategy(my_sort);
-}
-
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_with_destructive_order) {
-    auto my_sort = [](auto &data) {
-                       AndFlow::sort(data, true);
-                       for (size_t next = 1; next < data.size(); ++next) {
-                           auto [idx, target, score] = flow::select_forced_strict_and_child_with_destructive_order(flow::DirectAdapter(), data, next);
-                           if (score >= 0.0) {
+                       for (size_t next = 1; next <= 3 && next < data.size(); ++next) {
+                           auto [idx, target, diff] = flow::select_forced_strict_and_child(flow::DirectAdapter(), data, next);
+                           if (diff >= 0.0) {
                                break;
                            }
                            auto pos = data.begin() + idx;
