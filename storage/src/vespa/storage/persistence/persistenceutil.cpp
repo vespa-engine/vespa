@@ -70,9 +70,10 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
 MessageTracker::MessageTracker(const framework::MilliSecTimer& timer,
                                const PersistenceUtil& env,
                                std::shared_ptr<AsyncMessageBatch> batch,
+                               MessageSender& deferred_reply_sender,
                                std::shared_ptr<api::StorageMessage> msg,
                                ThrottleToken throttle_token)
-    : MessageTracker(timer, env, batch->deferred_sender_stub(), false, {}, std::move(batch), std::move(msg), std::move(throttle_token))
+    : MessageTracker(timer, env, deferred_reply_sender, false, {}, std::move(batch), std::move(msg), std::move(throttle_token))
 {}
 
 MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,

@@ -68,7 +68,9 @@ public:
     // For use with batching where bucket lock is held separately and bucket info
     // is _not_ fetched or updated per message.
     MessageTracker(const framework::MilliSecTimer& timer, const PersistenceUtil& env,
-                   std::shared_ptr<AsyncMessageBatch> batch, std::shared_ptr<api::StorageMessage> msg,
+                   std::shared_ptr<AsyncMessageBatch> batch,
+                   MessageSender& deferred_reply_sender,
+                   std::shared_ptr<api::StorageMessage> msg,
                    ThrottleToken throttle_token);
 
     ~MessageTracker();

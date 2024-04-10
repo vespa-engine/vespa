@@ -183,8 +183,8 @@ PersistenceHandler::process_locked_message_batch(std::shared_ptr<FileStorHandler
         // Important: we _copy_ the message shared_ptr instead of moving to ensure that `*bm.first` remains
         // valid even if the tracker is destroyed by an exception in processMessage(). All std::exceptions
         // are caught there, so we do not expect our loop to be interrupted.
-        auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env,
-                                                        batch, bm.first, std::move(bm.second));
+        auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, batch,
+                                                        batch->deferred_sender_stub(), bm.first, std::move(bm.second));
         tracker = processMessage(*bm.first, std::move(tracker));
         if (tracker) {
             tracker->sendReply(); // Actually defers to batch reply queue
