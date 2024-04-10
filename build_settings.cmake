@@ -90,12 +90,6 @@ else()
   message("-- liburing not found")
 endif()
 
-if(VESPA_OS_DISTRO_COMBINED STREQUAL "debian 10")
-  unset(VESPA_XXHASH_DEFINE)
-else()
-  set(VESPA_XXHASH_DEFINE "-DXXH_INLINE_ALL")
-endif()
-
 # Disable dangling reference and overloaded virtual warnings when using gcc 13
 # Disable stringop-oveflow, stringop-overread and array-bounds warning when using gcc 13.
 # The latter heuristics are sufficiently broken to be useless in practice.
@@ -111,7 +105,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
 endif()
 
 # C and C++ compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} ${VESPA_XXHASH_DEFINE} -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} -DXXH_INLINE_ALL -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
 # AddressSanitizer/ThreadSanitizer work for both GCC and Clang
 if (VESPA_USE_SANITIZER)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_USE_SANITIZER}")
