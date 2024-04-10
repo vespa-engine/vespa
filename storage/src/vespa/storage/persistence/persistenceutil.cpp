@@ -11,41 +11,83 @@ LOG_SETUP(".persistence.util");
 
 namespace storage {
 namespace {
-    bool isBatchable(api::MessageType::Id id)
-    {
-        return (id == api::MessageType::PUT_ID ||
-                id == api::MessageType::REMOVE_ID ||
-                id == api::MessageType::UPDATE_ID);
-    }
 
-    bool hasBucketInfo(api::MessageType::Id id)
-    {
-        return (isBatchable(id) ||
-                (id == api::MessageType::REMOVELOCATION_ID ||
-                 id == api::MessageType::JOINBUCKETS_ID));
+constexpr bool is_batchable(api::MessageType::Id id) noexcept {
+    return (id == api::MessageType::PUT_ID ||
+            id == api::MessageType::REMOVE_ID ||
+            id == api::MessageType::UPDATE_ID);
+}
+
+constexpr bool has_bucket_info(api::MessageType::Id id) noexcept {
+    return (is_batchable(id) ||
+            (id == api::MessageType::REMOVELOCATION_ID ||
+             id == api::MessageType::JOINBUCKETS_ID));
+}
+
+constexpr vespalib::duration WARN_ON_SLOW_OPERATIONS = 5s;
+
+} // anon ns
+
+DeferredReplySenderStub::DeferredReplySenderStub() = default;
+DeferredReplySenderStub::~DeferredReplySenderStub() = default;
+
+AsyncMessageBatch::AsyncMessageBatch(std::shared_ptr<FileStorHandler::BucketLockInterface> bucket_lock,
+                                     const PersistenceUtil& env,
+                                     MessageSender& reply_sender) noexcept
+    : _bucket_lock(std::move(bucket_lock)),
+      _env(env),
+      _reply_sender(reply_sender),
+      _deferred_sender_stub()
+{
+    assert(_bucket_lock);
+}
+
+AsyncMessageBatch::~AsyncMessageBatch() {
+    const auto bucket_info = _env.getBucketInfo(_bucket_lock->getBucket());
+    _env.updateBucketDatabase(_bucket_lock->getBucket(), bucket_info);
+
+    std::lock_guard lock(_deferred_sender_stub._mutex); // Ensure visibility of posted replies
+    for (auto& reply : _deferred_sender_stub._deferred_replies) {
+        if (reply->getResult().success()) {
+            dynamic_cast<api::BucketInfoReply&>(*reply).setBucketInfo(bucket_info);
+        }
+        _reply_sender.sendReplyDirectly(reply);
     }
-    const vespalib::duration WARN_ON_SLOW_OPERATIONS = 5s;
+    LOG(debug, "Processed async feed message batch of %zu ops for %s. New bucket info is %s",
+        _deferred_sender_stub._deferred_replies.size(),
+        _bucket_lock->getBucket().toString().c_str(), bucket_info.toString().c_str());
 }
 
 MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                const PersistenceUtil & env,
                                MessageSender & replySender,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
-                               api::StorageMessage::SP msg,
+                               std::shared_ptr<api::StorageMessage> msg,
                                ThrottleToken throttle_token)
-    : MessageTracker(timer, env, replySender, true, std::move(bucketLock), std::move(msg), std::move(throttle_token))
+    : MessageTracker(timer, env, replySender, true, std::move(bucketLock), {}, std::move(msg), std::move(throttle_token))
+{}
+
+MessageTracker::MessageTracker(const framework::MilliSecTimer& timer,
+                               const PersistenceUtil& env,
+                               std::shared_ptr<AsyncMessageBatch> batch,
+                               MessageSender& deferred_reply_sender,
+                               std::shared_ptr<api::StorageMessage> msg,
+                               ThrottleToken throttle_token)
+    : MessageTracker(timer, env, deferred_reply_sender, false, {}, std::move(batch), std::move(msg), std::move(throttle_token))
 {}
 
 MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                const PersistenceUtil & env,
                                MessageSender & replySender,
-                               bool updateBucketInfo,
-                               FileStorHandler::BucketLockInterface::SP bucketLock,
-                               api::StorageMessage::SP msg,
+                               bool update_bucket_info,
+                               std::shared_ptr<FileStorHandler::BucketLockInterface> bucket_lock,
+                               std::shared_ptr<AsyncMessageBatch> part_of_batch,
+                               std::shared_ptr<api::StorageMessage> msg,
                                ThrottleToken throttle_token)
     : _sendReply(true),
-      _updateBucketInfo(updateBucketInfo && hasBucketInfo(msg->getType().getId())),
-      _bucketLock(std::move(bucketLock)),
+      _updateBucketInfo(update_bucket_info && has_bucket_info(msg->getType().getId())),
+      _bucketLock(std::move(bucket_lock)),
+      _part_of_batch(std::move(part_of_batch)),
       _msg(std::move(msg)),
       _throttle_token(std::move(throttle_token)),
       _context(_msg->getPriority(), _msg->getTrace().getLevel()),
@@ -61,7 +103,7 @@ MessageTracker::createForTesting(const framework::MilliSecTimer & timer, Persist
                                  FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg)
 {
     return MessageTracker::UP(new MessageTracker(timer, env, replySender, false, std::move(bucketLock),
-                                                 std::move(msg), ThrottleToken()));
+                                                 {}, std::move(msg), ThrottleToken()));
 }
 
 void
@@ -102,6 +144,7 @@ MessageTracker::sendReply() {
     if (hasReply()) {
         getReply().getTrace().addChild(_context.steal_trace());
         if (_updateBucketInfo) {
+            assert(_bucketLock);
             if (getReply().getResult().success()) {
                 _env.setBucketInfo(*this, _bucketLock->getBucket());
             }
@@ -163,7 +206,7 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
 std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier>
 MessageTracker::sync_phase_done_notifier_or_nullptr() const
 {
-    if (_bucketLock->wants_sync_phase_done_notification()) {
+    if (_bucketLock && _bucketLock->wants_sync_phase_done_notification()) {
         return _bucketLock;
     }
     return {};
@@ -236,7 +279,7 @@ PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &
 {
     api::BucketInfo info = getBucketInfo(bucket);
 
-    static_cast<api::BucketInfoReply&>(tracker.getReply()).setBucketInfo(info);
+    dynamic_cast<api::BucketInfoReply&>(tracker.getReply()).setBucketInfo(info);
 
     updateBucketDatabase(bucket, info);
 }

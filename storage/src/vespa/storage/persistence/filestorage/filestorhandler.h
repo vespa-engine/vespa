@@ -1,23 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-/**
- * \class storage::FileStorHandler
- * \ingroup storage
- *
- * \brief Common resource for filestor threads
- *
- * Takes care of the interface between file stor threads and the file stor
- * manager to avoid circular dependencies, and confine the implementation that
- * needs to worry about locking between these components.
- */
-
 #pragma once
 
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/storage/persistence/batched_message.h>
 #include <vespa/storage/persistence/shared_operation_throttler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
+#include <vespa/vespalib/util/small_vector.h>
 
 namespace storage {
 namespace api {
@@ -80,13 +70,7 @@ public:
         std::shared_ptr<api::StorageMessage> msg;
         ThrottleToken                        throttle_token;
 
-        LockedMessage() noexcept = default;
-        LockedMessage(std::shared_ptr<BucketLockInterface> lock_,
-                      std::shared_ptr<api::StorageMessage> msg_) noexcept
-            : lock(std::move(lock_)),
-              msg(std::move(msg_)),
-              throttle_token()
-        {}
+        constexpr LockedMessage() noexcept = default;
         LockedMessage(std::shared_ptr<BucketLockInterface> lock_,
                       std::shared_ptr<api::StorageMessage> msg_,
                       ThrottleToken token) noexcept
@@ -98,27 +82,40 @@ public:
         ~LockedMessage();
     };
 
-    class ScheduleAsyncResult {
-    private:
-        bool _was_scheduled;
-        LockedMessage _async_message;
+    struct LockedMessageBatch {
+        std::shared_ptr<BucketLockInterface>     lock;
+        vespalib::SmallVector<BatchedMessage, 1> messages;
 
+        LockedMessageBatch() = default;
+        explicit LockedMessageBatch(LockedMessage&& initial_msg);
+        LockedMessageBatch(LockedMessageBatch&&) noexcept = default;
+        ~LockedMessageBatch();
+
+        [[nodiscard]] bool empty() const noexcept { return messages.empty(); }
+        [[nodiscard]] size_t size() const noexcept { return messages.size(); }
+        // Precondition: messages.size() == 1
+        [[nodiscard]] LockedMessage release_as_single_msg() noexcept;
+    };
+
+    class ScheduleAsyncResult {
+        bool          _was_scheduled;
+        LockedMessage _async_message;
     public:
-        ScheduleAsyncResult() : _was_scheduled(false), _async_message() {}
-        explicit ScheduleAsyncResult(LockedMessage&& async_message_in)
+        constexpr ScheduleAsyncResult() noexcept : _was_scheduled(false), _async_message() {}
+        explicit ScheduleAsyncResult(LockedMessage&& async_message_in) noexcept
             : _was_scheduled(true),
               _async_message(std::move(async_message_in))
         {}
-        bool was_scheduled() const {
+        [[nodiscard]] bool was_scheduled() const noexcept {
             return _was_scheduled;
         }
-        bool has_async_message() const {
-            return _async_message.lock.get() != nullptr;
+        [[nodiscard]] bool has_async_message() const noexcept {
+            return static_cast<bool>(_async_message.lock);
         }
-        const LockedMessage& async_message() const {
+        [[nodiscard]] const LockedMessage& async_message() const noexcept {
             return _async_message;
         }
-        LockedMessage&& release_async_message() {
+        [[nodiscard]] LockedMessage&& release_async_message() noexcept {
             return std::move(_async_message);
         }
     };
@@ -129,7 +126,7 @@ public:
     };
 
     FileStorHandler() : _getNextMessageTimout(100ms) { }
-    virtual ~FileStorHandler() = default;
+    ~FileStorHandler() override = default;
 
 
     /**
@@ -171,7 +168,9 @@ public:
      *
      * @param stripe The stripe to get messages for
      */
-    virtual LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) = 0;
+    [[nodiscard]] virtual LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) = 0;
+
+    [[nodiscard]] virtual LockedMessageBatch next_message_batch(uint32_t stripe, vespalib::steady_time now, vespalib::steady_time deadline) = 0;
 
     /** Only used for testing, should be removed */
     LockedMessage getNextMessage(uint32_t stripeId) {
@@ -189,8 +188,6 @@ public:
      * NB: As current operation can be a split or join operation, make sure that
      * you always wait for current to finish, if is a super or sub bucket of
      * the bucket we're locking.
-     *
-     *
      */
     virtual BucketLockInterface::SP lock(const document::Bucket&, api::LockingRequirements lockReq) = 0;
 
@@ -287,6 +284,8 @@ public:
     virtual void use_dynamic_operation_throttling(bool use_dynamic) noexcept = 0;
 
     virtual void set_throttle_apply_bucket_diff_ops(bool throttle_apply_bucket_diff) noexcept = 0;
+
+    virtual void set_max_feed_op_batch_size(uint32_t max_batch) noexcept = 0;
 private:
     vespalib::duration _getNextMessageTimout;
 };

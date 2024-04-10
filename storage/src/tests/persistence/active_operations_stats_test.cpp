@@ -28,6 +28,8 @@ public:
     std::shared_ptr<api::StorageMessage> createPut(uint64_t bucket, uint64_t docIdx);
     std::shared_ptr<api::StorageMessage> createGet(uint64_t bucket) const;
 
+    void SetUp() override;
+    void TearDown() override;
     void assert_active_operations_stats(const ActiveOperationsStats &stats, uint32_t exp_active_size, uint32_t exp_size_samples, uint32_t exp_latency_samples);
     void update_metrics();
     void test_active_operations_stats();
@@ -41,14 +43,28 @@ ActiveOperationsStatsTest::ActiveOperationsStatsTest()
       metrics(),
       stripeId(0)
 {
+    // Initialization of members must happen in SetUp() since this test transitively
+    // depends on components modified by the superclass' SetUp() method.
+}
+
+void
+ActiveOperationsStatsTest::SetUp()
+{
+    FileStorTestFixture::SetUp();
     setupPersistenceThreads(1);
     _node->setPersistenceProvider(std::make_unique<spi::dummy::DummyPersistence>(_node->getTypeRepo()));
     top.push_back(std::move(dummyManager));
     top.open();
     metrics.initDiskMetrics(1, 1);
-    filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics,
-                                                            _node->getComponentRegister());
+    filestorHandler = std::make_unique<FileStorHandlerImpl>(messageSender, metrics, _node->getComponentRegister());
     filestorHandler->setGetNextMessageTimeout(20ms);
+}
+
+void
+ActiveOperationsStatsTest::TearDown()
+{
+    filestorHandler.reset();
+    FileStorTestFixture::TearDown();
 }
 
 ActiveOperationsStatsTest::~ActiveOperationsStatsTest() = default;

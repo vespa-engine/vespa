@@ -29,7 +29,7 @@ response_sequencer_type enum {LATENCY, THROUGHPUT, ADAPTIVE} default=ADAPTIVE re
 ## Should follow stor-distributormanager:splitsize (16MB).
 bucket_merge_chunk_size int default=16772216 restart
 
-## Whether or not to use async message handling when scheduling storage messages from FileStorManager.
+## Whether to use async message handling when scheduling storage messages from FileStorManager.
 ##
 ## When turned on, the calling thread (e.g. FNET network thread when using Storage API RPC)
 ## gets the next async message to handle (if any) as part of scheduling a storage message.
@@ -61,3 +61,10 @@ async_operation_throttler.window_size_backoff double default=0.95
 async_operation_throttler.min_window_size int default=20
 async_operation_throttler.max_window_size int default=-1 # < 0 implies INT_MAX
 async_operation_throttler.resize_rate double default=3.0
+
+## Maximum number of enqueued put/remove/update operations towards a given bucket
+## that can be dispatched asynchronously as a batch under the same write lock.
+## This prevents pipeline stalls when many write operations are in-flight to the
+## same bucket, as each operation would otherwise have to wait for the completion
+## of all prior writes to the bucket.
+max_feed_op_batch_size int default=1

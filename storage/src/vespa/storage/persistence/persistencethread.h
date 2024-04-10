@@ -8,6 +8,7 @@
 namespace storage {
 
 namespace framework {
+    struct Clock;
     class Component;
     class Thread;
 }
@@ -27,10 +28,11 @@ public:
     framework::Thread& getThread() override { return *_thread; }
 
 private:
-    PersistenceHandler                 & _persistenceHandler;
-    FileStorHandler                    & _fileStorHandler;
-    uint32_t                             _stripeId;
-    std::unique_ptr<framework::Thread>   _thread;
+    PersistenceHandler&                _persistenceHandler;
+    FileStorHandler&                   _fileStorHandler;
+    const framework::Clock&            _clock;
+    uint32_t                           _stripeId;
+    std::unique_ptr<framework::Thread> _thread;
 
     void run(framework::ThreadHandle&) override;
 };

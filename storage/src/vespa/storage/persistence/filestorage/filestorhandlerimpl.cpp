@@ -12,6 +12,7 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/string_escape.h>
 
@@ -60,7 +61,8 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
       _max_active_merges_per_stripe(per_stripe_merge_limit(numThreads, numStripes)),
       _paused(false),
       _throttle_apply_bucket_diff_ops(false),
-      _last_active_operations_stats()
+      _last_active_operations_stats(),
+      _max_feed_op_batch_size(1)
 {
     assert(numStripes > 0);
     _stripes.reserve(numStripes);
@@ -241,8 +243,7 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (getState() == FileStorHandler::AVAILABLE) {
         document::Bucket bucket = getStorageMessageBucket(*msg);
-        stripe(bucket).schedule(MessageEntry(msg, bucket));
-        return true;
+        return stripe(bucket).schedule(MessageEntry(msg, bucket, _component.getClock().getMonotonicTime()));
     }
     return false;
 }
@@ -252,7 +253,7 @@ FileStorHandlerImpl::schedule_and_get_next_async_message(const std::shared_ptr<a
 {
     if (getState() == FileStorHandler::AVAILABLE) {
         document::Bucket bucket = getStorageMessageBucket(*msg);
-        return ScheduleAsyncResult(stripe(bucket).schedule_and_get_next_async_message(MessageEntry(msg, bucket)));
+        return ScheduleAsyncResult(stripe(bucket).schedule_and_get_next_async_message(MessageEntry(msg, bucket, _component.getClock().getMonotonicTime())));
     }
     return {};
 }
@@ -403,8 +404,23 @@ FileStorHandlerImpl::getNextMessage(uint32_t stripeId, vespalib::steady_time dea
     if (!tryHandlePause()) {
         return {}; // Still paused, return to allow tick.
     }
-
     return _stripes[stripeId].getNextMessage(deadline);
+}
+
+FileStorHandler::LockedMessageBatch
+FileStorHandlerImpl::next_message_batch(uint32_t stripe_id, vespalib::steady_time now, vespalib::steady_time deadline)
+{
+    if (!tryHandlePause()) {
+        return {};
+    }
+    return _stripes[stripe_id].next_message_batch(now, deadline);
+}
+
+FileStorHandler::LockedMessage
+FileStorHandlerImpl::LockedMessageBatch::release_as_single_msg() noexcept
+{
+    assert(lock && messages.size() == 1);
+    return {std::move(lock), std::move(messages[0].first), std::move(messages[0].second)};
 }
 
 std::shared_ptr<FileStorHandler::BucketLockInterface>
@@ -858,9 +874,10 @@ FileStorHandlerImpl::sendReplyDirectly(const std::shared_ptr<api::StorageReply>&
 }
 
 FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
-                                                const document::Bucket &bucket)
+                                                const document::Bucket& bucket,
+                                                vespalib::steady_time scheduled_at_time)
     : _command(cmd),
-      _timer(),
+      _timer(scheduled_at_time),
       _bucket(bucket),
       _priority(cmd->getPriority())
 { }
@@ -939,9 +956,8 @@ FileStorHandlerImpl::Stripe::operation_type_should_be_throttled(api::MessageType
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::Stripe::getNextMessage(vespalib::steady_time deadline)
+FileStorHandlerImpl::Stripe::next_message_impl(monitor_guard& guard, vespalib::steady_time deadline)
 {
-    std::unique_lock guard(*_lock);
     ThrottleToken throttle_token;
     // Try to grab a message+lock, immediately retrying once after a wait
     // if none can be found and then exiting if the same is the case on the
@@ -993,6 +1009,93 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::steady_time deadline)
 }
 
 FileStorHandler::LockedMessage
+FileStorHandlerImpl::Stripe::getNextMessage(vespalib::steady_time deadline)
+{
+    std::unique_lock guard(*_lock);
+    return next_message_impl(guard, deadline);
+}
+
+namespace {
+
+constexpr bool is_batchable_feed_op(api::MessageType::Id id) noexcept {
+    return (id == api::MessageType::PUT_ID ||
+            id == api::MessageType::REMOVE_ID ||
+            id == api::MessageType::UPDATE_ID);
+}
+
+// Precondition: msg must be a feed operation request (put, remove, update)
+document::GlobalId gid_from_feed_op(const api::StorageMessage& msg) {
+    switch (msg.getType().getId()) {
+    case api::MessageType::PUT_ID:
+        return static_cast<const api::PutCommand&>(msg).getDocumentId().getGlobalId();
+    case api::MessageType::REMOVE_ID:
+        return static_cast<const api::RemoveCommand&>(msg).getDocumentId().getGlobalId();
+    case api::MessageType::UPDATE_ID:
+        return static_cast<const api::UpdateCommand&>(msg).getDocumentId().getGlobalId();
+    default: abort();
+    }
+}
+
+} // anon ns
+
+FileStorHandler::LockedMessageBatch
+FileStorHandlerImpl::Stripe::next_message_batch(vespalib::steady_time now, vespalib::steady_time deadline)
+{
+    const auto max_batch_size = _owner.max_feed_op_batch_size();
+
+    std::unique_lock guard(*_lock);
+    auto initial_locked = next_message_impl(guard, deadline);
+    if (!initial_locked.lock || !is_batchable_feed_op(initial_locked.msg->getType().getId()) || (max_batch_size == 1)) {
+        return LockedMessageBatch(std::move(initial_locked));
+    }
+    LockedMessageBatch batch(std::move(initial_locked));
+    fill_feed_op_batch(guard, batch, max_batch_size, now);
+    return batch;
+}
+
+void
+FileStorHandlerImpl::Stripe::fill_feed_op_batch(monitor_guard& guard, LockedMessageBatch& batch,
+                                                uint32_t max_batch_size, vespalib::steady_time now)
+{
+    assert(batch.size() == 1);
+    assert(guard.owns_lock());
+    BucketIdx& idx = bmi::get<2>(*_queue);
+    auto bucket_msgs = idx.equal_range(batch.lock->getBucket());
+    // Process in FIFO order (_not_ priority order) until we hit the end, a non-batchable operation
+    // (implicit pipeline stall since bucket set might change) or can't get another throttle token.
+    // We also stall the pipeline if we get a concurrent modification to the same document (not expected,
+    // as the distributors should prevent this, but _technically_ it is possible).
+    const auto expected_max_size = std::min(ssize_t(max_batch_size), std::distance(bucket_msgs.first, bucket_msgs.second) + 1);
+    vespalib::hash_set<document::GlobalId, document::GlobalId::hash> gids_in_batch(expected_max_size);
+    gids_in_batch.insert(gid_from_feed_op(*batch.messages[0].first));
+    for (auto it = bucket_msgs.first; (it != bucket_msgs.second) && (batch.messages.size() < max_batch_size);) {
+        if (!is_batchable_feed_op(it->_command->getType().getId())) {
+            break;
+        }
+        auto [existing_iter, inserted] = gids_in_batch.insert(gid_from_feed_op(*it->_command));
+        if (!inserted) {
+            break; // Already present in batch
+        }
+        if (messageTimedOutInQueue(*it->_command, now - it->_timer.start_time())) {
+            // We just ignore timed out ops here; actually generating a timeout reply will be done by
+            // next_message_impl() during a subsequent invocation. This avoids having to deal with any
+            // potential issues caused by sending a reply up while holding the queue lock, since we
+            // can't release it here.
+            ++it;
+            continue;
+        }
+        auto throttle_token = _owner.operation_throttler().try_acquire_one();
+        if (!throttle_token.valid()) {
+            break;
+        }
+        // Note: iterator is const; can't std::move(it->_command)
+        batch.messages.emplace_back(it->_command, std::move(throttle_token));
+        it = idx.erase(it);
+    }
+    update_cached_queue_size(guard);
+}
+
+FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
 {
     if (_owner.isPaused()) {
@@ -1021,9 +1124,11 @@ FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter,
                                         ThrottleToken throttle_token)
 {
-    std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime)));
+    std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(
+            _owner._component.getClock().getMonotonicTime(),
+            _metrics->averageQueueWaitingTime)));
 
-    std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
+    std::shared_ptr<api::StorageMessage> msg = iter->_command; // iter is const; can't std::move()
     document::Bucket bucket(iter->_bucket);
     idx.erase(iter); // iter not used after this point.
     update_cached_queue_size(guard);
@@ -1032,7 +1137,6 @@ FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx
         auto locker = std::make_unique<BucketLock>(guard, *this, bucket, msg->getPriority(),
                                                    msg->getType().getId(), msg->getMsgId(),
                                                    msg->lockingRequirements());
-        guard.unlock();
         return {std::move(locker), std::move(msg), std::move(throttle_token)};
     } else {
         std::shared_ptr<api::StorageReply> msgReply(makeQueueTimeoutReply(*msg));
