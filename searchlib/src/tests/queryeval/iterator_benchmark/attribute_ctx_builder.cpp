@@ -18,30 +18,71 @@ namespace {
 
 template <typename AttributeType, bool is_string, bool is_multivalue>
 void
+update_attribute(AttributeType& attr, uint32_t docid, uint32_t value)
+{
+    if constexpr (is_string) {
+        if constexpr (is_multivalue) {
+            attr.append(docid, std::to_string(value), random_int(1, 100));
+        } else {
+            attr.update(docid, std::to_string(value));
+        }
+    } else {
+        if constexpr (is_multivalue) {
+            attr.append(docid, value, random_int(1, 100));
+        } else {
+            attr.update(docid, value);
+        }
+    }
+}
+
+template <typename AttributeType, bool is_string, bool is_multivalue>
+void
 populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hit_specs)
 {
     for (auto spec : hit_specs) {
         auto docids = random_docids(docid_limit, spec.num_hits);
         docids->foreach_truebit([&](uint32_t docid) {
-            if constexpr (is_string) {
-                if constexpr (is_multivalue) {
-                    attr.append(docid, std::to_string(spec.term_value), random_int(1, 100));
-                } else {
-                    attr.update(docid, std::to_string(spec.term_value));
-                }
-            } else {
-                if constexpr (is_multivalue) {
-                    attr.append(docid, spec.term_value, random_int(1, 100));
-                } else {
-                    attr.update(docid, spec.term_value);
-                }
-            }
+            update_attribute<AttributeType, is_string, is_multivalue>(attr, docid, spec.term_value);
         });
     }
 }
 
+template <typename AttributeType, bool is_string, bool is_multivalue>
+void
+populate_attribute(AttributeType& attr, const std::vector<uint32_t>& values)
+{
+    for (uint32_t docid = 1; docid < values.size(); ++docid) {
+        uint32_t value = values[docid];
+        if (value == 0) {
+            continue;
+        }
+        update_attribute<AttributeType, is_string, is_multivalue>(attr, docid, value);
+    }
+}
+
+template <typename AttributeType, bool is_string, bool is_multivalue>
+void
+populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpecs& hit_specs, bool disjunct_terms)
+{
+    if (disjunct_terms) {
+        // Ensure that each term in HitSpecs is matched by a disjunct (random) subset of docids.
+        std::vector<uint32_t> values(docid_limit, 0);
+        uint32_t docid = 1;
+        for (auto spec : hit_specs) {
+            assert((docid + spec.num_hits) <= docid_limit);
+            std::fill_n(values.begin() + docid, spec.num_hits, spec.term_value);
+            docid += spec.num_hits;
+        }
+        std::shuffle(values.begin() + 1, values.end(), get_gen());
+        populate_attribute<AttributeType, is_string, is_multivalue>(attr, values);
+   } else {
+        // For each term in HitSpecs we draw a new random set of docids that will match this term value.
+        populate_attribute<AttributeType, is_string, is_multivalue>(attr, docid_limit, hit_specs);
+    }
+}
+
 AttributeVector::SP
-make_attribute(const Config& cfg, vespalib::stringref field_name, uint32_t num_docs, const HitSpecs& hit_specs)
+make_attribute(const Config& cfg, vespalib::stringref field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms)
 {
     auto attr = AttributeFactory::createAttribute(field_name, cfg);
     attr->addReservedDoc();
@@ -52,16 +93,16 @@ make_attribute(const Config& cfg, vespalib::stringref field_name, uint32_t num_d
     if (attr->isStringType()) {
         auto& real = dynamic_cast<StringAttribute&>(*attr);
         if (is_multivalue) {
-            populate_attribute<StringAttribute, true, true>(real, docid_limit, hit_specs);
+            populate_attribute<StringAttribute, true, true>(real, docid_limit, hit_specs, disjunct_terms);
         } else {
-            populate_attribute<StringAttribute, true, false>(real, docid_limit, hit_specs);
+            populate_attribute<StringAttribute, true, false>(real, docid_limit, hit_specs, disjunct_terms);
         }
     } else {
         auto& real = dynamic_cast<IntegerAttribute&>(*attr);
         if (is_multivalue) {
-            populate_attribute<IntegerAttribute, false, true>(real, docid_limit, hit_specs);
+            populate_attribute<IntegerAttribute, false, true>(real, docid_limit, hit_specs, disjunct_terms);
         } else {
-            populate_attribute<IntegerAttribute, false, false>(real, docid_limit, hit_specs);
+            populate_attribute<IntegerAttribute, false, false>(real, docid_limit, hit_specs, disjunct_terms);
         }
     }
     attr->commit(true);
@@ -90,9 +131,9 @@ AttributeContextBuilder::AttributeContextBuilder()
 }
 
 void
-AttributeContextBuilder::add(const search::attribute::Config& cfg, vespalib::stringref field_name, uint32_t num_docs, const HitSpecs& hit_specs)
+AttributeContextBuilder::add(const search::attribute::Config& cfg, vespalib::stringref field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms)
 {
-    auto attr = make_attribute(cfg, field_name, num_docs, hit_specs);
+    auto attr = make_attribute(cfg, field_name, num_docs, hit_specs, disjunct_terms);
     _ctx->add(std::move(attr));
 }
 
