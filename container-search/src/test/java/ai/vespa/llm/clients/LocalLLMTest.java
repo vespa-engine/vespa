@@ -96,10 +96,6 @@ public class LocalLLMTest {
                 completions.get(seq).append(completion.text());
             }).exceptionally(exception -> Completion.FinishReason.error));
         }
-        for (var future : futures) {
-            var reason = future.join();
-            assertNotEquals(reason, Completion.FinishReason.error);
-        }
         for (int i = 0; i < promptsToUse; i++) {
             var reason = futures.get(i).join();
             assertNotEquals(reason, Completion.FinishReason.error);
