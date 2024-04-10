@@ -5,7 +5,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import org.w3c.dom.Document;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +34,7 @@ public class BundleValidator extends AbstractBundleValidator {
         for (Map.Entry<Object,Object> entry : attributes.entrySet()) {
             mfAttributes.add(entry.getKey().toString());
         }
-        List<String> requiredOSGIHeaders = Arrays.asList(
+        List<String> requiredOSGIHeaders = List.of(
                 "Bundle-ManifestVersion", "Bundle-Name", "Bundle-SymbolicName", "Bundle-Version");
         for (String header : requiredOSGIHeaders) {
             if (!mfAttributes.contains(header)) {

@@ -6,7 +6,6 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import org.w3c.dom.Element;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,7 +19,7 @@ public class TestUtil {
     public static Element parse(String... xmlLines) {
         List<String> lines = new ArrayList<>();
         lines.add("<?xml version='1.0' encoding='utf-8' ?>");
-        lines.addAll(Arrays.asList(xmlLines));
+        lines.addAll(List.of(xmlLines));
 
         try {
             return XmlHelper.getDocument(new StringReader(CollectionUtil.mkString(lines, "\n").replace("'", "\""))).getDocumentElement();

@@ -9,7 +9,7 @@ import com.yahoo.vespa.model.container.search.searchchain.GenericTarget;
 import com.yahoo.vespa.model.container.search.searchchain.Searcher;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,7 +20,7 @@ import java.util.Map;
 abstract public class DomGenericTargetBuilder<T extends GenericTarget> extends DomChainBuilderBase<Searcher<?>, T> {
 
     DomGenericTargetBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
-        super(Arrays.asList(ComponentsBuilder.ComponentType.searcher, ComponentsBuilder.ComponentType.federation),
+        super(List.of(ComponentsBuilder.ComponentType.searcher, ComponentsBuilder.ComponentType.federation),
                 outerSearcherTypeByComponentName);
     }
 

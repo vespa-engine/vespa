@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.documentmodel.NewDocumentType;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -45,7 +44,7 @@ public class ReservedDocumentTypeNameValidatorTest {
     @Test
     void validation_is_case_insensitive() {
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
-        Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(Arrays.asList("NULL", "True", "anD")));
+        Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(List.of("NULL", "True", "anD")));
         try {
             validator.validate(orderedDocTypes);
             fail();

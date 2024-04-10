@@ -7,7 +7,6 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +57,7 @@ public class MapConfigModelRegistry extends ConfigModelRegistry {
     @SafeVarargs
     @SuppressWarnings("varargs")
     public static ConfigModelRegistry createFromList(ConfigModelBuilder<? extends ConfigModel> ... builders) {
-        return new MapConfigModelRegistry(Arrays.asList(builders));
+        return new MapConfigModelRegistry(List.of(builders));
     }
 
 }

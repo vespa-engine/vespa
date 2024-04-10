@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class IndexingScriptChangeValidatorTest {
@@ -126,7 +125,7 @@ public class IndexingScriptChangeValidatorTest {
     void requireThatMultipleChangesRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: index } " + FIELD_F2 + " { indexing: index }",
                 FIELD + " { indexing: index \n stemming: none } " + FIELD_F2 + " { indexing: index \n normalizing: none }").
-                assertValidation(Arrays.asList(expectedReindexingAction("f1", "stemming: 'best' -> 'none'",
+                assertValidation(List.of(expectedReindexingAction("f1", "stemming: 'best' -> 'none'",
                 "{ input f1 | tokenize normalize stem:\"BEST\" | index f1; }",
                 "{ input f1 | tokenize normalize | index f1; }"),
                 expectedReindexingAction("f2", "normalizing: 'ACCENT' -> 'NONE'",

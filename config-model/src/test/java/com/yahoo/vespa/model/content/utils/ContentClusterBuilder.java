@@ -7,7 +7,6 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
@@ -21,7 +20,7 @@ public class ContentClusterBuilder {
     private String name = "mycluster";
     private int redundancy = 1;
     private int searchableCopies = 1;
-    private List<DocType> docTypes = Arrays.asList(DocType.index("test"));
+    private List<DocType> docTypes = List.of(DocType.index("test"));
     private String groupXml = getSimpleGroupXml();
     private Optional<String> dispatchXml = Optional.empty();
     private Optional<Double> protonDiskLimit = Optional.empty();
@@ -54,8 +53,8 @@ public class ContentClusterBuilder {
     }
 
     public ContentClusterBuilder docTypes(String ... docTypes) {
-        this.docTypes = Arrays.asList(docTypes).stream().
-                map(type -> DocType.index(type)).
+        this.docTypes = Arrays.stream(docTypes).
+                map(DocType::index).
                 toList();
         return this;
     }

@@ -21,7 +21,6 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -102,12 +101,12 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
     {
         AttributeFields attributes = new AttributeFields(schema);
 
-        verifyProfile(rankProfileRegistry.get(schema, "base"), Arrays.asList("large_f", "large_m"),
-                      Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", "base.large_f"), new Pair<>("rankingExpression(large_m).expressionName", "base.large_m")),
+        verifyProfile(rankProfileRegistry.get(schema, "base"), List.of("large_f", "large_m"),
+                      List.of(new Pair<>("rankingExpression(large_f).expressionName", "base.large_f"), new Pair<>("rankingExpression(large_m).expressionName", "base.large_m")),
                       largeExpressions, queryProfiles, models, attributes, properties);
-        for (String child : Arrays.asList("child_a", "child_b")) {
-            verifyProfile(rankProfileRegistry.get(schema, child), Arrays.asList("large_f", "large_m", "large_local_f", "large_local_m"),
-                          Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", child + ".large_f"), new Pair<>("rankingExpression(large_m).expressionName", child + ".large_m"),
+        for (String child : List.of("child_a", "child_b")) {
+            verifyProfile(rankProfileRegistry.get(schema, child), List.of("large_f", "large_m", "large_local_f", "large_local_m"),
+                          List.of(new Pair<>("rankingExpression(large_f).expressionName", child + ".large_f"), new Pair<>("rankingExpression(large_m).expressionName", child + ".large_m"),
                             new Pair<>("rankingExpression(large_local_f).expressionName", child + ".large_local_f"), new Pair<>("rankingExpression(large_local_m).expressionName", child + ".large_local_m"),
                             new Pair<>("vespa.rank.firstphase", "rankingExpression(firstphase)"), new Pair<>("rankingExpression(firstphase).expressionName", child + ".firstphase")),
                           largeExpressions, queryProfiles, models, attributes, properties);

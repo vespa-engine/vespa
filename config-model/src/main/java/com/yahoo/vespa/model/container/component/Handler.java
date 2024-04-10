@@ -8,7 +8,6 @@ import com.yahoo.vespa.model.container.ContainerThreadpool;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -51,7 +50,7 @@ public class Handler extends Component<Component<?, ?>, ComponentModel> {
     }
 
     public void addServerBindings(BindingPattern... bindings) {
-        serverBindings.addAll(Arrays.asList(bindings));
+        serverBindings.addAll(List.of(bindings));
     }
 
     public void addServerBindings(Collection<BindingPattern> bps) { serverBindings.addAll(bps); }
@@ -61,7 +60,7 @@ public class Handler extends Component<Component<?, ?>, ComponentModel> {
     }
 
     public void addClientBindings(BindingPattern... bindings) {
-        clientBindings.addAll(Arrays.asList(bindings));
+        clientBindings.addAll(List.of(bindings));
     }
 
     public final Collection<BindingPattern> getServerBindings() {

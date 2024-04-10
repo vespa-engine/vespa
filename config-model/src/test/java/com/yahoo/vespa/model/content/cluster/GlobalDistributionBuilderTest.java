@@ -6,9 +6,7 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,7 +33,7 @@ public class GlobalDistributionBuilderTest {
                         "  <document type=\"" + GLOBAL_2.getName() + "\" global=\"true\"/>" +
                         "</documents>";
 
-        Set<NewDocumentType> expectedResult = new HashSet<>(Arrays.asList(GLOBAL_1, GLOBAL_2));
+        Set<NewDocumentType> expectedResult = Set.of(GLOBAL_1, GLOBAL_2);
         Set<NewDocumentType> actualResult = builder.build(new ModelElement(XML.getDocument(documentsElement).getDocumentElement()));
         assertEquals(expectedResult, actualResult);
     }

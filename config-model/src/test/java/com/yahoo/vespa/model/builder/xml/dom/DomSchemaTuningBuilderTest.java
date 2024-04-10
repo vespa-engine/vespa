@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.search.Tuning;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +22,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     private static Element parseXml(String... xmlLines) {
         return parse("<tuning>",
                 "<searchnode>",
-                CollectionUtil.mkString(Arrays.asList(xmlLines), "\n"),
+                CollectionUtil.mkString(List.of(xmlLines), "\n"),
                 "</searchnode>",
                 "</tuning>");
     }

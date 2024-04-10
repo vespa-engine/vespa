@@ -13,8 +13,8 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,7 +27,7 @@ public class PositionTestCase {
 
     @Test
     void inherited_position_zcurve_field_is_not_added_to_document_fieldset() throws Exception {
-        ApplicationBuilder sb = ApplicationBuilder.createFromFiles(Arrays.asList(
+        ApplicationBuilder sb = ApplicationBuilder.createFromFiles(List.of(
                 "src/test/examples/position_base.sd",
                 "src/test/examples/position_inherited.sd"));
 

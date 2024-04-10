@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -112,7 +111,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
 
     @Test
     void multitenant() {
-        List<ConfigServerSpec> configServerSpecs = Arrays.asList(
+        List<ConfigServerSpec> configServerSpecs = List.of(
                 new TestProperties.Spec("test1", 19070, 2181),
                 new TestProperties.Spec("test2", 19070, 2181),
                 new TestProperties.Spec("test3", 19070, 2181));

@@ -42,7 +42,6 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -70,7 +69,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void testHierarchicRedundancy() {
-        ContentCluster cc = parse("" +
+        ContentCluster cc = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
                 "  <documents/>" +
                 "  <engine>" +
@@ -1102,7 +1101,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
         assertEquals(2, config.cluster().size());
 
-        assertClusterHasBucketSpaceMappings(config, "foo_c", Arrays.asList("bunnies", "hares"), List.of());
+        assertClusterHasBucketSpaceMappings(config, "foo_c", List.of("bunnies", "hares"), List.of());
         assertClusterHasBucketSpaceMappings(config, "bar_c", List.of(), List.of("rabbits"));
     }
 

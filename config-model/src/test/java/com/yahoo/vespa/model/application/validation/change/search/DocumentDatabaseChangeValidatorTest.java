@@ -8,7 +8,6 @@ import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeActi
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
@@ -50,7 +49,7 @@ public class DocumentDatabaseChangeValidatorTest {
                         "field f3 type string { indexing: summary } " +
                         "field f4 type array<s> { struct-field s1 { indexing: attribute } }");
         Instant.now();
-        f.assertValidation(Arrays.asList(
+        f.assertValidation(List.of(
                 newRestartAction(ClusterSpec.Id.from("test"),
                         "Field 'f1' changed: add attribute aspect"),
                 newRestartAction(ClusterSpec.Id.from("test"),

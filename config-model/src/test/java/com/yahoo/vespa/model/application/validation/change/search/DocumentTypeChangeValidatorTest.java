@@ -14,7 +14,6 @@ import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -108,7 +107,7 @@ public class DocumentTypeChangeValidatorTest {
                 "field f2 type string { indexing: summary } field f1 type int { indexing: summary }");
         Instant.now();
         Instant.now();
-        f.assertValidation(Arrays.asList(newRefeedAction(ClusterSpec.Id.from("test"), ValidationId.fieldTypeChange, "Field 'f1' changed: data type: 'string' -> 'int'"),
+        f.assertValidation(List.of(newRefeedAction(ClusterSpec.Id.from("test"), ValidationId.fieldTypeChange, "Field 'f1' changed: data type: 'string' -> 'int'"),
                 newRefeedAction(ClusterSpec.Id.from("test"), ValidationId.fieldTypeChange, "Field 'f2' changed: data type: 'int' -> 'string'")));
     }
 

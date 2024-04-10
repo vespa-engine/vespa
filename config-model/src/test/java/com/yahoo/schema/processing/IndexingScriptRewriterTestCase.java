@@ -18,7 +18,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -105,7 +105,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
 
     @Test
     void testDerivingFromSimple() throws Exception {
-        assertIndexing(Arrays.asList("clear_state | guard { input access | attribute access; }",
+        assertIndexing(List.of("clear_state | guard { input access | attribute access; }",
                         "clear_state | guard { input category | split \";\" | attribute category_arr; }",
                         "clear_state | guard { input category | tokenize | index category; }",
                         "clear_state | guard { input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
@@ -127,8 +127,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     @Test
     void testIndexRewrite() throws Exception {
         assertIndexing(
-                Arrays.asList("clear_state | guard { input title_src | lowercase | normalize | " +
-                        "                      tokenize | index title; }",
+                List.of("clear_state | guard { input title_src | lowercase | normalize | tokenize | index title; }",
                         "clear_state | guard { input title_src | summary title_s; }"),
                 ApplicationBuilder.buildFromFile("src/test/examples/indexrewrite.sd"));
     }

@@ -21,7 +21,6 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -489,7 +488,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
 
         private DocprocClusterSpec(String name, DocprocChainSpec ... chains) {
             this.name = name;
-            this.chains.addAll(Arrays.asList(chains));
+            this.chains.addAll(List.of(chains));
         }
     }
 
@@ -500,7 +499,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
 
         private DocprocChainSpec(String name, String ... inherits) {
             this.name = name;
-            this.inherits.addAll(Arrays.asList(inherits));
+            this.inherits.addAll(List.of(inherits));
         }
     }
 
@@ -542,7 +541,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
     }
 
     public static List<String> generateSchemas(String ... sdNames) {
-        return generateSchemas(Arrays.asList(sdNames));
+        return generateSchemas(List.of(sdNames));
     }
 
     public static List<String> generateSchemas(List<String> sdNames) {

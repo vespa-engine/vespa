@@ -12,7 +12,6 @@ import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.TemporarySDField;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,9 +72,8 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
     }
 
     private static void assertOrder(List<String> expectedSearchOrder, List<String> inputNames) {
-        inputNames.sort(String::compareTo);
         Map<String, Schema> schemas = createSchemas();
-        List<Schema> inputSchemas = inputNames.stream()
+        List<Schema> inputSchemas = inputNames.stream().sorted()
                                               .map(schemas::get)
                                               .map(Objects::requireNonNull)
                                               .toList();
@@ -100,44 +98,44 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
 
     @Test
     void testPerfectOrderingIsKept() {
-        assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                Arrays.asList("grandParent", "mother", "father", "daughter", "son", "product", "pc", "alone"));
+        assertOrder(List.of("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
+                List.of("grandParent", "mother", "father", "daughter", "son", "product", "pc", "alone"));
     }
 
     @Test
     void testOneLevelReordering() {
-        assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                Arrays.asList("grandParent", "daughter", "son", "mother", "father", "pc", "product", "alone"));
+        assertOrder(List.of("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
+                List.of("grandParent", "daughter", "son", "mother", "father", "pc", "product", "alone"));
     }
 
     @Test
     void testMultiLevelReordering() {
-        assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                Arrays.asList("daughter", "son", "mother", "father", "grandParent", "pc", "product", "alone"));
+        assertOrder(List.of("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
+                List.of("daughter", "son", "mother", "father", "grandParent", "pc", "product", "alone"));
     }
 
     @Test
     void testAloneIsKeptInPlaceWithMultiLevelReordering() {
-        assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                Arrays.asList("alone", "daughter", "son", "mother", "father", "grandParent", "pc", "product"));
+        assertOrder(List.of("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
+                List.of("alone", "daughter", "son", "mother", "father", "grandParent", "pc", "product"));
     }
 
     @Test
     void testPartialMultiLevelReordering() {
-        assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                Arrays.asList("daughter", "grandParent", "mother", "son", "father", "product", "pc", "alone"));
+        assertOrder(List.of("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
+                List.of("daughter", "grandParent", "mother", "son", "father", "product", "pc", "alone"));
     }
 
     @Test
     void testMultilevelReorderingAccrossHierarchies() {
-        assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
-                Arrays.asList("daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
+        assertOrder(List.of("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "son"),
+                List.of("daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
     }
 
     @Test
     void referees_are_ordered_before_referrer() {
-        assertOrder(Arrays.asList("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "accessory-pc", "son"),
-                Arrays.asList("accessory-pc", "daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
+        assertOrder(List.of("alone", "grandParent", "mother", "father", "daughter", "product", "pc", "accessory-pc", "son"),
+                List.of("accessory-pc", "daughter", "pc", "son", "mother", "grandParent", "father", "product", "alone"));
     }
 
 

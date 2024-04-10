@@ -54,7 +54,7 @@ public class StartupCommandChangeValidatorTest {
 
     private static MockRoot createRootWithChildren(TreeConfigProducer<?>... children) {
         MockRoot root = new MockRoot();
-        Arrays.asList(children).forEach(root::addChild);
+        List.of(children).forEach(root::addChild);
         root.freezeModelTopology();
         return root;
     }
