@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +24,7 @@ import static java.util.Collections.emptyList;
  */
 public class Notifications {
 
-    private static final Notifications none = new Notifications(Collections.emptyMap(), Collections.emptyMap());
+    private static final Notifications none = new Notifications(Map.of(), Map.of());
     public static Notifications none() { return none; }
 
     private final Map<When, List<String>> emailAddresses;

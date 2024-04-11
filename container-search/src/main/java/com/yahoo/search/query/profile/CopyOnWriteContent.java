@@ -66,7 +66,7 @@ public class CopyOnWriteContent extends FreezableClass implements Cloneable {
     public void freeze() {
         // Freeze this
         if (unmodifiableMap==null)
-            unmodifiableMap= map!=null ? Collections.unmodifiableMap(map) : Collections.<String, Object>emptyMap();
+            unmodifiableMap= map!=null ? Collections.unmodifiableMap(map) : Map.of();
         map=null; // just to keep the states simpler
 
         // Freeze content
@@ -119,7 +119,7 @@ public class CopyOnWriteContent extends FreezableClass implements Cloneable {
     //------- Content access -------------------------------------------------------
 
     public Map<String,Object> unmodifiableMap() {
-        if (isEmpty()) return Collections.emptyMap();
+        if (isEmpty()) return Map.of();
         if (map==null) // in COPYONWRITE or FROZEN state
             return unmodifiableMap;
         // In WRITABLE state: Create unmodifiable wrapper if necessary and return it

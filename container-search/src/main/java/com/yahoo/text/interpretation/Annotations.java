@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text.interpretation;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +27,7 @@ public class Annotations {
 
     public Map<String,Object> getMap() {
         if (annotations == null) {
-            return Collections.emptyMap();
+            return Map.of();
         } else {
             return annotations;
         }

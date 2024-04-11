@@ -5,11 +5,9 @@ import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.messagebus.network.NetworkMultiplexer;
 import com.yahoo.messagebus.shared.NullNetwork;
-import com.yahoo.vespa.config.content.DistributionConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;

@@ -333,7 +333,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     public void setFillable() {
         if (filled == null) {
-            filled = Collections.emptySet();
+            filled = Set.of();
             unmodifiableFilled = filled;
         }
     }
@@ -347,7 +347,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     public void setFilled(String summaryClass) {
         if (filled == null || filled.isEmpty()) {
-            filled = Collections.singleton(summaryClass);
+            filled = Set.of(summaryClass);
             unmodifiableFilled = filled;
         } else if (filled.size() == 1) {
             filled = new HashSet<>(filled);
@@ -483,7 +483,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private Map<String, Object> getUnmodifiableFieldMap() {
         if (unmodifiableFieldMap == null) {
             if (fields == null) {
-                return Collections.emptyMap();
+                return Map.of();
             } else {
                 unmodifiableFieldMap = Collections.unmodifiableMap(fields);
             }
@@ -574,12 +574,12 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Attach some data to this hit for this searcher */
     public void setSearcherSpecificMetaData(Searcher searcher, Object data) {
         if (searcherSpecificMetaData == null) {
-            searcherSpecificMetaData = Collections.singletonMap(searcher, data);
+            searcherSpecificMetaData = Map.of(searcher, data);
         } else {
             if (searcherSpecificMetaData.size() == 1) {
                 Object tmp = searcherSpecificMetaData.get(searcher);
                 if (tmp != null) {
-                    searcherSpecificMetaData = Collections.singletonMap(searcher, data);
+                    searcherSpecificMetaData = Map.of(searcher, data);
                 } else {
                     searcherSpecificMetaData = new TreeMap<>(searcherSpecificMetaData);
                     searcherSpecificMetaData.put(searcher, data);

@@ -331,7 +331,7 @@ public class PageTemplateXMLReader {
 
     private Map<String,String> readParameters(Element containingElement) {
         List<Element> parameterElements=XML.getChildren(containingElement,"parameter");
-        if (parameterElements.size()==0) return Collections.emptyMap(); // Shortcut
+        if (parameterElements.size()==0) return Map.of(); // Shortcut
 
         Map<String,String> parameters=new LinkedHashMap<>();
         for (Element parameter : parameterElements) {

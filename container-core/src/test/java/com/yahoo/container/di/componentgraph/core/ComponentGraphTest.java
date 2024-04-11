@@ -21,9 +21,9 @@ import com.yahoo.vespa.config.ConfigKey;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -480,7 +480,7 @@ public class ComponentGraphTest {
         ComponentGraph graph = new ComponentGraph();
         graph.add(mockComponentNodeWithId(ExecutorProvider.class, "dummyId"));
         graph.complete();
-        graph.setAvailableConfigs(Collections.emptyMap());
+        graph.setAvailableConfigs(Map.of());
         return graph;
     }
 
@@ -607,7 +607,7 @@ public class ComponentGraphTest {
     }
 
     public static class ExecutorProvider implements Provider<Executor> {
-        private Executor executor = Executors.newSingleThreadExecutor();
+        private final Executor executor = Executors.newSingleThreadExecutor();
 
         public Executor get() {
             return executor;

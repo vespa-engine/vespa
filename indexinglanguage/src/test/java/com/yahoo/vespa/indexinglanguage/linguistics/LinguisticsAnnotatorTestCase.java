@@ -244,11 +244,11 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     private static void assertAnnotations(SpanTree expected, String value, Token... tokens) {
-        assertAnnotations(expected, value, new AnnotatorConfig(), newLinguistics(Arrays.asList(tokens), Collections.emptyMap()));
+        assertAnnotations(expected, value, new AnnotatorConfig(), newLinguistics(Arrays.asList(tokens), Map.of()));
     }
 
     private static void assertAnnotations(SpanTree expected, String value, AnnotatorConfig config, Token... tokens) {
-        assertAnnotations(expected, value, config, newLinguistics(Arrays.asList(tokens), Collections.emptyMap()));
+        assertAnnotations(expected, value, config, newLinguistics(Arrays.asList(tokens), Map.of()));
     }
 
     private static void assertAnnotations(SpanTree expected, String str, AnnotatorConfig config, Linguistics linguistics) {

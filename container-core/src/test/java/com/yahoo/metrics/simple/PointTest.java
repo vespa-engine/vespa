@@ -3,8 +3,8 @@ package com.yahoo.metrics.simple;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -15,7 +15,7 @@ public class PointTest {
 
     @Test
     void testPointEquality() {
-        Point a = new Point(Collections.emptyMap());
+        Point a = new Point(Map.of());
         Point b = new Point(new HashMap<>(0));
         assertEquals(a.hashCode(), b.hashCode());
         assertEquals(a, b);

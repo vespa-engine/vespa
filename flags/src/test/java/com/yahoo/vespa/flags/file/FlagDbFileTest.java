@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,7 +67,7 @@ public class FlagDbFileTest {
         assertThat(anotherReadDataMap, IsMapContaining.hasKey(id3));
         assertThat(anotherReadDataMap.get(id1).serializeToJson(), equalTo("{\"id\":\"id1\",\"attributes\":{\"hostname\":\"h1\"}}"));
 
-        assertThat(flagDb.sync(Collections.emptyMap()), equalTo(true));
+        assertThat(flagDb.sync(Map.of()), equalTo(true));
         assertThat(getDbContent(), equalTo("{\"flags\":[]}"));
     }
 

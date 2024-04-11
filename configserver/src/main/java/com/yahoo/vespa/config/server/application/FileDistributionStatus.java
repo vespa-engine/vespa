@@ -16,7 +16,6 @@ import com.yahoo.vespa.config.server.http.JSONResponse;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +74,7 @@ public class FileDistributionStatus extends AbstractComponent {
         if (request.isError()) {
             return new HostStatus(hostname,
                                   Status.UNKNOWN,
-                                  Collections.emptyMap(),
+                                  Map.of(),
                                   "error: " + request.errorMessage() + "(" + request.errorCode() + ")");
         } else {
             Map<String, Double> fileReferenceStatuses = new HashMap<>();

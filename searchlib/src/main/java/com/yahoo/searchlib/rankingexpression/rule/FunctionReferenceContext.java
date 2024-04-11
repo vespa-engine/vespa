@@ -4,8 +4,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,12 +23,12 @@ public class FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext() {
-        this(Collections.emptyList());
+        this(List.of());
     }
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext(Collection<ExpressionFunction> functions) {
-        this(toMap(functions), Collections.emptyMap());
+        this(toMap(functions), Map.of());
     }
 
     public FunctionReferenceContext(Collection<ExpressionFunction> functions, Map<String, String> bindings) {

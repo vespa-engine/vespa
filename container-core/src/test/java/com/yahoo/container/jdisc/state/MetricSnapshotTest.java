@@ -3,8 +3,8 @@ package com.yahoo.container.jdisc.state;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,8 +29,8 @@ public class MetricSnapshotTest {
 
     @Test
     void testEquality() {
-        assertEquals(Collections.unmodifiableMap(new HashMap(0)).hashCode(), Collections.emptyMap().hashCode());
-        assertEquals(Collections.unmodifiableMap(new HashMap(0)), Collections.emptyMap());
+        assertEquals(new HashMap(0).hashCode(), Map.of().hashCode());
+        assertEquals(new HashMap(0), Map.of());
     }
 
 }

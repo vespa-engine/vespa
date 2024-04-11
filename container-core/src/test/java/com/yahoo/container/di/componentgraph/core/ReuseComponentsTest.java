@@ -16,7 +16,7 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleCompo
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -68,12 +68,12 @@ public class ReuseComponentsTest {
         Class<ComponentTakingConfig> componentClass = ComponentTakingConfig.class;
 
         ComponentGraph graph = buildGraph(componentClass);
-        graph.setAvailableConfigs(Collections.singletonMap(new ConfigKey<>(TestConfig.class, "component"),
+        graph.setAvailableConfigs(Map.of(new ConfigKey<>(TestConfig.class, "component"),
                 ConfigGetter.getConfig(TestConfig.class, "raw: stringVal \"oldConfig\"")));
         ComponentTakingConfig instance = getComponent(graph, componentClass);
 
         ComponentGraph newGraph = buildGraph(componentClass);
-        newGraph.setAvailableConfigs(Collections.singletonMap(new ConfigKey<>(TestConfig.class, "component"),
+        newGraph.setAvailableConfigs(Map.of(new ConfigKey<>(TestConfig.class, "component"),
                 ConfigGetter.getConfig(TestConfig.class, "raw: stringVal \"newConfig\"")));
         newGraph.reuseNodes(graph);
         ComponentTakingConfig instance2 = getComponent(newGraph, componentClass);
@@ -98,7 +98,7 @@ public class ReuseComponentsTest {
             graph.add(injectedComponent);
 
             graph.complete();
-            graph.setAvailableConfigs(Collections.singletonMap(new ConfigKey<>(TestConfig.class, configId),
+            graph.setAvailableConfigs(Map.of(new ConfigKey<>(TestConfig.class, configId),
                     ConfigGetter.getConfig(TestConfig.class, "raw: stringVal \"" + config + "\"")));
 
             return graph;
@@ -132,7 +132,7 @@ public class ReuseComponentsTest {
             }
 
             graph.complete();
-            graph.setAvailableConfigs(Collections.emptyMap());
+            graph.setAvailableConfigs(Map.of());
             return graph;
         };
 
@@ -163,7 +163,7 @@ public class ReuseComponentsTest {
             graph.add(injectedComponent);
 
             graph.complete();
-            graph.setAvailableConfigs(Collections.singletonMap(new ConfigKey<>(TestConfig.class, configId),
+            graph.setAvailableConfigs(Map.of(new ConfigKey<>(TestConfig.class, configId),
                     ConfigGetter.getConfig(TestConfig.class, "raw: stringVal \"" + config + "\"")));
 
             return graph;
@@ -188,7 +188,7 @@ public class ReuseComponentsTest {
             ComponentGraph graph = new ComponentGraph();
             graph.add(mockComponentNode(ComponentTakingExecutor.class, "dummyId"));
             graph.complete(ComponentGraphTest.singletonExecutorInjector);
-            graph.setAvailableConfigs(Collections.emptyMap());
+            graph.setAvailableConfigs(Map.of());
             return graph;
         };
 
@@ -224,7 +224,7 @@ public class ReuseComponentsTest {
 
     private void completeNode(ComponentNode node) {
         node.setArguments(new Object[0]);
-        node.setAvailableConfigs(Collections.emptyMap());
+        node.setAvailableConfigs(Map.of());
     }
 
     private ComponentGraph buildGraph(Class<?> componentClass) {
@@ -237,7 +237,7 @@ public class ReuseComponentsTest {
 
     private ComponentGraph buildGraphAndSetNoConfigs(Class<?> componentClass) {
         ComponentGraph g = buildGraph(componentClass);
-        g.setAvailableConfigs(Collections.emptyMap());
+        g.setAvailableConfigs(Map.of());
         return g;
     }
 

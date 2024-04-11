@@ -3,10 +3,11 @@ package com.yahoo.container.jdisc.state;
 
 import com.yahoo.jdisc.Metric;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
+
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * A context implementation whose identity is the key and values such that this can be used as
@@ -41,16 +42,10 @@ public final class StateMetricContext implements MetricDimensions, Metric.Contex
     }
 
     public static StateMetricContext newInstance(Map<String, ?> properties) {
-        Map<String, String> data;
-        if (properties != null) {
-            data = new HashMap<>(properties.size());
-            for (Map.Entry<String, ?> entry : properties.entrySet()) {
-                data.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
-            }
-            data = Collections.unmodifiableMap(data);
-        } else {
-            data = Collections.emptyMap();
-        }
+        Map<String, String> data = (properties != null)
+                ? properties.entrySet().stream().collect(
+                        toUnmodifiableMap(Map.Entry::getKey, e -> Objects.requireNonNullElse(e.getValue(), "").toString()))
+                : Map.of();
         return new StateMetricContext(data);
     }
 

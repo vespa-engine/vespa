@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -53,7 +52,7 @@ public class ContentClusterHtmlRendererTest {
                 statsAggregator,
                 1.0,
                 10,
-                Collections.emptyMap(),
+                Map.of(),
                 eventLog,
                 "pathPrefix",
                 "name");

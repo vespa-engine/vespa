@@ -7,7 +7,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +33,7 @@ public class ImportedMlModels {
 
     /** Create a null imported models */
     public ImportedMlModels() {
-        importedModels = Collections.emptyMap();
+        importedModels = Map.of();
     }
 
     public ImportedMlModels(File modelsDirectory, ExecutorService executor, Collection<MlModelImporter> importers) {
@@ -53,7 +52,7 @@ public class ImportedMlModels {
                 skippedModels.put(name, Exceptions.toMessageString(e));
             }
         });
-        importedModels = Collections.unmodifiableMap(models);
+        importedModels = Map.copyOf(models);
     }
 
     /**
