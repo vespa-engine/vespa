@@ -23,7 +23,6 @@ import com.yahoo.search.searchchain.Execution;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -145,7 +144,7 @@ public class PageTemplateSearcher extends Searcher {
         // If none set, just return the default or null if none
         if (pageIds == null) {
             PageElement defaultPage=templateRegistry.getComponent("default");
-            return (defaultPage == null ? Collections.<PageElement>emptyList() : Collections.singletonList(defaultPage));
+            return (defaultPage == null ? List.of() : List.of(defaultPage));
         }
 
         // Resolve the id list to page templates

@@ -8,7 +8,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
@@ -39,7 +38,7 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
 
     @Override
     public List<ExpressionNode> children() {
-        return Collections.singletonList(generator);
+        return List.of(generator);
     }
 
     @Override

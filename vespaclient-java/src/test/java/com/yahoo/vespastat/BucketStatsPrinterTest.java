@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,7 +27,7 @@ public class BucketStatsPrinterTest {
     public void mockBucketStatsRetriever() throws BucketStatsException {
         retriever = mock(BucketStatsRetriever.class);
         when(retriever.getBucketIdForType(any(), any())).thenReturn(new BucketId(0x42));
-        when(retriever.retrieveBucketList(any(), any())).thenReturn(Collections.emptyList());
+        when(retriever.retrieveBucketList(any(), any())).thenReturn(List.of());
         when(retriever.retrieveBucketStats(any(), any(), any(), any())).thenReturn("");
     }
 
@@ -79,7 +78,7 @@ public class BucketStatsPrinterTest {
     void testShouldPrintBucketStats() throws BucketStatsException {
         String dummyBucketStats = "dummystats";
         GetBucketListReply.BucketInfo bucketInfo = new GetBucketListReply.BucketInfo(new BucketId(0), "dummy");
-        when(retriever.retrieveBucketList(any(), any())).thenReturn(Collections.singletonList(bucketInfo));
+        when(retriever.retrieveBucketList(any(), any())).thenReturn(List.of(bucketInfo));
         when(retriever.retrieveBucketStats(any(), any(), any(), any())).thenReturn(dummyBucketStats);
 
         String output = retreiveAndPrintBucketStats(ClientParameters.SelectionType.USER, "1234", true);

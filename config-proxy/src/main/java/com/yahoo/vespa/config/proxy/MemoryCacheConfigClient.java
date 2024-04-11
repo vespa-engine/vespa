@@ -6,7 +6,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -56,7 +55,7 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
 
     @Override
     public List<String> getSourceConnections() {
-        return Collections.singletonList("N/A");
+        return List.of("N/A");
     }
 
     @Override

@@ -157,7 +157,7 @@ public class CuratorDb {
      * @return the nodes in their persisted state
      */
     public List<Node> writeTo(List<Node> nodes, Agent agent, Optional<String> reason) {
-        if (nodes.isEmpty()) return Collections.emptyList();
+        if (nodes.isEmpty()) return List.of();
 
         List<Node> writtenNodes = new ArrayList<>(nodes.size());
 
@@ -191,7 +191,7 @@ public class CuratorDb {
     }
 
     public Node writeTo(Node.State toState, Node node, Agent agent, Optional<String> reason) {
-        return writeTo(toState, Collections.singletonList(node), agent, reason).get(0);
+        return writeTo(toState, List.of(node), agent, reason).get(0);
     }
 
     /**

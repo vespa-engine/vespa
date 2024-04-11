@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,7 +42,7 @@ class HttpFeedClientTest {
             @Override public void await() { throw new UnsupportedOperationException(); }
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { return dispatch.get().apply(documentId, request); }
         }
-        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))).setDryrun(true),
+        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setDryrun(true),
                                                new DryrunCluster(),
                                                new MockRequestStrategy());
 
@@ -214,7 +214,7 @@ class HttpFeedClientTest {
     void testHandshake() {
         // dummy:123 does not exist, and results in a host-not-found exception.
         FeedException exception = assertThrows(FeedException.class,
-                                                   () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123")))));
+                                                   () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))));
         String message = exception.getMessage();
         assertTrue(message.startsWith("failed handshake with server after "), message);
         assertTrue(message.contains("java.net.UnknownHostException"), message);
@@ -237,19 +237,19 @@ class HttpFeedClientTest {
         // Old server, and speed-test.
         assertEquals("server does not support speed test; upgrade to a newer version",
                      assertThrows(FeedException.class,
-                                  () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))).setSpeedTest(true),
+                                  () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setSpeedTest(true),
                                                            cluster,
                                                            null))
                              .getMessage());
 
         // Old server.
-        new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))),
+        new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
                            cluster,
                            null);
 
         // New server.
         response.set(okResponse);
-        new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))),
+        new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
                            cluster,
                            null);
     }

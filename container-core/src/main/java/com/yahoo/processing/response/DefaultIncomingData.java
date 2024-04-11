@@ -5,7 +5,6 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.concurrent.CompletableFutures;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -60,13 +59,13 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
     /** Adds new data and marks this as completed */
     @Override
     public synchronized void addLast(DATATYPE data) {
-        addLast(Collections.singletonList(data));
+        addLast(List.of(data));
     }
 
     /** Adds new data without completing this */
     @Override
     public synchronized void add(DATATYPE data) {
-        add(Collections.singletonList(data));
+        add(List.of(data));
     }
 
     /** Adds new data and marks this as completed */

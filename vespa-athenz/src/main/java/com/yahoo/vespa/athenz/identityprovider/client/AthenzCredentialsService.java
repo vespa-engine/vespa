@@ -123,9 +123,9 @@ class AthenzCredentialsService {
 
     private Optional<AthenzCredentials> tryReadCredentialsFromDisk() {
         Optional<PrivateKey> privateKey = SiaUtils.readPrivateKeyFile(VESPA_SIA_DIRECTORY, tenantIdentity);
-        if (!privateKey.isPresent()) return Optional.empty();
+        if (privateKey.isEmpty()) return Optional.empty();
         Optional<X509Certificate> certificate = SiaUtils.readCertificateFile(VESPA_SIA_DIRECTORY, tenantIdentity);
-        if (!certificate.isPresent()) return Optional.empty();
+        if (certificate.isEmpty()) return Optional.empty();
         if (isExpired(certificate.get())) {
             return Optional.empty();
         }

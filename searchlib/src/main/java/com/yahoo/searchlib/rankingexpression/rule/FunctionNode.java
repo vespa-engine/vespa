@@ -11,7 +11,6 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Join;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +33,7 @@ public final class FunctionNode extends CompositeNode {
     public FunctionNode(Function function, ExpressionNode argument) {
         if (function.arity() != 1) throw new IllegalArgumentException(function + " is not unary");
         this.function = function;
-        this.arguments = new Arguments(Collections.singletonList(argument));
+        this.arguments = new Arguments(List.of(argument));
     }
 
     /** Creates a binary function node */

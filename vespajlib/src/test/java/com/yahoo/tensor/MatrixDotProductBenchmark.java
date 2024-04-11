@@ -9,7 +9,6 @@ import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -69,7 +68,7 @@ public class MatrixDotProductBenchmark {
                         .value(random.nextDouble());
             }
         }
-        return Collections.singletonList(builder.build());
+        return List.of(builder.build());
     }
 
     private static void addDimension(TensorType.Builder builder, String name, TensorType.Dimension.Type type, int size) {

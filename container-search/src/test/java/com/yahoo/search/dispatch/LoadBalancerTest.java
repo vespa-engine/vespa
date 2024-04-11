@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -238,7 +237,7 @@ public class LoadBalancerTest {
     }
 
     private GroupStatus newGroupStatus(int id) {
-        Group dummyGroup = new Group(id, Collections.emptyList()) {
+        Group dummyGroup = new Group(id, List.of()) {
             @Override
             public boolean hasSufficientCoverage() {
                 return true;

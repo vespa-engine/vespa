@@ -48,7 +48,7 @@ public class MockModel implements Model {
         hostnames.forEach(hostname -> {
             ServiceInfo configProxy = createServiceInfo(hostname, "configproxy", "configproxy",
                                             ClusterSpec.Type.admin, rpcPort, "rpc");
-            hostInfos.add(new HostInfo(hostname, Collections.singletonList(configProxy)));
+            hostInfos.add(new HostInfo(hostname, List.of(configProxy)));
         });
         return new MockModel(hostInfos);
     }

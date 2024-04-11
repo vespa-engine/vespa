@@ -15,7 +15,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,7 +194,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     /** Sets client SSL certificate/key */
     @Override
     public FeedClientBuilderImpl setCertificate(X509Certificate certificate, PrivateKey privateKey) {
-        return setCertificate(Collections.singletonList(certificate), privateKey);
+        return setCertificate(List.of(certificate), privateKey);
     }
 
     @Override

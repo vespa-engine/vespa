@@ -3,7 +3,6 @@ package com.yahoo.tensor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -50,7 +49,7 @@ public class TensorTypeParser {
             dimensionsSpec = specBody.substring(parenthesisIndex + 1);
         }
 
-        if (dimensionsSpec.isEmpty()) return new TensorType.Builder(valueType, Collections.emptyList()).build();
+        if (dimensionsSpec.isEmpty()) return new TensorType.Builder(valueType, List.of()).build();
 
         List<TensorType.Dimension> dimensions = new ArrayList<>();
         for (String element : dimensionsSpec.split(",")) {

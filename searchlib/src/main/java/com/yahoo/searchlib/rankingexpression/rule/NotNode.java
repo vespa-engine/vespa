@@ -7,7 +7,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
@@ -31,7 +30,7 @@ public class NotNode extends BooleanNode {
 
     @Override
     public List<ExpressionNode> children() {
-        return Collections.singletonList(value);
+        return List.of(value);
     }
 
     @Override

@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -104,7 +103,7 @@ public class RankProfilesConfigImporter {
             if (externalReference.isPresent()) {
                 RankingExpression expression = largeExpressions.get(property.value());
                 ExpressionFunction function = new ExpressionFunction(externalReference.get().functionName(),
-                        Collections.emptyList(),
+                        List.of(),
                         expression);
 
                 if (externalReference.get().isFree()) // make available in model under configured name
@@ -115,7 +114,7 @@ public class RankProfilesConfigImporter {
             else if (reference.isPresent()) {
                 RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
                 ExpressionFunction function = new ExpressionFunction(reference.get().functionName(),
-                                                                     Collections.emptyList(),
+                                                                     List.of(),
                                                                      expression);
 
                 if (reference.get().isFree()) // make available in model under configured name

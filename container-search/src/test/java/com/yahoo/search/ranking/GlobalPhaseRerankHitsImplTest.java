@@ -35,7 +35,7 @@ public class GlobalPhaseRerankHitsImplTest {
         }
     }
     static FunEvalSpec makeConstSpec(double constValue) {
-        return new FunEvalSpec(() -> new EvalSum(constValue), Collections.emptyList(), Collections.emptyList());
+        return new FunEvalSpec(() -> new EvalSum(constValue), List.of(), List.of());
     }
     static FunEvalSpec makeSumSpec(List<String> fromQuery, List<String> fromMF) {
         List<MatchFeatureInput> mfList = new ArrayList<>();
@@ -175,15 +175,15 @@ public class GlobalPhaseRerankHitsImplTest {
     }
     @Test void partialRerankWithRescaling() {
         var setup = setup().rerank(2).eval(makeConstSpec(3.0)).build();
-        var query = makeQuery(Collections.emptyList());
+        var query = makeQuery(List.of());
         var result = makeResult(query, List.of(hit("a", 3), hit("b", 4), hit("c", 5), hit("d", 6)));
         var expect = Expect.make(List.of(hit("a", 1), hit("b", 2), hit("c", 3), hit("d", 3)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
     }
     @Test void matchFeaturesCanBePartiallyHidden() {
-        var setup = setup().eval(makeSumSpec(Collections.emptyList(), List.of("public_value", "private_value"))).hide("private_value").build();
-        var query = makeQuery(Collections.emptyList());
+        var setup = setup().eval(makeSumSpec(List.of(), List.of("public_value", "private_value"))).hide("private_value").build();
+        var query = makeQuery(List.of());
         var factory = new HitFactory(List.of("public_value", "private_value"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("public_value", 2), value("private_value", 3))),
                 factory.create("b", 2, List.of(value("public_value", 5), value("private_value", 7)))));
@@ -194,8 +194,8 @@ public class GlobalPhaseRerankHitsImplTest {
         verifyDoesNotHaveMF(result, "private_value");
     }
     @Test void matchFeaturesCanBeRemoved() {
-        var setup = setup().eval(makeSumSpec(Collections.emptyList(), List.of("private_value"))).hide("private_value").build();
-        var query = makeQuery(Collections.emptyList());
+        var setup = setup().eval(makeSumSpec(List.of(), List.of("private_value"))).hide("private_value").build();
+        var query = makeQuery(List.of());
         var factory = new HitFactory(List.of("private_value"));
         var result = makeResult(query, List.of(factory.create("a", 1, List.of(value("private_value", 3))),
                 factory.create("b", 2, List.of(value("private_value", 7)))));
@@ -227,7 +227,7 @@ public class GlobalPhaseRerankHitsImplTest {
         verifyHasMF(result, "bar");
     }
     @Test void queryFeaturesCanBeDefaultValues() {
-        var setup = setup().eval(makeSumSpec(List.of("foo", "bar"), Collections.emptyList()))
+        var setup = setup().eval(makeSumSpec(List.of("foo", "bar"), List.of()))
                 .addDefault("query(bar)", Tensor.from(5.0)).build();
         var query = makeQuery(List.of(value("query(foo)", 7)));
         var result = makeResult(query, List.of(hit("a", 1)));
@@ -236,7 +236,7 @@ public class GlobalPhaseRerankHitsImplTest {
         expect.verifyScores(result);
     }
     @Test void withNormalizer() {
-        var setup = setup().eval(makeSumSpec(Collections.emptyList(), List.of("bar")))
+        var setup = setup().eval(makeSumSpec(List.of(), List.of("bar")))
                 .addNormalizer(makeNormalizer("foo", List.of(115.0, 65.0, 55.0, 45.0, 15.0), makeSumSpec(List.of("x"), List.of("bar")))).build();
         var query = makeQuery(List.of(value("query(x)", 5)));
         var factory = new HitFactory(List.of("bar"));

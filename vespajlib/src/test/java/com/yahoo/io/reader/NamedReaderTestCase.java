@@ -6,7 +6,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.nio.CharBuffer;
-import java.util.Collections;
 import java.util.List;
 
 import com.yahoo.protect.ClassValidator;
@@ -30,7 +29,7 @@ public class NamedReaderTestCase {
         assertEquals("test1",r.getName());
         assertEquals("test1",r.toString());
         assertEquals(stringReader,r.getReader());
-        NamedReader.closeAll(Collections.singletonList(r));
+        NamedReader.closeAll(List.of(r));
         NamedReader.closeAll(null); // noop, nor exception
     }
 

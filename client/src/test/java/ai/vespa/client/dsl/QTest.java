@@ -4,9 +4,9 @@ package ai.vespa.client.dsl;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -498,7 +498,7 @@ class QTest {
 
     @Test
     void use_contains_instead_of_contains_equiv_when_input_size_is_1() {
-        String q = Q.p("f1").containsEquiv(Collections.singletonList("p1"))
+        String q = Q.p("f1").containsEquiv(List.of("p1"))
                 .build();
 
         assertEquals(q, "yql=select * from sources * where f1 contains \"p1\"");
@@ -506,16 +506,16 @@ class QTest {
 
     @Test
     void contains_phrase_near_onear_equiv_empty_list_should_throw_illegal_argument_exception() {
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsPhrase(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsPhrase(List.of())
                 .build());
 
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsNear(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsNear(List.of())
                 .build());
 
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsOnear(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsOnear(List.of())
                 .build());
 
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsEquiv(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsEquiv(List.of())
                 .build());
     }
 

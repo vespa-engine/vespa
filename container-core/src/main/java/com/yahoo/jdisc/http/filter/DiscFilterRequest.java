@@ -242,7 +242,7 @@ public class DiscFilterRequest {
     public List<String> getHeadersAsList(String name) {
         List<String> values = parent.headers().get(name);
         if(values == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         return parent.headers().get(name);
     }
@@ -401,7 +401,7 @@ public class DiscFilterRequest {
         return Optional.ofNullable(parent.context().get(RequestUtils.JDISC_REQUEST_X509CERT))
                 .map(X509Certificate[].class::cast)
                 .map(Arrays::asList)
-                .orElse(Collections.emptyList());
+                .orElse(List.of());
     }
 
     public void setUserRoles(String[] roles) {

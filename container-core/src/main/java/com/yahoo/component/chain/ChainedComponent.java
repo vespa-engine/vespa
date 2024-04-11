@@ -13,7 +13,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -90,7 +89,7 @@ public abstract class ChainedComponent extends AbstractComponent {
                 Object values = annotationClass.getMethod("value").invoke(annotation);
                 return Arrays.asList((String[])values);
             }
-            return Collections.emptyList();
+            return List.of();
 
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);

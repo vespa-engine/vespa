@@ -7,7 +7,6 @@ import com.yahoo.tensor.functions.PrimitiveTensorFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,7 +33,7 @@ public class VariableTensor<NAMETYPE extends Name> extends PrimitiveTensorFuncti
     }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) { return this; }

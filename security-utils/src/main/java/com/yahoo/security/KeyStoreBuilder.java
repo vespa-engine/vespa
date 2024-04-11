@@ -15,8 +15,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Collections.singletonList;
-
 /**
  * @author bjorncs
  */
@@ -53,7 +51,7 @@ public class KeyStoreBuilder {
     }
 
     public KeyStoreBuilder withKeyEntry(String alias, PrivateKey privateKey, char[] password, X509Certificate certificate) {
-        return withKeyEntry(alias, privateKey, password, singletonList(certificate));
+        return withKeyEntry(alias, privateKey, password, List.of(certificate));
     }
 
     public KeyStoreBuilder withKeyEntry(String alias, PrivateKey privateKey, X509Certificate certificate) {

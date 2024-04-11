@@ -16,7 +16,7 @@ import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +82,7 @@ public class FutureDataTestCase {
     void testFutureData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
         AsyncProviderSearcher futureDataSource = new AsyncProviderSearcher();
-        Chain<Searcher> chain = new Chain<>(Collections.<Searcher>singletonList(futureDataSource));
+        Chain<Searcher> chain = new Chain<>(List.of(futureDataSource));
 
         // Execute
         Query query = new Query();

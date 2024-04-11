@@ -22,12 +22,11 @@ import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.processing.execution.chain.ChainRegistry;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static java.util.Collections.emptyList;
+import static java.util.List.of;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -158,7 +157,7 @@ public class FilterChainRepository extends AbstractComponent {
     }
 
     private static Object wrapIfSecurityFilter(Object filter) {
-        if (isSecurityFilter(filter)) return createSecurityChain(Collections.singletonList(filter));
+        if (isSecurityFilter(filter)) return createSecurityChain(List.of(filter));
         return filter;
     }
 

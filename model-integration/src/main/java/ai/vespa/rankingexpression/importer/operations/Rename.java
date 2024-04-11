@@ -7,7 +7,6 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -20,7 +19,7 @@ public class Rename extends IntermediateOperation {
     private String from, to;
 
     public Rename(String modelName, String from, String to, IntermediateOperation input) {
-        super(modelName, "rename", input != null ? List.of(input) : Collections.emptyList());
+        super(modelName, "rename", input != null ? List.of(input) : List.of());
         this.from = from;
         this.to = to;
     }

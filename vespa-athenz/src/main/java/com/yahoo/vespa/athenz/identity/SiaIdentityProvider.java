@@ -17,15 +17,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.cert.Certificate;
+
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
+
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * A {@link ServiceIdentityProvider} that provides the credentials stored on file system.

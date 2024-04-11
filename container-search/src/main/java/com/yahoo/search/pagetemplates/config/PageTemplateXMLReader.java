@@ -72,7 +72,7 @@ public class PageTemplateXMLReader {
             File file = new File(fileName);
             pageReader = new NamedReader(fileName,new FileReader(file));
             String firstName = file.getName().substring(0, file.getName().length() - 4);
-            return read(Collections.singletonList(pageReader), true).getComponent(firstName);
+            return read(List.of(pageReader), true).getComponent(firstName);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not read the page template '" + fileName + "'", e);
@@ -296,7 +296,7 @@ public class PageTemplateXMLReader {
             if ("item".equals(value.getNodeName()))
                 map.values().add(readPageElements(value));
             else
-                map.values().add(Collections.singletonList(readPageElement(value)));
+                map.values().add(List.of(readPageElement(value)));
         }
         return map;
     }
@@ -311,7 +311,7 @@ public class PageTemplateXMLReader {
             else if (alternative.getNodeName().equals("include")) // Implicit include
                 choice.alternatives().add(readInclude(alternative));
             else // Other implicit
-                choice.alternatives().add(Collections.singletonList(readPageElement(alternative)));
+                choice.alternatives().add(List.of(readPageElement(alternative)));
         }
         return choice;
     }
@@ -323,7 +323,7 @@ public class PageTemplateXMLReader {
                 if ("alternative".equals(alternative.getNodeName())) // Explicit alternative container
                     source.renderer().alternatives().addAll(readRenderers(XML.children(alternative)));
                 else // Implicit alternative - yes implicit and explicit may be combined
-                    source.renderer().alternatives().addAll(readRenderers(Collections.singletonList(alternative)));
+                    source.renderer().alternatives().addAll(readRenderers(List.of(alternative)));
             }
         }
     }

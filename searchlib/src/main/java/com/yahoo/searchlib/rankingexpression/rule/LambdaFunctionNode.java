@@ -9,7 +9,6 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Generate;
 
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -50,7 +49,7 @@ public class LambdaFunctionNode extends CompositeNode {
 
     @Override
     public List<ExpressionNode> children() {
-        return Collections.singletonList(functionExpression);
+        return List.of(functionExpression);
     }
 
     @Override

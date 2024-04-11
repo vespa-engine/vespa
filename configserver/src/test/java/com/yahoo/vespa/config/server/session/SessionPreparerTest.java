@@ -61,7 +61,6 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -192,7 +191,7 @@ public class SessionPreparerTest {
     public void require_exception_for_overlapping_host() throws IOException {
         FilesApplicationPackage app = getApplicationPackage(testApp);
         HostRegistry hostValidator = new HostRegistry();
-        hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
+        hostValidator.update(applicationId("foo"), List.of("mytesthost"));
         preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().applicationId(applicationId("default")).build(),
                          Optional.empty(), Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
     }
@@ -206,7 +205,7 @@ public class SessionPreparerTest {
         FilesApplicationPackage app = getApplicationPackage(testApp);
         HostRegistry hostValidator = new HostRegistry();
         ApplicationId applicationId = applicationId();
-        hostValidator.update(applicationId, Collections.singletonList("mytesthost"));
+        hostValidator.update(applicationId, List.of("mytesthost"));
         preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
                          Optional.empty(), Instant.now(), app.getAppDir(), app,
                          createSessionZooKeeperClient());

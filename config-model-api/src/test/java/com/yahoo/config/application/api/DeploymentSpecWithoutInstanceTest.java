@@ -16,7 +16,6 @@ import java.io.StringReader;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -599,7 +598,7 @@ public class DeploymentSpecWithoutInstanceTest {
     @Test
     public void emptyEndpoints() {
         var spec = DeploymentSpec.fromXml("<deployment><endpoints/></deployment>");
-        assertEquals(Collections.emptyList(), spec.requireInstance("default").endpoints());
+        assertEquals(List.of(), spec.requireInstance("default").endpoints());
     }
 
     @Test

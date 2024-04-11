@@ -11,7 +11,6 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
@@ -53,7 +52,7 @@ public class UnpackBitsNode extends CompositeNode {
 
     @Override
     public List<ExpressionNode> children() {
-        return Collections.singletonList(input);
+        return List.of(input);
     }
 
     private static record Meta(TensorType outputType, TensorType outputDenseType, String unpackDimension) {}

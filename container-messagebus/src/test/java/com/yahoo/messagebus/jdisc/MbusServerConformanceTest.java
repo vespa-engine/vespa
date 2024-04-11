@@ -24,7 +24,7 @@ import org.junit.Test;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -643,7 +643,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
 
         @Override
         public Iterable<ByteBuffer> newResponseContent() {
-            return Collections.emptyList();
+            return List.of();
         }
 
         @Override

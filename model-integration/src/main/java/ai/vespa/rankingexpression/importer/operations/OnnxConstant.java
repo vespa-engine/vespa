@@ -9,7 +9,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +30,7 @@ public class OnnxConstant extends IntermediateOperation {
         if (value instanceof TensorValue) {
             type = OrderedTensorType.fromSpec(value.type().toString()).rename(vespaName() + "_");
         } else {
-            type = OrderedTensorType.fromDimensionList(TensorType.Value.DOUBLE, Collections.emptyList());
+            type = OrderedTensorType.fromDimensionList(TensorType.Value.DOUBLE, List.of());
         }
         return type;
     }

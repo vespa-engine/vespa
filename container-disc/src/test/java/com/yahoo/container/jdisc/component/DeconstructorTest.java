@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,7 +32,7 @@ public class DeconstructorTest {
         deconstructor = new Deconstructor();
 
         var slowDeconstructComponent = new SlowDeconstructComponent();
-        deconstructor.deconstruct(0, List.of(slowDeconstructComponent), emptyList());
+        deconstructor.deconstruct(0, List.of(slowDeconstructComponent), List.of());
         deconstructor.shutdown();
         assertTrue(slowDeconstructComponent.destructed);
     }
@@ -41,7 +40,7 @@ public class DeconstructorTest {
     @Test
     void require_abstract_component_destructed() throws InterruptedException {
         TestAbstractComponent abstractComponent = new TestAbstractComponent();
-        deconstructor.deconstruct(0, List.of(abstractComponent), emptyList());
+        deconstructor.deconstruct(0, List.of(abstractComponent), List.of());
 
         waitForDeconstructToComplete(() -> abstractComponent.destructed);
         assertTrue(abstractComponent.destructed);
@@ -50,7 +49,7 @@ public class DeconstructorTest {
     @Test
     void require_provider_destructed() throws InterruptedException {
         TestProvider provider = new TestProvider();
-        deconstructor.deconstruct(0, List.of(provider), emptyList());
+        deconstructor.deconstruct(0, List.of(provider), List.of());
 
         waitForDeconstructToComplete(() -> provider.destructed);
         assertTrue(provider.destructed);
@@ -59,7 +58,7 @@ public class DeconstructorTest {
     @Test
     void require_shared_resource_released() throws InterruptedException {
         TestSharedResource sharedResource = new TestSharedResource();
-        deconstructor.deconstruct(0, List.of(sharedResource), emptyList());
+        deconstructor.deconstruct(0, List.of(sharedResource), List.of());
         waitForDeconstructToComplete(() -> sharedResource.released);
         assertTrue(sharedResource.released);
     }
@@ -68,7 +67,7 @@ public class DeconstructorTest {
     void bundles_are_uninstalled() throws InterruptedException {
         var bundle = new UninstallableMockBundle();
         // Done by executor, so it takes some time even with a 0 delay.
-        deconstructor.deconstruct(0, emptyList(), singleton(bundle));
+        deconstructor.deconstruct(0, List.of(), singleton(bundle));
 
         waitForDeconstructToComplete(() -> bundle.uninstalled);
         assertTrue(bundle.uninstalled);

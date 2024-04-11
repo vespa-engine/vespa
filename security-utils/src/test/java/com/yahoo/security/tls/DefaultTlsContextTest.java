@@ -18,7 +18,6 @@ import static com.yahoo.security.X509CertificateBuilder.generateRandomSerialNumb
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -38,7 +37,7 @@ public class DefaultTlsContextTest {
                 singleton(
                         new PeerPolicy(
                                 "dummy-policy",
-                                singletonList(RequiredPeerCredential.of(RequiredPeerCredential.Field.CN, "dummy")))));
+                                List.of(RequiredPeerCredential.of(RequiredPeerCredential.Field.CN, "dummy")))));
 
         DefaultTlsContext tlsContext =
                 DefaultTlsContext.of(

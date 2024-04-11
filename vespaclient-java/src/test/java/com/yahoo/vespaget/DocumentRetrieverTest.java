@@ -214,7 +214,7 @@ public class DocumentRetrieverTest {
                 .setCluster(cluster)
                 .build();
 
-        ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef(cluster)));
+        ClusterList clusterList = new ClusterList(List.of(new ClusterDef(cluster)));
 
         DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
         documentRetriever.retrieveDocuments();
@@ -230,7 +230,7 @@ public class DocumentRetrieverTest {
                     .setCluster("invalidclustername")
                     .build();
 
-            ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef("storage")));
+            ClusterList clusterList = new ClusterList(List.of(new ClusterDef("storage")));
 
             DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
             documentRetriever.retrieveDocuments();

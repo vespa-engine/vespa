@@ -5,7 +5,6 @@ import com.yahoo.lang.PublicCloneable;
 import com.yahoo.processing.request.properties.PropertyMap;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,8 +23,8 @@ public class PropertyMapTestCase {
         map.set("clonableArray", new ClonableObject[]{new ClonableObject()});
         map.set("publicClonableArray", new ClonableObject[]{new ClonableObject()});
         map.set("nonclonableArray", new NonClonableObject[]{new NonClonableObject()});
-        map.set("clonableList", Collections.singletonList(new ClonableObject()));
-        map.set("nonclonableList", Collections.singletonList(new NonClonableObject()));
+        map.set("clonableList", List.of(new ClonableObject()));
+        map.set("nonclonableList", List.of(new NonClonableObject()));
         assertNotNull(map.get("clonable"));
         assertNotNull(map.get("nonclonable"));
 

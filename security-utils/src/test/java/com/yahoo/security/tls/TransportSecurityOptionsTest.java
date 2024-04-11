@@ -4,12 +4,10 @@ package com.yahoo.security.tls;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,8 +20,8 @@ public class TransportSecurityOptionsTest {
     private static final TransportSecurityOptions OPTIONS = new TransportSecurityOptions.Builder()
             .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
             .withCaCertificates(Paths.get("my_cas.pem"))
-            .withAcceptedCiphers(Arrays.asList("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"))
-            .withAcceptedProtocols(Collections.singletonList("TLSv1.2"))
+            .withAcceptedCiphers(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"))
+            .withAcceptedProtocols(List.of("TLSv1.2"))
             .withHostnameValidationDisabled(true)
             .build();
 
@@ -35,7 +33,7 @@ public class TransportSecurityOptionsTest {
 
     @Test
     void can_read_options_from_json() throws IOException {
-        String tlsJson = new String(Files.readAllBytes(TEST_CONFIG_FILE), StandardCharsets.UTF_8);
+        String tlsJson = Files.readString(TEST_CONFIG_FILE);
         TransportSecurityOptions actualOptions = TransportSecurityOptions.fromJson(tlsJson);
         assertEquals(OPTIONS, actualOptions);
     }

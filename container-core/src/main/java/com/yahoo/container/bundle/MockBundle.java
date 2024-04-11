@@ -239,7 +239,7 @@ public class MockBundle implements Bundle, BundleWiring {
 
     @Override
     public Collection<String> listResources(String p1, String p2, int p3) {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override

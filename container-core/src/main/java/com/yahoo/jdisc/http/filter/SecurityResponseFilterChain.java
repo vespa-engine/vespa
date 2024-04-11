@@ -9,7 +9,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,12 +19,14 @@ import java.util.Optional;
  */
 public class SecurityResponseFilterChain extends AbstractResource implements ResponseFilter {
 
-    private final List<SecurityResponseFilter> filters = new ArrayList<>();
+    private final List<SecurityResponseFilter> filters;
 
     private SecurityResponseFilterChain(Iterable<? extends SecurityResponseFilter> filters) {
+        List<SecurityResponseFilter> builder = new ArrayList<>();
         for (SecurityResponseFilter filter : filters) {
-            this.filters.add(filter);
+            builder.add(filter);
         }
+        this.filters = List.copyOf(builder);
     }
 
     @Override
@@ -51,7 +52,7 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
 
     /** Returns an unmodifiable view of the filters in this */
     public List<SecurityResponseFilter> getFilters() {
-        return Collections.unmodifiableList(filters);
+        return filters;
     }
 
     static class RequestViewImpl implements RequestView {
@@ -74,7 +75,7 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
         @Override
         public List<String> getHeaders(String name) {
             List<String> headers = request.headers().get(name);
-            return headers == null ? Collections.emptyList() : Collections.unmodifiableList(headers);
+            return headers == null ? List.of() : List.copyOf(headers);
         }
 
         @Override

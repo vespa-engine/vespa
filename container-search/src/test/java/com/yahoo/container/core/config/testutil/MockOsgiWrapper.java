@@ -8,8 +8,6 @@ import org.osgi.framework.Bundle;
 import java.util.Collection;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
-
 /**
  * @author gjoranv
  */
@@ -22,7 +20,7 @@ public class MockOsgiWrapper implements OsgiWrapper {
 
     @Override
     public List<Bundle> getCurrentBundles() {
-        return emptyList();
+        return List.of();
     }
 
     @Override
@@ -32,7 +30,7 @@ public class MockOsgiWrapper implements OsgiWrapper {
 
     @Override
     public List<Bundle> install(String absolutePath) {
-        return emptyList();
+        return List.of();
     }
 
     @Override

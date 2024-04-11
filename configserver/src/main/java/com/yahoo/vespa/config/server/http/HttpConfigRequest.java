@@ -19,7 +19,7 @@ import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
 import com.yahoo.vespa.config.server.http.v2.request.TenantRequest;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -190,7 +190,7 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
 
     @Override
     public DefContent getDefContent() {
-        return DefContent.fromList(Collections.emptyList());
+        return DefContent.fromList(List.of());
     }
 
     @Override

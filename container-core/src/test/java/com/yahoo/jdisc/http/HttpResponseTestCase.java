@@ -5,7 +5,6 @@ import com.yahoo.jdisc.Response;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -79,7 +78,7 @@ public class HttpResponseTestCase {
     @Test
     void requireThatCookieHeaderCanBeEncoded() throws Exception {
         final HttpResponse response = newResponse(69);
-        final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
+        final List<Cookie> cookies = List.of(new Cookie("foo", "bar"));
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
         assertEquals(1, headers.size());
@@ -100,7 +99,7 @@ public class HttpResponseTestCase {
     @Test
     void requireThatCookieHeaderCanBeDecoded() throws Exception {
         final HttpResponse response = newResponse(69);
-        final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
+        final List<Cookie> cookies = List.of(new Cookie("foo", "bar"));
         response.encodeSetCookieHeader(cookies);
         assertEquals(cookies, response.decodeSetCookieHeader());
     }

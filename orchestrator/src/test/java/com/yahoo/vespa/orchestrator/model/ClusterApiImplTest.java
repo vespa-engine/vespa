@@ -28,7 +28,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -73,7 +72,7 @@ public class ClusterApiImplTest {
                         modelUtils.createServiceInstance("service-5", hostName5, ServiceStatus.UP)
                 )
         );
-        modelUtils.createApplicationInstance(Collections.singletonList(serviceCluster));
+        modelUtils.createApplicationInstance(List.of(serviceCluster));
 
         modelUtils.createNode(hostName1, HostStatus.NO_REMARKS);
         modelUtils.createNode(hostName2, HostStatus.NO_REMARKS);
@@ -278,7 +277,7 @@ public class ClusterApiImplTest {
                         service6
                 )
         );
-        modelUtils.createApplicationInstance(Collections.singletonList(serviceCluster));
+        modelUtils.createApplicationInstance(List.of(serviceCluster));
 
         modelUtils.createNode(hostName1, HostStatus.NO_REMARKS);
         modelUtils.createNode(hostName2, HostStatus.NO_REMARKS);

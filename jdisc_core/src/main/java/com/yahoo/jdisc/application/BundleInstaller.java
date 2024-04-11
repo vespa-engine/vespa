@@ -5,11 +5,9 @@ import com.google.inject.Inject;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static java.util.Collections.singletonList;
 
 /**
  * <p>This is a utility class to help with installing, starting, stopping and uninstalling OSGi Bundles. You can choose
@@ -30,7 +28,7 @@ public final class BundleInstaller {
     }
 
     public List<Bundle> installAndStart(String... locations) throws BundleException {
-        return installAndStart(Arrays.asList(locations));
+        return installAndStart(List.of(locations));
     }
 
     public List<Bundle> installAndStart(Iterable<String> locations) throws BundleException {
@@ -56,7 +54,7 @@ public final class BundleInstaller {
     }
 
     public void stopAndUninstall(Bundle... bundles) throws BundleException {
-        stopAndUninstall(Arrays.asList(bundles));
+        stopAndUninstall(List.of(bundles));
     }
 
     public void stopAndUninstall(Iterable<Bundle> bundles) throws BundleException {
@@ -76,7 +74,7 @@ public final class BundleInstaller {
             throw new BundleException("OSGi header '" + OsgiHeader.APPLICATION + "' not allowed for " +
                                       "non-application bundle " + bundle.getSymbolicName() + ".");
         }
-        osgiFramework.startBundles(singletonList(bundle), false);
+        osgiFramework.startBundles(List.of(bundle), false);
     }
 
     private void stop(Bundle bundle) throws BundleException {

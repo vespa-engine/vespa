@@ -8,7 +8,6 @@ import com.google.inject.Module;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.handler.RequestHandler;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -107,7 +106,7 @@ public class ContainerBuilder {
 
     public static List<String> safeStringSplit(Object obj, String delim) {
         if (!(obj instanceof String)) {
-            return Collections.emptyList();
+            return List.of();
         }
         List<String> lst = new LinkedList<>();
         for (String str : ((String)obj).split(delim)) {

@@ -17,7 +17,6 @@ import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,7 +27,7 @@ public class VespaTlsFilterTest {
     @Test
     void testFilter() {
         assertSuccess(createRequest(List.of(createCertificate())));
-        assertForbidden(createRequest(Collections.emptyList()));
+        assertForbidden(createRequest(List.of()));
     }
 
     private static X509Certificate createCertificate() {

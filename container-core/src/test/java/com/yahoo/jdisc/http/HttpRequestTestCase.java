@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -98,7 +97,7 @@ public class HttpRequestTestCase {
         assertEquals(Long.valueOf(1000), request.getConnectionTimeout(TimeUnit.MILLISECONDS));
 
         assertEquals(Arrays.asList("bar", "baz"), request.parameters().get("foo"));
-        assertEquals(Collections.singletonList("69"), request.parameters().get("cox"));
+        assertEquals(List.of("69"), request.parameters().get("cox"));
         request.parameters().put("cox", Arrays.asList("6", "9"));
         assertEquals(Arrays.asList("bar", "baz"), request.parameters().get("foo"));
         assertEquals(Arrays.asList("6", "9"), request.parameters().get("cox"));
@@ -170,7 +169,7 @@ public class HttpRequestTestCase {
     @Test
     void requireThatCookieHeaderCanBeEncoded() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
-        final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
+        final List<Cookie> cookies = List.of(new Cookie("foo", "bar"));
         request.encodeCookieHeader(cookies);
         final List<String> headers = request.headers().get(com.yahoo.jdisc.http.HttpHeaders.Names.COOKIE);
         assertEquals(1, headers.size());
@@ -180,7 +179,7 @@ public class HttpRequestTestCase {
     @Test
     void requireThatCookieHeaderCanBeDecoded() throws Exception {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
-        final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
+        final List<Cookie> cookies = List.of(new Cookie("foo", "bar"));
         request.encodeCookieHeader(cookies);
         assertEquals(cookies, request.decodeCookieHeader());
     }

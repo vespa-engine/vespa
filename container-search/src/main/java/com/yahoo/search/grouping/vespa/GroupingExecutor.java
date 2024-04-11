@@ -21,7 +21,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -357,7 +356,7 @@ public class GroupingExecutor extends Searcher {
     public static List<Grouping> getGroupingList(Query query) {
         Object obj = query.properties().get(PROP_GROUPINGLIST);
         if (!(obj instanceof List)) {
-            return Collections.emptyList();
+            return List.of();
         }
         return (List<Grouping>)obj;
     }

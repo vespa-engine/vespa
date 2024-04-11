@@ -21,7 +21,6 @@ import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
-import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
@@ -33,8 +32,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -160,7 +158,7 @@ public class DocumentScriptTestCase {
         assertSpanTrees(str, "mySpanTree");
     }
 
-    private class FieldPathFixture {
+    private static class FieldPathFixture {
         final DocumentType type;
         final StructDataType structType;
         final DataType structMap;
@@ -264,7 +262,7 @@ public class DocumentScriptTestCase {
     }
 
     private static DocumentScript newScript(DocumentType docType, String fieldName) {
-        return new DocumentScript(docType.getName(), Collections.singletonList(fieldName),
+        return new DocumentScript(docType.getName(), List.of(fieldName),
                 new StatementExpression(new InputExpression(fieldName),
                         new IndexExpression(fieldName)));
     }
@@ -285,7 +283,7 @@ public class DocumentScriptTestCase {
     private static void assertSpanTrees(FieldValue actual, String... expectedSpanTrees) {
         assertTrue(actual instanceof StringFieldValue);
         StringFieldValue str = (StringFieldValue)actual;
-        assertEquals(new ArrayList<>(Arrays.asList(expectedSpanTrees)),
+        assertEquals(List.of(expectedSpanTrees),
                      new ArrayList<>(str.getSpanTreeMap().keySet()));
     }
 
@@ -359,7 +357,7 @@ public class DocumentScriptTestCase {
     }
 
     private static DocumentScript newScript() throws ParseException {
-        return new DocumentScript("documentType", Arrays.asList("documentField"),
+        return new DocumentScript("documentType", List.of("documentField"),
                                   Expression.fromString("input documentField | index documentField"));
     }
 }

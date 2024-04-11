@@ -23,9 +23,6 @@ import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_DNS;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_URI;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -45,13 +42,13 @@ public class PeerAuthorizerTest {
         RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
         PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, cnRequirement, sanRequirement));
 
-        ConnectionAuthContext result = authorizer.authorizePeer(createCertificate("foo.matching.cn", asList("foo.matching.san", "foo.invalid.san"), emptyList()));
+        ConnectionAuthContext result = authorizer.authorizePeer(createCertificate("foo.matching.cn", List.of("foo.matching.san", "foo.invalid.san"), List.of()));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
 
-        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", singletonList("foo.matching.san"), emptyList())));
-        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", asList("foo.matching.san", "foo.invalid.san"), emptyList())));
-        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.invalid.san"), emptyList())));
+        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", List.of("foo.matching.san"), List.of())));
+        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.invalid.cn", List.of("foo.matching.san", "foo.invalid.san"), List.of())));
+        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", List.of("foo.invalid.san"), List.of())));
     }
 
     @Test
@@ -64,7 +61,7 @@ public class PeerAuthorizerTest {
                 createPolicy(POLICY_2, cnRequirement, sanRequirement));
 
         ConnectionAuthContext result = peerAuthorizer
-                .authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.matching.san"), emptyList()));
+                .authorizePeer(createCertificate("foo.matching.cn", List.of("foo.matching.san"), List.of()));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1, POLICY_2);
     }
@@ -75,7 +72,7 @@ public class PeerAuthorizerTest {
                 createPolicy(POLICY_1, createRequiredCredential(CN, "*.matching.cn")),
                 createPolicy(POLICY_2, createRequiredCredential(SAN_DNS, "*.matching.san")));
 
-        ConnectionAuthContext result = peerAuthorizer.authorizePeer(createCertificate("foo.invalid.cn", singletonList("foo.matching.san"), emptyList()));
+        ConnectionAuthContext result = peerAuthorizer.authorizePeer(createCertificate("foo.invalid.cn", List.of("foo.matching.san"), List.of()));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_2);
     }
@@ -89,9 +86,9 @@ public class PeerAuthorizerTest {
         PeerAuthorizer peerAuthorizer = createPeerAuthorizer(
                 createPolicy(POLICY_1, cnSuffixRequirement, cnPrefixRequirement, sanPrefixRequirement, sanSuffixRequirement));
 
-        assertAuthorized(peerAuthorizer.authorizePeer(createCertificate("matching.prefix.matching.suffix.cn", singletonList("matching.prefix.matching.suffix.san"), emptyList())));
-        assertUnauthorized(peerAuthorizer.authorizePeer(createCertificate("matching.prefix.matching.suffix.cn", singletonList("matching.prefix.invalid.suffix.san"), emptyList())));
-        assertUnauthorized(peerAuthorizer.authorizePeer(createCertificate("invalid.prefix.matching.suffix.cn", singletonList("matching.prefix.matching.suffix.san"), emptyList())));
+        assertAuthorized(peerAuthorizer.authorizePeer(createCertificate("matching.prefix.matching.suffix.cn", List.of("matching.prefix.matching.suffix.san"), List.of())));
+        assertUnauthorized(peerAuthorizer.authorizePeer(createCertificate("matching.prefix.matching.suffix.cn", List.of("matching.prefix.invalid.suffix.san"), List.of())));
+        assertUnauthorized(peerAuthorizer.authorizePeer(createCertificate("invalid.prefix.matching.suffix.cn", List.of("matching.prefix.matching.suffix.san"), List.of())));
     }
 
     @Test
@@ -100,11 +97,11 @@ public class PeerAuthorizerTest {
         RequiredPeerCredential sanUriRequirement = createRequiredCredential(SAN_URI, "myscheme://my/*/uri");
         PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, cnRequirement, sanUriRequirement));
 
-        ConnectionAuthContext result = authorizer.authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.irrelevant.san"), singletonList("myscheme://my/matching/uri")));
+        ConnectionAuthContext result = authorizer.authorizePeer(createCertificate("foo.matching.cn", List.of("foo.irrelevant.san"), List.of("myscheme://my/matching/uri")));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
 
-        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", emptyList(), singletonList("myscheme://my/nonmatching/url"))));
+        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", List.of(), List.of("myscheme://my/nonmatching/url"))));
     }
 
     @Test
@@ -145,7 +142,7 @@ public class PeerAuthorizerTest {
     }
 
     private static PeerPolicy createPolicy(String name, RequiredPeerCredential... requiredCredentials) {
-        return new PeerPolicy(name, asList(requiredCredentials));
+        return new PeerPolicy(name, List.of(requiredCredentials));
     }
 
     private static PeerPolicy createPolicy(String name, List<Capability> caps, List<RequiredPeerCredential> creds) {

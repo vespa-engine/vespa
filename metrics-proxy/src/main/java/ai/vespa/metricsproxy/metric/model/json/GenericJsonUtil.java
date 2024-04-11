@@ -18,8 +18,7 @@ import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
 
@@ -90,7 +89,7 @@ public class GenericJsonUtil {
             return toMetricsPackets(jsonModel);
         } catch (IOException e) {
             log.log(WARNING, "Could not create metrics packet from string:\n" + jsonString, e);
-            return emptyList();
+            return List.of();
         }
     }
 
@@ -106,7 +105,7 @@ public class GenericJsonUtil {
         if (node == null) return packets;
 
         if (node.metrics == null || node.metrics.isEmpty()) {
-            return singletonList(new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
+            return List.of(new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                                          .statusCode(StatusCode.UP.ordinal())
                                          .timestamp(node.timestamp));
         }
@@ -124,7 +123,7 @@ public class GenericJsonUtil {
     private static List<MetricsPacket.Builder> toServicePackets(GenericService service) {
         List<MetricsPacket.Builder> packets = new ArrayList<>();
         if (service.metrics == null || service.metrics.isEmpty())
-            return singletonList(newServicePacket(service));
+            return List.of(newServicePacket(service));
 
         for (var genericMetrics : service.metrics) {
             var packet = newServicePacket(service);
