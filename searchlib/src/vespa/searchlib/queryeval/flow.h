@@ -195,27 +195,7 @@ double ordered_cost_of(ADAPTER adapter, const T &children, F flow, bool allow_fo
     return total_cost;
 }
 
-size_t select_strict_and_child(auto adapter, const auto &children) {
-    double est = 1.0;
-    double cost = 0.0;
-    size_t best_idx = 0;
-    double best_diff = std::numeric_limits<double>::max();
-    for (size_t idx = 0; idx < children.size(); ++idx) {
-        auto child = FlowStats::from(adapter, children[idx]);
-        double child_abs_cost = est * child.cost;
-        double my_diff = (child.strict_cost + child.estimate * cost) - (cost + child_abs_cost);
-        if (my_diff < best_diff) {
-            best_diff = my_diff;
-            best_idx = idx;
-        }
-        cost += child_abs_cost;
-        est *= child.estimate;
-    }
-    return best_idx;
-}
-
-auto select_forced_strict_and_child(auto adapter, const auto &children, size_t first) {
-    double est = 1.0;
+auto select_strict_and_child(auto adapter, const auto &children, size_t first, double est, bool native_strict) {
     double cost = 0.0;
     size_t best_idx = first;
     size_t best_target = first;
@@ -223,11 +203,12 @@ auto select_forced_strict_and_child(auto adapter, const auto &children, size_t f
     for (size_t i = 0; i < first; ++i) {
         est *= adapter.estimate(children[i]);
     }
+    double first_est = est;
     for (size_t idx = first; idx < children.size(); ++idx) {
         auto child = FlowStats::from(adapter, children[idx]);
         double child_abs_cost = est * child.cost;
-        double forced_cost = forced_strict_cost(child, est);
-        double my_diff = (forced_cost + child.estimate * cost) - (cost + child_abs_cost);
+        double child_strict_cost = (first == 0 && native_strict) ? child.strict_cost : forced_strict_cost(child, first_est);
+        double my_diff = (child_strict_cost + child.estimate * cost) - (cost + child_abs_cost);
         size_t target = first;
         while (target > 0) {
             size_t candidate = target - 1;
@@ -238,7 +219,7 @@ auto select_forced_strict_and_child(auto adapter, const auto &children, size_t f
             }
             target = candidate;
             my_diff += (0.2 * child.estimate - 0.2 * other.estimate);
-            if (candidate == 0) {
+            if (candidate == 0 && native_strict) {
                 // the first iterator produces its own in-flow
                 my_diff += (0.2 * child.estimate - 0.2 * other.estimate);
             }
@@ -246,7 +227,8 @@ auto select_forced_strict_and_child(auto adapter, const auto &children, size_t f
             // (underestimate the benefit) of inserting 'child' before
             // 'other' if it leads to 'other' becoming
             // non-strict. This will also leave 'other' in a
-            // potentially unoptimal location.
+            // potentially unoptimal location. Unit tests indicate
+            // that the effects of this are minor.
         }
         if (my_diff < best_diff) {
             best_diff = my_diff;
@@ -295,11 +277,28 @@ public:
     static double estimate_of(const auto &children) {
         return estimate_of(flow::make_adapter(children), children);
     }
+    // assume children are already ordered by calling sort (with same strictness as in_flow)
+    static void reorder_for_extra_strictness(auto adapter, auto &children, InFlow in_flow, size_t max_extra) {
+        size_t num_strict = in_flow.strict() ? 1 : 0;
+        size_t max_strict = num_strict + max_extra;
+        for (size_t next = num_strict; (next < max_strict) && (next < children.size()); ++next) {
+            auto [idx, target, diff] = flow::select_strict_and_child(adapter, children, next, in_flow.rate(), in_flow.strict());
+            if (diff >= 0.0) {
+                break;
+            }
+            auto pos = children.begin() + idx;
+            std::rotate(children.begin() + target, pos, pos + 1);
+        }
+    }
+    static void reorder_for_extra_strictness(auto &children, InFlow in_flow, size_t max_extra) {
+        reorder_for_extra_strictness(flow::make_adapter(children), children, in_flow, max_extra);
+    }
     static void sort(auto adapter, auto &children, bool strict) {
         flow::sort<flow::MinAndCost>(adapter, children);
         if (strict && children.size() > 1) {
-            auto pos = children.begin() + flow::select_strict_and_child(adapter, children);
-            std::rotate(children.begin(), pos, pos + 1);
+            auto [idx, target, ignore_diff] = flow::select_strict_and_child(adapter, children, 0, 1.0, true);
+            auto pos = children.begin() + idx;
+            std::rotate(children.begin() + target, pos, pos + 1);
         }
     }
     static void sort(auto &children, bool strict) {
