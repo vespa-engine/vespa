@@ -7,8 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author hmusum
@@ -24,13 +23,11 @@ public class ModelTest {
                 </component>
                 """;
 
-        try {
-            var state = new DeployState.Builder().build();
-            Model.fromXml(state, XML.getDocument(xml).getDocumentElement(), "transformer-model", Set.of());
-            fail("should fail");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Invalid url 'models/e5-base-v2.onnx': url has no 'scheme' component", e.getMessage());
-        }
+        var state = new DeployState.Builder().build();
+        var element = XML.getDocument(xml).getDocumentElement();
+        assertThrows(IllegalArgumentException.class,
+                     () -> Model.fromXml(state, element, "transformer-model", Set.of()),
+                     "Invalid url 'models/e5-base-v2.onnx': url has no 'scheme' component");
     }
 
 }
