@@ -576,12 +576,12 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Attach some data to this hit for this searcher */
     public void setSearcherSpecificMetaData(Searcher searcher, Object data) {
         if (searcherSpecificMetaData == null) {
-            searcherSpecificMetaData = Map.of(searcher, data);
+            if (data != null)
+                searcherSpecificMetaData = Map.of(searcher, data);
         } else {
             if (searcherSpecificMetaData.size() == 1) {
-                Object tmp = searcherSpecificMetaData.get(searcher);
-                if (tmp != null) {
-                    searcherSpecificMetaData = Map.of(searcher, data);
+                if (searcherSpecificMetaData.containsKey(searcher)) {
+                    searcherSpecificMetaData = (data != null) ? Map.of(searcher, data) : null;
                 } else {
                     searcherSpecificMetaData = new TreeMap<>(searcherSpecificMetaData);
                     searcherSpecificMetaData.put(searcher, data);
