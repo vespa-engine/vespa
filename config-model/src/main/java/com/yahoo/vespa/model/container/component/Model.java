@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -51,9 +52,20 @@ class Model {
 
     static Model fromXml(DeployState ds, Element model, Set<String> requiredTags) {
         var modelId = XmlHelper.getOptionalAttribute(model, "model-id").orElse(null);
-        var url = XmlHelper.getOptionalAttribute(model, "url").map(URI::create).orElse(null);
+        var url = XmlHelper.getOptionalAttribute(model, "url").map(Model::parseUrl).orElse(null);
         var path = XmlHelper.getOptionalAttribute(model, "path").map(Path::fromString).orElse(null);
         return new Model(ds, model.getTagName(), modelId, url, path, requiredTags);
+    }
+
+    private static URI parseUrl(String url) {
+        try {
+            var uri = new URI(url);
+            if ( ! uri.isAbsolute())
+                throw new IllegalArgumentException("Invalid url '" + url + "': url has no 'scheme' component");
+            return uri;
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid url '" + url + "':" + e.getMessage());
+        }
     }
 
     /** Return tokenizer model from XML if specified, alternatively use model id for ONNX model with suffix '-vocab' appended */
