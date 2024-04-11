@@ -127,9 +127,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
             int queueSize = executor.getQueue().size();
             String error = String.format("Rejected completion due to too many requests, " +
                     "%d active, %d in queue", activeCount, queueSize);
-            logger.info(error);
-            consumer.accept(Completion.from(error, Completion.FinishReason.error));
-            completionFuture.complete(Completion.FinishReason.error);
+            throw new RejectedExecutionException(error);
         }
         return completionFuture;
     }

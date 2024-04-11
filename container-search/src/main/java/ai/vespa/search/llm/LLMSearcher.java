@@ -20,6 +20,7 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -83,7 +84,11 @@ public class LLMSearcher extends Searcher {
     protected Result complete(Query query, Prompt prompt) {
         var options = new InferenceParameters(getApiKeyHeader(query), s -> lookupProperty(s, query));
         var stream = lookupPropertyBool(STREAM_PROPERTY, query, this.stream);  // query value overwrites config
-        return stream ? completeAsync(query, prompt, options) : completeSync(query, prompt, options);
+        try {
+            return stream ? completeAsync(query, prompt, options) : completeSync(query, prompt, options);
+        } catch (RejectedExecutionException e) {
+            return new Result(query, new ErrorMessage(429, e.getMessage()));
+        }
     }
 
     private boolean shouldAddPrompt(Query query) {
