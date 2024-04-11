@@ -44,7 +44,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // Only used if GPU is not used
         var defaultThreadCount = Runtime.getRuntime().availableProcessors() - 2;
 
-        var modelFile = selectModelFile(config);
+        var modelFile = config.model().toFile().getAbsolutePath();
         var modelParams = new ModelParameters()
                 .setModelFilePath(modelFile)
                 .setContinuousBatching(true)
@@ -67,16 +67,6 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 0L, TimeUnit.MILLISECONDS,
                 config.maxQueueSize() > 0 ? new ArrayBlockingQueue<>(config.maxQueueSize()) : new SynchronousQueue<>(),
                 new ThreadPoolExecutor.AbortPolicy());
-    }
-
-    private String selectModelFile(LlmLocalClientConfig config) {
-        if ( ! config.localLlmFile().isEmpty()) {  // primarily for testing
-            return config.localLlmFile();
-        } else if (config.modelUrl().exists()) {
-            return config.modelUrl().getAbsolutePath();
-        }
-        throw new IllegalArgumentException("Local LLM model not set. " +
-                "Either set 'localLlmFile' or 'modelUrl' in 'llm-local-client' config.");
     }
 
     @Override

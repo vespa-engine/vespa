@@ -1,11 +1,8 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package=ai.vespa.llm.clients
 
-# Url to the model to use
-modelUrl url default=""
-
-# Local file path to the model to use - will have precedence over model_url if set - mostly for testing
-localLlmFile string default=""
+# The LLM model to use
+model model
 
 # Maximum number of requests to handle in parallel pr container node
 parallelRequests int default=10
