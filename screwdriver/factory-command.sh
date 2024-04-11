@@ -12,7 +12,22 @@ FACTORY_API="https://factory.vespa.aws-us-east-1a.vespa.oath.cloud/api/factory/v
 COOKIEJAR=$(pwd)/jar.txt
 trap "rm -f $COOKIEJAR" EXIT
 
-SESSION_TOKEN=$(curl -s -H 'Content-Type: application/json' -H 'Accept: application/json' -d "{ \"username\": \"svc-okta-vespa-factory\", \"password\": \"$SVC_OKTA_VESPA_FACTORY_TOKEN\" }" https://ouryahoo.okta.com/api/v1/authn | jq -re '.sessionToken')
+SESSION_TOKEN=null
+WAIT_UNTIL=$(( $(date +%s) + 120 ))
+while [[ $SESSION_TOKEN == null ]]; do
+  SESSION_TOKEN=$(curl -s -H 'Content-Type: application/json' -H 'Accept: application/json' -d "{ \"username\": \"svc-okta-vespa-factory\", \"password\": \"$SVC_OKTA_VESPA_FACTORY_TOKEN\" }" https://ouryahoo.okta.com/api/v1/authn | jq -re '.sessionToken')
+
+  if [[ $SESSION_TOKEN == null ]]; then
+    if [[ $(date +%s) -ge $WAIT_UNTIL ]]; then
+      echo "Could not fetch session token from Okta: SESSION_TOKEN=$SESSION_TOKEN"
+      exit 1
+    else
+      echo "Invalid SESSION_TOKEN=$SESSION_TOKEN . Trying again ..."
+      sleep 3
+    fi
+  fi
+done
+
 LOCATION=$(curl -s -i -c $COOKIEJAR "https://factory.vespa.aws-us-east-1a.vespa.oath.cloud/login" | grep location | awk '{print $2}' | tr -d '\r')
 curl -sL -b $COOKIEJAR -c $COOKIEJAR "$LOCATION&sessionToken=$SESSION_TOKEN" &> /dev/null
 
