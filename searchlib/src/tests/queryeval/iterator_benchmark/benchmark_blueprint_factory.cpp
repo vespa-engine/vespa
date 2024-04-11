@@ -178,9 +178,11 @@ MyFactory::MyFactory(const FieldConfig& field_cfg, QueryOperator query_op,
         hit_specs.add(default_values_per_document, num_docs);
     }
     _terms = hit_specs.add(children, hits_per_term);
-    if (disjunct_children) {
+    if (disjunct_children && default_values_per_document != 0) {
+        // This ensures that the remaining docids are populated with a "default value".
+        // Only a single default value is supported.
         uint32_t op_num_hits = num_docs * op_hit_ratio;
-        hit_specs.add(default_values_per_document, num_docs - op_num_hits);
+        hit_specs.add(1, num_docs - op_num_hits);
     }
     _searchable = make_searchable(field_cfg, num_docs, hit_specs, disjunct_children);
 }
