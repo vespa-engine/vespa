@@ -8,7 +8,6 @@ import com.yahoo.vespa.clustercontroller.core.DummyVdsNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -62,13 +61,13 @@ public interface Waiter {
             return waitForState(state, data.getTimeout());
         }
         public ClusterState waitForStateInAllSpaces(String state) {
-            return waitForState(state, data.getTimeout(), true, Collections.emptySet());
+            return waitForState(state, data.getTimeout(), true, Set.of());
         }
         public ClusterState waitForStateInSpace(String space, String state) {
-            return waitForState(state, data.getTimeout(), false, Collections.singleton(space));
+            return waitForState(state, data.getTimeout(), false, Set.of(space));
         }
         public ClusterState waitForState(String state, Duration timeoutMS) {
-            return waitForState(state, timeoutMS, false, Collections.emptySet());
+            return waitForState(state, timeoutMS, false, Set.of());
         }
         public ClusterState waitForStableSystem() {
             return waitForStableSystem(data.getDummyNodes().size() / 2);

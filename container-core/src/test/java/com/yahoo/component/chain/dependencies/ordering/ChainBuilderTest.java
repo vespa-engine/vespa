@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -90,9 +89,9 @@ public class ChainBuilderTest {
     @Test
     void testPhaseAndSearcher() {
         ChainBuilder depHandler = newChainBuilder();
-        depHandler.addPhase(new Phase("phase1", set("phase2"), Collections.<String>emptySet()));
+        depHandler.addPhase(new Phase("phase1", set("phase2"), Set.of()));
         depHandler.addPhase(new Phase("phase2", set("phase3"), set("phase1")));
-        depHandler.addPhase(new Phase("phase3", Collections.<String>emptySet(), set("phase2", "phase1")));
+        depHandler.addPhase(new Phase("phase3", Set.of(), set("phase2", "phase1")));
         ChainedComponent first = new First();
         ChainedComponent second = new Second();
 
@@ -172,9 +171,9 @@ public class ChainBuilderTest {
 
     private ChainBuilder createDependencyHandler() {
         ChainBuilder chainBuilder = newChainBuilder();
-        chainBuilder.addPhase(new Phase("phase1", Collections.<String>emptySet(), Collections.<String>emptySet()));
-        chainBuilder.addPhase(new Phase("phase2", Collections.<String>emptySet(), Collections.<String>emptySet()));
-        chainBuilder.addPhase(new Phase("phase3", Collections.<String>emptySet(), Collections.<String>emptySet()));
+        chainBuilder.addPhase(new Phase("phase1", Set.of(), Set.of()));
+        chainBuilder.addPhase(new Phase("phase2", Set.of(), Set.of()));
+        chainBuilder.addPhase(new Phase("phase3", Set.of(), Set.of()));
         return chainBuilder;
     }
 

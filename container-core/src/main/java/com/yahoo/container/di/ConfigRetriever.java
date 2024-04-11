@@ -8,7 +8,6 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -135,7 +134,7 @@ public final class ConfigRetriever {
 
     private void resetComponentSubscriberIfBootstrap(ConfigSnapshot configSnapshot) {
         if (configSnapshot instanceof BootstrapConfigs) {
-            setupComponentSubscriber(Collections.emptySet());
+            setupComponentSubscriber(Set.of());
         }
     }
 

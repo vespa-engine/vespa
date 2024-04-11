@@ -4,7 +4,6 @@ package com.yahoo.config.provision;
 import com.yahoo.text.StringUtilities;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -44,27 +43,27 @@ public class HostFilter {
 
     /** Returns a filter which matches all hosts */
     public static HostFilter all() {
-        return new HostFilter(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+        return new HostFilter(Set.of(), Set.of(), Set.of(), Set.of());
     }
 
     /** Returns a filter which matches a given host only */
     public static HostFilter hostname(String hostname) {
-        return new HostFilter(Collections.singleton(hostname), Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+        return new HostFilter(Set.of(hostname), Set.of(), Set.of(), Set.of());
     }
 
     /** Returns a filter which matches a given flavor only */
     public static HostFilter flavor(String flavor) {
-        return new HostFilter(Collections.emptySet(), Collections.singleton(flavor), Collections.emptySet(), Collections.emptySet());
+        return new HostFilter(Set.of(), Set.of(flavor), Set.of(), Set.of());
     }
 
     /** Returns a filter which matches a given cluster type only */
     public static HostFilter clusterType(ClusterSpec.Type clusterType) {
-        return new HostFilter(Collections.emptySet(), Collections.emptySet(), Collections.singleton(clusterType), Collections.emptySet());
+        return new HostFilter(Set.of(), Set.of(), Set.of(clusterType), Set.of());
     }
 
     /** Returns a filter which matches a given cluster id only */
     public static HostFilter clusterId(ClusterSpec.Id clusterId) {
-        return new HostFilter(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.singleton(clusterId));
+        return new HostFilter(Set.of(), Set.of(), Set.of(), Set.of(clusterId));
     }
 
     /** Returns a host filter from three optional conditions */

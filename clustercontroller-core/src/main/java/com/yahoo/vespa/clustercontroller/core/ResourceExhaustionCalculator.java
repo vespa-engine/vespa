@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -60,7 +59,7 @@ public class ResourceExhaustionCalculator {
         this.feedBlockEnabled = feedBlockEnabled;
         this.feedBlockLimits = feedBlockLimits;
         this.feedBlockNoiseLevel = 0.0;
-        this.previouslyBlockedNodeResources = Collections.emptySet();
+        this.previouslyBlockedNodeResources = Set.of();
     }
 
     public ResourceExhaustionCalculator(boolean feedBlockEnabled, Map<String, Double> feedBlockLimits,
@@ -74,7 +73,7 @@ public class ResourceExhaustionCalculator {
                     .map(ex -> NodeAndResourceType.of(ex.node.getIndex(), ex.resourceType))
                     .collect(Collectors.toSet());
         } else {
-            this.previouslyBlockedNodeResources = Collections.emptySet();
+            this.previouslyBlockedNodeResources = Set.of();
         }
     }
 
@@ -124,12 +123,12 @@ public class ResourceExhaustionCalculator {
                                                               effectiveLimit, nodeInfo.getRpcAddress()));
             }
         }
-        return (exceedingLimit != null) ? exceedingLimit : Collections.emptySet();
+        return (exceedingLimit != null) ? exceedingLimit : Set.of();
     }
 
     public Set<NodeResourceExhaustion> enumerateNodeResourceExhaustions(NodeInfo nodeInfo) {
         if (!nodeInfo.isStorage()) {
-            return Collections.emptySet();
+            return Set.of();
         }
         return resourceExhaustionsFromHostInfo(nodeInfo, nodeInfo.getHostInfo());
     }

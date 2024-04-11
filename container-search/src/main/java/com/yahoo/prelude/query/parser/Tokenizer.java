@@ -8,8 +8,8 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Substring;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.*;
 
@@ -63,7 +63,7 @@ public final class Tokenizer {
      * @return a read-only list of tokens. This list can only be used by this thread
      */
     public List<Token> tokenize(String string) {
-        return tokenize(string, new IndexFacts().newSession(Collections.emptySet(), Collections.emptySet()));
+        return tokenize(string, new IndexFacts().newSession(Set.of(), Set.of()));
     }
 
     /**

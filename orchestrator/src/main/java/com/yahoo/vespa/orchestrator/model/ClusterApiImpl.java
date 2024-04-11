@@ -18,7 +18,6 @@ import com.yahoo.vespa.orchestrator.status.HostStatus;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -83,8 +82,8 @@ class ClusterApiImpl implements ClusterApi {
                                 Collectors.groupingBy(
                                         instance -> nodeGroup.contains(instance.hostName()),
                                         Collectors.toSet()));
-        servicesInGroup = serviceInstancesByLocality.getOrDefault(true, Collections.emptySet());
-        servicesNotInGroup = serviceInstancesByLocality.getOrDefault(false, Collections.emptySet());
+        servicesInGroup = serviceInstancesByLocality.getOrDefault(true, Set.of());
+        servicesNotInGroup = serviceInstancesByLocality.getOrDefault(false, Set.of());
 
         int serviceInstances = serviceCluster.serviceInstances().size();
         if (clusterParams.size().isPresent() && serviceInstances < clusterParams.size().getAsInt()) {

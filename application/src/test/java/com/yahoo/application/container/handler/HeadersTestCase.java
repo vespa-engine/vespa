@@ -3,11 +3,7 @@ package com.yahoo.application.container.handler;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,9 +62,9 @@ public class HeadersTestCase {
     @Test
     void requireThatContainsValueWorksAsExpected() {
         Headers headers = new Headers();
-        assertFalse(headers.containsValue(Arrays.asList("bar")));
+        assertFalse(headers.containsValue(List.of("bar")));
         headers.add("foo", "bar");
-        assertTrue(headers.containsValue(Arrays.asList("bar")));
+        assertTrue(headers.containsValue(List.of("bar")));
     }
 
     @Test
@@ -104,19 +100,19 @@ public class HeadersTestCase {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.add("foo", "bar");
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
+        assertEquals(List.of("bar"), headers.get("foo"));
         headers.add("foo", "baz");
-        assertEquals(Arrays.asList("bar", "baz"), headers.get("foo"));
+        assertEquals(List.of("bar", "baz"), headers.get("foo"));
     }
 
     @Test
     void requireThatAddListWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
-        headers.add("foo", Arrays.asList("bar"));
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
-        headers.add("foo", Arrays.asList("baz", "cox"));
-        assertEquals(Arrays.asList("bar", "baz", "cox"), headers.get("foo"));
+        headers.add("foo", List.of("bar"));
+        assertEquals(List.of("bar"), headers.get("foo"));
+        headers.add("foo", List.of("baz", "cox"));
+        assertEquals(List.of("bar", "baz", "cox"), headers.get("foo"));
     }
 
     @Test
@@ -124,16 +120,14 @@ public class HeadersTestCase {
         Headers headers = new Headers();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
-        assertEquals(Arrays.asList("baz"), headers.get("bar"));
+        assertEquals(List.of("bar"), headers.get("foo"));
+        assertEquals(List.of("baz"), headers.get("bar"));
 
-        Map<String, List<String>> map = new HashMap<>();
-        map.put("foo", Arrays.asList("baz", "cox"));
-        map.put("bar", Arrays.asList("cox"));
+        Map<String, List<String>> map = Map.of("foo", List.of("baz", "cox"), "bar", List.of("cox"));
         headers.addAll(map);
 
-        assertEquals(Arrays.asList("bar", "baz", "cox"), headers.get("foo"));
-        assertEquals(Arrays.asList("baz", "cox"), headers.get("bar"));
+        assertEquals(List.of("bar", "baz", "cox"), headers.get("foo"));
+        assertEquals(List.of("baz", "cox"), headers.get("bar"));
     }
 
     @Test
@@ -141,19 +135,19 @@ public class HeadersTestCase {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.put("foo", "bar");
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
+        assertEquals(List.of("bar"), headers.get("foo"));
         headers.put("foo", "baz");
-        assertEquals(Arrays.asList("baz"), headers.get("foo"));
+        assertEquals(List.of("baz"), headers.get("foo"));
     }
 
     @Test
     void requireThatPutListWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
-        headers.put("foo", Arrays.asList("bar"));
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
-        headers.put("foo", Arrays.asList("baz", "cox"));
-        assertEquals(Arrays.asList("baz", "cox"), headers.get("foo"));
+        headers.put("foo", List.of("bar"));
+        assertEquals(List.of("bar"), headers.get("foo"));
+        headers.put("foo", List.of("baz", "cox"));
+        assertEquals(List.of("baz", "cox"), headers.get("foo"));
     }
 
     @Test
@@ -161,24 +155,22 @@ public class HeadersTestCase {
         Headers headers = new Headers();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
-        assertEquals(Arrays.asList("baz"), headers.get("bar"));
+        assertEquals(List.of("bar"), headers.get("foo"));
+        assertEquals(List.of("baz"), headers.get("bar"));
 
-        Map<String, List<String>> map = new HashMap<>();
-        map.put("foo", Arrays.asList("baz", "cox"));
-        map.put("bar", Arrays.asList("cox"));
+        Map<String, List<String>> map = Map.of("foo", List.of("baz", "cox"), "bar", List.of("cox"));
         headers.putAll(map);
 
-        assertEquals(Arrays.asList("baz", "cox"), headers.get("foo"));
-        assertEquals(Arrays.asList("cox"), headers.get("bar"));
+        assertEquals(List.of("baz", "cox"), headers.get("foo"));
+        assertEquals(List.of("cox"), headers.get("bar"));
     }
 
     @Test
     void requireThatRemoveWorksAsExpected() {
         Headers headers = new Headers();
-        headers.put("foo", Arrays.asList("bar", "baz"));
-        assertEquals(Arrays.asList("bar", "baz"), headers.get("foo"));
-        assertEquals(Arrays.asList("bar", "baz"), headers.remove("foo"));
+        headers.put("foo", List.of("bar", "baz"));
+        assertEquals(List.of("bar", "baz"), headers.get("foo"));
+        assertEquals(List.of("bar", "baz"), headers.remove("foo"));
         assertNull(headers.get("foo"));
         assertNull(headers.remove("foo"));
     }
@@ -186,11 +178,11 @@ public class HeadersTestCase {
     @Test
     void requireThatRemoveStringWorksAsExpected() {
         Headers headers = new Headers();
-        headers.put("foo", Arrays.asList("bar", "baz"));
-        assertEquals(Arrays.asList("bar", "baz"), headers.get("foo"));
+        headers.put("foo", List.of("bar", "baz"));
+        assertEquals(List.of("bar", "baz"), headers.get("foo"));
         assertTrue(headers.remove("foo", "bar"));
         assertFalse(headers.remove("foo", "cox"));
-        assertEquals(Arrays.asList("baz"), headers.get("foo"));
+        assertEquals(List.of("baz"), headers.get("foo"));
         assertTrue(headers.remove("foo", "baz"));
         assertFalse(headers.remove("foo", "cox"));
         assertNull(headers.get("foo"));
@@ -201,8 +193,8 @@ public class HeadersTestCase {
         Headers headers = new Headers();
         headers.add("foo", "bar");
         headers.add("bar", "baz");
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
-        assertEquals(Arrays.asList("baz"), headers.get("bar"));
+        assertEquals(List.of("bar"), headers.get("foo"));
+        assertEquals(List.of("baz"), headers.get("bar"));
         headers.clear();
         assertNull(headers.get("foo"));
         assertNull(headers.get("bar"));
@@ -213,14 +205,14 @@ public class HeadersTestCase {
         Headers headers = new Headers();
         assertNull(headers.get("foo"));
         headers.add("foo", "bar");
-        assertEquals(Arrays.asList("bar"), headers.get("foo"));
+        assertEquals(List.of("bar"), headers.get("foo"));
     }
 
     @Test
     void requireThatGetFirstWorksAsExpected() {
         Headers headers = new Headers();
         assertNull(headers.getFirst("foo"));
-        headers.add("foo", Arrays.asList("bar", "baz"));
+        headers.add("foo", List.of("bar", "baz"));
         assertEquals("bar", headers.getFirst("foo"));
     }
 
@@ -228,28 +220,28 @@ public class HeadersTestCase {
     void requireThatIsTrueWorksAsExpected() {
         Headers headers = new Headers();
         assertFalse(headers.isTrue("foo"));
-        headers.put("foo", Arrays.asList("true"));
+        headers.put("foo", List.of("true"));
         assertTrue(headers.isTrue("foo"));
-        headers.put("foo", Arrays.asList("true", "true"));
+        headers.put("foo", List.of("true", "true"));
         assertTrue(headers.isTrue("foo"));
-        headers.put("foo", Arrays.asList("true", "false"));
+        headers.put("foo", List.of("true", "false"));
         assertFalse(headers.isTrue("foo"));
-        headers.put("foo", Arrays.asList("false", "true"));
+        headers.put("foo", List.of("false", "true"));
         assertFalse(headers.isTrue("foo"));
-        headers.put("foo", Arrays.asList("false", "false"));
+        headers.put("foo", List.of("false", "false"));
         assertFalse(headers.isTrue("foo"));
-        headers.put("foo", Arrays.asList("false"));
+        headers.put("foo", List.of("false"));
         assertFalse(headers.isTrue("foo"));
     }
 
     @Test
     void requireThatKeySetWorksAsExpected() {
         Headers headers = new Headers();
-        assertEquals(Collections.<Set<String>>emptySet(), headers.keySet());
+        assertEquals(Set.of(), headers.keySet());
         headers.add("foo", "bar");
-        assertEquals(new HashSet<>(Arrays.asList("foo")), headers.keySet());
+        assertEquals(Set.of("foo"), headers.keySet());
         headers.add("bar", "baz");
-        assertEquals(new HashSet<>(Arrays.asList("foo", "bar")), headers.keySet());
+        assertEquals(Set.of("foo", "bar"), headers.keySet());
     }
 
     @Test
@@ -259,34 +251,34 @@ public class HeadersTestCase {
         headers.add("foo", "bar");
         Collection<List<String>> values = headers.values();
         assertEquals(1, values.size());
-        assertTrue(values.contains(Arrays.asList("bar")));
+        assertTrue(values.contains(List.of("bar")));
 
         headers.add("bar", "baz");
         values = headers.values();
         assertEquals(2, values.size());
-        assertTrue(values.contains(Arrays.asList("bar")));
-        assertTrue(values.contains(Arrays.asList("baz")));
+        assertTrue(values.contains(List.of("bar")));
+        assertTrue(values.contains(List.of("baz")));
     }
 
     @Test
     void requireThatEntrySetWorksAsExpected() {
         Headers headers = new Headers();
-        assertEquals(Collections.emptySet(), headers.entrySet());
-        headers.put("foo", Arrays.asList("bar", "baz"));
+        assertEquals(Set.of(), headers.entrySet());
+        headers.put("foo", List.of("bar", "baz"));
 
         Set<Map.Entry<String, List<String>>> entries = headers.entrySet();
         assertEquals(1, entries.size());
         Map.Entry<String, List<String>> entry = entries.iterator().next();
         assertNotNull(entry);
         assertEquals("foo", entry.getKey());
-        assertEquals(Arrays.asList("bar", "baz"), entry.getValue());
+        assertEquals(List.of("bar", "baz"), entry.getValue());
     }
 
     @Test
     void requireThatEntriesWorksAsExpected() {
         Headers headers = new Headers();
-        assertEquals(Collections.emptyList(), headers.entries());
-        headers.put("foo", Arrays.asList("bar", "baz"));
+        assertEquals(List.of(), headers.entries());
+        headers.put("foo", List.of("bar", "baz"));
 
         List<Map.Entry<String, String>> entries = headers.entries();
         assertEquals(2, entries.size());

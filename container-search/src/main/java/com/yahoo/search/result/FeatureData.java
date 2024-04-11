@@ -14,7 +14,6 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -150,7 +149,7 @@ public class FeatureData implements Inspectable, JsonProducer {
 
     /** Returns the names of the features available in this */
     public Set<String> featureNames() {
-        if (this == empty) return Collections.emptySet();
+        if (this == empty) return Set.of();
         if (featureNames != null) return featureNames;
 
         featureNames = new HashSet<>();

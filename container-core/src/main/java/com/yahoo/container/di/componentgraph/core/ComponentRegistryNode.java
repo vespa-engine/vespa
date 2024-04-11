@@ -8,10 +8,8 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Tony Vaagenes
@@ -20,7 +18,7 @@ import java.util.stream.Collectors;
  */
 public class ComponentRegistryNode extends Node {
 
-    private static ComponentId componentRegistryNamespace = ComponentId.fromString("ComponentRegistry");
+    private static final ComponentId componentRegistryNamespace = ComponentId.fromString("ComponentRegistry");
 
     private final Class<?> componentClass;
 
@@ -63,7 +61,7 @@ public class ComponentRegistryNode extends Node {
 
     @Override
     public Set<ConfigKey<ConfigInstance>> configKeys() {
-        return Collections.emptySet();
+        return Set.of();
     }
 
     @Override
@@ -76,8 +74,7 @@ public class ComponentRegistryNode extends Node {
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof ComponentRegistryNode) {
-            ComponentRegistryNode that = (ComponentRegistryNode) other;
+        if (other instanceof ComponentRegistryNode that) {
             return this.componentId().equals(that.componentId()) && this.instanceType().equals(that.instanceType())
                     && equalNodeEdges(this.usedComponents(), that.usedComponents());
         } else {

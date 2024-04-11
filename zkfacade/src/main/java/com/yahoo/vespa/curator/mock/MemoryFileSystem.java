@@ -53,7 +53,7 @@ class MemoryFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        return Collections.singleton(Paths.get("/"));
+        return Set.of(Paths.get("/"));
     }
 
     @Override
@@ -63,7 +63,7 @@ class MemoryFileSystem extends FileSystem {
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        return Collections.emptySet();
+        return Set.of();
     }
 
     @Override
