@@ -34,7 +34,6 @@ public class LocalLLMTest {
     @Test
     public void testGeneration() {
         var config = new LlmLocalClientConfig.Builder()
-                .useGpu(true)
                 .parallelRequests(1)
                 .model(ModelReference.valueOf(model));
         var llm = new LocalLLM(config.build());
@@ -53,7 +52,6 @@ public class LocalLLMTest {
         var sb = new StringBuilder();
         var tokenCount = new AtomicInteger(0);
         var config = new LlmLocalClientConfig.Builder()
-                .useGpu(true)
                 .parallelRequests(1)
                 .model(ModelReference.valueOf(model));
         var llm = new LocalLLM(config.build());
@@ -87,7 +85,6 @@ public class LocalLLMTest {
         var tokenCounts = new ArrayList<>(Collections.nCopies(promptsToUse, 0));
 
         var config = new LlmLocalClientConfig.Builder()
-                .useGpu(true)
                 .parallelRequests(parallelRequests)
                 .model(ModelReference.valueOf(model));
         var llm = new LocalLLM(config.build());
@@ -127,7 +124,6 @@ public class LocalLLMTest {
         var completions = new ArrayList<StringBuilder>(Collections.nCopies(promptsToUse, null));
 
         var config = new LlmLocalClientConfig.Builder()
-                .useGpu(true)
                 .parallelRequests(parallelRequests)
                 .maxQueueSize(additionalQueue)
                 .model(ModelReference.valueOf(model));
