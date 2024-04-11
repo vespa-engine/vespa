@@ -80,7 +80,7 @@ public class URI implements Cloneable, Comparable<URI> {
     }
 
     /**
-     * Creates an URI, optionaly keeping the fragment (the part starting by #).
+     * Creates a URI, optionally keeping the fragment (the part starting by #).
      * If the uri is hierarchical, it is normalized and incorrect hierarchical uris
      * which looks like urls are attempted repaired.
      *
@@ -95,7 +95,7 @@ public class URI implements Cloneable, Comparable<URI> {
     }
 
     /**
-     * Creates an URI, optionaly keeping the fragment (the part starting by #).
+     * Creates a URI, optionally keeping the fragment (the part starting by #).
      * If the uri is hierarchical, it is normalized and incorrect hierarchical uris
      * which looks like urls are attempted repaired.
      *

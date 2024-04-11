@@ -40,7 +40,7 @@
 
     <component id="bert-embedder" type="bert-embedder">
       <!-- model specifics -->
-      <transformer-model model-id="minilm-l6-v2" url="application-url"/>
+      <transformer-model model-id="minilm-l6-v2" url="https://my/url/model.onnx"/>
       <tokenizer-vocab path="files/vocab.txt"/>
       <max-tokens>512</max-tokens>
       <transformer-input-ids>my_input_ids</transformer-input-ids>
