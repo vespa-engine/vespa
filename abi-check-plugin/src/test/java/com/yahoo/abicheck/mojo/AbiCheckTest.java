@@ -13,8 +13,9 @@ import com.yahoo.abicheck.classtree.ClassFileTree;
 import com.yahoo.abicheck.signature.JavaClassSignature;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.maven.plugin.logging.Log;
 import org.junit.jupiter.api.Test;
 import root.Root;
@@ -30,9 +31,9 @@ public class AbiCheckTest {
     ClassFileTree.ClassFile rootPkgClass = mock(ClassFileTree.ClassFile.class);
     ClassFileTree.ClassFile subPkgClass = mock(ClassFileTree.ClassFile.class);
 
-    when(rootPkg.getSubPackages()).thenReturn(Collections.singleton(subPkg));
+    when(rootPkg.getSubPackages()).thenReturn(Set.of(subPkg));
     when(rootPkg.getClassFiles()).thenReturn(Arrays.asList(rootPkgClass, rootPkgInfoClass));
-    when(subPkg.getClassFiles()).thenReturn(Collections.singleton(subPkgClass));
+    when(subPkg.getClassFiles()).thenReturn(Set.of(subPkgClass));
 
     when(rootPkgInfoClass.getName()).thenReturn("package-info.class");
     when(rootPkgInfoClass.getInputStream())
@@ -68,16 +69,16 @@ public class AbiCheckTest {
 
     JavaClassSignature signatureA = new JavaClassSignature(
         "java.lang.Object",
-        Collections.emptySet(),
-        Collections.singletonList("public"),
-        Collections.singleton("public void foo()"),
-        Collections.singleton("public int bar"));
+        Set.of(),
+        List.of("public"),
+        Set.of("public void foo()"),
+        Set.of("public int bar"));
     JavaClassSignature signatureB = new JavaClassSignature(
         "java.lang.Exception",
-        Collections.singleton("java.lang.Runnable"),
-        Collections.singletonList("protected"),
-        Collections.singleton("public void foo(int)"),
-        Collections.singleton("public boolean bar"));
+        Set.of("java.lang.Runnable"),
+        List.of("protected"),
+        Set.of("public void foo(int)"),
+        Set.of("public boolean bar"));
 
     Map<String, JavaClassSignature> expected = ImmutableMap.<String, JavaClassSignature>builder()
         .put("test.Missing", signatureA)

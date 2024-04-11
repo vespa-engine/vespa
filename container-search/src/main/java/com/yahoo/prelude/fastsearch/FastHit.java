@@ -13,7 +13,6 @@ import com.yahoo.data.access.Inspector;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -62,7 +61,7 @@ public class FastHit extends Hit {
      * that most fields passes through the container with no processing most
      * of the time.
      */
-    private List<SummaryData> summaries = Collections.emptyList();
+    private List<SummaryData> summaries = List.of();
 
     /** Removed field values, which should therefore not be returned if present in summary data */
     private Set<String> removedFields = null;
@@ -481,7 +480,7 @@ public class FastHit extends Hit {
 
         private Set<String> createSet() {
             if (this.fieldSet != null) return this.fieldSet;
-            if ( ! hit.hasFields() && hit.summaries.isEmpty()) return Collections.emptySet(); // shortcut
+            if ( ! hit.hasFields() && hit.summaries.isEmpty()) return Set.of(); // shortcut
 
             Set<String> fields = new HashSet<>();
             if (hit.hasFields())

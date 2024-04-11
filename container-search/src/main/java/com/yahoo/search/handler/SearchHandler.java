@@ -3,7 +3,6 @@ package com.yahoo.search.handler;
 
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.cloud.ZoneInfo;
-import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Vtag;
@@ -117,7 +116,7 @@ public class SearchHandler extends LoggingRequestHandler {
                          ZoneInfo zoneInfo) {
         this(metric, threadpool.executor(), queryProfileRegistry, embedders, executionFactory,
              config.numQueriesToTraceOnDebugAfterConstruction(),
-             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
+                config.hostResponseHeaderKey().isEmpty() ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
              zoneInfo);
     }
 

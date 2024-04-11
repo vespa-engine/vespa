@@ -10,8 +10,6 @@ import org.osgi.framework.Bundle;
 import java.util.Collection;
 import java.util.Set;
 
-import static java.util.Collections.emptySet;
-
 /**
  * This interface has default implementations of all methods, to allow using it
  * for testing, instead of mocking or a test implementation.
@@ -49,7 +47,7 @@ public interface Osgi {
      * @return The set of bundles that are no longer needed by the new or latest good generation.
      */
     default Set<Bundle> completeBundleGeneration(GenerationStatus status) {
-        return emptySet();
+        return Set.of();
     }
 
     default Class<?> resolveClass(BundleInstantiationSpecification spec) {

@@ -4,7 +4,6 @@ package com.yahoo.collections;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -129,7 +128,7 @@ public abstract class LazyMap<K, V> implements Map<K, V> {
 
         @Override
         public Set<Entry<K, V>> entrySet() {
-            return Collections.emptySet();
+            return Set.of();
         }
     }
 

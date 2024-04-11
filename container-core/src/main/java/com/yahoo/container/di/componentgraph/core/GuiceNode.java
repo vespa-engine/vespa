@@ -7,7 +7,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -24,8 +23,7 @@ public final class GuiceNode extends Node {
     private final Object myInstance;
     private final Annotation annotation;
 
-    public GuiceNode(Object myInstance,
-                     Annotation annotation) {
+    public GuiceNode(Object myInstance, Annotation annotation) {
         super(componentId(myInstance));
         this.myInstance = myInstance;
         this.annotation = annotation;
@@ -33,7 +31,7 @@ public final class GuiceNode extends Node {
 
     @Override
     public Set<ConfigKey<ConfigInstance>> configKeys() {
-        return Collections.emptySet();
+        return Set.of();
     }
 
     @Override
@@ -54,7 +52,7 @@ public final class GuiceNode extends Node {
 
     @Override
     public List<Node> usedComponents() {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override

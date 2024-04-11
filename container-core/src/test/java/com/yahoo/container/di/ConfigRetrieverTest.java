@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,7 +44,7 @@ public class ConfigRetrieverTest {
     void require_that_bootstrap_configs_come_first() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
-        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
+        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Set.of(), 0, true);
 
         assertTrue(bootstrapConfigs instanceof BootstrapConfigs);
         retriever.shutdown();
@@ -56,10 +55,10 @@ public class ConfigRetrieverTest {
     void require_that_components_comes_after_bootstrap() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
-        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
+        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Set.of(), 0, true);
 
         ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
-        ConfigSnapshot componentsConfigs = retriever.getConfigs(Collections.singleton(testConfigKey), 0, true);
+        ConfigSnapshot componentsConfigs = retriever.getConfigs(Set.of(testConfigKey), 0, true);
 
         if (componentsConfigs instanceof ComponentsConfigs) {
             assertEquals(3, componentsConfigs.size());
@@ -75,8 +74,8 @@ public class ConfigRetrieverTest {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
         ConfigKey<? extends ConfigInstance> testConfigKey = new ConfigKey<>(TestConfig.class, dirConfigSource.configId());
-        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
-        ConfigSnapshot componentsConfigs = retriever.getConfigs(Collections.singleton(testConfigKey), 0, true);
+        ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Set.of(), 0, true);
+        ConfigSnapshot componentsConfigs = retriever.getConfigs(Set.of(testConfigKey), 0, true);
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(testConfigKey);
         keys.add(new ConfigKey<>(TestConfig.class, ""));
@@ -92,8 +91,8 @@ public class ConfigRetrieverTest {
     void require_that_empty_components_keys_after_bootstrap_returns_components_configs() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
-        assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof BootstrapConfigs);
-        assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof ComponentsConfigs);
+        assertTrue(retriever.getConfigs(Set.of(), 0, true) instanceof BootstrapConfigs);
+        assertTrue(retriever.getConfigs(Set.of(), 0, true) instanceof ComponentsConfigs);
         retriever.shutdown();
     }
 
