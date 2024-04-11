@@ -25,9 +25,9 @@ public class ModelTest {
 
         var state = new DeployState.Builder().build();
         var element = XML.getDocument(xml).getDocumentElement();
-        assertThrows(IllegalArgumentException.class,
-                     () -> Model.fromXml(state, element, "transformer-model", Set.of()),
-                     "Invalid url 'models/e5-base-v2.onnx': url has no 'scheme' component");
+var exception = assertThrows(IllegalArgumentException.class,
+                     () -> Model.fromXml(state, element, "transformer-model", Set.of()));
+org.junit.jupiter.api.Assertions.assertEquals("Invalid url 'models/e5-base-v2.onnx': url has no 'scheme' component", exception.getMessage());                   
     }
 
 }
