@@ -42,11 +42,11 @@ calc_hits_per_term(uint32_t num_docs, double op_hit_ratio, uint32_t children, Qu
 }
 
 std::unique_ptr<BenchmarkSearchable>
-make_searchable(const FieldConfig& cfg, uint32_t num_docs, const HitSpecs& hit_specs)
+make_searchable(const FieldConfig& cfg, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms)
 {
     if (cfg.is_attr()) {
         AttributeContextBuilder builder;
-        builder.add(cfg.attr_cfg(), field_name, num_docs, hit_specs);
+        builder.add(cfg.attr_cfg(), field_name, num_docs, hit_specs, disjunct_terms);
         return builder.build();
     } else {
         uint32_t docid_limit = num_docs + 1;
@@ -159,14 +159,14 @@ private:
 public:
     MyFactory(const FieldConfig& field_cfg, QueryOperator query_op,
               uint32_t num_docs, uint32_t default_values_per_document,
-              double op_hit_ratio, uint32_t children);
+              double op_hit_ratio, uint32_t children, bool disjunct_children);
 
     std::unique_ptr<Blueprint> make_blueprint() override;
 };
 
 MyFactory::MyFactory(const FieldConfig& field_cfg, QueryOperator query_op,
                      uint32_t num_docs, uint32_t default_values_per_document,
-                     double op_hit_ratio, uint32_t children)
+                     double op_hit_ratio, uint32_t children, bool disjunct_children)
     : _query_op(query_op),
       _docid_limit(num_docs + 1),
       _terms(),
@@ -174,9 +174,17 @@ MyFactory::MyFactory(const FieldConfig& field_cfg, QueryOperator query_op,
 {
     uint32_t hits_per_term = calc_hits_per_term(num_docs, op_hit_ratio, children, query_op);
     HitSpecs hit_specs(55555);
-    hit_specs.add(default_values_per_document, num_docs);
+    if (!disjunct_children) {
+        hit_specs.add(default_values_per_document, num_docs);
+    }
     _terms = hit_specs.add(children, hits_per_term);
-    _searchable = make_searchable(field_cfg, num_docs, hit_specs);
+    if (disjunct_children && default_values_per_document != 0) {
+        // This ensures that the remaining docids are populated with a "default value".
+        // Only a single default value is supported.
+        uint32_t op_num_hits = num_docs * op_hit_ratio;
+        hit_specs.add(1, num_docs - op_num_hits);
+    }
+    _searchable = make_searchable(field_cfg, num_docs, hit_specs, disjunct_children);
 }
 
 std::unique_ptr<Blueprint>
@@ -190,9 +198,9 @@ MyFactory::make_blueprint()
 std::unique_ptr<BenchmarkBlueprintFactory>
 make_blueprint_factory(const FieldConfig& field_cfg, QueryOperator query_op,
                        uint32_t num_docs, uint32_t default_values_per_document,
-                       double op_hit_ratio, uint32_t children)
+                       double op_hit_ratio, uint32_t children, bool disjunct_children)
 {
-    return std::make_unique<MyFactory>(field_cfg, query_op, num_docs, default_values_per_document, op_hit_ratio, children);
+    return std::make_unique<MyFactory>(field_cfg, query_op, num_docs, default_values_per_document, op_hit_ratio, children, disjunct_children);
 }
 
 }

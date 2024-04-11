@@ -5,6 +5,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <random>
 #include <variant>
 
 namespace search::queryeval::test {
@@ -77,6 +78,8 @@ public:
     auto begin() const { return _specs.begin(); }
     auto end() const { return _specs.end(); }
 };
+
+std::mt19937& get_gen();
 
 BitVector::UP random_docids(uint32_t docid_limit, uint32_t count);
 

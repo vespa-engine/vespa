@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "common.h"
-#include <random>
 #include <sstream>
 
 using search::attribute::CollectionType;
@@ -48,6 +47,8 @@ constexpr uint32_t default_seed = 1234;
 std::mt19937 gen(default_seed);
 
 }
+
+std::mt19937& get_gen() { return gen; }
 
 BitVector::UP
 random_docids(uint32_t docid_limit, uint32_t count)
