@@ -333,7 +333,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     public void setFillable() {
         if (filled == null) {
-            filled = Set.of();
+            //TODO Should have used Set.of(), but it checks that contains it not called with null
+            filled = Collections.emptySet();
             unmodifiableFilled = filled;
         }
     }
@@ -347,7 +348,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     public void setFilled(String summaryClass) {
         if (filled == null || filled.isEmpty()) {
-            filled = Set.of(summaryClass);
+            //TODO Should have used Set.of(), but it checks that contains it not called with null
+            filled = Collections.singleton(summaryClass);
             unmodifiableFilled = filled;
         } else if (filled.size() == 1) {
             filled = new HashSet<>(filled);
