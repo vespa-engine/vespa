@@ -88,7 +88,17 @@ ServiceLayerProcess::updateConfig()
 bool
 ServiceLayerProcess::configUpdated()
 {
-    return Process::configUpdated();
+    bool changed = Process::configUpdated();
+    if (_persistence_cfg_handle->isChanged()) {
+        changed = true;
+    }
+    if (_visitor_cfg_handle->isChanged()) {
+        changed = true;
+    }
+    if (_filestor_cfg_handle->isChanged()) {
+        changed = true;
+    }
+    return changed;
 }
 
 void
