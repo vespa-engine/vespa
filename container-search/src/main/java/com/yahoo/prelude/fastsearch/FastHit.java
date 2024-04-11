@@ -274,7 +274,8 @@ public class FastHit extends Hit {
     /** Removes all fields of this */
     @Override
     public void clearFields() {
-        summaries.clear();
+        if (!summaries.isEmpty())
+            summaries.clear();
         if (removedFields != null)
             removedFields = null;
         super.clearFields();
