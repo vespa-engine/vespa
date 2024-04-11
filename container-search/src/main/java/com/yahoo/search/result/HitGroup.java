@@ -718,7 +718,8 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
                 if (hitFilled.isEmpty()) {
                     filled = null;
                 } else if (hitFilled.size() == 1) {
-                    filled = Set.of(hitFilled.iterator().next());
+                    //TODO Avoid needing set that allows null ....
+                    filled = Collections.singleton(hitFilled.iterator().next());
                 } else {
                     filled = new HashSet<>(hitFilled);
                 }
@@ -799,8 +800,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             analyzeHit(hit);
             Set<String> hitFilled = hit.getFilled();
             if (hitFilled != null) {
+                //TODO Avoid needing set that allows null ....
                 filled = (hitFilled.size() == 1)
-                        ? Set.of(hitFilled.iterator().next())
+                        ? Collections.singleton(hitFilled.iterator().next())
                         : hitFilled.isEmpty() ? null : new HashSet<>(hitFilled);
                 setFilledInternal(filled);
             }
@@ -931,9 +933,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     private Set<String> getFilledSingle(String summaryName, Set<String> summaryNames, Iterator<Hit> iterator) {
         while (true) {
             if (summaryNames == null) {
-                return Set.of(summaryName);
+                return Collections.singleton(summaryName);
             } else if (!summaryNames.contains(summaryName)) {
-                return Set.of();
+                return Collections.emptySet();
             }
             summaryNames = getSummaryNamesNextFilledHit(iterator);
         }
