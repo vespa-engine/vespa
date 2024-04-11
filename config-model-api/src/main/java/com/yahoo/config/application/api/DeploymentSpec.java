@@ -386,7 +386,7 @@ public class DeploymentSpec {
         public abstract boolean concerns(Environment environment, Optional<RegionName> region);
 
         /** Returns the zones deployed to in this step. */
-        public List<DeclaredZone> zones() { return Collections.emptyList(); }
+        public List<DeclaredZone> zones() { return List.of(); }
 
         /** The delay introduced by this step (beyond the time it takes to execute the step). */
         public Duration delay() { return Duration.ZERO; }

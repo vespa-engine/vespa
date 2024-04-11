@@ -9,7 +9,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.jar.Manifest;
@@ -37,7 +36,7 @@ public class AnalyzeBundle {
 
     static List<Export> exportedPackages(File jarFile) {
         var manifest = getOsgiManifest(jarFile);
-        if (manifest == null) return Collections.emptyList();
+        if (manifest == null) return List.of();
         try {
             return parseExports(manifest);
         } catch (Exception e) {
@@ -55,7 +54,7 @@ public class AnalyzeBundle {
 
     private static List<String> nonPublicApiPackages(File jarFile) {
         var manifest = getOsgiManifest(jarFile);
-        if (manifest == null) return Collections.emptyList();
+        if (manifest == null) return List.of();
         return getMainAttributeValue(manifest, "X-JDisc-Non-PublicApi-Export-Package")
                 .map(s -> Arrays.asList(s.split(",")))
                 .orElseGet(ArrayList::new);

@@ -53,7 +53,7 @@ public abstract class IntermediateOperation {
 
     private final List<String> importWarnings = new ArrayList<>();
     private Value constantValue = null;
-    private List<IntermediateOperation> controlInputs = Collections.emptyList();
+    private List<IntermediateOperation> controlInputs = List.of();
 
     protected Function<OrderedTensorType, Value> constantValueFunction = null;
 
@@ -259,7 +259,7 @@ public abstract class IntermediateOperation {
         if (result == DoubleValue.NaN) {
             if (constantValue != null) {
                 result = constantValue;
-            } else if (inputs.size() == 0) {
+            } else if (inputs.isEmpty()) {
                 if (getConstantValue().isEmpty()) {
                     throw new IllegalArgumentException("Error in evaluating constant for " + name);
                 }
@@ -278,7 +278,7 @@ public abstract class IntermediateOperation {
 
     /** Insert an operation between an input and this one */
     public void insert(IntermediateOperation operationToInsert, int inputNumber) {
-        if ( operationToInsert.inputs.size() > 0 ) {
+        if (!operationToInsert.inputs.isEmpty()) {
             throw new IllegalArgumentException("Operation to insert to '" + name + "' has " +
                                                "existing inputs which is not supported.");
         }
@@ -336,7 +336,7 @@ public abstract class IntermediateOperation {
     public abstract IntermediateOperation withInputs(List<IntermediateOperation> inputs);
 
     String asString(Optional<OrderedTensorType> type) {
-        return type.map(t -> t.toString()).orElse("(unknown)");
+        return type.map(OrderedTensorType::toString).orElse("(unknown)");
     }
 
     /**
@@ -373,7 +373,7 @@ public abstract class IntermediateOperation {
 
     public String toFullString() {
         return "\t" + type + ":\t" + operationName() + "(" +
-               inputs().stream().map(input -> input.toFullString()).collect(Collectors.joining(", ")) +
+               inputs().stream().map(IntermediateOperation::toFullString).collect(Collectors.joining(", ")) +
                ")";
     }
 

@@ -10,7 +10,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.pagetemplates.result.PageTemplatesXmlRenderer;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -34,7 +34,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
      * Use MoreExecutors.directExecutor().
      */
     public RendererRegistry(Executor executor) {
-        this(Collections.emptyList(), executor);
+        this(List.of(), executor);
     }
 
     /** 
@@ -111,7 +111,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     private String rendererNames() {
         StringBuilder r = new StringBuilder();
         for (Renderer<Result> c : allComponents()) {
-            if (r.length() > 0)
+            if (!r.isEmpty())
                 r.append(", ");
             r.append(c.getId().stringValue());
         }

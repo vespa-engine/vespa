@@ -53,7 +53,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -278,7 +278,7 @@ class HostRequestHandlerTest {
         ServiceCluster serviceCluster = new ServiceCluster(
                 new ClusterId("clusterId"),
                 new ServiceType("serviceType"),
-                Collections.singleton(serviceInstance));
+                Set.of(serviceInstance));
         serviceInstance.setServiceCluster(serviceCluster);
 
         Host host = new Host(
@@ -287,7 +287,7 @@ class HostRequestHandlerTest {
                 new ApplicationInstanceReference(
                         new TenantId("tenantId"),
                         new ApplicationInstanceId("applicationId")),
-                Collections.singletonList(serviceInstance));
+                List.of(serviceInstance));
         when(orchestrator.getHost(hostName)).thenReturn(host);
 
         HttpResponse httpResponse = executeRequest(testDriver, Method.GET, "/orchestrator/v1/hosts/hostname", null);
@@ -314,13 +314,14 @@ class HostRequestHandlerTest {
         assertEquals(409, httpResponse.getStatus());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         httpResponse.render(out);
-        JsonTestHelper.assertJsonEquals("{\n" +
-                "  \"hostname\" : \"hostname\",\n" +
-                "  \"reason\" : {\n" +
-                "    \"constraint\" : \"deadline\",\n" +
-                "    \"message\" : \"resume failed: Timeout Message\"\n" +
-                "  }\n" +
-                "}",
+        JsonTestHelper.assertJsonEquals("""
+                        {
+                          "hostname" : "hostname",
+                          "reason" : {
+                            "constraint" : "deadline",
+                            "message" : "resume failed: Timeout Message"
+                          }
+                        }""",
                 out.toString());
     }
 

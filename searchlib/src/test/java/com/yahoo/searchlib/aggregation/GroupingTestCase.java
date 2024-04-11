@@ -1,14 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
-import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.NullResultNode;
 import com.yahoo.searchlib.expression.StringBucketResultNode;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -30,7 +28,7 @@ public class GroupingTestCase {
         assertEquals(9, grouping.getId());
 
         Grouping other = new Grouping(6);
-        assertFalse(grouping.equals(other));
+        assertNotEquals(grouping, other);
         other.setId(9);
         assertEquals(grouping, other);
 
@@ -46,7 +44,7 @@ public class GroupingTestCase {
         assertTrue(grouping.getAll());
 
         Grouping other = new Grouping();
-        assertFalse(grouping.equals(other));
+        assertNotEquals(grouping, other);
         other.setAll(true);
         assertEquals(grouping, other);
 
@@ -62,7 +60,7 @@ public class GroupingTestCase {
         assertEquals(69, grouping.getTopN());
 
         Grouping other = new Grouping();
-        assertFalse(grouping.equals(other));
+        assertNotEquals(grouping, other);
         other.setTopN(69);
         assertEquals(grouping, other);
 
@@ -78,7 +76,7 @@ public class GroupingTestCase {
         assertEquals(69, grouping.getFirstLevel());
 
         Grouping other = new Grouping();
-        assertFalse(grouping.equals(other));
+        assertNotEquals(grouping, other);
         other.setFirstLevel(69);
         assertEquals(grouping, other);
 
@@ -94,7 +92,7 @@ public class GroupingTestCase {
         assertEquals(69, grouping.getLastLevel());
 
         Grouping other = new Grouping();
-        assertFalse(grouping.equals(other));
+        assertNotEquals(grouping, other);
         other.setLastLevel(69);
         assertEquals(grouping, other);
 
@@ -117,7 +115,7 @@ public class GroupingTestCase {
         assertEquals(root, grouping.getRoot());
 
         Grouping other = new Grouping();
-        assertFalse(grouping.equals(other));
+        assertNotEquals(grouping, other);
         other.setRoot(root);
         assertEquals(grouping, other);
 
@@ -128,7 +126,7 @@ public class GroupingTestCase {
     @Test
     public void requireThatLevelAccessorsWork() {
         Grouping grouping = new Grouping();
-        assertEquals(Collections.emptyList(), grouping.getLevels());
+        assertEquals(List.of(), grouping.getLevels());
         try {
             grouping.addLevel(null);
             fail();
@@ -137,10 +135,10 @@ public class GroupingTestCase {
         }
         GroupingLevel level = new GroupingLevel();
         grouping.addLevel(level);
-        assertEquals(Arrays.asList(level), grouping.getLevels());
+        assertEquals(List.of(level), grouping.getLevels());
 
         Grouping other = new Grouping();
-        assertFalse(grouping.equals(other));
+        assertNotEquals(grouping, other);
         other.addLevel(level);
         assertEquals(grouping, other);
 
@@ -155,8 +153,8 @@ public class GroupingTestCase {
 
     @Test
     public void requireThatEqualsIsImplemented() {
-        assertFalse(new Grouping().equals(new Object()));
-        assertTrue(new Grouping().equals(new Grouping()));
+        assertNotEquals(new Grouping(), new Object());
+        assertEquals(new Grouping(), new Grouping());
     }
 
     @Test

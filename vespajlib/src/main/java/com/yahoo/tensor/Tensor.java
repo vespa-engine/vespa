@@ -24,7 +24,6 @@ import com.yahoo.tensor.impl.Label;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -186,8 +185,8 @@ public interface Tensor {
     }
 
     default Tensor rename(String fromDimension, String toDimension) {
-        return new Rename<>(new ConstantTensor<>(this), Collections.singletonList(fromDimension),
-                                                        Collections.singletonList(toDimension)).evaluate();
+        return new Rename<>(new ConstantTensor<>(this), List.of(fromDimension),
+                                                        List.of(toDimension)).evaluate();
     }
 
     default Tensor concat(double argument, String dimension) {
@@ -270,26 +269,26 @@ public interface Tensor {
     default Tensor bit(Tensor argument) { return join(argument, (a,b) -> ((int)b < 8 && (int)b >= 0 && ((int)a & (1 << (int)b)) != 0) ? 1.0 : 0.0); }
     default Tensor hamming(Tensor argument) { return join(argument, Hamming::hamming); }
 
-    default Tensor avg() { return avg(Collections.emptyList()); }
-    default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }
+    default Tensor avg() { return avg(List.of()); }
+    default Tensor avg(String dimension) { return avg(List.of(dimension)); }
     default Tensor avg(List<String> dimensions) { return reduce(Reduce.Aggregator.avg, dimensions); }
-    default Tensor count() { return count(Collections.emptyList()); }
-    default Tensor count(String dimension) { return count(Collections.singletonList(dimension)); }
+    default Tensor count() { return count(List.of()); }
+    default Tensor count(String dimension) { return count(List.of(dimension)); }
     default Tensor count(List<String> dimensions) { return reduce(Reduce.Aggregator.count, dimensions); }
-    default Tensor max() { return max(Collections.emptyList()); }
-    default Tensor max(String dimension) { return max(Collections.singletonList(dimension)); }
+    default Tensor max() { return max(List.of()); }
+    default Tensor max(String dimension) { return max(List.of(dimension)); }
     default Tensor max(List<String> dimensions) { return reduce(Reduce.Aggregator.max, dimensions); }
-    default Tensor median() { return median(Collections.emptyList()); }
-    default Tensor median(String dimension) { return median(Collections.singletonList(dimension)); }
+    default Tensor median() { return median(List.of()); }
+    default Tensor median(String dimension) { return median(List.of(dimension)); }
     default Tensor median(List<String> dimensions) { return reduce(Reduce.Aggregator.median, dimensions); }
-    default Tensor min() { return min(Collections.emptyList()); }
-    default Tensor min(String dimension) { return min(Collections.singletonList(dimension)); }
+    default Tensor min() { return min(List.of()); }
+    default Tensor min(String dimension) { return min(List.of(dimension)); }
     default Tensor min(List<String> dimensions) { return reduce(Reduce.Aggregator.min, dimensions); }
-    default Tensor prod() { return prod(Collections.emptyList()); }
-    default Tensor prod(String dimension) { return prod(Collections.singletonList(dimension)); }
+    default Tensor prod() { return prod(List.of()); }
+    default Tensor prod(String dimension) { return prod(List.of(dimension)); }
     default Tensor prod(List<String> dimensions) { return reduce(Reduce.Aggregator.prod, dimensions); }
-    default Tensor sum() { return sum(Collections.emptyList()); }
-    default Tensor sum(String dimension) { return sum(Collections.singletonList(dimension)); }
+    default Tensor sum() { return sum(List.of()); }
+    default Tensor sum(String dimension) { return sum(List.of(dimension)); }
     default Tensor sum(List<String> dimensions) { return reduce(Reduce.Aggregator.sum, dimensions); }
 
     // ----------------- non-math query methods (that is, computations not returning a tensor)

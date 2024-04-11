@@ -8,7 +8,6 @@ import com.yahoo.search.dispatch.searchcluster.Node;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -163,7 +162,7 @@ public class SearchPath {
                 nodes = parseNodeRange(nodes, ret);
             } else {
                 if (isWildcard(nodes)) { // any node will be accepted
-                    return Collections.emptyList();
+                    return List.of();
                 }
                 nodes = parseNodeNum(nodes, ret);
             }
@@ -231,7 +230,7 @@ public class SearchPath {
 
         public Collection<Integer> matches(int max) {
             if (from >= max) {
-                return Collections.emptyList();
+                return List.of();
             }
             int end = Math.min(to, max);
             return IntStream.range(from, end).boxed().toList();

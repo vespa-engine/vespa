@@ -4,7 +4,6 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.Name;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -28,7 +27,7 @@ public class Range<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETY
     }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {

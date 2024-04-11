@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -311,7 +310,7 @@ public class ConfigServerBootstrapTest {
     }
 
     private Host createHost(String hostname, String version) {
-        return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
+        return new Host(hostname, List.of(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
     }
 
     private VipStatus createVipStatus(StateMonitor stateMonitor) {

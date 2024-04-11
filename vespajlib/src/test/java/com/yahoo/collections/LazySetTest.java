@@ -198,15 +198,15 @@ public class LazySetTest {
         assertFalse(set.remove("foo"));
         Mockito.verify(delegate).remove("foo");
 
-        Collection<String> containsAllArg = Collections.singletonList("foo");
+        Collection<String> containsAllArg = Set.of("foo");
         assertFalse(set.containsAll(containsAllArg));
         Mockito.verify(delegate).containsAll(containsAllArg);
 
-        Collection<String> retainAllArg = Collections.singletonList("foo");
+        Collection<String> retainAllArg = Set.of("foo");
         assertFalse(set.retainAll(retainAllArg));
         Mockito.verify(delegate).retainAll(retainAllArg);
 
-        Collection<String> removeAllArg = Collections.singletonList("foo");
+        Collection<String> removeAllArg = Set.of("foo");
         assertFalse(set.removeAll(removeAllArg));
         Mockito.verify(delegate).removeAll(removeAllArg);
 

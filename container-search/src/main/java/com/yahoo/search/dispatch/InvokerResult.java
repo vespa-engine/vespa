@@ -7,7 +7,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.query.Sorting;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,7 +21,7 @@ public class InvokerResult {
 
     public InvokerResult(Result result) {
         this.result = result;
-        this.leanHits = Collections.emptyList();
+        this.leanHits = List.of();
     }
 
     public InvokerResult(Query query, int expectedHits) {
@@ -54,7 +53,8 @@ public class InvokerResult {
             fh.setCached(false);
             result.hits().add(fh);
         }
-        leanHits.clear();
+        if (!leanHits.isEmpty())
+            leanHits.clear();
     }
 
 }

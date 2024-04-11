@@ -7,14 +7,13 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 public class Constant extends IntermediateOperation {
 
     public Constant(String modelName, String nodeName, OrderedTensorType type) {
-        super(modelName, nodeName, Collections.emptyList());
+        super(modelName, nodeName, List.of());
         this.type = type.rename(vespaName() + "_");
     }
 

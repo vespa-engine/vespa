@@ -25,7 +25,6 @@ import static com.yahoo.security.X509CertificateBuilder.generateRandomSerialNumb
 import static java.time.Instant.EPOCH;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 
 /**
  * @author bjorncs
@@ -42,8 +41,7 @@ class CryptoUtils {
             singleton(
                     new PeerPolicy(
                             "localhost-policy",
-                            singletonList(
-                                    RequiredPeerCredential.of(Field.CN, "localhost")))));
+                            List.of(RequiredPeerCredential.of(Field.CN, "localhost")))));
 
     static TlsContext createTestTlsContext() {
         return DefaultTlsContext.of(

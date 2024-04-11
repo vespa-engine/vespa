@@ -18,8 +18,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
-import static java.util.Collections.singletonList;
-
 /**
  * A builder for {@link SSLContext}.
  *
@@ -48,7 +46,7 @@ public class SslContextBuilder {
     }
 
     public SslContextBuilder withTrustStore(X509Certificate caCertificate) {
-        return withTrustStore(singletonList(caCertificate));
+        return withTrustStore(List.of(caCertificate));
     }
 
     public SslContextBuilder withTrustStore(List<X509Certificate> caCertificates) {
@@ -66,7 +64,7 @@ public class SslContextBuilder {
     }
 
     public SslContextBuilder withKeyStore(PrivateKey privateKey, X509Certificate certificate) {
-        return withKeyStore(privateKey, singletonList(certificate));
+        return withKeyStore(privateKey, List.of(certificate));
     }
 
     public SslContextBuilder withKeyStore(PrivateKey privateKey, List<X509Certificate> certificates) {

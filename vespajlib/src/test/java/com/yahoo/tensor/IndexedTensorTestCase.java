@@ -3,9 +3,9 @@ package com.yahoo.tensor;
 
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -139,7 +139,7 @@ public class IndexedTensorTestCase {
         Tensor.Builder builder = Tensor.Builder.of(type);
         builder.cell(47.0, 98);
         Tensor tensor = builder.build();
-        assertEquals(47.0, tensor.sum(Collections.singletonList("x")).asDouble(), 0.000001);
+        assertEquals(47.0, tensor.sum(List.of("x")).asDouble(), 0.000001);
     }
     
     private void assertBuildingVWXYZ(TensorType type) {

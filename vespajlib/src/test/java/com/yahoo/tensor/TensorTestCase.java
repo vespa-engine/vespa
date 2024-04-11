@@ -11,7 +11,6 @@ import com.yahoo.tensor.functions.TensorFunction;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
@@ -214,7 +213,7 @@ public class TensorTestCase {
         Tensor unitK = Tensor.Builder.of(new TensorType.Builder().mapped("k").build()).cell().label("k", 0).value(1).build();
         Tensor vectorInJSpace = vector(Type.mapped).multiply(unitJ);
         Tensor matrixInKSpace = matrix(Type.mapped, 2).get(0).multiply(unitK);
-        assertEquals("Generic computation implementation", 42, (int)dotProduct(vectorInJSpace, Collections.singletonList(matrixInKSpace)));
+        assertEquals("Generic computation implementation", 42, (int)dotProduct(vectorInJSpace, List.of(matrixInKSpace)));
     }
 
     @Test
@@ -458,7 +457,7 @@ public class TensorTestCase {
                         .value((i+1)*(j+1));
             }
         }
-        return Collections.singletonList(builder.build());
+        return List.of(builder.build());
     }
 
     private TensorType vectorType(TensorType.Builder builder, String name, TensorType.Dimension.Type type, int size) {

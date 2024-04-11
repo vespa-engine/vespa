@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -156,7 +155,7 @@ abstract public class SectionedRenderer<WRITER> extends Renderer {
     }
 
     private  void renderResultContent(WRITER writer, Result result) throws IOException {
-        if (result.hits().getError() != null || result.hits().getQuery().errors().size() > 0) {
+        if (result.hits().getError() != null || !result.hits().getQuery().errors().isEmpty()) {
             error(writer, asUnmodifiableSearchErrorList(result.hits().getQuery().errors(), result.hits().getError()));
         }
 
@@ -172,14 +171,14 @@ abstract public class SectionedRenderer<WRITER> extends Renderer {
     }
 
     private Collection<ErrorMessage> asUnmodifiableSearchErrorList(List<com.yahoo.processing.request.ErrorMessage> queryErrors,ErrorMessage resultError) {
-        if (queryErrors.size() == 0)
-            return Collections.singletonList(resultError);
+        if (queryErrors.isEmpty())
+            return List.of(resultError);
         List<ErrorMessage> searchErrors = new ArrayList<>(queryErrors.size() + (resultError != null ? 1 :0) );
-        for (int i=0; i<queryErrors.size(); i++)
-            searchErrors.add(ErrorMessage.from(queryErrors.get(i)));
+        for (com.yahoo.processing.request.ErrorMessage queryError : queryErrors)
+            searchErrors.add(ErrorMessage.from(queryError));
         if (resultError != null)
             searchErrors.add(resultError);
-        return Collections.unmodifiableCollection(searchErrors);
+        return List.copyOf(searchErrors);
     }
 
     private void renderHitGroup(WRITER writer, HitGroup hitGroup) throws IOException {

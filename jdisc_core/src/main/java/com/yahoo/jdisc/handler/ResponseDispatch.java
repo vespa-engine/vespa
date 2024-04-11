@@ -5,8 +5,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.SharedResource;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -28,7 +27,7 @@ import java.util.concurrent.TimeoutException;
  *         }
  *         &#64;Override
  *         protected Iterable&lt;ByteBuffer&gt; responseContent() {
- *             return Collections.singleton(ByteBuffer.wrap(new byte[] { 6, 9 }));
+ *             return Set.of(ByteBuffer.wrap(new byte[] { 6, 9 }));
  *         }
  *     }.dispatch(handler);
  * }
@@ -56,7 +55,7 @@ public abstract class ResponseDispatch implements Future<Boolean> {
      * @return The ByteBuffers to write to the Response's ContentChannel.
      */
     protected Iterable<ByteBuffer> responseContent() {
-        return Collections.emptyList();
+        return List.of();
     }
 
     /**
@@ -130,7 +129,7 @@ public abstract class ResponseDispatch implements Future<Boolean> {
      * @return The created ResponseDispatch.
      */
     public static ResponseDispatch newInstance(int responseStatus, ByteBuffer... content) {
-        return newInstance(new Response(responseStatus), Arrays.asList(content));
+        return newInstance(new Response(responseStatus), List.of(content));
     }
 
     /**
@@ -155,7 +154,7 @@ public abstract class ResponseDispatch implements Future<Boolean> {
      * @return The created ResponseDispatch.
      */
     public static ResponseDispatch newInstance(Response response, ByteBuffer... content) {
-        return newInstance(response, Arrays.asList(content));
+        return newInstance(response, List.of(content));
     }
 
     /**

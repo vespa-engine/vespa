@@ -14,7 +14,6 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,7 @@ import java.util.Objects;
 public final class ScriptExpression extends ExpressionList<StatementExpression> {
 
     public ScriptExpression() {
-        this(Collections.emptyList());
+        this(List.of());
     }
 
     public ScriptExpression(StatementExpression... statements) {

@@ -16,7 +16,6 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.text.Utf8String;
 import com.yahoo.vespa.config.content.DistributionConfig;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -283,7 +282,7 @@ public class DocumentProtocol implements Protocol {
         // Prepare version specifications to use when adding routable factories.
         VersionSpecification version6 = new VersionSpecification(6, 221);
 
-        List<VersionSpecification> from6 = Collections.singletonList(version6);
+        List<VersionSpecification> from6 = List.of(version6);
 
         // 6.x serialization (keep alphabetized please)
         putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories60.CreateVisitorMessageFactory(), from6);
@@ -322,7 +321,7 @@ public class DocumentProtocol implements Protocol {
 
     private void registerV8Factories() {
         var version8 = new VersionSpecification(8, 310); // Must be same as in C++ impl
-        var from8 = Collections.singletonList(version8);
+        var from8 = List.of(version8);
 
         putRoutableFactory(MESSAGE_CREATEVISITOR,   RoutableFactories80.createCreateVisitorMessageFactory(),   from8);
         putRoutableFactory(MESSAGE_DESTROYVISITOR,  RoutableFactories80.createDestroyVisitorMessageFactory(),  from8);

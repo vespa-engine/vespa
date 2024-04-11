@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -78,7 +77,7 @@ public class ConfigSubscriptionTest {
     @Test
     public void testSubscribeWithException() {
         TestConfigSubscriber sub = new TestConfigSubscriber();
-        ConfigSourceSet configSourceSet = new ConfigSourceSet(Collections.singletonList("tcp/localhost:99999"));
+        ConfigSourceSet configSourceSet = new ConfigSourceSet(List.of("tcp/localhost:99999"));
         try {
             sub.subscribe(SimpletypesConfig.class, "configid", configSourceSet, new TimingValues().setSubscribeTimeout(100));
             fail();

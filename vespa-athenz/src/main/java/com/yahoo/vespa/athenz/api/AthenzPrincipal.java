@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static java.util.Collections.emptyList;
-
 /**
  * @author bjorncs
  */
@@ -18,11 +16,11 @@ public class AthenzPrincipal implements Principal {
     private final List<AthenzRole> roles;
 
     public AthenzPrincipal(AthenzIdentity athenzIdentity) {
-        this(athenzIdentity, null, emptyList());
+        this(athenzIdentity, null, List.of());
     }
 
     public AthenzPrincipal(AthenzIdentity athenzIdentity, NToken nToken) {
-        this(athenzIdentity, nToken, emptyList());
+        this(athenzIdentity, nToken, List.of());
     }
 
     public AthenzPrincipal(AthenzIdentity identity, List<AthenzRole> roles) {

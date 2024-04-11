@@ -22,7 +22,6 @@ import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.model.ModelGenerator;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,12 +106,12 @@ public abstract class InfraApplication implements InfraApplicationApi {
                 // service name == service type for the first service of each type on each host
                 serviceType.s(),
                 serviceType.s(),
-                Collections.singletonList(portInfo),
+                List.of(portInfo),
                 properties,
                 configIdFor(hostname).s(),
                 hostname.value());
 
-        return new HostInfo(hostname.value(), Collections.singletonList(serviceInfo));
+        return new HostInfo(hostname.value(), List.of(serviceInfo));
     }
 
     public ConfigId configIdFor(DomainName hostname) {

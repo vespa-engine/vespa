@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static java.util.Collections.emptyList;
-
 /**
  * @author bjorncs
  */
@@ -40,7 +38,7 @@ public class Pkcs10Csr {
         return getExtensions()
                 .map(extensions -> GeneralNames.fromExtensions(extensions, Extension.subjectAlternativeName))
                 .map(SubjectAlternativeName::fromGeneralNames)
-                .orElse(emptyList());
+                .orElse(List.of());
     }
 
     /**
@@ -57,7 +55,7 @@ public class Pkcs10Csr {
                 .map(extensions -> Arrays.stream(extensions.getExtensionOIDs())
                         .map(ASN1ObjectIdentifier::getId)
                         .toList())
-                .orElse(emptyList());
+                .orElse(List.of());
 
     }
 

@@ -14,7 +14,6 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -66,7 +65,7 @@ public class ProtobufSerializationTest {
         builder.setTimeout(0);
         var hit = new FastHit();
         hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());
-        var bytes = ProtobufSerialization.serializeDocsumRequest(builder, Collections.singletonList(hit));
+        var bytes = ProtobufSerialization.serializeDocsumRequest(builder, List.of(hit));
 
         assertEquals(56, bytes.length);
     }

@@ -6,7 +6,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,12 +35,12 @@ public class NonWorkingOsgiFramework implements OsgiFramework {
 
     @Override
     public List<Bundle> bundles() {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override
     public List<Bundle> getBundles(Bundle requestingBundle) {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override

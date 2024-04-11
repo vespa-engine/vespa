@@ -537,12 +537,7 @@ public abstract class GroupingOperation extends GroupingNode {
         } else if (level == 1) {
             return "single group";
         } else {
-            StringBuilder ret = new StringBuilder();
-            for (int i = 1; i < level; ++i) {
-                ret.append("list of ");
-            }
-            ret.append("groups");
-            return ret.toString();
+            return "list of ".repeat(level - 1) + "groups";
         }
     }
 
@@ -571,8 +566,8 @@ public abstract class GroupingOperation extends GroupingNode {
      * @throws IllegalArgumentException thrown if the string could not be parsed
      */
     public static List<GroupingOperation> fromStringAsList(String string) {
-        if (string == null || string.trim().length() == 0) {
-            return Collections.emptyList();
+        if (string == null || string.trim().isEmpty()) {
+            return List.of();
         }
         GroupingParserInput input = new GroupingParserInput(string);
         try {

@@ -27,7 +27,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -188,7 +187,7 @@ public class UniqueGroupingSearcher extends Searcher {
     private static List<Hit> getRequestedHits(GroupList resultGroups, int offset, int hits) {
         List<Hit> receivedHits = getAllHitsFromGroupingResult(resultGroups);
         if (receivedHits.size() <= offset) {
-            return Collections.emptyList(); // There weren't any hits as far out as requested.
+            return List.of(); // There weren't any hits as far out as requested.
         }
         int lastRequestedHit = Math.min(offset + hits, receivedHits.size());
         return receivedHits.subList(offset, lastRequestedHit);

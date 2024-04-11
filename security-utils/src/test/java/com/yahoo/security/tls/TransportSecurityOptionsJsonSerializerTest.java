@@ -15,8 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
@@ -50,7 +50,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
                                                 RequiredPeerCredential.of(SAN_URI, "myscheme://resource/path/"))),
                                         new PeerPolicy("node", Optional.empty(),
                                                 CapabilitySet.of(Capability.SLOBROK__API),
-                                                Collections.singletonList(RequiredPeerCredential.of(CN, "hostname")))))))
+                                                List.of(RequiredPeerCredential.of(CN, "hostname")))))))
                 .build();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -68,7 +68,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
                 .withCaCertificates(Paths.get("my_cas.pem"))
                 .withAcceptedCiphers(Arrays.asList("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"))
-                .withAcceptedProtocols(Collections.singletonList("TLSv1.2"))
+                .withAcceptedProtocols(List.of("TLSv1.2"))
                 .withHostnameValidationDisabled(true)
                 .build();
         File outputFile = File.createTempFile("junit", null, tempDirectory);

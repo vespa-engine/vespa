@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.defaultMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
-import static java.util.Collections.emptyList;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -65,7 +64,7 @@ public class YamasJsonUtil {
             return packets;
         } catch (IOException e) {
             log.log(WARNING, "Could not create metrics packet from string:\n" + jsonString, e);
-            return emptyList();
+            return List.of();
         }
     }
 

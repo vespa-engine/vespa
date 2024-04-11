@@ -41,7 +41,6 @@ import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -194,7 +193,7 @@ class JettyCluster implements Cluster {
             proxySslCtxFactory.setSslContext(b.constructProxySslContext());
             try { proxySslCtxFactory.start(); } catch (Exception e) { throw new IOException(e); }
             httpClient.getProxyConfiguration().addProxy(
-                    new HttpProxy(address, proxySslCtxFactory, new Origin.Protocol(Collections.singletonList("h2"), false)));
+                    new HttpProxy(address, proxySslCtxFactory, new Origin.Protocol(List.of("h2"), false)));
             URI proxyUri = URI.create(endpointUri(b.proxy));
             httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
                 @Override public URI getURI() { return proxyUri; }
@@ -205,7 +204,7 @@ class JettyCluster implements Cluster {
         } else {
             // Assume insecure proxy uses HTTP/1.1
             httpClient.getProxyConfiguration().addProxy(
-                    new HttpProxy(address, false, new Origin.Protocol(Collections.singletonList("http/1.1"), false)));
+                    new HttpProxy(address, false, new Origin.Protocol(List.of("http/1.1"), false)));
             // Bug in Jetty cause authentication result to be ignored for HTTP/1.1 CONNECT requests
             httpClient.getRequestListeners().add(new Request.Listener() {
                 @Override

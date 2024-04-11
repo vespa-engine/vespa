@@ -6,7 +6,6 @@ import com.yahoo.container.plugin.osgi.ExportPackages.Parameter;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ImportPackageTest {
     private static final String PACKAGE_NAME = "com.yahoo.exported";
-    private final Set<String> referencedPackages = Collections.singleton(PACKAGE_NAME);
-    private final Map<String, Export> exports = exportByPackageName(new Export(List.of(PACKAGE_NAME), Collections.emptyList()));
+    private final Set<String> referencedPackages = Set.of(PACKAGE_NAME);
+    private final Map<String, Export> exports = exportByPackageName(new Export(List.of(PACKAGE_NAME), List.of()));
     private final Map<String, Export> exportsWithVersion = exportByPackageName(
             new Export(List.of(PACKAGE_NAME), List.of(new Parameter("version", "1.3"))));
 

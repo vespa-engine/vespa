@@ -772,7 +772,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     private String serializeSortingAndLimits(boolean includeHitsAndOffset) {
         StringBuilder insert = new StringBuilder();
-        if (getRanking().getSorting() != null && getRanking().getSorting().fieldOrders().size() > 0) {
+        if (getRanking().getSorting() != null && !getRanking().getSorting().fieldOrders().isEmpty()) {
             serializeSorting(insert);
         }
         if (includeHitsAndOffset) {

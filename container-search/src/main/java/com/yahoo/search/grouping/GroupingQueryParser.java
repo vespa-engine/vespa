@@ -15,7 +15,6 @@ import com.yahoo.search.query.Select;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,7 +82,7 @@ public class GroupingQueryParser extends Searcher {
 
     private List<Continuation> getContinuations(String param) {
         if (param == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         List<Continuation> ret = new LinkedList<>();
         for (String str : param.split(" ")) {

@@ -9,7 +9,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -27,7 +26,7 @@ public interface FeedClientBuilder {
      * Creates a builder for a single feed container endpoint.
      * This is for feeding against a container cluster with a load balancer in front of it.
      **/
-    static FeedClientBuilder create(URI endpoint) { return create(Collections.singletonList(endpoint)); }
+    static FeedClientBuilder create(URI endpoint) { return create(List.of(endpoint)); }
 
     /**
      * Creates a builder which <em>distributes</em> the feed across the given feed container endpoints.
