@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.metric.Metric;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,8 +41,8 @@ public class MetricsPacket {
         this.statusMessage = statusMessage;
         this.timestamp = timestamp;
         this.service = service;
-        this.metrics = Map.copyOf(metrics);
-        this.dimensions = Map.copyOf(dimensions);
+        this.metrics = Collections.unmodifiableMap(metrics);  // Retain order for tests
+        this.dimensions = Collections.unmodifiableMap(dimensions); // Retain order for tests
         this.consumers = Set.copyOf(consumers);
     }
 
