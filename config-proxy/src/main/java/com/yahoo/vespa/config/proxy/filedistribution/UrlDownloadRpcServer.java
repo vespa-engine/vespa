@@ -16,6 +16,7 @@ import net.jpountz.xxhash.XXHashFactory;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -94,6 +95,7 @@ class UrlDownloadRpcServer {
     }
 
     private static Downloader downloader(String url) {
+        Objects.requireNonNull(url, "url cannot be null");
         URI uri = new URI(url);
         return switch (uri.getScheme()) {
             case "http", "https" -> new UrlDownloader();
