@@ -17,8 +17,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SwitchExpression;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -67,18 +67,18 @@ public class ExpressionSearcherTestCase {
         assertFound(exp, new ScriptExpression(new StatementExpression(new AttributeExpression("foo")),
                                               new StatementExpression(exp)));
         assertFound(exp, new SelectInputExpression(
-                Arrays.asList(new Pair<String, Expression>("foo", exp),
-                              new Pair<String, Expression>("bar", new AttributeExpression("bar")))));
+                List.of(new Pair<>("foo", exp),
+                        new Pair<>("bar", new AttributeExpression("bar")))));
         assertFound(exp, new SelectInputExpression(
-                Arrays.asList(new Pair<String, Expression>("foo", new AttributeExpression("bar")),
-                              new Pair<String, Expression>("bar", exp))));
+                List.of(new Pair<>("foo", new AttributeExpression("bar")),
+                        new Pair<>("bar", exp))));
         assertFound(exp, new StatementExpression(exp));
         assertFound(exp, new StatementExpression(new AttributeExpression("foo"), exp));
         assertFound(exp, new SwitchExpression(
-                Collections.singletonMap("foo", exp),
+                Map.of("foo", exp),
                 new AttributeExpression("bar")));
         assertFound(exp, new SwitchExpression(
-                Collections.singletonMap("foo", new AttributeExpression("bar")),
+                Map.of("foo", new AttributeExpression("bar")),
                 exp));
     }
 

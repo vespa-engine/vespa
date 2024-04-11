@@ -7,7 +7,6 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,10 +44,10 @@ public class SwitchTestCase {
         cases.put("bar", bar);
         SwitchExpression exp = new SwitchExpression(cases, baz);
 
-        assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new SwitchExpression(Collections.singletonMap("foo", foo))));
-        assertFalse(exp.equals(new SwitchExpression(Collections.singletonMap("foo", foo), baz)));
-        assertFalse(exp.equals(new SwitchExpression(cases)));
+        assertNotEquals(exp, new Object());
+        assertNotEquals(exp, new SwitchExpression(Map.of("foo", foo)));
+        assertNotEquals(exp, new SwitchExpression(Map.of("foo", foo), baz));
+        assertNotEquals(exp, new SwitchExpression(cases));
         assertEquals(exp, new SwitchExpression(cases, baz));
         assertEquals(exp.hashCode(), new SwitchExpression(cases, baz).hashCode());
     }
@@ -56,7 +55,7 @@ public class SwitchTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         Expression foo = SimpleExpression.newConversion(DataType.STRING, DataType.INT);
-        Expression exp = new SwitchExpression(Collections.singletonMap("foo", foo));
+        Expression exp = new SwitchExpression(Map.of("foo", foo));
         assertVerify(DataType.STRING, exp, DataType.STRING); // does not touch output
         assertVerifyThrows(null, exp, "Expected string input, but no input is specified");
         assertVerifyThrows(DataType.INT, exp, "Expected string input, got int");
@@ -68,15 +67,14 @@ public class SwitchTestCase {
         cases.put("foo", SimpleExpression.newRequired(DataType.INT));
         assertVerifyThrows(DataType.STRING, new SwitchExpression(cases),
                            "Expected int input, got string");
-        assertVerifyThrows(DataType.STRING, new SwitchExpression(Collections.<String, Expression>emptyMap(),
-                                                                 SimpleExpression.newRequired(DataType.INT)),
+        assertVerifyThrows(DataType.STRING, new SwitchExpression(Map.of(), SimpleExpression.newRequired(DataType.INT)),
                            "Expected int input, got string");
     }
 
     @Test
     public void requireThatIllegalArgumentThrows() {
         try {
-            new SwitchExpression(Collections.<String, Expression>emptyMap()).execute(new IntegerFieldValue(69));
+            new SwitchExpression(Map.of()).execute(new IntegerFieldValue(69));
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Expected string input, got int", e.getMessage());
@@ -85,18 +83,18 @@ public class SwitchTestCase {
 
     @Test
     public void requireThatDefaultExpressionIsNullIfNotGiven() {
-        assertNull(new SwitchExpression(Collections.<String, Expression>emptyMap()).getDefaultExpression());
+        assertNull(new SwitchExpression(Map.of()).getDefaultExpression());
     }
 
     @Test
     public void requireThatIsEmptyReflectsOnBothCasesAndDefault() {
-        assertTrue(new SwitchExpression(Collections.<String, Expression>emptyMap()).isEmpty());
-        assertTrue(new SwitchExpression(Collections.<String, Expression>emptyMap(), null).isEmpty());
-        assertFalse(new SwitchExpression(Collections.<String, Expression>emptyMap(),
+        assertTrue(new SwitchExpression(Map.of()).isEmpty());
+        assertTrue(new SwitchExpression(Map.of(), null).isEmpty());
+        assertFalse(new SwitchExpression(Map.of(),
                                          new AttributeExpression("foo")).isEmpty());
-        assertFalse(new SwitchExpression(Collections.singletonMap("foo", new AttributeExpression("foo")),
+        assertFalse(new SwitchExpression(Map.of("foo", new AttributeExpression("foo")),
                                          null).isEmpty());
-        assertFalse(new SwitchExpression(Collections.singletonMap("foo", new AttributeExpression("foo")),
+        assertFalse(new SwitchExpression(Map.of("foo", new AttributeExpression("foo")),
                                          new AttributeExpression("foo")).isEmpty());
 
     }

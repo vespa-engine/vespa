@@ -55,7 +55,6 @@ import com.yahoo.vespa.indexinglanguage.expressions.ZCurveExpression;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,7 +108,7 @@ public class ExpressionConverterTestCase {
         assertConvertable(new StatementExpression(new InputExpression("foo")));
         assertConvertable(new SubstringExpression(6, 9));
         assertConvertable(new SummaryExpression("foo"));
-        assertConvertable(new SwitchExpression(Collections.singletonMap("foo", (Expression)new IndexExpression("bar")),
+        assertConvertable(new SwitchExpression(Map.of("foo", (Expression)new IndexExpression("bar")),
                                                new InputExpression("baz")));
         assertConvertable(new ThisExpression());
         assertConvertable(new ToArrayExpression());

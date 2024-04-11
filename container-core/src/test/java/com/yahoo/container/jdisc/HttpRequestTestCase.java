@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +30,7 @@ public class HttpRequestTestCase {
     @BeforeEach
     public void setUp() throws Exception {
         requestData = new ByteArrayInputStream(Utf8.toBytes(X_RAY_YANKEE_ZULU));
-        r = HttpRequest.createTestRequest(HTTP_MAILHOST_25_ALPHA_BRAVO_CHARLIE_DELTA, Method.GET, requestData, Collections.singletonMap("foxtrot", "golf"));
+        r = HttpRequest.createTestRequest(HTTP_MAILHOST_25_ALPHA_BRAVO_CHARLIE_DELTA, Method.GET, requestData, Map.of("foxtrot", "golf"));
     }
 
     @AfterEach

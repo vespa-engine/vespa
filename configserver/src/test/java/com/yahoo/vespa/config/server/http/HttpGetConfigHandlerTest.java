@@ -17,7 +17,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Map;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpResponse.Status.BAD_REQUEST;
@@ -90,7 +90,7 @@ public class HttpGetConfigHandlerTest {
 
     @Test
     public void require_that_nocache_property_works() throws IOException {
-        HttpRequest request = HttpRequest.createTestRequest(configUri, GET, null, Collections.singletonMap("nocache", "true"));
+        HttpRequest request = HttpRequest.createTestRequest(configUri, GET, null, Map.of("nocache", "true"));
         HttpResponse response = handler.handle(request);
         String renderedString = SessionHandlerTest.getRenderedString(response);
         assertTrue(renderedString, renderedString.startsWith(expected));
