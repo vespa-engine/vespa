@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,27 +21,29 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class HostsXmlProvisionerTest {
 
-    private static final String oneHost = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-            "<hosts>\n" +
-            "    <host name=\"test1.yahoo.com\">\n" +
-            "        <alias>node1</alias>\n" +
-            "        <alias>node2</alias>\n" +
-            "    </host>\n" +
-            "</hosts>";
+    private static final String oneHost = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <hosts>
+                <host name="test1.yahoo.com">
+                    <alias>node1</alias>
+                    <alias>node2</alias>
+                </host>
+            </hosts>""";
 
-    private static final String threeHosts = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-            "<hosts>\n" +
-            "    <host name=\"test1.yahoo.com\">\n" +
-            "        <alias>node1</alias>\n" +
-            "    </host>\n" +
-            "    <host name=\"test2.yahoo.com\">\n" +
-            "        <alias>node2</alias>\n" +
-            "        <alias>node3</alias>\n" +
-            "    </host>\n" +
-            "    <host name=\"test3.yahoo.com\">\n" +
-            "        <alias>node4</alias>\n" +
-            "    </host>\n" +
-            "</hosts>";
+    private static final String threeHosts = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <hosts>
+                <host name="test1.yahoo.com">
+                    <alias>node1</alias>
+                </host>
+                <host name="test2.yahoo.com">
+                    <alias>node2</alias>
+                    <alias>node3</alias>
+                </host>
+                <host name="test3.yahoo.com">
+                    <alias>node4</alias>
+                </host>
+            </hosts>""";
 
     @Test
     void require_basic_works() {
@@ -57,7 +58,7 @@ public class HostsXmlProvisionerTest {
         assertTrue(map.keySet().containsAll(aliases));
 
         // 5 services, 3 host aliases, mapping to 2 host.
-        aliases = createAliases(Collections.singletonList("node3"));
+        aliases = createAliases(List.of("node3"));
         map = allocate(hostProvisioner, aliases);
 
         assertCorrectNumberOfHosts(map, 2);
@@ -65,7 +66,7 @@ public class HostsXmlProvisionerTest {
         assertTrue(map.keySet().containsAll(aliases));
 
         // 5 services, 3 host aliases, mapping to 3 host.
-        aliases = createAliases(Collections.singletonList("node4"));
+        aliases = createAliases(List.of("node4"));
         map = allocate(hostProvisioner, aliases);
         assertEquals(3, map.size());
         assertCorrectNumberOfHosts(map, 3);

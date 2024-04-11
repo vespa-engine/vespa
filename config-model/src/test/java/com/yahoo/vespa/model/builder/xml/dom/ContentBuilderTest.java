@@ -26,7 +26,6 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -876,8 +875,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                                                                 .withHosts(getHosts())
                                                                 .withServices(combined)
-                                                                .withSchemas(Arrays.asList(MockApplicationPackage.MUSIC_SCHEMA,
-                                                                                           MockApplicationPackage.BOOK_SCHEMA))
+                                                                .withSchemas(List.of(MockApplicationPackage.MUSIC_SCHEMA,
+                                                                                     MockApplicationPackage.BOOK_SCHEMA))
                                                                 .build())
                 .create();
 

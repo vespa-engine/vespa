@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -35,10 +34,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     private boolean multitenant = false;
     private ApplicationId applicationId = ApplicationId.defaultId();
-    private List<ConfigServerSpec> configServerSpecs = Collections.emptyList();
+    private List<ConfigServerSpec> configServerSpecs = List.of();
     private boolean hostedVespa = false;
     private Zone zone = Zone.defaultZone();
-    private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
+    private final Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
@@ -55,10 +54,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private double feedNiceness = 0.0;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
-    private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
+    private List<TenantSecretStore> tenantSecretStores = List.of();
     private String jvmOmitStackTraceInFastThrowOption;
     private boolean allowDisableMtls = true;
-    private List<X509Certificate> operatorCertificates = Collections.emptyList();
+    private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
     private double minNodeRatioPerGroup = 0.0;

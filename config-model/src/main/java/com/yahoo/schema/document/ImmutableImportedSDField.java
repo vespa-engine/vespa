@@ -10,7 +10,6 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -131,7 +130,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Map<String, String> getAliasToName() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @Override

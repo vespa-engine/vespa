@@ -12,7 +12,6 @@ import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,7 +20,7 @@ import java.util.List;
 public class UriHack extends Processor {
 
     private static final List<String> URL_SUFFIX =
-            Arrays.asList("scheme", "host", "port", "path", "query", "fragment", "hostname");
+            List.of("scheme", "host", "port", "path", "query", "fragment", "hostname");
 
     UriHack(Schema schema,
             DeployLogger deployLogger,
@@ -52,8 +51,7 @@ public class UriHack extends Processor {
         if (uriField.getDataType() instanceof ArrayDataType) {
             generatedType = new ArrayDataType(DataType.STRING);
         }
-        else if (uriField.getDataType() instanceof WeightedSetDataType) {
-            WeightedSetDataType wdt = (WeightedSetDataType) uriField.getDataType();
+        else if (uriField.getDataType() instanceof WeightedSetDataType wdt) {
             generatedType = new WeightedSetDataType(DataType.STRING, wdt.createIfNonExistent(), wdt.removeIfZero());
         }
 

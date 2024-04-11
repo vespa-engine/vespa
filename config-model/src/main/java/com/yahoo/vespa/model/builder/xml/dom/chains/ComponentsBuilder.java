@@ -151,7 +151,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
     private Map<String, ComponentType<?>> unmodifiable(Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
         return (outerComponentTypeByComponentName != null)?
                 Collections.unmodifiableMap(outerComponentTypeByComponentName):
-                Collections.emptyMap();
+                Map.of();
     }
 
     public Collection<T> getComponentDefinitions() {

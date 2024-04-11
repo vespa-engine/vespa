@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -349,7 +348,7 @@ public class StorageGroup {
                                        owner.getStorageCluster().getClusterName(),
                                        owner.getRoot().hostSystem(),
                                        context) :
-                        Collections.emptyMap();
+                        Map.of();
 
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
                 if (hostGroups.size() > 1) {
@@ -475,7 +474,7 @@ public class StorageGroup {
         }
 
         private List<XmlNodeBuilder> collectExplicitNodes(Optional<ModelElement> groupOrNodesElement) {
-            if (groupOrNodesElement.isEmpty()) return Collections.emptyList();
+            if (groupOrNodesElement.isEmpty()) return List.of();
             List<XmlNodeBuilder> nodes = new ArrayList<>();
             for (ModelElement n : groupOrNodesElement.get().subElements("node"))
                 nodes.add(new XmlNodeBuilder(clusterElement, n));

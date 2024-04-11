@@ -5,8 +5,6 @@ import com.yahoo.documentmodel.NewDocumentType;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,24 +18,24 @@ public class TopologicalDocumentTypeSorterTest {
 
     @Test
     void require_that_types_without_references_are_returned_in_input_order() {
-        assertOrder(Arrays.asList("a"), new DocumentTypesBuilder().add("a"));
-        assertOrder(Arrays.asList("a", "c", "b"),
+        assertOrder(List.of("a"), new DocumentTypesBuilder().add("a"));
+        assertOrder(List.of("a", "c", "b"),
                 new DocumentTypesBuilder().add("a").add("c").add("b"));
     }
 
     @Test
     void require_that_types_with_references_are_sorted_in_topological_order() {
-        assertOrder(Arrays.asList("b", "a"), new DocumentTypesBuilder()
-                .add("a", Arrays.asList("b"))
+        assertOrder(List.of("b", "a"), new DocumentTypesBuilder()
+                .add("a", List.of("b"))
                 .add("b"));
-        assertOrder(Arrays.asList("c", "b", "a"), new DocumentTypesBuilder()
-                .add("a", Arrays.asList("b", "c"))
-                .add("b", Arrays.asList("c"))
+        assertOrder(List.of("c", "b", "a"), new DocumentTypesBuilder()
+                .add("a", List.of("b", "c"))
+                .add("b", List.of("c"))
                 .add("c"));
-        assertOrder(Arrays.asList("b", "a", "d", "c"), new DocumentTypesBuilder()
-                .add("a", Arrays.asList("b"))
+        assertOrder(List.of("b", "a", "d", "c"), new DocumentTypesBuilder()
+                .add("a", List.of("b"))
                 .add("b")
-                .add("c", Arrays.asList("d"))
+                .add("c", List.of("d"))
                 .add("d"));
     }
 
@@ -52,7 +50,7 @@ public class TopologicalDocumentTypeSorterTest {
         private final List<NewDocumentType> result = new ArrayList<>();
 
         public DocumentTypesBuilder add(String docTypeName) {
-            return add(docTypeName, Collections.emptyList());
+            return add(docTypeName, List.of());
         }
 
         public DocumentTypesBuilder add(String docTypeName, List<String> docTypeNameReferences) {

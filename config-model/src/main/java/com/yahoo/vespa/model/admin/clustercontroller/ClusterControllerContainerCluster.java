@@ -10,7 +10,6 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.PlatformBundles;
 
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -22,7 +21,7 @@ import java.util.Set;
  */
 public class ClusterControllerContainerCluster extends ContainerCluster<ClusterControllerContainer> {
 
-    private static final Set<Path> UNNECESSARY_BUNDLES = Collections.unmodifiableSet(PlatformBundles.VESPA_SECURITY_BUNDLES);
+    private static final Set<Path> UNNECESSARY_BUNDLES = Set.copyOf(PlatformBundles.VESPA_SECURITY_BUNDLES);
 
     private final ReindexingContext reindexingContext;
 

@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
@@ -21,7 +21,7 @@ import static com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.Com
  */
 public class FilterChainBuilder extends DomChainBuilderBase<Filter, HttpFilterChain> {
 
-    private static final Collection<ComponentType<Filter>> allowedComponentTypes = Collections.singleton(ComponentType.filter);
+    private static final Collection<ComponentType<Filter>> allowedComponentTypes = List.of(ComponentType.filter);
 
     public FilterChainBuilder(Map<String, ComponentType<?>> outerFilterTypeByComponentName) {
         super(allowedComponentTypes, outerFilterTypeByComponentName);

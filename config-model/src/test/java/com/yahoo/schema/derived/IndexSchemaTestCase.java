@@ -6,7 +6,6 @@ import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -194,7 +193,7 @@ public class IndexSchemaTestCase {
 
     private static void assertFlat(Field fieldToFlatten, Field... expectedFields) {
         List<Field> actual = new LinkedList<>(IndexSchema.flattenField(fieldToFlatten));
-        List<Field> expected = new LinkedList<>(Arrays.asList(expectedFields));
+        List<Field> expected = new LinkedList<>(List.of(expectedFields));
         Collections.sort(actual);
         Collections.sort(expected);
         for (Field field : actual) {

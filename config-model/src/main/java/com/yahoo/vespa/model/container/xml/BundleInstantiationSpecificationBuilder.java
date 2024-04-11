@@ -7,7 +7,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.vespa.model.container.PlatformBundles;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.PROCESSING_HANDLER_CLASS;
@@ -39,9 +38,7 @@ public class BundleInstantiationSpecificationBuilder {
 
 
     private static void validate(BundleInstantiationSpecification instSpec) {
-        List<String> forbiddenClasses = Arrays.asList(
-                SearchHandler.HANDLER_CLASSNAME,
-                PROCESSING_HANDLER_CLASS);
+        List<String> forbiddenClasses = List.of(SearchHandler.HANDLER_CLASSNAME, PROCESSING_HANDLER_CLASS);
 
         for (String forbiddenClass: forbiddenClasses) {
             if (forbiddenClass.equals(instSpec.getClassName())) {

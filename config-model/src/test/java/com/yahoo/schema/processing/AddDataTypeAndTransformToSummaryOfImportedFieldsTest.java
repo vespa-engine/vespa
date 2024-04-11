@@ -19,7 +19,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -63,7 +63,7 @@ public class AddDataTypeAndTransformToSummaryOfImportedFieldsTest {
         SDField targetField = new SDField(doc, "target_field", DataType.INT);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSchema);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
-        return new ImportedFields(Collections.singletonMap(fieldName, importedField));
+        return new ImportedFields(Map.of(fieldName, importedField));
     }
 
     private static DocumentSummary createDocumentSummary(String fieldName, Schema schema) {

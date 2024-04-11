@@ -4,8 +4,6 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.documentmodel.NewDocumentType;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -40,13 +38,13 @@ public class ReservedDocumentTypeNameValidatorTest {
     @Test
     void exception_is_not_thrown_on_unreserved_name() {
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
-        validator.validate(asDocTypeMapping(Collections.singletonList("foo")));
+        validator.validate(asDocTypeMapping(List.of("foo")));
     }
 
     @Test
     void validation_is_case_insensitive() {
         ReservedDocumentTypeNameValidator validator = new ReservedDocumentTypeNameValidator();
-        Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(Arrays.asList("NULL", "True", "anD")));
+        Map<String, NewDocumentType> orderedDocTypes = new TreeMap<>(asDocTypeMapping(List.of("NULL", "True", "anD")));
         try {
             validator.validate(orderedDocTypes);
             fail();

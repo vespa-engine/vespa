@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -351,7 +350,7 @@ public class ApplicationBuilder {
                                                      RankProfileRegistry rankProfileRegistry,
                                                      QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
-        return createFromFiles(Collections.singletonList(fileName), new MockFileRegistry(), deployLogger, new TestProperties(),
+        return createFromFiles(List.of(fileName), new MockFileRegistry(), deployLogger, new TestProperties(),
                                rankProfileRegistry, queryprofileRegistry);
     }
 
@@ -414,8 +413,8 @@ public class ApplicationBuilder {
                                                             queryProfileRegistry);
 
         var fnli = Files.list(new File(dir).toPath())
-            .map(p -> p.toString())
-            .filter(fn -> AbstractApplicationPackage.validSchemaFilename(fn))
+            .map(java.nio.file.Path::toString)
+            .filter(AbstractApplicationPackage::validSchemaFilename)
             .sorted();
         for (var i = fnli.iterator(); i.hasNext(); ) {
             builder.addSchemaFile(i.next());

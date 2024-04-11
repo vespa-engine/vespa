@@ -21,12 +21,9 @@ import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import com.yahoo.vespa.model.container.xml.ConfigServerContainerModelBuilder;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,7 +43,7 @@ public class ConfigserverClusterTest {
 
     @Test
     void zookeeperConfig_only_config_servers_set_hosted() {
-        TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Collections.emptyList());
+        TestOptions testOptions = createTestOptions(List.of("cfg1", "localhost", "cfg3"), List.of());
         ZookeeperServerConfig config = getConfig(ZookeeperServerConfig.class, testOptions);
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 0, 1, 2);
@@ -57,7 +54,7 @@ public class ConfigserverClusterTest {
 
     @Test
     void zookeeperConfig_with_config_servers_and_zk_ids_hosted() {
-        TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Arrays.asList(4, 2, 3));
+        TestOptions testOptions = createTestOptions(List.of("cfg1", "localhost", "cfg3"), List.of(4, 2, 3));
         ZookeeperServerConfig config = getConfig(ZookeeperServerConfig.class, testOptions);
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
@@ -68,7 +65,7 @@ public class ConfigserverClusterTest {
     @Test
     void zookeeperConfig_self_hosted() {
         final boolean hostedVespa = false;
-        TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Arrays.asList(4, 2, 3), hostedVespa);
+        TestOptions testOptions = createTestOptions(List.of("cfg1", "localhost", "cfg3"), List.of(4, 2, 3), hostedVespa);
         ZookeeperServerConfig config = getConfig(ZookeeperServerConfig.class, testOptions);
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
@@ -80,7 +77,7 @@ public class ConfigserverClusterTest {
     @Test
     void zookeeperConfig_uneven_number_of_config_servers_and_zk_ids() {
         assertThrows(IllegalArgumentException.class, () -> {
-            TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Collections.singletonList(1));
+            TestOptions testOptions = createTestOptions(List.of("cfg1", "localhost", "cfg3"), List.of(1));
             getConfig(ZookeeperServerConfig.class, testOptions);
         });
     }
@@ -88,7 +85,7 @@ public class ConfigserverClusterTest {
     @Test
     void zookeeperConfig_negative_zk_id() {
         assertThrows(IllegalArgumentException.class, () -> {
-            TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Arrays.asList(1, 2, -1));
+            TestOptions testOptions = createTestOptions(List.of("cfg1", "localhost", "cfg3"), List.of(1, 2, -1));
             getConfig(ZookeeperServerConfig.class, testOptions);
         });
     }
@@ -137,7 +134,7 @@ public class ConfigserverClusterTest {
     private static <T> void assertZookeeperServerProperty(
             List<ZookeeperServerConfig.Server> zkServers, Function<ZookeeperServerConfig.Server, T> propertyMapper, T... expectedProperties) {
         List<T> actualPropertyValues = zkServers.stream().map(propertyMapper).toList();
-        List<T> expectedPropertyValues = Arrays.asList(expectedProperties);
+        List<T> expectedPropertyValues = List.of(expectedProperties);
         assertEquals(expectedPropertyValues, actualPropertyValues);
     }
 
@@ -169,7 +166,7 @@ public class ConfigserverClusterTest {
     }
 
     private static <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz) {
-        return getConfig(clazz, createTestOptions(Collections.emptyList(), Collections.emptyList()));
+        return getConfig(clazz, createTestOptions(List.of(), List.of()));
     }
 
     private static <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, TestOptions testOptions) {

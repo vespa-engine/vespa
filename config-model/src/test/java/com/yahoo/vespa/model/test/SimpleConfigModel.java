@@ -10,7 +10,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -20,8 +19,8 @@ import java.util.List;
  */
 public class SimpleConfigModel extends ConfigModel implements TestApi {
 
-    private List<SimpleService> simpleServices = new ArrayList<>();
-    private List<ParentService> parentServices = new ArrayList<>();
+    private final List<SimpleService> simpleServices = new ArrayList<>();
+    private final List<ParentService> parentServices = new ArrayList<>();
 
     public SimpleConfigModel(ConfigModelContext modelContext) {
         super(modelContext);
@@ -43,7 +42,7 @@ public class SimpleConfigModel extends ConfigModel implements TestApi {
 
         @Override
         public List<ConfigModelId> handlesElements() {
-            return Arrays.asList(ConfigModelId.fromName("simple"));
+            return List.of(ConfigModelId.fromName("simple"));
         }
 
         @Override
@@ -54,11 +53,10 @@ public class SimpleConfigModel extends ConfigModel implements TestApi {
             NodeList childNodes = spec.getChildNodes();
             for (int i=0; i < childNodes.getLength(); i++) {
                 Node child   = childNodes.item(i);
-                if (! (child instanceof Element)) {
+                if (! (child instanceof Element e)) {
                     // skip #text and #comment nodes
                     continue;
                 }
-                Element e = (Element)child;
                 String service = e.getTagName();
 
                 if (service.equals("simpleservice")) {

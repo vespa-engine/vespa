@@ -106,7 +106,7 @@ public class IndexingOutputs extends Processor {
         MyConverter(Schema schema, Field field, Set<String> summaryFields, boolean validate) {
             this.schema = schema;
             this.field = field;
-            this.summaryFields = summaryFields.isEmpty() ? Collections.singleton(field.getName()) : summaryFields;
+            this.summaryFields = summaryFields.isEmpty() ? Set.of(field.getName()) : summaryFields;
             this.validate = validate;
         }
 

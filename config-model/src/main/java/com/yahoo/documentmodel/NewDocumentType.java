@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.Collections.emptySet;
 
 /**
  * @author baldersheim
@@ -47,7 +46,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     private final Set<String> importedFieldNames;
 
     public NewDocumentType(Name name) {
-        this(name, emptySet());
+        this(name, Set.of());
     }
 
     public NewDocumentType(Name name, Set<Name> documentReferences, Set<String> importedFieldNames) {
@@ -60,7 +59,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
     }
 
     public NewDocumentType(Name name, Set<Name> documentReferences) {
-        this(name, documentReferences, emptySet());
+        this(name, documentReferences, Set.of());
     }
 
     public NewDocumentType(Name name,
@@ -74,8 +73,8 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         if (fs != null) {
             this.fieldSets.addAll(fs.userFieldSets().values());
             for (FieldSet f : fs.builtInFieldSets().values()) {
-                if ((f.getName() != BuiltInFieldSets.INTERNAL_FIELDSET_NAME) &&
-                    (f.getName() != BuiltInFieldSets.SEARCH_FIELDSET_NAME)) {
+                if (!BuiltInFieldSets.INTERNAL_FIELDSET_NAME.equals(f.getName()) &&
+                    !BuiltInFieldSets.SEARCH_FIELDSET_NAME.equals(f.getName())) {
                     fieldSets.add(f);
                 }
             }

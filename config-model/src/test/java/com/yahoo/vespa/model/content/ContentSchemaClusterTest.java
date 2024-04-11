@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -60,12 +59,12 @@ public class ContentSchemaClusterTest {
 
     private static ContentClusterBuilder createClusterBuilderWithGlobalType() {
         return new ContentClusterBuilder()
-                .docTypes(Arrays.asList(DocType.indexGlobal("global"), DocType.index("regular")));
+                .docTypes(List.of(DocType.indexGlobal("global"), DocType.index("regular")));
     }
 
     private static ContentClusterBuilder createClusterBuilderWithOnlyDefaultTypes() {
         return new ContentClusterBuilder()
-                .docTypes(Arrays.asList(DocType.index("marve"), DocType.index("fleksnes")));
+                .docTypes(List.of(DocType.index("marve"), DocType.index("fleksnes")));
     }
 
     private static ProtonConfig getProtonConfig(ContentCluster cluster) {

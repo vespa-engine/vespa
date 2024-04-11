@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -98,7 +97,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
 
     @Test
     void ensureSearchChainsExists() {
-        for (String id : Arrays.asList("provider:1", "source:1@provider:1", "default")) {
+        for (String id : List.of("provider:1", "source:1@provider:1", "default")) {
             assertNotNull(getSearchChain(id), "Missing search chain " + id);
         }
     }

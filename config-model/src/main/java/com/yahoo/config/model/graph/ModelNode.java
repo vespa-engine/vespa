@@ -135,7 +135,7 @@ public class ModelNode<MODEL extends ConfigModel> implements ConfigModelInstance
         }
         // For collections, we don't require that dependency has been added, we just give an empty collection
         if (isCollection(param))
-            return Collections.emptyList();
+            return List.of();
         throw new IllegalArgumentException("Unable to find constructor argument " + param + " for " + clazz.getName());
     }
 

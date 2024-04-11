@@ -8,7 +8,7 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 
 import static com.yahoo.schema.processing.AssertIndexingScript.assertIndexing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -154,7 +154,7 @@ public class IndexingValidationTestCase extends AbstractExportingTestCase {
     @Test
     void testExtraField() throws IOException, ParseException {
         assertIndexing(
-                Arrays.asList("clear_state | guard { input my_index | tokenize normalize stem:\"BEST\" | index my_index | summary my_index }",
+                List.of("clear_state | guard { input my_index | tokenize normalize stem:\"BEST\" | index my_index | summary my_index }",
                         "clear_state | guard { input my_input | tokenize normalize stem:\"BEST\" | index my_extra | summary my_extra }"),
                 ApplicationBuilder.buildFromFile("src/test/examples/indexing_extra.sd"));
     }

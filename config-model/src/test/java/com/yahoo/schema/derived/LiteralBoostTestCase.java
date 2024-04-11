@@ -15,7 +15,7 @@ import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import static com.yahoo.schema.processing.AssertIndexingScript.assertIndexing;
@@ -50,7 +50,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         derived.getAttributeFields(); // TODO: assert content
 
         // Check il script addition
-        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
+        assertIndexing(List.of("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                         "clear_state | guard { input a | tokenize | index a_literal; }"),
                 schema);
 
@@ -78,7 +78,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check il script addition
-        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
+        assertIndexing(List.of("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                         "clear_state | guard { input a | tokenize | index a_literal; }"),
                 schema);
 
@@ -103,7 +103,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
 
         schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
-        assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
+        assertIndexing(List.of("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                         "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",
                         "clear_state | guard { input title | tokenize | index title_literal; }",
                         "clear_state | guard { input body | tokenize | index body_literal; }"),

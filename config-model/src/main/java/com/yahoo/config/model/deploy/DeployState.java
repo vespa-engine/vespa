@@ -50,7 +50,6 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -329,7 +328,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
         private Optional<Model> previousModel = Optional.empty();
         private Set<ContainerEndpoint> endpoints = Set.of();
-        private Collection<MlModelImporter> modelImporters = Collections.emptyList();
+        private Collection<MlModelImporter> modelImporters = List.of();
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;

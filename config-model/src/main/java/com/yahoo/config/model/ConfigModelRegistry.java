@@ -5,7 +5,7 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * A resolver of implementations of named config models.
@@ -44,7 +44,7 @@ public abstract class ConfigModelRegistry {
 
         @Override
         public Collection<ConfigModelBuilder> resolve(ConfigModelId id) {
-            return Collections.emptyList();
+            return List.of();
         }
     }
 

@@ -10,7 +10,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -50,7 +49,7 @@ public class ApiConfigModel extends ConfigModel {
 
         @Override
         public List<ConfigModelId> handlesElements() {
-            return Arrays.asList(ConfigModelId.fromName("api"));
+            return List.of(ConfigModelId.fromName("api"));
         }
 
         @Override

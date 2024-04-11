@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.container.component;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -24,9 +23,9 @@ public class DiscBindingsConfigGenerator {
 
     public static <T extends Handler> Map<String, Handlers.Builder> generate(T handler) {
         if (handler.getServerBindings().isEmpty() && handler.getClientBindings().isEmpty())
-            return Collections.emptyMap();
+            return Map.of();
 
-        return Collections.singletonMap(handler.model.getComponentId().stringValue(),
+        return Map.of(handler.model.getComponentId().stringValue(),
                             new Handlers.Builder()
                                     .serverBindings(toStrings(handler.getServerBindings()))
                                     .clientBindings(toStrings(handler.getClientBindings())));

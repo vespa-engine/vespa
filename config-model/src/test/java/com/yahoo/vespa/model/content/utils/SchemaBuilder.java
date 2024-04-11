@@ -38,8 +38,7 @@ public class SchemaBuilder {
     }
 
     public static List<String> createSchemas(String ... docTypes) {
-        return Arrays.asList(docTypes)
-                .stream()
+        return Arrays.stream(docTypes)
                 .map(type -> new SchemaBuilder().name(type).build())
                 .toList();
     }
