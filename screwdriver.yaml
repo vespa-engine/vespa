@@ -111,6 +111,8 @@ jobs:
       - get-vespa-version: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             VERSION_INFO=$(screwdriver/factory-command.sh create-build)
+            echo "Version information from Factory : $VERSION_INFO"
+
             VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
             VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
             SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
