@@ -194,7 +194,7 @@ public class TenantRepository {
         this.configserverConfig = configserverConfig;
         this.curator = curator;
         this.metrics = metrics;
-        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
+        metricUpdater = metrics.getOrCreateMetricUpdater(Map.of());
         this.zkCacheExecutor = zkCacheExecutor;
         this.zkApplicationWatcherExecutor = zkApplicationWatcherExecutor;
         this.zkSessionWatcherExecutor = zkSessionWatcherExecutor;
@@ -312,7 +312,7 @@ public class TenantRepository {
             }
         }
 
-        if (failed.size() > 0)
+        if (!failed.isEmpty())
             throw new RuntimeException("Could not create all tenants when bootstrapping, failed to create: " + failed);
 
         metricUpdater.setTenants(tenants.size());

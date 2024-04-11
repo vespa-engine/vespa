@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +54,7 @@ public class FlagDbFile {
 
     public Map<FlagId, FlagData> read() {
         Optional<byte[]> bytes = readFile();
-        if (!bytes.isPresent()) return Collections.emptyMap();
+        if (!bytes.isPresent()) return Map.of();
         return FlagData.deserializeList(bytes.get()).stream().collect(Collectors.toMap(FlagData::id, Function.identity()));
     }
 

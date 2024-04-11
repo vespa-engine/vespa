@@ -32,7 +32,6 @@ import java.net.URLClassLoader;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -226,7 +225,7 @@ public final class ClassLoaderOsgiFramework implements OsgiFramework {
 
         @Override
         public Map<X509Certificate, List<X509Certificate>> getSignerCertificates(int signersType) {
-            return Collections.emptyMap();
+            return Map.of();
         }
 
         @Override

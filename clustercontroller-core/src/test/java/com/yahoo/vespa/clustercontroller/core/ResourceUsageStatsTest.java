@@ -4,7 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -46,20 +46,20 @@ public class ResourceUsageStatsTest {
 
     @Test
     void nodes_above_limit_is_zero_without_feed_block_status() {
-        var stats = ResourceUsageStats.calculateFrom(Collections.emptyList(), Collections.emptyMap(), Optional.empty());
+        var stats = ResourceUsageStats.calculateFrom(List.of(), Map.of(), Optional.empty());
         assertEquals(0, stats.getNodesAboveLimit());
     }
 
     @Test
     void nodes_above_limit_is_equal_to_node_resource_exhaustions() {
-        var stats = ResourceUsageStats.calculateFrom(Collections.emptyList(), Collections.emptyMap(),
+        var stats = ResourceUsageStats.calculateFrom(List.of(), Map.of(),
                 createFeedBlock(exhaustion(1, "disk"), exhaustion(2, "memory")));
         assertEquals(2, stats.getNodesAboveLimit());
     }
 
     @Test
     void nodes_above_limit_counts_each_node_only_once() {
-        var stats = ResourceUsageStats.calculateFrom(Collections.emptyList(), Collections.emptyMap(),
+        var stats = ResourceUsageStats.calculateFrom(List.of(), Map.of(),
                 createFeedBlock(exhaustion(1, "disk"), exhaustion(1, "memory")));
         assertEquals(1, stats.getNodesAboveLimit());
     }

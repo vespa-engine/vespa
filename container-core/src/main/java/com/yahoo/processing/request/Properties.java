@@ -3,7 +3,6 @@ package com.yahoo.processing.request;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collections;
 
 /**
  * The properties of a request
@@ -271,7 +270,7 @@ public class Properties implements Cloneable {
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
      */
     public final void clearAll(String name) {
-        clearAll(new CompoundName(name), Collections.<String,String>emptyMap());
+        clearAll(new CompoundName(name), Map.of());
     }
 
     /**

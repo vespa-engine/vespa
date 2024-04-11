@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.ClusterState;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,7 +55,7 @@ public class ClusterStateBundle {
         public FeedBlock(boolean blockFeedInCluster, String description) {
             this.blockFeedInCluster = blockFeedInCluster;
             this.description = description;
-            this.concreteExhaustions = Collections.emptySet();
+            this.concreteExhaustions = Set.of();
         }
 
         public FeedBlock(boolean blockFeedInCluster, String description,
@@ -165,14 +164,10 @@ public class ClusterStateBundle {
                 return ClusterStateBundle.ofBaselineOnly(baselineState, feedBlock, deferredActivation);
             }
             Map<String, AnnotatedClusterState> derived;
-            if (explicitDerivedStates != null) {
-                derived = explicitDerivedStates;
-            } else {
-                derived = bucketSpaces.stream()
-                        .collect(Collectors.toMap(
-                                Function.identity(),
-                                s -> stateDeriver.derivedFrom(baselineState, s)));
-            }
+            derived = Objects.requireNonNullElseGet(explicitDerivedStates, () -> bucketSpaces.stream()
+                    .collect(Collectors.toUnmodifiableMap(
+                            Function.identity(),
+                            s -> stateDeriver.derivedFrom(baselineState, s))));
             return new ClusterStateBundle(baselineState, derived, feedBlock, deferredActivation);
         }
     }
@@ -186,7 +181,7 @@ public class ClusterStateBundle {
                                FeedBlock feedBlock,
                                boolean deferredActivation) {
         this.baselineState = baselineState;
-        this.derivedBucketSpaceStates = Collections.unmodifiableMap(derivedBucketSpaceStates);
+        this.derivedBucketSpaceStates = Map.copyOf(derivedBucketSpaceStates);
         this.feedBlock = feedBlock;
         this.deferredActivation = deferredActivation;
     }
@@ -209,11 +204,11 @@ public class ClusterStateBundle {
     public static ClusterStateBundle ofBaselineOnly(AnnotatedClusterState baselineState,
                                                     FeedBlock feedBlock,
                                                     boolean deferredActivation) {
-        return new ClusterStateBundle(baselineState, Collections.emptyMap(), feedBlock, deferredActivation);
+        return new ClusterStateBundle(baselineState, Map.of(), feedBlock, deferredActivation);
     }
 
     public static ClusterStateBundle ofBaselineOnly(AnnotatedClusterState baselineState) {
-        return new ClusterStateBundle(baselineState, Collections.emptyMap());
+        return new ClusterStateBundle(baselineState, Map.of());
     }
 
     public static ClusterStateBundle empty() {
@@ -238,7 +233,7 @@ public class ClusterStateBundle {
         AnnotatedClusterState clonedBaseline = baselineState.cloneWithClusterState(
                 mapper.apply(baselineState.getClusterState().clone()));
         Map<String, AnnotatedClusterState> clonedDerived = derivedBucketSpaceStates.entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().cloneWithClusterState(
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().cloneWithClusterState(
                         mapper.apply(e.getValue().getClusterState().clone()))));
         return new ClusterStateBundle(clonedBaseline, clonedDerived, feedBlock, deferredActivation);
     }

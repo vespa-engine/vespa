@@ -9,9 +9,9 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,7 +29,7 @@ public class SerializationContext extends FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public SerializationContext() {
-        this(Collections.emptyList(), Collections.emptyMap(), Optional.empty(), new LinkedHashMap<>());
+        this(List.of(), Map.of(), Optional.empty(), new LinkedHashMap<>());
     }
 
     /**
@@ -40,7 +40,7 @@ public class SerializationContext extends FunctionReferenceContext {
      */
     public SerializationContext(Collection<ExpressionFunction> functions,
                                 Optional<TypeContext<Reference>> typeContext) {
-        this(functions, Collections.emptyMap(), typeContext, new LinkedHashMap<>());
+        this(functions, Map.of(), typeContext, new LinkedHashMap<>());
     }
 
     /**

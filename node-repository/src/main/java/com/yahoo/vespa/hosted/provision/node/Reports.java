@@ -6,7 +6,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,8 +19,8 @@ public class Reports {
 
     private final Map<String, Report> reports;
 
-    public Reports() { this(Collections.emptyMap()); }
-    private Reports(Map<String, Report> reports) { this.reports = Collections.unmodifiableMap(reports); }
+    public Reports() { this(Map.of()); }
+    private Reports(Map<String, Report> reports) { this.reports = Map.copyOf(reports); }
 
     public boolean isEmpty() { return reports.isEmpty(); }
     public Optional<Report> getReport(String id) { return Optional.ofNullable(reports.get(id)); }

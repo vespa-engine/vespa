@@ -10,7 +10,6 @@ import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -433,7 +432,7 @@ public class FleetControllerOptions {
         private double minMergeCompletionRatio = 1.0;
         private int maxDivergentNodesPrintedInTaskErrorMessages = 10;
         private boolean clusterFeedBlockEnabled = false;
-        private Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
+        private Map<String, Double> clusterFeedBlockLimit = Map.of();
         private double clusterFeedBlockNoiseLevel = 0.01;
         private int maxNumberOfGroupsAllowedToBeDown = 1;
         private Function<FleetControllerContext, DatabaseFactory> dbFactoryFn = ZooKeeperDatabaseFactory::new;

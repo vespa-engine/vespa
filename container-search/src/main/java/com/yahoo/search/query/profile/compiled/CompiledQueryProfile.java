@@ -9,7 +9,6 @@ import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.SubstituteString;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -102,7 +101,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      * For example, if {a.d =&gt; "a.d-value" ,a.e =&gt; "a.e-value", b.d =&gt; "b.d-value", then calling listValues("a")
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
-    public final Map<String, Object> listValues(CompoundName prefix) {  return listValues(prefix, Collections.emptyMap()); }
+    public final Map<String, Object> listValues(CompoundName prefix) {  return listValues(prefix, Map.of()); }
     public final Map<String, Object> listValues(String prefix) { return listValues(new CompoundName(prefix)); }
 
     /**

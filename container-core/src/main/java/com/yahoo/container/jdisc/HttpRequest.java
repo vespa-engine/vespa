@@ -412,7 +412,7 @@ public class HttpRequest {
         Map<String, String> mask;
         Map<String, String> view;
 
-        mask = Objects.requireNonNullElse(parameterMask, Collections.emptyMap());
+        mask = Objects.requireNonNullElse(parameterMask, Map.of());
         view = new HashMap<>(parameters.size() + mask.size());
         for (Map.Entry<String, List<String>> parameter : parameters.entrySet()) {
             if (existsAsOriginalParameter(parameter.getValue())) {

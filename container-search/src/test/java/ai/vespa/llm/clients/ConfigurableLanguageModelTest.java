@@ -11,7 +11,6 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -85,7 +84,7 @@ public class ConfigurableLanguageModelTest {
     }
 
     private static InferenceParameters inferenceParams() {
-        return new InferenceParameters(s -> lookupParameter(s, Collections.emptyMap()));
+        return new InferenceParameters(s -> lookupParameter(s, Map.of()));
     }
 
     private static InferenceParameters inferenceParams(Map<String, String> params) {
@@ -93,7 +92,7 @@ public class ConfigurableLanguageModelTest {
     }
 
     private static InferenceParameters inferenceParamsWithDefaultKey() {
-        return new InferenceParameters(MockLLMClient.ACCEPTED_API_KEY, s -> lookupParameter(s, Collections.emptyMap()));
+        return new InferenceParameters(MockLLMClient.ACCEPTED_API_KEY, s -> lookupParameter(s, Map.of()));
     }
 
     private LlmClientConfig modelParams(String apiKeySecretName, String endpoint) {

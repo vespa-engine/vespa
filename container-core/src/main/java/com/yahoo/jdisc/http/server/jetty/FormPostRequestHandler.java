@@ -20,7 +20,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -134,7 +133,7 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
      */
     private static Map<String, List<String>> parseFormParameters(String formContent) {
         if (formContent.isEmpty()) {
-            return Collections.emptyMap();
+            return Map.of();
         }
 
         Map<String, List<String>> parameterMap = new HashMap<>();
