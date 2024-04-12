@@ -7,4 +7,5 @@ vespa_define_module(
 
     APPS
     src/apps/vespa-logforwarder-start
+    src/apps/vespa-otelcol-start
 )

@@ -233,6 +233,37 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
         }
     }
 
+    // add cluster type?
+    // add cluster name?
+    public record StatePortInfo(String hostName, int portNumber,
+                                String serviceName, String serviceType)
+    {}
+
+    public List<StatePortInfo> getStatePorts() {
+        List<StatePortInfo> result = new ArrayList<>();
+        for (HostResource modelHost : hostSystem().getHosts()) {
+            String hostName = modelHost.getHostname();
+            for (Service modelService : modelHost.getServices()) {
+                String serviceName = modelService.getServiceName();
+                String serviceType = modelService.getServiceType();
+                PortsMeta portsMeta = modelService.getPortsMeta();
+                for (int i = 0; i < portsMeta.getNumPorts(); i++) {
+                    int portNumber = modelService.getRelativePort(i);
+                    boolean hasState = false;
+                    boolean isHttp = false;
+                    for (String tag : portsMeta.getTagsAt(i)) {
+                        if (tag.equals("state")) hasState = true;
+                        if (tag.equals("http")) isHttp = true;
+                    }
+                    if (hasState && isHttp) {
+                        result.add(new StatePortInfo(hostName, portNumber, serviceName, serviceType));
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
     private List<Services.Builder> getServices(HostResource modelHost) {
         List<Services.Builder> ret = new ArrayList<>();
         for (Service modelService : modelHost.getServices()) {
