@@ -7,12 +7,11 @@
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 namespace wand {
 
 template <typename FutureHeap, typename PastHeap, bool IS_STRICT>
-class WeakAndSearchLR : public WeakAndSearch
+class WeakAndSearchLR final : public WeakAndSearch
 {
 private:
     using Scores = vespalib::PriorityQueue<score_t>;
@@ -47,7 +46,7 @@ public:
         : _terms(terms,
                  TermFrequencyScorer(),
                  0,
-                 fef::MatchData::UP(nullptr)),
+                 fef::MatchData::UP()),
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
           _algo(),
           _threshold(1),
@@ -55,9 +54,9 @@ public:
           _n(n)
     {
     }
-    virtual size_t get_num_terms() const override { return _terms.size(); }
-    virtual int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
-    virtual score_t get_max_score(size_t idx) const override { return _terms.maxScore(idx); }
+    size_t get_num_terms() const override { return _terms.size(); }
+    int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
+    score_t get_max_score(size_t idx) const override { return _terms.maxScore(idx); }
     const Terms &getTerms() const override { return _terms.input_terms(); }
     uint32_t getN() const override { return _n; }
     void doSeek(uint32_t docid) override {
@@ -138,5 +137,4 @@ WeakAndSearch::create(const Terms &terms, uint32_t n, bool strict)
 
 //-----------------------------------------------------------------------------
 
-}  // namespace queryeval
-}  // namespace search
+}
