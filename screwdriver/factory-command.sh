@@ -23,7 +23,7 @@ while [[ $SESSION_TOKEN == null ]]; do
       echo "Could not fetch session token from Okta: SESSION_TOKEN=$SESSION_TOKEN"
       exit 1
     else
-      echo "Invalid SESSION_TOKEN=$SESSION_TOKEN . Trying again ..."
+      echo "Invalid SESSION_TOKEN=$SESSION_TOKEN . Trying again ..." >&2
       sleep 3
     fi
   fi
