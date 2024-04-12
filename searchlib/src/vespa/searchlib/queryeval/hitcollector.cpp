@@ -34,8 +34,7 @@ HitCollector::sortHitsByDocId()
     }
 }
 
-HitCollector::HitCollector(uint32_t numDocs,
-                           uint32_t maxHitsSize)
+HitCollector::HitCollector(uint32_t numDocs, uint32_t maxHitsSize)
     : _numDocs(numDocs),
       _maxHitsSize(std::min(maxHitsSize, numDocs)),
       _maxDocIdVectorSize((numDocs + 31) / 32),
@@ -63,14 +62,14 @@ HitCollector::RankedHitCollector::collect(uint32_t docId, feature_t score)
 {
     HitCollector & hc = this->_hc;
     if (hc._hits.size() < hc._maxHitsSize) {
-        if (__builtin_expect(((hc._hits.size() > 0) &&
+        if (__builtin_expect(((!hc._hits.empty()) &&
                               (docId < hc._hits.back().first) &&
                               (hc._hitsSortOrder == SortOrder::DOC_ID)), false))
         {
             hc._hitsSortOrder = SortOrder::NONE;
             hc._unordered = true;
         }
-        hc._hits.push_back(std::make_pair(docId, score));
+        hc._hits.emplace_back(docId, score);
     } else {
         collectAndChangeCollector(docId, score);
     }
@@ -86,7 +85,7 @@ HitCollector::BitVectorCollector<CollectRankedHit>::collect(uint32_t docId, feat
 }
 
 void
-HitCollector::CollectorBase::replaceHitInVector(uint32_t docId, feature_t score) {
+HitCollector::CollectorBase::replaceHitInVector(uint32_t docId, feature_t score) noexcept {
     // replace lowest scored hit in hit vector
     std::pop_heap(_hc._hits.begin(), _hc._hits.end(), ScoreComparator());
     _hc._hits.back().first = docId;
@@ -138,7 +137,7 @@ HitCollector::DocIdCollector<CollectRankedHit>::collect(uint32_t docId, feature_
     }
     HitCollector & hc = this->_hc;
     if (hc._docIdVector.size() < hc._maxDocIdVectorSize) {
-        if (__builtin_expect(((hc._docIdVector.size() > 0) &&
+        if (__builtin_expect(((!hc._docIdVector.empty()) &&
                               (docId < hc._docIdVector.back()) &&
                               (hc._unordered == false)), false))
         {
@@ -173,7 +172,7 @@ HitCollector::getSortedHitSequence(size_t max_hits)
 {
     size_t num_hits = std::min(_hits.size(), max_hits);
     sortHitsByScore(num_hits);
-    return SortedHitSequence(_hits.data(), _scoreOrder.data(), num_hits);
+    return {_hits.data(), _scoreOrder.data(), num_hits};
 }
 
 void
