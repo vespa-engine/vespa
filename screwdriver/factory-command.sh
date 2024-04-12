@@ -14,6 +14,7 @@ trap "rm -f $COOKIEJAR" EXIT
 
 SESSION_TOKEN=null
 WAIT_UNTIL=$(( $(date +%s) + 120 ))
+set +e
 while [[ $SESSION_TOKEN == null ]]; do
   SESSION_TOKEN=$(curl -s -H 'Content-Type: application/json' -H 'Accept: application/json' -d "{ \"username\": \"svc-okta-vespa-factory\", \"password\": \"$SVC_OKTA_VESPA_FACTORY_TOKEN\" }" https://ouryahoo.okta.com/api/v1/authn | jq -re '.sessionToken')
 
@@ -27,6 +28,7 @@ while [[ $SESSION_TOKEN == null ]]; do
     fi
   fi
 done
+set -e
 
 LOCATION=$(curl -s -i -c $COOKIEJAR "https://factory.vespa.aws-us-east-1a.vespa.oath.cloud/login" | grep location | awk '{print $2}' | tr -d '\r')
 curl -sL -b $COOKIEJAR -c $COOKIEJAR "$LOCATION&sessionToken=$SESSION_TOKEN" &> /dev/null
