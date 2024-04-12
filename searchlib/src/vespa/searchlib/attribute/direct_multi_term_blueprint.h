@@ -93,8 +93,10 @@ public:
             }
         };
         double est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
-        return {est, OrFlow::cost_of(MyAdapter(docid_limit), _terms, false),
-                OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
+        // Iterator benchmarking has shown that non-strict cost should be 1.0.
+        // Program: searchlib/src/tests/queryeval/iterator_benchmark
+        // TODO: Add more details, and consider moving constant to flow_tuning.h
+        return {est, 1.0, OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
     }
 
     std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
