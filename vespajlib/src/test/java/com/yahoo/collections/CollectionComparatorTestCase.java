@@ -3,7 +3,6 @@ package com.yahoo.collections;
 
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -14,16 +13,16 @@ import static org.junit.Assert.assertEquals;
 public class CollectionComparatorTestCase {
     @Test
     public void arrayLength() {
-        List<String> shortArr = Arrays.asList("x", "y");
-        List<String> longArr = Arrays.asList("a", "b", "c", "d", "e");
+        List<String> shortArr = List.of("x", "y");
+        List<String> longArr = List.of("a", "b", "c", "d", "e");
 
         assertEquals(-1, CollectionComparator.compare(shortArr, longArr));
     }
 
     @Test
     public void compareArrays() {
-        List<String> one = Arrays.asList("b", "c", "d", "d", "e");
-        List<String> two = Arrays.asList("a", "b", "c", "d", "e");
+        List<String> one = List.of("b", "c", "d", "d", "e");
+        List<String> two = List.of("a", "b", "c", "d", "e");
 
         assertEquals(1, CollectionComparator.compare(one, two));
         assertEquals(-1, CollectionComparator.compare(two, one));
@@ -31,8 +30,8 @@ public class CollectionComparatorTestCase {
 
     @Test
     public void compareEqualArrays() {
-        List<String> one = Arrays.asList("a", "b", "c", "d", "e");
-        List<String> two = Arrays.asList("a", "b", "c", "d", "e");
+        List<String> one = List.of("a", "b", "c", "d", "e");
+        List<String> two = List.of("a", "b", "c", "d", "e");
 
         assertEquals(0, CollectionComparator.compare(one, two));
         assertEquals(0, CollectionComparator.compare(two, one));

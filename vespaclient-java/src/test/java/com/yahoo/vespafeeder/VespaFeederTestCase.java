@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
 import com.yahoo.clientmetrics.RouteMetricSet;
 import com.yahoo.document.DocumentPut;
@@ -39,7 +39,7 @@ public class VespaFeederTestCase {
         Arguments arguments = new Arguments(argsS.split(" "), DummySessionFactory.createWithAutoReply());
 
         FeederConfig config = arguments.getFeederConfig();
-        assertEquals(false, config.abortondocumenterror());
+        assertFalse(config.abortondocumenterror());
         assertEquals(13.0, config.timeout(), 0.00001);
         assertEquals(false, config.retryenabled());
         assertEquals("e6", config.route());
@@ -103,7 +103,7 @@ public class VespaFeederTestCase {
 
     public void assertRenderErrorOutput(String expected, String[] errors) {
         ArrayList<String> l = new ArrayList<String>();
-        l.addAll(Arrays.asList(errors));
+        l.addAll(List.of(errors));
         assertEquals(expected, VespaFeeder.renderErrors(l).getMessage());
     }
 
@@ -111,16 +111,29 @@ public class VespaFeederTestCase {
     void testRenderErrors() {
         {
             String[] errors = {"foo"};
-            assertRenderErrorOutput("Errors:\n" +
-                    "-------\n" +
-                    "    foo\n", errors);
+            assertRenderErrorOutput("""
+                    Errors:
+                    -------
+                        foo
+                    """, errors);
         }
 
         {
             String[] errors = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
-            assertRenderErrorOutput("First 10 errors (of 11):\n" +
-                    "------------------------\n" +
-                    "    1\n    2\n    3\n    4\n    5\n    6\n    7\n    8\n    9\n    10\n", errors);
+            assertRenderErrorOutput("""
+                    First 10 errors (of 11):
+                    ------------------------
+                        1
+                        2
+                        3
+                        4
+                        5
+                        6
+                        7
+                        8
+                        9
+                        10
+                    """, errors);
         }
     }
 

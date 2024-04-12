@@ -359,7 +359,7 @@ public class UrlTokenizerTestCase {
     }
 
     private static void assertTokenize(Url url, UrlToken... expected) {
-        Iterator<UrlToken> expectedIt = Arrays.asList(expected).iterator();
+        Iterator<UrlToken> expectedIt = List.of(expected).iterator();
         Iterator<UrlToken> actualIt = new UrlTokenizer(url).tokenize().iterator();
         while (expectedIt.hasNext()) {
             assertTrue(actualIt.hasNext());
@@ -373,7 +373,7 @@ public class UrlTokenizerTestCase {
         List<UrlToken> actual = new LinkedList<>();
         UrlTokenizer.addTokens(actual, UrlToken.Type.PATH, 0, img, true);
 
-        Iterator<String> expectedIt = Arrays.asList(expected).iterator();
+        Iterator<String> expectedIt = List.of(expected).iterator();
         Iterator<UrlToken> actualIt = actual.iterator();
         while (expectedIt.hasNext()) {
             assertTrue(actualIt.hasNext());

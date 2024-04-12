@@ -55,7 +55,6 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -435,11 +434,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
         File sdDir = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
+            schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
         sdDir = applicationFile(appDir, SCHEMAS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
+            schemaFiles.addAll(List.of(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
         return schemaFiles;
     }

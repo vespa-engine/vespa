@@ -6,7 +6,6 @@ import com.yahoo.messagebus.ConfigHandler;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -71,17 +70,17 @@ public class RoutingSpecTestCase {
     @Test
     void testApplicationSpec() {
         assertApplicationSpec(List.of("foo"),
-                              Arrays.asList("foo",
+                              List.of("foo",
                         "*"));
         assertApplicationSpec(List.of("foo/bar"),
-                              Arrays.asList("foo/bar",
+                              List.of("foo/bar",
                         "foo/*",
                         "*/bar",
                         "*/*"));
-        assertApplicationSpec(Arrays.asList("foo/0/baz",
+        assertApplicationSpec(List.of("foo/0/baz",
                         "foo/1/baz",
                         "foo/2/baz"),
-                Arrays.asList("foo/0/baz",
+                List.of("foo/0/baz",
                         "foo/1/baz",
                         "foo/2/baz",
                         "foo/0/*",
@@ -259,7 +258,7 @@ public class RoutingSpecTestCase {
                 new ApplicationSpec()
                         .addService("mytable", "bar")
                         .addService("mytable", "baz"),
-                Arrays.asList("Routing table 'mytable' is defined 2 times.",
+                List.of("Routing table 'mytable' is defined 2 times.",
                         "For hop 'hop2' in routing table 'mytable'; Failed to parse empty string.",
                         "For hop 'hop3' in routing table 'mytable'; Failed to completely parse 'bar/baz cox'.",
                         "For hop 1 in route 'route2' in routing table 'mytable'; Failed to parse empty string.",

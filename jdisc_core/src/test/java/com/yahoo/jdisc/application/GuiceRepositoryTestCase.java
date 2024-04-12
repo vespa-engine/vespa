@@ -12,7 +12,6 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -47,7 +46,7 @@ public class GuiceRepositoryTestCase {
         GuiceRepository guice = new GuiceRepository();
         StringBinding foo = new StringBinding("fooKey", "fooVal");
         StringBinding bar = new StringBinding("barKey", "barVal");
-        guice.installAll(Arrays.asList(foo, bar));
+        guice.installAll(List.of(foo, bar));
         assertBinding(guice, "fooKey", "fooVal");
         assertBinding(guice, "barKey", "barVal");
 
@@ -77,12 +76,12 @@ public class GuiceRepositoryTestCase {
         StringBinding foo = new StringBinding("fooKey", "fooVal");
         StringBinding bar = new StringBinding("barKey", "barVal");
         StringBinding baz = new StringBinding("bazKey", "bazVal");
-        guice.installAll(Arrays.asList(foo, bar, baz));
+        guice.installAll(List.of(foo, bar, baz));
         assertBinding(guice, "fooKey", "fooVal");
         assertBinding(guice, "barKey", "barVal");
         assertBinding(guice, "bazKey", "bazVal");
 
-        guice.uninstallAll(Arrays.asList(foo, baz));
+        guice.uninstallAll(List.of(foo, baz));
         assertNoBinding(guice, "fooKey");
         assertBinding(guice, "barKey", "barVal");
         assertNoBinding(guice, "bazKey");
@@ -122,7 +121,7 @@ public class GuiceRepositoryTestCase {
     void requireThatPrivateModulesWorks() {
         GuiceRepository guice = new GuiceRepository();
 
-        List<Named> names = Arrays.asList(Names.named("A"), Names.named("B"));
+        List<Named> names = List.of(Names.named("A"), Names.named("B"));
 
         for (Named name : names) {
             guice.install(createPrivateInjectNameModule(name));

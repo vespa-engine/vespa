@@ -23,7 +23,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -369,7 +368,7 @@ public class ComponentGraph {
     public static boolean isBindingAnnotation(Annotation annotation) {
         LinkedList<Class<?>> queue = new LinkedList<>();
         queue.add(annotation.getClass());
-        queue.addAll(Arrays.asList(annotation.getClass().getInterfaces()));
+        queue.addAll(List.of(annotation.getClass().getInterfaces()));
 
         while (!queue.isEmpty()) {
             Class<?> clazz = queue.removeFirst();

@@ -21,7 +21,6 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -88,7 +87,7 @@ public class SuperModelRequestHandlerTest {
         assertTrue(controller.getHandler().getSuperModel().applicationModels().keySet().containsAll(List.of(foo, bar, baz)));
         controller.removeApplication(bar);
         assertEquals(2, controller.getHandler().getSuperModel().applicationModels().size());
-        assertEquals(Arrays.asList(foo, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
+        assertEquals(List.of(foo, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
         assertEquals(gen + 5, controller.getHandler().getGeneration());
     }
 

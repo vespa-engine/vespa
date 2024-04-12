@@ -12,7 +12,6 @@ import com.yahoo.abicheck.Public;
 import com.yahoo.abicheck.classtree.ClassFileTree;
 import com.yahoo.abicheck.signature.JavaClassSignature;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +31,7 @@ public class AbiCheckTest {
     ClassFileTree.ClassFile subPkgClass = mock(ClassFileTree.ClassFile.class);
 
     when(rootPkg.getSubPackages()).thenReturn(Set.of(subPkg));
-    when(rootPkg.getClassFiles()).thenReturn(Arrays.asList(rootPkgClass, rootPkgInfoClass));
+    when(rootPkg.getClassFiles()).thenReturn(List.of(rootPkgClass, rootPkgInfoClass));
     when(subPkg.getClassFiles()).thenReturn(Set.of(subPkgClass));
 
     when(rootPkgInfoClass.getName()).thenReturn("package-info.class");

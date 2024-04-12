@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -121,28 +120,28 @@ public class RankingExpressionTestCase {
     @Test
     public void testSerialization() throws ParseException {
         List<ExpressionFunction> functions = new ArrayList<>();
-        functions.add(new ExpressionFunction("foo", Arrays.asList("arg1", "arg2"), new RankingExpression("min(arg1, pow(arg2, 2))")));
-        functions.add(new ExpressionFunction("bar", Arrays.asList("arg1", "arg2"), new RankingExpression("arg1 * arg1 + 2 * arg1 * arg2 + arg2 * arg2")));
-        functions.add(new ExpressionFunction("baz", Arrays.asList("arg1", "arg2"), new RankingExpression("foo(1, 2) / bar(arg1, arg2)")));
+        functions.add(new ExpressionFunction("foo", List.of("arg1", "arg2"), new RankingExpression("min(arg1, pow(arg2, 2))")));
+        functions.add(new ExpressionFunction("bar", List.of("arg1", "arg2"), new RankingExpression("arg1 * arg1 + 2 * arg1 * arg2 + arg2 * arg2")));
+        functions.add(new ExpressionFunction("baz", List.of("arg1", "arg2"), new RankingExpression("foo(1, 2) / bar(arg1, arg2)")));
         functions.add(new ExpressionFunction("cox", null, new RankingExpression("10 + 08 * 1977")));
 
-        assertSerialization(Arrays.asList(
+        assertSerialization(List.of(
          "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(foo@af74e3fd9070bd18.a368ed0a5ba3a5d0) * rankingExpression(foo@dbab346efdad5362.e5c39e42ebd91c30)",
          "min(5,pow(rankingExpression(foo@d1d1417259cdc651.573bbcd4be18f379),2))",
          "min(6,pow(7,2))",
          "min(1,pow(2,2))",
          "min(3,pow(4,2))",
          "min(rankingExpression(foo@84951be88255b0ec.d0303e061b36fab8),pow(8,2))"), "foo(1,2) + foo(3,4) * foo(5, foo(foo(6, 7), 8))", functions);
-        assertSerialization(Arrays.asList(
+        assertSerialization(List.of(
          "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(bar@af74e3fd9070bd18.a368ed0a5ba3a5d0)",
          "min(1,pow(2,2))",
          "3 * 3 + 2 * 3 * 4 + 4 * 4"), "foo(1, 2) + bar(3, 4)", functions);
-        assertSerialization(Arrays.asList(
+        assertSerialization(List.of(
          "rankingExpression(baz@e2dc17a89864aed0.12232eb692c6c502)",
          "min(1,pow(2,2))",
          "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) / rankingExpression(bar@e2dc17a89864aed0.12232eb692c6c502)",
          "1 * 1 + 2 * 1 * 2 + 2 * 2"), "baz(1, 2)", functions);
-        assertSerialization(Arrays.asList(
+        assertSerialization(List.of(
          "rankingExpression(cox)",
          "10 + 8 * 1977"), "cox", functions
         );
@@ -237,8 +236,8 @@ public class RankingExpressionTestCase {
         String expRhs = "(rankingExpression(log10tweetage) * rankingExpression(log10tweetage) * " +
                         "rankingExpression(log10tweetage)) + 5.0 * attribute(ythl)";
 
-        assertSerialization(Arrays.asList(expLhs + " + " + expRhs, "69"), lhs + " + " + rhs, functions);
-        assertSerialization(Arrays.asList(expLhs + " - " + expRhs, "69"), lhs + " - " + rhs, functions);
+        assertSerialization(List.of(expLhs + " + " + expRhs, "69"), lhs + " + " + rhs, functions);
+        assertSerialization(List.of(expLhs + " - " + expRhs, "69"), lhs + " - " + rhs, functions);
     }
 
     @Test

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,19 +48,19 @@ public class UriPatternTestCase {
         assertNotMatch(pattern, "barbaz://host:69/path");
 
         pattern = new UriPattern("*://host:69/path");
-        assertMatch(pattern, "foobar://host:69/path", Arrays.asList("foobar"));
-        assertMatch(pattern, "bar://host:69/path", Arrays.asList("bar"));
-        assertMatch(pattern, "barbaz://host:69/path", Arrays.asList("barbaz"));
+        assertMatch(pattern, "foobar://host:69/path", List.of("foobar"));
+        assertMatch(pattern, "bar://host:69/path", List.of("bar"));
+        assertMatch(pattern, "barbaz://host:69/path", List.of("barbaz"));
 
         pattern = new UriPattern("*bar://host:69/path");
-        assertMatch(pattern, "foobar://host:69/path", Arrays.asList("foo"));
-        assertMatch(pattern, "bar://host:69/path", Arrays.asList(""));
+        assertMatch(pattern, "foobar://host:69/path", List.of("foo"));
+        assertMatch(pattern, "bar://host:69/path", List.of(""));
         assertNotMatch(pattern, "barbaz://host:69/path");
 
         pattern = new UriPattern("bar*://host:69/path");
         assertNotMatch(pattern, "foobar://host:69/path");
-        assertMatch(pattern, "bar://host:69/path", Arrays.asList(""));
-        assertMatch(pattern, "barbaz://host:69/path", Arrays.asList("baz"));
+        assertMatch(pattern, "bar://host:69/path", List.of(""));
+        assertMatch(pattern, "barbaz://host:69/path", List.of("baz"));
 
         // host matching
         pattern = new UriPattern("scheme://bar:69/path");
@@ -70,19 +69,19 @@ public class UriPatternTestCase {
         assertNotMatch(pattern, "scheme://barbaz:69/path");
 
         pattern = new UriPattern("scheme://*:69/path");
-        assertMatch(pattern, "scheme://foobar:69/path", Arrays.asList("foobar"));
-        assertMatch(pattern, "scheme://bar:69/path", Arrays.asList("bar"));
-        assertMatch(pattern, "scheme://barbaz:69/path", Arrays.asList("barbaz"));
+        assertMatch(pattern, "scheme://foobar:69/path", List.of("foobar"));
+        assertMatch(pattern, "scheme://bar:69/path", List.of("bar"));
+        assertMatch(pattern, "scheme://barbaz:69/path", List.of("barbaz"));
 
         pattern = new UriPattern("scheme://*bar:69/path");
-        assertMatch(pattern, "scheme://foobar:69/path", Arrays.asList("foo"));
-        assertMatch(pattern, "scheme://bar:69/path", Arrays.asList(""));
+        assertMatch(pattern, "scheme://foobar:69/path", List.of("foo"));
+        assertMatch(pattern, "scheme://bar:69/path", List.of(""));
         assertNotMatch(pattern, "scheme://barbaz:69/path");
 
         pattern = new UriPattern("scheme://bar*:69/path");
         assertNotMatch(pattern, "scheme://foobar:69/path");
-        assertMatch(pattern, "scheme://bar:69/path", Arrays.asList(""));
-        assertMatch(pattern, "scheme://barbaz:69/path", Arrays.asList("baz"));
+        assertMatch(pattern, "scheme://bar:69/path", List.of(""));
+        assertMatch(pattern, "scheme://barbaz:69/path", List.of("baz"));
 
         // port matching
         pattern = new UriPattern("scheme://host:69/path");
@@ -91,9 +90,9 @@ public class UriPatternTestCase {
         assertNotMatch(pattern, "scheme://host:699/path");
 
         pattern = new UriPattern("scheme://host:*/path");
-        assertMatch(pattern, "scheme://host:669/path", Arrays.asList("669"));
-        assertMatch(pattern, "scheme://host:69/path", Arrays.asList("69"));
-        assertMatch(pattern, "scheme://host:699/path", Arrays.asList("699"));
+        assertMatch(pattern, "scheme://host:669/path", List.of("669"));
+        assertMatch(pattern, "scheme://host:69/path", List.of("69"));
+        assertMatch(pattern, "scheme://host:699/path", List.of("699"));
 
         // path matching
         pattern = new UriPattern("scheme://host:69/");
@@ -106,20 +105,20 @@ public class UriPatternTestCase {
         assertNotMatch(pattern, "scheme://host:69/barbaz");
 
         pattern = new UriPattern("scheme://host:69/*");
-        assertMatch(pattern, "scheme://host:69/", Arrays.asList(""));
-        assertMatch(pattern, "scheme://host:69/foobar", Arrays.asList("foobar"));
-        assertMatch(pattern, "scheme://host:69/bar", Arrays.asList("bar"));
-        assertMatch(pattern, "scheme://host:69/barbaz", Arrays.asList("barbaz"));
+        assertMatch(pattern, "scheme://host:69/", List.of(""));
+        assertMatch(pattern, "scheme://host:69/foobar", List.of("foobar"));
+        assertMatch(pattern, "scheme://host:69/bar", List.of("bar"));
+        assertMatch(pattern, "scheme://host:69/barbaz", List.of("barbaz"));
 
         pattern = new UriPattern("scheme://host:69/*bar");
-        assertMatch(pattern, "scheme://host:69/foobar", Arrays.asList("foo"));
-        assertMatch(pattern, "scheme://host:69/bar", Arrays.asList(""));
+        assertMatch(pattern, "scheme://host:69/foobar", List.of("foo"));
+        assertMatch(pattern, "scheme://host:69/bar", List.of(""));
         assertNotMatch(pattern, "scheme://host:69/barbaz");
 
         pattern = new UriPattern("scheme://host:69/bar*");
         assertNotMatch(pattern, "scheme://host:69/foobar");
-        assertMatch(pattern, "scheme://host:69/bar", Arrays.asList(""));
-        assertMatch(pattern, "scheme://host:69/barbaz", Arrays.asList("baz"));
+        assertMatch(pattern, "scheme://host:69/bar", List.of(""));
+        assertMatch(pattern, "scheme://host:69/barbaz", List.of("baz"));
     }
 
     @Test
@@ -128,7 +127,7 @@ public class UriPatternTestCase {
         assertNotMatch(pattern, "scheme://host");
 
         pattern = new UriPattern("scheme://host/*");
-        assertMatch(pattern, "scheme://host", Arrays.asList(""));
+        assertMatch(pattern, "scheme://host", List.of(""));
     }
 
     @Test
@@ -141,8 +140,8 @@ public class UriPatternTestCase {
     @Test
     void requireThatHostSupportsWildcard() {
         UriPattern pattern = new UriPattern("scheme://*.host/path");
-        assertMatch(pattern, "scheme://a.host/path", Arrays.asList("a"));
-        assertMatch(pattern, "scheme://a.b.host/path", Arrays.asList("a.b"));
+        assertMatch(pattern, "scheme://a.host/path", List.of("a"));
+        assertMatch(pattern, "scheme://a.b.host/path", List.of("a.b"));
     }
 
     @Test

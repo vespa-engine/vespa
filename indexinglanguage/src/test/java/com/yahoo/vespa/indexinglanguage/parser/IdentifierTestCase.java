@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage.parser;
 
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -15,7 +14,7 @@ public class IdentifierTestCase {
 
     @Test
     public void requireThatThereAreNoReservedWords() throws ParseException {
-        List<String> tokens = Arrays.asList("attribute",
+        List<String> tokens = List.of("attribute",
                                             "base64decode",
                                             "base64encode",
                                             "clear_state",

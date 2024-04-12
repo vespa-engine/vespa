@@ -27,7 +27,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +63,7 @@ public class ClusterApiImplTest {
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
                 new ServiceType("service-type"),
-                Arrays.asList(
+                List.of(
                         modelUtils.createServiceInstance("service-1", hostName1, ServiceStatus.UP),
                         modelUtils.createServiceInstance("service-2", hostName2, ServiceStatus.DOWN),
                         modelUtils.createServiceInstance("service-3", hostName3, ServiceStatus.UP),
@@ -268,7 +267,7 @@ public class ClusterApiImplTest {
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
                 new ServiceType("service-type"),
-                Arrays.asList(
+                List.of(
                         modelUtils.createServiceInstance("service-1", hostName1, ServiceStatus.UP),
                         service2,
                         modelUtils.createServiceInstance("service-3", hostName3, ServiceStatus.UP),
@@ -336,7 +335,7 @@ public class ClusterApiImplTest {
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
                 "cluster",
                 ServiceType.STORAGE,
-                Arrays.asList(
+                List.of(
                         modelUtils.createServiceInstance("storage-1", hostName1, ServiceStatus.UP),
                         modelUtils.createServiceInstance("storage-2", hostName2, ServiceStatus.DOWN)
                 )

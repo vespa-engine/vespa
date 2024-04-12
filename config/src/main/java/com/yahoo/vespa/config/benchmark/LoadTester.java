@@ -28,7 +28,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +138,7 @@ public class LoadTester {
             if (!name.endsWith(".def")) continue;
             String contents = IOUtils.readFile(f);
             ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefFile(f);
-            ret.put(key, new Tuple2<>(ConfigUtils.getDefMd5(Arrays.asList(contents.split("\n"))), contents.split("\n")));
+            ret.put(key, new Tuple2<>(ConfigUtils.getDefMd5(List.of(contents.split("\n"))), contents.split("\n")));
         }
         System.out.println("#  Read " + ret.size() + " def files from " + defDir.getPath());
         return ret;

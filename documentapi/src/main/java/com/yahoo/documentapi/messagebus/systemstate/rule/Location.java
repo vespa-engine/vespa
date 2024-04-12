@@ -3,7 +3,6 @@ package com.yahoo.documentapi.messagebus.systemstate.rule;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
 
 /**
  * @author Simon Thoresen Hult
@@ -25,7 +24,7 @@ public class Location {
      * @param loc The location string to parse.
      */
     public Location(String loc) {
-        items.addAll(Arrays.asList(loc.split("/")));
+        items.addAll(List.of(loc.split("/")));
         normalize();
     }
 

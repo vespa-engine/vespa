@@ -4,7 +4,6 @@ package com.yahoo.vespa.config;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -567,7 +566,7 @@ public class ConfigDefinition {
 
     public void addEnumDef(String id, String valsCommaSep, String defVal) {
         String[] valArr = valsCommaSep.split(",");
-        addEnumDef(id, Arrays.asList(valArr), defVal);
+        addEnumDef(id, List.of(valArr), defVal);
     }
 
     public void addStringDef(String id, String defVal) {

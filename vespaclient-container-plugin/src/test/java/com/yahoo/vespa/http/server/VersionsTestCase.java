@@ -20,15 +20,15 @@ import static org.junit.Assert.assertTrue;
 public class VersionsTestCase {
 
     private static final List<String> EMPTY = List.of();
-    private static final List<String> ONE_TWO = Arrays.asList("1", "2");
-    private static final List<String> ONE_THREE = Arrays.asList("1", "3");
-    private static final List<String> TWO_THREE = Arrays.asList("3", "2");
+    private static final List<String> ONE_TWO = List.of("1", "2");
+    private static final List<String> ONE_THREE = List.of("1", "3");
+    private static final List<String> TWO_THREE = List.of("3", "2");
     private static final List<String> ONE_NULL_THREE = Arrays.asList("1", null, "3");
     private static final List<String> ONE_COMMA_THREE = List.of("1, 3");
-    private static final List<String> ONE_EMPTY_THREE = Arrays.asList("1", "", "3");
+    private static final List<String> ONE_EMPTY_THREE = List.of("1", "", "3");
     private static final List<String> TOO_LARGE_NUMBER = List.of("1000000000");
-    private static final List<String> THREE_TOO_LARGE_NUMBER = Arrays.asList("3", "1000000000");
-    private static final List<String> THREE_COMMA_TOO_LARGE_NUMBER = Arrays.asList("3,1000000000");
+    private static final List<String> THREE_TOO_LARGE_NUMBER = List.of("3", "1000000000");
+    private static final List<String> THREE_COMMA_TOO_LARGE_NUMBER = List.of("3,1000000000");
     private static final List<String> GARBAGE = List.of("garbage");
 
     @Test

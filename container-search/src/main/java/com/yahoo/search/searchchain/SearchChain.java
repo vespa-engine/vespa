@@ -6,7 +6,6 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.Phase;
 import com.yahoo.search.Searcher;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -33,7 +32,7 @@ public class SearchChain extends Chain<Searcher> {
     }
 
     public SearchChain(ComponentId id, Searcher... searchers) {
-        this(id, Arrays.asList(searchers));
+        this(id, List.of(searchers));
     }
 
     public SearchChain(ComponentId id, Collection<Searcher> searchers) {

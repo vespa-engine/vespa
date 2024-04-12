@@ -56,7 +56,7 @@ public class ModelFactoryRegistryTest {
         TestFactory b = new TestFactory(new Version(5, 58, 1));
         TestFactory c = new TestFactory(new Version(5, 48, 44));
         TestFactory d = new TestFactory(new Version(5, 18, 44));
-        ModelFactoryRegistry registry = new ModelFactoryRegistry(Arrays.asList(a, b, c, d));
+        ModelFactoryRegistry registry = new ModelFactoryRegistry(List.of(a, b, c, d));
         assertEquals(4, registry.getFactories().size());
         assertTrue(registry.getFactories().contains(a));
         assertTrue(registry.getFactories().contains(b));
@@ -70,23 +70,9 @@ public class ModelFactoryRegistryTest {
         registry.getFactory(new Version(3, 2, 1));
     }
 
-    private static class TestFactory implements ModelFactory {
+    private record TestFactory(Version version) implements ModelFactory {
 
-        private final Version version;
-
-        TestFactory(Version version) {
-            this.version = version;
-        }
-
-        @Override
-        public Version version() {
-            return version;
-        }
-
-        @Override
-        public Model createModel(ModelContext modelContext) {
-            return null;
-        }
+        @Override public Model createModel(ModelContext modelContext) { return null; }
 
         @Override
         public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {

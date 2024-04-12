@@ -4,7 +4,6 @@ package com.yahoo.documentapi.messagebus.protocol;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -55,7 +54,7 @@ public class LoadBalancerTestCase {
     public void testAdaptiveLoadBalancer() {
         LoadBalancer lb = new AdaptiveLoadBalancer("foo", new Random(1));
 
-        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
+        List<Mirror.Entry> entries = List.of(new Mirror.Entry("foo/0/default", "tcp/bar:1"),
                 new Mirror.Entry("foo/1/default", "tcp/bar:2"),
                 new Mirror.Entry("foo/2/default", "tcp/bar:3"));
         List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
@@ -112,7 +111,7 @@ public class LoadBalancerTestCase {
 
     private void verifyLoadBalancerOneItemOnly(LoadBalancer lb) {
 
-        List<Mirror.Entry> entries = Arrays.asList(new Mirror.Entry("foo/0/default", "tcp/bar:1") );
+        List<Mirror.Entry> entries = List.of(new Mirror.Entry("foo/0/default", "tcp/bar:1") );
         List<LoadBalancer.NodeMetrics> weights = lb.getNodeWeights();
 
         assertEquals("foo/0/default" , lb.getRecipient(entries).entry.getName());

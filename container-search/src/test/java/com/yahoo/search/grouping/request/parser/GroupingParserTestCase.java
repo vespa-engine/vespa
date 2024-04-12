@@ -13,7 +13,6 @@ import com.yahoo.search.yql.YqlParser;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +28,7 @@ public class GroupingParserTestCase {
 
     @Test
     void requireThatMathAllowsWhitespace() {
-        for (String op : Arrays.asList("+", " +", " + ", "+ ",
+        for (String op : List.of("+", " +", " + ", "+ ",
                                        "-", " -", " - ", "- ",
                                        "*", " *", " * ", "* ",
                                        "/", " /", " / ", "/ ",
@@ -64,7 +63,7 @@ public class GroupingParserTestCase {
 
     @Test
     void requireThatTokenImagesAreNotReservedWords() {
-        List<String> images = Arrays.asList("acos",
+        List<String> images = List.of("acos",
                 "acosh",
                 "accuracy",
                 "add",
@@ -489,7 +488,7 @@ public class GroupingParserTestCase {
 
     @Test
     void testMisc() {
-        for (String fnc : Arrays.asList("time.date",
+        for (String fnc : List.of("time.date",
                                         "time.dayofmonth",
                                         "time.dayofweek",
                                         "time.dayofyear",
@@ -634,7 +633,7 @@ public class GroupingParserTestCase {
             actual.add(operation.toString());
         }
         if (expectedOperations.length > 0) {
-            assertEquals(Arrays.asList(expectedOperations), actual);
+            assertEquals(List.of(expectedOperations), actual);
         }
 
         // make sure that operation does not mutate through toString() -> fromString()
@@ -656,7 +655,7 @@ public class GroupingParserTestCase {
             actual.add(step.getOperation().toString());
         }
         if (expectedOperations.length > 0) {
-            assertEquals(Arrays.asList(expectedOperations), actual);
+            assertEquals(List.of(expectedOperations), actual);
         }
     }
 

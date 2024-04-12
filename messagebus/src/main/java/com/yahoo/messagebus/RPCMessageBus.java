@@ -5,7 +5,6 @@ import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -76,7 +75,7 @@ public class RPCMessageBus extends NetworkMessageBus {
      *                 destination sessions to be routed to.
      */
     public RPCMessageBus(Protocol protocol, String configId) {
-        this(Arrays.asList(protocol), new RPCNetworkParams().setIdentity(new Identity(configId)), null);
+        this(List.of(protocol), new RPCNetworkParams().setIdentity(new Identity(configId)), null);
     }
 
     /**

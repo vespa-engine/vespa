@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +108,7 @@ public class ZooKeeperDeployer {
         void initialize() {
             curator.create(sessionPath);
 
-            for (String subPath : Arrays.asList(DEFCONFIGS_ZK_SUBPATH,
+            for (String subPath : List.of(DEFCONFIGS_ZK_SUBPATH,
                                                 USER_DEFCONFIGS_ZK_SUBPATH,
                                                 USERAPP_ZK_SUBPATH,
                                                 ZKApplicationPackage.fileRegistryNode)) {

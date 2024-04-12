@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http;
 
 import com.yahoo.jdisc.HeaderFields;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,7 +30,7 @@ public class CookieHelper {
     public static void encodeSetCookieHeader(HeaderFields headers, List<Cookie> cookies) {
         headers.remove(HttpHeaders.Names.SET_COOKIE);
         for (Cookie cookie : cookies) {
-            headers.add(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeaders(Arrays.asList(cookie)));
+            headers.add(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeaders(List.of(cookie)));
         }
     }
 }

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +54,7 @@ public class ApplicationRestartTestCase {
 
     private static ApplicationLoader newApplicationLoader() {
         return new ApplicationLoader(new NonWorkingOsgiFramework(),
-                                     Arrays.asList(new AbstractModule() {
+                                     List.of(new AbstractModule() {
                                          @Override
                                          public void configure() {
                                              bind(Application.class).to(SimpleApplication.class);

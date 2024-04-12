@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +45,7 @@ public class ApplicationVersionsTest {
 
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionOrLatestThrows() {
-        applicationVersions = ApplicationVersions.fromList(Arrays.asList(applications.get(0), applications.get(2)));
+        applicationVersions = ApplicationVersions.fromList(List.of(applications.get(0), applications.get(2)));
         applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
     }
 

@@ -99,7 +99,7 @@ public class BuilderGenerator {
         }
 
         String uninitializedList = (scalarsWithoutDefault.size() > 0)
-                ? "Arrays.asList(\n" + indentCode(INDENTATION, String.join(",\n", scalarsWithoutDefault) + "\n)")
+                ? "List.of(\n" + indentCode(INDENTATION, String.join(",\n", scalarsWithoutDefault) + "\n)")
                 : "";
 
         return "private Set<String> " + INTERNAL_PREFIX + "uninitialized = new HashSet<String>(" + uninitializedList + ");";

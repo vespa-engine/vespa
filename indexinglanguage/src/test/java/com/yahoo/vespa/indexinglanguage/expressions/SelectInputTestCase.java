@@ -8,7 +8,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -66,11 +65,11 @@ public class SelectInputTestCase {
 
     @Test
     public void requireThatSelectedExpressionIsRun() {
-        assertSelect(Arrays.asList("foo", "bar"), List.of("foo"), "foo");
-        assertSelect(Arrays.asList("foo", "bar"), List.of("bar"), "bar");
-        assertSelect(Arrays.asList("foo", "bar"), List.of("foo", "bar"), "foo");
-        assertSelect(Arrays.asList("foo", "bar"), List.of("bar", "baz"), "bar");
-        assertSelect(Arrays.asList("foo", "bar"), List.of("baz", "cox"), null);
+        assertSelect(List.of("foo", "bar"), List.of("foo"), "foo");
+        assertSelect(List.of("foo", "bar"), List.of("bar"), "bar");
+        assertSelect(List.of("foo", "bar"), List.of("foo", "bar"), "foo");
+        assertSelect(List.of("foo", "bar"), List.of("bar", "baz"), "bar");
+        assertSelect(List.of("foo", "bar"), List.of("baz", "cox"), null);
     }
 
     private static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {

@@ -7,7 +7,8 @@ import com.yahoo.document.predicate.FeatureSet;
 import com.yahoo.document.predicate.Predicate;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static com.yahoo.document.predicate.Predicates.and;
 import static com.yahoo.document.predicate.Predicates.not;
@@ -101,7 +102,7 @@ public class FeatureConjunctionTransformerTest {
     }
 
     private static FeatureConjunction conj(Predicate... operands) {
-        return new FeatureConjunction(Arrays.asList(operands));
+        return new FeatureConjunction(List.of(operands));
     }
 
     private static FeatureSet featureSet(int id, String... values) {

@@ -8,7 +8,6 @@ import com.yahoo.language.simple.SimpleTokenizer;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -22,25 +21,25 @@ public class SegmenterImplTestCase {
 
     @Test
     public void requireThatNonIndexableCharactersAreDelimiters() {
-        assertSegments("i've", Arrays.asList("i", "ve"));
-        assertSegments("foo bar. baz", Arrays.asList("foo", "bar", "baz"));
-        assertSegments("1,2, 3 4", Arrays.asList("1", "2", "3", "4"));
+        assertSegments("i've", List.of("i", "ve"));
+        assertSegments("foo bar. baz", List.of("foo", "bar", "baz"));
+        assertSegments("1,2, 3 4", List.of("1", "2", "3", "4"));
     }
 
     @Test
     public void requireThatAdjacentIndexableTokenTypesAreNotSplit() {
-        assertSegments("a1,2b,c3,4d", Arrays.asList("a1", "2b", "c3", "4d"));
+        assertSegments("a1,2b,c3,4d", List.of("a1", "2b", "c3", "4d"));
     }
 
     @Test
     public void requireThatSegmentationReturnsOriginalForm() {
-        assertSegments("a\u030A", Arrays.asList("a\u030A"));
-        assertSegments("FOO BAR", Arrays.asList("FOO", "BAR"));
+        assertSegments("a\u030A", List.of("a\u030A"));
+        assertSegments("FOO BAR", List.of("FOO", "BAR"));
     }
 
     @Test
     public void requireThatEmptyInputIsPreserved() {
-        assertSegments("", Arrays.asList(""));
+        assertSegments("", List.of(""));
     }
 
     private static void assertSegments(String input, List<String> expectedSegments) {
@@ -51,7 +50,7 @@ public class SegmenterImplTestCase {
     public void requireThatEmptyStringsAreSuppressed() {
         Tokenizer fancyTokenizer = new FancyTokenizer();
         Segmenter fancySegmenter = new SegmenterImpl(fancyTokenizer);
-        List<String> expectedSegments = Arrays.asList("juice", "\u00BD", "oz");
+        List<String> expectedSegments = List.of("juice", "\u00BD", "oz");
         String input = "juice \u00BD oz";
         assertEquals(expectedSegments, fancySegmenter.segment(input, Language.ENGLISH));
     }

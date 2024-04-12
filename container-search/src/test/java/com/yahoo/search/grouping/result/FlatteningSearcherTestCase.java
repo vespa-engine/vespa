@@ -28,7 +28,6 @@ import com.yahoo.searchlib.aggregation.hll.SparseSketch;
 import com.yahoo.searchlib.expression.StringResultNode;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -105,7 +104,7 @@ public class FlatteningSearcherTestCase {
     }
 
     private static Execution newExecution(Searcher... searchers) {
-        return new Execution(new SearchChain(new ComponentId("foo"), Arrays.asList(searchers)),
+        return new Execution(new SearchChain(new ComponentId("foo"), List.of(searchers)),
                              Execution.Context.createContextStub());
     }
 

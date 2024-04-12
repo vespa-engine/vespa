@@ -100,7 +100,7 @@ public class PageTemplateSearcherTestCase {
 
         { // Specifying two templates as a list, should override the page.id setting
             Query query = new Query("?query=foo&page.id=anySource&page.resolver=native.deterministic");
-            query.properties().set("page.idList", Arrays.asList("oneSource", "threeSources"));
+            query.properties().set("page.idList", List.of("oneSource", "threeSources"));
             Result result = new Execution(chain, Execution.Context.createContextStub()).search(query);
             assertSources("source1 source2 source3", "source1 source2 source3", result);
         }
@@ -172,11 +172,11 @@ public class PageTemplateSearcherTestCase {
     }
 
     private void assertSources(String expectedQuerySourceString,String expectedResultSourceString,Result result) {
-        Set<String> expectedQuerySources=new HashSet<>(Arrays.asList(expectedQuerySourceString.split(" ")));
+        Set<String> expectedQuerySources=new HashSet<>(List.of(expectedQuerySourceString.split(" ")));
         assertEquals(expectedQuerySources,result.getQuery().getModel().getSources());
 
-        Set<String> expectedResultSources=new HashSet<>(Arrays.asList(expectedResultSourceString.split(" ")));
-        for (String sourceName : Arrays.asList("source1 source2 source3".split(" "))) {
+        Set<String> expectedResultSources=new HashSet<>(List.of(expectedResultSourceString.split(" ")));
+        for (String sourceName : List.of("source1 source2 source3".split(" "))) {
             if (expectedResultSources.contains(sourceName))
                 assertNotNull(result.hits().get(sourceName),"Result contains '" + sourceName + "'");
             else
@@ -189,7 +189,7 @@ public class PageTemplateSearcherTestCase {
         @Override
         public Result search(Query query,Execution execution) {
             Result result=new Result(query);
-            for (String sourceName : Arrays.asList("source1 source2 source3".split(" ")))
+            for (String sourceName : List.of("source1 source2 source3".split(" ")))
                 if (query.getModel().getSources().isEmpty() || query.getModel().getSources().contains(sourceName))
                     result.hits().add(createSource(sourceName));
             return result;

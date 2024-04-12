@@ -4,7 +4,8 @@ package com.yahoo.vespa.config;
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.codegen.LeafCNode;
 
-import java.util.Arrays;
+import java.util.List;
+
 
 /**
  * Builds a ConfigDefinition from a tree of CNodes.
@@ -183,9 +184,9 @@ public class ConfigDefinitionBuilder {
 
     private static void addNode(ConfigDefinition def, LeafCNode.EnumLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
-            def.addEnumDef(leaf.getName(), Arrays.asList(leaf.getLegalValues()), leaf.getDefaultValue().getValue());
+            def.addEnumDef(leaf.getName(), List.of(leaf.getLegalValues()), leaf.getDefaultValue().getValue());
         } else {
-            def.addEnumDef(leaf.getName(), Arrays.asList(leaf.getLegalValues()), null);
+            def.addEnumDef(leaf.getName(), List.of(leaf.getLegalValues()), null);
         }
     }
 

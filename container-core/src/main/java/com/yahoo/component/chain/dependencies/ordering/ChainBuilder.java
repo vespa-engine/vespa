@@ -3,7 +3,6 @@ package com.yahoo.component.chain.dependencies.ordering;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -50,7 +49,7 @@ public class ChainBuilder<T extends ChainedComponent> {
     }
 
     private Set<String> set(String... s) {
-        return new HashSet<>(Arrays.asList(s));
+        return new HashSet<>(List.of(s));
     }
 
     public PhaseNameProvider addPhase(Phase phase) {

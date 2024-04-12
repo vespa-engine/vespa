@@ -26,7 +26,6 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -311,7 +310,7 @@ public class TestDriver implements ContainerActivator, CurrentContainer {
      */
     public static TestDriver newApplicationBundleInstance(String bundleLocation, boolean privileged,
                                                           Module... guiceModules) {
-        return newInstance(newOsgiFramework(), bundleLocation, privileged, Arrays.asList(guiceModules));
+        return newInstance(newOsgiFramework(), bundleLocation, privileged, List.of(guiceModules));
     }
 
     /**
@@ -326,7 +325,7 @@ public class TestDriver implements ContainerActivator, CurrentContainer {
      */
     public static TestDriver newInstance(OsgiFramework osgiFramework, String bundleLocation, boolean privileged,
                                          Module... guiceModules) {
-        return newInstance(osgiFramework, bundleLocation, privileged, Arrays.asList(guiceModules));
+        return newInstance(osgiFramework, bundleLocation, privileged, List.of(guiceModules));
     }
 
     /**
@@ -381,7 +380,7 @@ public class TestDriver implements ContainerActivator, CurrentContainer {
     private static List<Module> newModuleList(final Application app, final Class<? extends Application> appClass,
                                               Module... guiceModules) {
         List<Module> lst = new LinkedList<>();
-        lst.addAll(Arrays.asList(guiceModules));
+        lst.addAll(List.of(guiceModules));
         lst.add(new AbstractModule() {
 
             @Override

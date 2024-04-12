@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,7 +35,7 @@ public class BindingMatchingTestCase {
     void runThroughtputMeasurements() throws Exception {
         System.err.format("%15s%15s%15s%15s%15s%15s%15s%15s\n",
                 "No. of Bindings", "1 thread", "2 thread", "4 thread", "8 thread", "16 thread", "32 thread", "64 thread");
-        for (int numBindings : Arrays.asList(1, 10, 25, 50, 100, 250)) {
+        for (int numBindings : List.of(1, 10, 25, 50, 100, 250)) {
             BindingRepository<Object> repo = new BindingRepository<>();
             for (int binding = 0; binding < numBindings; ++binding) {
                 repo.bind("http://*/v" + binding + "/*/data/", new Object());

@@ -3,7 +3,8 @@ package com.yahoo.search.predicate.index;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,9 +15,9 @@ public class ZstarCompressedPostingListTest {
     @Test
     void requireThatPostingListCanIterate() {
         PredicateIntervalStore.Builder builder = new PredicateIntervalStore.Builder();
-        int ref1 = builder.insert(Arrays.asList(0x10000));
-        int ref2 = builder.insert(Arrays.asList(0x10000, 0x0ffff));
-        int ref3 = builder.insert(Arrays.asList(0x10000, 0x00003, 0x40003, 0x60005));
+        int ref1 = builder.insert(List.of(0x10000));
+        int ref2 = builder.insert(List.of(0x10000, 0x0ffff));
+        int ref3 = builder.insert(List.of(0x10000, 0x00003, 0x40003, 0x60005));
         ZstarCompressedPostingList postingList = new ZstarCompressedPostingList(
                 builder.build(), new int[]{2, 4, 6}, new int[]{ref1, ref2, ref3});
         assertEquals(-1, postingList.getDocId());

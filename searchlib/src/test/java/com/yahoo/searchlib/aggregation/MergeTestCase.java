@@ -13,7 +13,6 @@ import com.yahoo.searchlib.expression.MultiplyFunctionNode;
 import com.yahoo.searchlib.expression.StringResultNode;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -725,20 +724,20 @@ public class MergeTestCase {
     }
 
     private static void assertMerge(Grouping request, Group lhs, Group rhs, Group expect) {
-        assertMerge(Arrays.asList(request.clone().setRoot(lhs.clone()),
+        assertMerge(List.of(request.clone().setRoot(lhs.clone()),
                                   request.clone().setRoot(rhs.clone())),
                     expect);
     }
 
     private static void assertMerge(Grouping request, Group a, Group b, Group c, Group expect) {
-        assertMerge(Arrays.asList(request.clone().setRoot(a.clone()),
+        assertMerge(List.of(request.clone().setRoot(a.clone()),
                                   request.clone().setRoot(b.clone()),
                                   request.clone().setRoot(c.clone())),
                     expect);
     }
 
     private static void assertMerge(Grouping lhs, Grouping rhs, Group expect) {
-        assertMerge(Arrays.asList(lhs, rhs), expect);
+        assertMerge(List.of(lhs, rhs), expect);
     }
 
     private static void assertMerge(List<Grouping> groupingList, Group expect) {

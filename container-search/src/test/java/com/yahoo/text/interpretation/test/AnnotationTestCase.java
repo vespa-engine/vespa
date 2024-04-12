@@ -2,7 +2,6 @@
 package com.yahoo.text.interpretation.test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,7 +49,7 @@ public class AnnotationTestCase {
         }
 
         Set<AnnotationClass> annotationClasses = a.getClasses(0, 3);
-        Set<AnnotationClass> testClass = new HashSet<>(Arrays.asList(
+        Set<AnnotationClass> testClass = new HashSet<>(List.of(
                 new AnnotationClass("token"), new AnnotationClass("state")));
         assertEquals(testClass, annotationClasses);
 
@@ -75,7 +74,7 @@ public class AnnotationTestCase {
         //This is bad about the API, getTokens may not necessairily return what a user thinks a token is
         //But it should still be tested
         a.annotate(0, 1, "n");
-        Set<String> testSet = new HashSet<>(Arrays.asList("n", "york", "hotel"));
+        Set<String> testSet = new HashSet<>(List.of("n", "york", "hotel"));
         for (Span span :a.getTokens()) {
             assertTrue(testSet.remove(span.getText()));
         }
@@ -118,7 +117,7 @@ public class AnnotationTestCase {
                 //if a number is not found
                 woe_id = annotations.getInteger("woe_id");
             }
-            assertEquals(Arrays.asList("crab"), toppings);
+            assertEquals(List.of("crab"), toppings);
             assertEquals(2459115, woe_id);
 
         }

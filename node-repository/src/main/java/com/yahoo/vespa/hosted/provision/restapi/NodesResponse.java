@@ -27,7 +27,6 @@ import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -66,7 +65,7 @@ class NodesResponse extends SlimeJsonResponse {
         this.wantedDockerTagFlag = PermanentFlags.WANTED_DOCKER_TAG.bindTo(nodeRepository.flagSource());
 
         // Cannot use Set.of() because the nodeRepository account can also be the empty account (at least in tests).
-        var nonEnclaveAccounts = new HashSet<>(Arrays.asList(CloudAccount.empty, nodeRepository.zone().cloud().account()));
+        var nonEnclaveAccounts = new HashSet<>(List.of(CloudAccount.empty, nodeRepository.zone().cloud().account()));
         this.filter = NodesV2ApiHandler.toNodeFilter(request, nonEnclaveAccounts);
 
         Cursor root = slime.setObject();

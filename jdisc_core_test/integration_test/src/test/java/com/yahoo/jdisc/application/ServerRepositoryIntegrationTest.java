@@ -8,8 +8,8 @@ import com.yahoo.jdisc.test.TestDriver;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +54,7 @@ public class ServerRepositoryIntegrationTest {
         BundleInstaller installer = new BundleInstaller(driver.osgiFramework());
         Bundle bundle = installer.installAndStart("my-server-provider.jar").get(0);
         ContainerBuilder builder = driver.newContainerBuilder();
-        builder.serverProviders().installAll(bundle, Arrays.asList("com.yahoo.jdisc.bundle.MyServerProvider",
+        builder.serverProviders().installAll(bundle, List.of("com.yahoo.jdisc.bundle.MyServerProvider",
                                                                    "com.yahoo.jdisc.bundle.MyServerProvider"));
         Iterator<ServerProvider> it = builder.serverProviders().iterator();
         assertTrue(it.hasNext());

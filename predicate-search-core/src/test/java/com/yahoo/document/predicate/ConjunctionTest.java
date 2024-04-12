@@ -3,7 +3,7 @@ package com.yahoo.document.predicate;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,18 +22,18 @@ public class ConjunctionTest {
         Conjunction node = new Conjunction();
         Predicate a = SimplePredicates.newString("a");
         node.addOperand(a);
-        assertEquals(Arrays.asList(a), node.getOperands());
+        assertEquals(List.of(a), node.getOperands());
         Predicate b = SimplePredicates.newString("b");
         node.addOperand(b);
-        assertEquals(Arrays.asList(a, b), node.getOperands());
+        assertEquals(List.of(a, b), node.getOperands());
         Predicate c = SimplePredicates.newString("c");
         Predicate d = SimplePredicates.newString("d");
-        node.addOperands(Arrays.asList(c, d));
-        assertEquals(Arrays.asList(a, b, c, d), node.getOperands());
+        node.addOperands(List.of(c, d));
+        assertEquals(List.of(a, b, c, d), node.getOperands());
         Predicate e = SimplePredicates.newString("e");
         Predicate f = SimplePredicates.newString("f");
-        node.setOperands(Arrays.asList(e, f));
-        assertEquals(Arrays.asList(e, f), node.getOperands());
+        node.setOperands(List.of(e, f));
+        assertEquals(List.of(e, f), node.getOperands());
     }
 
     @Test
@@ -41,10 +41,10 @@ public class ConjunctionTest {
         Predicate foo = SimplePredicates.newString("foo");
         Predicate bar = SimplePredicates.newString("bar");
         Conjunction node = new Conjunction(foo, bar);
-        assertEquals(Arrays.asList(foo, bar), node.getOperands());
+        assertEquals(List.of(foo, bar), node.getOperands());
 
-        node = new Conjunction(Arrays.asList(foo, bar));
-        assertEquals(Arrays.asList(foo, bar), node.getOperands());
+        node = new Conjunction(List.of(foo, bar));
+        assertEquals(List.of(foo, bar), node.getOperands());
     }
 
     @Test

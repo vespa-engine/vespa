@@ -7,7 +7,6 @@ import com.yahoo.container.plugin.util.JarFiles;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +55,7 @@ public class AnalyzeBundle {
         var manifest = getOsgiManifest(jarFile);
         if (manifest == null) return List.of();
         return getMainAttributeValue(manifest, "X-JDisc-Non-PublicApi-Export-Package")
-                .map(s -> Arrays.asList(s.split(",")))
+                .map(s -> List.of(s.split(",")))
                 .orElseGet(ArrayList::new);
     }
 

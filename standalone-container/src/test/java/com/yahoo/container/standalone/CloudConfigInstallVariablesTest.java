@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.yahoo.container.standalone.CloudConfigInstallVariables.toConfigModelsPluginDir;
 import static com.yahoo.container.standalone.CloudConfigInstallVariables.toConfigServer;
@@ -39,7 +38,7 @@ public class CloudConfigInstallVariablesTest {
         assertEquals(2, parsed.length);
 
         List<String> hostNames = Arrays.stream(parsed).map(cs -> cs.hostName).toList();
-        assertTrue(hostNames.containsAll(Arrays.asList("test1", "test2")));
+        assertTrue(hostNames.containsAll(List.of("test1", "test2")));
     }
 
     @Test(expected = IllegalArgumentException.class)

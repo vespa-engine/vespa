@@ -12,8 +12,8 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.foo.StructtypesConfig.Simple.Gender.Enum.FEMALE;
@@ -176,7 +176,7 @@ public class ConfigInstanceBuilderTest {
                 doublearr(123.0).
                 stringarr("bar").
                 enumarr(Enumarr.VALUES).
-                refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
+                refarr(List.of(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
                 intMap("one", 1).
                 intMap("two", 2).

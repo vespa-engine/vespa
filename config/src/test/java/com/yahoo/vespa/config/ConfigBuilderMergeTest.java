@@ -8,7 +8,8 @@ import com.yahoo.foo.StructtypesConfig;
 import com.yahoo.foo.MaptypesConfig;
 import org.junit.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static com.yahoo.foo.MaptypesConfig.Innermap;
 import static org.hamcrest.CoreMatchers.is;
@@ -44,7 +45,7 @@ public class ConfigBuilderMergeTest {
         StructtypesConfig.Simple.Builder simpleBuilder = new StructtypesConfig.Simple.Builder();
         simpleBuilder.name(name);
         simpleBuilder.gender(StructtypesConfig.Simple.Gender.Enum.valueOf(gender));
-        simpleBuilder.emails(Arrays.asList(emails));
+        simpleBuilder.emails(List.of(emails));
         builder.simple(simpleBuilder);
         return builder;
     }

@@ -14,7 +14,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -43,8 +42,8 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 .withHostnameValidationDisabled(false)
                 .withAuthorizedPeers(
                         new AuthorizedPeers(
-                                new LinkedHashSet<>(Arrays.asList(
-                                        new PeerPolicy("cfgserver", "cfgserver policy description", Arrays.asList(
+                                new LinkedHashSet<>(List.of(
+                                        new PeerPolicy("cfgserver", "cfgserver policy description", List.of(
                                                 RequiredPeerCredential.of(CN, "mycfgserver"),
                                                 RequiredPeerCredential.of(SAN_DNS, "*.suffix.com"),
                                                 RequiredPeerCredential.of(SAN_URI, "myscheme://resource/path/"))),
@@ -67,7 +66,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCertificates(Paths.get("certs.pem"), Paths.get("myhost.key"))
                 .withCaCertificates(Paths.get("my_cas.pem"))
-                .withAcceptedCiphers(Arrays.asList("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"))
+                .withAcceptedCiphers(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"))
                 .withAcceptedProtocols(List.of("TLSv1.2"))
                 .withHostnameValidationDisabled(true)
                 .build();

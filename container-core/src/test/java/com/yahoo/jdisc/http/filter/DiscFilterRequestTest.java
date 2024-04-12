@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -306,7 +305,7 @@ public class DiscFilterRequestTest {
         URI uri = URI.create("http://example.yahoo.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         httpReq.headers().add("key1", "value1");
-        httpReq.headers().add("key2", Arrays.asList("value1", "value2"));
+        httpReq.headers().add("key2", List.of("value1", "value2"));
 
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
         HeaderFields headers = request.getUntreatedHeaders();

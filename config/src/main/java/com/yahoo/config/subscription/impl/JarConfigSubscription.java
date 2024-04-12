@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.List;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -56,7 +56,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
                 throw new IllegalArgumentException("Config '" + key.getName() + "' not found in '" + jarName + "!/" + path + "'.");
             T config;
             try {
-                ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readAll(new InputStreamReader(jarFile.getInputStream(zipEntry), StandardCharsets.UTF_8)).split("\n")));
+                ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(List.of(IOUtils.readAll(new InputStreamReader(jarFile.getInputStream(zipEntry), StandardCharsets.UTF_8)).split("\n")));
                 config = payload.toInstance(configClass, key.getConfigId());
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);

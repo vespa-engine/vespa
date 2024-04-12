@@ -2,7 +2,6 @@
 package com.yahoo.test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,7 +24,7 @@ public abstract class OrderTester<T extends Comparable<? super T>> {
     @SafeVarargs
     @SuppressWarnings("varargs")
     private OrderTester<T> addGroup(T... group) {
-        groups.add(Arrays.asList(group));
+        groups.add(List.of(group));
         return this;
     }
 

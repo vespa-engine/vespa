@@ -2,7 +2,8 @@
 package com.yahoo.config.model.api;
 
 import org.junit.Test;
-import java.util.Arrays;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -10,10 +11,10 @@ import static org.junit.Assert.assertNotEquals;
 public class HostInfoTest {
     @Test
     public void testEquals() {
-        HostInfo a = new HostInfo("foo.yahoo.com", Arrays.asList(new ServiceInfo("foo", "bar", null, null, "config-id", "host-name")));
-        HostInfo b = new HostInfo("foo.yahoo.com", Arrays.asList(new ServiceInfo("foo", "bar", null, null, "config-id", "host-name")));
-        HostInfo c = new HostInfo("foo.yahoo.com", Arrays.asList(new ServiceInfo("foo", "baz", null, null, "config-id", "host-name")));
-        HostInfo d = new HostInfo("foo.yahoo.com", Arrays.asList(new ServiceInfo("bar", "baz", null, null, "config-id", "host-name")));
+        HostInfo a = new HostInfo("foo.yahoo.com", List.of(new ServiceInfo("foo", "bar", null, null, "config-id", "host-name")));
+        HostInfo b = new HostInfo("foo.yahoo.com", List.of(new ServiceInfo("foo", "bar", null, null, "config-id", "host-name")));
+        HostInfo c = new HostInfo("foo.yahoo.com", List.of(new ServiceInfo("foo", "baz", null, null, "config-id", "host-name")));
+        HostInfo d = new HostInfo("foo.yahoo.com", List.of(new ServiceInfo("bar", "baz", null, null, "config-id", "host-name")));
         HostInfo e = new HostInfo("bar.yahoo.com", null);
         assertEquals(a, b);
         assertNotEquals(a, c);

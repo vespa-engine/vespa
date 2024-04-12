@@ -4,7 +4,6 @@ package com.yahoo.search.grouping.request;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,8 +41,8 @@ public class RawBufferTestCase {
 
     @Test
     void requireThatToStringWorks() {
-        assertToString(Arrays.asList("a".getBytes()[0], "b".getBytes()[0]), "{97,98}");
-        assertToString(Arrays.asList((byte) 2, (byte) 6), "{2,6}");
+        assertToString(List.of("a".getBytes()[0], "b".getBytes()[0]), "{97,98}");
+        assertToString(List.of((byte) 2, (byte) 6), "{2,6}");
     }
 
     public void assertToString(List<Byte> data, String expected) {

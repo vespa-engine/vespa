@@ -40,7 +40,7 @@ public class MockModel implements Model {
                                                   ClusterSpec.Type.container, statePort, "state");
         ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "logserver", "logserver",
                                                            ClusterSpec.Type.admin, 1234, "logtp");
-        return new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
+        return new HostInfo(hostname, List.of(container, serviceNoStatePort));
     }
 
     static MockModel createConfigProxies(List<String> hostnames, int rpcPort) {

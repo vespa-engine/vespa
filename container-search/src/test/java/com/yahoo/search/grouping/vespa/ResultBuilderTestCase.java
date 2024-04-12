@@ -36,7 +36,6 @@ import com.yahoo.searchlib.expression.StringResultNode;
 import org.junit.jupiter.api.Test;
 
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -916,10 +915,11 @@ public class ResultBuilderTestCase {
         assertOutput(test);
     }
 
+
     private static void assertOutput(ResultTest test) {
         RequestBuilder reqBuilder = new RequestBuilder(REQUEST_ID);
         reqBuilder.setRootOperation(GroupingOperation.fromString(test.request));
-        reqBuilder.addContinuations(Arrays.asList(test.continuation));
+        reqBuilder.addContinuations(test.getContinuations());
         reqBuilder.build();
         assertEquals(reqBuilder.getRequestList().size(), test.result.size());
 
@@ -973,6 +973,9 @@ public class ResultBuilderTestCase {
         String expectedException;
         OutputWriter outputWriter;
         Continuation continuation;
+        List<Continuation> getContinuations() {
+            return continuation != null ? List.of(continuation) : List.of();
+        }
     }
 
     private static interface OutputWriter {

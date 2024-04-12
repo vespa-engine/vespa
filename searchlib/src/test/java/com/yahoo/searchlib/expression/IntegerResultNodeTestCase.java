@@ -4,7 +4,6 @@ package com.yahoo.searchlib.expression;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -18,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class IntegerResultNodeTestCase extends ResultNodeTest {
 
     List<NumericResultNode> getResultNodes(long startvalue) {
-        return Arrays.asList(new Int8ResultNode((byte)startvalue),
+        return List.of(new Int8ResultNode((byte)startvalue),
                              new Int16ResultNode((short)startvalue),
                              new Int32ResultNode((int)startvalue),
                              new IntegerResultNode(startvalue));

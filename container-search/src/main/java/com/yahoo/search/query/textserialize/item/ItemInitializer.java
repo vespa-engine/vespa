@@ -7,7 +7,6 @@ import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.search.query.textserialize.serializer.DispatchForm;
 import com.yahoo.search.query.textserialize.serializer.ItemIdMapper;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -116,7 +115,7 @@ public class ItemInitializer {
         Item connectedItem = taggableItem.getConnectedItem();
         if (connectedItem != null) {
             form.setProperty("connectivity",
-                    Arrays.asList(itemIdMapper.getId(connectedItem), taggableItem.getConnectivity()));
+                    List.of(itemIdMapper.getId(connectedItem), taggableItem.getConnectivity()));
         }
 
         if (taggableItem.hasExplicitSignificance()) {

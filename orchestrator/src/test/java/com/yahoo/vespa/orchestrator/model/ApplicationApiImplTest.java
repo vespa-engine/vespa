@@ -33,11 +33,11 @@ public class ApplicationApiImplTest {
         HostName hostName4 = new HostName("host4");
 
         ApplicationInstance applicationInstance =
-                modelUtils.createApplicationInstance(Arrays.asList(
+                modelUtils.createApplicationInstance(List.of(
                         modelUtils.createServiceCluster(
                                 "cluster-3",
                                 new ServiceType("service-type-3"),
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-1", hostName1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-2", hostName2, ServiceStatus.UP)
                                 )
@@ -45,7 +45,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 new ServiceType("service-type-1"),
-                                Arrays.asList(
+                                List.of(
                                     modelUtils.createServiceInstance("config-id-3", hostName1, ServiceStatus.UP),
                                     modelUtils.createServiceInstance("config-id-4", hostName3, ServiceStatus.UP)
                                 )
@@ -53,7 +53,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 new ServiceType("service-type-2"),
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-5", hostName1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-6", hostName2, ServiceStatus.UP)
                                 )
@@ -71,7 +71,7 @@ public class ApplicationApiImplTest {
         try (scopedApi) {
             // Note: we require the clusters to be in order.
             List<ClusterApi> clusterApis = scopedApi.applicationApi().getClusters();
-            String clusterInfos = clusterApis.stream().map(clusterApi -> clusterApi.clusterInfo()).collect(Collectors.joining(","));
+            String clusterInfos = clusterApis.stream().map(ClusterApi::clusterInfo).collect(Collectors.joining(","));
 
             String expectedClusterInfos = Arrays.stream(expectedClusterNumbers)
                     .map(number -> "{ clusterId=cluster-" + number + ", serviceType=service-type-" + number + " }")
@@ -92,11 +92,11 @@ public class ApplicationApiImplTest {
         HostName hostName7 = new HostName("host7");
 
         ApplicationInstance applicationInstance =
-                modelUtils.createApplicationInstance(Arrays.asList(
+                modelUtils.createApplicationInstance(List.of(
                         modelUtils.createServiceCluster(
                                 "cluster-3",
                                 ServiceType.STORAGE,
-                                Arrays.asList(
+                                List.of(
                                     modelUtils.createServiceInstance("config-id-30", hostName1, ServiceStatus.UP),
                                     modelUtils.createServiceInstance("config-id-31", hostName2, ServiceStatus.UP)
                                 )
@@ -104,7 +104,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 ServiceType.STORAGE,
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-10", hostName3, ServiceStatus.DOWN),
                                         modelUtils.createServiceInstance("config-id-11", hostName4, ServiceStatus.UP)
                                 )
@@ -112,7 +112,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-4",
                                 new ServiceType("service-type-4"),
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-40", hostName1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-41", hostName2, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-42", hostName3, ServiceStatus.UP),
@@ -122,7 +122,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 ServiceType.STORAGE,
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-20", hostName6, ServiceStatus.DOWN),
                                         modelUtils.createServiceInstance("config-id-21", hostName7, ServiceStatus.UP)
                                 )
@@ -154,9 +154,9 @@ public class ApplicationApiImplTest {
                                                     HostName... expectedHostNames) {
         try (scopedApi) {
             List<HostName> upStorageNodes = scopedApi.applicationApi().getNoRemarksStorageNodesInGroupInClusterOrder().stream()
-                    .map(storageNode -> storageNode.hostName())
+                    .map(StorageNode::hostName)
                     .toList();
-            assertEquals(Arrays.asList(expectedHostNames), upStorageNodes);
+            assertEquals(List.of(expectedHostNames), upStorageNodes);
         }
     }
 
@@ -191,7 +191,7 @@ public class ApplicationApiImplTest {
             List<HostName> actualStorageNodes = scopedApi.applicationApi()
                     .getNoRemarksStorageNodesInGroupInClusterOrder()
                     .stream()
-                    .map(storageNode -> storageNode.hostName())
+                    .map(StorageNode::hostName)
                     .toList();
             assertEquals(upStorageNodes, actualStorageNodes);
         }
@@ -204,11 +204,11 @@ public class ApplicationApiImplTest {
         HostName hostName3 = new HostName("host3");
 
         ApplicationInstance applicationInstance =
-                modelUtils.createApplicationInstance(Arrays.asList(
+                modelUtils.createApplicationInstance(List.of(
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 new ServiceType("service-type-1"),
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-10", hostName1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-11", hostName2, ServiceStatus.UP)
                                 )
@@ -216,7 +216,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 new ServiceType("service-type-2"),
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-20", hostName1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-21", hostName3, ServiceStatus.UP)
                                 )
@@ -233,11 +233,11 @@ public class ApplicationApiImplTest {
                 List.of());
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName2),
-                Arrays.asList(hostName1, hostName2),
+                List.of(hostName1, hostName2),
                 List.of());
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName2, hostName3),
-                Arrays.asList(hostName1, hostName2),
+                List.of(hostName1, hostName2),
                 List.of(hostName3));
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createScopedApplicationApi(applicationInstance, hostName3),
@@ -268,11 +268,11 @@ public class ApplicationApiImplTest {
         HostName allowedToBeDownHost7 = new HostName("host7");
 
         ApplicationInstance applicationInstance =
-                modelUtils.createApplicationInstance(Arrays.asList(
+                modelUtils.createApplicationInstance(List.of(
                         modelUtils.createServiceCluster(
                                 "cluster-4",
                                 ServiceType.STORAGE,
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-40", allowedToBeDownHost1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-41", noRemarksHost2, ServiceStatus.DOWN)
                                 )
@@ -280,7 +280,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 new ServiceType("service-type-1"),
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-10", allowedToBeDownHost1, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-11", allowedToBeDownHost3, ServiceStatus.UP)
                                 )
@@ -288,7 +288,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-3",
                                 ServiceType.STORAGE,
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-30", allowedToBeDownHost4, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-31", noRemarksHost5, ServiceStatus.UP)
                                 )
@@ -296,7 +296,7 @@ public class ApplicationApiImplTest {
                         modelUtils.createServiceCluster(
                                 "cluster-2",
                                 ServiceType.STORAGE,
-                                Arrays.asList(
+                                List.of(
                                         modelUtils.createServiceInstance("config-id-20", noRemarksHost6, ServiceStatus.UP),
                                         modelUtils.createServiceInstance("config-id-21", allowedToBeDownHost7, ServiceStatus.UP)
                                 )
@@ -343,9 +343,9 @@ public class ApplicationApiImplTest {
                     .applicationApi()
                     .getSuspendedStorageNodesInGroupInReverseClusterOrder()
                     .stream()
-                    .map(storageNode -> storageNode.hostName())
+                    .map(StorageNode::hostName)
                     .toList();
-            assertEquals(Arrays.asList(hostNames), actualStorageNodes);
+            assertEquals(List.of(hostNames), actualStorageNodes);
         }
     }
 }

@@ -7,7 +7,6 @@ import org.junit.Test;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -31,23 +30,23 @@ public class TokenizationTestCase {
     @Test
     public void testTokenizer() {
         assertTokenize("This is a test, 123",
-                       Arrays.asList("this", "is", "a", "test", "123"),
-                       Arrays.asList("This", " ", "is", " ", "a", " ", "test", ",", " ", "123"));
+                       List.of("this", "is", "a", "test", "123"),
+                       List.of("This", " ", "is", " ", "a", " ", "test", ",", " ", "123"));
     }
 
     @Test
     public void testUnderScoreTokenization() {
-        assertTokenize("ugcapi_1", Language.ENGLISH, StemMode.SHORTEST, true, Arrays.asList("ugcapi", "1"), null);
+        assertTokenize("ugcapi_1", Language.ENGLISH, StemMode.SHORTEST, true, List.of("ugcapi", "1"), null);
     }
 
     @Test
     public void testPhrasesWithPunctuation() {
         assertTokenize("PHY_101.html a space/time or space-time course", Language.ENGLISH, StemMode.NONE,
                        false,
-                       Arrays.asList("phy", "101", "html", "a", "space", "time", "or", "space", "time", "course"),
+                       List.of("phy", "101", "html", "a", "space", "time", "or", "space", "time", "course"),
                        null);
-        assertTokenize("PHY_101.", Language.ENGLISH, StemMode.NONE, false, Arrays.asList("phy", "101"), null);
-        assertTokenize("101.3", Language.ENGLISH, StemMode.NONE, false, Arrays.asList("101", "3"), null);
+        assertTokenize("PHY_101.", Language.ENGLISH, StemMode.NONE, false, List.of("phy", "101"), null);
+        assertTokenize("101.3", Language.ENGLISH, StemMode.NONE, false, List.of("101", "3"), null);
     }
 
     @Test

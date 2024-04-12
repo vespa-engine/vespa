@@ -16,7 +16,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,7 +35,7 @@ public class BasicNetworkTestCase {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);
         table.addHop("pxy", "test/pxy/session", List.of("test/pxy/session"));
         table.addHop("dst", "test/dst/session", List.of("test/dst/session"));
-        table.addRoute("test", Arrays.asList("pxy", "dst"));
+        table.addRoute("test", List.of("pxy", "dst"));
         slobrok = new Slobrok();
         src = new TestServer("test/src", table, slobrok, null);
         pxy = new TestServer("test/pxy", table, slobrok, null);

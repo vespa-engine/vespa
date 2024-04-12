@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation.hll;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,13 +16,13 @@ public class SketchUtils {
 
     public static SparseSketch createSparseSketch(Integer... values) {
         SparseSketch sketch = new SparseSketch();
-        sketch.aggregate(Arrays.asList(values));
+        sketch.aggregate(List.of(values));
         return sketch;
     }
 
     public static NormalSketch createNormalSketch(Integer... values) {
         NormalSketch sketch = new NormalSketch();
-        sketch.aggregate(Arrays.asList(values));
+        sketch.aggregate(List.of(values));
         return sketch;
     }
 

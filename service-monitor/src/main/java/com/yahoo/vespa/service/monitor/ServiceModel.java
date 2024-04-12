@@ -9,7 +9,6 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -74,7 +73,7 @@ public class ServiceModel {
                     ApplicationInstance previous = applicationInstances.put(instance.hostName(), application);
                     if (previous != null && !previous.equals(application)) {
                         throw new IllegalStateException("Major assumption broken: Multiple application instances contain host " +
-                                instance.hostName().s() + ": " + Arrays.asList(previous, application));
+                                instance.hostName().s() + ": " + List.of(previous, application));
                     }
 
                     serviceInstances

@@ -17,7 +17,6 @@ import com.yahoo.jrt.Value;
 import com.yahoo.jrt.Values;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -108,7 +107,7 @@ public class RpcInvoker {
             System.err.println("    supported types: {'b','h','i','l','f','d','s'}");
             System.exit(0);
         }
-        List<String> arguments = new ArrayList<String>(Arrays.asList(args));
+        List<String> arguments = new ArrayList<String>(List.of(args));
         String connectSpec = "localhost:8086";
         if ("-h".equals(arguments.get(0)) && arguments.size() >= 3) {
             arguments.remove(0);             // Consume -h

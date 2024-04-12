@@ -74,13 +74,11 @@ public final class Point implements Context {
     @Override
     public String toString() {
         final int maxLen = 3;
-        StringBuilder builder = new StringBuilder();
-        builder.append("Point [location=")
-                .append(Arrays.asList(location).subList(0, Math.min(location.length, maxLen)))
-                .append(", dimensions=")
-                .append(Arrays.asList(dimensions).subList(0, Math.min(dimensions.length, maxLen)))
-                .append("]");
-        return builder.toString();
+        return "Point [location=" +
+                List.of(location).subList(0, Math.min(location.length, maxLen)) +
+                ", dimensions=" +
+                List.of(dimensions).subList(0, Math.min(dimensions.length, maxLen)) +
+                "]";
     }
 
     /**

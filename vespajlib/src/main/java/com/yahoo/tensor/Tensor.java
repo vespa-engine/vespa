@@ -23,7 +23,6 @@ import com.yahoo.tensor.functions.Expand;
 import com.yahoo.tensor.impl.Label;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -169,7 +168,7 @@ public interface Tensor {
 
     /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
     default Tensor reduce(Reduce.Aggregator aggregator, String ... dimensions) {
-        return new Reduce<>(new ConstantTensor<>(this), aggregator, Arrays.asList(dimensions)).evaluate();
+        return new Reduce<>(new ConstantTensor<>(this), aggregator, List.of(dimensions)).evaluate();
     }
     /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
     default Tensor reduce(Reduce.Aggregator aggregator, List<String> dimensions) {

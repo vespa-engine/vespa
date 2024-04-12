@@ -66,7 +66,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -538,7 +537,7 @@ public class DocumentGenPluginTest {
     }
 
     private static DocumentTypeManager typeManagerFromSDs(String... files) {
-        var cfg = getDocumentConfig(Arrays.asList(files));
+        var cfg = getDocumentConfig(List.of(files));
         return new DocumentTypeManager(cfg);
     }
 

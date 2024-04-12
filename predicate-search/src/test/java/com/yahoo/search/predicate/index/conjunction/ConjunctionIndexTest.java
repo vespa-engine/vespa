@@ -343,7 +343,7 @@ public class ConjunctionIndexTest {
     }
 
     private static List<ConjunctionHit> matchingConjunctionList(ConjunctionHit... conjunctionHits) {
-        return Arrays.asList(conjunctionHits);
+        return List.of(conjunctionHits);
     }
 
     private static void assertHitsEquals(List<ConjunctionHit> hits, IndexableFeatureConjunction... conjunctions) {
@@ -356,15 +356,11 @@ public class ConjunctionIndexTest {
     }
 
     private static void assertHitsEquals(List<ConjunctionHit> expectedHits, List<ConjunctionHit> hits) {
-        Collections.sort(expectedHits);
-        Collections.sort(hits);
-        assertArrayEquals(
-                expectedHits.toArray(new ConjunctionHit[expectedHits.size()]),
-                hits.toArray(new ConjunctionHit[expectedHits.size()]));
+        assertEquals(expectedHits.stream().sorted().toList(), hits.stream().sorted().toList());
     }
 
     private static FeatureConjunction conj(Predicate... operands) {
-        return new FeatureConjunction(Arrays.asList(operands));
+        return new FeatureConjunction(List.of(operands));
     }
 
     private static IndexableFeatureConjunction indexableConj(FeatureConjunction conjunction) {

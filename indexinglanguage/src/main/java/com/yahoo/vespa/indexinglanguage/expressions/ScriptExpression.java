@@ -12,7 +12,6 @@ import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -29,7 +28,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     public ScriptExpression(StatementExpression... statements) {
-        this(Arrays.asList(statements));
+        this(List.of(statements));
     }
 
     public ScriptExpression(Collection<? extends StatementExpression> statements) {

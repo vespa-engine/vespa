@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +30,7 @@ public class RequestDispatchTestCase {
     @Test
     void requireThatRequestCanBeDispatched() throws Exception {
         final TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
-        final List<ByteBuffer> writtenContent = Arrays.asList(ByteBuffer.allocate(6), ByteBuffer.allocate(9));
+        final List<ByteBuffer> writtenContent = List.of(ByteBuffer.allocate(6), ByteBuffer.allocate(9));
         ReadableContentChannel receivedContent = new ReadableContentChannel();
         ContainerBuilder builder = driver.newContainerBuilder();
         Response response = new Response(Response.Status.OK);
@@ -154,7 +153,7 @@ public class RequestDispatchTestCase {
 
                 @Override
                 protected Iterable<ByteBuffer> requestContent() {
-                    return Arrays.asList(ByteBuffer.allocate(69));
+                    return List.of(ByteBuffer.allocate(69));
                 }
             }.dispatch();
             fail();
@@ -192,7 +191,7 @@ public class RequestDispatchTestCase {
 
                 @Override
                 protected Iterable<ByteBuffer> requestContent() {
-                    return Arrays.asList(ByteBuffer.allocate(69));
+                    return List.of(ByteBuffer.allocate(69));
                 }
             }.dispatch();
             fail();

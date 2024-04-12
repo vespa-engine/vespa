@@ -22,7 +22,6 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -83,7 +82,7 @@ public interface HttpClient extends Closeable {
 
         /** Sets query parameters without a value, like {@code ?debug&recursive}. */
         default RequestBuilder emptyParameters(String... keys) {
-            return emptyParameters(Arrays.asList(keys));
+            return emptyParameters(List.of(keys));
         }
 
         /** Sets query parameters without a value, like {@code ?debug&recursive}. */
@@ -91,7 +90,7 @@ public interface HttpClient extends Closeable {
 
         /** Sets the parameter key/values for the request. Number of arguments must be even. Null values are omitted. */
         default RequestBuilder parameters(String... pairs) {
-            return parameters(Arrays.asList(pairs));
+            return parameters(List.of(pairs));
         }
 
         /** Sets the parameter key/values for the request. Number of arguments must be even. Pairs with {@code null} values are omitted. */

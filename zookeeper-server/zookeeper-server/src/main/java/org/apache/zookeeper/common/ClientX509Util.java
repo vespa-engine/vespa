@@ -23,7 +23,6 @@ import io.netty.handler.ssl.DelegatingSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
-import java.util.Arrays;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -31,6 +30,8 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * X509 utilities specific for client-server communication framework.
@@ -196,9 +197,9 @@ public class ClientX509Util extends X509Util {
             if (getSslProvider(config) != SslProvider.JDK) {
                 return null;
             }
-            return Arrays.asList(X509Util.getDefaultCipherSuites());
+            return List.of(X509Util.getDefaultCipherSuites());
         } else {
-            return Arrays.asList(cipherSuitesInput.split(","));
+            return List.of(cipherSuitesInput.split(","));
         }
     }
 

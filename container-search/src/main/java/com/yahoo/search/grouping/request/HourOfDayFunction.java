@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class represents an hour-of-day timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
@@ -22,7 +22,7 @@ public class HourOfDayFunction extends FunctionNode {
     }
 
     private HourOfDayFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.hourofday", label, level, Arrays.asList(exp));
+        super("time.hourofday", label, level, List.of(exp));
     }
 
     @Override

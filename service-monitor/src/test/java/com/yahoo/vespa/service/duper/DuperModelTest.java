@@ -66,7 +66,7 @@ public class DuperModelTest {
 
         duperModel.add(application1);
         assertEquals(Optional.of(application1), duperModel.getApplicationInfo(id1));
-        assertEquals(Arrays.asList(application1), duperModel.getApplicationInfos());
+        assertEquals(List.of(application1), duperModel.getApplicationInfos());
         assertEquals(1, duperModel.numberOfApplications());
 
         duperModel.registerListener(listener1);
@@ -86,7 +86,7 @@ public class DuperModelTest {
         assertEquals(Optional.empty(), duperModel.getApplicationInfo(id1));
         verify(listener1, times(1)).applicationRemoved(id1);
         verifyNoMoreInteractions(listener1);
-        assertEquals(Arrays.asList(application2), duperModel.getApplicationInfos());
+        assertEquals(List.of(application2), duperModel.getApplicationInfos());
 
         duperModel.remove(id1);
         verifyNoMoreInteractions(listener1);

@@ -8,7 +8,6 @@ import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -26,7 +25,7 @@ public class PriorityTestCase {
         String path = "test/crosslanguagefiles/5.1-Priority.txt";
         BufferedReader in = new BufferedReader(new FileReader(path));
 
-        List<Priority> expected = new LinkedList<Priority>(Arrays.asList(Priority.values()));
+        List<Priority> expected = new LinkedList<Priority>(List.of(Priority.values()));
         String str;
         while ((str = in.readLine()) != null) {
             String arr[] = str.split(":", 2);

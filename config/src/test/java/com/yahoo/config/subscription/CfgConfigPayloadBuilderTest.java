@@ -8,7 +8,6 @@ import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.vespa.config.ConfigPayload;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
@@ -216,7 +215,7 @@ public class CfgConfigPayloadBuilderTest {
     @Test
     public void test_config_with_comments() {
         CfgConfigPayloadBuilderTest.assertDeserializedConfigEqualsJson(
-                Arrays.asList(
+                List.of(
                         "fielda b\n",
                         "#fielda c\n",
                         "#fieldb c\n",
@@ -230,7 +229,7 @@ public class CfgConfigPayloadBuilderTest {
 
     @Test
     public void testConvertingMaps() {
-        List<String> payload = Arrays.asList(
+        List<String> payload = List.of(
                 "intmap{\"foo\"} 1337",
                 "complexmap{\"key\"}.foo 1337",
                 "nestedmap{\"key1\"}.foo{\"key2\"}.bar 1337"

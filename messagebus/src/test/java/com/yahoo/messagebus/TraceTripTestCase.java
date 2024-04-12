@@ -12,8 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.UnknownHostException;
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,9 +30,9 @@ public class TraceTripTestCase {
     @BeforeEach
     public void setUp() throws ListenFailedException {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME)
-                                 .addHop("pxy", "test/pxy/session", Arrays.asList("test/pxy/session"))
-                                 .addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"))
-                                 .addRoute("test", Arrays.asList("pxy", "dst"));
+                                 .addHop("pxy", "test/pxy/session", List.of("test/pxy/session"))
+                                 .addHop("dst", "test/dst/session", List.of("test/dst/session"))
+                                 .addRoute("test", List.of("pxy", "dst"));
 
         slobrok = new Slobrok();
         src = new TestServer("test/src", table, slobrok, null);
@@ -82,7 +81,7 @@ public class TraceTripTestCase {
     }
 
     private static class Proxy implements MessageHandler, ReplyHandler {
-        private IntermediateSession session;
+        private final IntermediateSession session;
 
         public Proxy(MessageBus bus) {
             session = bus.createIntermediateSession("session", true, this, this);
@@ -102,7 +101,7 @@ public class TraceTripTestCase {
     }
 
     private static class Server implements MessageHandler {
-        private DestinationSession session;
+        private final DestinationSession session;
 
         public Server(MessageBus bus) {
             session = bus.createDestinationSession("session", true, this);

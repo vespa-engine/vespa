@@ -8,7 +8,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +42,7 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
     }
 
     public static ResponseFilter newInstance(SecurityResponseFilter... filters) {
-        return newInstance(Arrays.asList(filters));
+        return newInstance(List.of(filters));
     }
 
     public static ResponseFilter newInstance(List<? extends SecurityResponseFilter> filters) {

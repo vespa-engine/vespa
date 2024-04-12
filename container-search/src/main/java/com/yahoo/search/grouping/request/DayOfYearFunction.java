@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class represents a day-of-year timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
@@ -22,14 +22,12 @@ public class DayOfYearFunction extends FunctionNode {
     }
 
     private DayOfYearFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.dayofyear", label, level, Arrays.asList(exp));
+        super("time.dayofyear", label, level, List.of(exp));
     }
 
     @Override
     public DayOfYearFunction copy() {
-        return new DayOfYearFunction(getLabel(),
-                                     getLevelOrNull(),
-                                     getArg(0).copy());
+        return new DayOfYearFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
     }
 
 }

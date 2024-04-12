@@ -2,7 +2,6 @@
 package com.yahoo.search.searchchain.test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -38,7 +37,7 @@ public class SimpleSearchChain {
 
         @Override
         public Collection<ForkingSearcher.CommentedSearchChain> getSearchChainsForwarded(SearchChainRegistry registry) {
-            return Arrays.asList(
+            return List.of(
                     new ForkingSearcher.CommentedSearchChain("Reason for forwarding to this search chain.", dummySearchChain()),
                     new ForkingSearcher.CommentedSearchChain(null, dummySearchChain()));
         }

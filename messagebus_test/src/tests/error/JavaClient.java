@@ -6,8 +6,8 @@ import com.yahoo.messagebus.routing.*;
 import com.yahoo.messagebus.network.*;
 import com.yahoo.messagebus.network.rpc.*;
 import com.yahoo.messagebus.network.rpc.test.*;
-import java.util.Arrays;
 import java.util.logging.*;
+import java.util.List;
 
 public class JavaClient {
 
@@ -16,7 +16,7 @@ public class JavaClient {
     public static void main(String[] args) {
         try {
 	    RPCMessageBus mb = new RPCMessageBus(
-		Arrays.asList((Protocol)new SimpleProtocol()),
+		List.of(new SimpleProtocol()),
                 new RPCNetworkParams()
                 .setIdentity(new Identity("server/java"))
 		.setSlobrokConfigId("file:slobrok.cfg"),

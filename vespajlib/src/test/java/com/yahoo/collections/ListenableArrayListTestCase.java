@@ -4,7 +4,7 @@ package com.yahoo.collections;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.ListIterator;
 
 /**
@@ -22,9 +22,9 @@ public class ListenableArrayListTestCase {
         assertEquals(1,listener.invoked);
         list.add(0,"b");
         assertEquals(2,listener.invoked);
-        list.addAll(Arrays.asList(new String[]{"c", "d"}));
+        list.addAll(List.of(new String[]{"c", "d"}));
         assertEquals(3,listener.invoked);
-        list.addAll(1,Arrays.asList(new String[]{"e", "f"}));
+        list.addAll(1,List.of(new String[]{"e", "f"}));
         assertEquals(4,listener.invoked);
         list.set(0,"g");
         assertEquals(5,listener.invoked);
