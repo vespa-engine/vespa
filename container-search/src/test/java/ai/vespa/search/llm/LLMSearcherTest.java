@@ -3,14 +3,14 @@ package ai.vespa.search.llm;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.clients.ConfigurableLanguageModelTest;
 import ai.vespa.llm.clients.LlmClientConfig;
-import ai.vespa.llm.clients.MockLLMClient;
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.jdisc.SecretStoreProvider;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +48,8 @@ public class LLMSearcherTest {
 
     @Test
     public void testGeneration() {
-        var searcher = createLLMSearcher(Map.of("mock", createLLMClient()));
+        var client = createLLMClient();
+        var searcher = createLLMSearcher(Map.of("mock", client));
         var params = Map.of("prompt", "why are ducks better than cats");
         assertEquals("Ducks have adorable waddling walks.", getCompletion(runMockSearch(searcher, params)));
     }
@@ -191,26 +193,59 @@ public class LLMSearcherTest {
     }
 
     private static BiFunction<Prompt, InferenceParameters, String> createGenerator() {
-        return ConfigurableLanguageModelTest.createGenerator();
+        return (prompt, options) -> {
+            String answer = "I have no opinion on the matter";
+            if (prompt.asString().contains("ducks")) {
+                answer = "Ducks have adorable waddling walks.";
+                var temperature = options.getDouble("temperature");
+                if (temperature.isPresent() && temperature.get() > 0.5) {
+                    answer = "Random text about ducks vs cats that makes no sense whatsoever.";
+                }
+            }
+            var maxTokens = options.getInt("maxTokens");
+            if (maxTokens.isPresent()) {
+                return Arrays.stream(answer.split(" ")).limit(maxTokens.get()).collect(Collectors.joining(" "));
+            }
+            return answer;
+        };
     }
+
+    public static SecretStore createSecretStore(Map<String, String> secrets) {
+        Provider<SecretStore> secretStore = new Provider<>() {
+            public SecretStore get() {
+                return new SecretStore() {
+                    public String getSecret(String key) {
+                        return secrets.get(key);
+                    }
+                    public String getSecret(String key, int version) {
+                        return secrets.get(key);
+                    }
+                };
+            }
+            public void deconstruct() {
+            }
+        };
+        return secretStore.get();
+    }
+
 
     static MockLLMClient createLLMClient() {
         var config = new LlmClientConfig.Builder().apiKeySecretName("api-key").build();
-        var secretStore = ConfigurableLanguageModelTest.createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
+        var secretStore = createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
         var generator = createGenerator();
         return new MockLLMClient(config, secretStore, generator, null);
     }
 
     static MockLLMClient createLLMClient(String id) {
         var config = new LlmClientConfig.Builder().apiKeySecretName("api-key").build();
-        var secretStore = ConfigurableLanguageModelTest.createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
+        var secretStore = createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
         var generator = createIdGenerator(id);
         return new MockLLMClient(config, secretStore, generator, null);
     }
 
     static MockLLMClient createLLMClient(ExecutorService executor) {
         var config = new LlmClientConfig.Builder().apiKeySecretName("api-key").build();
-        var secretStore = ConfigurableLanguageModelTest.createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
+        var secretStore = createSecretStore(Map.of("api-key", MockLLMClient.ACCEPTED_API_KEY));
         var generator = createGenerator();
         return new MockLLMClient(config, secretStore, generator, executor);
     }

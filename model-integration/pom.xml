@@ -40,6 +40,12 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-disc</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchcore</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -71,6 +77,12 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-onnxruntime</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-llama</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

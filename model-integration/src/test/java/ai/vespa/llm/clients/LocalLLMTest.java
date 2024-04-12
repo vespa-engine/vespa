@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class LocalLLMTest {
 
-    private static String model = "src/test/resources/llms/tinyllm.gguf";
+    private static String model = "src/test/models/llm/tinyllm.gguf";
     private static Prompt prompt = StringPrompt.from("A random prompt");
 
     @Test

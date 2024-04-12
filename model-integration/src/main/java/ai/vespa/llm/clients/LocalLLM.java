@@ -9,6 +9,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import de.kherud.llama.LlamaModel;
 import de.kherud.llama.ModelParameters;
+import de.kherud.llama.args.LogFormat;
 
 import java.util.ArrayList;
 import java.util.List;
