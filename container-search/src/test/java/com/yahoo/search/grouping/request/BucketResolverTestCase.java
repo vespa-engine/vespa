@@ -4,7 +4,6 @@ package com.yahoo.search.grouping.request;
 import org.junit.jupiter.api.Test;
 
 import java.text.ChoiceFormat;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,30 +71,30 @@ public class BucketResolverTestCase {
 
     @Test
     void testBucketType() {
-        checkPushFail(Arrays.asList((ConstantValue) new StringValue("a"), new LongValue(1L)),
+        checkPushFail(List.of((ConstantValue) new StringValue("a"), new LongValue(1L)),
                 "Bucket type mismatch, expected 'StringValue' got 'LongValue'.");
-        checkPushFail(Arrays.asList((ConstantValue) new StringValue("a"), new DoubleValue(1.0)),
+        checkPushFail(List.of((ConstantValue) new StringValue("a"), new DoubleValue(1.0)),
                 "Bucket type mismatch, expected 'StringValue' got 'DoubleValue'.");
-        checkPushFail(Arrays.asList((ConstantValue) new LongValue(1L), new StringValue("a")),
+        checkPushFail(List.of((ConstantValue) new LongValue(1L), new StringValue("a")),
                 "Bucket type mismatch, expected 'LongValue' got 'StringValue'.");
-        checkPushFail(Arrays.asList((ConstantValue) new LongValue(1L), new DoubleValue(1.0)),
+        checkPushFail(List.of((ConstantValue) new LongValue(1L), new DoubleValue(1.0)),
                 "Bucket type mismatch, expected 'LongValue' got 'DoubleValue'.");
-        checkPushFail(Arrays.asList((ConstantValue) new DoubleValue(1.0), new StringValue("a")),
+        checkPushFail(List.of((ConstantValue) new DoubleValue(1.0), new StringValue("a")),
                 "Bucket type mismatch, expected 'DoubleValue' got 'StringValue'.");
-        checkPushFail(Arrays.asList((ConstantValue) new DoubleValue(1.0), new LongValue(1L)),
+        checkPushFail(List.of((ConstantValue) new DoubleValue(1.0), new LongValue(1L)),
                 "Bucket type mismatch, expected 'DoubleValue' got 'LongValue'.");
-        checkPushFail(Arrays.asList((ConstantValue) new InfiniteValue(new Infinite(true)), new InfiniteValue(new Infinite(false))),
+        checkPushFail(List.of((ConstantValue) new InfiniteValue(new Infinite(true)), new InfiniteValue(new Infinite(false))),
                 "Bucket type mismatch, cannot both be infinity.");
 
     }
 
     @Test
     void testBucketOrder() {
-        checkPushFail(Arrays.asList((ConstantValue) new LongValue(2L), new LongValue(1L)),
+        checkPushFail(List.of((ConstantValue) new LongValue(2L), new LongValue(1L)),
                 "Bucket to-value can not be less than from-value.");
-        checkPushFail(Arrays.asList((ConstantValue) new DoubleValue(2.0), new DoubleValue(1.0)),
+        checkPushFail(List.of((ConstantValue) new DoubleValue(2.0), new DoubleValue(1.0)),
                 "Bucket to-value can not be less than from-value.");
-        checkPushFail(Arrays.asList((ConstantValue) new StringValue("b"), new StringValue("a")),
+        checkPushFail(List.of((ConstantValue) new StringValue("b"), new StringValue("a")),
                 "Bucket to-value can not be less than from-value.");
     }
 

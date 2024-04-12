@@ -6,7 +6,6 @@ import com.yahoo.jdisc.service.CurrentContainer;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -67,7 +66,7 @@ public abstract class AbstractApplication implements Application {
     }
 
     public final List<Bundle> installAndStartBundle(String... locations) throws BundleException {
-        return installAndStartBundle(Arrays.asList(locations));
+        return installAndStartBundle(List.of(locations));
     }
 
     public final List<Bundle> installAndStartBundle(Iterable<String> locations) throws BundleException {
@@ -75,7 +74,7 @@ public abstract class AbstractApplication implements Application {
     }
 
     public final void stopAndUninstallBundle(Bundle... bundles) throws BundleException {
-        stopAndUninstallBundle(Arrays.asList(bundles));
+        stopAndUninstallBundle(List.of(bundles));
     }
 
     public final void stopAndUninstallBundle(Iterable<Bundle> bundles) throws BundleException {

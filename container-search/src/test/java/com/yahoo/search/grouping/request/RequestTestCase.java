@@ -3,7 +3,7 @@ package com.yahoo.search.grouping.request;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +17,7 @@ public class RequestTestCase {
         GroupingOperation op = new AllOperation()
                 .setGroupBy(new AttributeValue("foo"))
                 .addOrderBy(new CountAggregator())
-                .addChildren(Arrays.asList(new AllOperation(), new EachOperation()))
+                .addChildren(List.of(new AllOperation(), new EachOperation()))
                 .addChild(new EachOperation()
                         .addOutput(new CountAggregator())
                         .addOutput(new MinAggregator(new AttributeValue("bar")))

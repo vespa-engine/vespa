@@ -13,7 +13,6 @@ import com.google.inject.spi.Elements;
 import com.yahoo.jdisc.Container;
 import org.osgi.framework.Bundle;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -38,7 +37,7 @@ public class GuiceRepository implements Iterable<Module> {
     private Injector injector;
 
     public GuiceRepository(Module... modules) {
-        installAll(Arrays.asList(modules));
+        installAll(List.of(modules));
     }
 
     public Injector activate() {

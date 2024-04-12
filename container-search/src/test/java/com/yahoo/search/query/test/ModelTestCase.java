@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -91,8 +91,8 @@ public class ModelTestCase {
         Model sr = new Model(q);
         sr.setRestrict("music, cheese,other");
         sr.setSources("cluster1");
-        assertEquals(sr.getSources(), new LinkedHashSet<>(Arrays.asList(new String[]{"cluster1"})));
-        assertEquals(sr.getRestrict(), new LinkedHashSet<>(Arrays.asList(new String[]{"cheese", "music", "other"})));
+        assertEquals(sr.getSources(), new LinkedHashSet<>(List.of(new String[]{"cluster1"})));
+        assertEquals(sr.getRestrict(), new LinkedHashSet<>(List.of(new String[]{"cheese", "music", "other"})));
     }
 
     @Test

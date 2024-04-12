@@ -8,9 +8,9 @@ import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -68,7 +68,7 @@ public class CorsResponseFilterTest {
 
     private static CorsResponseFilter newResponseFilter(String... allowedOriginUrls) {
         Builder builder = new Builder();
-        Arrays.asList(allowedOriginUrls).forEach(builder::allowedUrls);
+        List.of(allowedOriginUrls).forEach(builder::allowedUrls);
         return new CorsResponseFilter(new CorsFilterConfig(builder));
     }
 

@@ -10,8 +10,8 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class X509CertificateBuilderTest {
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
+        return List.of(new Object[][]{
                 {KeyAlgorithm.RSA, 2048, SignatureAlgorithm.SHA512_WITH_RSA},
                 {KeyAlgorithm.EC, 256, SignatureAlgorithm.SHA512_WITH_ECDSA}});
     }

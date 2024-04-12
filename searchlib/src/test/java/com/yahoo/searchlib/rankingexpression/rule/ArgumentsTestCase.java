@@ -3,8 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -23,7 +23,7 @@ public class ArgumentsTestCase {
 
         var foo = new ReferenceNode("foo");
         var bar = new ReferenceNode("bar");
-        args = new Arguments(Arrays.asList(foo, bar));
+        args = new Arguments(List.of(foo, bar));
         assertEquals(2, args.expressions().size());
         assertSame(foo, args.expressions().get(0));
         assertSame(bar, args.expressions().get(1));
@@ -31,12 +31,12 @@ public class ArgumentsTestCase {
 
     @Test
     public void requireThatHashCodeAndEqualsWork() {
-        Arguments arg1 = new Arguments(Arrays.asList(new ReferenceNode("foo"), new ReferenceNode("bar")));
-        Arguments arg2 = new Arguments(Arrays.asList(new ReferenceNode("foo"), new ReferenceNode("bar")));
-        Arguments arg3 = new Arguments(Arrays.asList(new ReferenceNode("foo")));
+        Arguments arg1 = new Arguments(List.of(new ReferenceNode("foo"), new ReferenceNode("bar")));
+        Arguments arg2 = new Arguments(List.of(new ReferenceNode("foo"), new ReferenceNode("bar")));
+        Arguments arg3 = new Arguments(List.of(new ReferenceNode("foo")));
 
         assertEquals(arg1.hashCode(), arg2.hashCode());
-        assertTrue(arg1.equals(arg2));
-        assertFalse(arg2.equals(arg3));
+        assertEquals(arg1, arg2);
+        assertNotEquals(arg2, arg3);
     }
 }

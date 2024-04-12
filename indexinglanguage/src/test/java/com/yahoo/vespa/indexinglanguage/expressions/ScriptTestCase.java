@@ -8,7 +8,8 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
@@ -32,7 +33,7 @@ public class ScriptTestCase {
         assertEquals(2, exp.size());
         assertSame(foo, exp.get(0));
         assertSame(bar, exp.get(1));
-        assertEquals(Arrays.asList(foo, bar), exp.asList());
+        assertEquals(List.of(foo, bar), exp.asList());
     }
 
     @Test

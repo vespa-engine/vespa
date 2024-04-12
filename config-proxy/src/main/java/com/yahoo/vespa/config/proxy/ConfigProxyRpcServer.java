@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -180,7 +181,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
             String ret;
             System.out.println(proxyServer.getMode());
             if (proxyServer.getMode().requiresConfigSource()) {
-                proxyServer.updateSourceConnections(Arrays.asList(sources.split(",")));
+                proxyServer.updateSourceConnections(List.of(sources.split(",")));
                 ret = "Updated config sources to: " + sources;
             } else {
                 ret = "Cannot update sources when in '" + proxyServer.getMode().name() + "' mode";

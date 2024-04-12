@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -214,7 +213,7 @@ public class FelixFrameworkIntegrationTest {
             for (Bundle bundle : bundles) {
                 actual.add(bundle.getSymbolicName());
             }
-            assertEquals(Arrays.asList(expectedBundles), actual);
+            assertEquals(List.of(expectedBundles), actual);
             felix.startBundles(bundles, false);
             if (className != null) {
                 assertNotNull(bundles.get(0).loadClass(className).getDeclaredConstructor().newInstance());

@@ -9,7 +9,6 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
@@ -42,7 +41,7 @@ public class X509CertificateUtilsTest {
         X509Certificate cert1 = TestUtils.createCertificate(keypair, subject1);
         X500Principal subject2 = new X500Principal("CN=myservice2");
         X509Certificate cert2 = TestUtils.createCertificate(keypair, subject2);
-        List<X509Certificate> certificateList = Arrays.asList(cert1, cert2);
+        List<X509Certificate> certificateList = List.of(cert1, cert2);
         String pem = X509CertificateUtils.toPem(certificateList);
         List<X509Certificate> deserializedCertificateList = X509CertificateUtils.certificateListFromPem(pem);
         assertEquals(2, certificateList.size());

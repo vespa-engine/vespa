@@ -6,8 +6,8 @@ import com.yahoo.language.process.GramSplitter.GramSplitterIterator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -220,7 +220,7 @@ public class GramSplitterTestCase {
     }
 
     private void assertGramSplits(String input, int gramSize, String ... expected) {
-        assertEquals(Arrays.asList(expected), gramSplitter.split(input, gramSize).toExtractedList());
+        assertEquals(List.of(expected), gramSplitter.split(input, gramSize).toExtractedList());
     }
 
     private void assertGramSplit(String input, int gramSize, String expected) {

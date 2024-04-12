@@ -3,7 +3,7 @@ package com.yahoo.search.searchchain.config.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 
 import com.yahoo.component.chain.dependencies.After;
 
@@ -72,8 +72,8 @@ public class DependencyConfigTestCase {
     void test() {
         Dependencies dependencies = registry.getSearcherRegistry().getComponent(Searcher1.class.getName()).getDependencies();
 
-        assertTrue(dependencies.provides().containsAll(Arrays.asList("P", "P1", "P2", Searcher1.class.getSimpleName())));
-        assertTrue(dependencies.before().containsAll(Arrays.asList("B", "B1", "B2")));
-        assertTrue(dependencies.after().containsAll(Arrays.asList("A", "A1", "A2")));
+        assertTrue(dependencies.provides().containsAll(List.of("P", "P1", "P2", Searcher1.class.getSimpleName())));
+        assertTrue(dependencies.before().containsAll(List.of("B", "B1", "B2")));
+        assertTrue(dependencies.after().containsAll(List.of("A", "A1", "A2")));
     }
 }

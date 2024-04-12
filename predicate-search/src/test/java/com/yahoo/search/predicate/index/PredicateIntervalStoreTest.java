@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.search.predicate.serialization.SerializationTestHelper.assertSerializationDeserializationMatches;
@@ -49,9 +48,9 @@ public class PredicateIntervalStoreTest {
     @Test
     void requireThatSerializationAndDeserializationRetainIntervals() throws IOException {
         PredicateIntervalStore.Builder builder = new PredicateIntervalStore.Builder();
-        builder.insert(Arrays.asList(0x00010001, 0x00020002));
-        builder.insert(Arrays.asList(0x00010001, 0x00020002, 0x00030003));
-        builder.insert(Arrays.asList(0x0fffffff, 0x00020002, 0x00030003));
+        builder.insert(List.of(0x00010001, 0x00020002));
+        builder.insert(List.of(0x00010001, 0x00020002, 0x00030003));
+        builder.insert(List.of(0x0fffffff, 0x00020002, 0x00030003));
         PredicateIntervalStore store = builder.build();
         assertSerializationDeserializationMatches(
                 store, PredicateIntervalStore::writeToOutputStream, PredicateIntervalStore::fromInputStream);
@@ -60,8 +59,8 @@ public class PredicateIntervalStoreTest {
     @Test
     void requireThatEqualIntervalListsReturnsSameReference() {
         PredicateIntervalStore.Builder builder = new PredicateIntervalStore.Builder();
-        List<Integer> intervals1 = Arrays.asList(0x00010001, 0x00020002);
-        List<Integer> intervals2 = Arrays.asList(0x00010001, 0x00020002);
+        List<Integer> intervals1 = List.of(0x00010001, 0x00020002);
+        List<Integer> intervals2 = List.of(0x00010001, 0x00020002);
         int ref1 = builder.insert(intervals1);
         int ref2 = builder.insert(intervals2);
         PredicateIntervalStore store = builder.build();

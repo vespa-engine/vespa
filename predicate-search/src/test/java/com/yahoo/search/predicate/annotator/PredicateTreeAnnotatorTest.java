@@ -13,7 +13,6 @@ import com.yahoo.search.predicate.index.IntervalWithBounds;
 import com.yahoo.search.predicate.index.conjunction.IndexableFeatureConjunction;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -229,7 +228,7 @@ public class PredicateTreeAnnotatorTest {
         long hash = PredicateHash.hash64(feature);
         List<Integer> actualIntervals = r.intervalMap.get(hash);
         assertNotNull(actualIntervals);
-        assertArrayEquals(Ints.toArray(Arrays.asList(expectedIntervals)), Ints.toArray(actualIntervals));
+        assertArrayEquals(Ints.toArray(List.of(expectedIntervals)), Ints.toArray(actualIntervals));
     }
 
     private static void assertBoundsContains(PredicateTreeAnnotations r, String feature, IntervalWithBounds expectedBounds) {
@@ -258,11 +257,11 @@ public class PredicateTreeAnnotatorTest {
 
     private static FeatureRange range(String key, Long lower, Long upper, RangePartition... partitions) {
         FeatureRange range = new FeatureRange(key, lower, upper);
-        Arrays.asList(partitions).forEach(range::addPartition);
+        List.of(partitions).forEach(range::addPartition);
         return range;
     }
 
     private static FeatureConjunction conj(Predicate... operands) {
-        return new FeatureConjunction(Arrays.asList(operands));
+        return new FeatureConjunction(List.of(operands));
     }
 }

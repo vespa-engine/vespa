@@ -52,7 +52,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -116,12 +115,12 @@ public class PolicyTestCase {
         frame.setHop(new HopSpec("test", "[AND]")
                      .addRecipient("foo")
                      .addRecipient("bar"));
-        frame.assertSelect(Arrays.asList("foo", "bar"));
+        frame.assertSelect(List.of("foo", "bar"));
 
         frame.setHop(new HopSpec("test", "[AND:baz]")
                      .addRecipient("foo")
                      .addRecipient("bar"));
-        frame.assertSelect(Arrays.asList("baz")); // param precedes recipients
+        frame.assertSelect(List.of("baz")); // param precedes recipients
 
         frame.setHop(new HopSpec("test", "[AND:foo]"));
         frame.assertMergeOneReply("foo");
@@ -414,10 +413,10 @@ public class PolicyTestCase {
         PolicyTestFrame frame = createFrameWithTwoRoutes();
 
         frame.setMessage(createRemove("id:ns:testdoc::1"));
-        frame.assertSelect(Arrays.asList("testdoc-route"));
+        frame.assertSelect(List.of("testdoc-route"));
 
         frame.setMessage(createRemove("id:ns:other::1"));
-        frame.assertSelect(Arrays.asList("other-route"));
+        frame.assertSelect(List.of("other-route"));
         frame.destroy();
     }
 
@@ -426,10 +425,10 @@ public class PolicyTestCase {
         PolicyTestFrame frame = createFrameWithTwoRoutes();
 
         frame.setMessage(createGet("id:ns:testdoc::1"));
-        frame.assertSelect(Arrays.asList("testdoc-route"));
+        frame.assertSelect(List.of("testdoc-route"));
 
         frame.setMessage(createGet("id:ns:other::1"));
-        frame.assertSelect(Arrays.asList("other-route"));
+        frame.assertSelect(List.of("other-route"));
         frame.destroy();
     }
 
@@ -586,19 +585,19 @@ public class PolicyTestCase {
                                          "route[1].feed \"myfeed\"\n]").addRecipient("foo").addRecipient("bar"));
 
         frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "fieldSet"));
-        frame.assertSelect(Arrays.asList("foo"));
+        frame.assertSelect(List.of("foo"));
 
         Message put = new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
                                                           new DocumentId("id:ns:testdoc::"))));
         frame.setMessage(put);
-        frame.assertSelect(Arrays.asList("foo"));
+        frame.assertSelect(List.of("foo"));
 
         frame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::")));
-        frame.assertSelect(Arrays.asList("foo"));
+        frame.assertSelect(List.of("foo"));
 
         frame.setMessage(new UpdateDocumentMessage(new DocumentUpdate(manager.getDocumentType("testdoc"),
                                                                       new DocumentId("id:ns:testdoc::"))));
-        frame.assertSelect(Arrays.asList("foo"));
+        frame.assertSelect(List.of("foo"));
 
         frame.setMessage(put);
         frame.assertMergeOneReply("foo");
@@ -619,13 +618,13 @@ public class PolicyTestCase {
                 "route[1].feed \"myfeed\"\n]").addRecipient("foo").addRecipient("bar"));
 
         frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "fieldSet"));
-        frame.assertSelect(Arrays.asList("foo"));
+        frame.assertSelect(List.of("foo"));
 
         Document doc = new Document(manager.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::"));
         doc.setFieldValue("intfield", 3000);
         Message put = new PutDocumentMessage(new DocumentPut(doc));
         frame.setMessage(put);
-        frame.assertSelect(Arrays.asList("foo"));
+        frame.assertSelect(List.of("foo"));
 
         frame.setMessage(put);
         frame.assertMergeOneReply("foo");
@@ -653,7 +652,7 @@ public class PolicyTestCase {
 
         frame.setMessage(new UpdateDocumentMessage(new DocumentUpdate(manager.getDocumentType("testdoc"),
                                                                       new DocumentId("id:ns:testdoc::"))));
-        frame.assertSelect(Arrays.asList("docproc/cluster.foo"));
+        frame.assertSelect(List.of("docproc/cluster.foo"));
 
         frame.destroy();
     }
@@ -667,7 +666,7 @@ public class PolicyTestCase {
         assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", 1));
         frame.setHop(new HopSpec("test", "[LoadBalancer:cluster=docproc/cluster.default;session=chain.default]"));
 
-        assertSelect(frame, 1, Arrays.asList(frame.getNetwork().getConnectionSpec() + "/chain.default"));
+        assertSelect(frame, 1, List.of(frame.getNetwork().getConnectionSpec() + "/chain.default"));
         frame.destroy();
     }
 
@@ -685,16 +684,16 @@ public class PolicyTestCase {
                 .addRecipient("docproc/cluster.default/3/chain.default")
                 .addRecipient("docproc/cluster.default/6/chain.default")
                 .addRecipient("docproc/cluster.default/9/chain.default"));
-        assertSelect(frame, 32, Arrays.asList("docproc/cluster.default/3/chain.default",
+        assertSelect(frame, 32, List.of("docproc/cluster.default/3/chain.default",
                                               "docproc/cluster.default/6/chain.default",
                                               "docproc/cluster.default/9/chain.default"));
         frame.getNetwork().unregisterSession("6/chain.default");
         assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", 9));
-        assertSelect(frame, 32, Arrays.asList("docproc/cluster.default/3/chain.default",
+        assertSelect(frame, 32, List.of("docproc/cluster.default/3/chain.default",
                                               "docproc/cluster.default/9/chain.default"));
         frame.getNetwork().unregisterSession("3/chain.default");
         assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", 8));
-        assertSelect(frame, 32, Arrays.asList("docproc/cluster.default/9/chain.default"));
+        assertSelect(frame, 32, List.of("docproc/cluster.default/9/chain.default"));
         frame.getNetwork().unregisterSession("9/chain.default");
         assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", 7));
         assertSelect(frame, 32, new ArrayList<>());

@@ -3,7 +3,6 @@ package com.yahoo.search.yql;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Arrays;
 import java.util.List;
 
 import com.yahoo.search.schema.DocumentSummary;
@@ -48,9 +47,9 @@ public class YqlFieldAndSourceTestCase {
         DocumentSourceSearcher mockBackend = new DocumentSourceSearcher();
         mockBackend.addResult(query, result);
 
-        mockBackend.addSummaryClassByCopy(DEFAULT_SUMMARY_CLASS, Arrays.asList(FIELD1, FIELD2));
-        mockBackend.addSummaryClassByCopy(SORTABLE_ATTRIBUTES_SUMMARY_CLASS, Arrays.asList(FIELD2));
-        mockBackend.addSummaryClassByCopy(THIRD_OPTION, Arrays.asList(FIELD3));
+        mockBackend.addSummaryClassByCopy(DEFAULT_SUMMARY_CLASS, List.of(FIELD1, FIELD2));
+        mockBackend.addSummaryClassByCopy(SORTABLE_ATTRIBUTES_SUMMARY_CLASS, List.of(FIELD2));
+        mockBackend.addSummaryClassByCopy(THIRD_OPTION, List.of(FIELD3));
 
         searchChain = new Chain<>(new FieldFiller(schemaInfo()), mockBackend);
         context = Execution.Context.createContextStub();

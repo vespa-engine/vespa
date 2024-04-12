@@ -4,8 +4,8 @@ package com.yahoo.search.query.properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import com.yahoo.processing.request.properties.PropertyMap;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ public class SubPropertiesTestCase {
         assertEquals("1", sub.get("e"));
         assertEquals(2, sub.get("f"));
         assertNull(sub.get("d"));
-        assertEquals(new HashSet<>(Arrays.asList("e", "f")), sub.listProperties("").keySet());
+        assertEquals(new HashSet<>(List.of("e", "f")), sub.listProperties("").keySet());
     }
 
 }

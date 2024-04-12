@@ -8,7 +8,6 @@ import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenScript;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -28,7 +27,7 @@ public class TokenizerTester {
         for (Token token : tokenize(input)) {
             findTokenStrings(token, actual);
         }
-        assertEquals(Arrays.asList(expectedTokenStrings), actual);
+        assertEquals(List.of(expectedTokenStrings), actual);
     }
 
     public void assertTokenScripts(String input, TokenScript... expectedTokenScripts) {
@@ -36,7 +35,7 @@ public class TokenizerTester {
         for (Token token : tokenize(input)) {
             findTokenScripts(token, actual);
         }
-        assertEquals(Arrays.asList(expectedTokenScripts), actual);
+        assertEquals(List.of(expectedTokenScripts), actual);
     }
 
     public List<String> findTokenStrings(Token token, List<String> out) {

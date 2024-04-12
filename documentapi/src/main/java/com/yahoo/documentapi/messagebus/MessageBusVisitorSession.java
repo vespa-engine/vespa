@@ -18,6 +18,8 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage;
 import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
+
+import java.util.List;
 import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSession;
 import com.yahoo.messagebus.DestinationSessionParams;
@@ -37,7 +39,6 @@ import com.yahoo.messagebus.routing.RoutingTable;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vdslib.state.ClusterState;
 
-import java.util.Arrays;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -162,14 +163,13 @@ public class MessageBusVisitorSession implements VisitorSession {
         }
 
         VisitorControlHandler.CompletionCode toCompletionCode() {
-            switch (state) {
-                case COMPLETED: return VisitorControlHandler.CompletionCode.SUCCESS;
-                case ABORTED:   return VisitorControlHandler.CompletionCode.ABORTED;
-                case FAILED:    return VisitorControlHandler.CompletionCode.FAILURE;
-                case TIMED_OUT: return VisitorControlHandler.CompletionCode.TIMEOUT;
-                default:
-                    throw new IllegalStateException("Current state did not have a valid value: " + state);
-            }
+            return switch (state) {
+                case COMPLETED -> VisitorControlHandler.CompletionCode.SUCCESS;
+                case ABORTED -> VisitorControlHandler.CompletionCode.ABORTED;
+                case FAILED -> VisitorControlHandler.CompletionCode.FAILURE;
+                case TIMED_OUT -> VisitorControlHandler.CompletionCode.TIMEOUT;
+                default -> throw new IllegalStateException("Current state did not have a valid value: " + state);
+            };
         }
 
         public boolean failed() {
@@ -312,9 +312,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         return sessionCounter.incrementAndGet();
     }
     private static String createSessionName() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("visitor-").append(getNextSessionId()).append('-').append(System.currentTimeMillis());
-        return sb.toString();
+        return "visitor-" + getNextSessionId() + '-' + System.currentTimeMillis();
     }
 
     private final VisitorParameters params;
@@ -647,7 +645,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
             msg.getTrace().setLevel(params.getTraceLevel());
             msg.setTimeRemaining(messageTimeoutMs);
-            msg.setBuckets(Arrays.asList(bucket.getSuperbucket(), bucket.getProgress()));
+            msg.setBuckets(List.of(bucket.getSuperbucket(), bucket.getProgress()));
             msg.setDocumentSelection(params.getDocumentSelection());
             msg.setBucketSpace(params.getBucketSpace());
             msg.setFromTimestamp(params.getFromTimestamp());
@@ -881,7 +879,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         }
 
         try {
-            if (msg.getErrorMessage().length() > 0) {
+            if (!msg.getErrorMessage().isEmpty()) {
                 params.getControlHandler().onVisitorError(msg.getErrorMessage());
             }
             synchronized (progress.getToken()) {

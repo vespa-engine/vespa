@@ -6,7 +6,8 @@ import com.yahoo.document.predicate.Predicate;
 import com.yahoo.document.predicate.PredicateOperator;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static com.yahoo.document.predicate.Predicates.and;
 import static com.yahoo.document.predicate.Predicates.feature;
@@ -208,7 +209,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     private static FeatureConjunction conj(Predicate... operands) {
-        return new FeatureConjunction(Arrays.asList(operands));
+        return new FeatureConjunction(List.of(operands));
     }
 
     private static void assertSizeMapContains(PredicateTreeAnalyzerResult r, PredicateSelector selector, int expectedValue) {
@@ -217,18 +218,13 @@ public class PredicateTreeAnalyzerTest {
         assertEquals(expectedValue, actualValue.intValue());
     }
 
-    private static class PredicateSelector {
-        public final Predicate predicate;
-
-        public PredicateSelector(Predicate predicate) {
-            this.predicate = predicate;
-        }
+    private record PredicateSelector(Predicate predicate) {
 
         public PredicateSelector child(int index) {
-            PredicateOperator op = (PredicateOperator) predicate;
-            return new PredicateSelector(op.getOperands().get(index));
+                PredicateOperator op = (PredicateOperator) predicate;
+                return new PredicateSelector(op.getOperands().get(index));
+            }
         }
-    }
 
     private static PredicateSelector pred(Predicate p) {
         return new PredicateSelector(p);

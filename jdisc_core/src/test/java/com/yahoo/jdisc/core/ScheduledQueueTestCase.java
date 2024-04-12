@@ -3,8 +3,8 @@ package com.yahoo.jdisc.core;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import static com.yahoo.jdisc.core.ScheduledQueue.MILLIS_PER_SLOT;
@@ -123,6 +123,6 @@ public class ScheduledQueueTestCase {
         Queue<Object> expired = new LinkedList<>();
         queue.drainTo(currentTimeMillis, expired);
         assertEquals(expected.length, expired.size());
-        assertEquals(Arrays.asList(expected), expired);
+        assertEquals(List.of(expected), expired);
     }
 }

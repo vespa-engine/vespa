@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -203,10 +202,10 @@ public class InterleavedSearchInvokerTest {
     }
 
     private static final double DELTA = 0.000000000001;
-    private static final List<Double> A5 = Arrays.asList(11.0,8.5,7.5,3.0,2.0);
-    private static final List<Double> B5 = Arrays.asList(9.0,8.0,7.0,6.0,1.0);
-    private static final List<Double> A5Aux = Arrays.asList(-1.0,11.0,8.5,7.5,-7.0,3.0,2.0);
-    private static final List<Double> B5Aux = Arrays.asList(9.0,8.0,-3.0,7.0,6.0,1.0, -1.0);
+    private static final List<Double> A5 = List.of(11.0,8.5,7.5,3.0,2.0);
+    private static final List<Double> B5 = List.of(9.0,8.0,7.0,6.0,1.0);
+    private static final List<Double> A5Aux = List.of(-1.0,11.0,8.5,7.5,-7.0,3.0,2.0);
+    private static final List<Double> B5Aux = List.of(9.0,8.0,-3.0,7.0,6.0,1.0, -1.0);
 
     private void validateThatTopKProbabilityOverrideTakesEffect(Double topKProbability, int expectedK, Group group) throws IOException {
         try (InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5, group)) {

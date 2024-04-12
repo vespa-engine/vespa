@@ -5,7 +5,9 @@ import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.vdslib.state.ClusterState;
 import org.junit.jupiter.api.Test;
 
+
 import java.util.Arrays;
+import java.util.List;
 
 import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.MAY_HAVE_MERGES_PENDING;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.NODE_TOO_UNSTABLE;
@@ -110,8 +112,8 @@ public class MaintenanceWhenPendingGlobalMergesTest {
     @Test
     void node_with_pending_merges_only_set_to_maintenance_if_eligible() {
         Fixture f = new Fixture();
-        Arrays.asList(1, 2, 3).forEach(idx -> when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), idx)).thenReturn(true));
-        Arrays.asList(1, 2, 4).forEach(idx -> when(f.mockTransitionConstraint.maintenanceTransitionAllowed(idx)).thenReturn(false));
+        List.of(1, 2, 3).forEach(idx -> when(f.mockPendingChecker.mayHaveMergesPending(globalSpace(), idx)).thenReturn(true));
+        List.of(1, 2, 4).forEach(idx -> when(f.mockTransitionConstraint.maintenanceTransitionAllowed(idx)).thenReturn(false));
         AnnotatedClusterState derived = f.deriver.derivedFrom(stateFromString("distributor:5 storage:5"), defaultSpace());
         assertThat(derived, equalTo(AnnotatedClusterStateBuilder.ofState("distributor:5 storage:5 .3.s:m")
                 .reason(MAY_HAVE_MERGES_PENDING, 3).build()));

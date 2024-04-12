@@ -1,8 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.List;
 
 /**
  * This class represents debug_wait function in a {@link GroupingExpression}. For each hit evaluated,
@@ -25,7 +24,7 @@ public class DebugWaitFunction extends FunctionNode {
     }
 
     private DebugWaitFunction(String label, Integer level, GroupingExpression arg1, DoubleValue arg2, BooleanValue arg3) {
-        super("debugwait", label, level, Arrays.asList(arg1, arg2, arg3));
+        super("debugwait", label, level, List.of(arg1, arg2, arg3));
     }
 
     @Override

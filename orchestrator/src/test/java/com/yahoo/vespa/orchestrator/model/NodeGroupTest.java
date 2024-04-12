@@ -7,8 +7,8 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -27,7 +27,7 @@ public class NodeGroupTest {
         nodeGroup.addNode(hostName2);
 
         // hostnames are sorted (for no good reason other than testability due to stability, readability)
-        assertEquals(Arrays.asList(hostName1, hostName2, hostName3), nodeGroup.getHostNames());
+        assertEquals(List.of(hostName1, hostName2, hostName3), nodeGroup.getHostNames());
         assertEquals("host1,host2,host3", nodeGroup.toCommaSeparatedString());
     }
 }

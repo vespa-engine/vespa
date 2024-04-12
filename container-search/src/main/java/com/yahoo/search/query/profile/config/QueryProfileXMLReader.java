@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -68,7 +67,7 @@ public class QueryProfileXMLReader {
 
     private List<File> sortFiles(File dir) {
         ArrayList<File> files = new ArrayList<>();
-        files.addAll(Arrays.asList(dir.listFiles()));
+        files.addAll(List.of(dir.listFiles()));
         Collections.sort(files);
         return files;
     }

@@ -6,7 +6,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -18,7 +17,7 @@ public class PomXmlGeneratorTest {
 
     @Test
     public void write_system_tests_pom_xml() throws IOException {
-        List<Path> artifacts = Arrays.asList(
+        List<Path> artifacts = List.of(
                 Paths.get("components/my-comp.jar"),
                 Paths.get("main.jar"));
 

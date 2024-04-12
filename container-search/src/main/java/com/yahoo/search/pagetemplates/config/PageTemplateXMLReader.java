@@ -85,7 +85,7 @@ public class PageTemplateXMLReader {
 
     private List<File> sortFiles(File dir) {
         ArrayList<File> files = new ArrayList<>();
-        files.addAll(Arrays.asList(dir.listFiles()));
+        files.addAll(List.of(dir.listFiles()));
         Collections.sort(files);
         return files;
     }

@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,7 +38,7 @@ public class MockNameResolver implements NameResolver {
         Objects.requireNonNull(hostname, "hostname must be non-null");
         Arrays.stream(ipAddress).forEach(ip -> Objects.requireNonNull(ip, "ipAddress must be non-null"));
         records.computeIfAbsent(hostname, (k) -> new HashSet<>())
-               .addAll(Arrays.asList(ipAddress));
+               .addAll(List.of(ipAddress));
         return this;
     }
 

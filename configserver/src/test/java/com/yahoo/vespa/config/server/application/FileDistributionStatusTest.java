@@ -17,7 +17,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -119,7 +118,7 @@ public class FileDistributionStatusTest {
         fileReferenceStatuses2.put("1234", 1.0);
         HostStatus localhost2 = statusFinished("localhost2", Status.FINISHED, fileReferenceStatuses2);
 
-        FileDistributionStatus status = new MockStatus(new HashSet<>(Arrays.asList(localhost, localhost2)));
+        FileDistributionStatus status = new MockStatus(new HashSet<>(List.of(localhost, localhost2)));
         application = createApplication("localhost", "localhost2");
         HttpResponse response = getStatus(status, application);
         assertResponse(200,
@@ -156,7 +155,7 @@ public class FileDistributionStatusTest {
     }
 
     private Application createApplication(String... hostname) {
-        return createApplication(Arrays.asList(hostname));
+        return createApplication(List.of(hostname));
     }
 
     private Application createApplication(List<String> hostnames) {

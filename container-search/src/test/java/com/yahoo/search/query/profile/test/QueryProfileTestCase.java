@@ -20,7 +20,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -125,7 +124,7 @@ public class QueryProfileTestCase {
         far.set("a.far", "a.far", null);
         CompiledQueryProfile cbarn = barn.compile(null);
 
-        assertSameObjects(cbarn, "a", Arrays.asList("mormor", "far", "barn"));
+        assertSameObjects(cbarn, "a", List.of("mormor", "far", "barn"));
 
         assertEquals("b.mor", cbarn.get("b.mor"));
         assertEquals("b.far", cbarn.get("b.far"));

@@ -5,7 +5,6 @@ import static com.yahoo.search.searchchain.test.SimpleSearchChain.searchChain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,7 +39,7 @@ public class SearchChainTestCase {
         assertEquals("test", searchChain.getId().getName());
         assertEquals(Version.emptyVersion, searchChain.getId().getVersion());
         assertEquals(new Version(), searchChain.getId().getVersion());
-        assertEqualMembers(Arrays.asList("one", "two"), searcherNames(searchChain.searchers()));
+        assertEqualMembers(List.of("one", "two"), searcherNames(searchChain.searchers()));
     }
 
     public List<String> searcherNames(Collection<Searcher> searchers) {

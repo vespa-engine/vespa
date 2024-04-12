@@ -9,7 +9,6 @@ import com.yahoo.jdisc.http.HttpResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -158,7 +157,7 @@ public class DiscFilterResponse {
 
     public void setCookie(String name, String value) {
         Cookie cookie = new Cookie(name, value);
-        setCookies(Arrays.asList(cookie));
+        setCookies(List.of(cookie));
     }
 
  }

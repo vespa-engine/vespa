@@ -1,8 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.List;
 
 /**
  * This class represents a day-of-month timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
@@ -23,14 +22,12 @@ public class DayOfMonthFunction extends FunctionNode {
     }
 
     private DayOfMonthFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.dayofmonth", label, level, Arrays.asList(exp));
+        super("time.dayofmonth", label, level, List.of(exp));
     }
 
     @Override
     public DayOfMonthFunction copy() {
-        return new DayOfMonthFunction(getLabel(),
-                                      getLevelOrNull(),
-                                      getArg(0).copy());
+        return new DayOfMonthFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
     }
 
 }

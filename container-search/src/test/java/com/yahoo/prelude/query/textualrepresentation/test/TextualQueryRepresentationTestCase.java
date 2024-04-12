@@ -5,9 +5,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import com.yahoo.prelude.query.Item;
@@ -29,7 +29,7 @@ public class TextualQueryRepresentationTestCase {
         example;
     }
 
-    private class MockItem extends Item {
+    private static class MockItem extends Item {
         private final String name;
 
         @Override
@@ -71,7 +71,7 @@ public class TextualQueryRepresentationTestCase {
             Map<Integer, Object> exampleMap = new HashMap<>();
             exampleMap.put(1, "one");
             exampleMap.put(2, "two");
-            exampleMap.put(3, Arrays.asList('x', 'y', 'z'));
+            exampleMap.put(3, List.of('x', 'y', 'z'));
 
             discloser.addProperty("01", null);
             discloser.addProperty("02", "a string.");
@@ -79,9 +79,9 @@ public class TextualQueryRepresentationTestCase {
             discloser.addProperty("04", true);
             discloser.addProperty("05", ExampleEnum.example);
             discloser.addProperty("06", new int[]{1, 2, 3});
-            discloser.addProperty("07", Arrays.asList('x', 'y', 'z'));
+            discloser.addProperty("07", List.of('x', 'y', 'z'));
             discloser.addProperty("08", new ArrayList());
-            discloser.addProperty("09", new HashSet(Arrays.asList(1, 2, 3)));
+            discloser.addProperty("09", new HashSet(List.of(1, 2, 3)));
             discloser.addProperty("10", exampleMap);
 
             discloser.setValue("example-value: \"12\"");

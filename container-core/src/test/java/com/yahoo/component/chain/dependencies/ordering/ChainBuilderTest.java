@@ -11,7 +11,6 @@ import com.yahoo.component.chain.dependencies.Provides;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -97,7 +96,7 @@ public class ChainBuilderTest {
 
         depHandler.addComponent(first);
         depHandler.addComponent(second);
-        assertEquals(depHandler.orderNodes().components(), Arrays.asList(first, second));
+        assertEquals(depHandler.orderNodes().components(), List.of(first, second));
 
     }
 
@@ -113,7 +112,7 @@ public class ChainBuilderTest {
         chainBuilder.addComponent(c);
         chainBuilder.addComponent(a2);
 
-        assertEquals(Arrays.asList(a1, c, a2), chainBuilder.orderNodes().components());
+        assertEquals(List.of(a1, c, a2), chainBuilder.orderNodes().components());
     }
 
     private ChainBuilder newChainBuilder() {
@@ -121,7 +120,7 @@ public class ChainBuilderTest {
     }
 
     private Set<String> set(String... strings) {
-        return new HashSet<>(Arrays.asList(strings));
+        return new HashSet<>(List.of(strings));
     }
 
     @Before("phase1")

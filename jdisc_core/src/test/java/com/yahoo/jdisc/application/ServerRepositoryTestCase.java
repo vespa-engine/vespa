@@ -5,8 +5,8 @@ import com.yahoo.jdisc.NoopSharedResource;
 import com.yahoo.jdisc.service.ServerProvider;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,7 +35,7 @@ public class ServerRepositoryTestCase {
         ServerRepository servers = newServerRepository();
         ServerProvider foo = new MyServer();
         ServerProvider bar = new MyServer();
-        servers.installAll(Arrays.asList(foo, bar));
+        servers.installAll(List.of(foo, bar));
 
         Iterator<ServerProvider> it = servers.iterator();
         assertTrue(it.hasNext());
@@ -60,8 +60,8 @@ public class ServerRepositoryTestCase {
         ServerProvider foo = new MyServer();
         ServerProvider bar = new MyServer();
         ServerProvider baz = new MyServer();
-        servers.installAll(Arrays.asList(foo, bar, baz));
-        servers.uninstallAll(Arrays.asList(foo, bar));
+        servers.installAll(List.of(foo, bar, baz));
+        servers.uninstallAll(List.of(foo, bar));
         Iterator<ServerProvider> it = servers.iterator();
         assertNotNull(it);
         assertTrue(it.hasNext());

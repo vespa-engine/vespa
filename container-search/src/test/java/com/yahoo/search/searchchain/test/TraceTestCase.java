@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -308,7 +307,7 @@ public class TraceTestCase {
         public Forker(boolean carryOverContext, boolean parallel, Searcher ... branches) {
             this.carryOverContext = carryOverContext;
             this.parallel = parallel;
-            this.branches = Arrays.asList(branches);
+            this.branches = List.of(branches);
         }
 
         @Override

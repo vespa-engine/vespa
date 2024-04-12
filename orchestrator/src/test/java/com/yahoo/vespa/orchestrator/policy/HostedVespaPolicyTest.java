@@ -20,7 +20,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -56,7 +55,7 @@ public class HostedVespaPolicyTest {
         ClusterApi clusterApi1 = mock(ClusterApi.class);
         ClusterApi clusterApi2 = mock(ClusterApi.class);
         ClusterApi clusterApi3 = mock(ClusterApi.class);
-        List<ClusterApi> clusterApis = Arrays.asList(clusterApi1, clusterApi2, clusterApi3);
+        List<ClusterApi> clusterApis = List.of(clusterApi1, clusterApi2, clusterApi3);
         when(applicationApi.getClusters()).thenReturn(clusterApis);
 
         StorageNode storageNode1 = mock(StorageNode.class);
@@ -69,11 +68,11 @@ public class HostedVespaPolicyTest {
         HostName hostName3 = new HostName("storage-3");
         when(storageNode1.hostName()).thenReturn(hostName3);
 
-        List<StorageNode> upStorageNodes = Arrays.asList(storageNode1, storageNode3);
+        List<StorageNode> upStorageNodes = List.of(storageNode1, storageNode3);
         when(applicationApi.getNoRemarksStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
         // setHostState
 
-        List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
+        List<HostName> noRemarksHostNames = List.of(hostName1, hostName2, hostName3);
         when(applicationApi.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)).thenReturn(noRemarksHostNames);
 
         InOrder order = inOrder(applicationApi, clusterPolicy, storageNode1, storageNode3);
@@ -108,7 +107,7 @@ public class HostedVespaPolicyTest {
         ClusterApi clusterApi1 = mock(ClusterApi.class);
         ClusterApi clusterApi2 = mock(ClusterApi.class);
         ClusterApi clusterApi3 = mock(ClusterApi.class);
-        List<ClusterApi> clusterApis = Arrays.asList(clusterApi1, clusterApi2, clusterApi3);
+        List<ClusterApi> clusterApis = List.of(clusterApi1, clusterApi2, clusterApi3);
         when(applicationApi.getClusters()).thenReturn(clusterApis);
 
         StorageNode storageNode1 = mock(StorageNode.class);
@@ -121,10 +120,10 @@ public class HostedVespaPolicyTest {
         HostName hostName3 = new HostName("storage-3");
         when(storageNode1.hostName()).thenReturn(hostName3);
 
-        List<StorageNode> upStorageNodes = Arrays.asList(storageNode1, storageNode3);
+        List<StorageNode> upStorageNodes = List.of(storageNode1, storageNode3);
         when(applicationApi.getStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
 
-        List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
+        List<HostName> noRemarksHostNames = List.of(hostName1, hostName2, hostName3);
         when(applicationApi.getNodesInGroupWith(any())).thenReturn(noRemarksHostNames);
 
         InOrder order = inOrder(applicationApi, clusterPolicy, storageNode1, storageNode3);
@@ -161,7 +160,7 @@ public class HostedVespaPolicyTest {
         ClusterApi clusterApi1 = mock(ClusterApi.class);
         ClusterApi clusterApi2 = mock(ClusterApi.class);
         ClusterApi clusterApi3 = mock(ClusterApi.class);
-        List<ClusterApi> clusterApis = Arrays.asList(clusterApi1, clusterApi2, clusterApi3);
+        List<ClusterApi> clusterApis = List.of(clusterApi1, clusterApi2, clusterApi3);
         when(applicationApi.getClusters()).thenReturn(clusterApis);
 
         StorageNode storageNode1 = mock(StorageNode.class);
@@ -174,10 +173,10 @@ public class HostedVespaPolicyTest {
         HostName hostName3 = new HostName("storage-3");
         when(storageNode1.hostName()).thenReturn(hostName3);
 
-        List<StorageNode> upStorageNodes = Arrays.asList(storageNode1, storageNode3);
+        List<StorageNode> upStorageNodes = List.of(storageNode1, storageNode3);
         when(applicationApi.getStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
 
-        List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
+        List<HostName> noRemarksHostNames = List.of(hostName1, hostName2, hostName3);
         when(applicationApi.getNodesInGroupWith(any())).thenReturn(noRemarksHostNames);
 
         InOrder order = inOrder(applicationApi, clusterPolicy, storageNode1, storageNode3);

@@ -8,7 +8,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,7 +39,7 @@ public final class RequestFilterChain extends AbstractResource implements Reques
     }
 
     public static RequestFilter newInstance(RequestFilter... filters) {
-        return newInstance(Arrays.asList(filters));
+        return newInstance(List.of(filters));
     }
 
     public static RequestFilter newInstance(List<? extends RequestFilter> filters) {

@@ -12,8 +12,8 @@ import com.google.common.collect.Iterables;
 import com.yahoo.abicheck.classtree.ClassFileTree;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ public class ClassFileTreeTest {
     JarEntry dirJarEntry = new JarEntry("com/yahoo/");
     InputStream jarEntryStream = mock(InputStream.class);
     when(jarFile.entries())
-        .thenReturn(Collections.enumeration(Arrays.asList(dirJarEntry, classJarEntry)));
+        .thenReturn(Collections.enumeration(List.of(dirJarEntry, classJarEntry)));
     when(jarFile.getInputStream(classJarEntry)).thenReturn(jarEntryStream);
 
     try (ClassFileTree cft = ClassFileTree.fromJar(jarFile)) {

@@ -6,7 +6,6 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -14,7 +13,7 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +59,7 @@ public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implemen
         X509ExtendedKeyManager manager = mutableX509KeyManager.currentManager();
         X509Certificate[] certificateChain = manager.getCertificateChain(CERTIFICATE_ALIAS);
         PrivateKey privateKey = manager.getPrivateKey(CERTIFICATE_ALIAS);
-        return new X509CertificateWithKey(Arrays.asList(certificateChain), privateKey);
+        return new X509CertificateWithKey(List.of(certificateChain), privateKey);
     }
 
     private static KeyStore createKeystore(Path privateKey, Path certificateChain) {
@@ -68,8 +67,8 @@ public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implemen
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                     .withKeyEntry(
                             CERTIFICATE_ALIAS,
-                            KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKey), StandardCharsets.UTF_8)),
-                            X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificateChain), StandardCharsets.UTF_8)))
+                            KeyUtils.fromPemEncodedPrivateKey(Files.readString(privateKey)),
+                            X509CertificateUtils.certificateListFromPem(Files.readString(certificateChain)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.chain.dependencies.ordering;
 
-import java.util.Arrays;
 
 import com.yahoo.component.chain.ChainedComponent;
 
@@ -10,6 +9,8 @@ import com.yahoo.component.chain.dependencies.Dependencies;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import com.yahoo.component.ComponentId;
+
+import java.util.List;
 
 
 /**
@@ -20,14 +21,14 @@ import com.yahoo.component.ComponentId;
 @SuppressWarnings("rawtypes")
 public class OrderedReadyNodesTest {
 
-    class ComponentA extends ChainedComponent {
+    static class ComponentA extends ChainedComponent {
         public ComponentA(ComponentId id) {
             super(id);
         }
 
         @Override
         public Dependencies getDependencies() {
-            return new Dependencies(Arrays.asList(getId().getName()), null, null);
+            return new Dependencies(List.of(getId().getName()), null, null);
         }
     }
 

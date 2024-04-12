@@ -11,7 +11,8 @@ import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
 import com.yahoo.jdisc.http.filter.util.FilterTestUtils;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
@@ -75,7 +76,7 @@ public class CorsPreflightRequestFilterTest {
 
     private static CorsPreflightRequestFilter newRequestFilter(String... allowedOriginUrls) {
         Builder builder = new Builder();
-        Arrays.asList(allowedOriginUrls).forEach(builder::allowedUrls);
+        List.of(allowedOriginUrls).forEach(builder::allowedUrls);
         return new CorsPreflightRequestFilter(new CorsFilterConfig(builder));
     }
 

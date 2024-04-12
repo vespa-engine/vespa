@@ -56,7 +56,7 @@ public class Bundle {
         if (!bundleDir.isDirectory()) {
             return new ArrayList<>();
         }
-        return Arrays.asList(bundleDir.listFiles((dir, name) -> name.endsWith(".jar")));
+        return List.of(bundleDir.listFiles((dir, name) -> name.endsWith(".jar")));
     }
 
     public List<DefEntry> getDefEntries() {

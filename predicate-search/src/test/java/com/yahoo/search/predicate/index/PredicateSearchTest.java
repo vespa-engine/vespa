@@ -32,7 +32,7 @@ public class PredicateSearchTest {
                         entry(0, 0x000100ff),
                         entry(1, 0x00010001, 0x000200ff),
                         entry(2, 0x00010042)));
-        assertEquals(Arrays.asList(new Hit(0), new Hit(1)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0), new Hit(1)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -43,7 +43,7 @@ public class PredicateSearchTest {
                         SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x000100ff),
                         entry(1, 0x000100ff)));
-        assertEquals(Arrays.asList(new Hit(1)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(1)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -54,7 +54,7 @@ public class PredicateSearchTest {
                         entry(0, 0x00010001)),
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x000200ff)));
-        assertEquals(Arrays.asList(new Hit(0)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -67,7 +67,7 @@ public class PredicateSearchTest {
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(1, 0x000100ff),
                         entry(2, 0x000100ff)));
-        assertEquals(Arrays.asList(new Hit(1), new Hit(2), new Hit(3)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(1), new Hit(2), new Hit(3)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -75,7 +75,7 @@ public class PredicateSearchTest {
         PredicateSearch search = createPredicateSearch(
                 new byte[0],
                 postingList(SubqueryBitmap.ALL_SUBQUERIES));
-        assertEquals(Arrays.asList().toString(), search.stream().toList().toString());
+        assertEquals(List.of().toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class PredicateSearchTest {
                         entry(1, 0x000100ff)),
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(2, 0x000100ff)));
-        assertEquals(Arrays.asList(new Hit(0), new Hit(1), new Hit(2)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0), new Hit(1), new Hit(2)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -110,7 +110,7 @@ public class PredicateSearchTest {
                         entry(1, 0x000100ff),
                         entry(3, 0x000100ff)));
         assertEquals(
-                Arrays.asList(new Hit(0), new Hit(1), new Hit(2), new Hit(3)).toString(),
+                List.of(new Hit(0), new Hit(1), new Hit(2), new Hit(3)).toString(),
                 search.stream().toList().toString());
     }
 
@@ -121,7 +121,7 @@ public class PredicateSearchTest {
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00010001),
                         entry(1, 0x000200ff)));
-        assertEquals(Arrays.asList().toString(), search.stream().toList().toString());
+        assertEquals(List.of().toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -134,7 +134,7 @@ public class PredicateSearchTest {
                         entry(0, 0x000300ff)),
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00020002)));
-        assertEquals(Arrays.asList(new Hit(0)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -143,7 +143,7 @@ public class PredicateSearchTest {
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00010001, 0x00020002, 0x00030003, 0x000100ff, 0x00040004, 0x00050005, 0x00060006)));
-        assertEquals(Arrays.asList(new Hit(0)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -154,7 +154,7 @@ public class PredicateSearchTest {
                         entry(0, 0x00010001)),
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00010000, 0x00ff0001)));
-        assertEquals(Arrays.asList().toString(), search.stream().toList().toString());
+        assertEquals(List.of().toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -163,7 +163,7 @@ public class PredicateSearchTest {
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00010000, 0x00ff0001)));
-        assertEquals(Arrays.asList(new Hit(0)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class PredicateSearchTest {
                 new byte[]{1},
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00020001, 0x00ff0001)));
-        assertEquals(Arrays.asList().toString(), search.stream().toList().toString());
+        assertEquals(List.of().toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -183,7 +183,7 @@ public class PredicateSearchTest {
                         entry(0, 0x00010001)),
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00fe0001, 0x00ff00fe)));
-        assertEquals(Arrays.asList(new Hit(0)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0)).toString(), search.stream().toList().toString());
     }
 
     @Test
@@ -202,14 +202,14 @@ public class PredicateSearchTest {
                         entry(0, 0x00010008, 0x00060006)),
                 postingList(SubqueryBitmap.ALL_SUBQUERIES,
                         entry(0, 0x00020002, 0x000700ff)));
-        assertEquals(Arrays.asList(new Hit(0)).toString(), search.stream().toList().toString());
+        assertEquals(List.of(new Hit(0)).toString(), search.stream().toList().toString());
     }
 
     private static PredicateSearch createPredicateSearch(byte[] minFeatures, PostingList... postingLists) {
         byte[] nPostingListsForDocument = new byte[minFeatures.length];
         short[] intervalEnds = new short[minFeatures.length];
         Arrays.fill(intervalEnds, (short) 0xFF);
-        List<PostingList> list = Arrays.asList(postingLists);
+        List<PostingList> list = List.of(postingLists);
         for (PostingList postingList : postingLists) {
             for (int id : postingList.getDocIds()) {
                 nPostingListsForDocument[id]++;

@@ -10,7 +10,6 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Identifiable;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -56,7 +55,7 @@ public class GroupTestCase {
         group.addOrderBy(bar, false);
         assertEquals(2, group.getOrderByExpressions().size());
         assertSame(bar, group.getOrderByExpressions().get(1));
-        assertEquals(Arrays.asList(1, -2), group.getOrderByIndexes());
+        assertEquals(List.of(1, -2), group.getOrderByIndexes());
     }
 
     @Test

@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +22,7 @@ public class UcaFunction extends FunctionNode {
      * @param locale  The locale to used for sorting.
      */
     public UcaFunction(GroupingExpression exp, String locale) {
-        this(null, null, Arrays.asList(exp, new StringValue(locale)));
+        this(null, null, List.of(exp, new StringValue(locale)));
     }
 
     /**
@@ -34,7 +33,7 @@ public class UcaFunction extends FunctionNode {
      * @param strength The strength level to use.
      */
     public UcaFunction(GroupingExpression exp, String locale, String strength) {
-        this(null, null, Arrays.asList(exp, new StringValue(locale), new StringValue(strength)));
+        this(null, null, List.of(exp, new StringValue(locale), new StringValue(strength)));
         if ( ! validStrength(strength))
             throw new IllegalArgumentException("Not a valid UCA strength: " + strength);
     }

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.test.FunctionTestConfig.BasicStruct;
@@ -136,7 +136,7 @@ public class ConfigInstanceEqualsTest {
                 doublearr(123.0).
                 stringarr("bar").
                 enumarr(Enumarr.VALUES).
-                refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
+                refarr(List.of(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
                 urlArr(new UrlReference("http://docs.vespa.ai")).
                 modelArr(ModelReference.unresolved(Optional.empty(),

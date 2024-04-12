@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +19,7 @@ public class UriMatchingTestCase {
 
     @Test
     void requireThatUriPatternMatchingIsFast() {
-        List<String> inputs = Arrays.asList(
+        List<String> inputs = List.of(
                 "other://host/",
                 "scheme://other/",
                 "scheme://host/",

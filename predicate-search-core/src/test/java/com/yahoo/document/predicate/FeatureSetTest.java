@@ -4,7 +4,6 @@ package com.yahoo.document.predicate;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,35 +24,35 @@ public class FeatureSetTest {
     void requireThatAccessorsWork() {
         FeatureSet node = new FeatureSet("key", "valueA", "valueB");
         assertEquals("key", node.getKey());
-        assertValues(Arrays.asList("valueA", "valueB"), node);
+        assertValues(List.of("valueA", "valueB"), node);
         node.addValue("valueC");
-        assertValues(Arrays.asList("valueA", "valueB", "valueC"), node);
-        node.addValues(Arrays.asList("valueD", "valueE"));
-        assertValues(Arrays.asList("valueA", "valueB", "valueC", "valueD", "valueE"), node);
-        node.setValues(Arrays.asList("valueF", "valueG"));
-        assertValues(Arrays.asList("valueF", "valueG"), node);
+        assertValues(List.of("valueA", "valueB", "valueC"), node);
+        node.addValues(List.of("valueD", "valueE"));
+        assertValues(List.of("valueA", "valueB", "valueC", "valueD", "valueE"), node);
+        node.setValues(List.of("valueF", "valueG"));
+        assertValues(List.of("valueF", "valueG"), node);
     }
 
     @Test
     void requireThatValueSetIsMutable() {
         FeatureSet node = new FeatureSet("key");
         node.getValues().add("valueA");
-        assertValues(Arrays.asList("valueA"), node);
+        assertValues(List.of("valueA"), node);
 
         node = new FeatureSet("key", "valueA");
         node.getValues().add("valueB");
-        assertValues(Arrays.asList("valueA", "valueB"), node);
+        assertValues(List.of("valueA", "valueB"), node);
     }
 
     @Test
     void requireThatConstructorsWork() {
         FeatureSet node = new FeatureSet("key", "valueA", "valueB");
         assertEquals("key", node.getKey());
-        assertValues(Arrays.asList("valueA", "valueB"), node);
+        assertValues(List.of("valueA", "valueB"), node);
 
-        node = new FeatureSet("key", Arrays.asList("valueA", "valueB"));
+        node = new FeatureSet("key", List.of("valueA", "valueB"));
         assertEquals("key", node.getKey());
-        assertValues(Arrays.asList("valueA", "valueB"), node);
+        assertValues(List.of("valueA", "valueB"), node);
     }
 
     @Test
@@ -123,7 +122,7 @@ public class FeatureSetTest {
         } catch (NullPointerException e) {
             assertEquals("value", e.getMessage());
         }
-        assertValues(Arrays.asList("bar"), node);
+        assertValues(List.of("bar"), node);
     }
 
     @Test

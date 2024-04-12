@@ -19,7 +19,7 @@ import java.util.*;
 public final class CatExpression extends ExpressionList<Expression> {
 
     public CatExpression(Expression... lst) {
-        this(Arrays.asList(lst));
+        this(List.of(lst));
     }
 
     public CatExpression(Collection<? extends Expression> lst) {

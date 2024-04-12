@@ -8,8 +8,8 @@ import org.apache.felix.framework.util.FelixConstants;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +29,7 @@ public class ApplicationLoaderIntegrationTest {
     public void requireThatLifecycleWorks() throws Exception {
         MyModule module = new MyModule();
         ApplicationLoader loader = new ApplicationLoader(TestDriver.newOsgiFramework(),
-                                                         Arrays.asList(module));
+                                                         List.of(module));
         loader.init("app-a.jar", false);
 
         assertFalse(module.init.await(100, TimeUnit.MILLISECONDS));

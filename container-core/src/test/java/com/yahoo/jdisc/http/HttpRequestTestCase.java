@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -96,11 +95,11 @@ public class HttpRequestTestCase {
         request.setConnectionTimeout(1, TimeUnit.SECONDS);
         assertEquals(Long.valueOf(1000), request.getConnectionTimeout(TimeUnit.MILLISECONDS));
 
-        assertEquals(Arrays.asList("bar", "baz"), request.parameters().get("foo"));
+        assertEquals(List.of("bar", "baz"), request.parameters().get("foo"));
         assertEquals(List.of("69"), request.parameters().get("cox"));
-        request.parameters().put("cox", Arrays.asList("6", "9"));
-        assertEquals(Arrays.asList("bar", "baz"), request.parameters().get("foo"));
-        assertEquals(Arrays.asList("6", "9"), request.parameters().get("cox"));
+        request.parameters().put("cox", List.of("6", "9"));
+        assertEquals(List.of("bar", "baz"), request.parameters().get("foo"));
+        assertEquals(List.of("6", "9"), request.parameters().get("cox"));
 
         assertEquals(1L, request.getConnectedAt(TimeUnit.MILLISECONDS));
     }

@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -137,7 +137,7 @@ public class ClusterStateBundle {
         }
 
         public Builder bucketSpaces(String... bucketSpaces) {
-            return bucketSpaces(new TreeSet<>(Arrays.asList(bucketSpaces)));
+            return bucketSpaces(new TreeSet<>(List.of(bucketSpaces)));
         }
 
         public Builder explicitDerivedStates(Map<String, AnnotatedClusterState> derivedStates) {

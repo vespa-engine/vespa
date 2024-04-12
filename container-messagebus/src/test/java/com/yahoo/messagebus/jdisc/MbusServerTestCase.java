@@ -28,7 +28,6 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -245,13 +244,13 @@ public class MbusServerTestCase {
     public void requireThatResponseErrorCodeDoesNotDuplicateReplyError() {
         assertError(Collections.<Integer>emptyList(),
                     Response.Status.OK);
-        assertError(Arrays.asList(ErrorCode.APP_FATAL_ERROR),
+        assertError(List.of(ErrorCode.APP_FATAL_ERROR),
                     Response.Status.BAD_REQUEST);
-        assertError(Arrays.asList(ErrorCode.FATAL_ERROR),
+        assertError(List.of(ErrorCode.FATAL_ERROR),
                     Response.Status.BAD_REQUEST, ErrorCode.FATAL_ERROR);
-        assertError(Arrays.asList(ErrorCode.TRANSIENT_ERROR, ErrorCode.APP_FATAL_ERROR),
+        assertError(List.of(ErrorCode.TRANSIENT_ERROR, ErrorCode.APP_FATAL_ERROR),
                     Response.Status.BAD_REQUEST, ErrorCode.TRANSIENT_ERROR);
-        assertError(Arrays.asList(ErrorCode.FATAL_ERROR, ErrorCode.TRANSIENT_ERROR),
+        assertError(List.of(ErrorCode.FATAL_ERROR, ErrorCode.TRANSIENT_ERROR),
                     Response.Status.BAD_REQUEST, ErrorCode.FATAL_ERROR, ErrorCode.TRANSIENT_ERROR);
     }
 

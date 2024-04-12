@@ -5,7 +5,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,7 +24,7 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     public ChoiceExpression(Expression... choices) {
-        this(Arrays.asList(choices));
+        this(List.of(choices));
     }
 
     public ChoiceExpression(Collection<? extends Expression> choices) {

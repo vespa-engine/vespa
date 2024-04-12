@@ -2,7 +2,6 @@
 package com.yahoo.document.predicate;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -15,7 +14,7 @@ public class Conjunction extends PredicateOperator {
     private List<Predicate> operands;
 
     public Conjunction(Predicate... operands) {
-        this(Arrays.asList(operands));
+        this(List.of(operands));
     }
 
     public Conjunction(List<? extends Predicate> operands) {

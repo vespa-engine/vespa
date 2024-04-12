@@ -8,7 +8,8 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.PayloadChecksums;
 
-import java.util.Arrays;
+import java.util.List;
+
 
 /**
  * Subscription used when config id is raw:...
@@ -34,7 +35,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
         if (payload == null) {
             payload = inputPayload;
-            ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(payload.split("\n")));
+            ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(List.of(payload.split("\n")));
             setConfig(0L, false, configPayload.toInstance(configClass, key.getConfigId()), PayloadChecksums.empty());
             return true;
         }

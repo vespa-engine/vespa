@@ -10,7 +10,6 @@ import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.response.FutureResponse;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -23,7 +22,7 @@ public class Federator extends Processor {
     @SafeVarargs
     @SuppressWarnings("varargs")
     public Federator(Chain<? extends Processor> ... chains) {
-        this.chains = Arrays.asList(chains);
+        this.chains = List.of(chains);
     }
 
     @SuppressWarnings("unchecked")

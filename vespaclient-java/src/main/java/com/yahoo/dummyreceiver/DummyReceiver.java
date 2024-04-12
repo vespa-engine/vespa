@@ -18,7 +18,6 @@ import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -174,7 +173,7 @@ public class DummyReceiver implements MessageHandler {
         LogSetup.initVespaLogging("dummyreceiver");
         DummyReceiver rcv = new DummyReceiver();
 
-        if (!rcv.parseArgs(new LinkedList<>(Arrays.asList(args))) && !rcv.helpOption) {
+        if (!rcv.parseArgs(new LinkedList<>(List.of(args))) && !rcv.helpOption) {
             System.exit(1);
         }
         if (rcv.helpOption) {

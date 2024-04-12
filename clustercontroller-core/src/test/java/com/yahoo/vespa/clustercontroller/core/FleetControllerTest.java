@@ -28,7 +28,6 @@ import org.junit.jupiter.api.AfterEach;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -221,7 +220,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     static Set<Integer> asIntSet(Integer... idx) {
-        return new HashSet<>(Arrays.asList(idx));
+        return new HashSet<>(List.of(idx));
     }
 
     static Set<ConfiguredNode> asConfiguredNodes(Set<Integer> indices) {

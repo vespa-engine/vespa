@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,7 +20,7 @@ public class XorBitFunction extends FunctionNode {
      * @param numBits The number of bits of the expression value to xor.
      */
     public XorBitFunction(GroupingExpression exp, int numBits) {
-        this(null, null, Arrays.asList(exp, new LongValue(numBits)));
+        this(null, null, List.of(exp, new LongValue(numBits)));
     }
 
     private XorBitFunction(String label, Integer level, List<GroupingExpression> exp) {

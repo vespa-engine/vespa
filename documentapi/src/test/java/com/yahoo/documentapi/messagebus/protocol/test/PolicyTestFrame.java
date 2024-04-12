@@ -28,7 +28,6 @@ import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.messagebus.test.SimpleReply;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -219,7 +218,7 @@ public class PolicyTestFrame {
      * @param recipient The expected recipient.
      */
     public void assertMergeOneReply(String recipient) {
-        assertSelect(Arrays.asList(recipient));
+        assertSelect(List.of(recipient));
 
         Map<String, Integer> replies = new HashMap<>();
         replies.put(recipient, ErrorCode.NONE);
@@ -237,7 +236,7 @@ public class PolicyTestFrame {
      * @param recipientTwo The second expected recipient.
      */
     public void assertMergeTwoReplies(String recipientOne, String recipientTwo) {
-        assertSelect(Arrays.asList(recipientOne, recipientTwo));
+        assertSelect(List.of(recipientOne, recipientTwo));
 
         Map<String, Integer> replies = new HashMap<>();
         replies.put(recipientOne, ErrorCode.NONE);
@@ -254,7 +253,7 @@ public class PolicyTestFrame {
 
         replies.put(recipientOne, ErrorCode.TRANSIENT_ERROR);
         replies.put(recipientTwo, ErrorCode.TRANSIENT_ERROR);
-        assertMerge(replies, Arrays.asList(ErrorCode.TRANSIENT_ERROR, ErrorCode.TRANSIENT_ERROR), List.of(recipientOne, recipientTwo));
+        assertMerge(replies, List.of(ErrorCode.TRANSIENT_ERROR, ErrorCode.TRANSIENT_ERROR), List.of(recipientOne, recipientTwo));
 
         replies.put(recipientOne, ErrorCode.NONE);
         replies.put(recipientTwo, DocumentProtocol.ERROR_MESSAGE_IGNORED);

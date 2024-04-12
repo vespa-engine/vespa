@@ -9,8 +9,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -70,7 +70,7 @@ class AnalyzeMethodVisitor extends MethodVisitor implements ImportCollector {
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         addImportWithInternalName(owner);
-        Arrays.asList(Type.getArgumentTypes(desc)).forEach(this::addImport);
+        List.of(Type.getArgumentTypes(desc)).forEach(this::addImport);
         addImport(Type.getReturnType(desc));
     }
 
@@ -112,7 +112,7 @@ class AnalyzeMethodVisitor extends MethodVisitor implements ImportCollector {
                 addImport((Type) arg);
             } else if (arg instanceof Handle) {
                 addImportWithInternalName(((Handle) arg).getOwner());
-                Arrays.asList(Type.getArgumentTypes(desc)).forEach(this::addImport);
+                List.of(Type.getArgumentTypes(desc)).forEach(this::addImport);
             } else if ( ! (arg instanceof Number) && ! (arg instanceof String)) {
                 throw new AssertionError("Unexpected type " + arg.getClass() + " with value '" + arg + "'");
             }

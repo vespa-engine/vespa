@@ -9,7 +9,8 @@ import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,9 +34,9 @@ public class ErrorTestCase {
     @Test
     void requireThatErrorIsPropagated() throws Exception {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);
-        table.addHop("itr", "test/itr/session", Arrays.asList("test/itr/session"));
-        table.addHop("dst", "test/dst/session", Arrays.asList("test/dst/session"));
-        table.addRoute("test", Arrays.asList("itr", "dst"));
+        table.addHop("itr", "test/itr/session", List.of("test/itr/session"));
+        table.addHop("dst", "test/dst/session", List.of("test/dst/session"));
+        table.addRoute("test", List.of("itr", "dst"));
 
         Slobrok slobrok = new Slobrok();
         TestServer src = new TestServer("test/src", table, slobrok, null);

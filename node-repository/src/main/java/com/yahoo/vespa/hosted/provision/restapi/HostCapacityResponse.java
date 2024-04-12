@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.maintenance.CapacityChecker;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +45,7 @@ public class HostCapacityResponse extends HttpResponse {
     }
 
     private List<Node> parseHostList(String hosts) {
-        List<String> hostNames = Arrays.asList(hosts.split(","));
+        List<String> hostNames = List.of(hosts.split(","));
         try {
             return capacityChecker.nodesFromHostnames(hostNames);
         } catch (IllegalArgumentException e) {

@@ -5,9 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.yahoo.abicheck.collector.Util;
-import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
+
+import java.util.List;
 
 public class AccessConversionTest {
 
@@ -15,7 +16,7 @@ public class AccessConversionTest {
   public void testClassFlags() {
     // ACC_SUPER should be ignored
     assertEquals(
-        Arrays.asList("public", "abstract"),
+        List.of("public", "abstract"),
         Util.convertAccess(
             Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER | Opcodes.ACC_ABSTRACT,
             Util.classFlags));
@@ -25,7 +26,7 @@ public class AccessConversionTest {
   public void testMethodFlags() {
     // ACC_DEPRECATED should be ignored
     assertEquals(
-        Arrays.asList("protected", "varargs"),
+        List.of("protected", "varargs"),
         Util.convertAccess(
             Opcodes.ACC_PROTECTED | Opcodes.ACC_VARARGS | Opcodes.ACC_DEPRECATED,
             Util.methodFlags));
@@ -34,7 +35,7 @@ public class AccessConversionTest {
   @Test
   public void testFieldFlags() {
     assertEquals(
-        Arrays.asList("private", "volatile"),
+        List.of("private", "volatile"),
         Util.convertAccess(
             Opcodes.ACC_PRIVATE | Opcodes.ACC_VOLATILE,
             Util.fieldFlags));

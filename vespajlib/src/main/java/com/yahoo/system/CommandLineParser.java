@@ -39,12 +39,12 @@ public class CommandLineParser {
     }
 
     public CommandLineParser(String[] cmds) {
-        inputStrings = Arrays.asList(cmds);
+        inputStrings = List.of(cmds);
     }
 
     public CommandLineParser(String progname, String[] cmds) {
         this.progname=progname;
-        inputStrings = Arrays.asList(cmds);
+        inputStrings = List.of(cmds);
     }
 
     /**

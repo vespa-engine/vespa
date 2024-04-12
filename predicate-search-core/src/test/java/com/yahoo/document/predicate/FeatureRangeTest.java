@@ -3,7 +3,7 @@ package com.yahoo.document.predicate;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -249,15 +249,15 @@ public class FeatureRangeTest {
     @Test
     void requireThatFeatureRangeCanBeBuiltFromMixedInNode() {
         assertEquals(new FeatureRange("foo", 10L, 19L),
-                FeatureRange.buildFromMixedIn("foo", Arrays.asList("foo=10-19"), 10));
+                FeatureRange.buildFromMixedIn("foo", List.of("foo=10-19"), 10));
         assertEquals(new FeatureRange("foo", -19L, -10L),
-                FeatureRange.buildFromMixedIn("foo", Arrays.asList("foo=-10-19"), 10));
+                FeatureRange.buildFromMixedIn("foo", List.of("foo=-10-19"), 10));
         assertEquals(new FeatureRange("foo", 10L, 19L),
-                FeatureRange.buildFromMixedIn("foo", Arrays.asList("foo=10,10,9"), 10));
+                FeatureRange.buildFromMixedIn("foo", List.of("foo=10,10,9"), 10));
         assertEquals(new FeatureRange("foo", 10L, 19L),
-                FeatureRange.buildFromMixedIn("foo", Arrays.asList("foo=10,10,1073741833"), 10));
+                FeatureRange.buildFromMixedIn("foo", List.of("foo=10,10,1073741833"), 10));
         assertEquals(new FeatureRange("foo", 10L, 19L),
-                FeatureRange.buildFromMixedIn("foo", Arrays.asList("foo=10,10,2147483648"), 10));
+                FeatureRange.buildFromMixedIn("foo", List.of("foo=10,10,2147483648"), 10));
     }
 
 }

@@ -4,12 +4,12 @@ package com.yahoo.abicheck.classtree;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -24,7 +24,7 @@ public abstract class ClassFileTree implements AutoCloseable {
     while (jarEntries.hasMoreElements()) {
       JarEntry entry = jarEntries.nextElement();
       if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
-        Deque<String> parts = new ArrayDeque<>(Arrays.asList(entry.getName().split("/")));
+        Deque<String> parts = new ArrayDeque<>(List.of(entry.getName().split("/")));
         String className = parts.removeLast();
         Package pkg = rootPackages
             .computeIfAbsent(parts.removeFirst(), name -> new Package(null, name));

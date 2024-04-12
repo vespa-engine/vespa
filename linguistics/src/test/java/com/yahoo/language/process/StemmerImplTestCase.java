@@ -8,7 +8,6 @@ import com.yahoo.language.simple.SimpleTokenizer;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -21,13 +20,13 @@ public class StemmerImplTestCase {
 
     @Test
     public void requireThatStemIsNormalizedAndLowerCased() {
-        assertStem("FOO", Arrays.asList("foo"));
-        assertStem("a\u030A", Arrays.asList("\u00E5"));
+        assertStem("FOO", List.of("foo"));
+        assertStem("a\u030A", List.of("\u00E5"));
     }
 
     @Test
     public void requireThatOnlyIndexableTokensAreReturned() {
-        assertStem("foo. (bar)!", Arrays.asList("foo", "bar"));
+        assertStem("foo. (bar)!", List.of("foo", "bar"));
     }
 
     @Test
@@ -43,17 +42,17 @@ public class StemmerImplTestCase {
         Tokenizer tokenizer = Mockito.mock(Tokenizer.class);
         Mockito.when(tokenizer.tokenize(Mockito.anyString(), Mockito.<Language>any(), Mockito.<StemMode>any(),
                                         Mockito.anyBoolean()))
-               .thenReturn(Arrays.<Token>asList(token));
+               .thenReturn(List.of(token));
         Stemmer stemmer = new StemmerImpl(tokenizer);
 
         token.setSpecialToken(false);
-        assertEquals(Arrays.asList(new StemList("c"),
+        assertEquals(List.of(new StemList("c"),
                                    new StemList("p"),
                                    new StemList("p")),
                      stemmer.stem("c++", StemMode.SHORTEST, Language.ENGLISH));
 
         token.setSpecialToken(true);
-        assertEquals(Arrays.asList(new StemList("c++")),
+        assertEquals(List.of(new StemList("c++")),
                      stemmer.stem("c++", StemMode.SHORTEST, Language.ENGLISH));
     }
 

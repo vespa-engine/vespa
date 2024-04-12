@@ -36,7 +36,6 @@ public class RankFeaturesTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     void requireThatRankFeaturesUsingDoubleAndDoubleToStringEncodeTheSameWay() {
         RankFeatures withDouble = new RankFeatures(new Ranking(new Query()));
         withDouble.put("query(myDouble)", 3.8);
@@ -68,20 +67,12 @@ public class RankFeaturesTestCase {
         TensorType type = new TensorType.Builder().mapped("x").mapped("y").mapped("z").build();
         Tensor tensor1 = Tensor.from(type, "{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
         Tensor tensor2 = Tensor.from(type, "{ {x:a, y:b, z:c}:5.0 }");
-        assertTensorEncodingAndDecoding(type, Arrays.asList(
+        assertTensorEncodingAndDecoding(type, List.of(
                 new Entry("query(tensor1)", "tensor1", tensor1),
                 new Entry("$tensor2", "tensor2", tensor2)));
     }
 
-    private static class Entry {
-        final String key;
-        final String normalizedKey;
-        final Tensor tensor;
-        Entry(String key, String normalizedKey, Tensor tensor) {
-            this.key = key;
-            this.normalizedKey = normalizedKey;
-            this.tensor = tensor;
-        }
+    private record Entry(String key, String normalizedKey, Tensor tensor) {
     }
 
     private static void assertTensorEncodingAndDecoding(TensorType type, List<Entry> entries) {
@@ -97,7 +88,7 @@ public class RankFeaturesTestCase {
     }
 
     private static void assertTensorEncodingAndDecoding(TensorType type, String key, String normalizedKey, Tensor tensor) {
-        assertTensorEncodingAndDecoding(type, Arrays.asList(new Entry(key, normalizedKey, tensor)));
+        assertTensorEncodingAndDecoding(type, List.of(new Entry(key, normalizedKey, tensor)));
     }
 
     private static RankProperties createRankPropertiesWithTensors(List<Entry> entries) {

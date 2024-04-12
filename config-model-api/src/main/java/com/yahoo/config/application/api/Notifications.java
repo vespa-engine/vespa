@@ -4,7 +4,6 @@ package com.yahoo.config.application.api;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -107,7 +106,7 @@ public class Notifications {
         private final List<When> includes;
 
         When(When... includes) {
-            this.includes = Arrays.asList(includes);
+            this.includes = List.of(includes);
         }
 
         public static String toValue(When when) {

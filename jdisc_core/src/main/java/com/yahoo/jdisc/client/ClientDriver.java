@@ -10,7 +10,6 @@ import com.yahoo.jdisc.core.FelixFramework;
 import com.yahoo.jdisc.core.FelixParams;
 import com.yahoo.jdisc.test.NonWorkingOsgiFramework;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -94,7 +93,7 @@ public abstract class ClientDriver {
     }
 
     private static List<Module> newModuleList(final ClientApplication appInstance, Module... guiceModules) {
-        List<Module> lst = new LinkedList<>(Arrays.asList(guiceModules));
+        List<Module> lst = new LinkedList<>(List.of(guiceModules));
         lst.add(new AbstractModule() {
 
             @Override
@@ -108,7 +107,7 @@ public abstract class ClientDriver {
     private static List<Module> newModuleList(final Class<? extends ClientApplication> appClass,
                                               Module... guiceModules)
     {
-        List<Module> lst = new LinkedList<>(Arrays.asList(guiceModules));
+        List<Module> lst = new LinkedList<>(List.of(guiceModules));
         lst.add(new AbstractModule() {
 
             @Override

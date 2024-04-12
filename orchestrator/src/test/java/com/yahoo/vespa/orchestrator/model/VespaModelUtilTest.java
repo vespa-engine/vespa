@@ -14,7 +14,6 @@ import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.TestUtil;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -172,7 +171,7 @@ public class VespaModelUtilTest {
     @Test
     public void testGettingClusterControllerInstances() {
         List<HostName> controllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, CONTENT_CLUSTER_ID);
-        List<HostName> expectedControllers = Arrays.asList(controller0.hostName(), controller1.hostName());
+        List<HostName> expectedControllers = List.of(controller0.hostName(), controller1.hostName());
 
         assertEquals(expectedControllers, controllers);
     }

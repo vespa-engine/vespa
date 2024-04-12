@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
@@ -27,7 +26,7 @@ public class Pkcs10CsrTest {
                 .addSubjectAlternativeName(san1)
                 .addSubjectAlternativeName(san2)
                 .build();
-        assertEquals(Arrays.asList(san1, san2), csr.getSubjectAlternativeNames());
+        assertEquals(List.of(san1, san2), csr.getSubjectAlternativeNames());
     }
 
     @Test
@@ -49,7 +48,7 @@ public class Pkcs10CsrTest {
                 .addSubjectAlternativeName("san")
                 .setBasicConstraints(true, true)
                 .build();
-        List<String> expected = Arrays.asList(Extension.BASIC_CONSTRAINTS.getOId(), Extension.SUBJECT_ALTERNATIVE_NAMES.getOId());
+        List<String> expected = List.of(Extension.BASIC_CONSTRAINTS.getOId(), Extension.SUBJECT_ALTERNATIVE_NAMES.getOId());
         List<String> actual = csr.getExtensionOIds();
         assertEquals(expected, actual);
     }

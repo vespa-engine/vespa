@@ -34,7 +34,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -393,7 +392,7 @@ public class ZkStatusServiceTest {
     @SuppressWarnings("varargs")
     private static <T> List<T> shuffledList(T... values) {
         //new ArrayList necessary to avoid "write through" behaviour
-        List<T> list = new ArrayList<>(Arrays.asList(values));
+        List<T> list = new ArrayList<>(List.of(values));
         Collections.shuffle(list);
         return list;
     }

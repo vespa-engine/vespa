@@ -14,7 +14,6 @@ import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.wiring.FrameworkWiring;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -150,14 +149,14 @@ public class FelixFramework implements OsgiFramework {
 
     @Override
     public List<Bundle> bundles() {
-        return Arrays.asList(felix.getBundleContext().getBundles());
+        return List.of(felix.getBundleContext().getBundles());
     }
 
     @Override
     public List<Bundle> getBundles(Bundle requestingBundle) {
         log.fine(() -> "All bundles: " + bundles());
         log.fine(() -> "Getting visible bundles for bundle " + requestingBundle);
-        List<Bundle> visibleBundles = Arrays.asList(requestingBundle.getBundleContext().getBundles());
+        List<Bundle> visibleBundles = List.of(requestingBundle.getBundleContext().getBundles());
         log.fine(() -> "Visible bundles: " + visibleBundles);
         return visibleBundles;
     }

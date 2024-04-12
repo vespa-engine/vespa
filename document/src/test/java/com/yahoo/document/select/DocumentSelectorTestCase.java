@@ -32,7 +32,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -852,10 +851,10 @@ public class DocumentSelectorTestCase {
 
     @Test
     public void testThatSelectionIsConvertedToQueries() throws ParseException {
-        assertThatQueriesAreCreated("music.expire > now()", Arrays.asList("music"), Arrays.asList("expire:>now(0)"));
-        assertThatQueriesAreCreated("music.expire > now() - 300", Arrays.asList("music"), Arrays.asList("expire:>now(300)"));
-        assertThatQueriesAreCreated("music.expire > now() - 300 and video.expire > now() - 3600", Arrays.asList("music", "video"), Arrays.asList("expire:>now(300)", "expire:>now(3600)"));
-        assertThatQueriesAreCreated("music.expire > now() - 300 or video", Arrays.asList("music"), Arrays.asList("expire:>now(300)"));
+        assertThatQueriesAreCreated("music.expire > now()", List.of("music"), List.of("expire:>now(0)"));
+        assertThatQueriesAreCreated("music.expire > now() - 300", List.of("music"), List.of("expire:>now(300)"));
+        assertThatQueriesAreCreated("music.expire > now() - 300 and video.expire > now() - 3600", List.of("music", "video"), List.of("expire:>now(300)", "expire:>now(3600)"));
+        assertThatQueriesAreCreated("music.expire > now() - 300 or video", List.of("music"), List.of("expire:>now(300)"));
         assertVisitWithInvalidNowFails("music.field1 > now() - 300 and music.field2 > now() - 300", "Specifying multiple document types is not allowed");
         assertVisitWithInvalidNowFails("music.field1 > now() - 300 and video.field1 > now() and music.field2 > now() - 300", "Specifying multiple document types is not allowed");
         assertVisitWithInvalidNowFails("now() > music.field", "Left hand side of comparison must be a document field");
