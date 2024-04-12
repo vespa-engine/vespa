@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -22,7 +23,7 @@ public class VersionsTestCase {
     private static final List<String> ONE_TWO = List.of("1", "2");
     private static final List<String> ONE_THREE = List.of("1", "3");
     private static final List<String> TWO_THREE = List.of("3", "2");
-    private static final List<String> ONE_NULL_THREE = List.of("1", null, "3");
+    private static final List<String> ONE_NULL_THREE = Arrays.asList("1", null, "3");
     private static final List<String> ONE_COMMA_THREE = List.of("1, 3");
     private static final List<String> ONE_EMPTY_THREE = List.of("1", "", "3");
     private static final List<String> TOO_LARGE_NUMBER = List.of("1000000000");
