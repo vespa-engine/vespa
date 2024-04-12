@@ -336,6 +336,23 @@ public class StorageClusterTest {
         assertEquals(3.0, config.async_operation_throttler().resize_rate(), 0.0001);
     }
 
+    private void verifyMaxFeedOpBatchSize(int expected, Integer flagValue) {
+        var props = new TestProperties();
+        if (flagValue != null) {
+            props.setPersistenceThreadMaxFeedOpBatchSize(flagValue);
+        }
+        var config = filestorConfigFromProducer(simpleCluster(props));
+        assertEquals(expected, config.max_feed_op_batch_size());
+    }
+
+    @Test
+    void persistence_max_feed_op_batch_size_is_controlled_by_feature_flag() {
+        // TODO update default once rolled out and tested
+        verifyMaxFeedOpBatchSize(1, null);
+        verifyMaxFeedOpBatchSize(1, 1);
+        verifyMaxFeedOpBatchSize(1234, 1234);
+    }
+
     @Test
     void testCapacity() {
         String xml = joinLines(

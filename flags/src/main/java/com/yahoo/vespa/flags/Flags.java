@@ -428,6 +428,15 @@ public class Flags {
             "Whether to read and write disk encryption key to new path",
             "Will be read only on boot.");
 
+    public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
+            "persistence-thread-max-feed-op-batch-size", 1,
+            List.of("vekterli"), "2024-04-12", "2025-01-01",
+            "Maximum number of enqueued feed operations (put/update/remove) bound "+
+            "towards the same bucket that can be async dispatched as part of the " +
+            "same write-locked batch by a persistence thread.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

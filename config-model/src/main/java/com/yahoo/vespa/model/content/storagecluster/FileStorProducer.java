@@ -47,6 +47,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final int responseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
     private final boolean useAsyncMessageHandlingOnSchedule;
+    private final int persistenceThreadMaxFeedOpBatchSize;
 
     private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
         try {
@@ -62,6 +63,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         this.responseNumThreads = featureFlags.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
         this.useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
+        this.persistenceThreadMaxFeedOpBatchSize = featureFlags.persistenceThreadMaxFeedOpBatchSize();
     }
 
 
@@ -75,6 +77,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
         var throttleBuilder = new StorFilestorConfig.Async_operation_throttler.Builder();
         builder.async_operation_throttler(throttleBuilder);
+        builder.max_feed_op_batch_size(persistenceThreadMaxFeedOpBatchSize);
     }
 
 }

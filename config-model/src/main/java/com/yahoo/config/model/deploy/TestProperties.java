@@ -82,6 +82,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
     private int contentLayerMetadataFeatureLevel = 0;
+    private int persistenceThreadMaxFeedOpBatchSize = 1;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -138,6 +139,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
+    @Override public int persistenceThreadMaxFeedOpBatchSize() { return persistenceThreadMaxFeedOpBatchSize; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -365,6 +367,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setContentLayerMetadataFeatureLevel(int level) {
         this.contentLayerMetadataFeatureLevel = level;
+        return this;
+    }
+
+    public TestProperties setPersistenceThreadMaxFeedOpBatchSize(int maxBatchSize) {
+        this.persistenceThreadMaxFeedOpBatchSize = maxBatchSize;
         return this;
     }
 
