@@ -55,7 +55,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.ZCurveExpression;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import org.junit.Test;
 
-import java.util.Collections;
+
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -64,7 +65,6 @@ import static org.junit.Assert.assertEquals;
  */
 public class ExpressionVisitorTestCase {
 
-    @SuppressWarnings("unchecked")
     @Test
     public void requireThatAllExpressionsAreVisited() {
         assertCount(3, new ArithmeticExpression(new InputExpression("foo"), ArithmeticExpression.Operator.ADD,
@@ -96,8 +96,8 @@ public class ExpressionVisitorTestCase {
         assertCount(2, new ParenthesisExpression(new InputExpression("foo")));
         assertCount(1, new RandomExpression(69));
         assertCount(3, new ScriptExpression(new StatementExpression(new InputExpression("foo"))));
-        assertCount(3, new SelectInputExpression(new Pair<String, Expression>("foo", new IndexExpression("bar")),
-                                                 new Pair<String, Expression>("bar", new IndexExpression("foo"))));
+        assertCount(3, new SelectInputExpression(new Pair<>("foo", new IndexExpression("bar")),
+                new Pair<>("bar", new IndexExpression("foo"))));
         assertCount(1, new SetLanguageExpression());
         assertCount(1, new ConstantExpression(new IntegerFieldValue(69)));
         assertCount(1, new SetVarExpression("foo"));
@@ -105,7 +105,7 @@ public class ExpressionVisitorTestCase {
         assertCount(2, new StatementExpression(new InputExpression("foo")));
         assertCount(1, new SummaryExpression("foo"));
         assertCount(1, new SubstringExpression(6, 9));
-        assertCount(3, new SwitchExpression(Collections.singletonMap("foo", (Expression)new IndexExpression("bar")),
+        assertCount(3, new SwitchExpression(Map.of("foo", (Expression)new IndexExpression("bar")),
                                             new InputExpression("baz")));
         assertCount(1, new ThisExpression());
         assertCount(1, new ToArrayExpression());

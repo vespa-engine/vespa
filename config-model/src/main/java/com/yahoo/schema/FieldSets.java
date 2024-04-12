@@ -47,11 +47,7 @@ public class FieldSets {
      * @param field field to add to field set
      */
     public void addBuiltInFieldSetItem(String setName, String field) {
-        if (builtInFieldSets.get(setName) == null) {
-            // First entry in this set
-            builtInFieldSets.put(setName, new FieldSet(setName));
-        }
-        builtInFieldSets.get(setName).addFieldName(field);
+        builtInFieldSets.computeIfAbsent(setName, FieldSet::new).addFieldName(field);
     }
 
     /** Returns the built in field sets, unmodifiable */

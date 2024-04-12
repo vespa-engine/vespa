@@ -30,7 +30,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +92,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Ignore
     @Test
     public void require_that_from_parameter_cannot_be_set_if_data_in_request() throws IOException {
-        HttpRequest request = post(Collections.singletonMap("from", "active"));
+        HttpRequest request = post(Map.of("from", "active"));
         HttpResponse response = createHandler().handle(request);
         assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Parameter 'from' is illegal for POST");
     }
@@ -114,14 +113,14 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     private void assertIllegalFromParameter(String fromValue) throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
-        HttpRequest request = post(outFile, postHeaders, Collections.singletonMap("from", fromValue));
+        HttpRequest request = post(outFile, postHeaders, Map.of("from", fromValue));
         assertHttpStatusCodeErrorCodeAndMessage(createHandler().handle(request), BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Parameter 'from' has illegal value '" + fromValue + "'");
     }
 
     @Test
     public void require_that_prepare_url_is_returned_on_success() throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile(temporaryFolder.getRoot().toPath());
-        Map<String, String> parameters = Collections.singletonMap("name", "foo");
+        Map<String, String> parameters = Map.of("name", "foo");
         HttpResponse response = createHandler().handle(post(outFile, postHeaders, parameters));
         assertNotNull(response);
         assertEquals(OK, response.getStatus());
@@ -160,7 +159,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Test
     public void require_that_application_urls_can_be_given_as_from_parameter() throws Exception {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), "foo", "quux");
-        HttpRequest request = post(Collections.singletonMap(
+        HttpRequest request = post(Map.of(
                 "from",
                 "http://myhost:40555/application/v2/tenant/" + tenant + "/application/foo/environment/test/region/baz/instance/quux"));
         assertEquals(applicationId, SessionCreateHandler.getFromApplicationId(request));
@@ -180,7 +179,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_content_type_is_parsed_correctly() throws FileNotFoundException {
         HttpRequest request = post(new ByteArrayInputStream("foo".getBytes(StandardCharsets.UTF_8)),
                                    Map.of("Content-Type", "multipart/form-data; charset=ISO-8859-1; boundary=g5gJAzUWl_t6"),
-                                   Collections.emptyMap());
+                                   Map.of());
 
         // Valid header should validate ok
         SessionCreateHandler.validateDataAndHeader(request, List.of(ContentType.MULTIPART_FORM_DATA.getMimeType()));

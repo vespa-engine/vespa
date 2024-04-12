@@ -3,7 +3,6 @@ package com.yahoo.document.annotation;
 
 import com.yahoo.document.DataType;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -29,7 +28,7 @@ public final class AnnotationTypes {
     public static final AnnotationType PROXIMITY_BREAK = new AnnotationType("proximity_break", DataType.DOUBLE, 8);
     public static final AnnotationType SPECIAL_TOKEN = new AnnotationType("special_token", 9);
 
-    public static final List<AnnotationType> ALL_TYPES = Arrays.asList(TERM, TOKEN_TYPE, CANONICAL, NORMALIZED, READING,
+    public static final List<AnnotationType> ALL_TYPES = List.of(TERM, TOKEN_TYPE, CANONICAL, NORMALIZED, READING,
                                                                        STEM, TRANSFORMED, PROXIMITY_BREAK,
                                                                        SPECIAL_TOKEN);
 }

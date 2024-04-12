@@ -64,7 +64,7 @@ public class DefaultTlsContext implements TlsContext {
                     String.format("None of the accepted ciphers are supported (supported=%s, accepted=%s)",
                                   supportedCiphers, acceptedCiphers));
         }
-        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", Arrays.asList(allowedCiphers)));
+        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", List.of(allowedCiphers)));
         return allowedCiphers;
     }
 

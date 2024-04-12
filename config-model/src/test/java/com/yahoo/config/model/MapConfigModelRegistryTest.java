@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,7 +46,7 @@ public class MapConfigModelRegistryTest {
         }
 
         @Override
-        public List<ConfigModelId> handlesElements() { return Collections.singletonList(ConfigModelId.fromName("modelB")); }
+        public List<ConfigModelId> handlesElements() { return List.of(ConfigModelId.fromName("modelB")); }
         @Override
         public void doBuild(ModelB model, Element spec, ConfigModelContext modelContext) { }
     }
@@ -57,7 +56,7 @@ public class MapConfigModelRegistryTest {
             super(ModelB.class);
         }
         @Override
-        public List<ConfigModelId> handlesElements() { return Collections.singletonList(ConfigModelId.fromName("modelB")); }
+        public List<ConfigModelId> handlesElements() { return List.of(ConfigModelId.fromName("modelB")); }
         @Override
         public void doBuild(ModelB model, Element spec, ConfigModelContext modelContext) { }
     }
@@ -73,7 +72,7 @@ public class MapConfigModelRegistryTest {
             super(ModelA.class);
         }
         @Override
-        public List<ConfigModelId> handlesElements() { return Collections.singletonList(ConfigModelId.fromName("modelA")); }
+        public List<ConfigModelId> handlesElements() { return List.of(ConfigModelId.fromName("modelA")); }
 
         @Override
         public void doBuild(ModelA model, Element spec, ConfigModelContext modelContext) { }

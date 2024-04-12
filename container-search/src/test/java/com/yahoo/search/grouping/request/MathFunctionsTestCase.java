@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Einar M R Rosenvinge
  */
 public class MathFunctionsTestCase {
+    private static final DoubleValue ZERO = new DoubleValue(0.0);
 
     @Test
     void testMathFunctions() {
@@ -37,27 +38,27 @@ public class MathFunctionsTestCase {
         assertSame(MathFunctions.Function.create(19), MathFunctions.Function.HYPOT);
         assertSame(MathFunctions.Function.create(20), MathFunctions.Function.FLOOR);
 
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.EXP, null, null) instanceof MathExpFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.POW, null, null) instanceof MathPowFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.LOG, null, null) instanceof MathLogFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.LOG1P, null, null) instanceof MathLog1pFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.LOG10, null, null) instanceof MathLog10Function);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.SIN, null, null) instanceof MathSinFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ASIN, null, null) instanceof MathASinFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.COS, null, null) instanceof MathCosFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ACOS, null, null) instanceof MathACosFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.TAN, null, null) instanceof MathTanFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ATAN, null, null) instanceof MathATanFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.SQRT, null, null) instanceof MathSqrtFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.SINH, null, null) instanceof MathSinHFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ASINH, null, null) instanceof MathASinHFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.COSH, null, null) instanceof MathCosHFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ACOSH, null, null) instanceof MathACosHFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.TANH, null, null) instanceof MathTanHFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ATANH, null, null) instanceof MathATanHFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.CBRT, null, null) instanceof MathCbrtFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.HYPOT, null, null) instanceof MathHypotFunction);
-        assertTrue(MathFunctions.newInstance(MathFunctions.Function.FLOOR, null, null) instanceof MathFloorFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.EXP, ZERO, ZERO) instanceof MathExpFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.POW, ZERO, ZERO) instanceof MathPowFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.LOG, ZERO, ZERO) instanceof MathLogFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.LOG1P, ZERO, ZERO) instanceof MathLog1pFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.LOG10, ZERO, ZERO) instanceof MathLog10Function);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.SIN, ZERO, ZERO) instanceof MathSinFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ASIN, ZERO, ZERO) instanceof MathASinFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.COS, ZERO, ZERO) instanceof MathCosFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ACOS, ZERO, ZERO) instanceof MathACosFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.TAN, ZERO, ZERO) instanceof MathTanFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ATAN, ZERO, ZERO) instanceof MathATanFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.SQRT, ZERO, ZERO) instanceof MathSqrtFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.SINH, ZERO, ZERO) instanceof MathSinHFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ASINH, ZERO, ZERO) instanceof MathASinHFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.COSH, ZERO, ZERO) instanceof MathCosHFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ACOSH, ZERO, ZERO) instanceof MathACosHFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.TANH, ZERO, ZERO) instanceof MathTanHFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.ATANH, ZERO, ZERO) instanceof MathATanHFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.CBRT, ZERO, ZERO) instanceof MathCbrtFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.HYPOT, ZERO, ZERO) instanceof MathHypotFunction);
+        assertTrue(MathFunctions.newInstance(MathFunctions.Function.FLOOR, ZERO, ZERO) instanceof MathFloorFunction);
     }
 
 }

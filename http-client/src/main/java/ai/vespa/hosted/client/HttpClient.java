@@ -83,7 +83,7 @@ public interface HttpClient extends Closeable {
 
         /** Sets query parameters without a value, like {@code ?debug&recursive}. */
         default RequestBuilder emptyParameters(String... keys) {
-            return emptyParameters(Arrays.asList(keys));
+            return emptyParameters(List.of(keys));
         }
 
         /** Sets query parameters without a value, like {@code ?debug&recursive}. */

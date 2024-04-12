@@ -8,7 +8,6 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +28,7 @@ import static org.junit.Assert.assertNull;
 public class RawConfigTest {
 
     private static final ConfigKey<?> key = new ConfigKey<>("foo", "id", "bar");
-    private static final List<String> defContent = Arrays.asList("version=1", "anInt int");
+    private static final List<String> defContent = List.of("version=1", "anInt int");
     private static final String defMd5 = ConfigUtils.getDefMd5FromRequest("", defContent);
     private static final PayloadChecksums payloadChecksums = PayloadChecksums.from("012345", "");
     private static final Payload payload = Payload.from(new Utf8String("anInt 1"), CompressionInfo.uncompressed());

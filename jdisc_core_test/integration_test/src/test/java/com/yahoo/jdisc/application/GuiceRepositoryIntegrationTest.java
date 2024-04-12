@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -56,7 +55,7 @@ public class GuiceRepositoryIntegrationTest {
 
         BundleInstaller installer = new BundleInstaller(driver.osgiFramework());
         Bundle bundle = installer.installAndStart("my-guice-module.jar").get(0);
-        builder.guiceModules().installAll(bundle, Arrays.asList("com.yahoo.jdisc.bundle.MyGuiceModule",
+        builder.guiceModules().installAll(bundle, List.of("com.yahoo.jdisc.bundle.MyGuiceModule",
                                                                 "com.yahoo.jdisc.bundle.MyGuiceModule"));
         List<Module> next = new LinkedList<>(builder.guiceModules().collection());
         next.removeAll(prev);

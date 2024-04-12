@@ -4,8 +4,8 @@ package com.yahoo.search.predicate.index;
 import com.yahoo.document.predicate.PredicateHash;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,7 +16,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatSmallRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=40-49",
                 "key=0-99",
                 "key=0-999",
@@ -46,7 +46,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatLargeRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=123456789012345670-123456789012345679",
                 "key=123456789012345600-123456789012345699",
                 "key=123456789012345000-123456789012345999",
@@ -86,7 +86,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatSmallNegativeRangeIsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=-49-40",
                 "key=-99-0",
                 "key=-999-0",
@@ -126,7 +126,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatMinRangeMinus9IsExpanded() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=-9223372036854775799-9223372036854775790",
                 "key=-9223372036854775799-9223372036854775700").iterator();
         expander.expand("key", -9223372036854775799L, range -> assertEquals(PredicateHash.hash64(expectedLabels.next()), range),
@@ -150,7 +150,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatSmallRangeIsExpandedInArity2() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(2);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=42-43",
                 "key=40-43",
                 "key=40-47",
@@ -225,7 +225,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatSmallNegativeRangeIsExpandedInArity2() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(2);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=-43-42",
                 "key=-43-40",
                 "key=-47-40",
@@ -300,7 +300,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatUpperBoundIsUsed() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, -99, 9999);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=40-49",
                 "key=0-99",
                 "key=0-999",
@@ -316,7 +316,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatLowerBoundIsUsed() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, -9999, 99);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=-49-40",
                 "key=-99-0",
                 "key=-999-0",
@@ -339,7 +339,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatUpperAndLowerBoundGreaterThan0Works() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, 100, 9999);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=140-149",
                 "key=100-199",
                 "key=0-999",
@@ -355,7 +355,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatSearchCloseToUnevenUpperBoundIsSensible() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, -99, 1234);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=40-49",
                 "key=0-99",
                 "key=0-999",
@@ -371,7 +371,7 @@ public class PredicateRangeTermExpanderTest {
     @Test
     void requireThatSearchCloseToMaxUnevenUpperBoundIsSensible() {
         PredicateRangeTermExpander expander = new PredicateRangeTermExpander(10, 0, 9223372036854771234L);
-        Iterator<String> expectedLabels = Arrays.asList(
+        Iterator<String> expectedLabels = List.of(
                 "key=9223372036854770000-9223372036854770009",
                 "key=9223372036854770000-9223372036854770099",
                 "key=9223372036854770000-9223372036854770999").iterator();

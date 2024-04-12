@@ -23,7 +23,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1152,7 +1151,7 @@ public class DeploymentSpecTest {
                                                         <instance id='default'/>
                                                      </deployment>
                                                      """);
-        assertEquals(Collections.emptyList(), spec.requireInstance("default").endpoints());
+        assertEquals(List.of(), spec.requireInstance("default").endpoints());
         assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
                                                                      defaultId(),
                                                                      ClusterSpec.Id.from("cluster")));

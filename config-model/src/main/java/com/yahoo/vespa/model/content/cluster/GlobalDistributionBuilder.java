@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content.cluster;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -20,19 +19,19 @@ public class GlobalDistributionBuilder {
     private final Map<String, NewDocumentType> documentDefinitions;
 
     public GlobalDistributionBuilder(Map<String, NewDocumentType> documentDefinitions) {
-        this.documentDefinitions = Collections.unmodifiableMap(documentDefinitions);
+        this.documentDefinitions = Map.copyOf(documentDefinitions);
     }
 
     public Set<NewDocumentType> build(ModelElement documentsElement) {
         if (documentsElement == null || documentsElement.subElements("document").isEmpty())
-            return Collections.emptySet();
+            return Set.of();
 
         return documentsElement.subElements("document")
                 .stream()
                 .filter(GlobalDistributionBuilder::isGloballyDistributed)
                 .map(GlobalDistributionBuilder::getDocumentName)
                 .map(this::getDocumentType)
-                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static boolean isGloballyDistributed(ModelElement e) {

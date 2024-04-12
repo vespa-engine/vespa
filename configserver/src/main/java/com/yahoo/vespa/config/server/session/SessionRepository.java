@@ -64,7 +64,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -851,7 +850,7 @@ public class SessionRepository {
                 File[] sdFiles = sdDir.listFiles();
                 if (sdFiles != null) {
                     Files.createDirectories(schemasDir.toPath());
-                    Arrays.asList(sdFiles).forEach(file -> Exceptions.uncheck(
+                    List.of(sdFiles).forEach(file -> Exceptions.uncheck(
                             () -> Files.move(file.toPath(),
                                              schemasDir.toPath().resolve(file.toPath().getFileName()),
                                              StandardCopyOption.REPLACE_EXISTING)));

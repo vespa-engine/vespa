@@ -9,8 +9,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.TestProperties;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -28,7 +28,7 @@ public class Processing {
     public Processing(ModelContext.Properties properties) { this.properties = properties; }
 
     private Collection<ProcessorFactory> processors() {
-        return Arrays.asList(
+        return List.<ProcessorFactory>of(
                 SearchMustHaveDocument::new,
                 UrlFieldValidator::new,
                 BuiltInFieldSets::new,
@@ -99,7 +99,7 @@ public class Processing {
 
     /** Processors of rank profiles only (those who tolerate and do something useful when the search field is null) */
     private Collection<ProcessorFactory> rankProfileProcessors() {
-        return Arrays.asList(
+        return List.of(
                 RankProfileTypeSettingsProcessor::new,
                 ReservedFunctionNames::new,
                 RankingExpressionTypeResolver::new);

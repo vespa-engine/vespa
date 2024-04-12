@@ -3,7 +3,6 @@ package ai.vespa.client.dsl;
 
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,7 +18,7 @@ public class Sources {
     }
 
     Sources(Select select, String searchDefinition) {
-        this(select, Collections.singletonList(searchDefinition));
+        this(select, List.of(searchDefinition));
     }
 
     Sources(Select select, String searchDefinition, String... others) {

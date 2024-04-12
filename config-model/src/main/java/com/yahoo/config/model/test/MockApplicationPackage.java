@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -143,7 +142,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @Override
@@ -203,7 +202,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     public List<ComponentInfo> getComponentsInfo(Version vespaVersion) {
-        return Collections.emptyList();
+        return List.of();
     }
 
     public QueryProfileRegistry getQueryProfiles() { return queryProfileRegistry; }
@@ -240,7 +239,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         private File root = new File("nonexisting");
         private String hosts = null;
         private String services = null;
-        private List<String> schemas = Collections.emptyList();
+        private List<String> schemas = List.of();
         private Map<Path, MockApplicationFile> files = new LinkedHashMap<>();
         private String schemaDir = null;
         private String deploymentSpec = null;
@@ -277,12 +276,12 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public Builder withSearchDefinition(String searchDefinition) {
-            this.schemas = Collections.singletonList(searchDefinition);
+            this.schemas = List.of(searchDefinition);
             return this;
         }
 
         public Builder withSchemas(List<String> searchDefinition) {
-            this.schemas = Collections.unmodifiableList(searchDefinition);
+            this.schemas = List.copyOf(searchDefinition);
             return this;
         }
 
@@ -369,8 +368,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     private List<NamedReader> asNamedReaderList(String value) {
-        if (value == null) return Collections.emptyList();
-        return Collections.singletonList(new NamedReader(extractId(value) + ".xml", new StringReader(value)));
+        if (value == null) return List.of();
+        return List.of(new NamedReader(extractId(value) + ".xml", new StringReader(value)));
     }
 
     private String extractId(String xmlStringWithIdAttribute) {

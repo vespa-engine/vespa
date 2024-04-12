@@ -3,11 +3,10 @@ package com.yahoo.security.tls;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -18,9 +17,9 @@ public class AuthorizedPeersTest {
     @Test
     void throws_exception_on_peer_policies_with_duplicate_names() {
         assertThrows(IllegalArgumentException.class, () -> {
-            PeerPolicy peerPolicy1 = new PeerPolicy("duplicate-name", singletonList(RequiredPeerCredential.of(CN, "mycfgserver")));
-            PeerPolicy peerPolicy2 = new PeerPolicy("duplicate-name", singletonList(RequiredPeerCredential.of(CN, "myclient")));
-            new AuthorizedPeers(new HashSet<>(asList(peerPolicy1, peerPolicy2)));
+            PeerPolicy peerPolicy1 = new PeerPolicy("duplicate-name", List.of(RequiredPeerCredential.of(CN, "mycfgserver")));
+            PeerPolicy peerPolicy2 = new PeerPolicy("duplicate-name", List.of(RequiredPeerCredential.of(CN, "myclient")));
+            new AuthorizedPeers(Set.of(peerPolicy1, peerPolicy2));
         });
     }
 

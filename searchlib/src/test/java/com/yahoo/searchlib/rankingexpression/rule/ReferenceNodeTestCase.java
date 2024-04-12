@@ -3,7 +3,6 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -15,7 +14,7 @@ public class ReferenceNodeTestCase {
 
     @Test
     public void requireThatAccessorsWork() {
-        ReferenceNode node = new ReferenceNode("foo", Arrays.asList(new ReferenceNode("bar"), new ReferenceNode("baz")), "cox");
+        ReferenceNode node = new ReferenceNode("foo", List.of(new ReferenceNode("bar"), new ReferenceNode("baz")), "cox");
         assertEquals("foo", node.getName());
         List<ExpressionNode> args = node.getArguments().expressions();
         assertEquals(2, args.size());
@@ -23,10 +22,10 @@ public class ReferenceNodeTestCase {
         assertEquals(new ReferenceNode("baz"), args.get(1));
         assertEquals("cox", node.getOutput());
 
-        node = node.setArguments(Arrays.<ExpressionNode>asList(new ReferenceNode("bar@")));
+        node = node.setArguments(List.of(new ReferenceNode("bar@")));
         assertEquals(new ReferenceNode("bar@"), node.getArguments().expressions().get(0));
 
-        node = node.setArguments(Arrays.<ExpressionNode>asList(new ReferenceNode("baz$")));
+        node = node.setArguments(List.of(new ReferenceNode("baz$")));
         assertEquals(new ReferenceNode("baz$"), node.getArguments().expressions().get(0));
 
         node = node.setOutput("cox'");

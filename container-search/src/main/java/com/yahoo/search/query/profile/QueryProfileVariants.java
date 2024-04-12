@@ -5,7 +5,6 @@ import com.yahoo.component.provider.Freezable;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -187,7 +186,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
      * @param dimensionBinding the dimension bindings to use in this
      */
     public Object get(String name, QueryProfileType type, boolean allowQueryProfileResult, DimensionBinding dimensionBinding) {
-        SingleValueQueryProfileVisitor visitor = new SingleValueQueryProfileVisitor(Collections.singletonList(name),allowQueryProfileResult);
+        SingleValueQueryProfileVisitor visitor = new SingleValueQueryProfileVisitor(List.of(name),allowQueryProfileResult);
         visitor.enter("");
         accept(true, type, visitor, dimensionBinding);
         visitor.leave("");
@@ -370,7 +369,7 @@ public class QueryProfileVariants implements Freezable, Cloneable {
 
         /** Returns the field values (values for various dimensions) for this field as a read-only list (never null) */
         public List<FieldValue> asList() {
-            if (resolutionList == null) return Collections.emptyList();
+            if (resolutionList == null) return List.of();
             return resolutionList;
         }
 

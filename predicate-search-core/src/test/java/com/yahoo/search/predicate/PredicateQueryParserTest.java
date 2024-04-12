@@ -4,7 +4,6 @@ package com.yahoo.search.predicate;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +33,7 @@ public class PredicateQueryParserTest {
                 (k, v, s) -> result.add(String.format("%s:%s:%#x", k, v, s)),
                 (k, v, s) -> result.add(String.format("%s:%d:%#x", k, v, s)));
 
-        assertEquals(result, Arrays.asList(
+        assertEquals(result, List.of(
                 "k1:value1:0x1", "k2:value2:0x3",
                 "range1:123456789123:0xffff", "range2:0:0xffffffffffffffff"));
     }

@@ -7,7 +7,6 @@ import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,7 +29,7 @@ public class Deriver {
     }
 
     public static DocumentmanagerConfig.Builder getDocumentManagerConfig(String sd) {
-        return getDocumentManagerConfig(Collections.singletonList(sd));
+        return getDocumentManagerConfig(List.of(sd));
     }
 
     public static DocumentmanagerConfig.Builder getDocumentManagerConfig(List<String> schemas) {
@@ -38,7 +37,7 @@ public class Deriver {
     }
 
     public static DocumenttypesConfig.Builder getDocumentTypesConfig(String schema) {
-        return getDocumentTypesConfig(Collections.singletonList(schema));
+        return getDocumentTypesConfig(List.of(schema));
     }
 
     public static DocumenttypesConfig.Builder getDocumentTypesConfig(List<String> schemas) {

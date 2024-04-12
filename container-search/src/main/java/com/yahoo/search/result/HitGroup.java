@@ -718,6 +718,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
                 if (hitFilled.isEmpty()) {
                     filled = null;
                 } else if (hitFilled.size() == 1) {
+                    //TODO Avoid needing set that allows null ....
                     filled = Collections.singleton(hitFilled.iterator().next());
                 } else {
                     filled = new HashSet<>(hitFilled);
@@ -799,6 +800,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             analyzeHit(hit);
             Set<String> hitFilled = hit.getFilled();
             if (hitFilled != null) {
+                //TODO Avoid needing set that allows null ....
                 filled = (hitFilled.size() == 1)
                         ? Collections.singleton(hitFilled.iterator().next())
                         : hitFilled.isEmpty() ? null : new HashSet<>(hitFilled);

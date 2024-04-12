@@ -3,7 +3,6 @@ package com.yahoo.processing.response;
 
 import com.yahoo.processing.impl.ProcessingFuture;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -158,7 +157,7 @@ public interface IncomingData<DATATYPE extends Data> {
         }
 
         public List<DATATYPE> drain() {
-            return Collections.emptyList();
+            return List.of();
         }
 
         /**

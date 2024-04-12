@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -41,7 +41,7 @@ public class BundleInstallationExceptionTestCase {
 
     @Test
     void requireThatBundlesCollectionIsUnmodifiable() {
-        BundleInstallationException e = new BundleInstallationException(Arrays.asList(Mockito.mock(Bundle.class)),
+        BundleInstallationException e = new BundleInstallationException(List.of(Mockito.mock(Bundle.class)),
                 new Throwable());
         try {
             e.installedBundles().add(Mockito.mock(Bundle.class));

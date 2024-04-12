@@ -3,7 +3,6 @@ package com.yahoo.language;
 
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -15,7 +14,7 @@ public class LanguageTestCase {
 
     @Test
     public void requireThatSpecificLanguagesAreCjk() {
-        List<Language> cjk = Arrays.asList(Language.CHINESE_SIMPLIFIED,
+        List<Language> cjk = List.of(Language.CHINESE_SIMPLIFIED,
                                            Language.CHINESE_TRADITIONAL,
                                            Language.JAPANESE,
                                            Language.KOREAN,

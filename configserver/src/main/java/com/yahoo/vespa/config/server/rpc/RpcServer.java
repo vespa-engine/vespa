@@ -48,7 +48,6 @@ import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -131,7 +130,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         this.superModelRequestHandler = superModelRequestHandler;
         metricUpdaterFactory = metrics;
         supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
-        this.metrics = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
+        this.metrics = metrics.getOrCreateMetricUpdater(Map.of());
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
         int rpcWorkerThreads = (config.numRpcThreads() == 0) ? threadsToUse() : config.numRpcThreads();
         executorService = new ThreadPoolExecutor(rpcWorkerThreads, rpcWorkerThreads,

@@ -11,9 +11,7 @@ import com.yahoo.component.chain.dependencies.Provides;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -70,7 +68,7 @@ public abstract class ChainedComponent extends AbstractComponent {
     // TODO: move to vespajlib.
     private static List<String> allOf(List<String> symbols, String... otherSymbols) {
         List<String> result = new ArrayList<>(symbols);
-        result.addAll(Arrays.asList(otherSymbols));
+        result.addAll(List.of(otherSymbols));
         return result;
     }
 
@@ -88,9 +86,9 @@ public abstract class ChainedComponent extends AbstractComponent {
             Annotation annotation = component.getClass().getAnnotation(annotationClass);
             if (annotation != null) {
                 Object values = annotationClass.getMethod("value").invoke(annotation);
-                return Arrays.asList((String[])values);
+                return List.of((String[])values);
             }
-            return Collections.emptyList();
+            return List.of();
 
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);

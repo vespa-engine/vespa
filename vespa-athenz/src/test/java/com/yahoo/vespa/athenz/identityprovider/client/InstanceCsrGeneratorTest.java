@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
-import java.util.Collections;
 import java.util.Set;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
@@ -36,7 +35,7 @@ public class InstanceCsrGeneratorTest {
         VespaUniqueInstanceId vespaUniqueInstanceId = VespaUniqueInstanceId.fromDottedString("0.default.default.foo-app.vespa.us-north-1.prod.node");
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
 
-        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(service, vespaUniqueInstanceId, Collections.emptySet(), ClusterType.CONTAINER, keyPair);
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(service, vespaUniqueInstanceId, Set.of(), ClusterType.CONTAINER, keyPair);
         assertEquals(new X500Principal(String.format("OU=%s, CN=%s", PROVIDER_SERVICE, ATHENZ_SERVICE)), csr.getSubject());
         var actualSans = Set.copyOf(csr.getSubjectAlternativeNames());
         var expectedSans = Set.of(

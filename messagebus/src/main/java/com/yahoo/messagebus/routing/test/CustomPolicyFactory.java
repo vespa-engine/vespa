@@ -6,7 +6,6 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.messagebus.test.SimpleProtocol;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -26,7 +25,7 @@ public class CustomPolicyFactory implements SimpleProtocol.PolicyFactory {
     }
 
     public CustomPolicyFactory(boolean selectOnRetry, int consumableError) {
-        this(selectOnRetry, Arrays.asList(consumableError));
+        this(selectOnRetry, List.of(consumableError));
     }
 
     public CustomPolicyFactory(boolean selectOnRetry, List<Integer> consumableErrors) {

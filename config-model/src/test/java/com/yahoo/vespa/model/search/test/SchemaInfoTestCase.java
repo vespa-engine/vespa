@@ -102,7 +102,7 @@ public class SchemaInfoTestCase {
         var schemaInfoTester = new SchemaInfoTester();
         var schema = schemaInfoTester.createSchema("test");
         var field = (SDField)schema.getDocument().addField(new SDField("f1", DataType.STRING));
-        var attribute = field.addAttribute(new Attribute("f1Attribute", field.getDataType()));
+        var attribute = field.addAttribute(new Attribute(schema.getName(), field.getName(), "f1Attribute", field.getDataType()));
         attribute.getAliases().add("a1");
         attribute.getAliases().add("a2");
         assertEquals("""

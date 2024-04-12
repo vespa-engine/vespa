@@ -11,7 +11,7 @@ import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
 import com.yahoo.vespa.model.container.search.searchchain.Searcher;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +21,7 @@ import java.util.Map;
 public class DomSearchChainBuilder extends DomChainBuilderBase<Searcher<?>, SearchChain> {
 
     public DomSearchChainBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
-        super(Arrays.asList(ComponentsBuilder.ComponentType.searcher, ComponentsBuilder.ComponentType.federation),
+        super(List.of(ComponentsBuilder.ComponentType.searcher, ComponentsBuilder.ComponentType.federation),
                 outerSearcherTypeByComponentName);
     }
 

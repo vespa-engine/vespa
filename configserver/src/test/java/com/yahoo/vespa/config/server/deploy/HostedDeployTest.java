@@ -47,7 +47,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -581,7 +580,7 @@ public class HostedDeployTest {
     }
 
     private Host createHost(String hostname, String version) {
-        return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.ofNullable(version).map(Version::fromString));
+        return new Host(hostname, List.of(), Optional.empty(), Optional.ofNullable(version).map(Version::fromString));
     }
 
     private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories, Zone zone) {

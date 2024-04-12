@@ -21,7 +21,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -173,7 +172,7 @@ public class ApplicationMojo extends AbstractMojo {
     }
 
     private static <T> List<T> emptyListIfNull(List<T> modules) {
-        return modules == null ? Collections.emptyList(): modules;
+        return modules == null ? List.of(): modules;
     }
 
 }

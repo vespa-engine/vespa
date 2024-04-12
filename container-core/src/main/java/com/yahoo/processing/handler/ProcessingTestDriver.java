@@ -12,9 +12,9 @@ import com.yahoo.processing.Processor;
 import com.yahoo.processing.execution.chain.ChainRegistry;
 import com.yahoo.processing.rendering.Renderer;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -38,12 +38,12 @@ public class ProcessingTestDriver extends RequestHandlerTestDriver {
     @SafeVarargs
     @SuppressWarnings("varargs")
     public ProcessingTestDriver(Chain<Processor> ... chains) {
-        this(Arrays.asList(chains), new ComponentRegistry<>());
+        this(List.of(chains), new ComponentRegistry<>());
     }
     @SafeVarargs
     @SuppressWarnings("varargs")
     public ProcessingTestDriver(String binding, Chain<Processor> ... chains) {
-        this(binding, Arrays.asList(chains), new ComponentRegistry<>());
+        this(binding, List.of(chains), new ComponentRegistry<>());
     }
     public ProcessingTestDriver(Collection<Chain<Processor>> chains, ComponentRegistry<Renderer> renderers) {
         this(createProcessingHandler(chains, renderers, AccessLog.voidAccessLog()));

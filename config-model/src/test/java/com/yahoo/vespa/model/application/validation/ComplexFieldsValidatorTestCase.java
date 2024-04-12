@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -67,7 +68,9 @@ public class ComplexFieldsValidatorTestCase {
                     "}",
                     "}"));
         });
-        assertTrue(exception.getMessage().contains(getExpectedMessage("docTopics (docTopics.topics, docTopics.topics.id, docTopics.topics.label)")));
+        assertEquals("For schema 'test': Field 'docTopics.topics' of type 'array<topic>' cannot be an attribute." +
+                        " Instead specify the struct fields to be searchable as attribute",
+                exception.getMessage());
     }
 
     @Test

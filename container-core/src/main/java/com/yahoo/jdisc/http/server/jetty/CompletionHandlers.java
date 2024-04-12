@@ -3,7 +3,8 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
 
-import java.util.Arrays;
+import java.util.List;
+
 
 /**
  * @author Simon Thoresen Hult
@@ -33,7 +34,7 @@ public class CompletionHandlers {
     }
 
     public static CompletionHandler wrap(CompletionHandler... handlers) {
-        return wrap(Arrays.asList(handlers));
+        return wrap(List.of(handlers));
     }
 
     public static CompletionHandler wrap(final Iterable<CompletionHandler> handlers) {

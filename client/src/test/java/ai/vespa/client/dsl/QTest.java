@@ -3,10 +3,9 @@ package ai.vespa.client.dsl;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -224,9 +223,9 @@ class QTest {
         String q = Q.select("*")
                 .from("sd1")
                 .where(Q.wand("f1", stringIntMap("a", 1, "b", 2, "c", 3)))
-                .and(Q.wand("f2", Arrays.asList(Arrays.asList(1, 1), Arrays.asList(2, 2))))
+                .and(Q.wand("f2", List.of(List.of(1, 1), List.of(2, 2))))
                 .and(
-                        Q.wand("f3", Arrays.asList(Arrays.asList(1, 1), Arrays.asList(2, 2)))
+                        Q.wand("f3", List.of(List.of(1, 1), List.of(2, 2)))
                                 .annotate(A.a("scoreThreshold", 0.13))
                 )
                 .build();
@@ -421,7 +420,7 @@ class QTest {
         {
             String q1 = Q.p("f1").containsPhrase("p1", "p2", "p3")
                     .build();
-            String q2 = Q.p("f1").containsPhrase(Arrays.asList("p1", "p2", "p3"))
+            String q2 = Q.p("f1").containsPhrase(List.of("p1", "p2", "p3"))
                     .build();
             assertEquals(q1, "yql=select * from sources * where f1 contains phrase(\"p1\", \"p2\", \"p3\")");
             assertEquals(q2, "yql=select * from sources * where f1 contains phrase(\"p1\", \"p2\", \"p3\")");
@@ -429,7 +428,7 @@ class QTest {
         {
             String q1 = Q.p("f1").containsNear("p1", "p2", "p3")
                     .build();
-            String q2 = Q.p("f1").containsNear(Arrays.asList("p1", "p2", "p3"))
+            String q2 = Q.p("f1").containsNear(List.of("p1", "p2", "p3"))
                     .build();
             assertEquals(q1, "yql=select * from sources * where f1 contains near(\"p1\", \"p2\", \"p3\")");
             assertEquals(q2, "yql=select * from sources * where f1 contains near(\"p1\", \"p2\", \"p3\")");
@@ -437,7 +436,7 @@ class QTest {
         {
             String q1 = Q.p("f1").containsOnear("p1", "p2", "p3")
                     .build();
-            String q2 = Q.p("f1").containsOnear(Arrays.asList("p1", "p2", "p3"))
+            String q2 = Q.p("f1").containsOnear(List.of("p1", "p2", "p3"))
                     .build();
             assertEquals(q1, "yql=select * from sources * where f1 contains onear(\"p1\", \"p2\", \"p3\")");
             assertEquals(q2, "yql=select * from sources * where f1 contains onear(\"p1\", \"p2\", \"p3\")");
@@ -445,7 +444,7 @@ class QTest {
         {
             String q1 = Q.p("f1").containsEquiv("p1", "p2", "p3")
                     .build();
-            String q2 = Q.p("f1").containsEquiv(Arrays.asList("p1", "p2", "p3"))
+            String q2 = Q.p("f1").containsEquiv(List.of("p1", "p2", "p3"))
                     .build();
             assertEquals(q1, "yql=select * from sources * where f1 contains equiv(\"p1\", \"p2\", \"p3\")");
             assertEquals(q2, "yql=select * from sources * where f1 contains equiv(\"p1\", \"p2\", \"p3\")");
@@ -498,7 +497,7 @@ class QTest {
 
     @Test
     void use_contains_instead_of_contains_equiv_when_input_size_is_1() {
-        String q = Q.p("f1").containsEquiv(Collections.singletonList("p1"))
+        String q = Q.p("f1").containsEquiv(List.of("p1"))
                 .build();
 
         assertEquals(q, "yql=select * from sources * where f1 contains \"p1\"");
@@ -506,16 +505,16 @@ class QTest {
 
     @Test
     void contains_phrase_near_onear_equiv_empty_list_should_throw_illegal_argument_exception() {
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsPhrase(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsPhrase(List.of())
                 .build());
 
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsNear(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsNear(List.of())
                 .build());
 
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsOnear(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsOnear(List.of())
                 .build());
 
-        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsEquiv(Collections.emptyList())
+        assertThrows(IllegalArgumentException.class, () -> Q.p("f1").containsEquiv(List.of())
                 .build());
     }
 
@@ -586,7 +585,7 @@ class QTest {
 
 @Test
     void arbitrary_annotations() {
-        Annotation a = A.a("a1", "v1", "a2", 2, "a3", stringObjMap("k", "v", "k2", 1), "a4", 4D, "a5", Arrays.asList(1, 2, 3));
+        Annotation a = A.a("a1", "v1", "a2", 2, "a3", stringObjMap("k", "v", "k2", 1), "a4", 4D, "a5", List.of(1, 2, 3));
         assertEquals(a.toString(), "{\"a1\":\"v1\",\"a2\":2,\"a3\":{\"k\":\"v\",\"k2\":1},\"a4\":4.0,\"a5\":[1,2,3]}");
     }
 

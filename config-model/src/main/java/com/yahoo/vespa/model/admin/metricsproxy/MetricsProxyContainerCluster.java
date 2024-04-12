@@ -36,7 +36,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -198,7 +197,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private Map<String, MetricsConsumer> getUserMetricsConsumers() {
         return getAdmin()
                 .map(admin -> admin.getUserMetrics().getConsumers())
-                .orElse(Collections.emptyMap());
+                .orElse(Map.of());
     }
 
     private Optional<String> getSystemName() {

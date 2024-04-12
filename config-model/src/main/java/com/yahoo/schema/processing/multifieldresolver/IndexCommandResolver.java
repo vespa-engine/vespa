@@ -5,8 +5,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.Schema;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -16,17 +14,10 @@ import java.util.logging.Level;
 public class IndexCommandResolver extends MultiFieldResolver {
 
     /** Commands which don't have to be harmonized between fields */
-    private static List<String> ignoredCommands = new ArrayList<>();
+    private static final List<String> ignoredCommands = List.of( "complete-boost", "literal-boost", "highlight");
 
     /** Commands which must be harmonized between fields */
-    private static List<String> harmonizedCommands = new ArrayList<>();
-
-    static {
-        String[] ignore = { "complete-boost", "literal-boost", "highlight" };
-        ignoredCommands.addAll(Arrays.asList(ignore));
-        String[] harmonize = { "stemming", "normalizing" };
-        harmonizedCommands.addAll(Arrays.asList(harmonize));
-    }
+    private static final List<String> harmonizedCommands = List.of("stemming", "normalizing");
 
     public IndexCommandResolver(String indexName, List<SDField> fields, Schema schema, DeployLogger logger) {
         super(indexName, fields, schema, logger);
@@ -53,8 +44,8 @@ public class IndexCommandResolver extends MultiFieldResolver {
                             ", adding to field " + field.getName());
                     field.addQueryCommand(command);
                 } else {
-                    deployLogger.logApplicationPackage(Level.WARNING, "All fields going to the same index should have the same query-commands. Field \'" + field.getName() +
-                            "\' doesn't contain command \'" + command+"\'");
+                    deployLogger.logApplicationPackage(Level.WARNING, "All fields going to the same index should have the same query-commands. Field '" + field.getName() +
+                            "' doesn't contain command '" + command+"'");
                 }
             }
         }

@@ -42,7 +42,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -277,7 +276,7 @@ public class OrchestratorImplTest {
 
         orchestrator.suspendAll(
                 new HostName("parentHostname"),
-                Arrays.asList(
+                List.of(
                         DummyServiceMonitor.TEST1_HOST_NAME,
                         DummyServiceMonitor.TEST3_HOST_NAME,
                         DummyServiceMonitor.TEST6_HOST_NAME));
@@ -317,7 +316,7 @@ public class OrchestratorImplTest {
         try {
             orchestrator.suspendAll(
                     new HostName("parentHostname"),
-                    Arrays.asList(
+                    List.of(
                             DummyServiceMonitor.TEST1_HOST_NAME,
                             DummyServiceMonitor.TEST3_HOST_NAME,
                             DummyServiceMonitor.TEST6_HOST_NAME));

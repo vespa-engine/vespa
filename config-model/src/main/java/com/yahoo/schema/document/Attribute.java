@@ -5,7 +5,9 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.MapDataType;
 import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
@@ -143,8 +145,8 @@ public final class Attribute implements Cloneable, Serializable {
     }
 
     /** Creates an attribute with default settings */
-    public Attribute(String name, DataType fieldType) {
-        this(name, convertDataType(fieldType), convertCollectionType(fieldType), convertTensorType(fieldType), convertTargetType(fieldType));
+    public Attribute(String schemaName, String fieldName, String name, DataType fieldType) {
+        this(name, convertDataType(schemaName, fieldName, fieldType), convertCollectionType(fieldType), convertTensorType(fieldType), convertTargetType(fieldType));
         setRemoveIfZero(fieldType instanceof WeightedSetDataType wsdt && wsdt.removeIfZero());
         setCreateIfNonExistent(fieldType instanceof WeightedSetDataType wsdt && wsdt.createIfNonExistent());
     }
@@ -266,12 +268,26 @@ public final class Attribute implements Cloneable, Serializable {
     private void setType(Type type)                     { this.type=type; }
     public void  setCollectionType(CollectionType type) { this.collectionType=type; }
 
+    private static void failDataType(String schemaName, String fieldName, String dataType) throws IllegalArgumentException {
+        throw new IllegalArgumentException("For schema '" + schemaName + "': Field '" + fieldName + "' of type '" + dataType + "' cannot be an attribute. " +
+                "Instead specify the struct fields to be searchable as attribute");
+    }
+    public static void validateDataType(String schemaName, String fieldName, DataType fieldType) throws IllegalArgumentException {
+        if (fieldType instanceof MapDataType mapType) {
+            failDataType(schemaName, fieldName, "map<" + mapType.getKeyType().getName() + "," + mapType.getValueType().getName() + ">");
+        }
+        if (fieldType instanceof ArrayDataType arrayType && arrayType.getNestedType() instanceof StructDataType nestedType) {
+            failDataType(schemaName, fieldName, "array<" + nestedType.getName() + ">");
+        }
+    }
+
     /** Converts to the right attribute type from a field datatype */
-    public static Type convertDataType(DataType fieldType) {
+    public static Type convertDataType(String schemaName, String fieldName, DataType fieldType) {
+        validateDataType(schemaName, fieldName, fieldType);
         if (fieldType instanceof NewDocumentReferenceDataType) {
             return Type.REFERENCE;
         } else if (fieldType instanceof CollectionDataType) {
-            return convertDataType(((CollectionDataType) fieldType).getNestedType());
+            return convertDataType(schemaName, fieldName, ((CollectionDataType) fieldType).getNestedType());
         }
         FieldValue fval = fieldType.createFieldValue();
         if (fval instanceof StringFieldValue) {

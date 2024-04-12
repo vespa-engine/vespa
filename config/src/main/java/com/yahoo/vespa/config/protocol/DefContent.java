@@ -7,7 +7,6 @@ import com.yahoo.slime.*;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -47,7 +46,7 @@ public class DefContent {
     }
 
     public static DefContent fromArray(String[] schema) {
-        return fromList(Arrays.asList(schema));
+        return fromList(List.of(schema));
     }
 
     /**

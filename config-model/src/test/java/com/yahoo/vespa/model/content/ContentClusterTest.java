@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -43,8 +42,6 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,7 +69,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void testHierarchicRedundancy() {
-        ContentCluster cc = parse("" +
+        ContentCluster cc = parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
                 "  <documents/>" +
                 "  <engine>" +
@@ -947,8 +944,8 @@ public class ContentClusterTest extends ContentBaseTest {
                 .properties(props);
         MockRoot root = flavor.isPresent() ?
                 ContentClusterUtils.createMockRoot(new SingleNodeProvisioner(flavor.get()),
-                        Collections.emptyList(), deployStateBuilder) :
-                ContentClusterUtils.createMockRoot(Collections.emptyList(), deployStateBuilder);
+                        List.of(), deployStateBuilder) :
+                ContentClusterUtils.createMockRoot(List.of(), deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();
@@ -1104,8 +1101,8 @@ public class ContentClusterTest extends ContentBaseTest {
 
         assertEquals(2, config.cluster().size());
 
-        assertClusterHasBucketSpaceMappings(config, "foo_c", Arrays.asList("bunnies", "hares"), Collections.emptyList());
-        assertClusterHasBucketSpaceMappings(config, "bar_c", Collections.emptyList(), Collections.singletonList("rabbits"));
+        assertClusterHasBucketSpaceMappings(config, "foo_c", List.of("bunnies", "hares"), List.of());
+        assertClusterHasBucketSpaceMappings(config, "bar_c", List.of(), List.of("rabbits"));
     }
 
     @Test

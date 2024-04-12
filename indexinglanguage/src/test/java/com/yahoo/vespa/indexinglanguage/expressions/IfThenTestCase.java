@@ -10,7 +10,6 @@ import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
@@ -174,12 +173,12 @@ public class IfThenTestCase {
 
     @Test
     public void requireThatNumericValuesSupportNumericCompareTo() {
-        List<NumericFieldValue> sixes = Arrays.asList(new ByteFieldValue((byte)6),
+        List<NumericFieldValue> sixes = List.of(new ByteFieldValue((byte)6),
                                                       new DoubleFieldValue(6.0),
                                                       new FloatFieldValue(6.0f),
                                                       new IntegerFieldValue(6),
                                                       new LongFieldValue(6L));
-        List<NumericFieldValue> nines = Arrays.asList(new ByteFieldValue((byte)9),
+        List<NumericFieldValue> nines = List.of(new ByteFieldValue((byte)9),
                                                       new DoubleFieldValue(9.0),
                                                       new FloatFieldValue(9.0f),
                                                       new IntegerFieldValue(9),

@@ -10,7 +10,6 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +24,7 @@ public final class SelectInputExpression extends CompositeExpression {
     @SafeVarargs
     @SuppressWarnings("varargs")
     public SelectInputExpression(Pair<String, Expression>... cases) {
-        this(Arrays.asList(cases));
+        this(List.of(cases));
     }
 
     public SelectInputExpression(List<Pair<String, Expression>> cases) {

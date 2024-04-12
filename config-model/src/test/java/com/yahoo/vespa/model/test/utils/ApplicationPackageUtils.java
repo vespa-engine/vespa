@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.test.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -50,7 +49,7 @@ public class ApplicationPackageUtils {
     }
 
     public static List<String> generateSchemas(String ... sdNames) {
-        return generateSchemas(Arrays.asList(sdNames));
+        return generateSchemas(List.of(sdNames));
     }
 
     public static List<String> generateSchemas(List<String> sdNames) {

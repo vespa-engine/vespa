@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -181,7 +180,7 @@ public class SchemaTester {
     }
 
     public static List<String> generateSchemas(String schemaContent, String rankProfile, String ... schemaNames) {
-        return generateSchemas(schemaContent, rankProfile, Arrays.asList(schemaNames));
+        return generateSchemas(schemaContent, rankProfile, List.of(schemaNames));
     }
 
     public static List<String> generateSchemas(String schemaContent, String rankProfile, List<String> schemaNames) {

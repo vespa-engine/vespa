@@ -3,7 +3,6 @@ package com.yahoo.security;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,7 +17,7 @@ public class X509CertificateWithKey {
     private final PrivateKey privateKey;
 
     public X509CertificateWithKey(X509Certificate certificate, PrivateKey privateKey) {
-        this(Collections.singletonList(certificate), privateKey);
+        this(List.of(certificate), privateKey);
     }
 
     public X509CertificateWithKey(List<X509Certificate> certificate, PrivateKey privateKey) {

@@ -15,7 +15,7 @@ import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import static com.yahoo.schema.processing.AssertIndexingScript.assertIndexing;
@@ -36,7 +36,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
         SDField field1 = document.addField("a", DataType.STRING);
-        field1.parseIndexingScript("{ index }");
+        field1.parseIndexingScript(schema.getName(), "{ index }");
         field1.setLiteralBoost(20);
         RankProfile other = new RankProfile("other", schema, rankProfileRegistry);
         rankProfileRegistry.add(other);
@@ -50,7 +50,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         derived.getAttributeFields(); // TODO: assert content
 
         // Check il script addition
-        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
+        assertIndexing(List.of("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                         "clear_state | guard { input a | tokenize | index a_literal; }"),
                 schema);
 
@@ -69,7 +69,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
         SDField field1 = document.addField("a", DataType.STRING);
-        field1.parseIndexingScript("{ index }");
+        field1.parseIndexingScript(schema.getName(), "{ index }");
         RankProfile other = new RankProfile("other", schema, rankProfileRegistry);
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
@@ -78,7 +78,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check il script addition
-        assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
+        assertIndexing(List.of("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                         "clear_state | guard { input a | tokenize | index a_literal; }"),
                 schema);
 
@@ -95,15 +95,15 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDDocumentType document = new SDDocumentType("msb");
         schema.addDocument(document);
         SDField field1 = document.addField("title", DataType.STRING);
-        field1.parseIndexingScript("{ summary | index }");
+        field1.parseIndexingScript(schema.getName(), "{ summary | index }");
         field1.setLiteralBoost(20);
         SDField field2 = document.addField("body", DataType.STRING);
-        field2.parseIndexingScript("{ summary | index }");
+        field2.parseIndexingScript(schema.getName(), "{ summary | index }");
         field2.setLiteralBoost(20);
 
         schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
-        assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
+        assertIndexing(List.of("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                         "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",
                         "clear_state | guard { input title | tokenize | index title_literal; }",
                         "clear_state | guard { input body | tokenize | index body_literal; }"),

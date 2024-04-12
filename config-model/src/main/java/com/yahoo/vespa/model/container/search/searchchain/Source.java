@@ -4,9 +4,8 @@ package com.yahoo.vespa.model.container.search.searchchain;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 
-import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -51,7 +50,7 @@ public class Source extends GenericTarget {
     @Override
     public ChainSpecification getChainSpecification() {
         return super.getChainSpecification().addInherits(
-                Arrays.asList(getParentProvider().getComponentId().toSpecification()));
+                List.of(getParentProvider().getComponentId().toSpecification()));
     }
 
     public ComponentId getGlobalComponentId() {

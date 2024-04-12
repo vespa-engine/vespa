@@ -3,7 +3,6 @@ package com.yahoo.yolean.trace;
 
 import com.yahoo.yolean.concurrent.ThreadRobustList;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,7 +72,7 @@ public class TraceNode {
      */
     public <PAYLOADTYPE> Iterable<PAYLOADTYPE> descendants(final Class<PAYLOADTYPE> payloadType) {
         if (children == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         return new Iterable<PAYLOADTYPE>() {
 
@@ -118,7 +117,7 @@ public class TraceNode {
      */
     public Iterable<TraceNode> children() {
         if (children == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         return children;
     }

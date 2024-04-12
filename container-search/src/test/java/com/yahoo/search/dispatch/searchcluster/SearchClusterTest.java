@@ -12,7 +12,6 @@ import com.yahoo.search.result.ErrorMessage;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,7 @@ public class SearchClusterTest {
         List<AtomicInteger> pingCounts;
 
         State(String clusterId, int nodesPergroup, String ... nodeNames) {
-            this(clusterId, nodesPergroup, Arrays.asList(nodeNames));
+            this(clusterId, nodesPergroup, List.of(nodeNames));
         }
 
         State(String clusterId, int nodesPerGroup, List<String> nodeNames) {

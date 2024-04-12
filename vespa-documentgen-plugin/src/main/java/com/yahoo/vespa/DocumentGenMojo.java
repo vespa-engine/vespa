@@ -598,7 +598,7 @@ public class DocumentGenMojo extends AbstractMojo {
     private static void exportFieldSetDefinition(Set<FieldSet> fieldSets, Writer out, int ind) throws IOException {
         out.write(ind(ind) + "java.util.Map<java.lang.String, java.util.Collection<java.lang.String>> fieldSets = new java.util.HashMap<>();\n");
         for (FieldSet fieldSet : fieldSets) {
-            out.write(ind(ind) + "fieldSets.put(\"" + fieldSet.getName() + "\", java.util.Arrays.asList(");
+            out.write(ind(ind) + "fieldSets.put(\"" + fieldSet.getName() + "\", java.util.List.of(");
             int count = 0;
             for (String field : fieldSet.getFieldNames()) {
                 out.write("\"" + field + "\"");

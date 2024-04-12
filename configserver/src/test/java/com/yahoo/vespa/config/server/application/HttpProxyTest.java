@@ -21,8 +21,9 @@ import org.mockito.ArgumentCaptor;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.vespa.config.server.application.MockModel.createServiceInfo;
@@ -119,9 +120,9 @@ public class HttpProxyTest {
                 "state http external query");
         ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "storagenode", "storagenode",
                                                            ClusterSpec.Type.content, 1234, "rpc");
-        HostInfo hostInfo = new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
+        HostInfo hostInfo = new HostInfo(hostname, List.of(container, serviceNoStatePort));
 
-        return new MockModel(Collections.singleton(hostInfo));
+        return new MockModel(Set.of(hostInfo));
     }
 
 }

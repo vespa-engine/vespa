@@ -107,7 +107,7 @@ public class PredicateProcessor extends Processor {
         script = new StatementExpression(makeSetPredicateVariablesScript(booleanIndexDefiniton), script);
 
         ExpressionConverter converter = new PredicateOutputTransformer(schema);
-        field.setIndexingScript(new ScriptExpression((StatementExpression)converter.convert(script)));
+        field.setIndexingScript(schema.getName(), new ScriptExpression((StatementExpression)converter.convert(script)));
     }
 
     private Expression makeSetPredicateVariablesScript(BooleanIndexDefinition options) {

@@ -22,8 +22,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -99,7 +97,7 @@ public class PageTemplateSearcher extends Searcher {
      * @param resolvers the resolvers to use, in addition to the default resolvers
      */
     public PageTemplateSearcher(PageTemplateRegistry templateRegistry, Resolver... resolvers) {
-        this(templateRegistry, Arrays.asList(resolvers));
+        this(templateRegistry, List.of(resolvers));
     }
 
     private PageTemplateSearcher(PageTemplateRegistry templateRegistry, List<Resolver> resolvers) {
@@ -139,13 +137,13 @@ public class PageTemplateSearcher extends Searcher {
         if (pageIds == null) {
             String pageIdString = query.properties().getString(pageIdName,"").trim();
             if (!pageIdString.isEmpty())
-                pageIds = Arrays.asList(pageIdString.split(" "));
+                pageIds = List.of(pageIdString.split(" "));
         }
 
         // If none set, just return the default or null if none
         if (pageIds == null) {
             PageElement defaultPage=templateRegistry.getComponent("default");
-            return (defaultPage == null ? Collections.<PageElement>emptyList() : Collections.singletonList(defaultPage));
+            return (defaultPage == null ? List.of() : List.of(defaultPage));
         }
 
         // Resolve the id list to page templates

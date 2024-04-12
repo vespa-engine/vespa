@@ -4,13 +4,10 @@ package com.yahoo.config.application.api;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-
-import static java.util.Collections.emptyList;
 
 /**
  * Configuration of notifications for deployment jobs.
@@ -25,7 +22,7 @@ import static java.util.Collections.emptyList;
  */
 public class Notifications {
 
-    private static final Notifications none = new Notifications(Collections.emptyMap(), Collections.emptyMap());
+    private static final Notifications none = new Notifications(Map.of(), Map.of());
     public static Notifications none() { return none; }
 
     private final Map<When, List<String>> emailAddresses;
@@ -60,7 +57,7 @@ public class Notifications {
     /** Returns all email addresses to notify for the given condition. */
     public Set<String> emailAddressesFor(When when) {
         ImmutableSet.Builder<String> addresses = ImmutableSet.builder();
-        addresses.addAll(emailAddresses.getOrDefault(when, emptyList()));
+        addresses.addAll(emailAddresses.getOrDefault(when, List.of()));
         for (When include : when.includes)
             addresses.addAll(emailAddressesFor(include));
         return addresses.build();
@@ -69,7 +66,7 @@ public class Notifications {
     /** Returns all roles for which email notification is to be sent for the given condition. */
     public Set<Role> emailRolesFor(When when) {
         ImmutableSet.Builder<Role> roles = ImmutableSet.builder();
-        roles.addAll(emailRoles.getOrDefault(when, emptyList()));
+        roles.addAll(emailRoles.getOrDefault(when, List.of()));
         for (When include : when.includes)
             roles.addAll(emailRolesFor(include));
         return roles.build();
@@ -82,17 +79,17 @@ public class Notifications {
         author;
 
         public static String toValue(Role role) {
-            switch (role) {
-                case author: return "author";
-                default: throw new IllegalArgumentException("Unexpected constant '" + role.name() + "'.");
+            if (Objects.requireNonNull(role) == Role.author) {
+                return "author";
             }
+            throw new IllegalArgumentException("Unexpected constant '" + role.name() + "'.");
         }
 
         public static Role fromValue(String value) {
-            switch (value) {
-                case "author": return author;
-                default: throw new IllegalArgumentException("Unknown value '" + value + "'.");
+            if (value.equals("author")) {
+                return author;
             }
+            throw new IllegalArgumentException("Unknown value '" + value + "'.");
         }
 
     }
@@ -109,15 +106,15 @@ public class Notifications {
         private final List<When> includes;
 
         When(When... includes) {
-            this.includes = Arrays.asList(includes);
+            this.includes = List.of(includes);
         }
 
         public static String toValue(When when) {
-            switch (when) {
-                case failing: return "failing";
-                case failingCommit: return "failing-commit";
-                default: throw new IllegalArgumentException("Unexpected constant '" + when.name() + "'.");
-            }
+            return switch (when) {
+                case failing -> "failing";
+                case failingCommit -> "failing-commit";
+                default -> throw new IllegalArgumentException("Unexpected constant '" + when.name() + "'.");
+            };
         }
 
         public static When fromValue(String value) {

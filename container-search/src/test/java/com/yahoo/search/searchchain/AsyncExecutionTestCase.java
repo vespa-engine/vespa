@@ -10,7 +10,6 @@ import com.yahoo.search.result.Hit;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -70,20 +69,20 @@ public class AsyncExecutionTestCase {
     void testWaitForAll() {
         Chain<Searcher> slowChain = new Chain<>(
                 new ComponentId("slow"),
-                Arrays.asList(new Searcher[]{new WaitingSearcher("slow", 30000)}
+                List.of(new Searcher[]{new WaitingSearcher("slow", 30000)}
                 )
         );
 
         Chain<Searcher> fastChain = new Chain<>(
                 new ComponentId("fast"),
-                Arrays.asList(new Searcher[]{new SimpleSearcher()})
+                List.of(new Searcher[]{new SimpleSearcher()})
         );
 
         FutureResult slowFuture = new AsyncExecution(slowChain, Execution.Context.createContextStub()).search(new Query("?hits=0"));
         FutureResult fastFuture = new AsyncExecution(fastChain, Execution.Context.createContextStub()).search(new Query("?hits=0"));
         fastFuture.get();
         FutureResult [] reslist = new FutureResult[]{slowFuture, fastFuture};
-        List<Result> results = AsyncExecution.waitForAll(Arrays.asList(reslist), 0);
+        List<Result> results = AsyncExecution.waitForAll(List.of(reslist), 0);
 
         //assertTrue(slowFuture.isCancelled());
         assertTrue(fastFuture.isDone() && !fastFuture.isCancelled());

@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class represents a day-of-week timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
@@ -22,14 +22,12 @@ public class DayOfWeekFunction extends FunctionNode {
     }
 
     private DayOfWeekFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.dayofweek", label, level, Arrays.asList(exp));
+        super("time.dayofweek", label, level, List.of(exp));
     }
 
     @Override
     public DayOfWeekFunction copy() {
-        return new DayOfWeekFunction(getLabel(),
-                                      getLevelOrNull(),
-                                      getArg(0).copy());
+        return new DayOfWeekFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
     }
 
 }

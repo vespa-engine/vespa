@@ -28,7 +28,7 @@ public class Negation extends PredicateOperator {
 
     @Override
     public List<Predicate> getOperands() {
-        return java.util.Arrays.asList(operand);
+        return java.util.List.of(operand);
     }
 
     @Override

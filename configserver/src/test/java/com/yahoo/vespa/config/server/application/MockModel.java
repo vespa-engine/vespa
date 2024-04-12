@@ -40,7 +40,7 @@ public class MockModel implements Model {
                                                   ClusterSpec.Type.container, statePort, "state");
         ServiceInfo serviceNoStatePort = createServiceInfo(hostname, "logserver", "logserver",
                                                            ClusterSpec.Type.admin, 1234, "logtp");
-        return new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
+        return new HostInfo(hostname, List.of(container, serviceNoStatePort));
     }
 
     static MockModel createConfigProxies(List<String> hostnames, int rpcPort) {
@@ -48,7 +48,7 @@ public class MockModel implements Model {
         hostnames.forEach(hostname -> {
             ServiceInfo configProxy = createServiceInfo(hostname, "configproxy", "configproxy",
                                             ClusterSpec.Type.admin, rpcPort, "rpc");
-            hostInfos.add(new HostInfo(hostname, Collections.singletonList(configProxy)));
+            hostInfos.add(new HostInfo(hostname, List.of(configProxy)));
         });
         return new MockModel(hostInfos);
     }

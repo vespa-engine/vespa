@@ -15,7 +15,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,8 +61,8 @@ public class RoutingContextTestCase {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(
                 false,
-                Arrays.asList("foo", "bar", "baz/cox"),
-                Arrays.asList("foo", "bar")));
+                List.of("foo", "bar", "baz/cox"),
+                List.of("foo", "bar")));
         srcServer.mb.putProtocol(protocol);
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("myroute").addHop("myhop"))
@@ -83,8 +82,8 @@ public class RoutingContextTestCase {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(
                 false,
-                Arrays.asList("foo", "foo/bar", "foo/bar0/baz", "foo/bar1/baz", "foo/bar/baz/cox"),
-                Arrays.asList("foo/bar0/baz", "foo/bar1/baz")));
+                List.of("foo", "foo/bar", "foo/bar0/baz", "foo/bar1/baz", "foo/bar/baz/cox"),
+                List.of("foo/bar0/baz", "foo/bar1/baz")));
         srcServer.mb.putProtocol(protocol);
         srcServer.setupRouting(new RoutingTableSpec(SimpleProtocol.NAME)
                 .addRoute(new RouteSpec("myroute").addHop("myhop"))

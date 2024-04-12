@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -42,13 +41,13 @@ public class MetricsPacket {
         this.statusMessage = statusMessage;
         this.timestamp = timestamp;
         this.service = service;
-        this.metrics = metrics;
-        this.dimensions = dimensions;
+        this.metrics = Collections.unmodifiableMap(metrics);  // Retain order for tests
+        this.dimensions = Collections.unmodifiableMap(dimensions); // Retain order for tests
         this.consumers = Set.copyOf(consumers);
     }
 
-    public Map<MetricId, Number> metrics() { return unmodifiableMap(metrics); }
-    public Map<DimensionId, String> dimensions() { return unmodifiableMap(dimensions); }
+    public Map<MetricId, Number> metrics() { return metrics; }
+    public Map<DimensionId, String> dimensions() { return dimensions; }
     public Set<ConsumerId> consumers() { return consumers;}
 
     @Override
@@ -80,7 +79,7 @@ public class MetricsPacket {
         private long timestamp = 0L;
         private Map<MetricId, Number> metrics = new LinkedHashMap<>();
         private final Map<DimensionId, String> dimensions = new LinkedHashMap<>();
-        private Set<ConsumerId> consumers = Collections.emptySet();
+        private Set<ConsumerId> consumers = Set.of();
 
         public Builder(ServiceId service) {
             Objects.requireNonNull(service, "Service cannot be null.");
@@ -169,7 +168,7 @@ public class MetricsPacket {
             if ((extraConsumers != null) && !extraConsumers.isEmpty()) {
                 if (consumers.isEmpty()) {
                     if (extraConsumers.size() == 1) {
-                        consumers = Collections.singleton(extraConsumers.iterator().next());
+                        consumers = Set.of(extraConsumers.iterator().next());
                         return this;
                     }
                     consumers = new LinkedHashSet<>(extraConsumers.size());

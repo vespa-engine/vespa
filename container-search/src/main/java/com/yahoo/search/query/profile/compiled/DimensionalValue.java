@@ -2,18 +2,15 @@
 package com.yahoo.search.query.profile.compiled;
 
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.profile.DimensionBinding;
 import com.yahoo.search.query.profile.SubstituteString;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Contains the values a given key in a DimensionalMap may take for different dimensional contexts.
@@ -44,7 +41,7 @@ public class DimensionalValue<VALUE> {
     /** Returns the value matching this context, or null if none */
     public VALUE get(Map<String, String> context) {
         if (context == null)
-            context = Collections.emptyMap();
+            context = Map.of();
 
         for (BindingSpec spec : bindingSpecs) {
             if ( ! spec.matches(context)) continue;
@@ -156,8 +153,7 @@ public class DimensionalValue<VALUE> {
                 variants.add(binding);
 
                 // We're combining values for efficiency, so remove incorrect provenance info
-                if (value instanceof ValueWithSource) {
-                    ValueWithSource v1 = (ValueWithSource)value;
+                if (value instanceof ValueWithSource v1) {
                     ValueWithSource v2 = (ValueWithSource)newValue;
 
                     if (v1.source() != null && ! v1.source().equals(v2.source()))
@@ -220,14 +216,12 @@ public class DimensionalValue<VALUE> {
             private VALUE substituteIfRelative(VALUE value,
                                                Binding variant,
                                                Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
-                if (value instanceof ValueWithSource && ((ValueWithSource)value).value() instanceof SubstituteString) {
-                    ValueWithSource valueWithSource = (ValueWithSource)value;
+                if (value instanceof ValueWithSource valueWithSource && ((ValueWithSource)value).value() instanceof SubstituteString) {
                     SubstituteString substitute = (SubstituteString)valueWithSource.value();
                     if (substitute.hasRelative()) {
                         List<SubstituteString.Component> resolvedComponents = new ArrayList<>(substitute.components().size());
                         for (SubstituteString.Component component : substitute.components()) {
-                            if (component instanceof SubstituteString.RelativePropertyComponent) {
-                                SubstituteString.RelativePropertyComponent relativeComponent = (SubstituteString.RelativePropertyComponent)component;
+                            if (component instanceof SubstituteString.RelativePropertyComponent relativeComponent) {
                                 var substituteValues = lookupByLocalName(relativeComponent.fieldName(), entries);
                                 if (substituteValues == null)
                                     throw new IllegalArgumentException("Could not resolve local substitution '" +
@@ -274,8 +268,8 @@ public class DimensionalValue<VALUE> {
 
         /** Returns whether this context contains all the keys of this */
         public boolean matches(Map<String, String> context) {
-            for (int i = 0; i < dimensions.length; i++)
-                if ( ! context.containsKey(dimensions[i])) return false;
+            for (String dimension : dimensions)
+                if (!context.containsKey(dimension)) return false;
             return true;
         }
 

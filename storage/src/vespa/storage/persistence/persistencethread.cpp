@@ -14,6 +14,7 @@ PersistenceThread::PersistenceThread(PersistenceHandler & persistenceHandler, Fi
                                      uint32_t stripeId, framework::Component & component)
     : _persistenceHandler(persistenceHandler),
       _fileStorHandler(fileStorHandler),
+      _clock(component.getClock()),
       _stripeId(stripeId),
       _thread()
 {
@@ -36,14 +37,19 @@ PersistenceThread::run(framework::ThreadHandle& thread)
 
     vespalib::duration max_wait_time = vespalib::adjustTimeoutByDetectedHz(100ms);
     while (!thread.interrupted()) {
-        vespalib::steady_time now = vespalib::steady_clock::now();
+        vespalib::steady_time now = _clock.getMonotonicTime();
         thread.registerTick(framework::UNKNOWN_CYCLE, now);
 
         vespalib::steady_time deadline = now + max_wait_time;
-        FileStorHandler::LockedMessage lock(_fileStorHandler.getNextMessage(_stripeId, deadline));
-
-        if (lock.lock) {
-            _persistenceHandler.processLockedMessage(std::move(lock));
+        auto batch = _fileStorHandler.next_message_batch(_stripeId, now, deadline);
+        if (!batch.empty()) {
+            // Special-case single message batches, as actually scheduling a full batch has more
+            // overhead due to extra bookkeeping state and deferred reply-sending.
+            if (batch.size() == 1) {
+                _persistenceHandler.processLockedMessage(batch.release_as_single_msg());
+            } else {
+                _persistenceHandler.process_locked_message_batch(std::move(batch.lock), batch.messages);
+            }
         }
     }
     LOG(debug, "Closing down persistence thread");

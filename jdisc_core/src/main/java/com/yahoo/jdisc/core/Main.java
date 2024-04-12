@@ -6,8 +6,7 @@ import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.application.OsgiFramework;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Simon Thoresen Hult
@@ -31,7 +30,7 @@ public class Main {
     static Iterable<Module> newConfigModule() {
         String configFile = System.getProperty("jdisc.config.file");
         if (configFile == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         Module configModule;
         try {
@@ -39,7 +38,7 @@ public class Main {
         } catch (IOException e) {
             throw new IllegalStateException("Exception thrown while reading config file '" + configFile + "'.", e);
         }
-        return Arrays.asList(configModule);
+        return List.of(configModule);
     }
 
 }

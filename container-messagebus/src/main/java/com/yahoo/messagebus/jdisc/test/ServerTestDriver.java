@@ -14,7 +14,6 @@ import com.yahoo.messagebus.shared.ServerSession;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.test.SimpleProtocol;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +82,7 @@ public class ServerTestDriver {
         if (reply == null) {
             return null;
         }
-        List<Integer> lst = new LinkedList<>(Arrays.asList(errCodes));
+        List<Integer> lst = new LinkedList<>(List.of(errCodes));
         for (int i = 0, len = reply.getNumErrors(); i < len; ++i) {
             Error err = reply.getError(i);
             System.out.println(err);

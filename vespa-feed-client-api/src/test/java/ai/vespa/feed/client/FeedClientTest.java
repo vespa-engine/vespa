@@ -5,7 +5,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -89,9 +88,9 @@ class FeedClientTest {
         CompletableFuture<Result> f3 = CompletableFuture.completedFuture(new MyResult());
 
         MultiFeedException multiException = assertThrows(MultiFeedException.class, () -> FeedClient.await(f1, f2, f3));
-        Set<DocumentId> expectedDocsIds = new HashSet<>(Arrays.asList(docId1, docId2));
+        Set<DocumentId> expectedDocsIds = new HashSet<>(List.of(docId1, docId2));
         assertEquals(expectedDocsIds, new HashSet<>(multiException.documentIds()));
-        Set<FeedException> expectedExceptions = new HashSet<>(Arrays.asList(exceptionDoc1, exceptionDoc2));
+        Set<FeedException> expectedExceptions = new HashSet<>(List.of(exceptionDoc1, exceptionDoc2));
         assertEquals(expectedExceptions, new HashSet<>(multiException.feedExceptions()));
         assertEquals("2 feed operations failed", multiException.getMessage());
     }

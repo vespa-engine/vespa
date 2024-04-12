@@ -5,7 +5,8 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,7 +64,7 @@ public class FillingTestCase {
         hits.add(hit1);
         hits.add(hit2);
 
-        assertEquals(Collections.emptySet(), hits.getFilled());
+        assertEquals(Set.of(), hits.getFilled());
     }
 
     @Test
@@ -82,7 +83,7 @@ public class FillingTestCase {
         hits.add(hit2);
         hits.add(hit3);
 
-        assertEquals(Collections.singleton("summary1"), hits.getFilled());
+        assertEquals(Set.of("summary1"), hits.getFilled());
     }
 
     private Hit createNonFilled(String id) {

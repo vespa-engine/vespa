@@ -9,7 +9,6 @@ import com.yahoo.search.searchchain.Execution;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -22,12 +21,12 @@ public class GroupingQueryParserTestCase {
 
     @Test
     void requireThatNoRequestIsSkipped() {
-        assertEquals(Collections.emptyList(), executeQuery(null, null, null));
+        assertEquals(List.of(), executeQuery(null, null, null));
     }
 
     @Test
     void requireThatEmptyRequestIsSkipped() {
-        assertEquals(Collections.emptyList(), executeQuery("", null, null));
+        assertEquals(List.of(), executeQuery("", null, null));
     }
 
     @Test

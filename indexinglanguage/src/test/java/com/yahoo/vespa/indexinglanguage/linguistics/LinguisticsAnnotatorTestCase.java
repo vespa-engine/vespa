@@ -18,7 +18,9 @@ import com.yahoo.language.simple.SimpleToken;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.*;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -90,7 +92,7 @@ public class LinguisticsAnnotatorTestCase {
     public void requireThatTermAnnotationsAreEmptyIfOrigIsLowerCase() {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
         expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM));
-        for (boolean specialToken : Arrays.asList(true, false)) {
+        for (boolean specialToken : List.of(true, false)) {
             for (TokenType type : TokenType.values()) {
                 if (!specialToken && !type.isIndexable()) {
                     continue;
@@ -104,7 +106,7 @@ public class LinguisticsAnnotatorTestCase {
     public void requireThatTermAnnotationsPreserveCasing() {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
         expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("BaR")));
-        for (boolean specialToken : Arrays.asList(true, false)) {
+        for (boolean specialToken : List.of(true, false)) {
             for (TokenType type : TokenType.values()) {
                 if (!specialToken && !type.isIndexable()) {
                     continue;
@@ -153,7 +155,7 @@ public class LinguisticsAnnotatorTestCase {
     public void requireThatTermReplacementsAreApplied() {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
         expected.spanList().span(0, 3).annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("bar")));
-        for (boolean specialToken : Arrays.asList(true, false)) {
+        for (boolean specialToken : List.of(true, false)) {
             for (TokenType type : TokenType.values()) {
                 if (!specialToken && !type.isIndexable()) {
                     continue;
@@ -161,7 +163,7 @@ public class LinguisticsAnnotatorTestCase {
                 assertAnnotations(expected, "foo",
                                   new AnnotatorConfig(),
                                   newLinguistics(List.of(token("foo", "foo", type, specialToken)),
-                                                 Collections.singletonMap("foo", "bar")));
+                                                 Map.of("foo", "bar")));
             }
         }
     }
@@ -175,7 +177,7 @@ public class LinguisticsAnnotatorTestCase {
         val.setSpanTree(spanTree);
 
         Linguistics linguistics = newLinguistics(List.of(token("foo", "bar", TokenType.ALPHABETIC, false)),
-                                                 Collections.<String, String>emptyMap());
+                                                 Map.of());
         assertTrue(new LinguisticsAnnotator(linguistics, new AnnotatorConfig()).annotate(val));
         assertEquals(spanTree, val.getSpanTree(SpanTrees.LINGUISTICS));
     }
@@ -244,11 +246,11 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     private static void assertAnnotations(SpanTree expected, String value, Token... tokens) {
-        assertAnnotations(expected, value, new AnnotatorConfig(), newLinguistics(Arrays.asList(tokens), Collections.emptyMap()));
+        assertAnnotations(expected, value, new AnnotatorConfig(), newLinguistics(List.of(tokens), Map.of()));
     }
 
     private static void assertAnnotations(SpanTree expected, String value, AnnotatorConfig config, Token... tokens) {
-        assertAnnotations(expected, value, config, newLinguistics(Arrays.asList(tokens), Collections.emptyMap()));
+        assertAnnotations(expected, value, config, newLinguistics(List.of(tokens), Map.of()));
     }
 
     private static void assertAnnotations(SpanTree expected, String str, AnnotatorConfig config, Linguistics linguistics) {
@@ -272,9 +274,12 @@ public class LinguisticsAnnotatorTestCase {
         }
 
         private Token replace(Token token, Map<String, String> replacementTerms) {
-            var simpleToken = (SimpleToken)token;
-            simpleToken.setTokenString(replacementTerms.getOrDefault(token.getTokenString(), token.getTokenString()));
-            return simpleToken;
+            String tokenString = token.getTokenString();
+            if (tokenString != null && !replacementTerms.isEmpty()) {
+                var simpleToken = (SimpleToken)token;
+                simpleToken.setTokenString(replacementTerms.getOrDefault(token.getTokenString(), token.getTokenString()));
+            }
+            return token;
         }
 
         @Override

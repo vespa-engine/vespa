@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.utils;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,7 +45,7 @@ public class DocType {
     }
 
     public static String listToXml(DocType... docTypes) {
-        return listToXml(Arrays.asList(docTypes));
+        return listToXml(List.of(docTypes));
     }
 
     public static String listToXml(List<DocType> docTypes) {

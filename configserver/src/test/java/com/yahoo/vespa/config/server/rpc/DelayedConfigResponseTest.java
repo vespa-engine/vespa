@@ -17,7 +17,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,7 +79,7 @@ public class DelayedConfigResponseTest {
 
     private JRTServerConfigRequest createRequest(String configName, String configId, long generation, long timeout, String namespace) {
         Request request = createWithParams(new ConfigKey<>(configName, configId, namespace, null),
-                                           DefContent.fromList(Collections.emptyList()), "fromHost",
+                                           DefContent.fromList(List.of()), "fromHost",
                                            PayloadChecksums.empty(), generation, timeout, Trace.createDummy(),
                                            CompressionType.UNCOMPRESSED, Optional.empty())
                 .getRequest();

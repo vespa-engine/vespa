@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -270,7 +269,7 @@ public class RoutingTestCase {
         dstSession.acknowledge(msg);
         assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("[APP_TRANSIENT_ERROR @ localhost]: err1",
+        assertTrace(List.of("[APP_TRANSIENT_ERROR @ localhost]: err1",
                         "-[APP_TRANSIENT_ERROR @ localhost]: err1",
                         "[APP_TRANSIENT_ERROR @ localhost]: err2",
                         "-[APP_TRANSIENT_ERROR @ localhost]: err2"),
@@ -298,7 +297,7 @@ public class RoutingTestCase {
         dstSession.acknowledge(msg);
         assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("Source session accepted a 3 byte message. 1 message(s) now pending.",
+        assertTrace(List.of("Source session accepted a 3 byte message. 1 message(s) now pending.",
                         "Running routing policy 'Custom'.",
                         "Selecting [" + dstSessName + "].",
                         "Component '" + dstSessName + "' selected by policy 'Custom'.",
@@ -371,7 +370,7 @@ public class RoutingTestCase {
         dstSession.acknowledge(msg);
         assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("Selecting [" + dstSessName + "].",
+        assertTrace(List.of("Selecting [" + dstSessName + "].",
                         "[APP_TRANSIENT_ERROR @ localhost]",
                         "-[APP_TRANSIENT_ERROR @ localhost]",
                         "Merged [" + dstSessName + "].",
@@ -397,7 +396,7 @@ public class RoutingTestCase {
         dstSession.acknowledge(msg);
         assertNotNull(reply = ((Receptor) srcSession.getReplyHandler()).getReply(60));
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("Selecting [" + dstSessName + "].",
+        assertTrace(List.of("Selecting [" + dstSessName + "].",
                         "[APP_TRANSIENT_ERROR @ localhost]",
                         "-[APP_TRANSIENT_ERROR @ localhost]",
                         "Merged [" + dstSessName + "].",
@@ -421,7 +420,7 @@ public class RoutingTestCase {
         assertNotNull(reply);
         assertEquals(1, reply.getNumErrors());
         assertEquals(ErrorCode.NO_ADDRESS_FOR_SERVICE, reply.getError(0).getCode());
-        assertTrace(Arrays.asList("Selecting [" + dstSessName + ", dst/unknown].",
+        assertTrace(List.of("Selecting [" + dstSessName + ", dst/unknown].",
                         "[NO_ADDRESS_FOR_SERVICE @ localhost]",
                         "Sending reply",
                         "Merged [" + dstSessName + ", dst/unknown]."),
@@ -439,7 +438,7 @@ public class RoutingTestCase {
         assertNotNull(reply);
         assertEquals(1, reply.getNumErrors());
         assertEquals(ErrorCode.NO_ADDRESS_FOR_SERVICE, reply.getError(0).getCode());
-        assertTrace(Arrays.asList("Selecting [dst/unknown].",
+        assertTrace(List.of("Selecting [dst/unknown].",
                         "[NO_ADDRESS_FOR_SERVICE @ localhost]",
                         "Merged [dst/unknown]."),
                 reply.getTrace());
@@ -479,7 +478,7 @@ public class RoutingTestCase {
         Reply reply = ((Receptor) srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList("[NO_ADDRESS_FOR_SERVICE @ localhost]",
+        assertTrace(List.of("[NO_ADDRESS_FOR_SERVICE @ localhost]",
                         "-[NO_ADDRESS_FOR_SERVICE @ localhost]",
                         "Sending message",
                         "-Sending message"),
@@ -537,7 +536,7 @@ public class RoutingTestCase {
                                                                         CustomPolicyFactory.parseRoutes(param),
                                                                         0));
         protocol.addPolicyFactory("SetReply", param -> new SetReplyPolicy(false,
-                                                                  Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR, ErrorCode.APP_FATAL_ERROR),
+                                                                  List.of(ErrorCode.APP_TRANSIENT_ERROR, ErrorCode.APP_FATAL_ERROR),
                                                                   param));
         srcServer.mb.putProtocol(protocol);
         assertTrue(srcSession
@@ -550,7 +549,7 @@ public class RoutingTestCase {
         assertEquals(1, reply.getNumErrors());
         assertEquals(ErrorCode.APP_FATAL_ERROR, reply.getError(0).getCode());
         assertEquals("foo", reply.getError(0).getMessage());
-        assertTrace(Arrays.asList("Resolving '[SetReply:foo]'.",
+        assertTrace(List.of("Resolving '[SetReply:foo]'.",
                         "Resolving '" + dstSessName + "'.",
                         "Resender resending message.",
                         "Resolving '" + dstSessName + "'.",
@@ -722,7 +721,7 @@ public class RoutingTestCase {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(false));
         protocol.addPolicyFactory("SetReply", param -> new SetReplyPolicy(false,
-                                                                  Arrays.asList(ErrorCode.APP_TRANSIENT_ERROR,
+                                                                  List.of(ErrorCode.APP_TRANSIENT_ERROR,
                                                                                 ErrorCode.APP_TRANSIENT_ERROR,
                                                                                 ErrorCode.APP_FATAL_ERROR),
                                                                   param));
@@ -870,7 +869,7 @@ public class RoutingTestCase {
         Reply reply = ((Receptor)srcSession.getReplyHandler()).getReply(60);
         assertNotNull(reply);
         assertFalse(reply.hasErrors());
-        assertTrace(Arrays.asList(expectedTrace), reply.getTrace());
+        assertTrace(List.of(expectedTrace), reply.getTrace());
     }
 
     public static void assertTrace(List<String> expected, Trace trace) {

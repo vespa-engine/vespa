@@ -5,7 +5,6 @@ import com.yahoo.test.json.JsonTestHelper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,13 +30,13 @@ public class TestDescriptorTest {
         Assertions.assertIterableEquals(List.of("ai.vespa.test.SystemTest1", "ai.vespa.test.SystemTest2"), systemTests);
 
         var stagingTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.stagingtest);
-        Assertions.assertIterableEquals(Collections.emptyList(), stagingTests);
+        Assertions.assertIterableEquals(List.of(), stagingTests);
 
         var stagingSetupTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.stagingtest);
-        Assertions.assertIterableEquals(Collections.emptyList(), stagingSetupTests);
+        Assertions.assertIterableEquals(List.of(), stagingSetupTests);
 
         var productionTests = testClassDescriptor.getConfiguredTests(TestDescriptor.TestCategory.productiontest);
-        Assertions.assertIterableEquals(Collections.emptyList(), productionTests);
+        Assertions.assertIterableEquals(List.of(), productionTests);
     }
 
     @Test

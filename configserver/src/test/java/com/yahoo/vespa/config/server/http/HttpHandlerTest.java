@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -39,7 +39,7 @@ public class HttpHandlerTest {
                 HttpRequest.createTestRequest("foo",
                                               com.yahoo.jdisc.http.HttpRequest.Method.GET,
                                               null,
-                                              Collections.singletonMap("timeout", "1.5")), Duration.ofSeconds(5)).toMillis());
+                                              Map.of("timeout", "1.5")), Duration.ofSeconds(5)).toMillis());
     }
 
     private static class HttpTestHandler extends HttpHandler {

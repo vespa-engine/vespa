@@ -53,7 +53,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -219,7 +218,7 @@ public class DeployTester {
         public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
             if ( ! validationParameters.ignoreValidationErrors())
                 throw new IllegalArgumentException("Model building fails");
-            return new ModelCreateResult(createModel(modelContext), Collections.emptyList());
+            return new ModelCreateResult(createModel(modelContext), List.of());
         }
 
     }

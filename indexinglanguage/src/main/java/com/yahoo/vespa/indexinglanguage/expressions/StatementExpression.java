@@ -30,7 +30,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     private String outputField;
 
     public StatementExpression(Expression... lst) {
-        this(Arrays.asList(lst));
+        this(Arrays.asList(lst)); //TODO Can contain null - necessary ?
     }
 
     public StatementExpression(Iterable<Expression> lst) {

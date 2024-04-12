@@ -4,7 +4,7 @@ package com.yahoo.prelude.query;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.regex.PatternSyntaxException;
@@ -211,7 +211,7 @@ public class ItemsCommonStuffTestCase {
         w.setConnectivity(v, 1.0);
         String expected = "puppy";
         String expected2 = "kvalp";
-        EquivItem e = new EquivItem(w, Arrays.asList(expected, expected2));
+        EquivItem e = new EquivItem(w, List.of(expected, expected2));
         assertEquals(1.0, e.getConnectivity(), 1e-9);
         assertSame(v, e.getConnectedItem());
         assertEquals(expected, ((WordItem) e.getItem(1)).getWord());

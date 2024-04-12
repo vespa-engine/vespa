@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.ConfigTransformer;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +54,7 @@ public class ConfigInstancePayloadTest {
                 doublearr(123.0).
                 stringarr("bar").
                 enumarr(Enumarr.VALUES).
-                refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
+                refarr(List.of(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
                 pathArr(FileReference.mockFileReferenceForUnitTesting(new File("pom.xml"))).
                 intMap("one", 1).

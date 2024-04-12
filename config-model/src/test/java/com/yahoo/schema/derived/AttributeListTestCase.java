@@ -14,6 +14,7 @@ import java.util.Iterator;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests attribute deriving
@@ -124,6 +125,40 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
         assertAttribute("str_map.value", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertAttribute("int_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertFalse(attributes.hasNext());
+    }
+
+    @Test
+    void bad_map_attribute() throws ParseException {
+        run_bad_struct_or_map_attribute("map<string,string>");
+    }
+
+    @Test
+    void bad_array_of_struct_attribute() throws ParseException {
+        run_bad_struct_or_map_attribute("array<s>");
+    }
+
+    private void run_bad_struct_or_map_attribute(String type) throws ParseException {
+        run_bad_struct_or_map_attribute(type, false, true);
+        run_bad_struct_or_map_attribute(type, true, false);
+        run_bad_struct_or_map_attribute(type, true, true);
+    }
+
+    private void run_bad_struct_or_map_attribute(String type, boolean fs, boolean ilscript) throws ParseException {
+        var exception = assertThrows(IllegalArgumentException.class, () -> ApplicationBuilder.createFromString(
+                joinLines("search test {",
+                        "  document test {",
+                        "    struct s {",
+                        "       field a type string { }",
+                        "    }",
+                        "    field metadata type " + type + " {",
+                        "      indexing: summary" + (ilscript ? "| attribute" : ""),
+                        "      " + (fs ? "attribute: fast-search" : ""),
+                        "    }",
+                        "  }",
+                        "}")).getSchema());
+        assertEquals("For schema 'test': Field 'metadata' of type '" + type + "' cannot be an attribute." +
+                " Instead specify the struct fields to be searchable as attribute",
+                exception.getMessage());
     }
 
 }

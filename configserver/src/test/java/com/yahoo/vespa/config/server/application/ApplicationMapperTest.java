@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,7 +51,7 @@ public class ApplicationMapperTest {
 
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionThrows() {
-        applicationMapper.register(appId, ApplicationVersions.fromList(Arrays.asList(applications.get(0), applications.get(2))));
+        applicationMapper.register(appId, ApplicationVersions.fromList(List.of(applications.get(0), applications.get(2))));
         applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1)), Instant.now());
     }
 

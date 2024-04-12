@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -148,7 +148,7 @@ public class FileDownloaderTest {
             File barFile = new File(subdir, "really-long-filename-over-100-bytes-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
             IOUtils.writeFile(barFile, "bar", false);
 
-            File tarFile = new FileReferenceCompressor(compressed, gzip).compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
+            File tarFile = new FileReferenceCompressor(compressed, gzip).compress(tempPath.toFile(), List.of(fooFile, barFile), new File(tempPath.toFile(), filename));
             byte[] tarredContent = IOUtils.readFileBytes(tarFile);
             receiveFile(fileReference, filename, compressed, tarredContent);
             Optional<File> downloadedFile = getFile(fileReference);

@@ -13,7 +13,7 @@
 
 namespace storage::framework::defaultimplementation {
 
-struct RealClock : public Clock {
+struct RealClock final : public Clock {
     vespalib::steady_time getMonotonicTime() const override;
     vespalib::system_time getSystemTime() const override;
 };

@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author baldersheim
@@ -19,7 +19,7 @@ public class MathATanHFunction extends FunctionNode {
     }
 
     private MathATanHFunction(String label, Integer level, GroupingExpression exp) {
-        super("math.atanh", label, level, Arrays.asList(exp));
+        super("math.atanh", label, level, List.of(exp));
     }
 
     @Override

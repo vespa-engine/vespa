@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,7 +45,7 @@ public class ResponseDispatchTestCase {
             ReadableContentChannel content = new ReadableContentChannel();
             FutureResponse handler = new FutureResponse(content);
             ByteBuffer buf = ByteBuffer.allocate(69);
-            ResponseDispatch.newInstance(69, Arrays.asList(buf)).dispatch(handler);
+            ResponseDispatch.newInstance(69, List.of(buf)).dispatch(handler);
             Response response = handler.get(600, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(69, response.getStatus());
@@ -57,7 +56,7 @@ public class ResponseDispatchTestCase {
             ReadableContentChannel content = new ReadableContentChannel();
             FutureResponse handler = new FutureResponse(content);
             ByteBuffer buf = ByteBuffer.allocate(69);
-            ResponseDispatch.newInstance(69, Arrays.asList(buf)).dispatch(handler);
+            ResponseDispatch.newInstance(69, List.of(buf)).dispatch(handler);
             Response response = handler.get(600, TimeUnit.SECONDS);
             assertNotNull(response);
             assertEquals(69, response.getStatus());
@@ -69,7 +68,7 @@ public class ResponseDispatchTestCase {
             FutureResponse handler = new FutureResponse(content);
             ByteBuffer buf = ByteBuffer.allocate(69);
             Response sentResponse = new Response(69);
-            ResponseDispatch.newInstance(sentResponse, Arrays.asList(buf)).dispatch(handler);
+            ResponseDispatch.newInstance(sentResponse, List.of(buf)).dispatch(handler);
             Response receivedResponse = handler.get(600, TimeUnit.SECONDS);
             assertSame(sentResponse, receivedResponse);
             assertSame(buf, content.read());
@@ -80,7 +79,7 @@ public class ResponseDispatchTestCase {
     @Test
     void requireThatResponseCanBeDispatched() throws Exception {
         final Response response = new Response(Response.Status.OK);
-        final List<ByteBuffer> writtenContent = Arrays.asList(ByteBuffer.allocate(6), ByteBuffer.allocate(9));
+        final List<ByteBuffer> writtenContent = List.of(ByteBuffer.allocate(6), ByteBuffer.allocate(9));
         ResponseDispatch dispatch = new ResponseDispatch() {
 
             @Override

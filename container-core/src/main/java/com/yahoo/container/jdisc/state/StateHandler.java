@@ -31,7 +31,6 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -373,7 +372,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
 
     private boolean isPrometheusRequest(String query) {
         if (query == null) return false;
-        return Arrays.asList(query.split("&")).contains("format=prometheus");
+        return List.of(query.split("&")).contains("format=prometheus");
     }
 
     private String prometheusSanitizedName(String name) {

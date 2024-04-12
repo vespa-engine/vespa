@@ -17,7 +17,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -101,7 +100,7 @@ public class ConfigConvergenceCheckerTest {
         }
 
         { // Model with two hosts on different generations
-            MockModel model = new MockModel(Arrays.asList(
+            MockModel model = new MockModel(List.of(
                     MockModel.createContainerHost(service.getHost(), service.getPort()),
                     MockModel.createContainerHost(service2.getHost(), service2.getPort()))
             );

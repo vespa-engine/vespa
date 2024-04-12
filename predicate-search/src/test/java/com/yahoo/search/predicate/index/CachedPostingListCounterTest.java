@@ -6,7 +6,6 @@ import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -107,12 +106,12 @@ public class CachedPostingListCounterTest {
     }
 
     private static List<PostingList> list(PostingList... postingLists) {
-        return Arrays.asList(postingLists);
+        return List.of(postingLists);
     }
 
     private static PostingList postingList(Integer... docIds) {
         PostingList postingList = mock(PostingList.class);
-        when(postingList.getDocIds()).thenReturn(Ints.toArray(Arrays.asList((docIds))));
+        when(postingList.getDocIds()).thenReturn(Ints.toArray(List.of((docIds))));
         return postingList;
     }
 

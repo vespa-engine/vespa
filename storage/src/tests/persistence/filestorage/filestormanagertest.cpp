@@ -43,6 +43,7 @@ LOG_SETUP(".filestormanagertest");
 
 using std::unique_ptr;
 using document::Document;
+using document::BucketId;
 using namespace storage::api;
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
@@ -405,6 +406,38 @@ TEST_F(FileStorManagerTest, put) {
     }
 }
 
+TEST_F(FileStorManagerTest, feed_op_batch_updates_bucket_db_and_reply_bucket_info) {
+    PersistenceHandlerComponents c(*this);
+    c.filestorHandler->set_max_feed_op_batch_size(10);
+    BucketId bucket_id(16, 1);
+    createBucket(bucket_id);
+    constexpr uint32_t n = 10;
+    // No persistence thread started yet, so no chance of racing
+    for (uint32_t i = 0; i < n; ++i) {
+        auto put = make_put_command(120, vespalib::make_string("id:foo:testdoctype1:n=1:%u", i), Timestamp(1000) + i);
+        put->setAddress(_storage3);
+        c.filestorHandler->schedule(put);
+    }
+    auto pt = c.make_disk_thread();
+    c.filestorHandler->flush(true);
+    c.top.waitForMessages(n, _waitTime);
+    c.executor.sync_all(); // Ensure all async reply processing tasks must have completed.
+    api::BucketInfo expected_bucket_info;
+    {
+        StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bucket_id, "foo"));
+        ASSERT_TRUE(entry.exists());
+        EXPECT_EQ(entry->getBucketInfo().getDocumentCount(), n);
+        expected_bucket_info = entry->getBucketInfo();
+    }
+    // All replies should have the _same_ bucket info due to being processed in the same batch.
+    auto replies = c.top.getRepliesOnce();
+    for (auto& reply : replies) {
+        auto actual_bucket_info = dynamic_cast<api::PutReply&>(*reply).getBucketInfo();
+        EXPECT_EQ(actual_bucket_info, expected_bucket_info);
+    }
+    c.filestorHandler->close(); // Ensure persistence thread is no longer in message fetch code
+}
+
 TEST_F(FileStorManagerTest, running_task_against_unknown_bucket_fails) {
     TestFileStorComponents c(*this);
 
@@ -726,7 +759,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
         filestorHandler.schedule(cmd);
     }
 
-    std::this_thread::sleep_for(51ms);
+    _node->getClock().addMilliSecondsToTime(51);
     for (;;) {
         auto lock = filestorHandler.getNextMessage(stripeId);
         if (lock.lock.get()) {

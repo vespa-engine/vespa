@@ -27,7 +27,8 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -383,7 +384,7 @@ public class VespaSerializerTestCase {
     private static void newGroupingRequest(Query query, GroupingOperation grouping, Continuation... continuations) {
         GroupingRequest request = GroupingRequest.newInstance(query);
         request.setRootOperation(grouping);
-        request.continuations().addAll(Arrays.asList(continuations));
+        request.continuations().addAll(List.of(continuations));
     }
 
     @Test

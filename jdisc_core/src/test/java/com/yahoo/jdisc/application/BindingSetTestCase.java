@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -480,13 +479,13 @@ public class BindingSetTestCase {
             for (int i = 0; i < expected.length; ++i) {
                 actual.add(expected[(off + i) % expected.length]);
             }
-            assertOrder(Arrays.asList(expected), actual);
+            assertOrder(List.of(expected), actual);
 
             actual = new ArrayList<>();
             for (int i = expected.length; --i >= 0; ) {
                 actual.add(expected[(off + i) % expected.length]);
             }
-            assertOrder(Arrays.asList(expected), actual);
+            assertOrder(List.of(expected), actual);
         }
     }
 

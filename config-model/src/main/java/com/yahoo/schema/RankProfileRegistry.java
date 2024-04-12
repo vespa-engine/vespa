@@ -4,9 +4,7 @@ package com.yahoo.schema;
 import com.yahoo.schema.document.SDDocumentType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +25,7 @@ public class RankProfileRegistry {
     private static final String globalRankProfilesKey = "[global]";
 
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
-    static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
+    static final Set<String> overridableRankProfileNames = Set.of("default", "unranked");
 
     public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Schema schema) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();

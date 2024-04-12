@@ -23,7 +23,6 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -339,7 +338,7 @@ public class FederationSearcherTest {
 
         @Override
         public Collection<FederationTarget<String>> getTargets(Query query, ChainRegistry<Searcher> searcherChainRegistry) {
-            return Arrays.asList(createTarget(1), createTarget(2));
+            return List.of(createTarget(1), createTarget(2));
         }
 
         private FederationTarget<String> createTarget(int number) {

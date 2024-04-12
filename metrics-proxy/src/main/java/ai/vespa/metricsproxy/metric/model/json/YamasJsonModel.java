@@ -19,9 +19,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 
 /**
  * Datamodel for Yamas execute output
@@ -80,7 +77,7 @@ public class YamasJsonModel {
     }
 
     List<Metric> getMetricsList() {
-        if (metrics == null) return emptyList();
+        if (metrics == null) return List.of();
 
         return metrics.keySet().stream()
                 .map(name -> new Metric(MetricId.toMetricId(name), metrics.get(name)))
@@ -88,14 +85,14 @@ public class YamasJsonModel {
     }
 
     Map<DimensionId, String> getDimensionsById() {
-        if (dimensions == null) return emptyMap();
+        if (dimensions == null) return Map.of();
 
         return dimensions.keySet().stream().collect(toLinkedMap(DimensionId::toDimensionId,
                                                                 name -> dimensions.get(name)));
     }
 
     Set<ConsumerId> getYamasConsumers() {
-        if (routing == null || routing.get("yamas") == null) return emptySet();
+        if (routing == null || routing.get("yamas") == null) return Set.of();
 
         return routing.get("yamas").namespaces.stream()
                 .map(ConsumerId::toConsumerId)

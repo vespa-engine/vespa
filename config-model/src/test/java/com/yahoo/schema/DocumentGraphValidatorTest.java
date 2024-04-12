@@ -9,7 +9,6 @@ import com.yahoo.schema.document.TemporarySDField;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,14 +141,13 @@ public class DocumentGraphValidatorTest {
         Schema campaignSchema = new Schema(name, MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType(name);
         campaignSchema.addDocument(document);
-        document.setDocumentReferences(new DocumentReferences(Collections.emptyMap()));
+        document.setDocumentReferences(new DocumentReferences(Map.of()));
         Arrays.stream(parents)
                 .map(Schema::getDocument)
                 .forEach(document::inherit);
         return campaignSchema;
     }
 
-    @SuppressWarnings("deprecation")
     private static void createDocumentReference(Schema from, Schema to, String refFieldName) {
         SDDocumentType fromDocument = from.getDocument();
         SDField refField = new TemporarySDField(fromDocument, refFieldName, NewDocumentReferenceDataType.forDocumentName(to.getName()));

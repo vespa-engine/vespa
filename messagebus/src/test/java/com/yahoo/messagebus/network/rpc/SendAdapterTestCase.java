@@ -26,7 +26,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -87,7 +86,7 @@ public class SendAdapterTestCase {
 
     @Test
     void requireThatMessagesCanBeSentAcrossAllSupportedVersions() {
-        List<Version> versions = Arrays.asList(
+        List<Version> versions = List.of(
                 new Version(6, 149),
                 new Version(9, 999)
         );

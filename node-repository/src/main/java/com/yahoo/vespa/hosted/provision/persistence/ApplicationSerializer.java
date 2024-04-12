@@ -56,7 +56,6 @@ public class ApplicationSerializer {
     private static final String maxResourcesKey = "max";
     private static final String groupSizeKey = "groupSize";
     private static final String requiredKey = "required";
-    private static final String suggestedKey = "suggested";
     private static final String suggestionsKey = "suggestionsKey";
     private static final String clusterInfoKey = "clusterInfo";
     private static final String bcpDeadlineKey = "bcpDeadline";
@@ -141,8 +140,6 @@ public class ApplicationSerializer {
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
         toSlime(cluster.groupSize(), clusterObject.setObject(groupSizeKey));
         clusterObject.setBool(requiredKey, cluster.required());
-        // TODO(olaa): Remove 'suggested' once all configservers have stopped reading entry
-        toSlime(Autoscaling.empty(), clusterObject.setObject(suggestedKey));
         toSlime(cluster.suggestions(), clusterObject.setArray(suggestionsKey));
         toSlime(cluster.target(), clusterObject.setObject(targetKey));
         if (! cluster.clusterInfo().isEmpty())

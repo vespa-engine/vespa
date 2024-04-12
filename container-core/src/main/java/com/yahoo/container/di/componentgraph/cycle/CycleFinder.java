@@ -6,13 +6,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinder.State.BLACK;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinder.State.GRAY;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinder.State.WHITE;
 import static java.util.logging.Level.FINE;
-import static java.util.Collections.singletonList;
 
 
 /**
@@ -55,7 +53,7 @@ public class CycleFinder<T> {
         resetState();
         for (T vertex : graph.getVertices()) {
             if (colors.get(vertex) == WHITE) {
-                if (visitDepthFirst(vertex, new ArrayList<>(singletonList(vertex)))) {
+                if (visitDepthFirst(vertex, new ArrayList<>(List.of(vertex)))) {
                     if (cycle == null) throw new IllegalStateException("Null cycle - this should never happen");
                     if (cycle.isEmpty()) throw new IllegalStateException("Empty cycle - this should never happen");
                     log.log(FINE, () -> "Cycle detected: " + cycle);

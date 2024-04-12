@@ -30,8 +30,8 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -73,7 +73,7 @@ public class SuperModelControllerTest {
     public void test_unknown_config_definition() {
         PayloadChecksums payloadChecksums = PayloadChecksums.empty();
         Request request = createWithParams(new ConfigKey<>("foo", "id", "bar", null),
-                                           DefContent.fromList(Collections.emptyList()), "fromHost",
+                                           DefContent.fromList(List.of()), "fromHost",
                                            payloadChecksums, 1, 1, Trace.createDummy(),
                                            CompressionType.UNCOMPRESSED, Optional.empty())
                 .getRequest();

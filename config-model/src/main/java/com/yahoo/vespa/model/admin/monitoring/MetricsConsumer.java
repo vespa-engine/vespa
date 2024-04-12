@@ -7,7 +7,6 @@ import ai.vespa.metrics.set.Vespa9VespaMetricSet;
 import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.http.ValuesFetcher;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,7 +70,7 @@ public class MetricsConsumer {
     }
 
     public static MetricsConsumer consumer(String id, MetricSet ... metricSets) {
-        return new MetricsConsumer(id, new MetricSet(id + "-consumer-metrics", List.of(), Arrays.asList(metricSets)));
+        return new MetricsConsumer(id, new MetricSet(id + "-consumer-metrics", List.of(), List.of(metricSets)));
     }
 
 }

@@ -5,7 +5,6 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.Curator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -62,7 +61,7 @@ public class CuratorOperations {
      * This does not fail, but returns an empty list if the path does not exist.
      */
     public static List<CuratorOperation> deleteAll(String path, Curator curator) {
-        if ( ! curator.exists(Path.fromString(path))) return Collections.emptyList();
+        if ( ! curator.exists(Path.fromString(path))) return List.of();
 
         List<CuratorOperation> operations = new ArrayList<>();
         deleteRecursively(Path.fromString(path), operations, curator);

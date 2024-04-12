@@ -16,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -226,7 +225,7 @@ public class HttpRequest extends Request {
     public List<Cookie> decodeCookieHeader() {
         List<String> cookies = headers().get(HttpHeaders.Names.COOKIE);
         if (cookies == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         List<Cookie> ret = new LinkedList<>();
         for (String cookie : cookies) {

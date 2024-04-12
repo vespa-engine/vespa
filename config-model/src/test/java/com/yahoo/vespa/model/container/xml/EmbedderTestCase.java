@@ -158,7 +158,7 @@ public class EmbedderTestCase {
         var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
         var cluster = model.getContainerClusters().get("container");
         var embedderCfg = assertBertEmbedderComponentPresent(cluster);
-        assertEquals("application-url", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals("files/vocab.txt", modelReference(embedderCfg, "tokenizerVocab").path().orElseThrow().value());
         assertEquals("", embedderCfg.transformerTokenTypeIds());
     }

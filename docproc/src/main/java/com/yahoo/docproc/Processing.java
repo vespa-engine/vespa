@@ -9,7 +9,6 @@ import com.yahoo.document.DocumentOperation;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -221,7 +220,7 @@ public final class Processing extends ProcessingAccess {
     @Override
     protected List<DocumentOperation> getOnceOperationsToBeProcessed() {
         if (operationsGotten)
-            return Collections.emptyList();
+            return List.of();
 
         operationsGotten = true;
         return getDocumentOperations();

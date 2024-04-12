@@ -27,7 +27,7 @@ public class CollectionUtilTest {
     @Test
     public void testMkString() {
         assertEquals("1, 2, 3, 4",
-                CollectionUtil.mkString(Arrays.asList(1, 2, 3, 4), ", "));
+                CollectionUtil.mkString(List.of(1, 2, 3, 4), ", "));
     }
 
     @Test
@@ -35,16 +35,14 @@ public class CollectionUtilTest {
         List<Integer> l2Copy = new ArrayList<>();
         l2Copy.addAll(l2);
         shuffle();
-        assertTrue(CollectionUtil.equalContentsIgnoreOrder(
-                l2, l2Copy));
-        assertFalse(CollectionUtil.equalContentsIgnoreOrder(
-                l1, l2));
+        assertTrue(CollectionUtil.equalContentsIgnoreOrder(l2, l2Copy));
+        assertFalse(CollectionUtil.equalContentsIgnoreOrder(l1, l2));
     }
 
     @Test
     public void testSymmetricDifference() {
         assertTrue(CollectionUtil.equalContentsIgnoreOrder(
-                Arrays.asList(1, 2, 3),
+                List.of(1, 2, 3),
                 CollectionUtil.symmetricDifference(l1, l2)));
     }
 }

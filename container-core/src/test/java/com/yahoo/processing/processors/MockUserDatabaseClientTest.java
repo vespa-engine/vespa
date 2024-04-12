@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,7 +30,7 @@ public class MockUserDatabaseClientTest {
         Request request = null;
         try {
             Chain<Processor> chain = new Chain<>("default", new MockUserDatabaseClient());
-            setupJDisc(Collections.singletonList(chain));
+            setupJDisc(List.of(chain));
             request = createRequest();
             Response response = Execution.createRoot(chain, 0, Execution.Environment.createEmpty()).process(request);
             MockUserDatabaseClient.User user = (MockUserDatabaseClient.User) response.data().request().properties().get("User");

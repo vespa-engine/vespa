@@ -4,7 +4,6 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.NetworkPorts;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,7 @@ public class HostPorts {
 
     private int allocatedPorts = 0;
 
-    private PortFinder portFinder = new PortFinder(Collections.emptyList());
+    private PortFinder portFinder = new PortFinder(List.of());
 
     private boolean flushed = false;
     private Optional<NetworkPorts> networkPortsList = Optional.empty();

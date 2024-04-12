@@ -10,7 +10,6 @@ import org.apache.http.message.BasicStatusLine;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,7 +83,7 @@ public class DelayedResponseLevelRetryHandlerTest {
         HttpClientContext ctx = new HttpClientContext();
         int lastExecutionCount = maxRetries + 1;
         List<Duration> expectedIntervals =
-                Arrays.asList(
+                List.of(
                         startDelay, Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(4),
                         Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(5),
                         Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(5));
@@ -100,7 +99,7 @@ public class DelayedResponseLevelRetryHandlerTest {
 
         DelayedResponseLevelRetryHandler handler = DelayedResponseLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), maxRetries)
-                .retryForStatusCodes(Arrays.asList(HttpStatus.SC_SERVICE_UNAVAILABLE, HttpStatus.SC_BAD_GATEWAY))
+                .retryForStatusCodes(List.of(HttpStatus.SC_SERVICE_UNAVAILABLE, HttpStatus.SC_BAD_GATEWAY))
                 .build();
 
         HttpResponse response = createResponse(HttpStatus.SC_SERVICE_UNAVAILABLE);
@@ -116,7 +115,7 @@ public class DelayedResponseLevelRetryHandlerTest {
     void does_not_retry_for_non_listed_exception() {
         DelayedResponseLevelRetryHandler handler = DelayedResponseLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), 2)
-                .retryForStatusCodes(Arrays.asList(HttpStatus.SC_SERVICE_UNAVAILABLE, HttpStatus.SC_BAD_GATEWAY))
+                .retryForStatusCodes(List.of(HttpStatus.SC_SERVICE_UNAVAILABLE, HttpStatus.SC_BAD_GATEWAY))
                 .build();
 
         HttpResponse response = createResponse(HttpStatus.SC_OK);

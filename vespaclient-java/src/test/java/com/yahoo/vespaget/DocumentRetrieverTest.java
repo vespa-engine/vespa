@@ -23,7 +23,6 @@ import org.mockito.ArgumentMatcher;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -99,7 +98,7 @@ public class DocumentRetrieverTest {
     }
 
     private static Iterator<String> asIterator(String... docIds) {
-        return Arrays.asList(docIds).iterator();
+        return List.of(docIds).iterator();
     }
 
     private static Reply createDocumentReply(String docId) {
@@ -214,7 +213,7 @@ public class DocumentRetrieverTest {
                 .setCluster(cluster)
                 .build();
 
-        ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef(cluster)));
+        ClusterList clusterList = new ClusterList(List.of(new ClusterDef(cluster)));
 
         DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
         documentRetriever.retrieveDocuments();
@@ -230,7 +229,7 @@ public class DocumentRetrieverTest {
                     .setCluster("invalidclustername")
                     .build();
 
-            ClusterList clusterList = new ClusterList(Collections.singletonList(new ClusterDef("storage")));
+            ClusterList clusterList = new ClusterList(List.of(new ClusterDef("storage")));
 
             DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
             documentRetriever.retrieveDocuments();

@@ -16,9 +16,9 @@ import org.codehaus.plexus.component.annotations.Requirement;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
@@ -145,7 +145,7 @@ public class GenerateSourcesMojo extends AbstractMojo {
             if (parts.length <= 3) {
                 return mavenVersion;
             } else {
-                return stringJoin(Arrays.asList(parts).subList(0, 3), ".");
+                return stringJoin(List.of(parts).subList(0, 3), ".");
             }
         }
     }

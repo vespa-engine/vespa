@@ -12,7 +12,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.NegativeNode;
 import org.junit.Test;
 
-import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -24,7 +24,7 @@ public class SimplifierTestCase {
     @Test
     public void testSimplify() throws ParseException {
         Simplifier s = new Simplifier();
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Map.of(), new MapTypeContext());
         assertEquals("a + b", s.transform(new RankingExpression("a + b"), c).toString());
         assertEquals("6.5", s.transform(new RankingExpression("1.0 + 2.0 + 3.5"), c).toString());
         assertEquals("6.5", s.transform(new RankingExpression("1.0 + ( 2.0 + 3.5 )"), c).toString());
@@ -48,7 +48,7 @@ public class SimplifierTestCase {
     @Test
     public void testNaNExpression() throws ParseException {
         Simplifier s = new Simplifier();
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Map.of(), new MapTypeContext());
         assertEquals("0 / 0", s.transform(new RankingExpression("0/0"), c).toString());
         assertEquals("1 + 0.0 / 0.0", s.transform(new RankingExpression("1 + (1-1)/(2-2)"), c).toString());
     }
@@ -56,7 +56,7 @@ public class SimplifierTestCase {
     @Test
     public void testSimplifyComplexExpression() throws ParseException {
         RankingExpression initial = new RankingExpression("sqrt(if (if (INFERRED * 0.9 < INFERRED, GMP, (1 + 1.1) * INFERRED) < INFERRED * INFERRED - INFERRED, if (GMP < 85.80799542793133 * GMP, INFERRED, if (GMP < GMP, tanh(INFERRED), log(76.89956221113943))), tanh(tanh(INFERRED))) * sqrt(sqrt(GMP + INFERRED)) * GMP ) + 13.5 * (1 - GMP) * pow(GMP * 0.1, 2 + 1.1 * 0)");
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Map.of(), new MapTypeContext());
         RankingExpression simplified = new Simplifier().transform(initial, c);
 
         Context context = new MapContext();
@@ -81,7 +81,7 @@ public class SimplifierTestCase {
     @Test
     public void testParenthesisPreservation() throws ParseException {
         Simplifier s = new Simplifier();
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Map.of(), new MapTypeContext());
         CompositeNode transformed = (CompositeNode)s.transform(new RankingExpression("a + (b + c) / 100000000.0"), c).getRoot();
         assertEquals("a + (b + c) / 1.0E8", transformed.toString());
     }
@@ -89,7 +89,7 @@ public class SimplifierTestCase {
     @Test
     public void testOptimizingNegativeConstants() throws ParseException {
         Simplifier s = new Simplifier();
-        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        TransformContext c = new TransformContext(Map.of(), new MapTypeContext());
         assertEquals("-3", s.transform(new RankingExpression("-3"), c).toString());
         assertEquals("-9.0", s.transform(new RankingExpression("-3 + -6"), c).toString());
         assertEquals("-a", s.transform(new RankingExpression("-a"), c).toString());

@@ -14,7 +14,6 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +45,7 @@ public class SemanticSearcher extends Searcher {
     }
 
     public SemanticSearcher(RuleBase ... ruleBases) {
-        this(Arrays.asList(ruleBases));
+        this(List.of(ruleBases));
     }
 
     @Inject

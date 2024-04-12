@@ -25,9 +25,8 @@ import com.yahoo.messagebus.Reply;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -48,7 +47,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
         this.type.addField(new Field("blahblah", DataType.STRING));
         this.type.addField(new Field("defaultWait", DataType.INT));
         this.type.addField(new Field("customWait", DataType.INT));
-        type.addFieldSets(Collections.singletonMap(DocumentType.DOCUMENT, Arrays.asList("blahblah", "defaultWait", "customWait")));
+        type.addFieldSets(Map.of(DocumentType.DOCUMENT, List.of("blahblah", "defaultWait", "customWait")));
     }
 
     @Test
@@ -158,8 +157,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
                     Document doc = ((DocumentPut) op).getDocument();
                     for (Field f : doc.getDataType().fieldSet()) {
                         FieldValue val = doc.getFieldValue(f);
-                        if (val instanceof StringFieldValue) {
-                            StringFieldValue sf = (StringFieldValue) val;
+                        if (val instanceof StringFieldValue sf) {
                             doc.setFieldValue(f, new StringFieldValue(sf.getString().toUpperCase()));
                         }
                     }

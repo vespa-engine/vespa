@@ -173,7 +173,7 @@ public final class CompoundName {
         if (isEmpty()) return fromComponents(nameParts);
 
         List<String> newCompounds = new ArrayList<>(nameParts.length + compounds.size());
-        newCompounds.addAll(Arrays.asList(nameParts));
+        newCompounds.addAll(List.of(nameParts));
         newCompounds.addAll(this.compounds);
         return new CompoundName(newCompounds);
     }
@@ -204,7 +204,7 @@ public final class CompoundName {
             throw new IllegalArgumentException("Asked for the first " + n + " components but '" +
                                                this + "' only have " + compounds.size() + " components.");
         if (compounds.size() == n) return this;
-        if (compounds.size() == 0) return empty;
+        if (compounds.isEmpty()) return empty;
         if (compounds.size() - 1 == n) return first;
         return first.first(n);
     }
@@ -316,7 +316,7 @@ public final class CompoundName {
         for (String compound : compounds) all += compound.length();
         StringBuilder b = new StringBuilder(all);
         for (String compound : compounds) b.append(compound).append(".");
-        return b.length()==0 ? "" : b.substring(0, b.length()-1);
+        return b.isEmpty() ? "" : b.substring(0, b.length()-1);
     }
 
     /**

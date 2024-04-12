@@ -42,29 +42,28 @@ public abstract class MathFunctions {
         }
     }
     public static FunctionNode newInstance(Function type, GroupingExpression x, GroupingExpression y) {
-        switch (type) {
-            case EXP: return new MathExpFunction(x);
-            case POW: return new MathPowFunction(x, y);
-            case LOG: return new MathLogFunction(x);
-            case LOG1P: return new MathLog1pFunction(x);
-            case LOG10: return new MathLog10Function(x);
-            case SIN: return new MathSinFunction(x);
-            case ASIN: return new MathASinFunction(x);
-            case COS: return new MathCosFunction(x);
-            case ACOS: return new MathACosFunction(x);
-            case TAN: return new MathTanFunction(x);
-            case ATAN: return new MathATanFunction(x);
-            case SQRT: return new MathSqrtFunction(x);
-            case SINH: return new MathSinHFunction(x);
-            case ASINH: return new MathASinHFunction(x);
-            case COSH: return new MathCosHFunction(x);
-            case ACOSH: return new MathACosHFunction(x);
-            case TANH: return new MathTanHFunction(x);
-            case ATANH: return new MathATanHFunction(x);
-            case CBRT: return new MathCbrtFunction(x);
-            case HYPOT: return new MathHypotFunction(x, y);
-            case FLOOR: return new MathFloorFunction(x);
-        }
-        return null;
+        return switch (type) {
+            case EXP -> new MathExpFunction(x);
+            case POW -> new MathPowFunction(x, y);
+            case LOG -> new MathLogFunction(x);
+            case LOG1P -> new MathLog1pFunction(x);
+            case LOG10 -> new MathLog10Function(x);
+            case SIN -> new MathSinFunction(x);
+            case ASIN -> new MathASinFunction(x);
+            case COS -> new MathCosFunction(x);
+            case ACOS -> new MathACosFunction(x);
+            case TAN -> new MathTanFunction(x);
+            case ATAN -> new MathATanFunction(x);
+            case SQRT -> new MathSqrtFunction(x);
+            case SINH -> new MathSinHFunction(x);
+            case ASINH -> new MathASinHFunction(x);
+            case COSH -> new MathCosHFunction(x);
+            case ACOSH -> new MathACosHFunction(x);
+            case TANH -> new MathTanHFunction(x);
+            case ATANH -> new MathATanHFunction(x);
+            case CBRT -> new MathCbrtFunction(x);
+            case HYPOT -> new MathHypotFunction(x, y);
+            case FLOOR -> new MathFloorFunction(x);
+        };
     }
 }

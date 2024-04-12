@@ -5,13 +5,12 @@ import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.Collections;
 import java.util.List;
 
 public class NoOp extends IntermediateOperation {
 
     public NoOp(String modelName, String nodeName, List<IntermediateOperation> inputs) {
-        super(modelName, nodeName, Collections.emptyList());  // don't propagate inputs
+        super(modelName, nodeName, List.of());  // don't propagate inputs
     }
 
     @Override

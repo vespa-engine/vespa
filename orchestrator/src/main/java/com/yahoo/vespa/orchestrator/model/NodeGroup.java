@@ -5,7 +5,6 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -21,7 +20,7 @@ public class NodeGroup {
 
     public NodeGroup(ApplicationInstance application, HostName... hostNames) {
         this.application = application;
-        this.hostNames.addAll(Arrays.asList(hostNames));
+        this.hostNames.addAll(List.of(hostNames));
     }
 
     public void addNode(HostName hostName) {

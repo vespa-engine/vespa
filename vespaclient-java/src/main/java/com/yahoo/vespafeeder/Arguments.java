@@ -11,7 +11,6 @@ import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -107,7 +106,7 @@ public class Arguments {
 
     private void parse(String[] argList) throws HelpShownException {
         List<String> args = new LinkedList<>();
-        args.addAll(Arrays.asList(argList));
+        args.addAll(List.of(argList));
 
         while (!args.isEmpty()) {
             String arg = args.remove(0);

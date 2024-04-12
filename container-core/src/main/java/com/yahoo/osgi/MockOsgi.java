@@ -7,7 +7,6 @@ import com.yahoo.jdisc.test.NonWorkingOsgiFramework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -23,7 +22,7 @@ public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
 
     @Override
     public List<Bundle> getCurrentBundles() {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override
@@ -33,7 +32,7 @@ public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
 
     @Override
     public List<Bundle> install(String absolutePath) {
-        return Collections.emptyList();
+        return List.of();
     }
 
 }

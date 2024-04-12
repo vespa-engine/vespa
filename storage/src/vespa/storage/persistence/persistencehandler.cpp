@@ -134,7 +134,7 @@ PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP 
 
     _env._metrics.operations.inc();
     if (msg.getType().isReply()) {
-        try{
+        try {
             LOG(debug, "Handling reply: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
             return handleReply(static_cast<api::StorageReply&>(msg), std::move(tracker));
@@ -161,9 +161,7 @@ PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP 
 
 void
 PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) const {
-    LOG(debug, "NodeIndex %d, ptr=%p", _env._nodeIndex, lock.msg.get());
     api::StorageMessage & msg(*lock.msg);
-
     // Important: we _copy_ the message shared_ptr instead of moving to ensure that `msg` remains
     // valid even if the tracker is destroyed by an exception in processMessage().
     auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, _env._fileStorHandler,
@@ -171,6 +169,26 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
     tracker = processMessage(msg, std::move(tracker));
     if (tracker) {
         tracker->sendReply();
+    }
+}
+
+void
+PersistenceHandler::process_locked_message_batch(std::shared_ptr<FileStorHandler::BucketLockInterface> lock,
+                                                 std::span<BatchedMessage> bucket_messages)
+{
+    const auto bucket = lock->getBucket();
+    auto batch = std::make_shared<AsyncMessageBatch>(std::move(lock), _env, _env._fileStorHandler);
+    for (auto& bm : bucket_messages) {
+        assert(bm.first->getBucket() == bucket);
+        // Important: we _copy_ the message shared_ptr instead of moving to ensure that `*bm.first` remains
+        // valid even if the tracker is destroyed by an exception in processMessage(). All std::exceptions
+        // are caught there, so we do not expect our loop to be interrupted.
+        auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, batch,
+                                                        batch->deferred_sender_stub(), bm.first, std::move(bm.second));
+        tracker = processMessage(*bm.first, std::move(tracker));
+        if (tracker) {
+            tracker->sendReply(); // Actually defers to batch reply queue
+        }
     }
 }
 

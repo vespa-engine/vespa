@@ -121,7 +121,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      */
     public List<QueryProfile> inherited() {
         if (isFrozen()) return inherited; // Frozen profiles always have an unmodifiable, non-null list
-        if (inherited == null) return Collections.emptyList();
+        if (inherited == null) return List.of();
         return Collections.unmodifiableList(inherited);
     }
 

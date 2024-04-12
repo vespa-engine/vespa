@@ -55,7 +55,9 @@ public:
         document::Bucket _bucket;
         uint8_t _priority;
 
-        MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::Bucket &bId);
+        MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
+                     const document::Bucket& bucket,
+                     vespalib::steady_time scheduled_at_time);
         MessageEntry(MessageEntry &&) noexcept ;
         MessageEntry(const MessageEntry &) noexcept;
         MessageEntry & operator = (const MessageEntry &) = delete;
@@ -66,13 +68,13 @@ public:
         }
     };
 
-    using PriorityOrder = bmi::ordered_non_unique<bmi::identity<MessageEntry> >;
-    using BucketOrder = bmi::ordered_non_unique<bmi::member<MessageEntry, document::Bucket, &MessageEntry::_bucket>>;
-
+    // ordered_non_unique shall preserve insertion order as iteration order of equal keys, but this is rather magical...
+    using PriorityOrder = bmi::ordered_non_unique<bmi::identity<MessageEntry>>;
+    using BucketOrder   = bmi::ordered_non_unique<bmi::member<MessageEntry, document::Bucket, &MessageEntry::_bucket>>;
     using PriorityQueue = bmi::multi_index_container<MessageEntry, bmi::indexed_by<bmi::sequenced<>, PriorityOrder, BucketOrder>>;
+    using PriorityIdx   = bmi::nth_index<PriorityQueue, 1>::type;
+    using BucketIdx     = bmi::nth_index<PriorityQueue, 2>::type;
 
-    using PriorityIdx = bmi::nth_index<PriorityQueue, 1>::type;
-    using BucketIdx = bmi::nth_index<PriorityQueue, 2>::type;
     using Clock = std::chrono::steady_clock;
     using monitor_guard = std::unique_lock<std::mutex>;
     using atomic_size_t = vespalib::datastore::AtomicValueWrapper<size_t>;
@@ -114,7 +116,7 @@ public:
                 ActiveOperationsStats &stats() { return _stats; }
             };
             SafeActiveOperationsStats() : _lock(std::make_unique<std::mutex>()), _stats() {}
-            Guard guard() { return Guard(*_lock, _stats, ctor_tag()); }
+            [[nodiscard]] Guard guard() { return Guard(*_lock, _stats, ctor_tag()); }
         };
 
         Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender);
@@ -123,8 +125,8 @@ public:
         Stripe & operator =(const Stripe &) = delete;
         ~Stripe();
         void flush();
-        bool schedule(MessageEntry messageEntry);
-        FileStorHandler::LockedMessage schedule_and_get_next_async_message(MessageEntry entry);
+        [[nodiscard]] bool schedule(MessageEntry messageEntry);
+        [[nodiscard]] FileStorHandler::LockedMessage schedule_and_get_next_async_message(MessageEntry entry);
         void waitUntilNoLocks() const;
         void abort(std::vector<std::shared_ptr<api::StorageReply>> & aborted, const AbortBucketOperationsCommand& cmd);
         void waitInactive(const AbortBucketOperationsCommand& cmd) const;
@@ -151,18 +153,19 @@ public:
                   api::LockingRequirements lockReq, bool count_as_active_merge,
                   const LockEntry & lockEntry);
 
-        std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
+        [[nodiscard]] std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
 
-        FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time deadline);
+        [[nodiscard]] FileStorHandler::LockedMessage getNextMessage(vespalib::steady_time deadline);
+        [[nodiscard]] FileStorHandler::LockedMessageBatch next_message_batch(vespalib::steady_time now, vespalib::steady_time deadline);
         void dumpQueue(std::ostream & os) const;
         void dumpActiveHtml(std::ostream & os) const;
         void dumpQueueHtml(std::ostream & os) const;
-        std::mutex & exposeLock() { return *_lock; }
-        PriorityQueue & exposeQueue() { return *_queue; }
-        BucketIdx & exposeBucketIdx() { return bmi::get<2>(*_queue); }
+        [[nodiscard]] std::mutex & exposeLock() { return *_lock; }
+        [[nodiscard]] PriorityQueue & exposeQueue() { return *_queue; }
+        [[nodiscard]] BucketIdx & exposeBucketIdx() { return bmi::get<2>(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
-        ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
+        [[nodiscard]] ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
         void update_cached_queue_size(const std::lock_guard<std::mutex> &) {
             _cached_queue_size.store_relaxed(_queue->size());
@@ -170,15 +173,20 @@ public:
         void update_cached_queue_size(const std::unique_lock<std::mutex> &) {
             _cached_queue_size.store_relaxed(_queue->size());
         }
-        bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
-        FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
+        [[nodiscard]] bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
+        [[nodiscard]] FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
         [[nodiscard]] bool operation_type_should_be_throttled(api::MessageType::Id type_id) const noexcept;
+
+        [[nodiscard]] FileStorHandler::LockedMessage next_message_impl(monitor_guard& held_lock,
+                                                                       vespalib::steady_time deadline);
+        void fill_feed_op_batch(monitor_guard& held_lock, LockedMessageBatch& batch,
+                                uint32_t max_batch_size, vespalib::steady_time now);
 
         // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
         // with its locking requirements.
-        FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdx & idx,
-                                                  PriorityIdx::iterator iter,
-                                                  ThrottleToken throttle_token);
+        [[nodiscard]] FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdx & idx,
+                                                                PriorityIdx::iterator iter,
+                                                                ThrottleToken throttle_token);
         using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
         const FileStorHandlerImpl      &_owner;
         MessageSender                  &_messageSender;
@@ -233,7 +241,8 @@ public:
     bool schedule(const std::shared_ptr<api::StorageMessage>&) override;
     ScheduleAsyncResult schedule_and_get_next_async_message(const std::shared_ptr<api::StorageMessage>& msg) override;
 
-    FileStorHandler::LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) override;
+    LockedMessage getNextMessage(uint32_t stripeId, vespalib::steady_time deadline) override;
+    LockedMessageBatch next_message_batch(uint32_t stripe, vespalib::steady_time now, vespalib::steady_time deadline) override;
 
     void remapQueueAfterJoin(const RemapInfo& source, RemapInfo& target) override;
     void remapQueueAfterSplit(const RemapInfo& source, RemapInfo& target1, RemapInfo& target2) override;
@@ -292,6 +301,13 @@ public:
         _throttle_apply_bucket_diff_ops.store(throttle_apply_bucket_diff, std::memory_order_relaxed);
     }
 
+    void set_max_feed_op_batch_size(uint32_t max_batch) noexcept override {
+        _max_feed_op_batch_size.store(max_batch, std::memory_order_relaxed);
+    }
+    [[nodiscard]] uint32_t max_feed_op_batch_size() const noexcept {
+        return _max_feed_op_batch_size.load(std::memory_order_relaxed);
+    }
+
     // Implements ResumeGuard::Callback
     void resume() override;
 
@@ -316,6 +332,7 @@ private:
     std::atomic<bool>               _paused;
     std::atomic<bool>               _throttle_apply_bucket_diff_ops;
     std::optional<ActiveOperationsStats> _last_active_operations_stats;
+    std::atomic<uint32_t>           _max_feed_op_batch_size;
 
     // Returns the index in the targets array we are sending to, or -1 if none of them match.
     int calculateTargetBasedOnDocId(const api::StorageMessage& msg, std::vector<RemapInfo*>& targets);

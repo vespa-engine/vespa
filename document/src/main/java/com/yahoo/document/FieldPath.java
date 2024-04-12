@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -19,7 +18,7 @@ public class FieldPath implements Iterable<FieldPathEntry> {
      * Constructs an empty path.
      */
     public FieldPath() {
-        list = Collections.emptyList();
+        list = List.of();
     }
 
     /**
@@ -109,7 +108,7 @@ public class FieldPath implements Iterable<FieldPathEntry> {
             FieldPathEntry.Type type = entry.getType();
             switch (type) {
             case STRUCT_FIELD:
-                if (out.length() > 0) {
+                if (!out.isEmpty()) {
                     out.append(".");
                 }
                 Field field = entry.getFieldRef();

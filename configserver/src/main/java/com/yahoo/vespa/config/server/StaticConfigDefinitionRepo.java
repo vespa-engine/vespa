@@ -6,7 +6,6 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -24,7 +23,7 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
         this.repo = new ConfigDefinitionRepo() {
             @Override
             public Map<ConfigDefinitionKey, ConfigDefinition> getConfigDefinitions() {
-                return Collections.emptyMap();
+                return Map.of();
             }
 
             @Override

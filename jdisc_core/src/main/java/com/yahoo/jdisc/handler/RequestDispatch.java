@@ -8,7 +8,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.SharedResource;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeoutException;
  *         }
  *         &#64;Override
  *         protected Iterable&lt;ByteBuffer&gt; requestContent() {
- *             return Collections.singleton(ByteBuffer.wrap(new byte[] { 6, 9 }));
+ *             return Set.of(ByteBuffer.wrap(new byte[] { 6, 9 }));
  *         }
  *         &#64;Override
  *         public ContentChannel handleResponse(Response response) {
@@ -69,7 +69,7 @@ public abstract class RequestDispatch implements Future<Response>, ResponseHandl
      * @return The ByteBuffers to write to the Request's ContentChannel.
      */
     protected Iterable<ByteBuffer> requestContent() {
-        return Collections.emptyList();
+        return List.of();
     }
 
     /**

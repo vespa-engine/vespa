@@ -8,7 +8,6 @@ import com.yahoo.tensor.evaluation.VariableTensor;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.Collections;
 import java.util.List;
 
 public class Argument extends IntermediateOperation {
@@ -16,7 +15,7 @@ public class Argument extends IntermediateOperation {
     private OrderedTensorType standardNamingType;  // using standard naming convention: d0, d1, ...
 
     public Argument(String modelName, String nodeName, OrderedTensorType type) {
-        super(modelName, nodeName, Collections.emptyList());
+        super(modelName, nodeName, List.of());
         this.type = type.rename(vespaName() + "_");
         standardNamingType = OrderedTensorType.standardType(type);
     }

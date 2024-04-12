@@ -24,7 +24,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.*;
 import com.yahoo.tensor.functions.*;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -893,7 +892,7 @@ List<String> bracedIdentifierList() :
     String element;
 }
 {
-    ( element = identifier() { return Collections.singletonList(element); } )
+    ( element = identifier() { return List.of(element); } )
     |
     ( <LBRACE> list = identifierList() <RBRACE> { return list; } )
 }

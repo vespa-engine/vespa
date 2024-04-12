@@ -46,7 +46,6 @@ import org.mockito.Mock;
 import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.time.Clock;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -174,7 +173,7 @@ public class TenantRepositoryTest {
     @Test
     public void testTenantWatching() throws Exception {
         TenantName newTenant = TenantName.from("newTenant");
-        List<TenantName> expectedTenants = Arrays.asList(TenantName.defaultName(), newTenant);
+        List<TenantName> expectedTenants = List.of(TenantName.defaultName(), newTenant);
         try {
             tenantRepository.addTenant(newTenant);
             // Poll for the watcher to pick up the tenant from zk, and add it

@@ -3,7 +3,6 @@ package com.yahoo.config;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,7 +72,7 @@ public class NodeVectorTest {
         assertTrue(v.contains(val));
         assertFalse(v.contains(barNode()));
         assertTrue(v.contains(val));
-        assertFalse(v.containsAll(Arrays.asList(val, barNode())));
+        assertFalse(v.containsAll(List.of(val, barNode())));
     }
 
     @Test
@@ -114,7 +113,7 @@ public class NodeVectorTest {
     private static class TestNodeVector extends LeafNodeVector<String, StringNode> {
 
         TestNodeVector(String... values) {
-            super(Arrays.asList(values), new StringNode());
+            super(List.of(values), new StringNode());
         }
     }
 

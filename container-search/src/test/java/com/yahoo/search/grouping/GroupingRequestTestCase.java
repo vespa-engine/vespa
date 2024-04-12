@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,7 +32,7 @@ public class GroupingRequestTestCase {
             }
         };
         req.continuations().add(foo);
-        assertEquals(Arrays.asList(foo), req.continuations());
+        assertEquals(List.of(foo), req.continuations());
 
         req.continuations().clear();
         assertTrue(req.continuations().isEmpty());
@@ -121,7 +119,7 @@ public class GroupingRequestTestCase {
     @Test
     void requireThatGetRequestsReturnsAllRequests() {
         Query query = new Query();
-        assertEquals(Collections.emptyList(), query.getSelect().getGrouping());
+        assertEquals(List.of(), query.getSelect().getGrouping());
 
         GroupingRequest foo = GroupingRequest.newInstance(query);
         assertEquals(List.of(foo), query.getSelect().getGrouping());

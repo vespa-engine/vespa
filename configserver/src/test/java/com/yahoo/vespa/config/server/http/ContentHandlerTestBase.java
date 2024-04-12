@@ -8,8 +8,8 @@ import com.yahoo.jdisc.http.HttpRequest;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -92,11 +92,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     protected abstract HttpResponse doRequest(HttpRequest.Method method, String path);
 
     private String generateResultArray(String... files) {
-        Collection<String> output = Collections2.transform(Arrays.asList(files), input -> "\"" + baseUrl + input + "\"");
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        sb.append(Joiner.on(",").join(output));
-        sb.append("]");
-        return sb.toString();
+        Collection<String> output = Collections2.transform(List.of(files), input -> "\"" + baseUrl + input + "\"");
+        return "[" + Joiner.on(",").join(output) + "]";
     }
 }

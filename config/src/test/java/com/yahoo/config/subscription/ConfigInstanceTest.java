@@ -49,15 +49,15 @@ public class ConfigInstanceTest {
     @Ignore
     public void testRetainOldValuesOnConfigUpdates() {
         AppConfig config = new AppConfig(new AppConfig.Builder());
-        //config.setConfig(Arrays.asList("message \"one\"", "times 333"), "", 0L);
+        //config.setConfig(List.of("message \"one\"", "times 333"), "", 0L);
         assertEquals("one", config.message());
         assertEquals(333, config.times());
 
-        //config.setConfig(Arrays.asList("message \"two\""), "", 0L);
+        //config.setConfig(List.of("message \"two\""), "", 0L);
         assertEquals("two", config.message());
         assertEquals("config.times retains previously set value", 333, config.times());
 
-        //config.setConfig(Arrays.asList("times 666"), "", 0L);
+        //config.setConfig(List.of("times 666"), "", 0L);
         assertEquals("config.message retains previously set value", "two", config.message());
         assertEquals(666, config.times());
     }

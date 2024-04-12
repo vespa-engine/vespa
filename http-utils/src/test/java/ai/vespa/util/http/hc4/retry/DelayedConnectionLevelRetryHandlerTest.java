@@ -8,7 +8,7 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -105,7 +105,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
 
         DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), maxRetries)
-                .retryForExceptions(Arrays.asList(SSLException.class, ConnectException.class))
+                .retryForExceptions(List.of(SSLException.class, ConnectException.class))
                 .withSleeper(mock(Sleeper.class))
                 .build();
 
@@ -122,7 +122,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
     void does_not_retry_for_non_listed_exception() {
         DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), 2)
-                .retryForExceptions(Arrays.asList(SSLException.class, ConnectException.class))
+                .retryForExceptions(List.of(SSLException.class, ConnectException.class))
                 .withSleeper(mock(Sleeper.class))
                 .build();
 

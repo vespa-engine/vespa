@@ -41,8 +41,8 @@ public class Value implements Inspector {
     public void traverse(ObjectTraverser ot) {}
     public Inspector entry(int idx) { return invalid; }
     public Inspector field(java.lang.String name) { return invalid; }
-    public Iterable<Inspector> entries() { return Collections.emptyList(); }
-    public Iterable<Map.Entry<java.lang.String,Inspector>> fields() { return Collections.emptyList(); }
+    public Iterable<Inspector> entries() { return List.of(); }
+    public Iterable<Map.Entry<java.lang.String,Inspector>> fields() { return List.of(); }
     public StringBuilder writeJson(StringBuilder target) {
         return JsonRender.render(this, target, true);
     }

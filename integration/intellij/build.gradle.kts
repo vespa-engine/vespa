@@ -10,7 +10,7 @@ plugins {
 }
 
 group="ai.vespa"
-version="1.6.0" // Also update pom.xml version AND the version below if this is changed
+version="1.6.1" // Also update pom.xml version AND the version below if this is changed
 
 defaultTasks("buildPlugin")
 
@@ -18,14 +18,13 @@ apply(plugin="org.jetbrains.grammarkit")
 
 task<GenerateLexerTask>("generateSdLexer") {
   sourceFile.set(file("src/main/jflex/ai/vespa/intellij/schema/lexer/sd.flex"))
-  targetDir.set("target/generated-sources/jflex/ai/vespa/intellij/schema/lexer/")
-  targetClass.set("SdLexer")
+  targetOutputDir.set(file("target/generated-sources/jflex/ai/vespa/intellij/schema/lexer/"))
   purgeOldFiles.set(true)
 }
 
 task<GenerateParserTask>("generateSdParser") {
   sourceFile.set(file("src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf"))
-  targetRoot.set("target/generated-sources/bnf/")
+  targetRootOutputDir.set(file("target/generated-sources/bnf/"))
   pathToParser.set("ai/vespa/intellij/schema/parser/SdParser.java")
   pathToPsiRoot.set("ai/vespa/intellij/schema/parser/psi/")
   purgeOldFiles.set(true)
@@ -43,7 +42,7 @@ sourceSets {
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
-  version.set("2023.3")
+  version.set("2024.1")
 }
 
 tasks {
@@ -55,12 +54,10 @@ tasks {
   }
 
   patchPluginXml {
-    version.set("1.6.0") // Keep in sync with pom.xml TODO: Use one version property
+    version.set("1.6.1") // Keep in sync with pom.xml TODO: Use one version property
     // Appears on the plugin page in preferences/plugins
     changeNotes.set("""
-      Updated Vespa icon
-      Support for IntelliJ 2023.3
-      Compatibility with all JetBrains IDEs
+      Support for IntelliJ 2024.1
     """)
   }
 

@@ -8,7 +8,7 @@ import com.yahoo.jdisc.test.TestDriver;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -106,11 +106,11 @@ public class ContainerBuilderTestCase {
         assertTrue(ContainerBuilder.safeStringSplit(new Object(), ",").isEmpty());
         assertTrue(ContainerBuilder.safeStringSplit("", ",").isEmpty());
         assertTrue(ContainerBuilder.safeStringSplit(" \f\n\r\t", ",").isEmpty());
-        assertEquals(Arrays.asList("foo"), ContainerBuilder.safeStringSplit("foo", ","));
-        assertEquals(Arrays.asList("foo"), ContainerBuilder.safeStringSplit(" foo", ","));
-        assertEquals(Arrays.asList("foo"), ContainerBuilder.safeStringSplit("foo ", ","));
-        assertEquals(Arrays.asList("foo"), ContainerBuilder.safeStringSplit("foo, ", ","));
-        assertEquals(Arrays.asList("foo"), ContainerBuilder.safeStringSplit("foo ,", ","));
-        assertEquals(Arrays.asList("foo", "bar"), ContainerBuilder.safeStringSplit("foo, bar", ","));
+        assertEquals(List.of("foo"), ContainerBuilder.safeStringSplit("foo", ","));
+        assertEquals(List.of("foo"), ContainerBuilder.safeStringSplit(" foo", ","));
+        assertEquals(List.of("foo"), ContainerBuilder.safeStringSplit("foo ", ","));
+        assertEquals(List.of("foo"), ContainerBuilder.safeStringSplit("foo, ", ","));
+        assertEquals(List.of("foo"), ContainerBuilder.safeStringSplit("foo ,", ","));
+        assertEquals(List.of("foo", "bar"), ContainerBuilder.safeStringSplit("foo, bar", ","));
     }
 }

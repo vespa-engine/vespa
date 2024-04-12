@@ -14,7 +14,6 @@ import com.yahoo.metrics.simple.Point;
 import com.yahoo.metrics.simple.UntypedMetric;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +28,7 @@ public class SnapshotConverterTest {
 
     @Test
     void testPointConversion() {
-        MetricDimensions a = SnapshotConverter.convert(new Point(Collections.emptyMap()));
+        MetricDimensions a = SnapshotConverter.convert(new Point(Map.of()));
         MetricDimensions b = SnapshotConverter.convert(new Point(new HashMap<>(0)));
         MetricDimensions c = SnapshotConverter.convert((Point) null);
         assertEquals(a.hashCode(), b.hashCode());

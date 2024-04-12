@@ -62,13 +62,13 @@ public class DocumentType extends StructuredDataType {
      * @param contentStructType The type of the content struct
      */
     public DocumentType(String name, StructDataType contentStructType) {
-        this(name, contentStructType, Collections.emptySet());
+        this(name, contentStructType, Set.of());
     }
 
     public DocumentType(String name, StructDataType contentStructType, Set<String> importedFieldNames) {
         super(name);
         this.contentStructType = contentStructType;
-        this.importedFieldNames = Collections.unmodifiableSet(importedFieldNames);
+        this.importedFieldNames = Set.copyOf(importedFieldNames);
     }
 
     public DocumentType(String name, Set<String> importedFieldNames) {

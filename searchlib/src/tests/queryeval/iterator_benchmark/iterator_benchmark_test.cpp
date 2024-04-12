@@ -31,25 +31,22 @@ struct BenchmarkResult {
     uint32_t hits;
     FlowStats flow;
     double actual_cost;
-    double alt_cost;
     vespalib::string iterator_name;
     vespalib::string blueprint_name;
-    BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, 0, "", "") {}
-    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, FlowStats flow_in, double actual_cost_in, double alt_cost_in,
+    BenchmarkResult() : BenchmarkResult(0, 0, 0, {0, 0, 0}, 0, "", "") {}
+    BenchmarkResult(double time_ms_in, uint32_t seeks_in, uint32_t hits_in, FlowStats flow_in, double actual_cost_in,
                     const vespalib::string& iterator_name_in, const vespalib::string& blueprint_name_in)
         : time_ms(time_ms_in),
           seeks(seeks_in),
           hits(hits_in),
           flow(flow_in),
           actual_cost(actual_cost_in),
-          alt_cost(alt_cost_in),
           iterator_name(iterator_name_in),
           blueprint_name(blueprint_name_in)
     {}
     ~BenchmarkResult();
     double ns_per_seek() const { return (time_ms / seeks) * 1000.0 * 1000.0; }
     double ms_per_actual_cost() const { return (time_ms / actual_cost); }
-    double ms_per_alt_cost() const { return (time_ms / alt_cost); }
 };
 BenchmarkResult::~BenchmarkResult() = default;
 
@@ -127,9 +124,6 @@ public:
     }
     Stats ms_per_actual_cost_stats() const {
         return calc_stats([](const auto& res){ return res.ms_per_actual_cost(); });
-    }
-    Stats ms_per_alt_cost_stats() const {
-        return calc_stats([](const auto& res){ return res.ms_per_alt_cost(); });
     }
 };
 
@@ -222,7 +216,7 @@ strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit)
         timer.after();
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
-    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, flow.strict_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
 }
 
 template <bool do_unpack>
@@ -256,9 +250,7 @@ non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, doub
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double actual_cost = flow.cost * filter_hit_ratio;
-    // This is an attempt to calculate an alternative actual cost for strict / posting list iterators that are used in a non-strict context.
-    double alt_cost = flow.strict_cost + 0.5 * filter_hit_ratio;
-    return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, alt_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
 }
 
 BenchmarkResult
@@ -413,32 +405,30 @@ to_string(bool val)
 void
 print_result_header()
 {
-    std::cout << "|  chn | f_ratio | o_ratio | a_ratio |   f.est |  f.cost | f.scost |     hits |    seeks |  time_ms | act_cost | alt_cost | ns_per_seek | ms_per_act_cost | ms_per_alt_cost | iterator | blueprint |" << std::endl;
+    std::cout << "|   chn | f_ratio | o_ratio | a_ratio |   f.est |    f.cost | f.scost |     hits |    seeks |  time_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | blueprint |" << std::endl;
 }
 
 void
 print_result(const BenchmarkResult& res, uint32_t children, double op_hit_ratio, double filter_hit_ratio, uint32_t num_docs)
 {
     std::cout << std::fixed << std::setprecision(5)
-              << "| " << std::setw(4) << children
+              << "| " << std::setw(5) << children
               << " | " << std::setw(7) << filter_hit_ratio
               << " | " << std::setw(7) << op_hit_ratio
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
               << " | " << std::setw(6) << res.flow.estimate
               << std::setprecision(4)
-              << " | " << std::setw(7) << res.flow.cost
+              << " | " << std::setw(9) << res.flow.cost
               << " | " << std::setw(7) << res.flow.strict_cost
               << " | " << std::setw(8) << res.hits
               << " | " << std::setw(8) << res.seeks
               << std::setprecision(3)
               << " | " << std::setw(8) << res.time_ms
               << std::setprecision(4)
-              << " | " << std::setw(8) << res.actual_cost
-              << " | " << std::setw(8) << res.alt_cost
+              << " | " << std::setw(9) << res.actual_cost
               << std::setprecision(2)
               << " | " << std::setw(11) << res.ns_per_seek()
               << " | " << std::setw(15) << res.ms_per_actual_cost()
-              << " | " << std::setw(15) << res.ms_per_alt_cost()
               << " | " << res.iterator_name
               << " | " << res.blueprint_name << " |" << std::endl;
 }
@@ -449,8 +439,7 @@ print_result(const BenchmarkCaseResult& result)
     std::cout << std::fixed << std::setprecision(3)
               << "summary: time_ms=" << result.time_ms_stats().to_string() << std::endl
               << "         ns_per_seek=" << result.ns_per_seek_stats().to_string() << std::endl
-              << "         ms_per_act_cost=" << result.ms_per_actual_cost_stats().to_string() << std::endl
-              << "         ms_per_alt_cost=" << result.ms_per_alt_cost_stats().to_string() << std::endl << std::endl;
+              << "         ms_per_act_cost=" << result.ms_per_actual_cost_stats().to_string() << std::endl << std::endl;
 }
 
 struct BenchmarkCase {
@@ -534,6 +523,7 @@ struct BenchmarkCaseSetup {
     std::vector<uint32_t> child_counts;
     std::vector<double> filter_hit_ratios;
     uint32_t default_values_per_document;
+    bool disjunct_children;
     double filter_crossover_factor;
     BenchmarkCaseSetup(uint32_t num_docs_in,
                        const BenchmarkCase& bcase_in,
@@ -545,6 +535,7 @@ struct BenchmarkCaseSetup {
           child_counts(child_counts_in),
           filter_hit_ratios({1.0}),
           default_values_per_document(0),
+          disjunct_children(false),
           filter_crossover_factor(0.0)
     {}
     ~BenchmarkCaseSetup() {}
@@ -561,6 +552,7 @@ struct BenchmarkSetup {
     bool force_strict;
     bool unpack_iterator;
     uint32_t default_values_per_document;
+    bool disjunct_children;
     double filter_crossover_factor;
     BenchmarkSetup(uint32_t num_docs_in,
                    const std::vector<FieldConfig>& field_cfgs_in,
@@ -578,6 +570,7 @@ struct BenchmarkSetup {
           force_strict(false),
           unpack_iterator(false),
           default_values_per_document(0),
+          disjunct_children(false),
           filter_crossover_factor(0.0)
     {}
     BenchmarkSetup(uint32_t num_docs_in,
@@ -592,6 +585,7 @@ struct BenchmarkSetup {
         res.bcase.force_strict = force_strict;
         res.bcase.unpack_iterator = unpack_iterator;
         res.default_values_per_document = default_values_per_document;
+        res.disjunct_children = disjunct_children;
         if (!bcase.strict_context) {
             // Simulation of a filter is only relevant in a non-strict context.
             res.filter_hit_ratios = filter_hit_ratios;
@@ -617,7 +611,7 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
         for (uint32_t children : setup.child_counts) {
             auto factory = make_blueprint_factory(setup.bcase.field_cfg, setup.bcase.query_op,
                                                   setup.num_docs, setup.default_values_per_document,
-                                                  op_hit_ratio, children);
+                                                  op_hit_ratio, children, setup.disjunct_children);
             for (double filter_hit_ratio : setup.filter_hit_ratios) {
                 if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
                     auto res = benchmark_search(*factory, setup.num_docs + 1,
@@ -726,6 +720,22 @@ TEST(IteratorBenchmark, analyze_term_search_in_fast_search_attributes)
     run_benchmarks(setup, global_summary);
 }
 
+TEST(IteratorBenchmark, analyze_in_operator_non_strict)
+{
+    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
+    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {false}, hit_ratios, {5, 9, 10, 100, 1000, 10000});
+    setup.disjunct_children = true;
+    run_benchmarks(setup);
+}
+
+TEST(IteratorBenchmark, analyze_in_operator_strict)
+{
+    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
+    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {true}, hit_ratios, {5, 9, 10, 100, 1000, 10000});
+    setup.disjunct_children = true;
+    run_benchmarks(setup);
+}
+
 TEST(IteratorBenchmark, analyze_complex_leaf_operators)
 {
     std::vector<FieldConfig> field_cfgs = {int32_array_fs};
@@ -764,18 +774,18 @@ TEST(IteratorBenchmark, or_benchmark)
 
 TEST(IteratorBenchmark, or_vs_filter_crossover)
 {
-    auto fixed_or = make_blueprint_factory(int32_array_fs, QueryOperator::Or, num_docs, 0, 0.1, 100);
+    auto fixed_or = make_blueprint_factory(int32_array_fs, QueryOperator::Or, num_docs, 0, 0.1, 100, false);
     auto variable_term = [](double rate) {
-                             return make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, rate, 1);
+                             return make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, rate, 1, false);
                          };
     analyze_crossover(*fixed_or, variable_term, num_docs + 1, false, 0.0001);
 }
 
 TEST(IteratorBenchmark, or_vs_filter_crossover_with_allow_force_strict)
 {
-    auto fixed_or = make_blueprint_factory(int32_array_fs, QueryOperator::Or, num_docs, 0, 0.1, 100);
+    auto fixed_or = make_blueprint_factory(int32_array_fs, QueryOperator::Or, num_docs, 0, 0.1, 100, false);
     auto variable_term = [](double rate) {
-                             return make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, rate, 1);
+                             return make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, rate, 1, false);
                          };
     analyze_crossover(*fixed_or, variable_term, num_docs + 1, true, 0.0001);
 }

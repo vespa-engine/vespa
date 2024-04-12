@@ -15,7 +15,19 @@ namespace metrics {
 
 class MetricTimer {
 public:
-    MetricTimer();
+    // Start time point set by system steady clock
+    MetricTimer() noexcept;
+    // Start time point explicitly given
+    explicit MetricTimer(std::chrono::steady_clock::time_point start_time) noexcept;
+
+    template<typename AvgVal, typename TotVal, bool SumOnAdd>
+    AvgVal stop(std::chrono::steady_clock::time_point now, ValueMetric<AvgVal, TotVal, SumOnAdd>& metric) const {
+        const auto delta = now - _startTime;
+        using ToDuration = std::chrono::duration<AvgVal, std::milli>;
+        const auto deltaMs(std::chrono::duration_cast<ToDuration>(delta).count());
+        metric.addValue(deltaMs);
+        return deltaMs;
+    }
 
     /**
      * Adds ms passed since this timer was constructed to given value metric.
@@ -26,11 +38,11 @@ public:
      */
     template<typename AvgVal, typename TotVal, bool SumOnAdd>
     AvgVal stop(ValueMetric<AvgVal, TotVal, SumOnAdd>& metric) const {
-        const auto delta = std::chrono::steady_clock::now() - _startTime;
-        using ToDuration = std::chrono::duration<AvgVal, std::milli>;
-        const auto deltaMs(std::chrono::duration_cast<ToDuration>(delta).count());
-        metric.addValue(deltaMs);
-        return deltaMs;
+        return stop(std::chrono::steady_clock::now(), metric);
+    }
+
+    [[nodiscard]] std::chrono::steady_clock::time_point start_time() const noexcept {
+        return _startTime;
     }
 
 private:

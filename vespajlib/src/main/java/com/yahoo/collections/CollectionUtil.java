@@ -51,8 +51,7 @@ public class CollectionUtil {
      * Returns true if the contents of the two given collections are equal, ignoring order.
      */
     public static boolean equalContentsIgnoreOrder(Collection<?> c1, Collection<?> c2) {
-        return c1.size() == c2.size() &&
-                c1.containsAll(c2);
+        return c1.size() == c2.size() && c1.containsAll(c2);
     }
 
     /**

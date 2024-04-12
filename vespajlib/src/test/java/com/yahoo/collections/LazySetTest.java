@@ -4,11 +4,11 @@ package com.yahoo.collections;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -26,25 +26,25 @@ public class LazySetTest {
 
     @Test
     public void requireThatInitialDelegateIsEmpty() {
-        LazySet<String> set = newLazySet(new HashSet<String>());
+        LazySet<String> set = newLazySet(new HashSet<>());
         assertEquals(LazySet.EmptySet.class, set.getDelegate().getClass());
     }
 
     @Test
     public void requireThatEmptySetAddUpgradesToSingletonSet() {
-        LazySet<String> set = newLazySet(new HashSet<String>());
+        LazySet<String> set = newLazySet(new HashSet<>());
         assertTrue(set.add("foo"));
         assertEquals(LazySet.SingletonSet.class, set.getDelegate().getClass());
 
-        set = newLazySet(new HashSet<String>());
-        assertTrue(set.addAll(Arrays.asList("foo")));
+        set = newLazySet(new HashSet<>());
+        assertTrue(set.addAll(List.of("foo")));
         assertEquals(LazySet.SingletonSet.class, set.getDelegate().getClass());
     }
 
     @Test
     public void requireThatEmptySetAddAllEmptySetDoesNotUpgradeToSingletonSet() {
-        LazySet<String> set = newLazySet(new HashSet<String>());
-        assertFalse(set.addAll(Collections.<String>emptySet()));
+        LazySet<String> set = newLazySet(new HashSet<>());
+        assertFalse(set.addAll(Set.of()));
         assertEquals(LazySet.EmptySet.class, set.getDelegate().getClass());
     }
 
@@ -52,7 +52,7 @@ public class LazySetTest {
     public void requireThatEmptySetAddAllUpgradesToFinalSet() {
         Set<String> delegate = new HashSet<>();
         LazySet<String> set = newLazySet(delegate);
-        assertTrue(set.addAll(Arrays.asList("foo", "bar")));
+        assertTrue(set.addAll(List.of("foo", "bar")));
         assertSame(delegate, set.getDelegate());
         assertEquals(2, delegate.size());
         assertTrue(delegate.contains("foo"));
@@ -76,7 +76,7 @@ public class LazySetTest {
     @Test
     public void requireThatSingletonSetAddAllEmptySetDoesNotUpgradeToFinalSet() {
         LazySet<String> set = newSingletonSet("foo");
-        assertFalse(set.addAll(Collections.<String>emptySet()));
+        assertFalse(set.addAll(Set.of()));
         assertEquals(LazySet.SingletonSet.class, set.getDelegate().getClass());
     }
 
@@ -102,7 +102,7 @@ public class LazySetTest {
     public void requireThatSingletonSetAddAllUpgradesToFinalSet() {
         Set<String> delegate = new HashSet<>();
         LazySet<String> set = newSingletonSet(delegate, "foo");
-        assertTrue(set.addAll(Arrays.asList("bar")));
+        assertTrue(set.addAll(List.of("bar")));
         assertSame(delegate, set.getDelegate());
         assertEquals(2, delegate.size());
         assertTrue(delegate.contains("foo"));
@@ -110,7 +110,7 @@ public class LazySetTest {
 
         delegate = new HashSet<>();
         set = newSingletonSet(delegate, "foo");
-        assertTrue(set.addAll(Arrays.asList("bar", "baz")));
+        assertTrue(set.addAll(List.of("bar", "baz")));
         assertSame(delegate, set.getDelegate());
         assertEquals(3, delegate.size());
         assertTrue(delegate.contains("foo"));
@@ -198,15 +198,15 @@ public class LazySetTest {
         assertFalse(set.remove("foo"));
         Mockito.verify(delegate).remove("foo");
 
-        Collection<String> containsAllArg = Collections.singletonList("foo");
+        Collection<String> containsAllArg = Set.of("foo");
         assertFalse(set.containsAll(containsAllArg));
         Mockito.verify(delegate).containsAll(containsAllArg);
 
-        Collection<String> retainAllArg = Collections.singletonList("foo");
+        Collection<String> retainAllArg = Set.of("foo");
         assertFalse(set.retainAll(retainAllArg));
         Mockito.verify(delegate).retainAll(retainAllArg);
 
-        Collection<String> removeAllArg = Collections.singletonList("foo");
+        Collection<String> removeAllArg = Set.of("foo");
         assertFalse(set.removeAll(removeAllArg));
         Mockito.verify(delegate).removeAll(removeAllArg);
 

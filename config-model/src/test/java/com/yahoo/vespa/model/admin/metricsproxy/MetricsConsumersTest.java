@@ -8,6 +8,8 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static ai.vespa.metrics.set.DefaultMetrics.defaultMetricSet;
 import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
 import static ai.vespa.metrics.set.NetworkMetrics.networkMetricSet;
@@ -21,7 +23,6 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.c
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
-import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -72,7 +73,7 @@ public class MetricsConsumersTest {
     void vespa_consumer_can_be_amended_via_admin_object() {
         VespaModel model = getModel(servicesWithAdminOnly(), hosted);
         var additionalMetric = new Metric("additional-metric");
-        model.getAdmin().setAdditionalDefaultMetrics(new MetricSet("amender-metrics", singleton(additionalMetric)));
+        model.getAdmin().setAdditionalDefaultMetrics(new MetricSet("amender-metrics", List.of(additionalMetric)));
 
         ConsumersConfig config = consumersConfigFromModel(model);
         assertEquals(numMetricsForVespaConsumer + 1, config.consumer(0).metric().size());

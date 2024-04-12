@@ -116,7 +116,7 @@ public class ContainerThreadPoolImplTest {
         assertEquals(CPUS * 4 * 100, executor.getQueue().remainingCapacity());
     }
 
-    private class FlipIt implements Runnable {
+    private static class FlipIt implements Runnable {
         public final Receiver<Boolean> didItRun = new Receiver<>();
 
         @Override
@@ -176,7 +176,7 @@ public class ContainerThreadPoolImplTest {
         }
     }
 
-    private class Hang implements Runnable {
+    private static class Hang implements Runnable {
 
         private final long hangMillis;
 

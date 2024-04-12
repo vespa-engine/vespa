@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import com.yahoo.security.KeyStoreBuilder;
-import com.yahoo.security.KeyStoreType;
-
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
@@ -29,7 +26,7 @@ public class TrustManagerUtils {
                     .filter(manager -> manager instanceof X509ExtendedTrustManager)
                     .map(X509ExtendedTrustManager.class::cast)
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No X509ExtendedTrustManager in " + Arrays.asList(trustManagers)));
+                    .orElseThrow(() -> new RuntimeException("No X509ExtendedTrustManager in " + List.of(trustManagers)));
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }

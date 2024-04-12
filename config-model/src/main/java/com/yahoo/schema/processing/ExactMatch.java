@@ -75,7 +75,7 @@ public class ExactMatch extends Processor {
         }
         ScriptExpression script = field.getIndexingScript();
         if (new ExpressionSearcher<>(IndexExpression.class).containedIn(script)) {
-            field.setIndexingScript((ScriptExpression)new MyProvider(schema).convert(field.getIndexingScript()));
+            field.setIndexingScript(schema.getName(), (ScriptExpression)new MyProvider(schema).convert(field.getIndexingScript()));
         }
     }
 

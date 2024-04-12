@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -88,7 +88,7 @@ public abstract class ContainerModelBuilderTestBase {
     private static void generateDefaultSearchChains(ContainerCluster<?> cluster) {
         ContainerSearch search = cluster.getSearch();
         if (search != null)
-            search.initializeSearchChains(Collections.emptyMap());
+            search.initializeSearchChains(Map.of());
     }
 
     protected ComponentsConfig componentsConfig() {

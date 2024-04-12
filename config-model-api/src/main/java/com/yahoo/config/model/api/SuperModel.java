@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,7 +22,7 @@ public class SuperModel {
     private final boolean complete;
 
     public SuperModel() {
-        this(Collections.emptyMap(), false);
+        this(Map.of(), false);
     }
 
     public SuperModel(Map<ApplicationId, ApplicationInfo> models, boolean complete) {

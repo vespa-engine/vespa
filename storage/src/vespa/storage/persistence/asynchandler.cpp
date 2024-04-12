@@ -143,7 +143,7 @@ AsyncHandler::AsyncHandler(const PersistenceUtil & env, spi::PersistenceProvider
 MessageTracker::UP
 AsyncHandler::handleRunTask(RunTaskCommand& cmd, MessageTracker::UP tracker) const {
     auto task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP response) {
-        tracker->checkForError(*response);
+        (void)tracker->checkForError(*response);
         tracker->sendReply();
     });
     spi::Bucket bucket(cmd.getBucket());
@@ -169,7 +169,7 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
 
     spi::Bucket bucket = _env.getBucket(cmd.getDocumentId(), cmd.getBucket());
     auto task = makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
-        tracker->checkForError(*response);
+        (void)tracker->checkForError(*response);
         tracker->sendReply();
     });
     _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocument(),
@@ -517,7 +517,7 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
     }
 
     auto task = makeResultTask([&cmd, tracker = std::move(tracker), removed = to_remove.size()](spi::Result::UP response) {
-        tracker->checkForError(*response);
+        (void)tracker->checkForError(*response);
         tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, removed));
         tracker->sendReply();
     });

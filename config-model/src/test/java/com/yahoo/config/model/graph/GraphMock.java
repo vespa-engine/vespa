@@ -8,7 +8,6 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -20,7 +19,7 @@ public class GraphMock {
 
     public static class BA extends ConfigModelBuilder<A> {
         public BA() { super(A.class); }
-        @Override public List<ConfigModelId> handlesElements() { return Arrays.asList(); }
+        @Override public List<ConfigModelId> handlesElements() { return List.of(); }
         @Override public void doBuild(A model, Element spec, ConfigModelContext modelContext) { }
     }
     public static class A extends ConfigModel {
@@ -29,7 +28,7 @@ public class GraphMock {
 
     public static class BB extends ConfigModelBuilder<B> {
         public BB() { super(B.class); }
-        @Override public List<ConfigModelId> handlesElements() { return Arrays.asList(); }
+        @Override public List<ConfigModelId> handlesElements() { return List.of(); }
         @Override public void doBuild(B model, Element spec, ConfigModelContext modelContext) { }
     }
     public static class B extends ConfigModel {
@@ -40,7 +39,7 @@ public class GraphMock {
 
     public static class BC extends ConfigModelBuilder<C> {
         public BC() { super(C.class); }
-        @Override public List<ConfigModelId> handlesElements() { return Arrays.asList(); }
+        @Override public List<ConfigModelId> handlesElements() { return List.of(); }
         @Override public void doBuild(C model, Element spec, ConfigModelContext modelContext) { }
     }
     public static class C extends ConfigModel {
@@ -51,7 +50,7 @@ public class GraphMock {
 
     public static class BD extends ConfigModelBuilder<D> {
         public BD() { super(D.class); }
-        @Override public List<ConfigModelId> handlesElements() { return Arrays.asList(); }
+        @Override public List<ConfigModelId> handlesElements() { return List.of(); }
         @Override public void doBuild(D model, Element spec, ConfigModelContext modelContext) { }
     }
     public static class D extends ConfigModel {
@@ -60,7 +59,7 @@ public class GraphMock {
 
     public static class BE extends ConfigModelBuilder<E> {
         public BE() { super(E.class); }
-        @Override public List<ConfigModelId> handlesElements() { return Arrays.asList(); }
+        @Override public List<ConfigModelId> handlesElements() { return List.of(); }
         @Override public void doBuild(E model, Element spec, ConfigModelContext modelContext) { }
     }
     public static class E extends ConfigModel {

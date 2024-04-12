@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -47,7 +46,7 @@ public class AnnotatedClusterState implements Cloneable {
                                  Map<Node, NodeStateReason> nodeStateReasons) {
         this.clusterState = Objects.requireNonNull(clusterState, "Cluster state cannot be null");
         this.clusterStateReason = Objects.requireNonNull(clusterStateReason, "Cluster state reason cannot be null");
-        this.nodeStateReasons = Objects.requireNonNull(nodeStateReasons, "Node state reasons cannot be null");
+        this.nodeStateReasons = Map.copyOf(Objects.requireNonNull(nodeStateReasons, "Node state reasons cannot be null"));
     }
 
     public static AnnotatedClusterState emptyState() {
@@ -59,7 +58,7 @@ public class AnnotatedClusterState implements Cloneable {
     }
 
     static Map<Node, NodeStateReason> emptyNodeStateReasons() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     public ClusterState getClusterState() {
@@ -67,7 +66,7 @@ public class AnnotatedClusterState implements Cloneable {
     }
 
     public Map<Node, NodeStateReason> getNodeStateReasons() {
-        return Collections.unmodifiableMap(nodeStateReasons);
+        return nodeStateReasons;
     }
 
     public Optional<ClusterStateReason> getClusterStateReason() {

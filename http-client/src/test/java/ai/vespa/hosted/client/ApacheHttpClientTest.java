@@ -60,7 +60,7 @@ class ApacheHttpClientTest {
                                                                     URI.create("http://localhost:" + server.port() + "/"))),
                                        Method.GET)
                                  .at("root")
-                                 .parameters("query", "foo")
+                                 .parameters("query", "foo", null, null)
                                  .discard());
         server.verify(2, getRequestedFor(urlEqualTo("/root?query=foo")));
         server.verify(2, anyRequestedFor(anyUrl()));

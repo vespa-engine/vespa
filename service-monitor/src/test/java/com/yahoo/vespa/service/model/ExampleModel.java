@@ -12,7 +12,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.service.slobrok.SlobrokMonitor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -151,7 +150,7 @@ public class ExampleModel {
          * A bit unrealistic, but the port is the same on all hosts.
          */
         ClusterBuilder addPort(int port, String... tags) {
-            portInfos.add(new PortInfo(port, Arrays.asList(tags)));
+            portInfos.add(new PortInfo(port, List.of(tags)));
             return this;
         }
 

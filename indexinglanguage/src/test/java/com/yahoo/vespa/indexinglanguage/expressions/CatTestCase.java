@@ -7,7 +7,8 @@ import com.yahoo.document.datatypes.*;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-import java.util.Arrays;
+
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -25,7 +26,7 @@ public class CatTestCase {
         assertEquals(2, exp.size());
         assertSame(foo, exp.get(0));
         assertSame(bar, exp.get(1));
-        assertEquals(Arrays.asList(foo, bar), exp.asList());
+        assertEquals(List.of(foo, bar), exp.asList());
     }
 
     @Test
@@ -33,11 +34,11 @@ public class CatTestCase {
         Expression foo = new AttributeExpression("foo");
         Expression bar = new AttributeExpression("bar");
         Expression exp = new CatExpression(foo, bar);
-        assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new StatementExpression(foo, bar)));
-        assertFalse(exp.equals(new CatExpression()));
-        assertFalse(exp.equals(new CatExpression(foo)));
-        assertFalse(exp.equals(new CatExpression(bar, foo)));
+        assertNotEquals(exp, new Object());
+        assertNotEquals(exp, new StatementExpression(foo, bar));
+        assertNotEquals(exp, new CatExpression());
+        assertNotEquals(exp, new CatExpression(foo));
+        assertNotEquals(exp, new CatExpression(bar, foo));
         assertEquals(exp, new CatExpression(foo, bar));
         assertEquals(exp.hashCode(), new CatExpression(foo, bar).hashCode());
     }

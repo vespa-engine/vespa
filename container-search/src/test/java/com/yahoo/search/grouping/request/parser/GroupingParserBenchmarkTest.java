@@ -4,7 +4,6 @@ package com.yahoo.search.grouping.request.parser;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,7 @@ public class GroupingParserBenchmarkTest {
     }
 
     private static List<String> getInputs() {
-        return Arrays.asList(
+        return List.of(
                 " all(group(foo)each(output(max(bar))))",
                 "all( group(foo)each(output(max(bar))))",
                 "all(group( foo)each(output(max(bar))))",

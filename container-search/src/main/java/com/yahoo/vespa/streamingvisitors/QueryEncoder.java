@@ -8,7 +8,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,10 +67,10 @@ class QueryEncoder {
             return cacheSettingMap;
         }
         if (query.getGroupingSessionCache())
-            return Collections.singletonMap("grouping", true);
+            return Map.of("grouping", true);
         if (query.getRanking().getQueryCache())
-            return Collections.singletonMap("query", true);
-        return Collections.emptyMap();
+            return Map.of("query", true);
+        return Map.of();
     }
 
     private static Map<String, String> createModelMap(Query query) {

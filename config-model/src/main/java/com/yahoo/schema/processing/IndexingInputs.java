@@ -36,7 +36,7 @@ public class IndexingInputs extends Processor {
             if (validate)
                 new VerifyInputExpression(schema, field).visit(script);
 
-            field.setIndexingScript(script);
+            field.setIndexingScript(schema.getName(), script);
         }
     }
 

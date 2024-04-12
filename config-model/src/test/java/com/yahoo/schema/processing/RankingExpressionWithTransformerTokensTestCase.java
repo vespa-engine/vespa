@@ -19,7 +19,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -94,16 +94,17 @@ public class RankingExpressionWithTransformerTokensTestCase {
         MockApplicationPackage application = (MockApplicationPackage) MockApplicationPackage.createEmpty();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfileRegistry = application.getQueryProfiles();
-        String sdContent = "search test {\n" +
-                "  document test {}\n" +
-                "  rank-profile my_profile inherits default {}\n" +
-                "}";
+        String sdContent = """
+                search test {
+                  document test {}
+                  rank-profile my_profile inherits default {}
+                }""";
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(application, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
         schemaBuilder.addSchema(sdContent);
         schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
         RankProfile rp = rankProfileRegistry.get(schema, "my_profile");
-        return new RankProfileTransformContext(rp, queryProfileRegistry, Collections.emptyMap(), null, Collections.emptyMap(), Collections.emptyMap());
+        return new RankProfileTransformContext(rp, queryProfileRegistry, Map.of(), null, Map.of(), Map.of());
     }
 
 }

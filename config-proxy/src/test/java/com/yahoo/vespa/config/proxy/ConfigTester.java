@@ -17,7 +17,6 @@ import com.yahoo.vespa.config.protocol.Payload;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,7 +29,7 @@ import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 public class ConfigTester {
 
     private static final long defaultTimeout = 10000;
-    private static final List<String> defContent = Collections.singletonList("bar string");
+    private static final List<String> defContent = List.of("bar string");
 
     static RawConfig fooConfig;
     static RawConfig barConfig;

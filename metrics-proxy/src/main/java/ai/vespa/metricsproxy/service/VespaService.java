@@ -7,7 +7,6 @@ import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -20,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class VespaService implements Comparable<VespaService> {
 
-    private static final Map<DimensionId, String> EMPTY_DIMENSIONS = Collections.emptyMap();
+    private static final Map<DimensionId, String> EMPTY_DIMENSIONS = Map.of();
     private static final String DEFAULT_MONITORING_PREFIX = "vespa";
     public static final String SEPARATOR = ".";
 

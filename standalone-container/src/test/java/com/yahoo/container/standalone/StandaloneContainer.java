@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -51,7 +50,7 @@ public class StandaloneContainer {
 
     private static void writeServicesXml(Path applicationPath, String servicesXml) throws IOException {
         Path path = applicationPath.resolve("services.xml");
-        List<String> output = Arrays.asList("<?xml version=\"1.0\" encoding=\"utf-8\"?>", servicesXml);
+        List<String> output = List.of("<?xml version=\"1.0\" encoding=\"utf-8\"?>", servicesXml);
         Files.write(path, output, StandardCharsets.UTF_8);
     }
 }

@@ -34,7 +34,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -150,7 +149,7 @@ public class X509CertificateUtils {
     public static List<SubjectAlternativeName> getSubjectAlternativeNames(X509Certificate certificate) {
         try {
             byte[] extensionValue = certificate.getExtensionValue(SUBJECT_ALTERNATIVE_NAMES.getOId());
-            if (extensionValue == null) return Collections.emptyList();
+            if (extensionValue == null) return List.of();
             ASN1Encodable asn1Encodable = ASN1Primitive.fromByteArray(extensionValue);
             if (asn1Encodable instanceof ASN1OctetString) {
                 asn1Encodable = ASN1Primitive.fromByteArray(((ASN1OctetString) asn1Encodable).getOctets());

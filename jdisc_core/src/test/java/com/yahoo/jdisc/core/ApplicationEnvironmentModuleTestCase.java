@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
-import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,7 +39,7 @@ public class ApplicationEnvironmentModuleTestCase {
             expected.add(entry.getKey().getTypeLiteral().getRawType());
         }
 
-        ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(), emptyList());
+        ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(), List.of());
         injector = Guice.createInjector(new ApplicationEnvironmentModule(loader));
         for (Map.Entry<Key<?>, Binding<?>> entry : injector.getBindings().entrySet()) {
             assertNotNull(expected.remove(entry.getKey().getTypeLiteral().getRawType()));
@@ -50,7 +49,7 @@ public class ApplicationEnvironmentModuleTestCase {
 
     @Test
     void requireThatContainerBuilderCanBeInjected() {
-        ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(), emptyList());
+        ApplicationLoader loader = new ApplicationLoader(new NonWorkingOsgiFramework(), List.of());
         assertNotNull(new ApplicationEnvironmentModule(loader).containerBuilder());
         assertNotNull(Guice.createInjector(new ApplicationEnvironmentModule(loader))
                 .getInstance(ContainerBuilder.class));

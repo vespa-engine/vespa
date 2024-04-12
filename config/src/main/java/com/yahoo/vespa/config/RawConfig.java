@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.protocol.Payload;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +39,7 @@ public class RawConfig extends ConfigInstance {
      * @param defMd5  The md5 sum of the .def-file.
      */
     public RawConfig(ConfigKey<?> key, String defMd5) {
-        this(key, defMd5, null, PayloadChecksums.empty(), 0L, false, 0, Collections.emptyList(), Optional.empty());
+        this(key, defMd5, null, PayloadChecksums.empty(), 0L, false, 0, List.of(), Optional.empty());
     }
 
     public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, PayloadChecksums payloadChecksums, long generation,

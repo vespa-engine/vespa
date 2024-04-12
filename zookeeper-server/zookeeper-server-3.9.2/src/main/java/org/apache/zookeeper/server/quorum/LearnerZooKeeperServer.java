@@ -19,7 +19,6 @@
 package org.apache.zookeeper.server.quorum;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import org.apache.zookeeper.jmx.MBeanRegistry;
 import org.apache.zookeeper.server.DataTreeBean;
@@ -61,7 +60,7 @@ public abstract class LearnerZooKeeperServer extends QuorumZooKeeperServer {
         if (sessionTracker != null) {
             return ((LearnerSessionTracker) sessionTracker).snapshot();
         }
-        Map<Long, Integer> map = Collections.emptyMap();
+        Map<Long, Integer> map = Map.of();
         return map;
     }
 

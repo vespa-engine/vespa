@@ -3,15 +3,14 @@ package com.yahoo.document;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Thomas Gundersen
@@ -37,7 +36,7 @@ public class DocumentTypeTestCase {
         root.addField("rootfield1", DataType.STRING);
         root.addField("rootfield2", DataType.STRING);
         root.addField("rootfield3", DataType.STRING);
-        root.addFieldSets(Collections.singletonMap(DocumentType.DOCUMENT, Arrays.asList("rootfield2")));
+        root.addFieldSets(Map.of(DocumentType.DOCUMENT, List.of("rootfield2")));
         assertEquals(1, root.fieldSet().size());
         assertEquals("rootfield2", root.fieldSet().iterator().next().getName());
         assertEquals(3, root.fieldSetAll().size());
@@ -49,25 +48,25 @@ public class DocumentTypeTestCase {
 
         DocumentType root = new DocumentType("root");
         root.addField("rootfield", DataType.STRING);
-        root.addFieldSets(Collections.singletonMap(DocumentType.DOCUMENT, Arrays.asList("rootfield")));
+        root.addFieldSets(Map.of(DocumentType.DOCUMENT, List.of("rootfield")));
 
         DocumentType parent1 = new DocumentType("parent1");
         parent1.addField("overridden", DataType.STRING);
         parent1.addField("parent1field", DataType.STRING);
         parent1.inherit(root);
-        parent1.addFieldSets(Collections.singletonMap(DocumentType.DOCUMENT, Arrays.asList("parent1field", "overridden")));
+        parent1.addFieldSets(Map.of(DocumentType.DOCUMENT, List.of("parent1field", "overridden")));
 
         DocumentType parent2 = new DocumentType("parent2");
         parent2.addField("parent2field", DataType.STRING);
         parent2.inherit(root);
-        parent2.addFieldSets(Collections.singletonMap(DocumentType.DOCUMENT, Arrays.asList("parent2field")));
+        parent2.addFieldSets(Map.of(DocumentType.DOCUMENT, List.of("parent2field")));
 
         DocumentType child = new DocumentType("child");
         child.addField("childfield", DataType.INT);
         child.addField("overridden", DataType.STRING);
         child.inherit(parent1);
         child.inherit(parent2);
-        child.addFieldSets(Collections.singletonMap(DocumentType.DOCUMENT, Arrays.asList("childfield", "overridden")));
+        child.addFieldSets(Map.of(DocumentType.DOCUMENT, List.of("childfield", "overridden")));
 
         typeManager.register(root);
         typeManager.register(parent1);
@@ -77,19 +76,19 @@ public class DocumentTypeTestCase {
         Iterator inherited = child.getInheritedTypes().iterator();
         assertEquals(parent1, inherited.next());
         assertEquals(parent2, inherited.next());
-        assertTrue(!inherited.hasNext());
+        assertFalse(inherited.hasNext());
 
         inherited = parent1.getInheritedTypes().iterator();
         assertEquals(root, inherited.next());
-        assertTrue(!inherited.hasNext());
+        assertFalse(inherited.hasNext());
 
         inherited = parent2.getInheritedTypes().iterator();
         assertEquals(root, inherited.next());
-        assertTrue(!inherited.hasNext());
+        assertFalse(inherited.hasNext());
 
         inherited = root.getInheritedTypes().iterator();
         assertEquals(DataType.DOCUMENT, inherited.next());
-        assertTrue(!inherited.hasNext());
+        assertFalse(inherited.hasNext());
 
         Iterator fields = child.fieldSet().iterator();
         Field field;

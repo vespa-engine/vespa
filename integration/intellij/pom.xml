@@ -9,7 +9,7 @@
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>vespa-intellij</artifactId> <!-- Not used - plugin is build by gradle -->
-    <version>1.6.0</version> <!-- See copy-zip below, which depends on this being the same as the v. in build.gradle.kts -->
+    <version>1.6.1</version> <!-- See copy-zip below, which depends on this being the same as the v. in build.gradle.kts -->
     <description>
         Maven wrapper for the gradle build of this IntelliJ plugin.
     </description>

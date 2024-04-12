@@ -13,7 +13,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -229,7 +228,7 @@ public class CommandLineOptions {
 
     private Iterator<String> getDocumentIds(CommandLine cl) {
         // Fetch document ids from stdin if no ids are passed in as command line arguments
-        List<String> documentIds = Arrays.asList(cl.getArgs());
+        List<String> documentIds = List.of(cl.getArgs());
         // WARNING: CommandLine.getArgs may return a single empty string as the only element
         if (documentIds.isEmpty() ||
                 documentIds.size() == 1 && documentIds.get(0).isEmpty()) {

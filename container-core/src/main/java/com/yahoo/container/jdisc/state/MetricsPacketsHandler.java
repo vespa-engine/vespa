@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +90,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
             @Override
             protected Iterable<ByteBuffer> responseContent() {
-                return Collections.singleton(ByteBuffer.wrap(buildMetricOutput(request.getUri().getQuery())));
+                return Set.of(ByteBuffer.wrap(buildMetricOutput(request.getUri().getQuery())));
             }
         }.dispatch(handler);
 
@@ -160,7 +159,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private List<JsonNode> getPacketsForSnapshot(MetricSnapshot metricSnapshot, String application, long timestamp) {
-        if (metricSnapshot == null) return Collections.emptyList();
+        if (metricSnapshot == null) return List.of();
 
         List<JsonNode> packets = new ArrayList<>();
 
@@ -178,9 +177,9 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private List<JsonNode> getPacketsForSnapshot(MetricSnapshot metricSnapshot, String metricSetId, String application, long timestamp) {
-        if (metricSnapshot == null) return Collections.emptyList();
+        if (metricSnapshot == null) return List.of();
         if (metricSetId == null) return getPacketsForSnapshot(metricSnapshot, application, timestamp);
-        Set<String> configuredMetrics = metricSets.getOrDefault(metricSetId, Collections.emptySet());
+        Set<String> configuredMetrics = metricSets.getOrDefault(metricSetId, Set.of());
         List<JsonNode> packets = new ArrayList<>();
 
         for (Map.Entry<MetricDimensions, MetricSet> snapshotEntry : metricSnapshot) {

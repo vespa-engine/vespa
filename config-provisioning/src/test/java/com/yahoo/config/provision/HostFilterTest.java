@@ -4,7 +4,7 @@ package com.yahoo.config.provision;
 import com.yahoo.component.Vtag;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -45,10 +45,10 @@ public class HostFilterTest {
 
     @Test
     void testMultiConditionFilter() {
-        HostFilter typeAndId = HostFilter.from(Collections.emptyList(),
-                               Collections.emptyList(),
-                               Collections.singletonList(ClusterSpec.Type.content),
-                               Collections.singletonList(ClusterSpec.Id.from("type1")));
+        HostFilter typeAndId = HostFilter.from(List.of(),
+                               List.of(),
+                               List.of(ClusterSpec.Type.content),
+                               List.of(ClusterSpec.Id.from("type1")));
 
         assertFalse(typeAndId.matches("anyhost", "flavor", membership("content/anyType/0/0/stateful")));
         assertFalse(typeAndId.matches("anyhost", "flavor", membership("container/type1/0/0")));

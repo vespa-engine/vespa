@@ -4,7 +4,6 @@ package com.yahoo.jdisc.core;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Constants;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -60,8 +59,8 @@ public class FelixParamsTestCase {
         assertEquals(prev.length + 2, next.length);
 
         List<String> diff = new LinkedList<>();
-        diff.addAll(Arrays.asList(next));
-        diff.removeAll(Arrays.asList(prev));
+        diff.addAll(List.of(next));
+        diff.removeAll(List.of(prev));
         assertEquals(2, diff.size());
         assertTrue(diff.contains("foo"));
         assertTrue(diff.contains("bar"));

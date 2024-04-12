@@ -2,14 +2,16 @@
 
 #pragma once
 
-#include "processallhandler.h"
-#include "mergehandler.h"
 #include "asynchandler.h"
+#include "batched_message.h"
+#include "mergehandler.h"
 #include "persistenceutil.h"
-#include "splitjoinhandler.h"
+#include "processallhandler.h"
 #include "simplemessagehandler.h"
+#include "splitjoinhandler.h"
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <span>
 
 namespace storage {
 
@@ -29,6 +31,8 @@ public:
     ~PersistenceHandler();
 
     void processLockedMessage(FileStorHandler::LockedMessage lock) const;
+    void process_locked_message_batch(std::shared_ptr<FileStorHandler::BucketLockInterface> lock,
+                                      std::span<BatchedMessage> bucket_messages);
 
     //TODO Rewrite tests to avoid this api leak
     const AsyncHandler & asyncHandler() const { return _asyncHandler; }

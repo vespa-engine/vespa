@@ -9,7 +9,6 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -174,8 +173,8 @@ public class EventDiffCalculator {
 
     private static void emitNodeResourceExhaustionEvents(PerStateParams params, List<Event> events, ContentCluster cluster) {
         // Feed block events are not ordered by node
-        Set<NodeResourceExhaustion> fromBlockSet = params.feedBlockFrom != null ? params.feedBlockFrom.getConcreteExhaustions() : Collections.emptySet();
-        Set<NodeResourceExhaustion> toBlockSet   = params.feedBlockTo   != null ? params.feedBlockTo.getConcreteExhaustions()   : Collections.emptySet();
+        Set<NodeResourceExhaustion> fromBlockSet = params.feedBlockFrom != null ? params.feedBlockFrom.getConcreteExhaustions() : Set.of();
+        Set<NodeResourceExhaustion> toBlockSet   = params.feedBlockTo   != null ? params.feedBlockTo.getConcreteExhaustions()   : Set.of();
 
         for (var ex : setSubtraction(fromBlockSet, toBlockSet)) {
             var info = cluster.getNodeInfo(ex.node);

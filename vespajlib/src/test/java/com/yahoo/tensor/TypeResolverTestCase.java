@@ -3,7 +3,6 @@
 package com.yahoo.tensor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -17,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 public class TypeResolverTestCase {
 
     private static List<String> mkl(String ...values) {
-        return Arrays.asList(values);
+        return List.of(values);
     }
 
     @Test

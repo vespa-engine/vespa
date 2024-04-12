@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -170,7 +170,7 @@ public class ThreadedRequestHandlerTestCase {
 
             @Override
             protected Iterable<ByteBuffer> requestContent() {
-                return Arrays.asList(content);
+                return List.of(content);
             }
         }.dispatch();
     }

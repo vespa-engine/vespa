@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -17,7 +17,7 @@ public class FeatureSet extends PredicateValue {
     private String key;
 
     public FeatureSet(String key, String... values) {
-        this(key, Arrays.asList(values));
+        this(key, List.of(values));
     }
 
     public FeatureSet(String key, Collection<String> values) {
@@ -83,10 +83,9 @@ public class FeatureSet extends PredicateValue {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof FeatureSet)) {
+        if (!(obj instanceof FeatureSet rhs)) {
             return false;
         }
-        FeatureSet rhs = (FeatureSet)obj;
         if (!key.equals(rhs.key)) {
             return false;
         }

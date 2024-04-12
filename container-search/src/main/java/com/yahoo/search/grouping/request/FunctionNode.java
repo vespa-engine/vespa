@@ -66,12 +66,12 @@ public abstract class FunctionNode extends GroupingExpression implements Iterabl
 
     @SuppressWarnings("unchecked")
     protected static <T> List<T> asList(T arg1, T... argN) {
-        return asList(Arrays.asList(arg1), Arrays.asList(argN));
+        return asList(List.of(arg1), List.of(argN));
     }
 
     @SuppressWarnings("unchecked")
     protected static <T> List<T> asList(T arg1, T arg2, T... argN) {
-        return asList(Arrays.asList(arg1, arg2), Arrays.asList(argN));
+        return asList(List.of(arg1, arg2), List.of(argN));
     }
 
     protected static <T> List<T> asList(List<T> foo, List<T> bar) {

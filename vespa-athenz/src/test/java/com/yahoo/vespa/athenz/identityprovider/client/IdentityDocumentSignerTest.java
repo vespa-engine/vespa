@@ -18,8 +18,8 @@ import org.junit.jupiter.api.Test;
 import java.net.URI;
 import java.security.KeyPair;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
@@ -41,7 +41,7 @@ public class IdentityDocumentSignerTest {
     private static final String configserverHostname = "configserverhostname";
     private static final String instanceHostname = "instancehostname";
     private static final Instant createdAt = Instant.EPOCH;
-    private static final HashSet<String> ipAddresses = new HashSet<>(Arrays.asList("1.2.3.4", "::1"));
+    private static final HashSet<String> ipAddresses = new HashSet<>(List.of("1.2.3.4", "::1"));
     private static final ClusterType clusterType = ClusterType.CONTAINER;
     private static final URI ztsUrl = URI.create("https://foo");
     private static final AthenzIdentity serviceIdentity = new AthenzService("vespa", "node");

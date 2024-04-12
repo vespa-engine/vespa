@@ -9,7 +9,6 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public final class SecurityRequestFilterChain extends AbstractResource implement
     }
 
     public static RequestFilter newInstance(SecurityRequestFilter... filters) {
-        return newInstance(Arrays.asList(filters));
+        return newInstance(List.of(filters));
     }
 
     public static RequestFilter newInstance(List<? extends SecurityRequestFilter> filters) {

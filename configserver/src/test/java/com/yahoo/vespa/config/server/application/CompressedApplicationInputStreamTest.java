@@ -18,7 +18,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
@@ -104,7 +103,7 @@ public class CompressedApplicationInputStreamTest {
         try (CompressedApplicationInputStream unpacked = streamFromTarGz(gzFile)) {
             outApp = unpacked.decompress();
         }
-        List<File> files = Arrays.asList(Objects.requireNonNull(outApp.listFiles()));
+        List<File> files = List.of(Objects.requireNonNull(outApp.listFiles()));
         assertEquals(5, files.size());
         assertTrue(files.contains(new File(outApp, "services.xml")));
         assertTrue(files.contains(new File(outApp, "hosts.xml")));
@@ -121,13 +120,13 @@ public class CompressedApplicationInputStreamTest {
         assertEquals(1, ext.listFiles().length);
         assertEquals(new File(ext, "foo").getAbsolutePath(), ext.listFiles()[0].getAbsolutePath());
 
-        files = Arrays.asList(ext.listFiles());
+        files = List.of(ext.listFiles());
         File foo = files.get(files.indexOf(new File(ext, "foo")));
         assertTrue(foo.isDirectory());
         assertEquals(1, foo.listFiles().length);
         assertEquals(new File(foo, "bar").getAbsolutePath(), foo.listFiles()[0].getAbsolutePath());
 
-        files = Arrays.asList(foo.listFiles());
+        files = List.of(foo.listFiles());
         File bar = files.get(files.indexOf(new File(foo, "bar")));
         assertTrue(bar.isDirectory());
         assertEquals(1, bar.listFiles().length);

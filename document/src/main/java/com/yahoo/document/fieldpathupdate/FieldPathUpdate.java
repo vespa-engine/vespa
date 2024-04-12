@@ -13,6 +13,7 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.serialization.DocumentUpdateReader;
 import com.yahoo.document.serialization.VespaDocumentSerializer6;
 import java.util.ListIterator;
+import java.util.Objects;
 
 /**
  * @author Thomas Gundersen
@@ -48,8 +49,8 @@ public abstract class FieldPathUpdate {
     private DocumentSelector selector;
     private String originalFieldPath;
     private String whereClause;
-    private Type updType;
-    private DocumentType docType;
+    private final Type updType;
+    private final DocumentType docType;
 
     public FieldPathUpdate(Type updType, DocumentType docType, String fieldPath, String whereClause) {
         this.updType = updType;
@@ -97,7 +98,7 @@ public abstract class FieldPathUpdate {
     public void setWhereClause(String whereClause) throws ParseException {
         this.whereClause = whereClause;
         selector = null;
-        if (whereClause != null && !whereClause.equals("")) {
+        if (whereClause != null && !whereClause.isEmpty()) {
             selector = new DocumentSelector(whereClause);
         }
     }
@@ -135,15 +136,11 @@ public abstract class FieldPathUpdate {
     }
 
     public static FieldPathUpdate create(Type type, DocumentType docType, DocumentUpdateReader reader) {
-        switch (type) {
-        case ASSIGN:
-            return new AssignFieldPathUpdate(docType, reader);
-        case ADD:
-            return new AddFieldPathUpdate(docType, reader);
-        case REMOVE:
-            return new RemoveFieldPathUpdate(docType, reader);
-        }
-        throw new IllegalArgumentException("Field path update type '" + type + "' not supported.");
+        return switch (type) {
+            case ASSIGN -> new AssignFieldPathUpdate(docType, reader);
+            case ADD -> new AddFieldPathUpdate(docType, reader);
+            case REMOVE -> new RemoveFieldPathUpdate(docType, reader);
+        };
     }
 
     @Override
@@ -153,10 +150,10 @@ public abstract class FieldPathUpdate {
 
         FieldPathUpdate that = (FieldPathUpdate) o;
 
-        if (docType != null ? !docType.equals(that.docType) : that.docType != null) return false;
-        if (originalFieldPath != null ? !originalFieldPath.equals(that.originalFieldPath) : that.originalFieldPath != null)
+        if (!Objects.equals(docType, that.docType)) return false;
+        if (!Objects.equals(originalFieldPath, that.originalFieldPath))
             return false;
-        if (whereClause != null ? !whereClause.equals(that.whereClause) : that.whereClause != null) return false;
+        if (!Objects.equals(whereClause, that.whereClause)) return false;
 
         return true;
     }

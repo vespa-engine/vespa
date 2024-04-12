@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -487,12 +486,12 @@ public class RankProfile implements Cloneable {
     }
 
     void setFirstPhaseRanking(RankingExpression rankingExpression) {
-        this.firstPhaseRanking = new RankingExpressionFunction(new ExpressionFunction(FIRST_PHASE, Collections.emptyList(), rankingExpression), false);
+        this.firstPhaseRanking = new RankingExpressionFunction(new ExpressionFunction(FIRST_PHASE, List.of(), rankingExpression), false);
     }
 
     public void setFirstPhaseRanking(String expression) {
         try {
-            firstPhaseRanking = new RankingExpressionFunction(parseRankingExpression(FIRST_PHASE, Collections.emptyList(), expression), false);
+            firstPhaseRanking = new RankingExpressionFunction(parseRankingExpression(FIRST_PHASE, List.of(), expression), false);
         } catch (ParseException e) {
             throw new IllegalArgumentException("Illegal first phase ranking function", e);
         }
@@ -515,7 +514,7 @@ public class RankProfile implements Cloneable {
 
     public void setSecondPhaseRanking(String expression) {
         try {
-            secondPhaseRanking = new RankingExpressionFunction(parseRankingExpression(SECOND_PHASE, Collections.emptyList(), expression), false);
+            secondPhaseRanking = new RankingExpressionFunction(parseRankingExpression(SECOND_PHASE, List.of(), expression), false);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Illegal second phase ranking function", e);
@@ -535,7 +534,7 @@ public class RankProfile implements Cloneable {
 
     public void setGlobalPhaseRanking(String expression) {
         try {
-            globalPhaseRanking = new RankingExpressionFunction(parseRankingExpression(GLOBAL_PHASE, Collections.emptyList(), expression), false);
+            globalPhaseRanking = new RankingExpressionFunction(parseRankingExpression(GLOBAL_PHASE, List.of(), expression), false);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Illegal global-phase ranking function", e);
@@ -1036,7 +1035,7 @@ public class RankProfile implements Cloneable {
         Map<Reference, TensorType> featureTypes = featureTypes();
         // Function compiling first pass: compile inline functions without resolving other functions
         Map<String, RankingExpressionFunction> inlineFunctions =
-                compileFunctions(this::getInlineFunctions, queryProfiles, featureTypes, importedModels, Collections.emptyMap(), expressionTransforms);
+                compileFunctions(this::getInlineFunctions, queryProfiles, featureTypes, importedModels, Map.of(), expressionTransforms);
 
         firstPhaseRanking = compile(this.getFirstPhase(), queryProfiles, featureTypes, importedModels, constants(), inlineFunctions, expressionTransforms);
         secondPhaseRanking = compile(this.getSecondPhase(), queryProfiles, featureTypes, importedModels, constants(), inlineFunctions, expressionTransforms);

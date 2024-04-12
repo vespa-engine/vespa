@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class represents a size-function in a {@link GroupingExpression}. It evaluates to a number that equals the
@@ -22,7 +22,7 @@ public class SizeFunction extends FunctionNode {
     }
 
     private SizeFunction(String label, Integer level, GroupingExpression exp) {
-        super("size", label, level, Arrays.asList(exp));
+        super("size", label, level, List.of(exp));
     }
 
     @Override

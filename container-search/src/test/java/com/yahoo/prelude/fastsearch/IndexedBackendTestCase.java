@@ -20,7 +20,6 @@ import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -98,7 +97,7 @@ public class IndexedBackendTestCase {
         var backend = new IndexedBackend(new ClusterParams(CLUSTER_PARAMS.getSearcherName(), CLUSTER_PARAMS.getServerId(),
                                                            CLUSTER_PARAMS.getDefaultSummary(), CLUSTER_PARAMS.getDocumentdbInfoConfig(),
                                                            new SchemaInfo(List.of(schema.build()), List.of())),
-                                         MockDispatcher.create(Collections.singletonList(new Node(CLUSTER, 0, "host0", 0))));
+                                         MockDispatcher.create(List.of(new Node(CLUSTER, 0, "host0", 0))));
         Query q = new Query("?query=foo");
         Result result = doSearch(backend, q, 0, 10);
         assertFalse(backend.summaryNeedsQuery(q));

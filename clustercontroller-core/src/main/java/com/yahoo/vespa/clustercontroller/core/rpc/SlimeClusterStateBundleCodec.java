@@ -41,11 +41,10 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
         // TODO add another function that is not toString for this..!
         states.setString("baseline", stateBundle.getBaselineClusterState().toString());
         Cursor spaces = states.setObject("spaces");
-        stateBundle.getDerivedBucketSpaceStates().entrySet()
-                .forEach(entry -> spaces.setString(entry.getKey(), entry.getValue().toString()));
+        stateBundle.getDerivedBucketSpaceStates().forEach((key, value) -> spaces.setString(key, value.toString()));
 
         // Only bother to encode feed block state if cluster is actually blocked
-        if (stateBundle.getFeedBlock().map(fb -> fb.blockFeedInCluster()).orElse(false)) {
+        if (stateBundle.getFeedBlock().map(ClusterStateBundle.FeedBlock::blockFeedInCluster).orElse(false)) {
             Cursor feedBlock = root.setObject("feed-block");
             feedBlock.setBool("block-feed-in-cluster", true);
             feedBlock.setString("description", stateBundle.getFeedBlock().get().getDescription());

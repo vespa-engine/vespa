@@ -79,10 +79,8 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
     @Test
     public void testPrometheusFormat() {
-        var counterContext = StateMetricContext.newInstance(Map.of("label1", "val1", "label2", "val2"));
-        var otherContext = StateMetricContext.newInstance(Map.of(
-                "label1", "This label has \"quotes\"",
-                "label2", "This label, a\nnewline"));
+        var counterContext = StateMetricContext.newInstance(Map.of("label", "This label has \"quotes\""));
+        var otherContext = StateMetricContext.newInstance(Map.of("label", "This label, a\nnewline"));
         var snapshot = new MetricSnapshot(0L, SNAPSHOT_INTERVAL, TimeUnit.MILLISECONDS);
         snapshot.add(counterContext, "some.counter", 10);
         snapshot.add(counterContext, "some.counter", 20);
@@ -100,8 +98,8 @@ public class StateHandlerTest extends StateHandlerTestBase {
                 bar_count 2 300000
                 bar_max 40.0 300000
                 bar_sum 60.0 300000
-                some_counter_count{label1="This label has \\"quotes\\"",label2="This label, a\\nnewline",} 3 300000
-                some_counter_count{label1="val1",label2="val2",} 30 300000
+                some_counter_count{label="This label has \\"quotes\\"",} 30 300000
+                some_counter_count{label="This label, a\\nnewline",} 3 300000
                 testing_infinity_count 1 300000
                 testing_infinity_max -Inf 300000
                 testing_infinity_sum -Inf 300000

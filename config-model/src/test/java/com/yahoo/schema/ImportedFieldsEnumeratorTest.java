@@ -22,7 +22,7 @@ public class ImportedFieldsEnumeratorTest {
         Schema parentSchema = new Schema(PARENT, MockApplicationPackage.createEmpty());
         SDDocumentType parentDocument = new SDDocumentType(PARENT, parentSchema);
         var parentField = new SDField(parentDocument, "their_field", DataType.INT);
-        AttributeUtils.addAttributeAspect(parentField);
+        AttributeUtils.addAttributeAspect(parentSchema.getName(), parentField);
         parentDocument.addField(parentField);
         parentSchema.addDocument(parentDocument);
 

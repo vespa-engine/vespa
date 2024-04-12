@@ -5,7 +5,6 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -34,7 +33,7 @@ public interface Endpoint {
 
     /** Creates a request against the endpoint, with the given path. */
     default HttpRequest.Builder request(String path) {
-        return request(path, Collections.emptyMap());
+        return request(path, Map.of());
     }
 
 }

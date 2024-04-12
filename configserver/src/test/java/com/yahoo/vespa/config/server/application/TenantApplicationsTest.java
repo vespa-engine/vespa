@@ -42,7 +42,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -306,7 +305,7 @@ public class TenantApplicationsTest {
     }
 
     private ModelFactoryRegistry createRegistry() {
-        return new ModelFactoryRegistry(Arrays.asList(new TestModelFactory(vespaVersion),
+        return new ModelFactoryRegistry(List.of(new TestModelFactory(vespaVersion),
                                                       new TestModelFactory(new Version(3, 2, 1))));
     }
 

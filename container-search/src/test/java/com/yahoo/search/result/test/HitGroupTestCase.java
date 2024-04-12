@@ -9,7 +9,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -165,14 +164,14 @@ public class HitGroupTestCase {
             Hit hit = new Hit("http://nalle.balle/1.html", 832);
             hit.setField("url", "http://nalle.balle/1.html");
             hit.setField("clickurl", "javascript:openWindow('http://www.foo');");
-            hit.setField("attributes", Arrays.asList("typevideo"));
+            hit.setField("attributes", List.of("typevideo"));
             hg.add(hit);
         }
         {
             Hit hit = new Hit("http://nalle.balle/2.html", 442);
             hit.setField("url", "http://nalle.balle/2.html");
             hit.setField("clickurl", "");
-            hit.setField("attributes", Arrays.asList("typevideo"));
+            hit.setField("attributes", List.of("typevideo"));
             hg.add(hit);
         }
         assertFalse(hg.isFillable());
@@ -187,7 +186,7 @@ public class HitGroupTestCase {
             Hit hit = new Hit("http://nalle.balle/1.html", 832);
             hit.setField("url", "http://nalle.balle/1.html");
             hit.setField("clickurl", "javascript:openWindow('http://www.foo');");
-            hit.setField("attributes", Arrays.asList("typevideo"));
+            hit.setField("attributes", List.of("typevideo"));
             hit.setFillable();
             hg.add(hit);
         }
@@ -195,7 +194,7 @@ public class HitGroupTestCase {
             Hit hit = new Hit("http://nalle.balle/2.html", 442);
             hit.setField("url", "http://nalle.balle/2.html");
             hit.setField("clickurl", "");
-            hit.setField("attributes", Arrays.asList("typevideo"));
+            hit.setField("attributes", List.of("typevideo"));
             hit.setFillable();
             hg.add(hit);
         }
@@ -211,14 +210,14 @@ public class HitGroupTestCase {
             Hit hit = new Hit("http://nalle.balle/1.html", 832);
             hit.setField("url", "http://nalle.balle/1.html");
             hit.setField("clickurl", "javascript:openWindow('http://www.foo');");
-            hit.setField("attributes", Arrays.asList("typevideo"));
+            hit.setField("attributes", List.of("typevideo"));
             hg.add(hit);
         }
         {
             Hit hit = new Hit("http://nalle.balle/2.html", 442);
             hit.setField("url", "http://nalle.balle/2.html");
             hit.setField("clickurl", "");
-            hit.setField("attributes", Arrays.asList("typevideo"));
+            hit.setField("attributes", List.of("typevideo"));
             hg.add(hit);
         }
         assertFalse(hg.isFillable());

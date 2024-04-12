@@ -43,7 +43,6 @@ import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.security.PublicKey;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +87,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
                 .addHeader(createCookieHeader(oAuthCredentials))
-                .setEntity(toJsonStringEntity(new TenancyRequestEntity(tenantDomain, providerService, Collections.emptyList())))
+                .setEntity(toJsonStringEntity(new TenancyRequestEntity(tenantDomain, providerService, List.of())))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }

@@ -3,7 +3,7 @@ package com.yahoo.searchlib.expression;
 
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -17,7 +17,7 @@ public class TimeStampFunctionTestCase {
     public void requireThatAccessorsWork() {
         ExpressionNode arg = new AttributeNode("foo");
         for (TimeStampFunctionNode.TimePart part : TimeStampFunctionNode.TimePart.values()) {
-            for (Boolean gmt : Arrays.asList(true, false)) {
+            for (Boolean gmt : List.of(true, false)) {
                 TimeStampFunctionNode node = new TimeStampFunctionNode(arg, part, gmt);
                 assertSame(arg, node.getArg());
                 assertEquals(part, node.getTimePart());

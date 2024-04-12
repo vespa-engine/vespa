@@ -19,13 +19,12 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -218,18 +217,17 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     private String verifyLogMessage(TestLogger logger, String... invalidOptions) {
-        List<String> strings = Arrays.asList(invalidOptions.clone());
+        List<String> strings = List.of(invalidOptions);
         // Verify that nothing is logged if there are no invalid options
         if (strings.isEmpty()) {
-            assertEquals(0, logger.msgs.size(), logger.msgs.size() > 0 ? logger.msgs.get(0).getSecond() : "");
+            assertEquals(0, logger.msgs.size(), !logger.msgs.isEmpty() ? logger.msgs.get(0).getSecond() : "");
             return null;
         }
 
-        assertTrue(logger.msgs.size() > 0, "Expected 1 or more log messages for invalid JM options, got none");
+        assertFalse(logger.msgs.isEmpty(), "Expected 1 or more log messages for invalid JM options, got none");
         Pair<Level, String> firstOption = logger.msgs.get(0);
         assertEquals(Level.WARNING, firstOption.getFirst());
 
-        Collections.sort(strings);
         return firstOption.getSecond();
     }
 

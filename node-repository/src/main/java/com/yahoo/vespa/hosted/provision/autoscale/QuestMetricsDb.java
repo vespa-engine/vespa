@@ -296,6 +296,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
+    private static String getStr(Record record, int col) {
+        CharSequence charSequence = record.getStrA(col);
+        return charSequence != null ? charSequence.toString() : "";
+    }
+
     private ListMap<String, NodeMetricSnapshot> getNodeSnapshots(Instant startTime,
                                                                  Set<String> hostnames,
                                                                  SqlExecutionContext context) throws SqlException {
@@ -312,7 +317,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
-                    String hostname = record.getStr(0).toString();
+                    String hostname = getStr(record, 0);
                     if (hostnames.isEmpty() || hostnames.contains(hostname)) {
                         snapshots.put(hostname,
                                       new NodeMetricSnapshot(Instant.ofEpochMilli(record.getTimestamp(1) / 1000),
@@ -345,9 +350,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
-                    String applicationIdString = record.getStr(0).toString();
+                    String applicationIdString = getStr(record, 0);
                     if ( ! application.serializedForm().equals(applicationIdString)) continue;
-                    String clusterId = record.getStr(1).toString();
+                    String clusterId = getStr(record, 1);
                     if (cluster.value().equals(clusterId)) {
                         snapshots.add(new ClusterMetricSnapshot(Instant.ofEpochMilli(record.getTimestamp(2) / 1000),
                                                                 record.getFloat(3),
@@ -475,7 +480,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                 try (RecordCursor cursor = factory.getCursor(context)) {
                     Record record = cursor.getRecord();
                     while (cursor.hasNext()) {
-                        columns.add(record.getStr(0).toString());
+                        columns.add(getStr(record, 0));
                     }
                 }
             }

@@ -7,6 +7,7 @@
 
 constexpr size_t loop_cnt = 64;
 constexpr size_t max_work = 1; // 500'000'000;
+constexpr bool dump_unexpected = false;
 constexpr bool verbose = false;
 
 using namespace search::queryeval;
@@ -40,7 +41,7 @@ double dual_ordered_cost_of(const std::vector<FlowStats> &data, InFlow in_flow, 
         any_flow.update_cost(total_cost, child_cost);
         any_flow.add(item.estimate);
     }
-    EXPECT_EQ(total_cost, result);
+    EXPECT_DOUBLE_EQ(total_cost, result);
     return result;
 }
 
@@ -174,7 +175,7 @@ void verify_flow(auto flow, const std::vector<double> &est_list, const std::vect
     AnyFlow any_flow = AnyFlow::create<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
     ASSERT_EQ(est_list.size() + 1, expect.size());
     for (size_t i = 0; i < est_list.size(); ++i) {
-        EXPECT_EQ(any_flow.flow(), flow.flow());
+        EXPECT_DOUBLE_EQ(any_flow.flow(), flow.flow());
         EXPECT_EQ(any_flow.strict(), flow.strict());
         EXPECT_DOUBLE_EQ(flow.flow(), expect[i].flow);
         EXPECT_EQ(flow.strict(), expect[i].strict);
@@ -182,7 +183,7 @@ void verify_flow(auto flow, const std::vector<double> &est_list, const std::vect
         any_flow.add(est_list[i]);
         flow.add(est_list[i]);
     }
-    EXPECT_EQ(any_flow.flow(), flow.flow());
+    EXPECT_DOUBLE_EQ(any_flow.flow(), flow.flow());
     EXPECT_EQ(any_flow.strict(), flow.strict());
     EXPECT_DOUBLE_EQ(flow.flow(), expect.back().flow);
     EXPECT_EQ(flow.strict(), expect.back().strict);
@@ -356,10 +357,10 @@ TEST(FlowTest, optimal_and_flow) {
             double min_cost = AndFlow::cost_of(data, strict);
             double max_cost = 0.0;
             AndFlow::sort(data, strict);
-            EXPECT_EQ(ordered_cost_of<AndFlow>(data, strict, false), min_cost);
+            EXPECT_DOUBLE_EQ(ordered_cost_of<AndFlow>(data, strict, false), min_cost);
             auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
                              double my_cost = ordered_cost_of<AndFlow>(my_data, strict, false);
-                             EXPECT_LE(min_cost, my_cost);
+                             EXPECT_LE(min_cost, my_cost + 1e-9);
                              max_cost = std::max(max_cost, my_cost);
                          };
             each_perm(data, check);
@@ -379,7 +380,7 @@ TEST(FlowTest, optimal_or_flow) {
             double min_cost = OrFlow::cost_of(data, strict);
             double max_cost = 0.0;
             OrFlow::sort(data, strict);
-            EXPECT_EQ(ordered_cost_of<OrFlow>(data, strict, false), min_cost);
+            EXPECT_DOUBLE_EQ(ordered_cost_of<OrFlow>(data, strict, false), min_cost);
             auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
                              double my_cost = ordered_cost_of<OrFlow>(my_data, strict, false);
                              EXPECT_LE(min_cost, my_cost + 1e-9);
@@ -451,7 +452,7 @@ void test_strict_AND_sort_strategy(auto my_sort) {
                                  flow.add(item.estimate);
                                  total_cost += child_cost;
                              }
-                             EXPECT_EQ(total_cost, ordered_cost_of<AndFlow>(list, true, true));
+                             EXPECT_DOUBLE_EQ(total_cost, ordered_cost_of<AndFlow>(list, true, true));
                              fprintf(stderr, "    total cost: %10f\n", total_cost);
                          };
         auto verify_order = [&](const std::vector<FlowStats> &list){
@@ -515,10 +516,7 @@ void test_strict_AND_sort_strategy(auto my_sort) {
                          };
             each_perm(data, check);
             double rel_err = 0.0;
-            double cost_range = (max_cost - min_cost);
-            if (cost_range > 1e-9) {
-                rel_err = (est_cost - min_cost) / cost_range;
-            }
+            rel_err = (est_cost - min_cost) / min_cost;
             if (rel_err > max_rel_err) {
                 max_rel_err = rel_err;
                 my_worst_order = my_order;
@@ -526,7 +524,7 @@ void test_strict_AND_sort_strategy(auto my_sort) {
             }
             sum_rel_err += rel_err;
             errs.push_back(rel_err);
-            if (verbose && !verify_order(best_order)) {
+            if (dump_unexpected && !verify_order(best_order)) {
                 fprintf(stderr, "  BEST ORDER IS UNEXPECTED:\n");
                 dump_flow(best_order, best_order);
                 fprintf(stderr, "  UNEXPECTED case, my_order:\n");
@@ -551,60 +549,12 @@ TEST(FlowTest, strict_and_with_allow_force_strict_basic_order) {
     test_strict_AND_sort_strategy(my_sort);
 }
 
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection) {
+TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_destructive_order_max_3_extra_strict) {
     auto my_sort = [](auto &data) {
                        AndFlow::sort(data, true);
-                       for (size_t next = 1; (next + 1) < data.size(); ++next) {
-                           auto [idx, score] = flow::select_forced_strict_and_child(flow::DirectAdapter(), data, next);
-                           if (score >= 0.0) {
-                               break;
-                           }
-                           auto pos = data.begin() + idx;
-                           std::rotate(data.begin() + next, pos, pos + 1);
-                       }
-                   };
-    test_strict_AND_sort_strategy(my_sort);
-}
-
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_with_strict_re_sorting) {
-    auto my_sort = [](auto &data) {
-                       AndFlow::sort(data, true);
-                       size_t strict_cnt = 1;
-                       for (; strict_cnt < data.size(); ++strict_cnt) {
-                           auto [idx, score] = flow::select_forced_strict_and_child(flow::DirectAdapter(), data, strict_cnt);
-                           if (score >= 0.0) {
-                               break;
-                           }
-                           auto pos = data.begin() + idx;
-                           std::rotate(data.begin() + strict_cnt, pos, pos + 1);
-                       }
-                       std::sort(data.begin(), data.begin() + strict_cnt,
-                                 [](const auto &a, const auto &b){ return (a.estimate < b.estimate); });
-                   };
-    test_strict_AND_sort_strategy(my_sort);
-}
-
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_with_order) {
-    auto my_sort = [](auto &data) {
-                       AndFlow::sort(data, true);
-                       for (size_t next = 1; next < data.size(); ++next) {
-                           auto [idx, target, score] = flow::select_forced_strict_and_child_with_order(flow::DirectAdapter(), data, next);
-                           if (score >= 0.0) {
-                               break;
-                           }
-                           auto pos = data.begin() + idx;
-                           std::rotate(data.begin() + target, pos, pos + 1);
-                       }
-                   };
-    test_strict_AND_sort_strategy(my_sort);
-}
-
-TEST(FlowTest, strict_and_with_allow_force_strict_incremental_strict_selection_with_destructive_order) {
-    auto my_sort = [](auto &data) {
-                       AndFlow::sort(data, true);
-                       for (size_t next = 1; next < data.size(); ++next) {
-                           auto [idx, target, score] = flow::select_forced_strict_and_child_with_destructive_order(flow::DirectAdapter(), data, next);
-                           if (score >= 0.0) {
+                       for (size_t next = 1; next <= 3 && next < data.size(); ++next) {
+                           auto [idx, target, diff] = flow::select_forced_strict_and_child(flow::DirectAdapter(), data, next);
+                           if (diff >= 0.0) {
                                break;
                            }
                            auto pos = data.begin() + idx;

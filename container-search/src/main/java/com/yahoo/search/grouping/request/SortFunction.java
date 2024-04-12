@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class represents a sort-function in a {@link GroupingExpression}. It evaluates to a list that equals the list
@@ -22,7 +22,7 @@ public class SortFunction  extends FunctionNode {
     }
 
     private SortFunction(String label, Integer level, GroupingExpression exp) {
-        super("sort", label, level, Arrays.asList(exp));
+        super("sort", label, level, List.of(exp));
     }
 
     @Override

@@ -10,7 +10,6 @@ import com.yahoo.tensor.functions.ScalarFunctions;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -77,7 +76,7 @@ public class Softmax extends IntermediateOperation {
     private class SoftmaxPartialOperation extends IntermediateOperation {
 
         private SoftmaxPartialOperation(String modelName, String nodeName, List<IntermediateOperation> inputs) {
-            super(modelName, nodeName + "_partial" , inputs != null ? inputs : Collections.emptyList());
+            super(modelName, nodeName + "_partial" , inputs != null ? inputs : List.of());
         }
 
         @Override

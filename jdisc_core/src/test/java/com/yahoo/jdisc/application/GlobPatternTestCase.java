@@ -4,7 +4,6 @@ package com.yahoo.jdisc.application;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,14 +41,14 @@ public class GlobPatternTestCase {
         assertMatch("foo", "foo", Collections.<String>emptyList());
         assertNotMatch("foo", "bar");
 
-        assertMatch("*", "foo", Arrays.asList("foo"));
-        assertMatch("*", "bar", Arrays.asList("bar"));
+        assertMatch("*", "foo", List.of("foo"));
+        assertMatch("*", "bar", List.of("bar"));
 
-        assertMatch("*foo", "foo", Arrays.asList(""));
-        assertMatch("*oo", "foo", Arrays.asList("f"));
-        assertMatch("f*o", "foo", Arrays.asList("o"));
-        assertMatch("fo*", "foo", Arrays.asList("o"));
-        assertMatch("foo*", "foo", Arrays.asList(""));
+        assertMatch("*foo", "foo", List.of(""));
+        assertMatch("*oo", "foo", List.of("f"));
+        assertMatch("f*o", "foo", List.of("o"));
+        assertMatch("fo*", "foo", List.of("o"));
+        assertMatch("foo*", "foo", List.of(""));
 
         assertNotMatch("*foo", "bar");
         assertNotMatch("*oo", "bar");
@@ -57,11 +56,11 @@ public class GlobPatternTestCase {
         assertNotMatch("fo*", "bar");
         assertNotMatch("foo*", "bar");
 
-        assertMatch("**foo", "foo", Arrays.asList("", ""));
-        assertMatch("**oo", "foo", Arrays.asList("", "f"));
-        assertMatch("f**o", "foo", Arrays.asList("", "o"));
-        assertMatch("fo**", "foo", Arrays.asList("", "o"));
-        assertMatch("foo**", "foo", Arrays.asList("", ""));
+        assertMatch("**foo", "foo", List.of("", ""));
+        assertMatch("**oo", "foo", List.of("", "f"));
+        assertMatch("f**o", "foo", List.of("", "o"));
+        assertMatch("fo**", "foo", List.of("", "o"));
+        assertMatch("foo**", "foo", List.of("", ""));
 
         assertNotMatch("**foo", "bar");
         assertNotMatch("**oo", "bar");
@@ -70,9 +69,9 @@ public class GlobPatternTestCase {
         assertNotMatch("foo**", "bar");
 
         assertMatch("foo bar", "foo bar", Collections.<String>emptyList());
-        assertMatch("*foo *bar", "foo bar", Arrays.asList("", ""));
-        assertMatch("foo* bar*", "foo bar", Arrays.asList("", ""));
-        assertMatch("f* *r", "foo bar", Arrays.asList("oo", "ba"));
+        assertMatch("*foo *bar", "foo bar", List.of("", ""));
+        assertMatch("foo* bar*", "foo bar", List.of("", ""));
+        assertMatch("f* *r", "foo bar", List.of("oo", "ba"));
 
         assertNotMatch("foo bar", "baz cox");
         assertNotMatch("*foo *bar", "baz cox");

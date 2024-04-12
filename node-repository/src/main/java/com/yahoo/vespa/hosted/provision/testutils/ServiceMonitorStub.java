@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -38,7 +37,7 @@ public class ServiceMonitorStub implements ServiceMonitor {
     @Inject
     @SuppressWarnings("unused")
     public ServiceMonitorStub(NodeRepository nodeRepository) {
-        this(Collections.emptyMap(), nodeRepository);
+        this(Map.of(), nodeRepository);
     }
 
     /** Create a service monitor where all nodes are initially up */

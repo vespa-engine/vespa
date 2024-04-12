@@ -4,7 +4,6 @@ package com.yahoo.collections;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -22,7 +21,6 @@ import static org.junit.Assert.fail;
  * @author Simon Thoresen Hult
  */
 public class LazyMapTest {
-
     @Test
     public void requireThatInitialDelegateIsEmpty() {
         LazyMap<String, String> map = newLazyMap(new HashMap<String, String>());
@@ -36,14 +34,14 @@ public class LazyMapTest {
         assertEquals(LazyMap.SingletonMap.class, map.getDelegate().getClass());
 
         map = newLazyMap(new HashMap<String, String>());
-        map.putAll(Collections.singletonMap("foo", "bar"));
+        map.put("foo", "bar");
         assertEquals(LazyMap.SingletonMap.class, map.getDelegate().getClass());
     }
 
     @Test
     public void requireThatEmptyMapPutAllEmptyMapDoesNotUpgradeToSingletonMap() {
         LazyMap<String, String> map = newLazyMap(new HashMap<String, String>());
-        map.putAll(Collections.<String, String>emptyMap());
+        map.putAll(Map.of());
         assertEquals(LazyMap.EmptyMap.class, map.getDelegate().getClass());
     }
 
@@ -81,7 +79,7 @@ public class LazyMapTest {
         assertEquals("bar", map.put("foo", "baz"));
         assertEquals("baz", map.get("foo"));
         assertSame(delegate, map.getDelegate());
-        map.putAll(Collections.singletonMap("foo", "cox"));
+        map.put("foo", "cox");
         assertSame(delegate, map.getDelegate());
         assertEquals("cox", map.get("foo"));
     }
@@ -89,7 +87,7 @@ public class LazyMapTest {
     @Test
     public void requireThatSingletonMapPutAllEmptyMapDoesNotUpgradeToFinalMap() {
         LazyMap<String, String> map = newSingletonMap("foo", "bar");
-        map.putAll(Collections.<String, String>emptyMap());
+        map.putAll(Map.of());
         assertEquals(LazyMap.SingletonMap.class, map.getDelegate().getClass());
     }
 
@@ -188,7 +186,7 @@ public class LazyMapTest {
         Mockito.verify(delegate).put("foo", "bar");
         Mockito.verify(delegate).put("baz", "cox");
 
-        Map<String, String> arg = Collections.singletonMap("baz", "cox");
+        Map<String, String> arg = Map.of("baz", "cox");
         map.putAll(arg);
         Mockito.verify(delegate).putAll(arg);
 

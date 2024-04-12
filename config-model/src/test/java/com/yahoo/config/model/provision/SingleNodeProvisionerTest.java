@@ -12,7 +12,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +39,7 @@ public class SingleNodeProvisionerTest {
         assertTrue(map.keySet().containsAll(aliases));
 
         // 5 services, 3 host aliases, mapping to 2 host.
-        aliases = createAliases(Collections.singletonList("node3"));
+        aliases = createAliases(List.of("node3"));
         map = allocate(hostProvisioner, aliases);
 
         assertCorrectNumberOfHost(map, 1);
@@ -48,7 +47,7 @@ public class SingleNodeProvisionerTest {
         assertTrue(map.keySet().containsAll(aliases));
 
         // 5 services, 3 host aliases, mapping to 3 host.
-        aliases = createAliases(Collections.singletonList("node4"));
+        aliases = createAliases(List.of("node4"));
         map = allocate(hostProvisioner, aliases);
         assertThat(map.size(), is(3));
         assertCorrectNumberOfHost(map, 1);

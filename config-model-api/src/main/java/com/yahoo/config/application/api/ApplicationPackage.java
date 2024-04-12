@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -213,11 +212,11 @@ public interface ApplicationPackage {
     }
 
     default Map<Version, FileRegistry> getFileRegistries() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     default Map<String, String> legacyOverrides() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     /**

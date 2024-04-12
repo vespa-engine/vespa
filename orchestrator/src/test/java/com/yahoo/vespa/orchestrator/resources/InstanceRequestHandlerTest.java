@@ -17,7 +17,6 @@ import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 import org.junit.jupiter.api.Test;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -34,7 +33,7 @@ class InstanceRequestHandlerTest {
     private static final String APPLICATION_INSTANCE_REFERENCE = "tenant:app:prod:us-west-1:instance";
     private static final ApplicationId APPLICATION_ID = ApplicationId.from(
             "tenant", "app", "instance");
-    private static final List<Mirror.Entry> ENTRIES = Arrays.asList(
+    private static final List<Mirror.Entry> ENTRIES = List.of(
             new Mirror.Entry("name1", "tcp/spec:1"),
             new Mirror.Entry("name2", "tcp/spec:2"));
     private static final ClusterId CLUSTER_ID = new ClusterId("cluster-id");

@@ -12,7 +12,7 @@ import com.yahoo.schema.document.SDField;
 public interface FieldOperation extends Comparable<FieldOperation> {
 
     /** Apply this operation on the given field */
-    void apply(SDField field);
+    void apply(String schemaName, SDField field);
     
     @Override
     default int compareTo(FieldOperation other) {

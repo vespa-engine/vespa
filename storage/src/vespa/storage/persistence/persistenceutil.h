@@ -25,12 +25,52 @@ namespace storage {
 
 class PersistenceUtil;
 
+struct DeferredReplySenderStub : MessageSender {
+    std::mutex _mutex;
+    std::vector<std::shared_ptr<api::StorageReply>> _deferred_replies;
+
+    DeferredReplySenderStub();
+    ~DeferredReplySenderStub() override;
+
+    void sendCommand(const std::shared_ptr<api::StorageCommand>&) override {
+        abort(); // Not supported
+    }
+    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
+        std::lock_guard lock(_mutex);
+        _deferred_replies.emplace_back(reply);
+    }
+};
+
+class AsyncMessageBatch {
+    std::shared_ptr<FileStorHandler::BucketLockInterface> _bucket_lock;
+    const PersistenceUtil& _env;
+    MessageSender& _reply_sender;
+    DeferredReplySenderStub _deferred_sender_stub;
+public:
+    AsyncMessageBatch(std::shared_ptr<FileStorHandler::BucketLockInterface> bucket_lock,
+                      const PersistenceUtil& env,
+                      MessageSender& reply_sender) noexcept;
+    // Triggered by last referencing batched MessageTracker being destroyed.
+    // Fetches bucket info, updates DB and sends all deferred replies with the new bucket info.
+    ~AsyncMessageBatch();
+
+    [[nodiscard]] MessageSender& deferred_sender_stub() noexcept { return _deferred_sender_stub; }
+};
+
 class MessageTracker {
 public:
     using UP = std::unique_ptr<MessageTracker>;
 
-    MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender,
-                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg,
+    MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & reply_sender,
+                   FileStorHandler::BucketLockInterface::SP bucket_lock, std::shared_ptr<api::StorageMessage> msg,
+                   ThrottleToken throttle_token);
+
+    // For use with batching where bucket lock is held separately and bucket info
+    // is _not_ fetched or updated per message.
+    MessageTracker(const framework::MilliSecTimer& timer, const PersistenceUtil& env,
+                   std::shared_ptr<AsyncMessageBatch> batch,
+                   MessageSender& deferred_reply_sender,
+                   std::shared_ptr<api::StorageMessage> msg,
                    ThrottleToken throttle_token);
 
     ~MessageTracker();
@@ -58,48 +98,53 @@ public:
      * commands like merge. */
     void dontReply() { _sendReply = false; }
 
-    bool hasReply() const { return bool(_reply); }
-    const api::StorageReply & getReply() const {
+    [[nodiscard]] bool hasReply() const { return bool(_reply); }
+    [[nodiscard]] const api::StorageReply & getReply() const {
         return *_reply;
     }
-    api::StorageReply & getReply() {
+    [[nodiscard]] api::StorageReply & getReply() {
         return *_reply;
     }
-    std::shared_ptr<api::StorageReply> && stealReplySP() && {
+    [[nodiscard]] std::shared_ptr<api::StorageReply> && stealReplySP() && {
         return std::move(_reply);
     }
 
     void generateReply(api::StorageCommand& cmd);
 
-    api::ReturnCode getResult() const { return _result; }
+    [[nodiscard]] api::ReturnCode getResult() const { return _result; }
 
-    spi::Context & context() { return _context; }
-    document::BucketId getBucketId() const {
+    [[nodiscard]] spi::Context & context() { return _context; }
+    [[nodiscard]] document::BucketId getBucketId() const {
         return _bucketLock->getBucket().getBucketId();
     }
 
     void sendReply();
 
-    bool checkForError(const spi::Result& response);
+    [[nodiscard]] bool checkForError(const spi::Result& response);
 
     // Returns a non-nullptr notifier instance iff the underlying operation wants to be notified
-    // when the sync phase is complete. Otherwise returns a nullptr shared_ptr.
-    std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier> sync_phase_done_notifier_or_nullptr() const;
+    // when the sync phase is complete. Otherwise, returns a nullptr shared_ptr.
+    [[nodiscard]] std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier> sync_phase_done_notifier_or_nullptr() const;
 
     static MessageTracker::UP
     createForTesting(const framework::MilliSecTimer & timer, PersistenceUtil & env, MessageSender & replySender,
                      FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg);
 
 private:
-    MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
-                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg,
+    MessageTracker(const framework::MilliSecTimer& timer, const PersistenceUtil& env,
+                   MessageSender& reply_sender, bool update_bucket_info,
+                   std::shared_ptr<FileStorHandler::BucketLockInterface> bucket_lock,
+                   std::shared_ptr<AsyncMessageBatch> part_of_batch,
+                   std::shared_ptr<api::StorageMessage> msg,
                    ThrottleToken throttle_token);
 
     [[nodiscard]] bool count_result_as_failure() const noexcept;
 
     bool                                     _sendReply;
     bool                                     _updateBucketInfo;
+    // Either _bucketLock or _part_of_batch must be set, never both at the same time
     FileStorHandler::BucketLockInterface::SP _bucketLock;
+    std::shared_ptr<AsyncMessageBatch>       _part_of_batch; // nullptr if not batched
     std::shared_ptr<api::StorageMessage>     _msg;
     ThrottleToken                            _throttle_token;
     spi::Context                             _context;
@@ -117,8 +162,6 @@ public:
     struct LockResult {
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock;
         LockResult() : lock() {}
-
-        bool bucketExisted() const { return bool(lock); }
     };
 
     PersistenceUtil(const ServiceLayerComponent&, FileStorHandler& fileStorHandler,

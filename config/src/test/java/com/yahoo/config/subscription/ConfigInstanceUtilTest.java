@@ -11,7 +11,7 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static com.yahoo.foo.FunctionTestConfig.*;
@@ -97,7 +97,7 @@ public class ConfigInstanceUtilTest {
                 doublearr(123.0).
                 stringarr("bar").
                 enumarr(Enumarr.VALUES).
-                refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
+                refarr(List.of(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
 
                 basicStruct(b -> b.

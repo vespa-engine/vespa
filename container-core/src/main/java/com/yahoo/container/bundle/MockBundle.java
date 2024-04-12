@@ -157,7 +157,7 @@ public class MockBundle implements Bundle, BundleWiring {
 
     @Override
     public Map<X509Certificate, List<X509Certificate>> getSignerCertificates(int signersType) {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @SuppressWarnings("unchecked")
@@ -239,7 +239,7 @@ public class MockBundle implements Bundle, BundleWiring {
 
     @Override
     public Collection<String> listResources(String p1, String p2, int p3) {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override

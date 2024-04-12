@@ -38,7 +38,7 @@ using Priority = uint16_t; // 0 - max pri, 255 - min pri
 
 // Define this type just because a ton of tests currently use it.
 struct Trace {
-    using TraceLevel = int;
+    using TraceLevel = uint32_t;
 };
 
 class Context {
@@ -48,10 +48,10 @@ class Context {
 public:
     Context(Context &&) noexcept = default;
     Context & operator = (Context &&) noexcept = default;
-    Context(Priority pri, int maxTraceLevel) noexcept;
+    Context(Priority pri, uint32_t maxTraceLevel) noexcept;
     ~Context();
 
-    Priority getPriority() const noexcept { return _priority; }
+    [[nodiscard]] Priority getPriority() const noexcept { return _priority; }
 
     /**
      * A read operation might choose to relax its consistency requirements,
@@ -65,16 +65,16 @@ public:
     void setReadConsistency(ReadConsistency consistency) noexcept {
         _readConsistency = consistency;
     }
-    ReadConsistency getReadConsistency() const noexcept {
+    [[nodiscard]] ReadConsistency getReadConsistency() const noexcept {
         return _readConsistency;
     }
 
-    vespalib::Trace && steal_trace() noexcept { return std::move(_trace); }
-    vespalib::Trace& getTrace() noexcept { return _trace; }
-    const vespalib::Trace& getTrace() const noexcept { return _trace; }
+    [[nodiscard]] vespalib::Trace && steal_trace() noexcept { return std::move(_trace); }
+    [[nodiscard]] vespalib::Trace& getTrace() noexcept { return _trace; }
+    [[nodiscard]] const vespalib::Trace& getTrace() const noexcept { return _trace; }
 
-    bool shouldTrace(int level) noexcept { return _trace.shouldTrace(level); }
-    void trace(int level, vespalib::stringref msg, bool addTime = true) {
+    [[nodiscard]] bool shouldTrace(uint32_t level) const noexcept { return _trace.shouldTrace(level); }
+    void trace(uint32_t level, vespalib::stringref msg, bool addTime = true) {
         _trace.trace(level, msg, addTime);
     }
 };

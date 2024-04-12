@@ -14,8 +14,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -55,9 +55,9 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         Analyze.getClassName(Type.getReturnType(desc)).ifPresent(imports::add);
-        Arrays.asList(Type.getArgumentTypes(desc)).forEach(argType -> Analyze.getClassName(argType).ifPresent(imports::add));
+        List.of(Type.getArgumentTypes(desc)).forEach(argType -> Analyze.getClassName(argType).ifPresent(imports::add));
         if (exceptions != null) {
-            Arrays.asList(exceptions).forEach(ex -> Analyze.internalNameToClassName(ex).ifPresent(imports::add));
+            List.of(exceptions).forEach(ex -> Analyze.internalNameToClassName(ex).ifPresent(imports::add));
         }
 
         AnalyzeSignatureVisitor.analyzeMethod(signature, this);
@@ -83,7 +83,7 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
         }
 
         addImportWithInternalName(superName);
-        Arrays.asList(interfaces).forEach(this::addImportWithInternalName);
+        List.of(interfaces).forEach(this::addImportWithInternalName);
 
         AnalyzeSignatureVisitor.analyzeClass(signature, this);
     }

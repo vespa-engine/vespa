@@ -4,6 +4,7 @@ package com.yahoo.searchlib.expression;
 import com.yahoo.vespa.objects.ObjectDumper;
 import org.junit.Test;
 
+
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -18,38 +19,46 @@ public class ObjectVisitorTestCase {
         assertDump("test: <NULL>\n", null);
         assertDump("test: 1\n", 1);
         assertDump("test: 'foo'\n", "foo");
-        assertDump("test: List {\n" +
-                   "    [0]: 'foo'\n" +
-                   "    [1]: 69\n" +
-                   "    [2]: <NULL>\n" +
-                   "}\n",
+        assertDump("""
+                        test: List {
+                            [0]: 'foo'
+                            [1]: 69
+                            [2]: <NULL>
+                        }
+                        """,
                    Arrays.asList("foo", 69, null));
-        assertDump("test: String[] {\n" +
-                   "    [0]: 'foo'\n" +
-                   "    [1]: 'bar'\n" +
-                   "    [2]: 'baz'\n" +
-                   "}\n",
+        assertDump("""
+                        test: String[] {
+                            [0]: 'foo'
+                            [1]: 'bar'
+                            [2]: 'baz'
+                        }
+                        """,
                    new String[] { "foo", "bar", "baz" });
-        assertDump("test: IntegerResultNode {\n" +
-                   "    classId: 16491\n" +
-                   "    value: 5\n" +
-                   "}\n",
+        assertDump("""
+                        test: IntegerResultNode {
+                            classId: 16491
+                            value: 5
+                        }
+                        """,
                    new IntegerResultNode(5));
-        assertDump("test: FixedWidthBucketFunctionNode {\n" +
-                   "    classId: 16461\n" +
-                   "    result: <NULL>\n" +
-                   "    args: List {\n" +
-                   "        [0]: AttributeNode {\n" +
-                   "            classId: 16439\n" +
-                   "            result: <NULL>\n" +
-                   "            attribute: 'foo'\n" +
-                   "        }\n" +
-                   "    }\n" +
-                   "    width: IntegerResultNode {\n" +
-                   "        classId: 16491\n" +
-                   "        value: 5\n" +
-                   "    }\n" +
-                   "}\n",
+        assertDump("""
+                        test: FixedWidthBucketFunctionNode {
+                            classId: 16461
+                            result: <NULL>
+                            args: List {
+                                [0]: AttributeNode {
+                                    classId: 16439
+                                    result: <NULL>
+                                    attribute: 'foo'
+                                }
+                            }
+                            width: IntegerResultNode {
+                                classId: 16491
+                                value: 5
+                            }
+                        }
+                        """,
                    new FixedWidthBucketFunctionNode(new IntegerResultNode(5), new AttributeNode("foo")));
     }
 

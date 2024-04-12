@@ -10,7 +10,6 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.yql.VespaGroupingStep;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,7 +52,7 @@ public class Select implements Cloneable {
     }
 
     public Select(String where, String grouping, Query query) {
-        this(where, grouping, null, query, Collections.emptyList());
+        this(where, grouping, null, query, List.of());
     }
 
     private Select(String where, String grouping, String groupingExpressionString, Query query, List<GroupingRequest> groupingRequests) {

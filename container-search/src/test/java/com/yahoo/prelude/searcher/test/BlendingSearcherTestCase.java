@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.searcher.test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -286,7 +285,7 @@ public class BlendingSearcherTestCase {
         assertEquals(1, cr.getConcreteHitCount());
         com.yahoo.search.result.ErrorHit errorHit = cr.hits().getErrorHit();
         Iterator errorIterator = errorHit.errorIterator();
-        List<String> errorList = Arrays.asList("Source 'a': No backends in service. Try later",
+        List<String> errorList = List.of("Source 'a': No backends in service. Try later",
                 "Source 'b': 2: Request too large");
         String a = errorIterator.next().toString();
         assertTrue(errorList.contains(a), a);

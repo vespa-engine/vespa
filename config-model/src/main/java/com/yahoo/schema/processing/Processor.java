@@ -87,7 +87,7 @@ public abstract class Processor {
         implementationField.setRankType(RankType.EMPTY);
         implementationField.setStemming(Stemming.NONE);
         implementationField.getNormalizing().inferCodepoint();
-        implementationField.parseIndexingScript(indexing);
+        implementationField.parseIndexingScript(schema.getName(), indexing);
         String indexName = field.getName();
         String implementationIndexName = indexName + "_" + suffix;
         Index implementationIndex = new Index(implementationIndexName);

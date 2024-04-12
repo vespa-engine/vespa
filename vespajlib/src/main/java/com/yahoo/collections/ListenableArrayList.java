@@ -56,7 +56,7 @@ public class ListenableArrayList<ITEM> extends ArrayList<ITEM> {
     }
 
     public List<Runnable> listeners() {
-        if (listeners == null) return Collections.emptyList();
+        if (listeners == null) return List.of();
         return Collections.unmodifiableList(listeners);
     }
 

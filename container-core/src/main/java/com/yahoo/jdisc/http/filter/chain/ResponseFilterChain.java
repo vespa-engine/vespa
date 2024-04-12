@@ -8,7 +8,6 @@ import com.yahoo.jdisc.application.ResourcePool;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -39,7 +38,7 @@ public final class ResponseFilterChain extends AbstractResource implements Respo
     }
 
     public static ResponseFilter newInstance(ResponseFilter... filters) {
-        return newInstance(Arrays.asList(filters));
+        return newInstance(List.of(filters));
     }
 
     public static ResponseFilter newInstance(List<? extends ResponseFilter> filters) {
