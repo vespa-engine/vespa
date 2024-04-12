@@ -23,7 +23,7 @@ public class OpenTelemetryConfigGenerator {
                   prometheus_simple:
                     collection_interval: 60s
                     endpoint: 'localhost:4080'
-                    metrics_path: '/state/v1/metrics
+                    metrics_path: '/state/v1/metrics'
                     params:
                       format: 'prometheus'
                     tls:
