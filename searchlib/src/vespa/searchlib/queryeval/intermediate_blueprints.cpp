@@ -261,6 +261,9 @@ AndBlueprint::sort(Children &children, bool strict, bool sort_by_cost) const
 {
     if (sort_by_cost) {
         AndFlow::sort(children, strict);
+        if (strict && opt_allow_force_strict()) {
+            AndFlow::reorder_for_extra_strictness(children, true, 3);
+        }
     } else {
         std::sort(children.begin(), children.end(), TieredLessEstimate());
     }
