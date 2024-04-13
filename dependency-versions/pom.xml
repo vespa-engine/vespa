@@ -137,7 +137,7 @@
         <plexus-archiver.vespa.version>4.9.2</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
         <plexus-io.vespa.version>3.4.2</plexus-io.vespa.version>
-        <plexus-utils.vespa.version>4.0.0</plexus-utils.vespa.version>
+        <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.3</plexus-xml.vespa.version>
         <protobuf.vespa.version>3.25.3</protobuf.vespa.version>
         <questdb.vespa.version>7.4.0</questdb.vespa.version>
