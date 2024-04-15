@@ -61,6 +61,16 @@
       <artifactId>onnxruntime</artifactId>
     </dependency>
     <dependency>
+      <groupId>de.kherud</groupId>
+      <artifactId>llama</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jetbrains</groupId>
+          <artifactId>annotations</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>airline</artifactId>
       <exclusions>
