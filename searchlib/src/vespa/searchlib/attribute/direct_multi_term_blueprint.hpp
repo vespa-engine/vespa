@@ -181,4 +181,34 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearch(Filte
     return wrapper;
 }
 
+template <typename PostingStoreType, typename SearchType>
+queryeval::FlowStats
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::calculate_flow_stats(uint32_t docid_limit) const
+{
+    using OrFlow = search::queryeval::OrFlow;
+    struct MyAdapter {
+        uint32_t docid_limit;
+        MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+        double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
+            return abs_to_rel_est(term.posting_size, docid_limit);
+        }
+        double cost(const IDirectPostingStore::LookupResult &) const noexcept {
+            return search::queryeval::flow::btree_cost();
+        }
+        double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
+            double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
+            return search::queryeval::flow::btree_strict_cost(rel_est);
+        }
+    };
+    double est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
+    // Iterator benchmarking has shown that non-strict cost is different for attributes
+    // that support using a reverse hash filter (see use_hash_filter()).
+    // Program used: searchlib/src/tests/queryeval/iterator_benchmark
+    // Tests: analyze_and_with_filter_vs_in(), analyze_and_with_filter_vs_in_array()
+    double non_strict_cost = (SearchType::supports_hash_filter && !_iattr.hasMultiValue())
+            ? queryeval::flow::reverse_hash_lookup() :
+              OrFlow::cost_of(MyAdapter(docid_limit), _terms, false);
+    return {est, non_strict_cost, OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
+}
+
 }

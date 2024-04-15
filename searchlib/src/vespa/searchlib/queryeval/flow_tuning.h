@@ -30,6 +30,11 @@ inline double lookup_cost(size_t num_indirections) {
     return 1.0 + (num_indirections * 1.0);
 }
 
+// Non-strict cost of reverse lookup into a hash table (containing terms from a multi-term operator).
+inline double reverse_hash_lookup() {
+    return 1.0;
+}
+
 // Strict cost of lookup based matching in an attribute (not fast-search).
 inline double lookup_strict_cost(size_t num_indirections) {
     return lookup_cost(num_indirections);
