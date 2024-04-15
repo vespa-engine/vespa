@@ -57,7 +57,7 @@ public class ApplicationSerializer {
     private static final String maxResourcesKey = "max";
     private static final String groupSizeKey = "groupSize";
     private static final String requiredKey = "required";
-    private static final String cloudAccountKey = "cloud-account";
+    private static final String cloudAccountKey = "cloudAccount";
     private static final String suggestionsKey = "suggestionsKey";
     private static final String clusterInfoKey = "clusterInfo";
     private static final String bcpDeadlineKey = "bcpDeadline";

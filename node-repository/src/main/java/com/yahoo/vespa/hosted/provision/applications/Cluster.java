@@ -61,7 +61,7 @@ public class Cluster {
         this.max = Objects.requireNonNull(maxResources);
         this.groupSize = Objects.requireNonNull(groupSize);
         this.required = required;
-        this.cloudAccount = cloudAccount;
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.suggestions = Objects.requireNonNull(suggestions);
         Objects.requireNonNull(target);
         if (target.resources().isPresent() && ! target.resources().get().isWithin(minResources, maxResources))
