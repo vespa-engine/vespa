@@ -44,8 +44,8 @@ public enum Dimension {
     /**
      * Cloud from com.yahoo.config.provision.CloudName::value, e.g. yahoo, aws, gcp.
      *
-     * <p><em>Eager resolution</em>:  This dimension is resolved before putting the flag data to the config server
-     * or controller, unless controller and the flag has declared this dimension.
+     * <p><em>Eager resolution</em>:  This dimension is resolved before storing the flag data in the config server and
+     * controller ZooKeeper, UNLESS it is the controller and the flag was defined with this dimension in [Permanent]Flags.
      */
     CLOUD("cloud"),
 
@@ -61,7 +61,10 @@ public enum Dimension {
     /** Email address of user - provided by auth0 in console. */
     CONSOLE_USER_EMAIL("console-user-email"),
 
-    /** Hosted Vespa environment from com.yahoo.config.provision.Environment::value, e.g. prod, staging, test. */
+    /**
+     * Hosted Vespa environment from com.yahoo.config.provision.Environment::value, e.g. prod, staging, test.
+     * <em>Eager resolution</em>, see {@link #CLOUD}.
+     */
     ENVIRONMENT("environment"),
 
     /**
