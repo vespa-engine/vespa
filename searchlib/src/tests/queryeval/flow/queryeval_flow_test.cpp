@@ -466,7 +466,6 @@ void test_AND_sort_strategy(auto my_sort) {
                                     // (3) non-strict items are sorted by max(reduction/cost)
                                     auto flow = AndFlow(in_flow);
                                     auto my_cmp = flow::MinAndCost(flow::DirectAdapter());
-                                    size_t num_strict = 0;
                                     size_t num_non_strict = 0;
                                     FlowStats prev_strict(0.0, 0.0, 0.0);
                                     FlowStats prev_non_strict(0.0, 0.0, 0.0);
@@ -478,7 +477,6 @@ void test_AND_sort_strategy(auto my_sort) {
                                             } else if (item.estimate < prev_strict.estimate) {
                                                 return false; // (2)
                                             }
-                                            ++num_strict;
                                             prev_strict = item;
                                         } else {
                                             if (my_cmp(item, prev_non_strict)) {
