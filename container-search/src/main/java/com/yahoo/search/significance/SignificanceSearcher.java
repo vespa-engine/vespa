@@ -16,6 +16,8 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 
+import java.util.Optional;
+
 import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 
 /**
@@ -42,7 +44,11 @@ public class SignificanceSearcher extends Searcher {
         if (significanceModelRegistry == null) return execution.search(query);
 
         Language language = query.getModel().getParsingLanguage();
-        setIDF(query.getModel().getQueryTree().getRoot(), significanceModelRegistry.getModel(language));
+        Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
+
+        if (model.isEmpty()) return execution.search(query);
+
+        setIDF(query.getModel().getQueryTree().getRoot(), model.get());
 
         return execution.search(query);
     }

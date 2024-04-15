@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.util.HashMap;
 
+
 import static com.yahoo.test.JunitCompat.assertEquals;
 
 /**
@@ -33,16 +34,19 @@ public class SignificanceSearcherTest {
         map.put(Language.ENGLISH, Path.of("src/test/java/com/yahoo/search/significance/model/en.json"));
 
         significanceModelRegistry = new DefaultSignificanceModelRegistry(map);
-        // TODO change to mock
         searcher = new SignificanceSearcher(significanceModelRegistry);
     }
 
-    private Execution createExecution() {
+    private Execution createExecution(SignificanceSearcher searcher) {
         return new Execution(new Chain<>(searcher), Execution.Context.createContextStub());
     }
 
+    private Execution createExecution() {
+        return new Execution(new Chain<>(), Execution.Context.createContextStub());
+    }
+
     @Test
-    void testSimpleSignificanceValue() {
+    void testSignificanceValueOnSimpleQuery() {
 
         Query q = new Query();
         AndItem root = new AndItem();
@@ -54,14 +58,14 @@ public class SignificanceSearcherTest {
 
         q.getModel().getQueryTree().setRoot(root);
 
-        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH);
+        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
         var helloFrequency = model.documentFrequency("Hello");
         var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
 
         var worldFrequency = model.documentFrequency("world");
         var worldSignificanceValue = SignificanceSearcher.calculateIDF(worldFrequency.corpusSize(), worldFrequency.frequency());
 
-        Result r = createExecution().search(q);
+        Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
@@ -73,7 +77,7 @@ public class SignificanceSearcherTest {
     }
 
     @Test
-    void testRecursiveSignificanceValues() {
+    void testSignificanceValueOnRecursiveQuery() {
         Query q = new Query();
         AndItem root = new AndItem();
         WordItem child1 = new WordItem("hello", true);
@@ -95,7 +99,7 @@ public class SignificanceSearcherTest {
 
         q.getModel().getQueryTree().setRoot(root);
 
-        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH);
+        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
         var helloFrequency = model.documentFrequency("hello");
         var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
 
@@ -104,7 +108,7 @@ public class SignificanceSearcherTest {
 
 
 
-        Result r = createExecution().search(q);
+        Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
@@ -114,6 +118,36 @@ public class SignificanceSearcherTest {
         assertEquals(helloSignificanceValue, w0.getSignificance());
         assertEquals(testSignificanceValue, w1.getSignificance());
         assertEquals(SignificanceSearcher.calculateIDF(10, 2), w3.getSignificance());
+
+    }
+
+    @Test
+    void testSignificanceValueOnEmptyQuery() {
+        Query q = new Query();
+        q.getModel().setLanguage(Language.NORWEGIAN_BOKMAL);
+        AndItem root = new AndItem();
+        WordItem tmp;
+        tmp = new WordItem("Hei", true);
+        root.addItem(tmp);
+        tmp = new WordItem("Verden", true);
+        root.addItem(tmp);
+
+
+        q.getModel().getQueryTree().setRoot(root);
+        Result r = createExecution(searcher).search(q);
+        root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
+
+        WordItem w0 = (WordItem) root.getItem(0);
+        WordItem w1 = (WordItem) root.getItem(1);
+
+        Result r0 = createExecution().search(q);
+        root = (AndItem) r0.getQuery().getModel().getQueryTree().getRoot();
+
+        WordItem w0_0 = (WordItem) root.getItem(0);
+        WordItem w0_1 = (WordItem) root.getItem(1);
+
+        assertEquals(w0_0.getSignificance(), w0.getSignificance());
+        assertEquals(w0_1.getSignificance(), w1.getSignificance());
 
     }
 }
