@@ -142,6 +142,7 @@ public class ApplicationSerializer {
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
         toSlime(cluster.groupSize(), clusterObject.setObject(groupSizeKey));
         clusterObject.setBool(requiredKey, cluster.required());
+        cluster.cloudAccount().ifPresent(cloudAccount -> clusterObject.setString(cloudAccountKey, cloudAccount.value()));
         toSlime(cluster.suggestions(), clusterObject.setArray(suggestionsKey));
         toSlime(cluster.target(), clusterObject.setObject(targetKey));
         if (! cluster.clusterInfo().isEmpty())

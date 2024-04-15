@@ -100,6 +100,7 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.maxResources(), serializedCluster.maxResources());
             assertEquals(originalCluster.groupSize(), serializedCluster.groupSize());
             assertEquals(originalCluster.required(), serializedCluster.required());
+            assertEquals(originalCluster.cloudAccount(), serializedCluster.cloudAccount());
             assertEquals(originalCluster.suggestions(), serializedCluster.suggestions());
             assertEquals(originalCluster.target(), serializedCluster.target());
             assertEquals(originalCluster.clusterInfo(), serializedCluster.clusterInfo());
