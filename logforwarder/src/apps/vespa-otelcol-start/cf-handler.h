@@ -13,7 +13,6 @@ private:
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<OpenTelemetryConfig>::UP _handle = {};
     std::unique_ptr<OpenTelemetryConfig> _lastConfig = {};
-    time_t _lastCertFileChange = 0;
     void subscribe(const std::string & configId, std::chrono::milliseconds timeout);
     void doConfigure();
 public:
