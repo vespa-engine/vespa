@@ -499,7 +499,7 @@ public:
     
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
-    virtual void sort(Children &children, bool strict, bool sort_by_cost) const = 0;
+    virtual void sort(Children &children, InFlow in_flow) const = 0;
     virtual SearchIteratorUP
     createIntermediateSearch(MultiSearch::Children subSearches, fef::MatchData &md) const = 0;
 

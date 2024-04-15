@@ -162,10 +162,10 @@ AndNotBlueprint::get_replacement()
 }
 
 void
-AndNotBlueprint::sort(Children &children, bool strict, bool sort_by_cost) const
+AndNotBlueprint::sort(Children &children, InFlow in_flow) const
 {
-    if (sort_by_cost) {
-        AndNotFlow::sort(children, strict);
+    if (opt_sort_by_cost()) {
+        AndNotFlow::sort(children, in_flow.strict());
     } else {
         if (children.size() > 2) {
             std::sort(children.begin() + 1, children.end(), TieredGreaterEstimate());
@@ -257,12 +257,12 @@ AndBlueprint::get_replacement()
 }
 
 void
-AndBlueprint::sort(Children &children, bool strict, bool sort_by_cost) const
+AndBlueprint::sort(Children &children, InFlow in_flow) const
 {
-    if (sort_by_cost) {
-        AndFlow::sort(children, strict);
-        if (strict && opt_allow_force_strict()) {
-            AndFlow::reorder_for_extra_strictness(children, true, 3);
+    if (opt_sort_by_cost()) {
+        AndFlow::sort(children, in_flow.strict());
+        if (opt_allow_force_strict()) {
+            AndFlow::reorder_for_extra_strictness(children, in_flow, 3);
         }
     } else {
         std::sort(children.begin(), children.end(), TieredLessEstimate());
@@ -360,10 +360,10 @@ OrBlueprint::get_replacement()
 }
 
 void
-OrBlueprint::sort(Children &children, bool strict, bool sort_by_cost) const
+OrBlueprint::sort(Children &children, InFlow in_flow) const
 {
-    if (sort_by_cost) {
-        OrFlow::sort(children, strict);
+    if (opt_sort_by_cost()) {
+        OrFlow::sort(children, in_flow.strict());
     } else {
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
@@ -449,7 +449,7 @@ WeakAndBlueprint::exposeFields() const
 }
 
 void
-WeakAndBlueprint::sort(Children &, bool, bool) const
+WeakAndBlueprint::sort(Children &, InFlow) const
 {
     // order needs to stay the same as _weights
 }
@@ -511,10 +511,10 @@ NearBlueprint::exposeFields() const
 }
 
 void
-NearBlueprint::sort(Children &children, bool strict, bool sort_by_cost) const
+NearBlueprint::sort(Children &children, InFlow in_flow) const
 {
-    if (sort_by_cost) {
-        AndFlow::sort(children, strict);
+    if (opt_sort_by_cost()) {
+        AndFlow::sort(children, in_flow.strict());
     } else {
         std::sort(children.begin(), children.end(), TieredLessEstimate());
     }
@@ -576,7 +576,7 @@ ONearBlueprint::exposeFields() const
 }
 
 void
-ONearBlueprint::sort(Children &, bool, bool) const
+ONearBlueprint::sort(Children &, InFlow) const
 {
     // ordered near cannot sort children here
 }
@@ -662,7 +662,7 @@ RankBlueprint::get_replacement()
 }
 
 void
-RankBlueprint::sort(Children &, bool, bool) const
+RankBlueprint::sort(Children &, InFlow) const
 {
 }
 
@@ -743,7 +743,7 @@ SourceBlenderBlueprint::exposeFields() const
 }
 
 void
-SourceBlenderBlueprint::sort(Children &, bool, bool) const
+SourceBlenderBlueprint::sort(Children &, InFlow) const
 {
 }
 
