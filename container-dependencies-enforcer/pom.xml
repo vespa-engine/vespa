@@ -116,7 +116,6 @@
                                         <include>com.yahoo.vespa:messagebus:*:provided</include>
                                         <include>com.yahoo.vespa:metrics:*:provided</include>
                                         <include>com.yahoo.vespa:model-evaluation:*:provided</include>
-                                        <include>com.yahoo.vespa:model-integration:*:provided</include>
                                         <include>com.yahoo.vespa:opennlp-linguistics:*:provided</include>
                                         <include>com.yahoo.vespa:predicate-search-core:*:provided</include>
                                         <include>com.yahoo.vespa:provided-dependencies:*:provided</include>
@@ -140,6 +139,7 @@
                                         <include>com.yahoo.vespa:indexinglanguage:*:test</include>
                                         <include>com.yahoo.vespa:logd:*:test</include>
                                         <include>com.yahoo.vespa:metrics-proxy:*:test</include>
+                                        <include>com.yahoo.vespa:model-integration:*:test</include>
                                         <include>com.yahoo.vespa:searchsummary:*:test</include>
                                         <include>com.yahoo.vespa:standalone-container:*:test</include>
                                         <include>com.yahoo.vespa:storage:*:test</include>
@@ -152,7 +152,6 @@
                                         <include>com.google.protobuf:protobuf-java:${protobuf.vespa.version}:test</include>
                                         <include>com.ibm.icu:icu4j:${icu4j.vespa.version}:test</include>
                                         <include>com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}:test</include>
-                                        <include>de.kherud:llama:${kherud.llama.vespa.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
                                         <include>commons-codec:commons-codec:${commons-codec.vespa.version}:test</include>
                                         <include>io.airlift:aircompressor:${aircompressor.vespa.version}:test</include>
