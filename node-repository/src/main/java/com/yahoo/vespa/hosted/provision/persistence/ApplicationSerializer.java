@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
@@ -56,6 +57,7 @@ public class ApplicationSerializer {
     private static final String maxResourcesKey = "max";
     private static final String groupSizeKey = "groupSize";
     private static final String requiredKey = "required";
+    private static final String cloudAccountKey = "cloud-account";
     private static final String suggestionsKey = "suggestionsKey";
     private static final String clusterInfoKey = "clusterInfo";
     private static final String bcpDeadlineKey = "bcpDeadline";
@@ -156,6 +158,7 @@ public class ApplicationSerializer {
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
                            intRangeFromSlime(clusterObject.field(groupSizeKey)),
                            clusterObject.field(requiredKey).asBool(),
+                           optionalCloudAccount(clusterObject.field(cloudAccountKey)),
                            suggestionsFromSlime(clusterObject.field(suggestionsKey)),
                            autoscalingFromSlime(clusterObject.field(targetKey)),
                            clusterInfoFromSlime(clusterObject.field(clusterInfoKey)),
@@ -324,6 +327,10 @@ public class ApplicationSerializer {
             case "rescaling" -> Autoscaling.Status.rescaling;
             default -> throw new IllegalArgumentException("Unknown autoscaling status '" + code + "'");
         };
+    }
+
+    private static Optional<CloudAccount> optionalCloudAccount(Inspector inspector) {
+        return inspector.valid() ? Optional.of(CloudAccount.from(inspector.asString())) : Optional.empty();
     }
 
     private static Optional<Instant> optionalInstant(Inspector inspector) {

@@ -143,6 +143,7 @@ public class DynamicProvisioningTester {
                               cluster.maxResources(),
                               cluster.groupSize(),
                               cluster.required(),
+                              cluster.cloudAccount(),
                               cluster.suggestions(),
                               cluster.target(),
                               cluster.clusterInfo(),
