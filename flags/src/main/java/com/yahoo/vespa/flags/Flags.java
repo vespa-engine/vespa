@@ -370,13 +370,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag DYNAMIC_HEAP_SIZE = defineFeatureFlag(
-            "dynamic-heap-size", true,
-            List.of("bjorncs"), "2023-09-21", "2024-04-15",
-            "Whether to calculate JVM heap size based on predicted Onnx model memory requirements",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag UNKNOWN_CONFIG_DEFINITION = defineStringFlag(
             "unknown-config-definition", "warn",
             List.of("hmusum"), "2023-09-25", "2024-09-01",
