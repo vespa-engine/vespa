@@ -3,3 +3,4 @@ Makefile
 pagedict4_test
 fakedict.*
 searchlib_pagedict4_test_app
+/long_words_dir/

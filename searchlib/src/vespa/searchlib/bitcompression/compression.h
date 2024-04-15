@@ -1167,7 +1167,7 @@ public:
      * Get remaining units in buffer (e.g. _realValE - _valI)
      */
 
-    int32_t remainingUnits() const override { return _realValE - _valI; }
+    int64_t remainingUnits() const override { return _realValE - _valI; }
 
     /**
      * Get unit ptr (e.g. _valI) from decode context.
@@ -1181,7 +1181,7 @@ public:
     }
 
     uint64_t getBitPos(int bitOffset, uint64_t bufferEndFilePos) const override {
-        int intOffset = _realValE - _valI;
+        int64_t intOffset = _realValE - _valI;
         if (bitOffset == -1) {
             bitOffset = -64 - _preRead;
         }
@@ -1200,7 +1200,7 @@ public:
 
     uint64_t getBitPosV() const override { return getReadOffset(); }
 
-    void adjUnitPtr(int newRemainingUnits) override {
+    void adjUnitPtr(int64_t newRemainingUnits) override {
         _valI = _realValE - newRemainingUnits;
     }
 
@@ -1219,7 +1219,7 @@ public:
      * @param  unitCount   Number of bytes in buffer
      * @param  moreData    Set if there is more data available
      */
-    void setEnd(unsigned int unitCount, bool moreData) {
+    void setEnd(uint64_t unitCount, bool moreData) {
         _valE = _realValE = _valI + unitCount;
         if (moreData) {
             _valE -= END_BUFFER_SAFETY;

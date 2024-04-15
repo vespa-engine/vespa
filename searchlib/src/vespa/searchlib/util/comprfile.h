@@ -32,7 +32,7 @@ public:
      * Get remaining units in buffer (e.g. _realValE - _valI)
      */
 
-    virtual int32_t remainingUnits() const = 0;
+    virtual int64_t remainingUnits() const = 0;
 
     /**
      * Get unit ptr (e.g. _valI) from decode context.
@@ -51,7 +51,7 @@ public:
     virtual uint64_t getBitPos(int bitOffset, uint64_t bufferEndFilePos) const = 0;
     virtual uint64_t getBitPosV() const = 0;
     virtual void skipBits(int bits) = 0;
-    virtual void adjUnitPtr(int newRemainingUnits) = 0;
+    virtual void adjUnitPtr(int64_t newRemainingUnits) = 0;
     virtual void emptyBuffer(uint64_t newBitPosition) = 0;
 
     /**
