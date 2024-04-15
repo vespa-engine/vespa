@@ -49,7 +49,7 @@ make_word(int i)
  */
 TEST(PageDict4LongWordsTest, test_many_long_words)
 {
-    int num_words = 4_Mi;
+    int num_words = 9_Mi;
     auto counts = make_counts();
     std::filesystem::remove_all(std::filesystem::path(test_dir));
     std::filesystem::create_directories(std::filesystem::path(test_dir));

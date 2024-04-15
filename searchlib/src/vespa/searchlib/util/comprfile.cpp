@@ -346,7 +346,7 @@ ComprFileReadContext::setPosition(uint64_t newPosition)
 }
 
 void
-ComprFileReadContext::allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment)
+ComprFileReadContext::allocComprBuf(size_t comprBufSize, size_t preferredFileAlignment)
 {
     ComprBuffer::allocComprBuf(comprBufSize, preferredFileAlignment, _file, true);
 }

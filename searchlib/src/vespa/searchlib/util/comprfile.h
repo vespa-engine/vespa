@@ -105,7 +105,7 @@ public:
     void readComprBuffer(uint64_t stopOffset, bool readAll);
     void readComprBuffer();
     void setPosition(uint64_t newPosition);
-    void allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment);
+    void allocComprBuf(size_t comprBufSize, size_t preferredFileAlignment);
     void setDecodeContext(ComprFileDecodeContext *decodeContext) { _decodeContext = decodeContext; }
     ComprFileDecodeContext *getDecodeContext() const { return _decodeContext; }
     void setFile(FastOS_FileInterface *file) { _file = file; }
