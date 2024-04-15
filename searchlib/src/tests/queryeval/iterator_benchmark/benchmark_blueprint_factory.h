@@ -16,6 +16,7 @@ class BenchmarkBlueprintFactory {
 public:
     virtual ~BenchmarkBlueprintFactory() = default;
     virtual std::unique_ptr<Blueprint> make_blueprint() = 0;
+    virtual vespalib::string get_name(Blueprint& blueprint) const = 0;
 };
 
 std::unique_ptr<BenchmarkBlueprintFactory>

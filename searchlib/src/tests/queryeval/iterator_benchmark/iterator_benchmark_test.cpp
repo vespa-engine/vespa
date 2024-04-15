@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "intermediate_blueprint_factory.h"
 #include "benchmark_blueprint_factory.h"
 #include "common.h"
 #include <vespa/searchlib/fef/matchdata.h>
@@ -24,6 +25,25 @@ using vespalib::make_string_short::fmt;
 
 const vespalib::string field_name = "myfield";
 double budget_sec = 1.0;
+
+enum class PlanningAlgo {
+    Order,
+    Estimate,
+    Cost,
+    CostForceStrict
+};
+
+vespalib::string
+to_string(PlanningAlgo algo)
+{
+    switch (algo) {
+        case PlanningAlgo::Order: return "ordr";
+        case PlanningAlgo::Estimate: return "esti";
+        case PlanningAlgo::Cost: return "cost";
+        case PlanningAlgo::CostForceStrict: return "forc";
+    }
+    return "unknown";
+}
 
 struct BenchmarkResult {
     double time_ms;
@@ -127,31 +147,6 @@ public:
     }
 };
 
-std::string
-delete_substr_from(const std::string& source, const std::string& substr)
-{
-    std::string res = source;
-    auto i = res.find(substr);
-    while (i != std::string::npos) {
-        res.erase(i, substr.length());
-        i = res.find(substr, i);
-    }
-    return res;
-}
-
-vespalib::string
-get_class_name(const auto& obj)
-{
-    auto res = obj.getClassName();
-    res = delete_substr_from(res, "search::attribute::");
-    res = delete_substr_from(res, "search::queryeval::");
-    res = delete_substr_from(res, "vespalib::btree::");
-    res = delete_substr_from(res, "search::");
-    res = delete_substr_from(res, "vespalib::");
-    res = delete_substr_from(res, "anonymous namespace");
-    return res;
-}
-
 struct MatchLoopContext {
     Blueprint::UP blueprint;
     MatchData::UP match_data;
@@ -174,12 +169,37 @@ struct MatchLoopContext {
 
 MatchLoopContext::~MatchLoopContext() = default;
 
+Blueprint::Options
+to_sort_options(PlanningAlgo algo)
+{
+    Blueprint::Options opts;
+    if (algo == PlanningAlgo::Order) {
+        opts.keep_order(true);
+    } else if (algo == PlanningAlgo::Cost) {
+        opts.sort_by_cost(true);
+    } else if (algo == PlanningAlgo::CostForceStrict) {
+        opts.sort_by_cost(true).allow_force_strict(true);
+    }
+    return opts;
+}
+
+void
+sort_blueprint(Blueprint& blueprint, InFlow in_flow, uint32_t docid_limit, Blueprint::Options opts)
+{
+    auto opts_guard = blueprint.bind_opts(opts);
+    blueprint.setDocIdLimit(docid_limit);
+    blueprint.each_node_post_order([docid_limit](Blueprint &bp){
+        bp.update_flow_stats(docid_limit);
+    });
+    blueprint.sort(in_flow);
+}
+
 MatchLoopContext
-make_match_loop_context(BenchmarkBlueprintFactory& factory, InFlow in_flow, uint32_t docid_limit)
+make_match_loop_context(BenchmarkBlueprintFactory& factory, InFlow in_flow, uint32_t docid_limit, PlanningAlgo algo)
 {
     auto blueprint = factory.make_blueprint();
     assert(blueprint);
-    blueprint->basic_plan(in_flow, docid_limit);
+    sort_blueprint(*blueprint, in_flow, docid_limit, to_sort_options(algo));
     blueprint->fetchPostings(ExecuteInfo::FULL);
     // Note: All blueprints get the same TermFieldMatchData instance.
     //       This is OK as long as we don't do unpacking and only use 1 thread.
@@ -191,13 +211,13 @@ make_match_loop_context(BenchmarkBlueprintFactory& factory, InFlow in_flow, uint
 
 template <bool do_unpack>
 BenchmarkResult
-strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit)
+strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, PlanningAlgo algo)
 {
     BenchmarkTimer timer(budget_sec);
     uint32_t hits = 0;
     MatchLoopContext ctx;
     while (timer.has_budget()) {
-        ctx = make_match_loop_context(factory, true, docid_limit);
+        ctx = make_match_loop_context(factory, true, docid_limit, algo);
         auto* itr = ctx.iterator.get();
         timer.before();
         hits = 0;
@@ -216,12 +236,12 @@ strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit)
         timer.after();
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
-    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, get_class_name(*ctx.iterator), factory.get_name(*ctx.blueprint)};
 }
 
 template <bool do_unpack>
 BenchmarkResult
-non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, double filter_hit_ratio, bool force_strict)
+non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, double filter_hit_ratio, bool force_strict, PlanningAlgo algo)
 {
     BenchmarkTimer timer(budget_sec);
     uint32_t seeks = 0;
@@ -231,7 +251,7 @@ non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, doub
     uint32_t docid_skip = 1.0 / filter_hit_ratio;
     MatchLoopContext ctx;
     while (timer.has_budget()) {
-        ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit);
+        ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit, algo);
         auto* itr = ctx.iterator.get();
         timer.before();
         seeks = 0;
@@ -250,26 +270,30 @@ non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, doub
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double actual_cost = flow.cost * filter_hit_ratio;
-    return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, get_class_name(*ctx.iterator), get_class_name(*ctx.blueprint)};
+    return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, get_class_name(*ctx.iterator), factory.get_name(*ctx.blueprint)};
 }
 
 BenchmarkResult
-benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, bool strict_context, bool force_strict, bool unpack_iterator, double filter_hit_ratio)
+benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, bool strict_context, bool force_strict, bool unpack_iterator, double filter_hit_ratio, PlanningAlgo algo)
 {
     if (strict_context) {
         if (unpack_iterator) {
-            return strict_search<true>(factory, docid_limit);
+            return strict_search<true>(factory, docid_limit, algo);
         } else {
-            return strict_search<false>(factory, docid_limit);
+            return strict_search<false>(factory, docid_limit, algo);
         }
     } else {
         if (unpack_iterator) {
-            return non_strict_search<true>(factory, docid_limit, filter_hit_ratio, force_strict);
+            return non_strict_search<true>(factory, docid_limit, filter_hit_ratio, force_strict, algo);
         } else {
-            return non_strict_search<false>(factory, docid_limit, filter_hit_ratio, force_strict);
+            return non_strict_search<false>(factory, docid_limit, filter_hit_ratio, force_strict, algo);
         }
     }
 }
+
+
+
+
 
 //-----------------------------------------------------------------------------
 
@@ -343,12 +367,12 @@ void analyze_crossover(BenchmarkBlueprintFactory &fixed, std::function<std::uniq
                                     auto a = first.make_blueprint();
                                     a->basic_plan(true, docid_limit);
                                     double est_a = a->estimate();
-                                    double a_ms = benchmark_search(first, docid_limit, true, false, false, 1.0).time_ms;
-                                    double b_ms = benchmark_search(last, docid_limit, false, false, false, est_a).time_ms;
+                                    double a_ms = benchmark_search(first, docid_limit, true, false, false, 1.0, PlanningAlgo::Cost).time_ms;
+                                    double b_ms = benchmark_search(last, docid_limit, false, false, false, est_a, PlanningAlgo::Cost).time_ms;
                                     if (!allow_force_strict) {
                                         return Sample(a_ms + b_ms);
                                     }
-                                    double c_ms = benchmark_search(last, docid_limit, false, true, false, est_a).time_ms;
+                                    double c_ms = benchmark_search(last, docid_limit, false, true, false, est_a, PlanningAlgo::Cost).time_ms;
                                     if (c_ms < b_ms) {
                                         return Sample(a_ms + c_ms, a_ms + b_ms, true);
                                     }
@@ -615,7 +639,7 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
             for (double filter_hit_ratio : setup.filter_hit_ratios) {
                 if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
                     auto res = benchmark_search(*factory, setup.num_docs + 1,
-                                                setup.bcase.strict_context, setup.bcase.force_strict, setup.bcase.unpack_iterator, filter_hit_ratio);
+                                                setup.bcase.strict_context, setup.bcase.force_strict, setup.bcase.unpack_iterator, filter_hit_ratio, PlanningAlgo::Cost);
                     print_result(res, children, op_hit_ratio, filter_hit_ratio, setup.num_docs);
                     result.add(res);
                 }
@@ -648,6 +672,119 @@ run_benchmarks(const BenchmarkSetup& setup)
     run_benchmarks(setup, summary);
     summary.calc_scaled_costs();
     print_summary(summary);
+}
+
+//---------------------------------------------------------------------------------------
+// Tools for benchmarking root intermediate blueprints with configurable children setups.
+//---------------------------------------------------------------------------------------
+
+void
+print_intermediate_blueprint_result_header(size_t children)
+{
+    // This matches the naming scheme in IntermediateBlueprintFactory.
+    char name = 'A';
+    for (size_t i = 0; i < children; ++i) {
+        std::cout << "| " << name++ << ".ratio ";
+    }
+    std::cout << "|  flow.cost | flow.scost | flow.est |   ratio |     hits |    seeks | ms_per_cost |  time_ms | algo | blueprint |" << std::endl;
+}
+
+void
+print_intermediate_blueprint_result(const BenchmarkResult& res, const std::vector<double>& children_ratios, PlanningAlgo algo, uint32_t num_docs)
+{
+    std::cout << std::fixed << std::setprecision(5);
+    for (auto ratio : children_ratios) {
+        std::cout << "| " << std::setw(7) << ratio << " ";
+    }
+    std::cout << std::setprecision(5)
+              << "| " << std::setw(10) << res.flow.cost
+              << " | " << std::setw(10) << res.flow.strict_cost
+              << " | " << std::setw(8) << res.flow.estimate
+              << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
+              << std::setprecision(4)
+              << " | " << std::setw(8) << res.hits
+              << " | " << std::setw(8) << res.seeks
+              << std::setprecision(3)
+              << " | " << std::setw(11) << res.ms_per_actual_cost()
+              << " | " << std::setw(8) << res.time_ms
+              << " | " << to_string(algo)
+              << " | " << res.blueprint_name << " |" << std::endl;
+}
+
+struct BlueprintFactorySetup {
+    FieldConfig field_cfg;
+    QueryOperator query_op;
+    std::vector<double> op_hit_ratios;
+    uint32_t children;
+    bool disjunct_children;
+    uint32_t default_values_per_document;
+
+    BlueprintFactorySetup(const FieldConfig& field_cfg_in, QueryOperator query_op_in, const std::vector<double>& op_hit_ratios_in)
+            : BlueprintFactorySetup(field_cfg_in, query_op_in, op_hit_ratios_in, 1, false)
+    {}
+    BlueprintFactorySetup(const FieldConfig& field_cfg_in, QueryOperator query_op_in, const std::vector<double>& op_hit_ratios_in,
+                          uint32_t children_in, bool disjunct_children_in)
+            : field_cfg(field_cfg_in),
+              query_op(query_op_in),
+              op_hit_ratios(op_hit_ratios_in),
+              children(children_in),
+              disjunct_children(disjunct_children_in),
+              default_values_per_document(0)
+    {}
+    ~BlueprintFactorySetup();
+    std::unique_ptr<BenchmarkBlueprintFactory> make_factory(size_t num_docs, double op_hit_ratio) const {
+        return make_blueprint_factory(field_cfg, query_op, num_docs, default_values_per_document, op_hit_ratio, children, disjunct_children);
+    }
+    std::shared_ptr<BenchmarkBlueprintFactory> make_factory_shared(size_t num_docs, double op_hit_ratio) const {
+        return std::shared_ptr<BenchmarkBlueprintFactory>(make_factory(num_docs, op_hit_ratio));
+    }
+};
+
+BlueprintFactorySetup::~BlueprintFactorySetup() = default;
+
+template <typename IntermediateBlueprintFactoryType>
+void
+run_intermediate_blueprint_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
+{
+    print_intermediate_blueprint_result_header(2);
+    for (double b_hit_ratio: b.op_hit_ratios) {
+        auto b_factory = b.make_factory_shared(num_docs, b_hit_ratio);
+        for (double a_hit_ratio : a.op_hit_ratios) {
+            IntermediateBlueprintFactoryType factory;
+            factory.add_child(a.make_factory(num_docs, a_hit_ratio));
+            factory.add_child(b_factory);
+            for (auto algo: {PlanningAlgo::Order, PlanningAlgo::Estimate, PlanningAlgo::Cost, PlanningAlgo::CostForceStrict}) {
+                auto res = benchmark_search(factory, num_docs + 1, true, false, false, 1.0, algo);
+                print_intermediate_blueprint_result(res, {a_hit_ratio, b_hit_ratio}, algo, num_docs);
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
+void
+run_and_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
+{
+    run_intermediate_blueprint_benchmark<AndBlueprintFactory>(a, b, num_docs);
+}
+
+//-------------------------------------------------------------------------------------
+
+std::vector<double>
+gen_ratios(double middle, double range_multiplier, size_t num_samples)
+{
+    double lower = middle / range_multiplier;
+    double upper = middle * range_multiplier;
+    // Solve the following equation:
+    // lower * (factor ^ (num_samples - 1)) = upper;
+    double factor = std::pow(upper / lower, 1.0 / (num_samples - 1));
+    std::vector<double> res;
+    double ratio = lower;
+    for (size_t i = 0; i < num_samples; ++i) {
+        res.push_back(ratio);
+        ratio *= factor;
+    }
+    return res;
 }
 
 FieldConfig
@@ -788,6 +925,20 @@ TEST(IteratorBenchmark, or_vs_filter_crossover_with_allow_force_strict)
                              return make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, rate, 1, false);
                          };
     analyze_crossover(*fixed_or, variable_term, num_docs + 1, true, 0.0001);
+}
+
+TEST(IteratorBenchmark, analyze_and_with_filter_vs_in)
+{
+    run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
+                      {int32_fs, QueryOperator::In, {0.1}, 100, false},
+                      num_docs);
+}
+
+TEST(IteratorBenchmark, analyze_and_with_filter_vs_or)
+{
+    run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
+                      {int32_fs, QueryOperator::Or, {0.1}, 100, false},
+                      num_docs);
 }
 
 int main(int argc, char **argv) {
