@@ -6,8 +6,19 @@
 
 namespace search::queryeval::flow {
 
+/**
+ * This function is used when calculating the strict cost of
+ * intermediate and complex leaf blueprints that use a heap for their strict iterator implementation.
+ *
+ * Iterator benchmarking has shown the need to increase the strict cost
+ * of complex blueprints, to avoid that they are forced strict too early.
+ * The 5.0 multiplier reflects this.
+ *
+ * Program used: searchlib/src/tests/queryeval/iterator_benchmark
+ * Tests used: analyze_and_with_filter_vs_*
+ */
 inline double heap_cost(double my_est, size_t num_children) {
-    return my_est * std::log2(std::max(size_t(1),num_children));
+    return 5.0 * my_est * std::log2(std::max(size_t(1), num_children));
 }
 
 /**
@@ -32,7 +43,7 @@ inline double lookup_cost(size_t num_indirections) {
 
 // Non-strict cost of reverse lookup into a hash table (containing terms from a multi-term operator).
 inline double reverse_hash_lookup() {
-    return 1.0;
+    return 5.0;
 }
 
 // Strict cost of lookup based matching in an attribute (not fast-search).

@@ -738,6 +738,9 @@ struct BlueprintFactorySetup {
     std::shared_ptr<BenchmarkBlueprintFactory> make_factory_shared(size_t num_docs, double op_hit_ratio) const {
         return std::shared_ptr<BenchmarkBlueprintFactory>(make_factory(num_docs, op_hit_ratio));
     }
+    vespalib::string to_string() const {
+        return "field=" + field_cfg.to_string() + ", query=" + test::to_string(query_op) + ", children=" + std::to_string(children);
+    }
 };
 
 BlueprintFactorySetup::~BlueprintFactorySetup() = default;
@@ -765,6 +768,7 @@ run_intermediate_blueprint_benchmark(const BlueprintFactorySetup& a, const Bluep
 void
 run_and_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
 {
+    std::cout << "AND[A={" << a.to_string() << "},B={" << b.to_string() << "}]" << std::endl;
     run_intermediate_blueprint_benchmark<AndBlueprintFactory>(a, b, num_docs);
 }
 
@@ -929,23 +933,29 @@ TEST(IteratorBenchmark, or_vs_filter_crossover_with_allow_force_strict)
 
 TEST(IteratorBenchmark, analyze_and_with_filter_vs_in)
 {
-    run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
-                      {int32_fs, QueryOperator::In, {0.1}, 100, false},
-                      num_docs);
+    for (uint32_t children: {10, 100, 1000}) {
+        run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
+                          {int32_fs, QueryOperator::In, {0.1}, children, false},
+                          num_docs);
+    }
 }
 
 TEST(IteratorBenchmark, analyze_and_with_filter_vs_in_array)
 {
-    run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
-                      {int32_array_fs, QueryOperator::In, {0.1}, 100, false},
-                      num_docs);
+    for (uint32_t children: {10, 100, 1000}) {
+        run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
+                          {int32_array_fs, QueryOperator::In, {0.1}, children, false},
+                          num_docs);
+    }
 }
 
 TEST(IteratorBenchmark, analyze_and_with_filter_vs_or)
 {
-    run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
-                      {int32_fs, QueryOperator::Or, {0.1}, 100, false},
-                      num_docs);
+    for (uint32_t children: {10, 100, 1000}) {
+        run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
+                          {int32_fs, QueryOperator::Or, {0.1}, children, false},
+                          num_docs);
+    }
 }
 
 int main(int argc, char **argv) {
