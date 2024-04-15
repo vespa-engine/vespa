@@ -934,6 +934,13 @@ TEST(IteratorBenchmark, analyze_and_with_filter_vs_in)
                       num_docs);
 }
 
+TEST(IteratorBenchmark, analyze_and_with_filter_vs_in_array)
+{
+    run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
+                      {int32_array_fs, QueryOperator::In, {0.1}, 100, false},
+                      num_docs);
+}
+
 TEST(IteratorBenchmark, analyze_and_with_filter_vs_or)
 {
     run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
