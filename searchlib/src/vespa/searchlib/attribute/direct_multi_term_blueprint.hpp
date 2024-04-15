@@ -206,8 +206,8 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::calculate_flow_stats(uin
     // Program used: searchlib/src/tests/queryeval/iterator_benchmark
     // Tests: analyze_and_with_filter_vs_in(), analyze_and_with_filter_vs_in_array()
     double non_strict_cost = (SearchType::supports_hash_filter && !_iattr.hasMultiValue())
-            ? queryeval::flow::reverse_hash_lookup() :
-              OrFlow::cost_of(MyAdapter(docid_limit), _terms, false);
+            ? queryeval::flow::reverse_hash_lookup()
+            : OrFlow::cost_of(MyAdapter(docid_limit), _terms, false);
     return {est, non_strict_cost, OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
 }
 
