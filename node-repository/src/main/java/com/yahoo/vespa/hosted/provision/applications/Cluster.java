@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.applications;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.Capacity;
@@ -33,6 +34,7 @@ public class Cluster {
     private final ClusterResources min, max;
     private final IntRange groupSize;
     private final boolean required;
+    private final Optional<CloudAccount> cloudAccount;
     private final List<Autoscaling> suggestions;
     private final Autoscaling target;
     private final ClusterInfo clusterInfo;
@@ -47,6 +49,7 @@ public class Cluster {
                    ClusterResources maxResources,
                    IntRange groupSize,
                    boolean required,
+                   Optional<CloudAccount> cloudAccount,
                    List<Autoscaling> suggestions,
                    Autoscaling target,
                    ClusterInfo clusterInfo,
@@ -58,6 +61,7 @@ public class Cluster {
         this.max = Objects.requireNonNull(maxResources);
         this.groupSize = Objects.requireNonNull(groupSize);
         this.required = required;
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.suggestions = Objects.requireNonNull(suggestions);
         Objects.requireNonNull(target);
         if (target.resources().isPresent() && ! target.resources().get().isWithin(minResources, maxResources))
@@ -88,6 +92,9 @@ public class Cluster {
      * Otherwise, they may be adjusted by capacity policies.
      */
     public boolean required() { return required; }
+
+    /** Returns the enclave cloud account of this cluster, or empty if not enclave. */
+    public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     /**
      * Returns the computed resources (between min and max, inclusive) this cluster should
@@ -134,19 +141,19 @@ public class Cluster {
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
                            capacity.minResources(), capacity.maxResources(), capacity.groupSize(), capacity.isRequired(),
-                           suggestions, target, capacity.clusterInfo(), bcpGroupInfo, scalingEvents);
+                           capacity.cloudAccount(), suggestions, target, capacity.clusterInfo(), bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withSuggestions(List<Autoscaling> suggestions) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, cloudAccount, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withTarget(Autoscaling target) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, cloudAccount, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster with(BcpGroupInfo bcpGroupInfo) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, cloudAccount, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -160,7 +167,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, cloudAccount, suggestions, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     @Override
@@ -192,7 +199,7 @@ public class Cluster {
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
         return new Cluster(id, exclusive,
                            requested.minResources(), requested.maxResources(), requested.groupSize(), requested.isRequired(),
-                           List.of(), Autoscaling.empty(), requested.clusterInfo(), BcpGroupInfo.empty(), List.of());
+                           requested.cloudAccount(), List.of(), Autoscaling.empty(), requested.clusterInfo(), BcpGroupInfo.empty(), List.of());
     }
 
     /** The predicted time it will take to rescale this cluster. */
