@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "common.h"
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <sstream>
 
 using search::attribute::CollectionType;
@@ -39,6 +40,38 @@ to_string(QueryOperator query_op)
     }
     return "unknown";
 }
+
+namespace {
+
+std::string
+delete_substr_from(const std::string& source, const std::string& substr)
+{
+    std::string res = source;
+    auto i = res.find(substr);
+    while (i != std::string::npos) {
+        res.erase(i, substr.length());
+        i = res.find(substr, i);
+    }
+    return res;
+}
+
+}
+
+vespalib::string
+get_class_name(const auto& obj)
+{
+    auto res = obj.getClassName();
+    res = delete_substr_from(res, "search::attribute::");
+    res = delete_substr_from(res, "search::queryeval::");
+    res = delete_substr_from(res, "vespalib::btree::");
+    res = delete_substr_from(res, "search::");
+    res = delete_substr_from(res, "vespalib::");
+    res = delete_substr_from(res, "anonymous namespace");
+    return res;
+}
+
+template vespalib::string get_class_name<Blueprint>(const Blueprint& obj);
+template vespalib::string get_class_name<SearchIterator>(const SearchIterator& obj);
 
 namespace {
 

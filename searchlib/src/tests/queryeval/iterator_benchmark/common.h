@@ -79,6 +79,8 @@ public:
     auto end() const { return _specs.end(); }
 };
 
+vespalib::string get_class_name(const auto& obj);
+
 std::mt19937& get_gen();
 
 BitVector::UP random_docids(uint32_t docid_limit, uint32_t count);
