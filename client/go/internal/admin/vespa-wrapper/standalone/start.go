@@ -41,6 +41,7 @@ func StartStandaloneContainer(extraArgs []string) int {
 	c := jvm.NewStandaloneContainer(serviceName)
 	jvmOpts := c.JvmOptions()
 	jvmOpts.AddOption("-DOnnxBundleActivator.skip=true")
+	jvmOpts.AddOption("-DLlamaBundleActivator.skip=true")
 	for _, extra := range extraArgs {
 		jvmOpts.AddOption(extra)
 	}

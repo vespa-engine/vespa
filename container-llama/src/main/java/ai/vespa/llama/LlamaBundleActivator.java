@@ -13,12 +13,19 @@ import java.util.logging.Logger;
  **/
 public class LlamaBundleActivator implements BundleActivator {
 
+    private static final String SKIP_SUFFIX = ".skip";
+    private static final String SKIP_VALUE = "true";
     private static final String PATH_PROPNAME = "de.kherud.llama.lib.path";
     private static final Logger log = Logger.getLogger(LlamaBundleActivator.class.getName());
 
     @Override
     public void start(BundleContext ctx) {
         log.fine("start bundle");
+        String skipAll = LlamaBundleActivator.class.getSimpleName() + SKIP_SUFFIX;
+        if (SKIP_VALUE.equals(System.getProperty(skipAll))) {
+            log.info("skip loading of native libraries");
+            return;
+        }
         if (checkFilenames(
                     "/dev/nvidia0",
                     "/opt/vespa-deps/lib64/cuda/libllama.so",

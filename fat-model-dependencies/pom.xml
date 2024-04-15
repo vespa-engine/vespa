@@ -96,6 +96,14 @@
           <groupId>com.theokanning.openai-gpt3-java</groupId>
           <artifactId>service</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.lz4</groupId>
+          <artifactId>lz4-java</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -230,6 +238,12 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-search-and-docproc</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>model-integration</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
