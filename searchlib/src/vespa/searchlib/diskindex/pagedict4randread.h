@@ -36,6 +36,7 @@ class PageDict4RandRead : public index::DictionaryFileRandRead
     uint32_t _ssHeaderLen;
     uint32_t _spHeaderLen;
     uint32_t _pHeaderLen;
+    uint32_t _mmap_threshold;
 
     void readSSHeader();
     void readSPHeader();
@@ -51,6 +52,7 @@ public:
 
     bool close() override;
     uint64_t getNumWordIds() const override;
+    void set_mmap_threshold(uint32_t v) { _mmap_threshold = v; }
 };
 
 }
