@@ -46,6 +46,26 @@ make_word(int i)
 /*
  * A long word that don't fit into a 4 KiB 'page' causes a fallback to
  * overflow handling where the word is put in the .ssdat file.
+ *
+ * Many long words causes excessive growth of the .ssdat file, with
+ * overflow potentials when the whole file is read into a buffer.
+ *
+ *  4 GiB size: Overflow in ComprFileReadBase::ReadComprBuffer for expression
+ *              readUnits * cbuf.getUnitSize() when both are 32-bits.
+ *              Testable by setting num_words to 900_Ki
+ *
+ * 16 GiB size: Overflow in ComprFileReadBase::ReadComprBuffer when
+ *              readUnits is 32-bit signed.
+ *              Some overflows in ComprFileDecodeContext API.
+ *              Overflow in DecodeContext64Base::getBitPos
+ *              Testable by setting num_words to 4_Mi
+ *
+ * 32 GiB size: Overflow when calling ComprFileReadContext::allocComprBuf when
+ *              comprBufSize is 32-bit unsigned.
+ *              Overflow in DecodeContext64Base::setEnd.
+ *              Testable by setting num_words to 9_Mi
+ *
+ * These overflows are fixed.
  */
 TEST(PageDict4LongWordsTest, test_many_long_words)
 {
