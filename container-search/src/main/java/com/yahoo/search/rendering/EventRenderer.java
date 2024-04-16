@@ -64,7 +64,17 @@ public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void data(Data data) throws IOException {
-        if (data instanceof EventStream.Event event) {
+        if (data instanceof EventStream.ErrorEvent error) {
+            generator.writeRaw("event: error\n");
+            generator.writeRaw("data: ");
+            generator.writeStartObject();
+            generator.writeStringField("source", error.source());
+            generator.writeNumberField("error", error.code());
+            generator.writeStringField("message", error.message());
+            generator.writeEndObject();
+            generator.writeRaw("\n\n");
+            generator.flush();
+        } else if (data instanceof EventStream.Event event) {
             if (RENDER_EVENT_HEADER) {
                 generator.writeRaw("event: " + event.type() + "\n");
             }
@@ -74,19 +84,6 @@ public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeEndObject();
             generator.writeRaw("\n\n");
             generator.flush();
-        }
-        else if (data instanceof ErrorHit) {
-            for (ErrorMessage error : ((ErrorHit) data).errors()) {
-                generator.writeRaw("event: error\n");
-                generator.writeRaw("data: ");
-                generator.writeStartObject();
-                generator.writeStringField("source", error.getSource());
-                generator.writeNumberField("error", error.getCode());
-                generator.writeStringField("message", error.getMessage());
-                generator.writeEndObject();
-                generator.writeRaw("\n\n");
-                generator.flush();
-            }
         }
         // Todo: support other types of data such as search results (hits), timing and trace
     }
