@@ -20,7 +20,11 @@ to_string(const Config& attr_config)
         oss << col_type.asString() << "<" << basic_type.asString() << ">";
     }
     if (attr_config.fastSearch()) {
-        oss << "(fs)";
+        oss << "(fs";
+        if (attr_config.getIsFilter()) {
+            oss << ",rf";
+        }
+        oss << ")";
     }
     return oss.str();
 }

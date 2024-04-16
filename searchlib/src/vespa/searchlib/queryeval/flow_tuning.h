@@ -61,6 +61,17 @@ inline double btree_strict_cost(double my_est) {
     return my_est;
 }
 
+// Non-strict cost of matching in a bitvector.
+inline double bitvector_cost() {
+    return 1.0;
+}
+
+// Strict cost of matching in a bitvector.
+// Test used: IteratorBenchmark::analyze_btree_vs_bitvector_iterators_strict
+inline double bitvector_strict_cost(double my_est) {
+    return 1.5 * my_est;
+}
+
 // Non-strict cost of matching in a disk index posting list.
 inline double disk_index_cost() {
     return 1.5;
