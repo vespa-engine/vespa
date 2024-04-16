@@ -792,10 +792,11 @@ gen_ratios(double middle, double range_multiplier, size_t num_samples)
 }
 
 FieldConfig
-make_attr_config(BasicType basic_type, CollectionType col_type, bool fast_search)
+make_attr_config(BasicType basic_type, CollectionType col_type, bool fast_search, bool rank_filter = false)
 {
     Config cfg(basic_type, col_type);
     cfg.setFastSearch(fast_search);
+    cfg.setIsFilter(rank_filter);
     return FieldConfig(cfg);
 }
 
@@ -812,6 +813,7 @@ const std::vector<double> base_hit_ratios = {0.0001, 0.001, 0.01, 0.1, 0.5, 1.0}
 const std::vector<double> filter_hit_ratios = {0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1.0};
 const auto int32 = make_attr_config(BasicType::INT32, CollectionType::SINGLE, false);
 const auto int32_fs = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true);
+const auto int32_fs_rf = make_attr_config(BasicType::INT32, CollectionType::SINGLE, true, true);
 const auto int32_array = make_attr_config(BasicType::INT32, CollectionType::ARRAY, false);
 const auto int32_array_fs = make_attr_config(BasicType::INT32, CollectionType::ARRAY, true);
 const auto int32_wset = make_attr_config(BasicType::INT32, CollectionType::WSET, false);
@@ -940,6 +942,15 @@ TEST(IteratorBenchmark, analyze_and_with_filter_vs_in)
     }
 }
 
+TEST(IteratorBenchmark, analyze_and_with_bitvector_vs_in)
+{
+    for (uint32_t children: {10, 100, 1000, 10000}) {
+        run_and_benchmark({int32_fs, QueryOperator::In, {0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60}, children, true},
+                          {int32_fs_rf, QueryOperator::Term, {1.0}, 1, true}, // this setup returns a bitvector matching all documents.
+                          num_docs);
+    }
+}
+
 TEST(IteratorBenchmark, analyze_and_with_filter_vs_in_array)
 {
     for (uint32_t children: {10, 100, 1000}) {
@@ -956,6 +967,12 @@ TEST(IteratorBenchmark, analyze_and_with_filter_vs_or)
                           {int32_fs, QueryOperator::Or, {0.1}, children, false},
                           num_docs);
     }
+}
+
+TEST(IteratorBenchmark, analyze_btree_vs_bitvector_iterators_strict)
+{
+    BenchmarkSetup setup(num_docs, {int32_fs, int32_fs_rf}, {QueryOperator::Term}, {true}, {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0}, {1});
+    run_benchmarks(setup);
 }
 
 int main(int argc, char **argv) {
