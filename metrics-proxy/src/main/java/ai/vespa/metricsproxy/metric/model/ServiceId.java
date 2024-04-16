@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model;
 
-import io.prometheus.client.Collector;
+import ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil;
 
 import java.util.Objects;
 
@@ -14,7 +14,7 @@ public class ServiceId {
     private final String idForPrometheus;
     private ServiceId(String id) {
         this.id = id;
-        idForPrometheus = Collector.sanitizeMetricName(id);
+        idForPrometheus = PrometheusUtil.sanitize(id);
     }
 
     public static ServiceId toServiceId(String id) { return new ServiceId(id); }

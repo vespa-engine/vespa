@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model;
 
+import ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import io.prometheus.client.Collector;
 
 import java.util.Map;
 import java.util.Objects;
@@ -17,7 +17,7 @@ public final class DimensionId {
     private final String idForPrometheus;
     private DimensionId(String id) {
         this.id = id;
-        idForPrometheus = Collector.sanitizeMetricName(id);
+        idForPrometheus = PrometheusUtil.sanitize(id);
     }
 
     public static DimensionId toDimensionId(String id) {
