@@ -26,6 +26,7 @@ public class ModelIdResolver {
     public static final String ONNX_MODEL = "onnx-model";
     public static final String BERT_VOCAB = "bert-vocabulary";
     public static final String SIGNIFICANCE_MODEL = "significance-model";
+    public static final String GGUF_MODEL = "gguf-model";
 
     private static Map<String, ProvidedModel> setupProvidedModels() {
         var m = new HashMap<String, ProvidedModel>();
@@ -60,6 +61,9 @@ public class ModelIdResolver {
 
         register(m, "e5-large-v2", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/model.onnx", Set.of(ONNX_MODEL));
         register(m, "e5-large-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/tokenizer.json", Set.of(HF_TOKENIZER));
+
+        register(m, "mistral-7b",    "https://data.vespa.oath.cloud/gguf_models/mistral-7b-instruct-v0.1.Q6_K.gguf", Set.of(GGUF_MODEL));
+        register(m, "mistral-7b-q8", "https://data.vespa.oath.cloud/gguf_models/mistral-7b-instruct-v0.1.Q8_0.gguf", Set.of(GGUF_MODEL));
         return Map.copyOf(m);
     }
 
@@ -124,7 +128,7 @@ public class ModelIdResolver {
             throw new IllegalArgumentException("Unknown model id '" + modelId + "' on '" + valueName + "'. Available models are [" +
                                                providedModels.keySet().stream().sorted().collect(Collectors.joining(", ")) + "]");
         var providedModel = providedModels.get(modelId);
-        if (!providedModel.tags().containsAll(requiredTags)) {
+        if ( ! providedModel.tags().containsAll(requiredTags)) {
             throw new IllegalArgumentException(
                     "Model '%s' on '%s' has tags %s but are missing required tags %s"
                             .formatted(modelId, valueName, providedModel.tags(), requiredTags));
