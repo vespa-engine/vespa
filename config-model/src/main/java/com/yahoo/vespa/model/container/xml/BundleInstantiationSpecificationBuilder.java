@@ -26,16 +26,17 @@ public class BundleInstantiationSpecificationBuilder {
         BundleInstantiationSpecification instSpec = new BundleInstantiationSpecification(id, classId, bundle);
         validate(instSpec);
 
-        return bundle == null ? setBundleForSearchAndDocprocComponents(instSpec) : instSpec;
+        return bundle == null ? setBundleForComponent(instSpec) : instSpec;
     }
 
-    private static BundleInstantiationSpecification setBundleForSearchAndDocprocComponents(BundleInstantiationSpecification spec) {
+    private static BundleInstantiationSpecification setBundleForComponent(BundleInstantiationSpecification spec) {
         if (PlatformBundles.isSearchAndDocprocClass(spec.getClassName()))
             return spec.inBundle(PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
+        else if (PlatformBundles.isModelIntegrationClass(spec.getClassName()))
+            return spec.inBundle(PlatformBundles.MODEL_INTEGRATION_BUNDLE);
         else
             return spec;
     }
-
 
     private static void validate(BundleInstantiationSpecification instSpec) {
         List<String> forbiddenClasses = List.of(SearchHandler.HANDLER_CLASSNAME, PROCESSING_HANDLER_CLASS);
@@ -47,7 +48,7 @@ public class BundleInstantiationSpecificationBuilder {
         }
     }
 
-    //null if missing
+    // null if missing
     private static ComponentSpecification getComponentSpecification(Element spec, String attributeName) {
         return (spec.hasAttribute(attributeName)) ?
                 new ComponentSpecification(spec.getAttribute(attributeName)) :

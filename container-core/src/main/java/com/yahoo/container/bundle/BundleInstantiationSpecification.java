@@ -15,6 +15,7 @@ import com.yahoo.component.ComponentSpecification;
 public final class BundleInstantiationSpecification {
 
     public static final String CONTAINER_SEARCH_AND_DOCPROC = "container-search-and-docproc";
+    public static final String MODEL_INTEGRATION = "model-integration";
 
     public final ComponentId id;
     public final ComponentSpecification classId;
