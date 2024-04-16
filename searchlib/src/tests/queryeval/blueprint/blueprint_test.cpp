@@ -39,7 +39,7 @@ public:
         return mixChildrenFields();
     }
 
-    void sort(Children &children, bool, bool) const override {
+    void sort(Children &children, InFlow) const override {
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
 

@@ -21,7 +21,7 @@ public:
     void optimize_self(OptimizePass pass) override;
     AndNotBlueprint * asAndNot() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool strict, bool sort_by_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
@@ -48,7 +48,7 @@ public:
     void optimize_self(OptimizePass pass) override;
     AndBlueprint * asAnd() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool strict, bool sort_by_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
@@ -72,7 +72,7 @@ public:
     void optimize_self(OptimizePass pass) override;
     OrBlueprint * asOr() noexcept final { return this; }
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool strict, bool sort_by_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
@@ -96,7 +96,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(Children &children, bool strict, bool sort_on_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     bool always_needs_unpack() const override;
     WeakAndBlueprint * asWeakAnd() noexcept final { return this; }
     SearchIterator::UP
@@ -126,7 +126,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(Children &children, bool strict, bool sort_by_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     SearchIteratorUP createSearch(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -148,7 +148,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(Children &children, bool strict, bool sort_by_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     SearchIteratorUP createSearch(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -168,7 +168,7 @@ public:
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
     Blueprint::UP get_replacement() override;
-    void sort(Children &children, bool strict, bool sort_by_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     bool isRank() const noexcept final { return true; }
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
@@ -196,7 +196,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
-    void sort(Children &children, bool strict, bool sort_by_cost) const override;
+    void sort(Children &children, InFlow in_flow) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;

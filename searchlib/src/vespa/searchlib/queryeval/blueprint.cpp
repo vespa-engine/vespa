@@ -619,7 +619,7 @@ IntermediateBlueprint::sort(InFlow in_flow)
 {
     resolve_strict(in_flow);
     if (!opt_keep_order()) [[likely]] {
-        sort(_children, in_flow.strict(), opt_sort_by_cost());
+        sort(_children, in_flow);
     }
     auto flow = my_flow(in_flow);
     for (size_t i = 0; i < _children.size(); ++i) {
