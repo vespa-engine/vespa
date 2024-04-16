@@ -1595,6 +1595,8 @@ public:
         writeComprBufferIfNeeded();
     }
 
+    void pad_for_memory_map_and_flush();
+
     virtual void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix);
     virtual void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const;
     virtual const vespalib::string &getIdentifier() const;
