@@ -32,7 +32,7 @@ public:
      * Get remaining units in buffer (e.g. _realValE - _valI)
      */
 
-    virtual int32_t remainingUnits() const = 0;
+    virtual int64_t remainingUnits() const = 0;
 
     /**
      * Get unit ptr (e.g. _valI) from decode context.
@@ -51,7 +51,7 @@ public:
     virtual uint64_t getBitPos(int bitOffset, uint64_t bufferEndFilePos) const = 0;
     virtual uint64_t getBitPosV() const = 0;
     virtual void skipBits(int bits) = 0;
-    virtual void adjUnitPtr(int newRemainingUnits) = 0;
+    virtual void adjUnitPtr(int64_t newRemainingUnits) = 0;
     virtual void emptyBuffer(uint64_t newBitPosition) = 0;
 
     /**
@@ -105,7 +105,7 @@ public:
     void readComprBuffer(uint64_t stopOffset, bool readAll);
     void readComprBuffer();
     void setPosition(uint64_t newPosition);
-    void allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment);
+    void allocComprBuf(size_t comprBufSize, size_t preferredFileAlignment);
     void setDecodeContext(ComprFileDecodeContext *decodeContext) { _decodeContext = decodeContext; }
     ComprFileDecodeContext *getDecodeContext() const { return _decodeContext; }
     void setFile(FastOS_FileInterface *file) { _file = file; }

@@ -23,14 +23,17 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
     bool isretryread = false;
 
  retry:
-    if (decodeContext.lastChunk())
+    if (decodeContext.lastChunk()) {
         return;         // Already reached end of file.
-    int remainingUnits = decodeContext.remainingUnits();
+    }
+    int64_t remainingUnits = decodeContext.remainingUnits();
+    assert(remainingUnits >= 0);
 
     // There's a good amount of data here already.
     if (remainingUnits >
-        static_cast<ssize_t>(ComprBuffer::minimumPadding()))  //FIX! Tune
+        static_cast<ssize_t>(ComprBuffer::minimumPadding())) { //FIX! Tune
         return;
+    }
 
     // Assert that file read offset is aligned on unit boundary
     assert((static_cast<size_t>(fileReadByteOffset) &
@@ -47,9 +50,9 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
     // Continuation reads starts at aligned boundary.
     assert(remainingUnits == 0 || padBeforeUnits == 0);
 
-    if (readAll)
+    if (readAll) {
         stopOffset = fileSize << 3;
-    else if (!isretryread) {
+    } else if (!isretryread) {
         stopOffset += 8 * cbuf.getUnitBitSize();    // XXX: Magic integer
         // Realign stop offset to direct IO alignment boundary
         uint64_t fileDirectIOBitAlign =
@@ -93,20 +96,19 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
         fileReadByteOffset -= padBeforeUnits * cbuf.getUnitSize();
         file.SetPosition(fileReadByteOffset);
     }
-    int readUnits0 = 0;
-    if (readBits > 0)
-        readUnits0 = static_cast<int>((readBits + cbuf.getUnitBitSize() - 1) /
-                                      cbuf.getUnitBitSize());
+    size_t readUnits0 = 0;
+    if (readBits > 0) {
+        readUnits0 = (readBits + cbuf.getUnitBitSize() - 1) / cbuf.getUnitBitSize();
+    }
 
     // Try to align end of read to an alignment boundary
-    int readUnits = cbuf.getAligner().adjustElements(fileReadByteOffset /
-            cbuf.getUnitSize(), readUnits0);
-    if (readUnits < readUnits0)
+    size_t readUnits = cbuf.getAligner().adjustElements(fileReadByteOffset / cbuf.getUnitSize(), readUnits0);
+    if (readUnits < readUnits0) {
         isMore = true;
+    }
 
     if (readUnits > 0) {
-        int64_t padBytes = fileReadByteOffset +
-                           static_cast<int64_t>(readUnits) * cbuf.getUnitSize() - fileSize;
+        int64_t padBytes = fileReadByteOffset + readUnits * cbuf.getUnitSize() - fileSize;
         if (!isMore && padBytes > 0) {
             // Pad reading of file written with smaller unit size with
             // NUL bytes.
@@ -115,17 +117,18 @@ ComprFileReadBase::ReadComprBuffer(uint64_t stopOffset,
                    readUnits * cbuf.getUnitSize() - padBytes,
                    0,
                    padBytes);
-        } else
+        } else {
             file.ReadBuf(cbuf.getComprBuf(), readUnits * cbuf.getUnitSize());
+        }
     }
     // If at end of file then add units of zero bits as padding
-    if (!isMore)
+    if (!isMore) {
         memset(reinterpret_cast<char *>(cbuf.getComprBuf()) +
                readUnits * cbuf.getUnitSize(),
                0,
                cbuf.getUnitSize() * ComprBuffer::minimumPadding());
+    }
 
-    assert(remainingUnits + readUnits >= 0);
     decodeContext.afterRead(reinterpret_cast<char *>(cbuf.getComprBuf()) +
                             (padBeforeUnits - remainingUnits) *
                             static_cast<int32_t>(cbuf.getUnitSize()),
@@ -343,7 +346,7 @@ ComprFileReadContext::setPosition(uint64_t newPosition)
 }
 
 void
-ComprFileReadContext::allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment)
+ComprFileReadContext::allocComprBuf(size_t comprBufSize, size_t preferredFileAlignment)
 {
     ComprBuffer::allocComprBuf(comprBufSize, preferredFileAlignment, _file, true);
 }
