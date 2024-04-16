@@ -41,7 +41,7 @@ public class EventStream extends Hit implements DataList<Data> {
     }
 
     public void error(String source, ErrorMessage message) {
-        incoming().add(new DefaultErrorHit(source, message));
+        incoming().add(new ErrorEvent(eventCount.incrementAndGet(), source, message));
     }
 
     public void markComplete() {
@@ -114,6 +114,40 @@ public class EventStream extends Hit implements DataList<Data> {
             hit.setField(type, data);
             return hit;
         }
+
+    }
+
+    public static class ErrorEvent extends Event {
+
+        private final String source;
+        private final ErrorMessage message;
+
+        public ErrorEvent(int eventNumber, String source, ErrorMessage message) {
+            super(eventNumber, message.getMessage(), "error");
+            this.source = source;
+            this.message = message;
+        }
+
+        public String source() {
+            return source;
+        }
+
+        public int code() {
+            return message.getCode();
+        }
+
+        public String message() {
+            return message.getMessage();
+        }
+
+        @Override
+        public Hit asHit() {
+            Hit hit = super.asHit();
+            hit.setField("source", source);
+            hit.setField("code", message.getCode());
+            return hit;
+        }
+
 
     }
 

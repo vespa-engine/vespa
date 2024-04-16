@@ -31,6 +31,7 @@ public class ContainerModelEvaluation implements
     public final static String EVALUATION_BUNDLE_NAME = "model-evaluation";
     public final static String INTEGRATION_BUNDLE_NAME = "model-integration";
     public final static String ONNXRUNTIME_BUNDLE_NAME = "container-onnxruntime.jar";
+    public final static String LLAMA_BUNDLE_NAME = "container-llama.jar";
     public final static String ONNX_RUNTIME_CLASS = "ai.vespa.modelintegration.evaluator.OnnxRuntime";
 
     private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();

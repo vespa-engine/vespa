@@ -141,6 +141,7 @@
                                         <include>com.microsoft.onnxruntime:onnxruntime:jar:${onnxruntime.vespa.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
                                         <include>commons-codec:commons-codec:${commons-codec.vespa.version}:test</include>
+                                        <include>de.kherud:llama:${kherud.llama.vespa.version}:test</include>
                                         <include>io.airlift:aircompressor:${aircompressor.vespa.version}:test</include>
                                         <include>io.airlift:airline:${airline.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient:${prometheus.client.vespa.version}:test</include>

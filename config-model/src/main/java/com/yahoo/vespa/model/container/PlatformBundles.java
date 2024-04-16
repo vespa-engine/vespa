@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.EVALUATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.LINGUISTICS_BUNDLE_NAME;
+import static com.yahoo.vespa.model.container.ContainerModelEvaluation.LLAMA_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_NAME;
 
 /**
@@ -37,6 +38,7 @@ public class PlatformBundles {
 
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
     public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
+    public static final String MODEL_INTEGRATION_BUNDLE = BundleInstantiationSpecification.MODEL_INTEGRATION;
 
     // Bundles that must be loaded for all container types.
     public static final Set<Path> COMMON_VESPA_BUNDLES = toBundlePaths(
@@ -63,7 +65,8 @@ public class PlatformBundles {
             "lucene-linguistics",
             EVALUATION_BUNDLE_NAME,
             INTEGRATION_BUNDLE_NAME,
-            ONNXRUNTIME_BUNDLE_NAME
+            ONNXRUNTIME_BUNDLE_NAME,
+            LLAMA_BUNDLE_NAME
     );
 
     private static Set<Path> toBundlePaths(String... bundleNames) {
@@ -84,6 +87,10 @@ public class PlatformBundles {
 
     public static boolean isSearchAndDocprocClass(String className) {
         return searchAndDocprocComponents.contains(className);
+    }
+
+    public static boolean isModelIntegrationClass(String className) {
+        return modelIntegrationComponents.contains(className);
     }
 
     // This is a hack to allow users to declare components from the search-and-docproc bundle without naming the bundle.
@@ -147,8 +154,13 @@ public class PlatformBundles {
             com.yahoo.vespa.streamingvisitors.MetricsSearcher.class.getName(),
             com.yahoo.vespa.streamingvisitors.StreamingBackend.class.getName(),
             ai.vespa.search.llm.LLMSearcher.class.getName(),
-            ai.vespa.search.llm.RAGSearcher.class.getName(),
-            ai.vespa.llm.clients.OpenAI.class.getName()
+            ai.vespa.search.llm.RAGSearcher.class.getName()
+    );
+
+    // This is a hack to allow users to declare components from the model-integration bundle without naming the bundle.
+    private static final Set<String> modelIntegrationComponents = Set.of(
+            ai.vespa.llm.clients.OpenAI.class.getName(),
+            ai.vespa.llm.clients.LocalLLM.class.getName()
     );
 
 }

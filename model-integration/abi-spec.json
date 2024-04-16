@@ -1,4 +1,186 @@
 {
+  "ai.vespa.llm.clients.ConfigurableLanguageModel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.clients.LlmClientConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
+      "protected java.lang.String getApiKey(ai.vespa.llm.InferenceParameters)",
+      "protected void setApiKey(ai.vespa.llm.InferenceParameters)",
+      "protected java.lang.String getEndpoint()",
+      "protected void setEndpoint(ai.vespa.llm.InferenceParameters)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmClientConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.clients.LlmClientConfig)",
+      "public ai.vespa.llm.clients.LlmClientConfig$Builder apiKeySecretName(java.lang.String)",
+      "public ai.vespa.llm.clients.LlmClientConfig$Builder endpoint(java.lang.String)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public ai.vespa.llm.clients.LlmClientConfig build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmClientConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void getConfig(ai.vespa.llm.clients.LlmClientConfig$Builder)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmClientConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(ai.vespa.llm.clients.LlmClientConfig$Builder)",
+      "public java.lang.String apiKeySecretName()",
+      "public java.lang.String endpoint()"
+    ],
+    "fields" : [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "ai.vespa.llm.clients.LlmLocalClientConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder model(com.yahoo.config.ModelReference)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder parallelRequests(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxQueueSize(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder useGpu(boolean)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder gpuLayers(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder threads(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder contextSize(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxTokens(int)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmLocalClientConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void getConfig(ai.vespa.llm.clients.LlmLocalClientConfig$Builder)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmLocalClientConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig$Builder)",
+      "public java.nio.file.Path model()",
+      "public int parallelRequests()",
+      "public int maxQueueSize()",
+      "public boolean useGpu()",
+      "public int gpuLayers()",
+      "public int threads()",
+      "public int contextSize()",
+      "public int maxTokens()"
+    ],
+    "fields" : [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "ai.vespa.llm.clients.LocalLLM" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig)",
+      "public void deconstruct()",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.OpenAI" : {
+    "superClass" : "ai.vespa.llm.clients.ConfigurableLanguageModel",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.clients.LlmClientConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.llm.generation.Generator" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
     "interfaces" : [ ],
