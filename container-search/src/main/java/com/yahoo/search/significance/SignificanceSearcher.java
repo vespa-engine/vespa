@@ -41,8 +41,6 @@ public class SignificanceSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        if (significanceModelRegistry == null) return execution.search(query);
-
         Language language = query.getModel().getParsingLanguage();
         Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
 
