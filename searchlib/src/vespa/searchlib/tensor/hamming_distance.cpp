@@ -38,7 +38,7 @@ private:
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
 public:
-    BoundHammingDistance(const vespalib::eval::TypedCells& lhs)
+    explicit BoundHammingDistance(const vespalib::eval::TypedCells& lhs)
         : _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs))
     {}
@@ -62,8 +62,7 @@ public:
         return threshold;
     }
     double to_rawscore(double distance) const override {
-        double score = 1.0 / (1.0 + distance);
-        return score;
+        return 1.0 / (1.0 + distance);
     }
     double calc_with_limit(const vespalib::eval::TypedCells& rhs, double) const override {
         // consider optimizing:

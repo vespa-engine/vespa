@@ -11,24 +11,24 @@ namespace vespalib::eval {
 
 struct TypedCells {
     const void *data;
-    size_t size:56;
-    CellType type;
+    size_t      size:56;
+    CellType    type;
 
-    explicit TypedCells(ConstArrayRef<double> cells) : data(cells.begin()), size(cells.size()), type(CellType::DOUBLE) {}
-    explicit TypedCells(ConstArrayRef<float> cells) : data(cells.begin()), size(cells.size()), type(CellType::FLOAT) {}
-    explicit TypedCells(ConstArrayRef<BFloat16> cells) : data(cells.begin()), size(cells.size()), type(CellType::BFLOAT16) {}
-    explicit TypedCells(ConstArrayRef<Int8Float> cells) : data(cells.begin()), size(cells.size()), type(CellType::INT8) {}
+    explicit TypedCells(ConstArrayRef<double> cells) noexcept : data(cells.begin()), size(cells.size()), type(CellType::DOUBLE) {}
+    explicit TypedCells(ConstArrayRef<float> cells) noexcept : data(cells.begin()), size(cells.size()), type(CellType::FLOAT) {}
+    explicit TypedCells(ConstArrayRef<BFloat16> cells) noexcept : data(cells.begin()), size(cells.size()), type(CellType::BFLOAT16) {}
+    explicit TypedCells(ConstArrayRef<Int8Float> cells) noexcept : data(cells.begin()), size(cells.size()), type(CellType::INT8) {}
 
     TypedCells() noexcept : data(nullptr), size(0), type(CellType::DOUBLE) {}
     TypedCells(const void *dp, CellType ct, size_t sz) noexcept : data(dp), size(sz), type(ct) {}
 
-    template <typename T> bool check_type() const { return vespalib::eval::check_cell_type<T>(type); }
+    template <typename T> bool check_type() const noexcept  { return check_cell_type<T>(type); }
 
-    template <typename T> ConstArrayRef<T> typify() const {
+    template <typename T> ConstArrayRef<T> typify() const noexcept {
         assert(check_type<T>());
         return ConstArrayRef<T>((const T *)data, size);
     }
-    template <typename T> ConstArrayRef<T> unsafe_typify() const {
+    template <typename T> ConstArrayRef<T> unsafe_typify() const noexcept {
         return ConstArrayRef<T>((const T *)data, size);
     }
 

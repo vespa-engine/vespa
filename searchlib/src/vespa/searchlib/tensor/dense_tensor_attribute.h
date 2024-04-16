@@ -26,8 +26,8 @@ public:
     bool supports_extract_cells_ref() const override { return true; }
 
     // Implements DocVectorAccess
-    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;
-    VectorBundle get_vectors(uint32_t docid) const override;
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override;
+    VectorBundle get_vectors(uint32_t docid) const noexcept override;
 };
 
 }

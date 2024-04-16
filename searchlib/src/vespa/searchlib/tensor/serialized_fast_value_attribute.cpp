@@ -42,7 +42,7 @@ SerializedFastValueAttribute::supports_get_serialized_tensor_ref() const
 }
 
 vespalib::eval::TypedCells
-SerializedFastValueAttribute::get_vector(uint32_t docid, uint32_t subspace) const
+SerializedFastValueAttribute::get_vector(uint32_t docid, uint32_t subspace) const noexcept
 {
     EntryRef ref = acquire_entry_ref(docid);
     auto vectors = _tensorBufferStore.get_vectors(ref);
@@ -50,7 +50,7 @@ SerializedFastValueAttribute::get_vector(uint32_t docid, uint32_t subspace) cons
 }
 
 VectorBundle
-SerializedFastValueAttribute::get_vectors(uint32_t docid) const
+SerializedFastValueAttribute::get_vectors(uint32_t docid) const noexcept
 {
     EntryRef ref = acquire_entry_ref(docid);
     return _tensorBufferStore.get_vectors(ref);

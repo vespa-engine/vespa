@@ -74,7 +74,7 @@ DirectTensorAttribute::get_tensor_ref(DocId docId) const
 }
 
 vespalib::eval::TypedCells
-DirectTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const
+DirectTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const noexcept
 {
     EntryRef ref = acquire_entry_ref(docid);
     auto vectors = _direct_store.get_vectors(ref);
@@ -82,7 +82,7 @@ DirectTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const
 }
 
 VectorBundle
-DirectTensorAttribute::get_vectors(uint32_t docid) const
+DirectTensorAttribute::get_vectors(uint32_t docid) const noexcept
 {
     EntryRef ref = acquire_entry_ref(docid);
     return _direct_store.get_vectors(ref);

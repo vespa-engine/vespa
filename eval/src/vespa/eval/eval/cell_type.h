@@ -70,7 +70,7 @@ struct CellMetaNotScalar {
 struct CellMeta {
     const CellType cell_type;
     const bool is_scalar;
-    constexpr CellMeta(CellType cell_type_in, bool is_scalar_in)
+    constexpr CellMeta(CellType cell_type_in, bool is_scalar_in) noexcept
         : cell_type(cell_type_in), is_scalar(is_scalar_in)
     {
         // is_scalar -> double cell type

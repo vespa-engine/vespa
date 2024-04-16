@@ -86,20 +86,20 @@ TensorExtAttribute::getExtendInterface()
 }
 
 TypedCells
-TensorExtAttribute::get_vector(uint32_t docid, uint32_t subspace) const
+TensorExtAttribute::get_vector(uint32_t docid, uint32_t subspace) const noexcept
 {
     auto vectors = get_vectors(docid);
     return (subspace < vectors.subspaces()) ? vectors.cells(subspace) : _empty.cells();
 }
 
 VectorBundle
-TensorExtAttribute::get_vectors(uint32_t docid) const
+TensorExtAttribute::get_vectors(uint32_t docid) const noexcept
 {
     auto tensor = _data[docid];
     if (tensor == nullptr) {
-        return VectorBundle();
+        return {};
     }
-    return VectorBundle(tensor->cells().data, tensor->index().size(), _subspace_type);
+    return {tensor->cells().data, static_cast<uint32_t>(tensor->index().size()), _subspace_type};
 }
 
 std::unique_ptr<Value>

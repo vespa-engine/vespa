@@ -21,7 +21,7 @@ class SerializedTensorRef;
  */
 class ITensorAttribute : public DocVectorAccess {
 public:
-    virtual ~ITensorAttribute() {}
+    virtual ~ITensorAttribute() = default;
     virtual std::unique_ptr<vespalib::eval::Value> getTensor(uint32_t docId) const = 0;
     virtual std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const = 0;
     virtual vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const = 0;

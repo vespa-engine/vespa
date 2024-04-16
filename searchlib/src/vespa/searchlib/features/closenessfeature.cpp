@@ -52,7 +52,7 @@ ConvertRawScoreToCloseness::execute(uint32_t docId)
             feature_t converted = tfmd->getRawScore();
             max_closeness = std::max(max_closeness, converted);
         } else if (elem.calc) {
-            feature_t converted = elem.calc->calc_raw_score(docId);
+            feature_t converted = elem.calc->calc_raw_score<false>(docId);
             max_closeness = std::max(max_closeness, converted);
         }
     }

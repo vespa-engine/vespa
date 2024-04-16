@@ -27,7 +27,7 @@ public:
     ImportedTensorAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard,
                                            const attribute::ImportedAttributeVector &imported_attribute,
                                            bool stableEnumGuard);
-    ~ImportedTensorAttributeVectorReadGuard();
+    ~ImportedTensorAttributeVectorReadGuard() override;
 
     const ITensorAttribute *asTensorAttribute() const override;
 
@@ -45,8 +45,8 @@ public:
     bool supports_get_serialized_tensor_ref() const override;
     uint32_t get_num_docs() const override { return getNumDocs(); }
 
-    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;
-    VectorBundle get_vectors(uint32_t docid) const override;
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override;
+    VectorBundle get_vectors(uint32_t docid) const noexcept override;
 
     const vespalib::eval::ValueType &getTensorType() const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;

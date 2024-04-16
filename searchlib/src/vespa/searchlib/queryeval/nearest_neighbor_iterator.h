@@ -39,7 +39,7 @@ public:
         {}
     };
 
-    NearestNeighborIterator(Params params_in)
+    explicit NearestNeighborIterator(Params params_in)
         : _params(std::move(params_in))
     {}
 
