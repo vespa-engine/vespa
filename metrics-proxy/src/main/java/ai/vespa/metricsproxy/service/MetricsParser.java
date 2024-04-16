@@ -28,6 +28,7 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
  * @author Jo Kristian Bergum
  */
 public class MetricsParser {
+    private static final Double ZERO_DOUBLE = 0d;
     public interface Collector {
         void accept(Metric metric);
     }
@@ -186,7 +187,8 @@ public class MetricsParser {
             if (token == JsonToken.VALUE_NUMBER_INT) {
                 metrics.add(Map.entry(metricName, parser.getLongValue()));
             } else if (token == JsonToken.VALUE_NUMBER_FLOAT) {
-                metrics.add(Map.entry(metricName, parser.getValueAsDouble()));
+                double value = parser.getValueAsDouble();
+                metrics.add(Map.entry(metricName, value == ZERO_DOUBLE ? ZERO_DOUBLE : value));
             } else {
                 throw new IllegalArgumentException("Value for aggregator '" + fieldName + "' is not a number");
             }

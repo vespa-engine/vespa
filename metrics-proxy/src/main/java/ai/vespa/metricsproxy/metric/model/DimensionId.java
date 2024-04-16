@@ -2,6 +2,7 @@
 package ai.vespa.metricsproxy.metric.model;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
+import io.prometheus.client.Collector;
 
 import java.util.Map;
 import java.util.Objects;
@@ -13,11 +14,17 @@ public final class DimensionId {
 
     private static final Map<String, DimensionId> dictionary = new CopyOnWriteHashMap<>();
     public final String id;
-    private DimensionId(String id) { this.id = id; }
+    private final String idForPrometheus;
+    private DimensionId(String id) {
+        this.id = id;
+        idForPrometheus = Collector.sanitizeMetricName(id);
+    }
 
     public static DimensionId toDimensionId(String id) {
         return dictionary.computeIfAbsent(id, key -> new DimensionId(key));
     }
+
+    public String getIdForPrometheus() { return idForPrometheus; }
 
     @Override
     public boolean equals(Object o) {

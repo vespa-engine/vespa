@@ -28,13 +28,14 @@ public class PrometheusUtil {
         Map<String, List<Sample>> samples = new HashMap<>();
         packetsByService.forEach(((serviceId, packets) -> {
 
-            var serviceName = Collector.sanitizeMetricName(serviceId.id);
+            var serviceName = serviceId.getIdForPrometheus();
             for (var packet : packets) {
+                Long timeStamp = packet.timestamp * 1000;
                 var dimensions = packet.dimensions();
                 List<String> labels = new ArrayList<>(dimensions.size());
                 List<String> labelValues = new ArrayList<>(dimensions.size());
                 for (var entry : dimensions.entrySet()) {
-                    var labelName = Collector.sanitizeMetricName(entry.getKey().id);
+                    var labelName = entry.getKey().getIdForPrometheus();
                     labels.add(labelName);
                     labelValues.add(entry.getValue());
                 }
@@ -42,7 +43,7 @@ public class PrometheusUtil {
                 labelValues.add(serviceName);
 
                 for (var metric : packet.metrics().entrySet()) {
-                    var metricName = Collector.sanitizeMetricName(metric.getKey().id);
+                    var metricName = metric.getKey().getIdForPrometheus();
                     List<Sample> sampleList;
                     if (samples.containsKey(metricName)) {
                         sampleList = samples.get(metricName);
@@ -51,7 +52,7 @@ public class PrometheusUtil {
                         samples.put(metricName, sampleList);
                         metricFamilySamples.add(new MetricFamilySamples(metricName, Collector.Type.UNKNOWN, "", sampleList));
                     }
-                    sampleList.add(new Sample(metricName, labels, labelValues, metric.getValue().doubleValue(), packet.timestamp * 1000));
+                    sampleList.add(new Sample(metricName, labels, labelValues, metric.getValue().doubleValue(), timeStamp));
                 }
             }
             if (!packets.isEmpty()) {
