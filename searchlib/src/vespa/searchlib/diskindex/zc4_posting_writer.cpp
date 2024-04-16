@@ -247,19 +247,7 @@ template <bool bigEndian>
 void
 Zc4PostingWriter<bigEndian>::on_close()
 {
-    // Write some pad bits to avoid decompression readahead going past
-    // memory mapped file during search and into SIGSEGV territory.
-
-    // First pad to 64 bits alignment.
-    _encode_context.smallAlign(64);
-    _encode_context.writeComprBufferIfNeeded();
-
-    // Then write 128 more bits.  This allows for 64-bit decoding
-    // with a readbits that always leaves a nonzero preRead
-    _encode_context.padBits(128);
-    _encode_context.alignDirectIO();
-    _encode_context.flush();
-    _encode_context.writeComprBuffer();   // Also flushes slack
+    _encode_context.pad_for_memory_map_and_flush();
 }
 
 template class Zc4PostingWriter<false>;

@@ -359,6 +359,24 @@ getParams(PostingListParams &params) const
     params.clear();
 }
 
+template <bool bigEndian>
+void
+FeatureEncodeContext<bigEndian>::pad_for_memory_map_and_flush()
+{
+    // Write some pad bits to avoid decompression readahead going past
+    // memory mapped file during search and into SIGSEGV territory.
+
+    // First pad to 64 bits alignment.
+    this->smallAlign(64);
+    writeComprBufferIfNeeded();
+
+    // Then write 128 more bits.  This allows for 64-bit decoding
+    // with a readbits that always leaves a nonzero preRead
+    padBits(128);
+    this->alignDirectIO();
+    this->flush();
+    writeComprBuffer(); // Also flushes slack
+}
 
 template <bool bigEndian>
 void

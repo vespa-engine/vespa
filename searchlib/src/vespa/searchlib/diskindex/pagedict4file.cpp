@@ -269,11 +269,9 @@ PageDict4FileSeqWrite::DictFileContext::DictFileContext(bool extended, vespalib:
 }
 
 bool
-PageDict4FileSeqWrite::DictFileContext::DictFileContext::close() {
-    //uint64_t usedPBits = _ec.getWriteOffset();
-    _ec.flush();
-    _writeContext.writeComprBuffer(true);
-
+PageDict4FileSeqWrite::DictFileContext::DictFileContext::close()
+{
+    _ec.pad_for_memory_map_and_flush();
     _writeContext.dropComprBuf();
     bool success = _file.Sync();
     success &= _file.Close();
