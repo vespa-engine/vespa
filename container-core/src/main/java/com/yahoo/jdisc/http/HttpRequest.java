@@ -88,7 +88,11 @@ public class HttpRequest extends Request {
             this.version = version;
             this.remoteAddress = remoteAddress;
             this.parameters.putAll(getUriQueryParameters(uri));
-            this.connectedAt = (connectedAtMillis != null) ? connectedAtMillis : creationTime(TimeUnit.MILLISECONDS);
+            if (connectedAtMillis != null) {
+                this.connectedAt = connectedAtMillis;
+            } else {
+                this.connectedAt = creationTime(TimeUnit.MILLISECONDS);
+            }
         } catch (Throwable e) {
             release();
             throw e;
