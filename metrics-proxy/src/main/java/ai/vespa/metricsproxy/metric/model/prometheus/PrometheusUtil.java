@@ -19,15 +19,7 @@ import java.util.stream.Collectors;
  */
 public class PrometheusUtil {
 
-    private static String sanitize(String name, Map<String, String> sanitizedCache) {
-        return sanitizedCache.computeIfAbsent(name, key -> {
-            String sanitized = Collector.sanitizeMetricName(name);
-            return (name.equals(sanitized)) ? name : sanitized;
-        });
-    }
-
     public static PrometheusModel toPrometheusModel(List<MetricsPacket> metricsPackets) {
-        Map<String, String> sanitizedMetrics = new HashMap<>();
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
                 .collect(Collectors.groupingBy(packet -> packet.service));
 
@@ -36,14 +28,14 @@ public class PrometheusUtil {
         Map<String, List<Sample>> samples = new HashMap<>();
         packetsByService.forEach(((serviceId, packets) -> {
 
-            var serviceName = sanitize(serviceId.id, sanitizedMetrics);
+            var serviceName = serviceId.getIdForPrometheus();
             for (var packet : packets) {
                 Long timeStamp = packet.timestamp * 1000;
                 var dimensions = packet.dimensions();
                 List<String> labels = new ArrayList<>(dimensions.size());
                 List<String> labelValues = new ArrayList<>(dimensions.size());
                 for (var entry : dimensions.entrySet()) {
-                    var labelName = sanitize(entry.getKey().id, sanitizedMetrics);
+                    var labelName = entry.getKey().getIdForPrometheus();
                     labels.add(labelName);
                     labelValues.add(entry.getValue());
                 }
@@ -51,7 +43,7 @@ public class PrometheusUtil {
                 labelValues.add(serviceName);
 
                 for (var metric : packet.metrics().entrySet()) {
-                    var metricName = sanitize(metric.getKey().id, sanitizedMetrics);
+                    var metricName = metric.getKey().getIdForPrometheus();
                     List<Sample> sampleList;
                     if (samples.containsKey(metricName)) {
                         sampleList = samples.get(metricName);
