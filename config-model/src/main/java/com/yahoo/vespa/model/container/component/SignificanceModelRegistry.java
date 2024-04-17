@@ -24,7 +24,7 @@ import static com.yahoo.vespa.model.container.xml.ModelIdResolver.SIGNIFICANCE_M
 public class SignificanceModelRegistry extends SimpleComponent implements SignificanceConfig.Producer {
 
     private static final String CLASS = "com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry";
-    private static final String BUNDLE = "linguistics";
+    private static final String BUNDLE = null;
 
     private final List<SignificanceModelConfig> configList = new ArrayList<>();
 
