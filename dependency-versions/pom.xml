@@ -146,7 +146,7 @@
         <surefire.vespa.version>3.2.5</surefire.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
-        <wiremock.vespa.version>3.5.2</wiremock.vespa.version>
+        <wiremock.vespa.version>3.5.3</wiremock.vespa.version>
         <woodstox.vespa.version>6.6.2</woodstox.vespa.version>
         <stax2-api.vespa.version>4.2.2</stax2-api.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
