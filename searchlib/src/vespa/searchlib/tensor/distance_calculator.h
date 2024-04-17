@@ -43,10 +43,11 @@ public:
     double calc_raw_score(uint32_t docid) const {
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
+            double min_rawscore = _dist_fun->min_rawscore();
             if (cells.size == 0) [[unlikely]] {
-                return _dist_fun->min_rawscore();
+                return min_rawscore;
             }
-            return _dist_fun->to_rawscore(_dist_fun->calc(cells));
+            return std::max(min_rawscore, _dist_fun->to_rawscore(_dist_fun->calc(cells)));
         } else {
             auto vectors = _attr_tensor.get_vectors(docid);
             double result = _dist_fun->min_rawscore();
