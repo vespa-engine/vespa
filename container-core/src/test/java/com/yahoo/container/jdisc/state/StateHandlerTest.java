@@ -88,7 +88,7 @@ public class StateHandlerTest extends StateHandlerTestBase {
         snapshot.add(otherContext, "some.counter", 2);
         snapshot.set(null, "bar", 20);
         snapshot.set(null, "bar", 40);
-        snapshot.set(null, "testing.infinity", Double.NEGATIVE_INFINITY);
+        snapshot.set(null, "testing-infinity", Double.NEGATIVE_INFINITY);
         snapshot.set(null, "testing.nan", Double.NaN);
         snapshotProvider.setSnapshot(snapshot);
 
