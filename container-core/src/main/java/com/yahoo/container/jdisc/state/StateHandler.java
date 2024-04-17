@@ -376,7 +376,15 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     }
 
     private String prometheusSanitizedName(String name) {
-        return name.replaceAll("\\.", "_");
+        var stringBuilder = new StringBuilder();
+        for (char c : name.toCharArray()) {
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+                stringBuilder.append(c);
+            } else {
+                stringBuilder.append("_");
+            }
+        }
+        return stringBuilder.toString();
     }
 
     private String sanitizeIfDouble(Number num) {
