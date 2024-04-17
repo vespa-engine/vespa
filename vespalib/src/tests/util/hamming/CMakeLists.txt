@@ -7,3 +7,10 @@ vespa_add_executable(vespalib_hamming_test_app TEST
     GTest::GTest
 )
 vespa_add_test(NAME vespalib_hamming_test_app COMMAND vespalib_hamming_test_app)
+
+vespa_add_executable(vespalib_hamming_benchmark_app TEST
+    SOURCES
+    hamming_benchmark.cpp
+    DEPENDS
+    vespalib
+)
