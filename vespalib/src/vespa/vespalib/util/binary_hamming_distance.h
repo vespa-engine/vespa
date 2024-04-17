@@ -10,5 +10,5 @@ namespace vespalib {
  * @param sz number of bytes in each blob
  * @return number of bits that differ when comparing the two blobs
  **/
-size_t binary_hamming_distance(const void *lhs, const void *rhs, size_t sz);
+size_t binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) noexcept;
 }

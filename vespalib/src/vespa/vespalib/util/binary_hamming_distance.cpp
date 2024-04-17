@@ -4,25 +4,34 @@
 
 namespace vespalib {
 
-size_t binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) {
-    uintptr_t addr_a = (uintptr_t) lhs;
-    uintptr_t addr_b = (uintptr_t) rhs;
+namespace {
+    constexpr uint8_t WORD_SZ = sizeof (uint64_t);
+    constexpr uint8_t UNROLL_CNT = 2;
+    static_assert(sizeof(uint64_t) == 8);
+}
+size_t
+binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) noexcept {
+    auto addr_a = (uintptr_t) lhs;
+    auto addr_b = (uintptr_t) rhs;
     size_t sum = 0;
     size_t i = 0;
-    static_assert(sizeof(uint64_t) == 8);
     bool aligned = ((addr_a & 0x7) == 0) && ((addr_b & 0x7) == 0);
     if (__builtin_expect(aligned, true)) {
-        const uint64_t *words_a = static_cast<const uint64_t *>(lhs);
-        const uint64_t *words_b = static_cast<const uint64_t *>(rhs);
-        for (; i * 8 + 7 < sz; ++i) {
-            uint64_t xor_bits = words_a[i] ^ words_b[i];
-            sum += __builtin_popcountl(xor_bits);
+        const auto *words_a = static_cast<const uint64_t *>(lhs);
+        const auto *words_b = static_cast<const uint64_t *>(rhs);
+        for (; (i+UNROLL_CNT) * WORD_SZ <= sz; i += UNROLL_CNT) {
+            for (uint8_t j=0; j < UNROLL_CNT; j++) {
+                sum += __builtin_popcountl(words_a[i+j] ^ words_b[i+j]);
+            }
+        }
+        for (; (i + 1) * WORD_SZ <= sz; ++i) {
+            sum += __builtin_popcountl(words_a[i] ^ words_b[i]);
         }
     }
-    if (__builtin_expect((i * 8 < sz), false)) {
-        const uint8_t *bytes_a = static_cast<const uint8_t *>(lhs);
-        const uint8_t *bytes_b = static_cast<const uint8_t *>(rhs);
-        for (i *= 8; i < sz; ++i) {
+    if (__builtin_expect((i * WORD_SZ < sz), false)) {
+        const auto *bytes_a = static_cast<const uint8_t *>(lhs);
+        const auto *bytes_b = static_cast<const uint8_t *>(rhs);
+        for (i *= WORD_SZ; i < sz; ++i) {
             uint64_t xor_bits = bytes_a[i] ^ bytes_b[i];
             sum += __builtin_popcountl(xor_bits);
         }
