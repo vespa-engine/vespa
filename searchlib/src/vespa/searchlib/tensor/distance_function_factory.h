@@ -4,7 +4,6 @@
 
 #include "distance_function.h"
 #include "bound_distance_function.h"
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/distance_metric.h>
 
 namespace search::tensor {
@@ -15,10 +14,11 @@ namespace search::tensor {
  * for one particular vector in the distance function object.
  */
 struct DistanceFunctionFactory {
-    DistanceFunctionFactory() = default;
-    virtual ~DistanceFunctionFactory() {}
-    virtual BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) = 0;
-    virtual BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) = 0;
+    using TypedCells = vespalib::eval::TypedCells;
+    DistanceFunctionFactory() noexcept = default;
+    virtual ~DistanceFunctionFactory() = default;
+    virtual BoundDistanceFunction::UP for_query_vector(TypedCells lhs) = 0;
+    virtual BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) = 0;
     using UP = std::unique_ptr<DistanceFunctionFactory>;
 };
 

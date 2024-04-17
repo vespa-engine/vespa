@@ -2,7 +2,9 @@
 
 #include "angular_distance.h"
 #include "temporary_vector_store.h"
+#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <numbers>
+#include <cmath>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
@@ -14,8 +16,7 @@ namespace {
 
 struct CalcAngular {
     template <typename LCT, typename RCT>
-    static double invoke(const vespalib::eval::TypedCells& lhs,
-                         const vespalib::eval::TypedCells& rhs)
+    static double invoke(TypedCells lhs, TypedCells rhs)
     {
         auto lhs_vector = lhs.unsafe_typify<LCT>();
         auto rhs_vector = rhs.unsafe_typify<RCT>();
@@ -50,7 +51,7 @@ private:
     const vespalib::ConstArrayRef<FloatType> _lhs;
     double _lhs_norm_sq;
 public:
-    BoundAngularDistance(const vespalib::eval::TypedCells& lhs)
+    explicit BoundAngularDistance(TypedCells lhs)
         : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator()),
           _tmpSpace(lhs.size),
           _lhs(_tmpSpace.storeLhs(lhs))
@@ -58,7 +59,7 @@ public:
         auto a = _lhs.data();
         _lhs_norm_sq = _computer.dotProduct(a, a, lhs.size);
     }
-    double calc(const vespalib::eval::TypedCells& rhs) const override {
+    double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(sz == rhs_vector.size());
@@ -72,7 +73,7 @@ public:
         double distance = 1.0 - cosine_similarity; // in range [0,2]
         return distance;
     }
-    double convert_threshold(double threshold) const override {
+    double convert_threshold(double threshold) const noexcept override {
         if (threshold < 0.0) {
             return 0.0;
         }
@@ -82,7 +83,7 @@ public:
         double cosine_similarity = cos(threshold);
         return 1.0 - cosine_similarity;
     }
-    double to_rawscore(double distance) const override {
+    double to_rawscore(double distance) const noexcept override {
         double cosine_similarity = 1.0 - distance;
         // should be in the range [-1,1] but roundoff may cause problems:
         cosine_similarity = std::min(1.0, cosine_similarity);
@@ -91,7 +92,7 @@ public:
         double score = 1.0 / (1.0 + angle_distance);
         return score;
     }
-    double calc_with_limit(const vespalib::eval::TypedCells& rhs, double) const override {
+    double calc_with_limit(TypedCells rhs, double) const noexcept override {
         return calc(rhs);
     }
 };
@@ -101,14 +102,14 @@ template class BoundAngularDistance<double>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-AngularDistanceFunctionFactory<FloatType>::for_query_vector(const vespalib::eval::TypedCells& lhs) {
+AngularDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) {
     using DFT = BoundAngularDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-AngularDistanceFunctionFactory<FloatType>::for_insertion_vector(const vespalib::eval::TypedCells& lhs) {
+AngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) {
     using DFT = BoundAngularDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }

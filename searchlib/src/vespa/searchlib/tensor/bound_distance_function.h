@@ -2,13 +2,8 @@
 
 #pragma once
 
-#include <memory>
-#include <vespa/eval/eval/cell_type.h>
-#include <vespa/eval/eval/typed_cells.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include "distance_function.h"
-
-namespace vespalib::eval { struct TypedCells; }
+#include <vespa/eval/eval/typed_cells.h>
 
 namespace search::tensor {
 
@@ -22,16 +17,17 @@ namespace search::tensor {
 class BoundDistanceFunction : public DistanceConverter {
 public:
     using UP = std::unique_ptr<BoundDistanceFunction>;
+    using TypedCells = vespalib::eval::TypedCells;
 
-    BoundDistanceFunction() = default;
+    BoundDistanceFunction() noexcept = default;
 
     ~BoundDistanceFunction() override = default;
 
     // calculate internal distance (comparable)
-    virtual double calc(const vespalib::eval::TypedCells& rhs) const = 0;
+    virtual double calc(TypedCells rhs) const noexcept = 0;
 
     // calculate internal distance, early return allowed if > limit
-    virtual double calc_with_limit(const vespalib::eval::TypedCells& rhs, double limit) const = 0;
+    virtual double calc_with_limit(TypedCells rhs, double limit) const noexcept = 0;
 };
 
 }

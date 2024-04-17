@@ -2,11 +2,7 @@
 
 #pragma once
 
-#include "distance_function.h"
-#include "bound_distance_function.h"
 #include "distance_function_factory.h"
-#include <vespa/eval/eval/typed_cells.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace search::tensor {
 
@@ -18,8 +14,8 @@ template <typename FloatType>
 class PrenormalizedAngularDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
     PrenormalizedAngularDistanceFunctionFactory() = default;
-    BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
-    BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
+    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) override;
+    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) override;
 };
 
 }
