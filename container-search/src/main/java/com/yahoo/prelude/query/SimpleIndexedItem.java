@@ -46,7 +46,7 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
 
     /** Appends the index prefix if necessary */
     protected void appendIndexString(StringBuilder buffer) {
-        if (!getIndexName().equals("")) {
+        if (!getIndexName().isEmpty()) {
             buffer.append(getIndexName());
             buffer.append(":");
         }

@@ -82,7 +82,7 @@ public class SortingTestCase {
     private void requireThatChineseHasCorrectRules(Collator col) {
         final int reorderCodes [] = {UScript.HAN};
         assertEquals("15.1.0.0", col.getUCAVersion().toString());
-        assertEquals("153.121.44.8", col.getVersion().toString());
+        assertEquals("153.121.45.0", col.getVersion().toString());
         assertEquals(Arrays.toString(reorderCodes), Arrays.toString(col.getReorderCodes()));
 
         assertNotEquals("", ((RuleBasedCollator) col).getRules());
