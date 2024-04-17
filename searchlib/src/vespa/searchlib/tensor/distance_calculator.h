@@ -39,11 +39,14 @@ public:
     const BoundDistanceFunction& function() const noexcept { return *_dist_fun; }
     bool has_single_subspace() const noexcept { return _attr_tensor.getTensorType().is_dense(); }
 
-    template<bool has_single_subspace=false>
+    template<bool has_single_subspace>
     double calc_raw_score(uint32_t docid) const {
         if (has_single_subspace) {
-            double distance = _dist_fun->calc(_attr_tensor.get_vector(docid, 0));
-            return _dist_fun->to_rawscore(distance);
+            auto cells = _attr_tensor.get_vector(docid, 0);
+            if (cells.size == 0) [[unlikely]] {
+                return _dist_fun->min_rawscore();
+            }
+            return _dist_fun->to_rawscore(_dist_fun->calc(cells));
         } else {
             auto vectors = _attr_tensor.get_vectors(docid);
             double result = _dist_fun->min_rawscore();

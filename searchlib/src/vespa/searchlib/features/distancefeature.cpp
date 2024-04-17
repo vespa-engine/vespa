@@ -12,7 +12,6 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
-#include <cmath>
 #include <limits>
 
 #include <vespa/log/log.h>
@@ -62,7 +61,7 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
             feature_t converted = elem.calc ? elem.calc->function().to_distance(invdist) : ((1.0 / invdist) - 1.0);
             min_distance = std::min(min_distance, converted);
         } else if (elem.calc) {
-            feature_t invdist = elem.calc->calc_raw_score(docId);
+            feature_t invdist = elem.calc->calc_raw_score<false>(docId);
             feature_t converted = elem.calc->function().to_distance(invdist);
             min_distance = std::min(min_distance, converted);
         }
@@ -130,7 +129,10 @@ GeoGCDExecutor::GeoGCDExecutor(GeoLocationSpecPtrs locations, const attribute::I
     : FeatureExecutor(),
       _locations(),
       _pos(pos),
-      _intBuf()
+      _intBuf(),
+      _best_index(0.0),
+      _best_lat(0.0),
+      _best_lng(0.0)
 {
     if (_pos == nullptr) {
         return;
@@ -140,7 +142,7 @@ GeoGCDExecutor::GeoGCDExecutor(GeoLocationSpecPtrs locations, const attribute::I
         if (p && p->location.valid() && p->location.has_point) {
             double lat = p->location.point.y / 1.0e6;
             double lng = p->location.point.x / 1.0e6;
-            _locations.emplace_back(search::common::GeoGcd{lat, lng});
+            _locations.emplace_back(lat, lng);
         }
     }
 }
