@@ -88,6 +88,7 @@ private:
             double w = getWeightFromNode(*node).percent();
             eq->addTerm(build(_requestContext, *node, _context), w / eqw);
         }
+        _result->setDocIdLimit(_context.getDocIdLimit());
         n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
     }
 
@@ -123,6 +124,7 @@ private:
             indexBlueprint = _context.getIndexes().createBlueprint(_requestContext, indexFields, n);
         }
         _result = mixer.mix(std::move(indexBlueprint));
+        _result->setDocIdLimit(_context.getDocIdLimit());
         n.setDocumentFrequency(_result->getState().estimate().estHits, _context.getDocIdLimit());
     }
 

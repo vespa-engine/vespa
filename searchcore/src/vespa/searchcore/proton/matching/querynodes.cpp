@@ -93,7 +93,8 @@ void
 ProtonTermData::setDocumentFrequency(uint32_t estHits, uint32_t docIdLimit)
 {
     if (docIdLimit > 1) {
-        propagate_document_frequency(estHits, docIdLimit - 1);
+        uint32_t total_doc_count = docIdLimit - 1;
+        propagate_document_frequency(std::min(estHits, total_doc_count), total_doc_count);
     } else {
         propagate_document_frequency(0, 1);
     }
