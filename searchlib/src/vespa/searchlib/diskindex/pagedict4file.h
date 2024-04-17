@@ -26,7 +26,7 @@ class PageDict4FileSeqRead : public index::DictionaryFileSeqRead
     std::unique_ptr<DictFileReadContext> _sp;
     std::unique_ptr<DictFileReadContext> _p;
     uint64_t _wordNum;
-    uint32_t _mmap_threshold;
+    uint32_t _mmap_file_size_threshold;
 public:
     PageDict4FileSeqRead();
     ~PageDict4FileSeqRead() override;
@@ -39,7 +39,7 @@ public:
     bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) override;
     bool close() override;
     void getParams(index::PostingListParams &params) override;
-    void set_mmap_threshold(uint32_t v) { _mmap_threshold = v; }
+    void set_mmap_file_size_threshold(uint32_t v) { _mmap_file_size_threshold = v; }
 };
 
 /**

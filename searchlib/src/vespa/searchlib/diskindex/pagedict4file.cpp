@@ -4,9 +4,7 @@
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 
@@ -53,7 +51,7 @@ using vespalib::getLastErrorString;
 namespace search::diskindex {
 
 struct PageDict4FileSeqRead::DictFileReadContext {
-    DictFileReadContext(vespalib::stringref id, const vespalib::string & name, const TuneFileSeqRead &tune, uint32_t mmap_threshold, bool read_all_upfront);
+    DictFileReadContext(vespalib::stringref id, const vespalib::string & name, const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront);
     ~DictFileReadContext();
     vespalib::FileHeader readHeader();
     void readExtendedHeader();
@@ -68,7 +66,7 @@ struct PageDict4FileSeqRead::DictFileReadContext {
 };
 
 PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringref id, const vespalib::string & name,
-                                                               const TuneFileSeqRead &tune, uint32_t mmap_threshold, bool read_all_upfront)
+                                                               const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront)
     : _id(id),
       _fileBitSize(0u),
       _headerLen(0u),
@@ -89,7 +87,7 @@ PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringr
         return;
     }
     uint64_t fileSize = _file.getSize();
-    uint64_t file_units = (fileSize + sizeof(uint64_t) - 1) / sizeof(uint64_t);
+    uint64_t file_units = DC::file_units(fileSize);
     _readContext.setFile(&_file);
     _readContext.setFileSize(fileSize);
     bool use_mmap = false;
@@ -97,14 +95,13 @@ PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringr
      * Limit memory usage spike by using memory mapped .ssdat file if
      * file size is greater than 32 MiB with padding at end of file.
      */
-    if (read_all_upfront && _file.MemoryMapPtr(0) != nullptr && fileSize >= mmap_threshold) {
+    if (read_all_upfront && _file.MemoryMapPtr(0) != nullptr && fileSize >= mmap_file_size_threshold) {
         _readContext.reference_compressed_buffer(_file.MemoryMapPtr(0), file_units);
         vespalib::FileHeader header;
         _dc.readHeader(header, _file.getSize());
         assert(header.hasTag("fileBitSize"));
         int64_t file_bit_size = header.getTag("fileBitSize").asInteger();
-        using Aligner = vespalib::datastore::Aligner<64>;
-        use_mmap = (Aligner::align(file_bit_size) + 128 <= (vespalib::round_up_to_page_size(fileSize) << 3));
+        use_mmap = DC::is_padded_for_memory_map(file_bit_size, fileSize);
         _readContext.setBitOffset(0);
         _readContext.setBufferEndFilePos(0);
     }
@@ -151,7 +148,7 @@ PageDict4FileSeqRead::PageDict4FileSeqRead()
       _sp(),
       _p(),
       _wordNum(0u),
-      _mmap_threshold(32_Mi)
+      _mmap_file_size_threshold(32_Mi)
 { }
 
 PageDict4FileSeqRead::~PageDict4FileSeqRead() = default;
@@ -196,9 +193,9 @@ bool
 PageDict4FileSeqRead::open(const vespalib::string &name,
                            const TuneFileSeqRead &tuneFileRead)
 {
-    _ss = std::make_unique<DictFileReadContext>(mySSId, name + ".ssdat", tuneFileRead, _mmap_threshold, true);
-    _sp = std::make_unique<DictFileReadContext>(mySPId, name + ".spdat", tuneFileRead, _mmap_threshold, false);
-    _p = std::make_unique<DictFileReadContext>(myPId, name + ".pdat", tuneFileRead, _mmap_threshold, false);
+    _ss = std::make_unique<DictFileReadContext>(mySSId, name + ".ssdat", tuneFileRead, _mmap_file_size_threshold, true);
+    _sp = std::make_unique<DictFileReadContext>(mySPId, name + ".spdat", tuneFileRead, _mmap_file_size_threshold, false);
+    _p = std::make_unique<DictFileReadContext>(myPId, name + ".pdat", tuneFileRead, _mmap_file_size_threshold, false);
     if ( !_ss->_valid || !_sp->_valid || !_p->_valid ) {
         return false;
     }

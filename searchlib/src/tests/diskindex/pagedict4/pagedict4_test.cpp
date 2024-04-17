@@ -358,7 +358,7 @@ checkCounts(const std::string &word,
 void
 testWords(const std::string &logname,
           vespalib::Rand48 &rnd,
-          std::optional<uint32_t> mmap_threshold,
+          std::optional<uint32_t> mmap_file_size_threshold,
           uint64_t numWordIds,
           uint32_t tupleCount,
           uint32_t chunkSize,
@@ -500,8 +500,8 @@ testWords(const std::string &logname,
         std::unique_ptr<DictionaryFileSeqRead> dr;
         {
             auto my_dr = std::make_unique<PageDict4FileSeqRead>();
-            if (mmap_threshold.has_value()) {
-                my_dr->set_mmap_threshold(mmap_threshold.value());
+            if (mmap_file_size_threshold.has_value()) {
+                my_dr->set_mmap_file_size_threshold(mmap_file_size_threshold.value());
             }
             dr = std::move(my_dr);
         }
@@ -547,8 +547,8 @@ testWords(const std::string &logname,
         std::unique_ptr<DictionaryFileRandRead> drr;
         {
             auto my_drr = std::make_unique<PageDict4RandRead>();
-            if (mmap_threshold.has_value()) {
-                my_drr->set_mmap_threshold(mmap_threshold.value());
+            if (mmap_file_size_threshold.has_value()) {
+                my_drr->set_mmap_file_size_threshold(mmap_file_size_threshold.value());
             }
             drr = std::move(my_drr);
         }

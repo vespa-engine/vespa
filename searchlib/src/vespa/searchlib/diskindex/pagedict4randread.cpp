@@ -2,9 +2,7 @@
 
 #include "pagedict4randread.h"
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -36,7 +34,7 @@ PageDict4RandRead::PageDict4RandRead()
       _ssHeaderLen(0u),
       _spHeaderLen(0u),
       _pHeaderLen(0u),
-      _mmap_threshold(32_Mi)
+      _mmap_file_size_threshold(32_Mi)
 {
     _ssd.setReadContext(&_ssReadContext);
 }
@@ -232,6 +230,7 @@ PageDict4RandRead::open(const vespalib::string &name,
     }
 
     uint64_t fileSize = _ssfile->getSize();
+    uint64_t file_units = DC::file_units(fileSize);
     _ssReadContext.setFile(_ssfile.get());
     _ssReadContext.setFileSize(fileSize);
     /*
@@ -241,20 +240,18 @@ PageDict4RandRead::open(const vespalib::string &name,
      * system is under memory pressure due to pageins.
      */
     bool has_read_ss_header = false;
-    if (_ssfile->MemoryMapPtr(0) != nullptr && fileSize >= _mmap_threshold) {
-        _ssReadContext.reference_compressed_buffer(_ssfile->MemoryMapPtr(0),
-                                                   (fileSize + sizeof(uint64_t) - 1) / sizeof(uint64_t));
+    if (_ssfile->MemoryMapPtr(0) != nullptr && fileSize >= _mmap_file_size_threshold) {
+        _ssReadContext.reference_compressed_buffer(_ssfile->MemoryMapPtr(0), file_units);
         assert(_ssd.getReadOffset() == 0u);
         readSSHeader();
         has_read_ss_header = true;
     }
-    using Aligner = vespalib::datastore::Aligner<64>;
-    if (!has_read_ss_header || Aligner::align(_ssFileBitSize) + 128 > (vespalib::round_up_to_page_size(fileSize) << 3)) {
+    if (!has_read_ss_header || !DC::is_padded_for_memory_map(_ssFileBitSize, fileSize)) {
         /*
          * Insufficient padding or small .sdat file. Read whole file into
          * memory.
          */
-        _ssReadContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) / sizeof(uint64_t), 32768u);
+        _ssReadContext.allocComprBuf(file_units, 32768u);
         _ssd.emptyBuffer(0);
         _ssReadContext.setBitOffset(0);
         _ssReadContext.setBufferEndFilePos(0);
