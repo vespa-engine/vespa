@@ -10,30 +10,10 @@ using vespalib::eval::TypedCells;
 
 namespace search::tensor {
 
-namespace {
-
-struct CalcHamming {
-    template <typename LCT, typename RCT>
-    static double invoke(TypedCells lhs, TypedCells rhs)
-    {
-        auto lhs_vector = lhs.unsafe_typify<LCT>();
-        auto rhs_vector = rhs.unsafe_typify<RCT>();
-        size_t sz = lhs_vector.size();
-        assert(sz == rhs_vector.size());
-        size_t sum = 0;
-        for (size_t i = 0; i < sz; ++i) {
-            sum += (lhs_vector[i] == rhs_vector[i]) ? 0 : 1;
-        }
-        return (double)sum;
-    }
-};
-
-}
-
 using vespalib::eval::Int8Float;
 
 template<typename FloatType>
-class BoundHammingDistance : public BoundDistanceFunction {
+class BoundHammingDistance final : public BoundDistanceFunction {
 private:
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
@@ -46,10 +26,9 @@ public:
         size_t sz = _lhs_vector.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(sz == rhs_vector.size());
-        auto a = _lhs_vector.data();
-        auto b = rhs_vector.data();
+
         if constexpr (std::is_same<Int8Float, FloatType>::value) {
-            return (double) vespalib::binary_hamming_distance(a, b, sz);
+            return (double) vespalib::binary_hamming_distance(_lhs_vector.data(), rhs_vector.data(), sz);
         } else {
             size_t sum = 0;
             for (size_t i = 0; i < sz; ++i) {

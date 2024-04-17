@@ -11,7 +11,7 @@ using vespalib::eval::Int8Float;
 namespace search::tensor {
 
 template<typename FloatType, bool extra_dim>
-class BoundMipsDistanceFunction : public BoundDistanceFunction {
+class BoundMipsDistanceFunction final : public BoundDistanceFunction {
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
     const vespalib::hwaccelrated::IAccelrated & _computer;

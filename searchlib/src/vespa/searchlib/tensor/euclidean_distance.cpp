@@ -11,32 +11,11 @@ using vespalib::eval::TypedCells;
 
 namespace search::tensor {
 
-namespace {
-
-struct CalcEuclidean {
-    template <typename LCT, typename RCT>
-    static double invoke(TypedCells lhs, TypedCells rhs)
-    {
-        auto lhs_vector = lhs.unsafe_typify<LCT>();
-        auto rhs_vector = rhs.unsafe_typify<RCT>();
-        double sum = 0.0;
-        size_t sz = lhs_vector.size();
-        assert(sz == rhs_vector.size());
-        for (size_t i = 0; i < sz; ++i) {
-            double diff = lhs_vector[i] - rhs_vector[i];
-            sum += diff*diff;
-        }
-        return sum;
-    }
-};
-
-}
-
 using vespalib::eval::Int8Float;
 using vespalib::BFloat16;
 
 template<typename AttributeCellType>
-class BoundEuclideanDistance : public BoundDistanceFunction {
+class BoundEuclideanDistance final : public BoundDistanceFunction {
     using FloatType = std::conditional_t<std::is_same<AttributeCellType,BFloat16>::value,float,AttributeCellType>;
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;

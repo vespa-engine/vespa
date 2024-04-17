@@ -10,7 +10,7 @@ using vespalib::eval::TypifyCellType;
 namespace search::tensor {
 
 template<typename FloatType>
-class BoundPrenormalizedAngularDistance : public BoundDistanceFunction {
+class BoundPrenormalizedAngularDistance final : public BoundDistanceFunction {
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;
     mutable TemporaryVectorStore<FloatType> _tmpSpace;

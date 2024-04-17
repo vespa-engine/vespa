@@ -16,7 +16,7 @@ namespace search::tensor {
  * Uses the haversine formula directly from:
  * https://en.wikipedia.org/wiki/Haversine_formula
  **/
-class BoundGeoDistance : public BoundDistanceFunction {
+class BoundGeoDistance final : public BoundDistanceFunction {
 private:
     mutable TemporaryVectorStore<double> _tmpSpace;
     const vespalib::ConstArrayRef<double> _lh_vector;
@@ -27,7 +27,7 @@ public:
     static constexpr double degrees_to_radians = M_PI / 180.0;
 
     // haversine function:
-    static double haversine(double angle) {
+    static double haversine(double angle) noexcept {
         double s = sin(0.5*angle);
         return s*s;
     }

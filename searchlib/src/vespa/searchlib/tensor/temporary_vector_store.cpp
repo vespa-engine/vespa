@@ -2,10 +2,6 @@
 
 #include "temporary_vector_store.h"
 
-#include <vespa/log/log.h>
-
-LOG_SETUP(".searchlib.tensor.temporary_vector_store");
-
 using vespalib::ConstArrayRef;
 using vespalib::ArrayRef;
 using vespalib::eval::CellType;
@@ -17,7 +13,7 @@ namespace {
 
 template<typename FromType, typename ToType>
 ConstArrayRef<ToType>
-convert_cells(ArrayRef<ToType> space, TypedCells cells)
+convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept
 {
     assert(cells.size == space.size());
     auto old_cells = cells.typify<FromType>();
@@ -32,7 +28,7 @@ convert_cells(ArrayRef<ToType> space, TypedCells cells)
 template <typename ToType>
 struct ConvertCellsSelector
 {
-    template <typename FromType> static auto invoke(ArrayRef<ToType> dst, TypedCells src) {
+    template <typename FromType> static auto invoke(ArrayRef<ToType> dst, TypedCells src) noexcept {
         return convert_cells<FromType, ToType>(dst, src);
     }
 };
@@ -41,8 +37,8 @@ struct ConvertCellsSelector
 
 template <typename FloatType>
 ConstArrayRef<FloatType>
-TemporaryVectorStore<FloatType>::internal_convert(TypedCells cells, size_t offset) {
-    LOG_ASSERT(cells.size * 2 == _tmpSpace.size());
+TemporaryVectorStore<FloatType>::internal_convert(TypedCells cells, size_t offset) noexcept {
+    assert(cells.size * 2 == _tmpSpace.size());
     ArrayRef<FloatType> where(_tmpSpace.data() + offset, cells.size);
     using MyTypify = vespalib::eval::TypifyCellType;
     using MySelector = ConvertCellsSelector<FloatType>;

@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include <memory>
-#include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/typed_cells.h>
-#include <vespa/vespalib/util/arrayref.h>
 
 namespace search::tensor {
 
@@ -13,14 +10,15 @@ namespace search::tensor {
 template <typename FloatType>
 class TemporaryVectorStore {
 private:
+    using TypedCells = vespalib::eval::TypedCells;
     std::vector<FloatType> _tmpSpace;
-    vespalib::ConstArrayRef<FloatType> internal_convert(vespalib::eval::TypedCells cells, size_t offset);
+    vespalib::ConstArrayRef<FloatType> internal_convert(TypedCells cells, size_t offset) noexcept;
 public:
-    TemporaryVectorStore(size_t vectorSize) : _tmpSpace(vectorSize * 2) {}
-    vespalib::ConstArrayRef<FloatType> storeLhs(vespalib::eval::TypedCells cells) {
+    explicit TemporaryVectorStore(size_t vectorSize) noexcept : _tmpSpace(vectorSize * 2) {}
+    vespalib::ConstArrayRef<FloatType> storeLhs(TypedCells cells) noexcept {
         return internal_convert(cells, 0);
     }
-    vespalib::ConstArrayRef<FloatType> convertRhs(vespalib::eval::TypedCells cells) {
+    vespalib::ConstArrayRef<FloatType> convertRhs(TypedCells cells) {
         if (vespalib::eval::get_cell_type<FloatType>() == cells.type) [[likely]] {
             return cells.unsafe_typify<FloatType>();
         } else {
