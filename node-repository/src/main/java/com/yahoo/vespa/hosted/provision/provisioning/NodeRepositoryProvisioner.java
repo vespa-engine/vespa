@@ -187,8 +187,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         boolean firstDeployment = nodes.isEmpty();
         var current =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
-                : new AllocatableResources(nodes, nodeRepository);
+                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository, requested.cloudAccount())
+                : new AllocatableResources(nodes, nodeRepository, requested.cloudAccount());
         var model = new ClusterModel(nodeRepository, application, clusterSpec, cluster, nodes, current, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), model, firstDeployment);
     }
@@ -199,9 +199,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
-    private ClusterResources within(Limits limits,
-                                    ClusterModel model,
-                                    boolean firstDeployment) {
+    private ClusterResources within(Limits limits, ClusterModel model, boolean firstDeployment) {
         if (limits.min().equals(limits.max())) return limits.min();
 
         // Don't change current deployments that are still legal
@@ -209,9 +207,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             return model.current().advertisedResources();
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
-        return allocationOptimizer.findBestAllocation(Load.one(),
-                                                      model,
-                                                      limits)
+        return allocationOptimizer.findBestAllocation(Load.one(), model, limits)
                                   .orElseThrow(() -> newNoAllocationPossible(model.current().clusterSpec(), limits))
                                   .advertisedResources();
     }

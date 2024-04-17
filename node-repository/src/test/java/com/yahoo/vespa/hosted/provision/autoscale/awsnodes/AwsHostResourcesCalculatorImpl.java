@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale.awsnodes;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +45,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     }
 
     @Override
-    public NodeResources requestToReal(NodeResources advertisedResources, boolean exclusive, boolean bestCase) {
+    public NodeResources requestToReal(NodeResources advertisedResources, Optional<CloudAccount> enclaveAccount, boolean exclusive, boolean bestCase) {
         var consideredFlavors = consideredFlavorsGivenAdvertised(advertisedResources);
         double memoryOverhead = consideredFlavors.stream()
                                                  .mapToDouble(flavor -> resourcesCalculator.memoryOverhead(flavor, advertisedResources, false))
@@ -56,7 +58,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     }
 
     @Override
-    public NodeResources realToRequest(NodeResources realResources, boolean exclusive, boolean bestCase) {
+    public NodeResources realToRequest(NodeResources realResources, Optional<CloudAccount> enclaveAccount, boolean exclusive, boolean bestCase) {
         double chosenMemoryOverhead = bestCase ? Integer.MAX_VALUE : 0;
         double chosenDiskOverhead = bestCase ? Integer.MAX_VALUE : 0;
         for (VespaFlavor flavor : consideredFlavorsGivenReal(realResources)) {

@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.IntFunction;
 
 import static org.junit.Assert.assertEquals;
@@ -92,7 +93,7 @@ public class ClusterModelTest {
         return new ClusterModel(nodeRepository,
                                 application.with(status),
                                 clusterSpec, cluster,
-                                new AllocatableResources(clusterResources(), clusterSpec, nodeRepository),
+                                new AllocatableResources(clusterResources(), clusterSpec, nodeRepository, cluster.cloudAccount()),
                                 clock, Duration.ofMinutes(10), Duration.ofMinutes(5),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());

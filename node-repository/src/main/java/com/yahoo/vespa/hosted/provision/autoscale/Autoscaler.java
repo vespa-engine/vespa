@@ -84,7 +84,7 @@ public class Autoscaler {
                 clusterNodes.not().retired().clusterSpec(),
                 cluster,
                 clusterNodes,
-                new AllocatableResources(clusterNodes.not().retired(), nodeRepository),
+                new AllocatableResources(clusterNodes.not().retired(), nodeRepository, cluster.cloudAccount()),
                 nodeRepository.metricsDb(),
                 nodeRepository.clock());
     }

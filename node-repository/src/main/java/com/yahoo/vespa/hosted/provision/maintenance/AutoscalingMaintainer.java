@@ -90,7 +90,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             NodeList clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
             cluster = updateCompletion(cluster, clusterNodes);
 
-            var current = new AllocatableResources(clusterNodes.not().retired(), nodeRepository()).advertisedResources();
+            var current = new AllocatableResources(clusterNodes.not().retired(), nodeRepository(), cluster.cloudAccount()).advertisedResources();
 
             // Autoscale unless an autoscaling is already in progress
             Autoscaling autoscaling = null;
