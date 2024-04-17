@@ -44,12 +44,16 @@ public:
     double calc_distance(uint32_t docid, const vespalib::string& query_tensor) {
         auto qt = make_tensor(query_tensor);
         auto calc = DistanceCalculator::make_with_validation(*attr, *qt);
-        return calc->calc_with_limit(docid, std::numeric_limits<double>::max());
+        return calc->has_single_subspace()
+                    ? calc->calc_with_limit<true>(docid, std::numeric_limits<double>::max())
+                    : calc->calc_with_limit<false>(docid, std::numeric_limits<double>::max());
     }
     double calc_rawscore(uint32_t docid, const vespalib::string& query_tensor) {
         auto qt = make_tensor(query_tensor);
         auto calc = DistanceCalculator::make_with_validation(*attr, *qt);
-        return calc->calc_raw_score(docid);
+        return calc->has_single_subspace()
+                      ? calc->calc_raw_score<true>(docid)
+                      : calc->calc_raw_score<false>(docid);
     }
     OptSubspace calc_closest_subspace(uint32_t docid, const vespalib::string& query_tensor) {
         auto qt = make_tensor(query_tensor);

@@ -62,14 +62,14 @@ public:
         _vectors[docid] = vec;
         return *this;
     }
-    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override {
+    vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override {
         return get_vectors(docid).cells(subspace);
     }
-    VectorBundle get_vectors(uint32_t docid) const override {
+    VectorBundle get_vectors(uint32_t docid) const noexcept override {
         ArrayRef ref(_vectors[docid]);
         assert((ref.size() % _subspace_type.size()) == 0);
         uint32_t subspaces = ref.size() / _subspace_type.size();
-        return VectorBundle(ref.data(), subspaces, _subspace_type);
+        return {ref.data(), subspaces, _subspace_type};
     }
 
     void clear() { _vectors.clear(); }
@@ -106,7 +106,7 @@ public:
                .set(7, {3, 5}).set(8, {0, 3}).set(9, {4, 5});
     }
 
-    ~HnswIndexTest() override {}
+    ~HnswIndexTest() override;
 
     auto dff() {
         return search::tensor::make_distance_function_factory(
@@ -279,6 +279,9 @@ public:
 
     static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;
 };
+
+template <typename IndexType>
+HnswIndexTest<IndexType>::~HnswIndexTest() = default;
 
 using HnswIndexTestTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>, HnswIndex<HnswIndexType::MULTI>>;
 

@@ -42,11 +42,11 @@ private:
     EntryRef add_entry(TensorSP tensor);
 
 public:
-    DirectTensorStore(const vespalib::eval::ValueType& tensor_type);
+    explicit DirectTensorStore(const vespalib::eval::ValueType& tensor_type);
     ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
-    const vespalib::eval::Value * get_tensor_ptr(EntryRef ref) const {
+    const vespalib::eval::Value * get_tensor_ptr(EntryRef ref) const noexcept {
         if (!ref.valid()) {
             return nullptr;
         }
@@ -65,12 +65,12 @@ public:
     vespalib::eval::TypedCells get_empty_subspace() const noexcept {
         return _empty.cells();
     }
-    VectorBundle get_vectors(EntryRef ref) const {
+    VectorBundle get_vectors(EntryRef ref) const noexcept {
         auto tensor = get_tensor_ptr(ref);
         if (tensor == nullptr) {
-            return VectorBundle();
+            return {};
         }
-        return VectorBundle(tensor->cells().data, tensor->index().size(), _subspace_type);
+        return {tensor->cells().data, static_cast<uint32_t>(tensor->index().size()), _subspace_type};
     }
 };
 

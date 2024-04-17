@@ -131,7 +131,7 @@ NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv)
             _attr->add(*tfv->getAsTensorPtr(), 1);
             for (auto& elem : _calcs) {
                 double distance_limit = elem->heap.distanceLimit();
-                double distance = elem->calc->calc_with_limit(scratch_docid, distance_limit);
+                double distance = elem->calc->calc_with_limit<false>(scratch_docid, distance_limit);
                 if (distance <= distance_limit) {
                     elem->node->set_distance(distance);
                 }

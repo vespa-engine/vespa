@@ -16,9 +16,9 @@ class VectorBundle;
  */
 class DocVectorAccess {
 public:
-    virtual ~DocVectorAccess() {}
-    virtual vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const = 0;
-    virtual VectorBundle get_vectors(uint32_t docid) const = 0;
+    virtual ~DocVectorAccess() = default;
+    virtual vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept = 0;
+    virtual VectorBundle get_vectors(uint32_t docid) const noexcept = 0;
 };
 
 }

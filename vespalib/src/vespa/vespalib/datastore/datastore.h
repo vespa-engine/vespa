@@ -96,7 +96,7 @@ public:
 
     EntryRef addEntry(const EntryType &e);
 
-    const EntryType &getEntry(EntryRef ref) const {
+    const EntryType &getEntry(EntryRef ref) const noexcept {
         return *this->template getEntry<EntryType>(RefType(ref));
     }
 };

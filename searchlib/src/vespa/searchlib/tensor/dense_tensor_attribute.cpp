@@ -30,14 +30,14 @@ DenseTensorAttribute::extract_cells_ref(DocId docId) const
 }
 
 vespalib::eval::TypedCells
-DenseTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const
+DenseTensorAttribute::get_vector(uint32_t docid, uint32_t subspace) const noexcept
 {
     EntryRef ref = (subspace == 0) ? acquire_entry_ref(docid) : EntryRef();
     return _denseTensorStore.get_typed_cells(ref);
 }
 
 VectorBundle
-DenseTensorAttribute::get_vectors(uint32_t docid) const
+DenseTensorAttribute::get_vectors(uint32_t docid) const noexcept
 {
     EntryRef ref = acquire_entry_ref(docid);
     return _denseTensorStore.get_vectors(ref);

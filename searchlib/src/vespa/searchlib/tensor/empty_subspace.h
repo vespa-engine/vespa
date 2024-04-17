@@ -10,7 +10,7 @@ namespace search::tensor {
 class SubspaceType;
 
 /*
- * Class containg an empty subspace, used as a bad fallback when we cannot
+ * Class containing an empty subspace, used as a bad fallback when we cannot
  * get a real subspace.
  */
 class EmptySubspace

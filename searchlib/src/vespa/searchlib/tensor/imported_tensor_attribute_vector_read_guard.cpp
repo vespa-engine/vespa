@@ -28,9 +28,7 @@ ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(s
 {
 }
 
-ImportedTensorAttributeVectorReadGuard::~ImportedTensorAttributeVectorReadGuard()
-{
-}
+ImportedTensorAttributeVectorReadGuard::~ImportedTensorAttributeVectorReadGuard() = default;
 
 const ITensorAttribute *
 ImportedTensorAttributeVectorReadGuard::asTensorAttribute() const
@@ -63,13 +61,13 @@ ImportedTensorAttributeVectorReadGuard::get_tensor_ref(uint32_t docid) const
 }
 
 vespalib::eval::TypedCells
-ImportedTensorAttributeVectorReadGuard::get_vector(uint32_t docid, uint32_t subspace) const
+ImportedTensorAttributeVectorReadGuard::get_vector(uint32_t docid, uint32_t subspace) const noexcept
 {
     return _target_tensor_attribute.get_vector(getTargetLid(docid), subspace);
 }
 
 search::tensor::VectorBundle
-ImportedTensorAttributeVectorReadGuard::get_vectors(uint32_t docid) const
+ImportedTensorAttributeVectorReadGuard::get_vectors(uint32_t docid) const noexcept
 {
     return _target_tensor_attribute.get_vectors(getTargetLid(docid));
 }

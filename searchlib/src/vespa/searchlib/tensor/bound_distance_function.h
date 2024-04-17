@@ -25,14 +25,13 @@ public:
 
     BoundDistanceFunction() = default;
 
-    virtual ~BoundDistanceFunction() = default;
+    ~BoundDistanceFunction() override = default;
 
     // calculate internal distance (comparable)
     virtual double calc(const vespalib::eval::TypedCells& rhs) const = 0;
 
     // calculate internal distance, early return allowed if > limit
-    virtual double calc_with_limit(const vespalib::eval::TypedCells& rhs,
-                                   double limit) const = 0;
+    virtual double calc_with_limit(const vespalib::eval::TypedCells& rhs, double limit) const = 0;
 };
 
 }

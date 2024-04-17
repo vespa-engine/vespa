@@ -224,7 +224,7 @@ void ExtendAttributeTest::testExtendRaw(AttributeVector& attr)
 
 void ExtendAttributeTest::testExtendTensor(AttributeVector& attr)
 {
-    std::vector<double> empty_cells{0.0, 0.0};
+    std::vector<double> empty_cells{};
     std::vector<double> spec0_dense_cells{1.0, 2.0};
     std::vector<double> spec0_mixed_cells0{3.0, 4.0};
     std::vector<double> spec0_mixed_cells1{5.0, 6.0};

@@ -19,17 +19,17 @@ namespace search::queryeval {
  * Keeps a heap of the K best hit distances.
  * Currently always does brute-force scanning, which is very expensive.
  **/
-template <bool strict, bool has_filter>
-class NearestNeighborImpl : public NearestNeighborIterator
+template <bool strict, bool has_filter, bool has_single_subspace>
+class NearestNeighborImpl final : public NearestNeighborIterator
 {
 public:
-    NearestNeighborImpl(Params params_in)
+    explicit NearestNeighborImpl(Params params_in)
         : NearestNeighborIterator(std::move(params_in)),
           _lastScore(0.0)
     {
     }
 
-    ~NearestNeighborImpl();
+    ~NearestNeighborImpl() override;
 
     void doSeek(uint32_t docId) override {
         double distanceLimit = params().distanceHeap.distanceLimit();
@@ -61,39 +61,47 @@ public:
 
 private:
     double computeDistance(uint32_t docId, double limit) {
-        return params().distance_calc->calc_with_limit(docId, limit);
+        return params().distance_calc->template calc_with_limit<has_single_subspace>(docId, limit);
     }
 
     double                 _lastScore;
 };
 
-template <bool strict, bool has_filter>
-NearestNeighborImpl<strict, has_filter>::~NearestNeighborImpl() = default;
+template <bool strict, bool has_filter, bool has_single_subspace>
+NearestNeighborImpl<strict, has_filter, has_single_subspace>::~NearestNeighborImpl() = default;
 
 namespace {
+
+template <bool strict, bool has_filter>
+std::unique_ptr<NearestNeighborIterator>
+resolve_single_subspace(NearestNeighborIterator::Params params)
+{
+    if (params.distance_calc->has_single_subspace()) {
+        using NNI = NearestNeighborImpl<strict, has_filter, true>;
+        return std::make_unique<NNI>(std::move(params));
+    } else {
+        using NNI = NearestNeighborImpl<strict, has_filter, false>;
+        return std::make_unique<NNI>(std::move(params));
+    }
+}
 
 template <bool has_filter>
 std::unique_ptr<NearestNeighborIterator>
 resolve_strict(bool strict, NearestNeighborIterator::Params params)
 {
     if (strict) {
-        using NNI = NearestNeighborImpl<true, has_filter>;
-        return std::make_unique<NNI>(std::move(params));
+        return resolve_single_subspace<true, has_filter>(std::move(params));
     } else {
-        using NNI = NearestNeighborImpl<false, has_filter>;
-        return std::make_unique<NNI>(std::move(params));
+        return resolve_single_subspace<false, has_filter>(std::move(params));
     }
 }
 
 } // namespace <unnamed>
 
 std::unique_ptr<NearestNeighborIterator>
-NearestNeighborIterator::create(
-        bool strict,
-        fef::TermFieldMatchData &tfmd,
-        std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
-        NearestNeighborDistanceHeap &distanceHeap,
-        const GlobalFilter &filter)
+NearestNeighborIterator::create(bool strict, fef::TermFieldMatchData &tfmd,
+                                std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
+                                NearestNeighborDistanceHeap &distanceHeap, const GlobalFilter &filter)
 {
     Params params(tfmd, std::move(distance_calc), distanceHeap, filter);
     if (filter.is_active()) {

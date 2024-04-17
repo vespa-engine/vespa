@@ -36,27 +36,48 @@ public:
         assert(_query_tensor != nullptr);
         return *_query_tensor;
     }
-    const BoundDistanceFunction& function() const { return *_dist_fun; }
+    const BoundDistanceFunction& function() const noexcept { return *_dist_fun; }
+    bool has_single_subspace() const noexcept { return _attr_tensor.getTensorType().is_dense(); }
 
+    template<bool has_single_subspace>
     double calc_raw_score(uint32_t docid) const {
-        auto vectors = _attr_tensor.get_vectors(docid);
-        double result = _dist_fun->min_rawscore();
-        for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
-            double distance = _dist_fun->calc(vectors.cells(i));
-            double score = _dist_fun->to_rawscore(distance);
-            result = std::max(result, score);
+        if (has_single_subspace) {
+            auto cells = _attr_tensor.get_vector(docid, 0);
+            double min_rawscore = _dist_fun->min_rawscore();
+            if (cells.size == 0) [[unlikely]] {
+                return min_rawscore;
+            }
+            return std::max(min_rawscore, _dist_fun->to_rawscore(_dist_fun->calc(cells)));
+        } else {
+            auto vectors = _attr_tensor.get_vectors(docid);
+            double result = _dist_fun->min_rawscore();
+            for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
+                double distance = _dist_fun->calc(vectors.cells(i));
+                double score = _dist_fun->to_rawscore(distance);
+                result = std::max(result, score);
+            }
+            return result;
         }
-        return result;
+
     }
 
+    template<bool has_single_subspace>
     double calc_with_limit(uint32_t docid, double limit) const {
-        auto vectors = _attr_tensor.get_vectors(docid);
-        double result = std::numeric_limits<double>::max();
-        for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
-            double distance = _dist_fun->calc_with_limit(vectors.cells(i), limit);
-            result = std::min(result, distance);
+        if (has_single_subspace) {
+            auto cells = _attr_tensor.get_vector(docid, 0);
+            if (cells.size == 0) [[unlikely]] {
+                return std::numeric_limits<double>::max();
+            }
+            return _dist_fun->calc_with_limit(cells, limit);
+        } else {
+            auto vectors = _attr_tensor.get_vectors(docid);
+            double result = std::numeric_limits<double>::max();
+            for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
+                double distance = _dist_fun->calc_with_limit(vectors.cells(i), limit);
+                result = std::min(result, distance);
+            }
+            return result;
         }
-        return result;
     }
 
     void calc_closest_subspace(VectorBundle vectors, std::optional<uint32_t>& closest_subspace, double& best_distance) {

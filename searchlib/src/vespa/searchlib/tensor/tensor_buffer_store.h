@@ -41,16 +41,16 @@ public:
     vespalib::eval::TypedCells get_empty_subspace() const noexcept {
         return _ops.get_empty_subspace();
     }
-    VectorBundle get_vectors(EntryRef ref) const {
+    VectorBundle get_vectors(EntryRef ref) const noexcept {
         if (!ref.valid()) {
-            return VectorBundle();
+            return {};
         }
         auto buf = _array_store.get(ref);
         return _ops.get_vectors(buf);
     }
-    SerializedTensorRef get_serialized_tensor_ref(EntryRef ref) const {
+    SerializedTensorRef get_serialized_tensor_ref(EntryRef ref) const noexcept {
         if (!ref.valid()) {
-            return SerializedTensorRef();
+            return {};
         }
         auto buf = _array_store.get(ref);
         return _ops.get_serialized_tensor_ref(buf);

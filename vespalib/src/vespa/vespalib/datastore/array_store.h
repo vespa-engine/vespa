@@ -94,7 +94,7 @@ private:
     EntryRef  allocate_dynamic_array(size_t array_size, uint32_t type_id);
     EntryRef addLargeArray(ConstArrayRef array);
     EntryRef allocate_large_array(size_t array_size);
-    ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
+    ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const noexcept {
         const ElemT *buf = _store.template getEntryArray<ElemT>(ref, arraySize);
         return ConstArrayRef(buf, arraySize);
     }
@@ -104,7 +104,7 @@ private:
         auto size = BufferType::get_dynamic_array_size(entry);
         return ConstArrayRef(entry, size);
     }
-    ConstArrayRef getLargeArray(RefT ref) const {
+    ConstArrayRef getLargeArray(RefT ref) const noexcept {
         const LargeArray *buf = _store.template getEntry<LargeArray>(ref);
         return ConstArrayRef(&(*buf)[0], buf->size());
     }
@@ -114,7 +114,7 @@ public:
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&& mapper);
     ~ArrayStore() override;
     EntryRef add(ConstArrayRef array);
-    ConstArrayRef get(EntryRef ref) const {
+    ConstArrayRef get(EntryRef ref) const noexcept {
         if (!ref.valid()) [[unlikely]] {
             return ConstArrayRef();
         }
