@@ -506,6 +506,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
             if (!atLeastOneClientWithCertificate)
                 throw new IllegalArgumentException("At least one client must require a certificate");
+
+            List<String> duplicates = clients.stream().collect(Collectors.groupingBy(Client::id))
+                    .entrySet().stream().filter(entry -> entry.getValue().size() > 1)
+                    .map(Map.Entry::getKey).sorted().toList();
+            if (! duplicates.isEmpty()) {
+                throw new IllegalArgumentException("Duplicate client ids: " + duplicates);
+            }
         }
 
         List<X509Certificate> operatorAndTesterCertificates = deployState.getProperties().operatorCertificates();
