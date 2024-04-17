@@ -3,7 +3,9 @@ package com.yahoo.vespa.model.admin.otel;
 
 import com.yahoo.cloud.config.OpenTelemetryConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 
@@ -14,8 +16,18 @@ import java.util.Optional;
 
 public class OpenTelemetryCollector extends AbstractService implements OpenTelemetryConfig.Producer {
 
+    private final Zone zone;
+
     public OpenTelemetryCollector(TreeConfigProducer<?> parent) {
         super(parent, "otelcol");
+        this.zone = null;
+        setProp("clustertype", "admin");
+        setProp("clustername", "admin");
+    }
+
+    public OpenTelemetryCollector(TreeConfigProducer<?> parent, DeployState deployState) {
+        super(parent, "otelcol");
+        this.zone = deployState.zone();
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
     }
@@ -38,7 +50,7 @@ public class OpenTelemetryCollector extends AbstractService implements OpenTelem
 
     @Override
     public void getConfig(OpenTelemetryConfig.Builder builder) {
-        var generator = new OpenTelemetryConfigGenerator();
+        var generator = new OpenTelemetryConfigGenerator(zone);
         AnyConfigProducer pp = this;
         AnyConfigProducer p = pp.getParent();
         while (p != null && p != pp) {
