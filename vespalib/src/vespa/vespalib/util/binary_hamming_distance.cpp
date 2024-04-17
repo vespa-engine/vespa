@@ -31,7 +31,7 @@ binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) noexcept {
     if (__builtin_expect((i * WORD_SZ < sz), false)) {
         const auto *bytes_a = static_cast<const uint8_t *>(lhs);
         const auto *bytes_b = static_cast<const uint8_t *>(rhs);
-        for (i *= 8; i < sz; ++i) {
+        for (i *= WORD_SZ; i < sz; ++i) {
             uint64_t xor_bits = bytes_a[i] ^ bytes_b[i];
             sum += __builtin_popcountl(xor_bits);
         }
