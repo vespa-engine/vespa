@@ -66,7 +66,7 @@ main(int argc, char **argv)
     return -1;
   }
   int res;
-  int buflen = 10240;
+  constexpr int buflen = 10240;
   char buf[buflen];
   while ((res = reader->ReadLine(buf, buflen - 1)) >= 0) {
     // printf("len=%d, content:>%s<\n", res, buf);

@@ -50,6 +50,7 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
         return;
     }
     size_t buffer_size = 21 * 2 + 3 + key.size(); // 2 numbers + punctuation + key
+    // GNU extension: Variable-length automatic array
     char buffer[buffer_size];
     int size;
     int prefix_size = snprintf(buffer, buffer_size, "%s=", key.c_str());
