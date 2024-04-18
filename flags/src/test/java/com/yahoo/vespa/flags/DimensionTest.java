@@ -13,7 +13,7 @@ class DimensionTest {
     public String remember_to_update_SystemFlagsDataArchive(Dimension dimension) {
         return switch (dimension) {
             case APPLICATION, ARCHITECTURE, CERTIFICATE_PROVIDER, CLAVE, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE,
-                    CONSOLE_USER_EMAIL, ENVIRONMENT, HOSTNAME, INSTANCE_ID, NODE_TYPE, SYSTEM, TENANT_ID,
+                    CONSOLE_USER_EMAIL, ENVIRONMENT, FLAVOR, HOSTNAME, INSTANCE_ID, NODE_TYPE, SYSTEM, TENANT_ID,
                     VESPA_VERSION, ZONE_ID -> dimension.toWire();
         };
     }
