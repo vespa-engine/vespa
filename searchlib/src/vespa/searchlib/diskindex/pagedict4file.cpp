@@ -76,7 +76,7 @@ PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringr
       _file()
 {
     _dc.setReadContext(&_readContext);
-    if (tune.getWantDirectIO()) {
+    if (tune.getWantDirectIO() && !read_all_upfront) {
         _file.EnableDirectIO();
     }
     if (read_all_upfront) {
