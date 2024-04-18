@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +44,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     }
 
     @Override
-    public NodeResources requestToReal(NodeResources advertisedResources, Optional<CloudAccount> enclaveAccount, boolean exclusive, boolean bestCase) {
+    public NodeResources requestToReal(NodeResources advertisedResources, CloudAccount enclaveAccount, boolean exclusive, boolean bestCase) {
         var consideredFlavors = consideredFlavorsGivenAdvertised(advertisedResources);
         double memoryOverhead = consideredFlavors.stream()
                                                  .mapToDouble(flavor -> resourcesCalculator.memoryOverhead(flavor, advertisedResources, false))
@@ -58,7 +57,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     }
 
     @Override
-    public NodeResources realToRequest(NodeResources realResources, Optional<CloudAccount> enclaveAccount, boolean exclusive, boolean bestCase) {
+    public NodeResources realToRequest(NodeResources realResources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
         double chosenMemoryOverhead = bestCase ? Integer.MAX_VALUE : 0;
         double chosenDiskOverhead = bestCase ? Integer.MAX_VALUE : 0;
         for (VespaFlavor flavor : consideredFlavorsGivenReal(realResources)) {

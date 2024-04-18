@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
@@ -187,8 +188,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
         boolean firstDeployment = nodes.isEmpty();
         var current =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository, requested.cloudAccount())
-                : new AllocatableResources(nodes, nodeRepository, requested.cloudAccount());
+                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec,
+                                           nodeRepository, requested.cloudAccount().orElse(CloudAccount.empty))
+                : new AllocatableResources(nodes, nodeRepository);
         var model = new ClusterModel(nodeRepository, application, clusterSpec, cluster, nodes, current, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), model, firstDeployment);
     }

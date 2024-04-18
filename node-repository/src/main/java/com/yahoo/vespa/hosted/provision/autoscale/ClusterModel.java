@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.OptionalDouble;
 
 /**
@@ -125,7 +124,7 @@ public class ClusterModel {
 
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
-    public Optional<CloudAccount> cloudAccount() { return cluster.cloudAccount(); }
+    public CloudAccount cloudAccount() { return cluster.cloudAccount().orElse(CloudAccount.empty); }
     public AllocatableResources current() { return current; }
     private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
     private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
@@ -441,7 +440,7 @@ public class ClusterModel {
                                                                                          clusterSpec,
                                                                                          application.id());
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
-                                                                          cluster.cloudAccount(),
+                                                                          cloudAccount(),
                                                                           nodeRepository.exclusiveAllocation(clusterSpec),
                                                                           false).memoryGb();
             }

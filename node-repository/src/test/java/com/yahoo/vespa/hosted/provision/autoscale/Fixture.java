@@ -70,8 +70,7 @@ public class Fixture {
 
     public AllocatableResources currentResources() {
         return new AllocatableResources(tester.nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId()),
-                                        tester.nodeRepository(),
-                                        Optional.empty());
+                                        tester.nodeRepository());
     }
 
     public Cluster cluster() {
@@ -86,7 +85,7 @@ public class Fixture {
                                 clusterSpec,
                                 cluster(),
                                 nodes(),
-                                new AllocatableResources(nodes(), tester.nodeRepository(), cluster().cloudAccount()),
+                                new AllocatableResources(nodes(), tester.nodeRepository()),
                                 tester.nodeRepository().metricsDb(),
                                 tester.nodeRepository().clock());
     }

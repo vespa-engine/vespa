@@ -42,10 +42,10 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
         public NodeResources advertisedResourcesOf(Flavor flavor) { return flavor.resources(); }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources, Optional<CloudAccount> enclaveAccount, boolean exclusive, boolean bestCase) { return resources; }
+        public NodeResources requestToReal(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) { return resources; }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources, Optional<CloudAccount> enclaveAccount, boolean exclusive, boolean bestCase) { return resources; }
+        public NodeResources realToRequest(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) { return resources; }
 
         @Override
         public long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -16,7 +17,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.IntFunction;
 
 import static org.junit.Assert.assertEquals;
@@ -93,7 +93,7 @@ public class ClusterModelTest {
         return new ClusterModel(nodeRepository,
                                 application.with(status),
                                 clusterSpec, cluster,
-                                new AllocatableResources(clusterResources(), clusterSpec, nodeRepository, cluster.cloudAccount()),
+                                new AllocatableResources(clusterResources(), clusterSpec, nodeRepository, cluster.cloudAccount().orElse(CloudAccount.empty)),
                                 clock, Duration.ofMinutes(10), Duration.ofMinutes(5),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());

@@ -8,8 +8,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 
-import java.util.Optional;
-
 /**
  * Some cloud providers advertise that a certain amount of resources are available in a flavor
  * but then actually provide less.
@@ -31,14 +29,14 @@ public interface HostResourcesCalculator {
      * Used with exclusive hosts:
      * Returns the lowest possible real resources we'll get if requesting the given advertised resources
      */
-    NodeResources requestToReal(NodeResources advertisedResources, Optional<CloudAccount> enclaveAccount,
+    NodeResources requestToReal(NodeResources advertisedResources, CloudAccount cloudAccount,
                                 boolean exclusiveAllocation, boolean bestCase);
 
     /**
      * Used with shared hosts:
      * Returns the advertised resources we need to request to be sure to get at least the given real resources.
      */
-    NodeResources realToRequest(NodeResources realResources, Optional<CloudAccount> enclaveAccount, boolean exclusiveAllocation, boolean bestCase);
+    NodeResources realToRequest(NodeResources realResources, CloudAccount cloudAccount, boolean exclusiveAllocation, boolean bestCase);
 
     /**
      * Returns the disk space to reserve in base2 GB. This space is reserved for use by the host, e.g. for storing

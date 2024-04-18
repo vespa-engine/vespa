@@ -3,7 +3,6 @@ package com.yahoo.config.provision;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -58,11 +57,6 @@ public class CloudAccount implements Comparable<CloudAccount> {
     public boolean isEnclave(Zone zone) {
         return !isUnspecified() &&
                !equals(zone.cloud().account());
-    }
-
-    /** Returns a cloud account if this is an enclave account, or empty otherwise. */
-    public Optional<CloudAccount> toEnclaveAccount(Zone zone) {
-        return isEnclave(zone) ? Optional.of(this) : Optional.empty();
     }
 
     @Override
