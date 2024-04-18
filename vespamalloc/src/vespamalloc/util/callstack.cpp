@@ -53,6 +53,7 @@ const void * StackEntry::_stopAddr = nullptr;
 size_t
 StackEntry::fillStack(StackEntry *stack, size_t nelems)
 {
+    // GNU extension: Variable-length automatic array
     void * retAddr[nelems];
     int sz = backtrace(retAddr, nelems);
     if ((sz > 0) && (size_t(sz) <= nelems)) {

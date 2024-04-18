@@ -604,6 +604,7 @@ getVespaChecksumV2(const std::string& ymumid, int fid, const std::string& flags_
                  sizeof(networkFid)+
                  new_flags_str.length();
 
+    // GNU extension: Variable-length automatic array
     unsigned char buffer[length];
     memset(buffer, 0x00, length);
     memcpy(buffer, ymumid.c_str(), ymumid.length());
