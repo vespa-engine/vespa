@@ -163,7 +163,7 @@ public class FederationSearcherTest {
     @Test
     void custom_federation_target() {
         ComponentId targetSelectorId = ComponentId.fromString("TargetSelector");
-        ComponentRegistry<TargetSelector> targetSelectors = new ComponentRegistry<>();
+        ComponentRegistry<TargetSelector<?>> targetSelectors = new ComponentRegistry<>();
         targetSelectors.register(targetSelectorId, new TestTargetSelector());
 
         FederationSearcher searcher = new FederationSearcher(
@@ -182,7 +182,7 @@ public class FederationSearcherTest {
     @Test
     void target_selectors_can_have_multiple_targets() {
         ComponentId targetSelectorId = ComponentId.fromString("TestMultipleTargetSelector");
-        ComponentRegistry<TargetSelector> targetSelectors = new ComponentRegistry<>();
+        ComponentRegistry<TargetSelector<?>> targetSelectors = new ComponentRegistry<>();
         targetSelectors.register(targetSelectorId, new TestMultipleTargetSelector());
 
         FederationSearcher searcher = new FederationSearcher(
