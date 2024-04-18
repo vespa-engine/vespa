@@ -448,6 +448,15 @@ WeakAndBlueprint::exposeFields() const
     return {};
 }
 
+Blueprint::UP
+WeakAndBlueprint::get_replacement()
+{
+    if (childCnt() == 1) {
+        return removeChild(0);
+    }
+    return {};
+}
+
 void
 WeakAndBlueprint::sort(Children &, InFlow) const
 {

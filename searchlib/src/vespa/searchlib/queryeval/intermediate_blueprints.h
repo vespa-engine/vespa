@@ -96,6 +96,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
+    Blueprint::UP get_replacement() override;
     void sort(Children &children, InFlow in_flow) const override;
     bool always_needs_unpack() const override;
     WeakAndBlueprint * asWeakAnd() noexcept final { return this; }

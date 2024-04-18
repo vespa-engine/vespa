@@ -869,7 +869,7 @@ TEST("AND_NOT AND AND_NOT collapsing into full source blender optimization") {
 TEST("test single child optimization") {
     InvalidSelector selector;
     //-------------------------------------------------------------------------
-    Blueprint::UP top = make::ANDNOT().add(make::AND().add(make::RANK().add(make::OR().add(make::SB(selector).source(2).add(make::RANK().leaf(42))))));
+    Blueprint::UP top = make::ANDNOT().add(make::AND().add(make::RANK().add(make::OR().add(make::WEAKAND(100).add(make::SB(selector).source(2).add(make::RANK().leaf(42)))))));
     //-------------------------------------------------------------------------
     Blueprint::UP expect = make::SB(selector).source(2).leaf(42);
     //-------------------------------------------------------------------------
