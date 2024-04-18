@@ -51,7 +51,7 @@ using vespalib::getLastErrorString;
 namespace search::diskindex {
 
 struct PageDict4FileSeqRead::DictFileReadContext {
-    DictFileReadContext(vespalib::stringref id, const vespalib::string & name, const TuneFileSeqRead &tune, bool read_all_upfront);
+    DictFileReadContext(vespalib::stringref id, const vespalib::string & name, const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront);
     ~DictFileReadContext();
     vespalib::FileHeader readHeader();
     void readExtendedHeader();
@@ -66,7 +66,7 @@ struct PageDict4FileSeqRead::DictFileReadContext {
 };
 
 PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringref id, const vespalib::string & name,
-                                                               const TuneFileSeqRead &tune, bool read_all_upfront)
+                                                               const TuneFileSeqRead &tune, uint32_t mmap_file_size_threshold, bool read_all_upfront)
     : _id(id),
       _fileBitSize(0u),
       _headerLen(0u),
@@ -76,26 +76,52 @@ PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringr
       _file()
 {
     _dc.setReadContext(&_readContext);
-    if (tune.getWantDirectIO()) {
+    if (tune.getWantDirectIO() && !read_all_upfront) {
         _file.EnableDirectIO();
+    }
+    if (read_all_upfront) {
+        _file.enableMemoryMap(0);
     }
     if (!_file.OpenReadOnly(name.c_str())) {
         LOG(error, "could not open %s: %s", _file.GetFileName(), getLastErrorString().c_str());
         return;
     }
     uint64_t fileSize = _file.getSize();
+    uint64_t file_units = DC::file_units(fileSize);
     _readContext.setFile(&_file);
     _readContext.setFileSize(fileSize);
+    bool use_mmap = false;
+    /*
+     * Limit memory usage spike by using memory mapped .ssdat file if
+     * file size is greater than 32 MiB with padding at end of file.
+     */
+    if (read_all_upfront && _file.MemoryMapPtr(0) != nullptr && fileSize >= mmap_file_size_threshold) {
+        _readContext.reference_compressed_buffer(_file.MemoryMapPtr(0), file_units);
+        vespalib::FileHeader header;
+        _dc.readHeader(header, _file.getSize());
+        assert(header.hasTag("fileBitSize"));
+        int64_t file_bit_size = header.getTag("fileBitSize").asInteger();
+        use_mmap = DC::is_padded_for_memory_map(file_bit_size, fileSize);
+        _readContext.setBitOffset(0);
+        _readContext.setBufferEndFilePos(0);
+    }
     if (read_all_upfront) {
-        _readContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) / sizeof(uint64_t), 32_Ki);
+        if (use_mmap) {
+            _readContext.reference_compressed_buffer(_file.MemoryMapPtr(0), file_units);
+        } else {
+            _readContext.allocComprBuf(file_units, 32_Ki);
+        }
     } else {
         _readContext.allocComprBuf(64_Ki, 32_Ki);
     }
-    _dc.emptyBuffer(0);
-    _readContext.readComprBuffer();
+    if (!use_mmap) {
+        _dc.emptyBuffer(0);
+        _readContext.readComprBuffer();
+    }
     if (read_all_upfront) {
         assert(_readContext.getBufferEndFilePos() >= fileSize);
     }
+    assert(_dc.getBitPosV() == 0);
     _valid = true;
 }
 
@@ -121,7 +147,8 @@ PageDict4FileSeqRead::PageDict4FileSeqRead()
       _ss(),
       _sp(),
       _p(),
-      _wordNum(0u)
+      _wordNum(0u),
+      _mmap_file_size_threshold(32_Mi)
 { }
 
 PageDict4FileSeqRead::~PageDict4FileSeqRead() = default;
@@ -166,9 +193,9 @@ bool
 PageDict4FileSeqRead::open(const vespalib::string &name,
                            const TuneFileSeqRead &tuneFileRead)
 {
-    _ss = std::make_unique<DictFileReadContext>(mySSId, name + ".ssdat", tuneFileRead, true);
-    _sp = std::make_unique<DictFileReadContext>(mySPId, name + ".spdat", tuneFileRead, false);
-    _p = std::make_unique<DictFileReadContext>(myPId, name + ".pdat", tuneFileRead, false);
+    _ss = std::make_unique<DictFileReadContext>(mySSId, name + ".ssdat", tuneFileRead, _mmap_file_size_threshold, true);
+    _sp = std::make_unique<DictFileReadContext>(mySPId, name + ".spdat", tuneFileRead, _mmap_file_size_threshold, false);
+    _p = std::make_unique<DictFileReadContext>(myPId, name + ".pdat", tuneFileRead, _mmap_file_size_threshold, false);
     if ( !_ss->_valid || !_sp->_valid || !_p->_valid ) {
         return false;
     }
