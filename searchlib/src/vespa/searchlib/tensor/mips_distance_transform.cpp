@@ -4,7 +4,6 @@
 #include "temporary_vector_store.h"
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <cmath>
-#include <mutex>
 #include <variant>
 
 using vespalib::eval::Int8Float;
@@ -12,7 +11,7 @@ using vespalib::eval::Int8Float;
 namespace search::tensor {
 
 template<typename FloatType, bool extra_dim>
-class BoundMipsDistanceFunction : public BoundDistanceFunction {
+class BoundMipsDistanceFunction final : public BoundDistanceFunction {
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
     const vespalib::hwaccelrated::IAccelrated & _computer;
@@ -24,7 +23,7 @@ class BoundMipsDistanceFunction : public BoundDistanceFunction {
     static const float *cast(const float * p) { return p; }
     static const int8_t *cast(const Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
 public:
-    BoundMipsDistanceFunction(const vespalib::eval::TypedCells& lhs, MaximumSquaredNormStore& sq_norm_store)
+    BoundMipsDistanceFunction(TypedCells lhs, MaximumSquaredNormStore& sq_norm_store)
         : BoundDistanceFunction(),
           _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs)),
@@ -44,7 +43,7 @@ public:
         return _lhs_extra_dim;
     }
 
-    double calc(const vespalib::eval::TypedCells &rhs) const override {
+    double calc(TypedCells rhs) const noexcept override {
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         const FloatType * a = _lhs_vector.data();
         const FloatType * b = rhs_vector.data();
@@ -58,32 +57,32 @@ public:
         }
         return -dp;
     }
-    double convert_threshold(double threshold) const override {
+    double convert_threshold(double threshold) const noexcept override {
         return threshold;
     }
-    double to_rawscore(double distance) const override {
+    double to_rawscore(double distance) const noexcept override {
         return -distance;
     }
-    double to_distance(double rawscore) const override {
+    double to_distance(double rawscore) const noexcept override {
         return -rawscore;
     }
-    double min_rawscore() const override {
+    double min_rawscore() const noexcept override {
         return std::numeric_limits<double>::lowest();
     }
-    double calc_with_limit(const vespalib::eval::TypedCells& rhs, double) const override {
+    double calc_with_limit(TypedCells rhs, double) const noexcept override {
         return calc(rhs);
     }
 };
 
 template<typename FloatType>
 BoundDistanceFunction::UP
-MipsDistanceFunctionFactory<FloatType>::for_query_vector(const vespalib::eval::TypedCells& lhs) {
+MipsDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) {
     return std::make_unique<BoundMipsDistanceFunction<FloatType, false>>(lhs, *_sq_norm_store);
 }
 
 template<typename FloatType>
 BoundDistanceFunction::UP
-MipsDistanceFunctionFactory<FloatType>::for_insertion_vector(const vespalib::eval::TypedCells& lhs) {
+MipsDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) {
     return std::make_unique<BoundMipsDistanceFunction<FloatType, true>>(lhs, *_sq_norm_store);
 };
 

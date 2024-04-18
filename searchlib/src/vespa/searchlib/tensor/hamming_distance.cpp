@@ -6,51 +6,29 @@
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
+using vespalib::eval::TypedCells;
 
 namespace search::tensor {
-
-namespace {
-
-struct CalcHamming {
-    template <typename LCT, typename RCT>
-    static double invoke(const vespalib::eval::TypedCells& lhs,
-                         const vespalib::eval::TypedCells& rhs)
-    {
-        auto lhs_vector = lhs.unsafe_typify<LCT>();
-        auto rhs_vector = rhs.unsafe_typify<RCT>();
-        size_t sz = lhs_vector.size();
-        assert(sz == rhs_vector.size());
-        size_t sum = 0;
-        for (size_t i = 0; i < sz; ++i) {
-            sum += (lhs_vector[i] == rhs_vector[i]) ? 0 : 1;
-        }
-        return (double)sum;
-    }
-};
-
-}
 
 using vespalib::eval::Int8Float;
 
 template<typename FloatType>
-class BoundHammingDistance : public BoundDistanceFunction {
+class BoundHammingDistance final : public BoundDistanceFunction {
 private:
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
 public:
-    explicit BoundHammingDistance(const vespalib::eval::TypedCells& lhs)
+    explicit BoundHammingDistance(TypedCells lhs)
         : _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs))
     {}
-    double calc(const vespalib::eval::TypedCells& rhs) const override {
+    double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs_vector.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
-        assert(sz == rhs_vector.size());
-        auto a = _lhs_vector.data();
-        auto b = rhs_vector.data();
         if constexpr (std::is_same<Int8Float, FloatType>::value) {
-            return (double) vespalib::binary_hamming_distance(a, b, sz);
+            return (double) vespalib::binary_hamming_distance(_lhs_vector.data(), rhs_vector.data(), sz);
         } else {
+            assert(sz == rhs_vector.size());
             size_t sum = 0;
             for (size_t i = 0; i < sz; ++i) {
                 sum += (_lhs_vector[i] == rhs_vector[i]) ? 0 : 1;
@@ -58,13 +36,13 @@ public:
             return (double)sum;
         }
     }
-    double convert_threshold(double threshold) const override {
+    double convert_threshold(double threshold) const noexcept override {
         return threshold;
     }
-    double to_rawscore(double distance) const override {
+    double to_rawscore(double distance) const noexcept override {
         return 1.0 / (1.0 + distance);
     }
-    double calc_with_limit(const vespalib::eval::TypedCells& rhs, double) const override {
+    double calc_with_limit(TypedCells rhs, double) const noexcept override {
         // consider optimizing:
         return calc(rhs);
     }
@@ -72,14 +50,14 @@ public:
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-HammingDistanceFunctionFactory<FloatType>::for_query_vector(const vespalib::eval::TypedCells& lhs) {
+HammingDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) {
     using DFT = BoundHammingDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-HammingDistanceFunctionFactory<FloatType>::for_insertion_vector(const vespalib::eval::TypedCells& lhs) {
+HammingDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) {
     using DFT = BoundHammingDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }

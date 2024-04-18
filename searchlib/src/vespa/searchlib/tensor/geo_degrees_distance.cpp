@@ -3,6 +3,7 @@
 #include "geo_degrees_distance.h"
 #include "temporary_vector_store.h"
 #include <numbers>
+#include <cmath>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
@@ -15,7 +16,7 @@ namespace search::tensor {
  * Uses the haversine formula directly from:
  * https://en.wikipedia.org/wiki/Haversine_formula
  **/
-class BoundGeoDistance : public BoundDistanceFunction {
+class BoundGeoDistance final : public BoundDistanceFunction {
 private:
     mutable TemporaryVectorStore<double> _tmpSpace;
     const vespalib::ConstArrayRef<double> _lh_vector;
@@ -26,16 +27,16 @@ public:
     static constexpr double degrees_to_radians = M_PI / 180.0;
 
     // haversine function:
-    static double haversine(double angle) {
+    static double haversine(double angle) noexcept {
         double s = sin(0.5*angle);
         return s*s;
     }
 
-    BoundGeoDistance(const vespalib::eval::TypedCells& lhs)
+    explicit  BoundGeoDistance(TypedCells lhs)
         : _tmpSpace(lhs.size),
           _lh_vector(_tmpSpace.storeLhs(lhs))
     {}
-    double calc(const vespalib::eval::TypedCells& rhs) const override {
+    double calc(TypedCells rhs) const noexcept override {
         vespalib::ConstArrayRef<double> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(2 == _lh_vector.size());
         assert(2 == rhs_vector.size());
@@ -56,7 +57,7 @@ public:
         double hav_central_angle = hav_lat + cos(lat_A)*cos(lat_B)*hav_lon;
         return hav_central_angle;
     }
-    double convert_threshold(double threshold) const override {
+    double convert_threshold(double threshold) const noexcept override {
         if (threshold < 0.0) {
             return 0.0;
         }
@@ -68,25 +69,25 @@ public:
         double rt_hav = sin(half_angle);
         return rt_hav * rt_hav;
     }
-    double to_rawscore(double distance) const override {
+    double to_rawscore(double distance) const noexcept override {
         double hav_diff = sqrt(distance);
         // distance in kilometers:
         double d = 2 * asin(hav_diff) * earth_mean_radius;
         // km to rawscore:
         return 1.0 / (1.0 + d);
     }
-    double calc_with_limit(const vespalib::eval::TypedCells& rhs, double) const override {
+    double calc_with_limit(TypedCells rhs, double) const noexcept override {
         return calc(rhs);
     }
 };
 
 BoundDistanceFunction::UP
-GeoDistanceFunctionFactory::for_query_vector(const vespalib::eval::TypedCells& lhs) {
+GeoDistanceFunctionFactory::for_query_vector(TypedCells lhs) {
     return std::make_unique<BoundGeoDistance>(lhs);
 }
 
 BoundDistanceFunction::UP
-GeoDistanceFunctionFactory::for_insertion_vector(const vespalib::eval::TypedCells& lhs) {
+GeoDistanceFunctionFactory::for_insertion_vector(TypedCells lhs) {
     return std::make_unique<BoundGeoDistance>(lhs);
 }
 

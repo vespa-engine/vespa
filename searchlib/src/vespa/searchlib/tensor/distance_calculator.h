@@ -5,6 +5,7 @@
 #include "distance_function_factory.h"
 #include "i_tensor_attribute.h"
 #include "vector_bundle.h"
+#include <vespa/eval/eval/value_type.h>
 #include <optional>
 
 namespace vespalib::eval { struct Value; }
@@ -32,7 +33,7 @@ public:
     ~DistanceCalculator();
 
     const tensor::ITensorAttribute& attribute_tensor() const { return _attr_tensor; }
-    const vespalib::eval::Value& query_tensor() const {
+    const vespalib::eval::Value& query_tensor() const noexcept{
         assert(_query_tensor != nullptr);
         return *_query_tensor;
     }
@@ -40,7 +41,7 @@ public:
     bool has_single_subspace() const noexcept { return _attr_tensor.getTensorType().is_dense(); }
 
     template<bool has_single_subspace>
-    double calc_raw_score(uint32_t docid) const {
+    double calc_raw_score(uint32_t docid) const noexcept {
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
             double min_rawscore = _dist_fun->min_rawscore();
@@ -62,7 +63,7 @@ public:
     }
 
     template<bool has_single_subspace>
-    double calc_with_limit(uint32_t docid, double limit) const {
+    double calc_with_limit(uint32_t docid, double limit) const noexcept {
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
             if (cells.size == 0) [[unlikely]] {
@@ -80,7 +81,7 @@ public:
         }
     }
 
-    void calc_closest_subspace(VectorBundle vectors, std::optional<uint32_t>& closest_subspace, double& best_distance) {
+    void calc_closest_subspace(VectorBundle vectors, std::optional<uint32_t>& closest_subspace, double& best_distance) noexcept {
         for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
             double distance = _dist_fun->calc(vectors.cells(i));
             if (!closest_subspace.has_value() || distance < best_distance) {
@@ -90,7 +91,7 @@ public:
         }
     }
 
-    std::optional<uint32_t> calc_closest_subspace(VectorBundle vectors) {
+    std::optional<uint32_t> calc_closest_subspace(VectorBundle vectors) noexcept {
         double best_distance = 0.0;
         std::optional<uint32_t> closest_subspace;
         calc_closest_subspace(vectors, closest_subspace, best_distance);

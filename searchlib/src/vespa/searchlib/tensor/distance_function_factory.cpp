@@ -3,22 +3,14 @@
 #include "distance_function_factory.h"
 #include "distance_functions.h"
 #include "mips_distance_transform.h"
-#include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/util/arrayref.h>
-#include <vespa/log/log.h>
-
-LOG_SETUP(".searchlib.tensor.distance_function_factory");
 
 using search::attribute::DistanceMetric;
 using vespalib::eval::CellType;
-using vespalib::eval::ValueType;
 
 namespace search::tensor {
 
 std::unique_ptr<DistanceFunctionFactory>
-make_distance_function_factory(search::attribute::DistanceMetric variant,
-                               vespalib::eval::CellType cell_type)
+make_distance_function_factory(DistanceMetric variant, CellType cell_type)
 {
     switch (variant) {
         case DistanceMetric::Angular:

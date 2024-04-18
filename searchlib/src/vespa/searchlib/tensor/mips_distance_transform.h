@@ -45,7 +45,7 @@ public:
         : _sq_norm_store(std::make_shared<MaximumSquaredNormStore>())
     {
     }
-    ~MipsDistanceFunctionFactoryBase() = default;
+    ~MipsDistanceFunctionFactoryBase() override = default;
     MaximumSquaredNormStore& get_max_squared_norm_store() noexcept { return *_sq_norm_store; }
 };
 
@@ -59,12 +59,11 @@ public:
 template<typename FloatType>
 class MipsDistanceFunctionFactory : public MipsDistanceFunctionFactoryBase {
 public:
-    MipsDistanceFunctionFactory() : MipsDistanceFunctionFactoryBase() { }
-    ~MipsDistanceFunctionFactory() = default;
+    MipsDistanceFunctionFactory() noexcept = default;
+    ~MipsDistanceFunctionFactory() override = default;
 
-    BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
-
-    BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
+    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) override;
+    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) override;
 };
 
 }

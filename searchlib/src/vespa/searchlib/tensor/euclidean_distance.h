@@ -2,11 +2,7 @@
 
 #pragma once
 
-#include "distance_function.h"
 #include "distance_function_factory.h"
-#include <vespa/eval/eval/typed_cells.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
-#include <cmath>
 
 namespace search::tensor {
 
@@ -18,9 +14,9 @@ namespace search::tensor {
 template <typename FloatType>
 class EuclideanDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
-    EuclideanDistanceFunctionFactory() = default;
-    BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
-    BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
+    EuclideanDistanceFunctionFactory() noexcept = default;
+    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) override;
+    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) override;
 };
 
 }
