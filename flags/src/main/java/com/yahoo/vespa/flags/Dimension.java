@@ -68,6 +68,12 @@ public enum Dimension {
     ENVIRONMENT("environment"),
 
     /**
+     * The machine flavor from com.yahoo.vespa.hosted.spec.VespaFlavor::vespaFlavorName, e.g. aws-g4dn.xlarge,
+     * gcp-n2d-highmem-2-375, C-2E/64/960.
+     */
+    FLAVOR("flavor"),
+
+    /**
      * Fully qualified hostname.
      *
      * <p>NOTE: There is seldom any need to set HOSTNAME, as it is always set implicitly (in {@link Flags})
