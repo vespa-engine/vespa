@@ -27,8 +27,8 @@ public class ProvisionedExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    ProvisionedExpirer(NodeRepository nodeRepository, Duration timeout, Metric metric) {
-        super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, timeout, metric);
+    ProvisionedExpirer(NodeRepository nodeRepository, Duration expiryTime, Metric metric) {
+        super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, expiryTime, metric);
         this.nodeRepository = nodeRepository;
     }
 
