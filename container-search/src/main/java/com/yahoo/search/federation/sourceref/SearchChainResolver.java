@@ -46,16 +46,6 @@ public class SearchChainResolver {
 
     public static class Builder {
 
-        public interface InvocationSpecFactory {
-            SearchChainInvocationSpec create(ComponentId searchChainId, FederationOptions federationOptions, List<String> schemas);
-        }
-
-        private class DefaultInvocationSpecFactory implements InvocationSpecFactory {
-            public SearchChainInvocationSpec create(ComponentId searchChainId, FederationOptions federationOptions, List<String> schemas) {
-                return new SearchChainInvocationSpec(searchChainId, federationOptions, schemas);
-            }
-        }
-
         private final SortedSet<Target> defaultTargets = new TreeSet<>();
 
         private final ComponentRegistry<Target> targets = new ComponentRegistry<>() {
