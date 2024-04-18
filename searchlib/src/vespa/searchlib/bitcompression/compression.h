@@ -1261,6 +1261,13 @@ public:
     virtual uint64_t decode_exp_golomb(int k) = 0;
     void readBytes(uint8_t *buf, size_t len);
     uint32_t readHeader(vespalib::GenericHeader &header, int64_t fileSize);
+
+    /*
+     * Check if file is padding at end for decompression readahead.
+     */
+    static bool is_padded_for_memory_map(uint64_t file_bit_size, uint64_t file_size) noexcept;
+
+    static uint64_t file_units(uint64_t file_size) noexcept { return (file_size + sizeof(uint64_t) - 1) / sizeof(uint64_t); }
 };
 
 
