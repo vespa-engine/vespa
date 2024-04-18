@@ -162,6 +162,36 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         assertEquals("Invalid permission 'unknown-permission'. Valid values are 'read' and 'write'.", exception.getMessage());
     }
 
+    @Test
+    void fails_on_duplicate_clients() throws IOException {
+        var certFile = securityFolder.resolve("foo.pem");
+        var servicesXml = """
+                    <container version="1.0">
+                        <clients>
+                            <client id="mtls" permissions="read,write">
+                              <certificate file="%1$s"/>
+                            </client>
+                            <client id="mtls" permissions="read,write">
+                              <certificate file="%1$s"/>
+                            </client>
+                            <client id="token1" permissions="read">
+                                <token id="my-token"/>
+                            </client>
+                            <client id="token2" permissions="read">
+                                <token id="my-token"/>
+                            </client>
+                            <client id="token1" permissions="read">
+                                <token id="my-token"/>
+                            </client>
+                        </clients>
+                    </container>
+                """.formatted(applicationFolder.toPath().relativize(certFile).toString());
+        var clusterElem = DomBuilderTest.parse(servicesXml);
+        createCertificate(certFile);
+        var exception = assertThrows(IllegalArgumentException.class, () -> buildModel(Set.of(mtlsEndpoint), defaultTokens, clusterElem));
+        assertEquals("Duplicate client ids: [mtls, token1]", exception.getMessage());
+    }
+
     private static CloudTokenDataPlaneFilterConfig.Clients.Tokens tokenConfig(
             String id, Collection<String> fingerprints, Collection<String> accessCheckHashes, Collection<String> expirations) {
         return new CloudTokenDataPlaneFilterConfig.Clients.Tokens.Builder()
