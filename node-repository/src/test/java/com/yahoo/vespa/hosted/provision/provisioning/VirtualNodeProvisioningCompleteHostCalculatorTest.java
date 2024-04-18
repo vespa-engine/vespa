@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -62,8 +63,8 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 1000, 4));
         var calculator = new CompleteResourcesCalculator(hostFlavor);
         var originalReal = new NodeResources(0.7, 6.0, 12.9, 1.0);
-        var realToRequest = calculator.realToRequest(originalReal, false, false);
-        var requestToReal = calculator.requestToReal(realToRequest, false, false);
+        var realToRequest = calculator.realToRequest(originalReal, CloudAccount.empty, false, false);
+        var requestToReal = calculator.requestToReal(realToRequest, CloudAccount.empty, false, false);
         var realResourcesOf = calculator.realResourcesOf(realToRequest);
         assertEquals(originalReal, requestToReal);
         assertEquals(originalReal, realResourcesOf);
@@ -93,7 +94,8 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources advertisedResources, boolean exclusive, boolean bestCase) {
+        public NodeResources requestToReal(NodeResources advertisedResources, CloudAccount cloudAccount,
+                                           boolean exclusive, boolean bestCase) {
             double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), advertisedResources, false);
             double diskOverhead = diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), advertisedResources, false);
             return advertisedResources.withMemoryGb(advertisedResources.memoryGb() - memoryOverhead)
@@ -108,7 +110,8 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources realResources, boolean exclusive, boolean bestCase) {
+        public NodeResources realToRequest(NodeResources realResources, CloudAccount cloudAccount,
+                                           boolean exclusive, boolean bestCase) {
             double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), realResources, true);
             double diskOverhead = diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), realResources, true);
             return realResources.withMemoryGb(realResources.memoryGb() + memoryOverhead)

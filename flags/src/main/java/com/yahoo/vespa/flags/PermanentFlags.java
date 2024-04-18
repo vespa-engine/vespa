@@ -14,7 +14,9 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
+import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CERTIFICATE_PROVIDER;
+import static com.yahoo.vespa.flags.Dimension.CLAVE;
 import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
@@ -278,7 +280,8 @@ public class PermanentFlags {
     public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
             "host-memory", 0.6,
             "The memory in GB required by a host's management processes.",
-            "Takes effect immediately"
+            "Takes effect immediately",
+            CLOUD_ACCOUNT, CLAVE, ARCHITECTURE
     );
 
     public static final UnboundBooleanFlag FORWARD_ISSUES_AS_ERRORS = defineFeatureFlag(

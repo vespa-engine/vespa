@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -123,6 +124,7 @@ public class ClusterModel {
 
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
+    public CloudAccount cloudAccount() { return cluster.cloudAccount().orElse(CloudAccount.empty); }
     public AllocatableResources current() { return current; }
     private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
     private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
@@ -438,6 +440,7 @@ public class ClusterModel {
                                                                                          clusterSpec,
                                                                                          application.id());
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
+                                                                          cloudAccount(),
                                                                           nodeRepository.exclusiveAllocation(clusterSpec),
                                                                           false).memoryGb();
             }

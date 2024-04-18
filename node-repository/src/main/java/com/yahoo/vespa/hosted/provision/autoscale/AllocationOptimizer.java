@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
 
@@ -38,9 +37,7 @@ public class AllocationOptimizer {
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits
      */
-    public Optional<AllocatableResources> findBestAllocation(Load loadAdjustment,
-                                                             ClusterModel model,
-                                                             Limits limits) {
+    public Optional<AllocatableResources> findBestAllocation(Load loadAdjustment, ClusterModel model, Limits limits) {
         return findBestAllocations(loadAdjustment, model, limits).stream().findFirst();
     }
 
@@ -51,9 +48,7 @@ public class AllocationOptimizer {
      * @return the best allocations, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits. The list contains the three best allocations, sorted from most to least preferred.
      */
-    public List<AllocatableResources> findBestAllocations(Load loadAdjustment,
-                                                         ClusterModel model,
-                                                         Limits limits) {
+    public List<AllocatableResources> findBestAllocations(Load loadAdjustment, ClusterModel model, Limits limits) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),

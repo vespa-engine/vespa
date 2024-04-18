@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -41,10 +42,10 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
         public NodeResources advertisedResourcesOf(Flavor flavor) { return flavor.resources(); }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources, boolean exclusive, boolean bestCase) { return resources; }
+        public NodeResources requestToReal(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) { return resources; }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources, boolean exclusive, boolean bestCase) { return resources; }
+        public NodeResources realToRequest(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) { return resources; }
 
         @Override
         public long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }

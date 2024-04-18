@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -35,10 +36,12 @@ public class AllocatableResources {
     /** Fake allocatable resources from requested capacity */
     public AllocatableResources(ClusterResources requested,
                                 ClusterSpec clusterSpec,
-                                NodeRepository nodeRepository) {
+                                NodeRepository nodeRepository,
+                                CloudAccount cloudAccount) {
         this.nodes = requested.nodes();
         this.groups = requested.groups();
-        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), nodeRepository.exclusiveAllocation(clusterSpec), false);
+        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), cloudAccount,
+                                                                                nodeRepository.exclusiveAllocation(clusterSpec), false);
         this.advertisedResources = requested.nodeResources();
         this.clusterSpec = clusterSpec;
         this.fulfilment = 1;
@@ -180,17 +183,20 @@ public class AllocatableResources {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var allocatableResources = calculateAllocatableResources(wantedResources,
                                                                      nodeRepository,
+                                                                     model.cloudAccount(),
                                                                      clusterSpec,
                                                                      applicationLimits,
                                                                      exclusive,
                                                                      true);
 
             var worstCaseRealResources = nodeRepository.resourcesCalculator().requestToReal(allocatableResources.advertisedResources,
+                                                                                            model.cloudAccount(),
                                                                                             exclusive,
                                                                                             false);
             if ( ! systemLimits.isWithinRealLimits(worstCaseRealResources, clusterSpec)) {
                 allocatableResources = calculateAllocatableResources(wantedResources,
                                                                      nodeRepository,
+                                                                     model.cloudAccount(),
                                                                      clusterSpec,
                                                                      applicationLimits,
                                                                      exclusive,
@@ -210,7 +216,7 @@ public class AllocatableResources {
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, false);
+                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, model.cloudAccount(), exclusive, false);
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
@@ -251,20 +257,21 @@ public class AllocatableResources {
 
     private static AllocatableResources calculateAllocatableResources(ClusterResources wantedResources,
                                                                       NodeRepository nodeRepository,
+                                                                      CloudAccount cloudAccount,
                                                                       ClusterSpec clusterSpec,
                                                                       Limits applicationLimits,
                                                                       boolean exclusive,
                                                                       boolean bestCase) {
         var systemLimits = nodeRepository.nodeResourceLimits();
-        var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive, bestCase);
+        var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), cloudAccount, exclusive, bestCase);
         advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec, exclusive, true); // Ask for something legal
         advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
-        var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, bestCase); // What we'll really get
+        var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, cloudAccount, exclusive, bestCase); // What we'll really get
         if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec)
              && advertisedResources.storageType() == NodeResources.StorageType.any) {
             // Since local disk reserves some of the storage, try to constrain to remote disk
             advertisedResources = advertisedResources.with(NodeResources.StorageType.remote);
-            realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, bestCase);
+            realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, cloudAccount, exclusive, bestCase);
         }
         return new AllocatableResources(wantedResources.with(realResources),
                                         advertisedResources,

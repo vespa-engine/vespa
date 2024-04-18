@@ -811,13 +811,13 @@ public class ProvisioningTester {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources, boolean exclusive, boolean bestCase) {
+        public NodeResources requestToReal(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
                             .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0) );
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources, boolean exclusive, boolean bestCase) {
+        public NodeResources realToRequest(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
                             .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
         }

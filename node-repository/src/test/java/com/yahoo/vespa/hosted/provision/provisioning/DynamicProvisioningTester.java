@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -266,12 +267,12 @@ public class DynamicProvisioningTester {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources, boolean exclusive, boolean bestCase) {
+        public NodeResources requestToReal(NodeResources resources, CloudAccount enclaveAccount, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb());
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources, boolean exclusive, boolean bestCase) {
+        public NodeResources realToRequest(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb());
         }
 

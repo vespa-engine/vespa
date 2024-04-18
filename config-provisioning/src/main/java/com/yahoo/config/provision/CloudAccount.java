@@ -19,7 +19,8 @@ public class CloudAccount implements Comparable<CloudAccount> {
     private static final Map<String, CloudMeta> META_BY_CLOUD = Map.of(
             "aws", new CloudMeta("Account ID", Pattern.compile("[0-9]{12}")),
             "azure", new CloudMeta("Subscription ID", Pattern.compile("[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}")),
-            "gcp", new CloudMeta("Project ID", Pattern.compile("[a-z][a-z0-9-]{4,28}[a-z0-9]")));
+            "gcp", new CloudMeta("Project ID", Pattern.compile("[a-z][a-z0-9-]{4,28}[a-z0-9]")),
+            "yahoo", new CloudMeta("OpenStack Project", Pattern.compile("[a-zA-Z0-9._-]+")));
 
     /** Empty value. When this is used, either implicitly or explicitly, the zone will use its default account */
     public static final CloudAccount empty = new CloudAccount("", CloudName.DEFAULT);
