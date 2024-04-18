@@ -123,7 +123,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
 
     private void addOtelcol(TreeConfigProducer<?> parent, DeployState deployState, HostResource hostResource) {
-        var otelcol = new OpenTelemetryCollector(parent);
+        var otelcol = new OpenTelemetryCollector(parent, deployState);
         otelcol.setHostResource(hostResource);
         otelcol.initService(deployState);
     }
