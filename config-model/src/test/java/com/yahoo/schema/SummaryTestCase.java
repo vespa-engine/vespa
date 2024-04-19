@@ -359,7 +359,7 @@ public class SummaryTestCase {
         ApplicationBuilder.createFromStrings(logger, sd);
         if (explicit) {
             assertEquals(1, logger.entries.size());
-            assertEquals(Level.FINE, logger.entries.get(0).level);
+            assertEquals(Level.WARNING, logger.entries.get(0).level);
             assertEquals("For schema 'test', field 'foo', summary 'bar':" +
                     " Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
                     " Remove the type specification to silence this warning.", logger.entries.get(0).message);
@@ -392,7 +392,7 @@ public class SummaryTestCase {
         ApplicationBuilder.createFromStrings(logger, sd);
         if (explicit) {
             assertEquals(1, logger.entries.size());
-            assertEquals(Level.FINE, logger.entries.get(0).level);
+            assertEquals(Level.WARNING, logger.entries.get(0).level);
             assertEquals("For schema 'test', document-summary 'bar', summary field 'foo':" +
                     " Specifying the type is deprecated, ignored and will be an error in Vespa 9." +
                     " Remove the type specification to silence this warning.", logger.entries.get(0).message);
