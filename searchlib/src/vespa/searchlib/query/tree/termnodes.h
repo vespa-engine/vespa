@@ -119,19 +119,22 @@ public:
 //-----------------------------------------------------------------------------
 
 class FuzzyTerm : public QueryNodeMixin<FuzzyTerm, StringBase> {
-private:
-    uint32_t _maxEditDistance;
-    uint32_t _prefixLength;
+    uint32_t _max_edit_distance;
+    uint32_t _prefix_lock_length;
+    // Prefix match mode is stored in parent Term
 public:
     FuzzyTerm(const Type &term, vespalib::stringref view,
-               int32_t id, Weight weight, uint32_t maxEditDistance, uint32_t prefixLength)
-            : QueryNodeMixinType(term, view, id, weight),
-              _maxEditDistance(maxEditDistance),
-              _prefixLength(prefixLength)
-    {}
+              int32_t id, Weight weight, uint32_t max_edit_distance,
+              uint32_t prefix_lock_length, bool prefix_match)
+        : QueryNodeMixinType(term, view, id, weight),
+          _max_edit_distance(max_edit_distance),
+          _prefix_lock_length(prefix_lock_length)
+    {
+        set_prefix_match(prefix_match);
+    }
 
-    uint32_t getMaxEditDistance() const { return _maxEditDistance; }
-    uint32_t getPrefixLength() const { return _prefixLength; }
+    [[nodiscard]] uint32_t max_edit_distance() const { return _max_edit_distance; }
+    [[nodiscard]] uint32_t prefix_lock_length() const { return _prefix_lock_length; }
 
     virtual ~FuzzyTerm() = 0;
 };

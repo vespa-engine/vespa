@@ -161,6 +161,16 @@ public abstract class Item implements Cloneable {
     }
 
     /**
+     * Indicates that a query item that does not normally match with prefix semantics
+     * should do so for this particular query item instance.
+     *
+     * False by default; should be overridden by subclasses that want to signal this behavior.
+     */
+    protected boolean hasPrefixMatchSemantics() {
+        return false;
+    }
+
+    /**
      * Returns the item creator value.
      *
      * @deprecated use isFilter(boolean)
@@ -286,6 +296,7 @@ public abstract class Item implements Cloneable {
         byte FLAGS_SPECIALTOKEN = 0x02;
         byte FLAGS_NOPOSITIONDATA = 0x04;
         byte FLAGS_ISFILTER = 0x08;
+        byte FLAGS_PREFIX_MATCH = 0x10;
 
         byte ret = 0;
         if (!isRanked()) {
@@ -299,6 +310,9 @@ public abstract class Item implements Cloneable {
         }
         if (isFilter()) {
             ret |= FLAGS_ISFILTER;
+        }
+        if (hasPrefixMatchSemantics()) {
+            ret |= FLAGS_PREFIX_MATCH;
         }
         return ret;
     }

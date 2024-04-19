@@ -23,7 +23,7 @@ class FuzzyTerm : public QueryTerm {
 public:
     FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, stringref term,
               const string& index, Type type, Normalizing normalizing,
-              uint8_t max_edits, uint32_t prefix_size);
+              uint8_t max_edits, uint32_t prefix_lock_length, bool prefix_match);
     ~FuzzyTerm() override;
 
     [[nodiscard]] FuzzyTerm* as_fuzzy_term() noexcept override { return this; }

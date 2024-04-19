@@ -130,7 +130,8 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 qt = std::make_unique<RegexpTerm>(factory.create(), ssTerm, ssIndex, TermType::REGEXP, normalize_mode);
             } else if (sTerm == TermType::FUZZYTERM) {
                 qt = std::make_unique<FuzzyTerm>(factory.create(), ssTerm, ssIndex, TermType::FUZZYTERM, normalize_mode,
-                                                 queryRep.getFuzzyMaxEditDistance(), queryRep.getFuzzyPrefixLength());
+                                                 queryRep.fuzzy_max_edit_distance(), queryRep.fuzzy_prefix_lock_length(),
+                                                 queryRep.has_prefix_match_semantics());
             } else [[likely]] {
                 qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm, normalize_mode);
             }

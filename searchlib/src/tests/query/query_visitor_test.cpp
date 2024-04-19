@@ -88,7 +88,7 @@ TEST("requireThatAllNodesCanBeVisited") {
     checkVisit<NearestNeighborTerm>(new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, 321, 100100.25));
     checkVisit<TrueQueryNode>(new SimpleTrue());
     checkVisit<FalseQueryNode>(new SimpleFalse());
-    checkVisit<FuzzyTerm>(new SimpleFuzzyTerm("t", "field", 0, Weight(0), 2, 0));
+    checkVisit<FuzzyTerm>(new SimpleFuzzyTerm("t", "field", 0, Weight(0), 2, 0, false));
     checkVisit<InTerm>(new SimpleInTerm(std::make_unique<StringTermVector>(0), MultiTerm::Type::STRING, "field", 0, Weight(0)));
 }
 

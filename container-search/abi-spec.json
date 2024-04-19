@@ -555,11 +555,15 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.lang.String, boolean, java.lang.String, int, int, boolean)",
       "public void <init>(java.lang.String, boolean, java.lang.String, int, int)",
       "public void setMaxEditDistance(int)",
       "public void setPrefixLength(int)",
       "public int getPrefixLength()",
       "public int getMaxEditDistance()",
+      "public boolean isPrefixMatch()",
+      "public void setPrefixMatch(boolean)",
+      "protected boolean hasPrefixMatchSemantics()",
       "public void setValue(java.lang.String)",
       "public java.lang.String getRawWord()",
       "public boolean isWords()",
@@ -820,6 +824,7 @@
       "public abstract java.lang.String getName()",
       "public void setFilter(boolean)",
       "public boolean isFilter()",
+      "protected boolean hasPrefixMatchSemantics()",
       "public com.yahoo.prelude.query.Item$ItemCreator getCreator()",
       "public void setCreator(com.yahoo.prelude.query.Item$ItemCreator)",
       "public void setWeight(int)",

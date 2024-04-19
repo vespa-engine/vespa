@@ -100,8 +100,9 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void setIndex(const string & index_) override { _index = index_; }
     const string & getIndex() const override { return _index; }
-    void setFuzzyMaxEditDistance(uint32_t fuzzyMaxEditDistance) { _fuzzyMaxEditDistance = fuzzyMaxEditDistance; }
-    void setFuzzyPrefixLength(uint32_t fuzzyPrefixLength) { _fuzzyPrefixLength = fuzzyPrefixLength; }
+    void set_fuzzy_max_edit_distance(uint32_t fuzzy_max_edit_distance) noexcept { _fuzzy_max_edit_distance = fuzzy_max_edit_distance; }
+    void set_fuzzy_prefix_lock_length(uint32_t fuzzy_prefix_length) noexcept { _fuzzy_prefix_lock_length = fuzzy_prefix_length; }
+    void set_fuzzy_prefix_match(bool prefix_match) noexcept { _fuzzy_prefix_match = prefix_match; }
     virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
     virtual MultiTerm* as_multi_term() noexcept;
     virtual const MultiTerm* as_multi_term() const noexcept;

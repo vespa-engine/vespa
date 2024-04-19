@@ -29,10 +29,12 @@ vespalib::FuzzyMatcher::FuzzyMatcher():
         _folded_term_codepoints_suffix()
 {}
 
-vespalib::FuzzyMatcher::FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased):
+vespalib::FuzzyMatcher::FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size,
+                                     bool is_cased, bool is_prefix):
         _max_edit_distance(max_edit_distance),
         _prefix_size(prefix_size),
         _is_cased(is_cased),
+        _is_prefix(is_prefix),
         _folded_term_codepoints(_is_cased ? cased_convert_to_ucs4(term) : LowerCase::convert_to_ucs4(term)),
         _folded_term_codepoints_prefix(get_prefix(_folded_term_codepoints, _prefix_size)),
         _folded_term_codepoints_suffix(get_suffix(_folded_term_codepoints, _prefix_size))
@@ -73,7 +75,7 @@ bool vespalib::FuzzyMatcher::isMatch(std::string_view target) const {
     return LevenshteinDistance::calculate(
             _folded_term_codepoints_suffix,
             get_suffix(targetCodepoints, _prefix_size),
-            _max_edit_distance).has_value();
+            _max_edit_distance, _is_prefix).has_value();
 }
 
 vespalib::string vespalib::FuzzyMatcher::getPrefix() const {

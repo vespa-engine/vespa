@@ -120,11 +120,12 @@ struct MatchStats {
 
 template <bool collect_matches>
 void
-brute_force_fuzzy_match_in_dictionary(std::string_view target, const StringEnumStore& store, uint32_t prefix_size, bool cased, MatchStats& stats, StringVector& matched_words)
+brute_force_fuzzy_match_in_dictionary(std::string_view target, const StringEnumStore& store, uint32_t prefix_size,
+                                      bool cased, bool prefix_match, MatchStats& stats, StringVector& matched_words)
 {
     auto view = store.get_dictionary().get_posting_dictionary().getFrozenView();
     vespalib::Timer timer;
-    FuzzyMatcher matcher(target, 2, prefix_size, cased);
+    FuzzyMatcher matcher(target, 2, prefix_size, cased, prefix_match);
     auto itr = view.begin();
     size_t matches = 0;
     size_t seeks = 0;
@@ -144,11 +145,12 @@ brute_force_fuzzy_match_in_dictionary(std::string_view target, const StringEnumS
 
 template <bool collect_matches>
 void
-dfa_fuzzy_match_in_dictionary(std::string_view target, const StringEnumStore& store, uint32_t prefix_size, bool cased, MatchStats& stats, StringVector& matched_words)
+dfa_fuzzy_match_in_dictionary(std::string_view target, const StringEnumStore& store, uint32_t prefix_size,
+                              bool cased, bool prefix_match, MatchStats& stats, StringVector& matched_words)
 {
     auto view = store.get_dictionary().get_posting_dictionary().getFrozenView();
     vespalib::Timer timer;
-    DfaFuzzyMatcher matcher(target, 2, prefix_size, cased, LevenshteinDfa::DfaType::Explicit);
+    DfaFuzzyMatcher matcher(target, 2, prefix_size, cased, prefix_match, LevenshteinDfa::DfaType::Explicit);
     Utf8Reader reader(vespalib::stringref(target.data(), target.size()));
     std::string target_copy;
     Utf8Writer<std::string> writer(target_copy);
@@ -187,11 +189,12 @@ dfa_fuzzy_match_in_dictionary(std::string_view target, const StringEnumStore& st
 
 template <bool collect_matches>
 void
-dfa_fuzzy_match_in_dictionary_no_skip(std::string_view target, const StringEnumStore& store, uint32_t prefix_size, bool cased, MatchStats& stats, StringVector& matched_words)
+dfa_fuzzy_match_in_dictionary_no_skip(std::string_view target, const StringEnumStore& store, uint32_t prefix_size,
+                                      bool cased, bool prefix_match, MatchStats& stats, StringVector& matched_words)
 {
     auto view = store.get_dictionary().get_posting_dictionary().getFrozenView();
     vespalib::Timer timer;
-    DfaFuzzyMatcher matcher(target, 2, prefix_size, cased, LevenshteinDfa::DfaType::Explicit);
+    DfaFuzzyMatcher matcher(target, 2, prefix_size, cased, prefix_match, LevenshteinDfa::DfaType::Explicit);
     auto itr = view.begin();
     size_t matches = 0;
     size_t seeks = 0;
@@ -247,19 +250,22 @@ struct DfaFuzzyMatcherTest : public ::testing::TestWithParam<TestParam> {
         updater.commit();
         store.freeze_dictionary();
     }
-    void expect_prefix_matches(std::string_view target, uint32_t prefix_size, const StringVector& exp_matches) {
+    void expect_prefix_matches(std::string_view target, uint32_t prefix_size, bool prefix_match, const StringVector& exp_matches) {
         MatchStats stats;
         StringVector brute_force_matches;
         StringVector dfa_matches;
         StringVector dfa_no_skip_matches;
         bool cased = GetParam()._cased;
         SCOPED_TRACE(target);
-        brute_force_fuzzy_match_in_dictionary<true>(target, store, prefix_size, cased, stats, brute_force_matches);
-        dfa_fuzzy_match_in_dictionary<true>(target, store, prefix_size, cased, stats, dfa_matches);
-        dfa_fuzzy_match_in_dictionary_no_skip<true>(target, store, prefix_size, cased, stats, dfa_no_skip_matches);
+        brute_force_fuzzy_match_in_dictionary<true>(target, store, prefix_size, cased, prefix_match, stats, brute_force_matches);
+        dfa_fuzzy_match_in_dictionary<true>(target, store, prefix_size, cased, prefix_match, stats, dfa_matches);
+        dfa_fuzzy_match_in_dictionary_no_skip<true>(target, store, prefix_size, cased, prefix_match, stats, dfa_no_skip_matches);
         EXPECT_EQ(exp_matches, brute_force_matches);
         EXPECT_EQ(exp_matches, dfa_matches);
         EXPECT_EQ(exp_matches, dfa_no_skip_matches);
+    }
+    void expect_prefix_matches(std::string_view target, uint32_t prefix_size, const StringVector& exp_matches) {
+        expect_prefix_matches(target, prefix_size, false, exp_matches);
     }
     void expect_matches(std::string_view target, const StringVector& exp_matches) {
         expect_prefix_matches(target, 0, exp_matches);
@@ -284,11 +290,12 @@ TEST_P(DfaFuzzyMatcherTest, fuzzy_match_in_dictionary)
     expect_matches("forcecast", {"forecast"});
 }
 
-TEST_P(DfaFuzzyMatcherTest, fuzzy_match_in_dictionary_with_prefix_size)
+TEST_P(DfaFuzzyMatcherTest, fuzzy_match_in_dictionary_with_prefix_lock_length)
 {
     bool cased = GetParam()._cased;
     StringVector words = { "board", "boat", "bob", "door", "food", "foot", "football", "foothill",
-                           "for", "forbid", "force", "ford", "forearm", "forecast", "forest", "H", "HA", "h", "ha", char_from_u8(u8"Ørn"), char_from_u8(u8"øre"), char_from_u8(u8"Ås"), char_from_u8(u8"ås")};
+                           "for", "forbid", "force", "ford", "forearm", "forecast", "forest", "H", "HA", "h", "ha",
+                           char_from_u8(u8"Ørn"), char_from_u8(u8"øre"), char_from_u8(u8"Ås"), char_from_u8(u8"ås")};
     populate_dictionary(words);
     expect_prefix_matches("a", 1, {});
     expect_prefix_matches("b", 1, {"bob"});
@@ -321,6 +328,25 @@ TEST_P(DfaFuzzyMatcherTest, fuzzy_match_in_dictionary_with_prefix_size)
     }
 }
 
+TEST_P(DfaFuzzyMatcherTest, fuzzy_match_in_dictionary_with_prefix_matching) {
+    // We include the empty string to make "everything matches"-checks easier since
+    // the dictionary implicitly returns such an empty string sentinel already.
+    StringVector words = {"", "board", "boat", "bob", "door", "food", "foot", "football", "foothill",
+                          "for", "forbid", "force", "ford", "forearm", "forecast", "forest"};
+    populate_dictionary(words);
+    expect_prefix_matches("bo",        0, true, words); // matches everything
+    expect_prefix_matches("bo",        2, true, {"board", "boat", "bob"});
+    expect_prefix_matches("boar",      0, true, {"board", "boat", "bob", "door", "for", "forbid",
+                                                 "force", "ford", "forearm", "forecast", "forest"});
+    expect_prefix_matches("board",     0, true, {"board", "boat", "ford"});
+    expect_prefix_matches("footb",     0, true, {"food", "foot", "football", "foothill", "forbid"});
+    expect_prefix_matches("footba",    0, true, {"foot", "football", "foothill"});
+    expect_prefix_matches("footbal",   0, true, {"football", "foothill"});
+    expect_prefix_matches("football",  0, true, {"football", "foothill"});
+    expect_prefix_matches("footballs", 0, true, {"football"});
+    expect_prefix_matches("z",         1, true, {});
+}
+
 void
 benchmark_fuzzy_match_in_dictionary(const StringEnumStore& store, const RawDictionary& dict, size_t words_to_match, bool cased, bool dfa_algorithm)
 {
@@ -329,9 +355,9 @@ benchmark_fuzzy_match_in_dictionary(const StringEnumStore& store, const RawDicti
     for (size_t i = 0; i < std::min(words_to_match, dict.size()); ++i) {
         const auto& entry = dict[i];
         if (dfa_algorithm) {
-            dfa_fuzzy_match_in_dictionary<false>(entry.first, store, 0, cased, stats, dummy);
+            dfa_fuzzy_match_in_dictionary<false>(entry.first, store, 0, cased, false, stats, dummy);
         } else {
-            brute_force_fuzzy_match_in_dictionary<false>(entry.first, store, 0, cased, stats, dummy);
+            brute_force_fuzzy_match_in_dictionary<false>(entry.first, store, 0, cased, false, stats, dummy);
         }
     }
     std::cout << (dfa_algorithm ? "DFA:" : "Brute force:") << " samples=" << stats.samples << ", avg_matches=" << stats.avg_matches() << ", avg_seeks=" << stats.avg_seeks() << ", avg_elapsed_ms=" << stats.avg_elapsed_ms() << std::endl;
