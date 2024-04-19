@@ -72,7 +72,7 @@ queryeval::FlowStats
 DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
     double rel_est = abs_to_rel_est(_lookupRes->counts._numDocs, docid_limit);
-    return {rel_est, disk_index_cost(), disk_index_strict_cost(rel_est)};
+    return {rel_est, disk_index_cost(rel_est), disk_index_strict_cost(rel_est)};
 }
 
 SearchIterator::UP

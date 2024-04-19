@@ -750,19 +750,36 @@ void
 run_intermediate_blueprint_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
 {
     print_intermediate_blueprint_result_header(2);
+    double max_speedup = 0.0;
+    double min_speedup = std::numeric_limits<double>::max();
     for (double b_hit_ratio: b.op_hit_ratios) {
         auto b_factory = b.make_factory_shared(num_docs, b_hit_ratio);
         for (double a_hit_ratio : a.op_hit_ratios) {
             IntermediateBlueprintFactoryType factory;
             factory.add_child(a.make_factory(num_docs, a_hit_ratio));
             factory.add_child(b_factory);
-            for (auto algo: {PlanningAlgo::Order, PlanningAlgo::Estimate, PlanningAlgo::Cost, PlanningAlgo::CostForceStrict}) {
+            double time_ms_esti = 0.0;
+            for (auto algo: {PlanningAlgo::Order, PlanningAlgo::Estimate, PlanningAlgo::Cost,
+                             PlanningAlgo::CostForceStrict}) {
                 auto res = benchmark_search(factory, num_docs + 1, true, false, false, 1.0, algo);
                 print_intermediate_blueprint_result(res, {a_hit_ratio, b_hit_ratio}, algo, num_docs);
+                if (algo == PlanningAlgo::Estimate) {
+                    time_ms_esti = res.time_ms;
+                }
+                if (algo == PlanningAlgo::CostForceStrict) {
+                    double speedup = time_ms_esti / res.time_ms;
+                    if (speedup > max_speedup) {
+                        max_speedup = speedup;
+                    }
+                    if (speedup < min_speedup) {
+                        min_speedup = speedup;
+                    }
+                    std::cout << "speedup (esti/forc)=" << std::setprecision(4) << speedup << std::endl;
+                }
             }
-            std::cout << std::endl;
         }
     }
+    std::cout << "max_speedup=" << max_speedup << ", min_speedup=" << min_speedup << std::endl << std::endl;
 }
 
 void
@@ -787,6 +804,12 @@ gen_ratios(double middle, double range_multiplier, size_t num_samples)
     for (size_t i = 0; i < num_samples; ++i) {
         res.push_back(ratio);
         ratio *= factor;
+        if (ratio > 1.0) {
+            if (res.size() < num_samples) {
+                res.push_back(1.0);
+            }
+            break;
+        }
     }
     return res;
 }
@@ -831,7 +854,6 @@ TEST(IteratorBenchmark, analyze_term_search_in_disk_index)
 {
     BenchmarkSetup setup(num_docs, {str_index}, {QueryOperator::Term}, {true, false}, base_hit_ratios);
     setup.filter_hit_ratios = filter_hit_ratios;
-    setup.filter_crossover_factor = 1.0;
     run_benchmarks(setup, global_summary);
 }
 
@@ -863,28 +885,21 @@ TEST(IteratorBenchmark, analyze_term_search_in_fast_search_attributes)
     run_benchmarks(setup, global_summary);
 }
 
-TEST(IteratorBenchmark, analyze_in_operator_non_strict)
+TEST(IteratorBenchmark, analyze_IN_non_strict)
 {
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
-    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {false}, hit_ratios, {5, 9, 10, 100, 1000, 10000});
-    setup.disjunct_children = true;
-    run_benchmarks(setup);
+    for (auto in_hit_ratio : {0.01, 0.1, 0.5}) {
+        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {false}, {in_hit_ratio}, {2, 5, 9, 10, 100, 1000, 10000});
+        setup.filter_hit_ratios = gen_ratios(in_hit_ratio, 10.0, 13);
+        setup.disjunct_children = true;
+        run_benchmarks(setup);
+    }
 }
 
-TEST(IteratorBenchmark, analyze_in_operator_strict)
+TEST(IteratorBenchmark, analyze_IN_strict)
 {
     const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
-    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {true}, hit_ratios, {5, 9, 10, 100, 1000, 10000});
+    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::In}, {true}, hit_ratios, {2, 5, 9, 10, 100, 1000, 10000});
     setup.disjunct_children = true;
-    run_benchmarks(setup);
-}
-
-TEST(IteratorBenchmark, analyze_complex_leaf_operators)
-{
-    std::vector<FieldConfig> field_cfgs = {int32_array_fs};
-    std::vector<QueryOperator> query_ops = {QueryOperator::In, QueryOperator::DotProduct};
-    const std::vector<double> hit_ratios = {0.001, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8};
-    BenchmarkSetup setup(num_docs, field_cfgs, query_ops, {true, false}, hit_ratios, {1, 2, 10, 100});
     run_benchmarks(setup);
 }
 
@@ -894,24 +909,6 @@ TEST(IteratorBenchmark, analyze_weak_and_operators)
     std::vector<QueryOperator> query_ops = {QueryOperator::WeakAnd, QueryOperator::ParallelWeakAnd};
     BenchmarkSetup setup(num_docs, field_cfgs, query_ops, {true, false}, base_hit_ratios, {1, 2, 10, 100});
     setup.unpack_iterator = true;
-    run_benchmarks(setup);
-}
-
-TEST(IteratorBenchmark, term_benchmark)
-{
-    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Term}, {true, false}, base_hit_ratios);
-    run_benchmarks(setup);
-}
-
-TEST(IteratorBenchmark, and_benchmark)
-{
-    BenchmarkSetup setup(num_docs, {int32_array_fs}, {QueryOperator::And}, {true, false}, base_hit_ratios, {1, 2, 4, 8});
-    run_benchmarks(setup);
-}
-
-TEST(IteratorBenchmark, or_benchmark)
-{
-    BenchmarkSetup setup(num_docs, {int32_array_fs}, {QueryOperator::Or}, {true, false}, base_hit_ratios, {1, 10, 100, 1000});
     run_benchmarks(setup);
 }
 
@@ -933,16 +930,38 @@ TEST(IteratorBenchmark, or_vs_filter_crossover_with_allow_force_strict)
     analyze_crossover(*fixed_or, variable_term, num_docs + 1, true, 0.0001);
 }
 
-TEST(IteratorBenchmark, analyze_and_with_filter_vs_in)
+TEST(IteratorBenchmark, analyze_AND_filter_vs_IN)
 {
-    for (uint32_t children: {10, 100, 1000}) {
-        run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
-                          {int32_fs, QueryOperator::In, {0.1}, children, false},
+    for (auto in_filter_ratio : {0.01, 0.1, 0.5}) {
+        for (uint32_t children: {2, 10, 100, 1000}) {
+            run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(in_filter_ratio, 10.0, 13)},
+                              {int32_fs, QueryOperator::In, {in_filter_ratio}, children, false},
+                              num_docs);
+        }
+    }
+}
+
+TEST(IteratorBenchmark, analyze_AND_filter_vs_OR)
+{
+    for (auto or_filter_ratio : {0.01, 0.1, 0.5}) {
+        for (uint32_t children: {2, 10, 100, 1000}) {
+            run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(or_filter_ratio, 10, 13)},
+                              {int32_fs, QueryOperator::Or, {or_filter_ratio}, children, false},
+                              num_docs);
+        }
+    }
+}
+
+TEST(IteratorBenchmark, analyze_AND_filter_vs_IN_array)
+{
+    for (uint32_t children: {2, 10, 100, 1000}) {
+        run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 10.0, 13)},
+                          {int32_array_fs, QueryOperator::In, {0.1}, children, false},
                           num_docs);
     }
 }
 
-TEST(IteratorBenchmark, analyze_and_with_bitvector_vs_in)
+TEST(IteratorBenchmark, analyze_AND_bitvector_vs_IN)
 {
     for (uint32_t children: {10, 100, 1000, 10000}) {
         run_and_benchmark({int32_fs, QueryOperator::In, {0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60}, children, true},
@@ -951,21 +970,35 @@ TEST(IteratorBenchmark, analyze_and_with_bitvector_vs_in)
     }
 }
 
-TEST(IteratorBenchmark, analyze_and_with_filter_vs_in_array)
+TEST(IteratorBenchmark, analyze_OR_non_strict_fs)
 {
-    for (uint32_t children: {10, 100, 1000}) {
-        run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
-                          {int32_array_fs, QueryOperator::In, {0.1}, children, false},
-                          num_docs);
+    for (auto or_hit_ratio : {0.01, 0.1, 0.5}) {
+        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {false}, {or_hit_ratio},
+                             {2, 4, 6, 8, 10, 100, 1000});
+        setup.filter_hit_ratios = gen_ratios(or_hit_ratio, 10.0, 13);
+        run_benchmarks(setup);
     }
 }
 
-TEST(IteratorBenchmark, analyze_and_with_filter_vs_or)
+TEST(IteratorBenchmark, analyze_OR_non_strict_non_fs)
 {
-    for (uint32_t children: {10, 100, 1000}) {
-        run_and_benchmark({int32_fs, QueryOperator::Term, gen_ratios(0.1, 8.0, 15)},
-                          {int32_fs, QueryOperator::Or, {0.1}, children, false},
-                          num_docs);
+    BenchmarkSetup setup(num_docs, {int32}, {QueryOperator::Or}, {false}, {0.1}, {2, 4, 6, 8, 10});
+    setup.filter_hit_ratios = gen_ratios(0.1, 10.0, 13);
+    run_benchmarks(setup);
+}
+
+TEST(IteratorBenchmark, analyze_OR_strict)
+{
+    BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {true}, {0.01, 0.1, 0.5}, {2, 4, 6, 8, 10, 100, 1000});
+    run_benchmarks(setup);
+}
+
+TEST(IteratorBenchmark, analyze_btree_iterator_non_strict)
+{
+    for (auto term_ratio : {0.01, 0.1, 0.5, 1.0}) {
+        BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Term}, {false}, {term_ratio}, {1});
+        setup.filter_hit_ratios = gen_ratios(term_ratio, 10.0, 15);
+        run_benchmarks(setup);
     }
 }
 
