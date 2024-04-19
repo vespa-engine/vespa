@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 
@@ -32,6 +33,11 @@ public class MemoryMetricsDb implements MetricsDb {
 
     /** Lock all access for now since we modify lists inside a map */
     private final Object lock = new Object();
+
+    @Inject
+    public MemoryMetricsDb() {
+        this(Clock.systemUTC());
+    }
 
     public MemoryMetricsDb(Clock clock) {
         this.clock = clock;
