@@ -23,9 +23,8 @@ public abstract class Target extends AbstractComponent {
         this(localId, false);
     }
 
-    public abstract SearchChainInvocationSpec responsibleSearchChain(Properties queryProperties) throws UnresolvedSearchChainException;
+    public abstract ResolveResult responsibleSearchChain(Properties queryProperties);
     public abstract String searchRefDescription();
 
     abstract void freeze();
-
 }

@@ -9,8 +9,6 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.errorhandling.Results;
-import com.yahoo.errorhandling.Results.Builder;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -19,12 +17,12 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.federation.selection.FederationTarget;
 import com.yahoo.search.federation.selection.TargetSelector;
 import com.yahoo.search.federation.sourceref.ModifyQueryAndResult;
+import com.yahoo.search.federation.sourceref.ResolveResult;
 import com.yahoo.search.federation.sourceref.SearchChainInvocationSpec;
 import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.federation.sourceref.SingleTarget;
 import com.yahoo.search.federation.sourceref.SourceRefResolver;
 import com.yahoo.search.federation.sourceref.SourcesTarget;
-import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
 import com.yahoo.search.federation.sourceref.VirtualSourceResolver;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.result.ErrorMessage;
@@ -53,6 +51,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -206,14 +205,44 @@ public class FederationSearcher extends ForkingSearcher {
                 setRequestTimeoutInMilliseconds(searchChain.requestTimeoutMillis());
     }
 
+    private static List<String> extractErrors(List<ResolveResult> results) {
+        List<String> errors = List.of();
+        for (ResolveResult result : results) {
+            if (result.errorMsg() != null) {
+                if (errors.isEmpty()) {
+                    errors = new ArrayList<>();
+                }
+                errors.add(result.errorMsg());
+            }
+        }
+        return errors;
+    }
+
+    private static List<SearchChainInvocationSpec> extractSpecs(List<ResolveResult> results) {
+        List<SearchChainInvocationSpec> errors = List.of();
+        for (ResolveResult result : results) {
+            if (result.invocationSpec() != null) {
+                if (errors.isEmpty()) {
+                    errors = List.of(result.invocationSpec());
+                } else if (errors.size() == 1) {
+                    errors = new ArrayList<>(errors);
+                    errors.add(result.invocationSpec());
+                } else {
+                    errors.add(result.invocationSpec());
+                }
+            }
+        }
+        return errors;
+    }
+
     @Override
     public Result search(Query query, Execution execution) {
         Result mergedResults = execution.search(query);
 
         var targets = getTargets(query.getModel().getSources(), query.properties());
-        warnIfUnresolvedSearchChains(targets.errors(), mergedResults.hits());
+        warnIfUnresolvedSearchChains(extractErrors(targets), mergedResults.hits());
 
-        var prunedTargets = pruneTargetsWithoutDocumentTypes(query.getModel().getRestrict(), targets.data());
+        var prunedTargets = pruneTargetsWithoutDocumentTypes(query.getModel().getRestrict(), extractSpecs(targets));
 
         var regularTargetHandlers = resolveSearchChains(prunedTargets, execution.searchChainRegistry());
         query.errors().addAll(regularTargetHandlers.errors());
@@ -311,32 +340,19 @@ public class FederationSearcher extends ForkingSearcher {
                 .forEach((k, v) -> outgoing.properties().set(k, v));
     }
 
-    private ErrorMessage missingSearchChainsErrorMessage(List<UnresolvedSearchChainException> unresolvedSearchChainExceptions) {
-        String message = String.join(" ", getMessagesSet(unresolvedSearchChainExceptions)) +
+    private ErrorMessage missingSearchChainsErrorMessage(List<String> errors) {
+        String message = String.join(" ", new TreeSet<>(errors)) +
                                      " Valid source refs are " + String.join(", ", allSourceRefDescriptions()) +'.';
         return ErrorMessage.createInvalidQueryParameter(message);
     }
 
     private List<String> allSourceRefDescriptions() {
-        List<String> descriptions = new ArrayList<>();
-
-        for (com.yahoo.search.federation.sourceref.Target target : searchChainResolver.allTopLevelTargets())
-            descriptions.add(target.searchRefDescription());
-        return descriptions;
+        return searchChainResolver.allTopLevelTargets().stream().map(com.yahoo.search.federation.sourceref.Target::searchRefDescription).toList();
     }
 
-    private static Set<String> getMessagesSet(List<UnresolvedSearchChainException> unresolvedSearchChainExceptions) {
-        Set<String> messages = new LinkedHashSet<>();
-        for (UnresolvedSearchChainException exception : unresolvedSearchChainExceptions) {
-            messages.add(exception.getMessage());
-        }
-        return messages;
-    }
-
-    private void warnIfUnresolvedSearchChains(List<UnresolvedSearchChainException> missingTargets,
-                                              HitGroup errorHitGroup) {
-        if (!missingTargets.isEmpty()) {
-            errorHitGroup.addError(missingSearchChainsErrorMessage(missingTargets));
+    private void warnIfUnresolvedSearchChains(List<String> errorMessages, HitGroup errorHitGroup) {
+        if (!errorMessages.isEmpty()) {
+            errorHitGroup.addError(missingSearchChainsErrorMessage(errorMessages));
         }
     }
 
@@ -344,7 +360,7 @@ public class FederationSearcher extends ForkingSearcher {
     public Collection<CommentedSearchChain> getSearchChainsForwarded(SearchChainRegistry registry) {
         List<CommentedSearchChain> searchChains = new ArrayList<>();
 
-        for (com.yahoo.search.federation.sourceref.Target target : searchChainResolver.allTopLevelTargets()) {
+        for (var target : searchChainResolver.allTopLevelTargets()) {
             if (target instanceof SourcesTarget) {
                 searchChains.addAll(commentedSourceProviderSearchChains((SourcesTarget)target, registry));
             } else if (target instanceof SingleTarget) {
@@ -468,40 +484,32 @@ public class FederationSearcher extends ForkingSearcher {
         return orderer;
     }
 
-    private Results<SearchChainInvocationSpec, UnresolvedSearchChainException> getTargets(Set<String> sources, Properties properties) {
+    private List<ResolveResult> getTargets(Set<String> sources, Properties properties) {
         return sources.isEmpty() ?
                 defaultSearchChains(properties):
                 resolveSources(sources, properties);
     }
 
 
-    private Results<SearchChainInvocationSpec, UnresolvedSearchChainException> resolveSources(Set<String> sourcesInQuery, Properties properties) {
-        Results.Builder<SearchChainInvocationSpec, UnresolvedSearchChainException> result = new Builder<>();
+    private List<ResolveResult> resolveSources(Set<String> sourcesInQuery, Properties properties) {
+        List<ResolveResult> result = new ArrayList<>();
         Set<String> sources = virtualSourceResolver.resolve(sourcesInQuery);
 
         for (String source : sources) {
-            try {
-                result.addAllData(sourceRefResolver.resolve(asSourceSpec(source), properties));
-            } catch (UnresolvedSearchChainException e) {
-                result.addError(e);
-            }
+            result.addAll(sourceRefResolver.resolve(asSourceSpec(source), properties));
         }
 
-        return result.build();
+        return List.copyOf(result);
     }
 
-    public Results<SearchChainInvocationSpec, UnresolvedSearchChainException> defaultSearchChains(Properties sourceToProviderMap) {
-        Results.Builder<SearchChainInvocationSpec, UnresolvedSearchChainException> result = new Builder<>();
+    public List<ResolveResult> defaultSearchChains(Properties sourceToProviderMap) {
+        List<ResolveResult> result = new ArrayList<>();
 
-        for (com.yahoo.search.federation.sourceref.Target target : searchChainResolver.defaultTargets()) {
-            try {
-                result.addData(target.responsibleSearchChain(sourceToProviderMap));
-            } catch (UnresolvedSearchChainException e) {
-                result.addError(e);
-            }
+        for (var target : searchChainResolver.defaultTargets()) {
+            result.add(target.responsibleSearchChain(sourceToProviderMap));
         }
 
-        return result.build();
+        return List.copyOf(result);
     }
 
 
