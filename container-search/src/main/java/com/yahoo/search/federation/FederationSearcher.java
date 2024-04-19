@@ -87,7 +87,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     @Inject
     public FederationSearcher(FederationConfig config, SchemaInfo schemaInfo,
-                              ComponentRegistry<TargetSelector<?>> targetSelectors) {
+                              ComponentRegistry<TargetSelector> targetSelectors) {
         this(createResolver(config),
              createVirtualSourceResolver(config),
              resolveSelector(config.targetSelector(), targetSelectors),
@@ -102,7 +102,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     private FederationSearcher(SearchChainResolver searchChainResolver,
                                VirtualSourceResolver virtualSourceResolver,
-                               TargetSelector<?> targetSelector,
+                               TargetSelector targetSelector,
                                Map<String, List<String>> schema2Clusters) {
         this.searchChainResolver = searchChainResolver;
         sourceRefResolver = new SourceRefResolver(searchChainResolver, schema2Clusters);
@@ -114,8 +114,8 @@ public class FederationSearcher extends ForkingSearcher {
         return VirtualSourceResolver.of(config.target().stream().map(FederationConfig.Target::id).collect(Collectors.toUnmodifiableSet()));
     }
 
-    private static TargetSelector<?> resolveSelector(String selectorId,
-                                                  ComponentRegistry<TargetSelector<?>> targetSelectors) {
+    private static TargetSelector resolveSelector(String selectorId,
+                                                  ComponentRegistry<TargetSelector> targetSelectors) {
         if (selectorId.isEmpty()) return null;
         return checkNotNull(targetSelectors.getComponent(selectorId),
                 "Missing target selector with id '" + selectorId + "'");
