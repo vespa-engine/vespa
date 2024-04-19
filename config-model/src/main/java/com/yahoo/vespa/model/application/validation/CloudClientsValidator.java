@@ -31,20 +31,17 @@ public class CloudClientsValidator implements Validator {
             if (extensions == null) return; // Certificate without any extensions is okay
             if (extensions.getExtensionOIDs().length == 0) {
                 /*
-                    BouncyCastle 1.77 no longer accepts certificates having an empty sequence of extensions.
+                    BouncyCastle 1.77 and 1.78 did not accept certificates having an empty sequence of extensions.
                     Earlier releases violated the ASN.1 specification as the specification forbids empty extension sequence.
                     See https://github.com/bcgit/bc-java/issues/1479.
-
-                    Detect such certificates and issue a warning for now.
-                    Validation will be implicitly enforced once we upgrade BouncyCastle past 1.76.
+                    The restriction was lifted on 1.78.1 although it's a reasonble to warn users still.
                  */
                 var message = "The certificate's ASN.1 structure contains an empty sequence of extensions, " +
                         "which is a violation of the ASN.1 specification. " +
                         "Please update the application package with a new certificate, " +
-                        "e.g by generating a new one using the Vespa CLI `$ vespa auth cert`. " +
-                        "Such certificate will no longer be accepted in near future.";
+                        "e.g by generating a new one using the Vespa CLI `$ vespa auth cert`. ";
                 state.getDeployLogger()
-                        .logApplicationPackage(Level.WARNING, errorMessage(clusterName, clientId, message));
+                        .log(Level.INFO, errorMessage(clusterName, clientId, message));
             }
         } catch (CertificateEncodingException e) {
             reporter.accept(errorMessage(clusterName, clientId, e.getMessage()), e);
