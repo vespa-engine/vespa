@@ -127,19 +127,13 @@ public class SearchChainResolver {
         this.defaultTargets = Collections.unmodifiableSortedSet(defaultTargets);
     }
 
-    public SearchChainInvocationSpec resolve(ComponentSpecification sourceRef, Properties sourceToProviderMap)
-            throws UnresolvedSearchChainException {
+    public ResolveResult resolve(ComponentSpecification sourceRef, Properties sourceToProviderMap) {
 
-        Target target = resolveTarget(sourceRef);
-        return target.responsibleSearchChain(sourceToProviderMap);
-    }
-
-    private Target resolveTarget(ComponentSpecification sourceRef) throws UnresolvedSearchChainException {
         Target target = targets.getComponent(sourceRef);
         if (target == null) {
-            throw UnresolvedSourceRefException.createForMissingSourceRef(sourceRef);
+            return new ResolveResult(SourceRefResolver.createForMissingSourceRef(sourceRef));
         }
-        return target;
+        return target.responsibleSearchChain(sourceToProviderMap);
     }
 
     public SortedSet<Target> allTopLevelTargets() {

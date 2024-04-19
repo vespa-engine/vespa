@@ -33,11 +33,6 @@ public class Results<DATA, ERROR> {
         public void addData(DATA d) {
             data.add(d);
         }
-
-        public void addAllData(Collection<? extends DATA> d) {
-            data.addAll(d);
-        }
-
         public void addError(ERROR e) {
             errors.add(e);
         }

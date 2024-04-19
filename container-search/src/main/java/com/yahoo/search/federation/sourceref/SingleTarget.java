@@ -17,8 +17,8 @@ public class SingleTarget extends Target {
     }
 
     @Override
-    public SearchChainInvocationSpec responsibleSearchChain(Properties queryProperties) {
-        return searchChainInvocationSpec;
+    public ResolveResult responsibleSearchChain(Properties queryProperties) {
+        return new ResolveResult(searchChainInvocationSpec);
     }
 
     @Override
