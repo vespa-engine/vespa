@@ -313,6 +313,20 @@ public:
     // optimal ordering. Used for testing.
     void null_plan(InFlow in_flow, uint32_t docid_limit);
 
+    // Estimate the actual cost of evaluating the (sub-)query
+    // represented by this blueprint with the given in-flow. This
+    // function should be called after query planning has been
+    // performed. This function could be useful to predict very
+    // expensive queries, but the initial use-case is to understand
+    // query cost better in micro-benchmarks to improve low-level cost
+    // tuning.
+    virtual double estimate_actual_cost(InFlow in_flow) const noexcept;
+    // Estimate the change in cost caused by having a strict iterator
+    // with a non-strict in-flow. Note that this function might force
+    // the in_flow to be strict in order to align it with the
+    // strictness of this blueprint.
+    double estimate_strict_cost_diff(InFlow &in_flow) const noexcept;
+
     static Blueprint::UP optimize(Blueprint::UP bp);
     virtual void sort(InFlow in_flow) = 0;
     static Blueprint::UP optimize_and_sort(Blueprint::UP bp, InFlow in_flow, const Options &opts) {
@@ -482,6 +496,9 @@ public:
     void setDocIdLimit(uint32_t limit) noexcept final;
     void each_node_post_order(const std::function<void(Blueprint&)> &f) override;
 
+    // additional cost not attributed to the children flow (heap merge/unpack/etc)
+    virtual double estimate_self_cost(InFlow in_flow) const noexcept;
+    double estimate_actual_cost(InFlow in_flow) const noexcept override;
     void optimize(Blueprint* &self, OptimizePass pass) final;
     void sort(InFlow in_flow) override;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
