@@ -27,8 +27,8 @@ public class DirtyExpirer extends Expirer {
 
     private final boolean wantToDeprovisionOnExpiry;
 
-    DirtyExpirer(NodeRepository nodeRepository, Duration dirtyTimeout, Metric metric) {
-        super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, dirtyTimeout, metric);
+    DirtyExpirer(NodeRepository nodeRepository, Duration expiryTime, Metric metric) {
+        super(Node.State.dirty, History.Event.Type.deallocated, nodeRepository, expiryTime, metric);
         // Deprovision hosts on expiry if dynamically provisioned
         this.wantToDeprovisionOnExpiry = nodeRepository.zone().cloud().dynamicProvisioning();
     }

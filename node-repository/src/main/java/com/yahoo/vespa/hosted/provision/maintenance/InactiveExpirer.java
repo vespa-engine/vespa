@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Maintenance job which moves inactive nodes to dirty or parked after timeout.
  *
- * The timeout is in place to provide a grace period in which nodes can be brought back to active
+ * The expiry time is in place to provide a grace period in which nodes can be brought back to active
  * if they were deactivated in error. As inactive nodes retain their state
  * they can be brought back to active and correct state faster than a new node.
  *
@@ -32,12 +32,12 @@ import java.util.List;
 public class InactiveExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
-    private final Duration timeout;
+    private final Duration expiryTime;
 
-    InactiveExpirer(NodeRepository nodeRepository, Duration timeout, Metric metric) {
-        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, timeout, metric);
+    InactiveExpirer(NodeRepository nodeRepository, Duration expiryTime, Metric metric) {
+        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, expiryTime, metric);
         this.nodeRepository = nodeRepository;
-        this.timeout = timeout;
+        this.expiryTime = expiryTime;
     }
 
     @Override
@@ -49,12 +49,12 @@ public class InactiveExpirer extends Expirer {
 
     @Override
     protected boolean isExpired(Node node) {
-        return super.isExpired(node, timeout(node)) ||
+        return super.isExpired(node, expiryTime(node)) ||
                node.allocation().get().owner().instance().isTester();
     }
 
-    private Duration timeout(Node node) {
-        return timeout;
+    private Duration expiryTime(Node node) {
+        return expiryTime;
     }
 
 }
