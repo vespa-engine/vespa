@@ -6,7 +6,7 @@ namespace vespalib {
 
 namespace {
     constexpr uint8_t WORD_SZ = sizeof (uint64_t);
-    constexpr uint8_t UNROLL_CNT = 2;
+    constexpr uint8_t UNROLL_CNT = 3;
     static_assert(sizeof(uint64_t) == 8);
 }
 size_t
