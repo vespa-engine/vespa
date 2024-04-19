@@ -41,10 +41,8 @@ public class AddExtraFieldsToDocument extends Processor {
                 for (var summaryField : docsum.getSummaryFields().values()) {
                     var transform = summaryField.getTransform();
                     if (transform.isDynamic() && DynamicSummaryTransformUtils.summaryFieldIsRequiredInDocumentType(summaryField) ||
-                            transform == SummaryTransform.NONE ||
-                            transform == SummaryTransform.DOCUMENT_ID)
+                            transform == SummaryTransform.NONE)
                     {
-                        // TODO: Adding the 'documentid' field should no longer be needed when the docsum framework in the backend has been simplified and the transform is always used.
                         addSummaryField(schema, document, summaryField, validate);
                     } else {
                         // skip: generated from attribute or similar,
