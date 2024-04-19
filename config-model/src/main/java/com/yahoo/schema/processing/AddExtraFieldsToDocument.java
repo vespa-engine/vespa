@@ -24,8 +24,6 @@ import java.util.Set;
  */
 public class AddExtraFieldsToDocument extends Processor {
 
-    Set<String> extraSummaryFields = new LinkedHashSet<String>();
-
     AddExtraFieldsToDocument(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
@@ -39,29 +37,7 @@ public class AddExtraFieldsToDocument extends Processor {
             }
             for (var docsum : schema.getSummaries().values()) {
                 for (var summaryField : docsum.getSummaryFields().values()) {
-                    var transform = summaryField.getTransform();
-                    if (transform.isDynamic() && DynamicSummaryTransformUtils.summaryFieldIsRequiredInDocumentType(summaryField) ||
-                            transform == SummaryTransform.NONE)
-                    {
-                        addSummaryField(schema, document, summaryField, validate);
-                    } else {
-                        // skip: generated from attribute or similar,
-                        // so does not need to be included as an extra
-                        // field in the document type
-                    }
-                }
-            }
-            /*
-             * Don't use extra summary fields when generating summaries. They will not be created nor populated by
-             * future vespa versions. When vespa version 'X' stops using these fields and vespa version 'Y' stops
-             * populating the fields, rollback from vespa version >= 'Y' to vespa version < 'X' will break (missing
-             * summary fields).
-             */
-            for (var docsum : schema.getSummaries().values()) {
-                for (var summaryField : docsum.getSummaryFields().values()) {
-                    if (extraSummaryFields.contains(summaryField.getName())) {
-                        considerCopyTransformForExtraSummaryField(schema, summaryField);
-                    }
+                    considerCopyTransformForExtraSummaryField(schema, summaryField);
                 }
             }
         }
@@ -77,24 +53,6 @@ public class AddExtraFieldsToDocument extends Processor {
             }
         }
         addField(schema, document, field, validate);
-    }
-
-    private void addSummaryField(Schema schema, SDDocumentType document, SummaryField field, boolean validate) {
-        Field docField = document.getField(field.getName());
-        if (docField == null) {
-            ImmutableSDField existingField = schema.getField(field.getName());
-            if (existingField == null) {
-                SDField newField = new SDField(document, field.getName(), field.getDataType());
-                newField.setIsExtraField(true);
-                extraSummaryFields.add(field.getName());
-                document.addField(newField);
-            } else if (!existingField.isImportedField()) {
-                document.addField(existingField.asField());
-            }
-        } else if (!docField.getDataType().equals(field.getDataType())) {
-            if (validate)
-                throw newProcessException(schema, field, "Summary field has conflicting type.");
-        }
     }
 
     private void addField(Schema schema, SDDocumentType document, Field field, boolean validate) {
@@ -114,6 +72,6 @@ public class AddExtraFieldsToDocument extends Processor {
 
     private boolean fieldIsExtraSummaryField(Schema schema, String name) {
         var field = schema.getConcreteField(name);
-        return field == null || extraSummaryFields.contains(name);
+        return field == null;
     }
 }

@@ -100,13 +100,11 @@ public class IndexingOutputs extends Processor {
 
         final Schema schema;
         final Field field;
-        final Set<String> summaryFields;
         final boolean validate;
 
         MyConverter(Schema schema, Field field, Set<String> summaryFields, boolean validate) {
             this.schema = schema;
             this.field = field;
-            this.summaryFields = summaryFields.isEmpty() ? Set.of(field.getName()) : summaryFields;
             this.validate = validate;
         }
 
@@ -134,18 +132,7 @@ public class IndexingOutputs extends Processor {
             } else if (exp instanceof IndexExpression) {
                 ret.add(new IndexExpression(field.getName()));
             } else if (exp instanceof SummaryExpression) {
-                for (String fieldName : summaryFields) {
-                    ret.add(new SummaryExpression(fieldName));
-                }
-                /*
-                 * Write to summary field source. AddExtraFieldsToDocument processor adds the "copy"
-                 * summary transform to summary fields without a corresponding explicitly declared
-                 * document field (2023-11-01). Future vespa versions will stop adding document
-                 * fields for those summary fields.
-                 */
-                if (!summaryFields.contains(field.getName())) {
-                    ret.add(new SummaryExpression(field.getName()));
-                }
+                ret.add(new SummaryExpression(field.getName()));
             } else {
                 throw new UnsupportedOperationException(exp.getClass().getName());
             }
