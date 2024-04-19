@@ -18,8 +18,6 @@ class CloudClientsValidatorTest {
 
     @Test
     void logs_deployment_warning_on_certificate_with_empty_sequence_of_extensions() {
-        // Test should fail on BouncyCastle 1.77 or later
-
         var logger = new DeployLoggerStub();
         var state = new DeployState.Builder().deployLogger(logger).build();
         var cert = readTestCertificate("cert-with-empty-sequence-of-extensions.pem");
@@ -30,8 +28,7 @@ class CloudClientsValidatorTest {
                 "The certificate's ASN.1 structure contains an empty sequence of extensions, " +
                 "which is a violation of the ASN.1 specification. " +
                 "Please update the application package with a new certificate, " +
-                "e.g by generating a new one using the Vespa CLI `$ vespa auth cert`. " +
-                "Such certificate will no longer be accepted in near future.";
+                "e.g by generating a new one using the Vespa CLI `$ vespa auth cert`. ";
         assertEquals(expected, logger.getLast().message);
     }
 
