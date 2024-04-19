@@ -32,20 +32,25 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
     std::span<const char>     _target_as_utf8;
     std::span<const uint32_t> _target_utf8_char_offsets;
     const bool                _is_cased;
+    const bool                _is_prefix;
 
     ImplicitDfaMatcher(std::span<const uint32_t> u32_str,
                        std::span<const char>     target_as_utf8,
                        std::span<const uint32_t> target_utf8_char_offsets,
-                       bool is_cased) noexcept
+                       bool is_cased,
+                       bool is_prefix) noexcept
         : Base(u32_str),
           _target_as_utf8(target_as_utf8),
           _target_utf8_char_offsets(target_utf8_char_offsets),
-          _is_cased(is_cased)
+          _is_cased(is_cased),
+          _is_prefix(is_prefix)
     {}
 
     // start, is_match, can_match, match_edit_distance are all provided by base type
 
     bool is_cased() const noexcept { return _is_cased; }
+
+    bool is_prefix() const noexcept { return _is_prefix; }
 
     template <typename F>
     bool has_any_char_matching(const StateType& state, F&& f) const noexcept(noexcept(f(uint32_t{}))) {
@@ -137,21 +142,21 @@ struct ImplicitDfaMatcher : public DfaSteppingBase<Traits> {
 template <typename Traits>
 LevenshteinDfa::MatchResult
 ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str);
 }
 
 template <typename Traits>
 LevenshteinDfa::MatchResult
 ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::string& successor_out) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 
 template <typename Traits>
 LevenshteinDfa::MatchResult
 ImplicitLevenshteinDfa<Traits>::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const {
-    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased);
+    ImplicitDfaMatcher<Traits> matcher(_u32_str_buf, _target_as_utf8, _target_utf8_char_offsets, _is_cased, _is_prefix);
     return MatchAlgorithm<Traits::max_edits()>::match(matcher, u8str, successor_out);
 }
 

@@ -353,11 +353,13 @@ struct TableMatcher {
     const TableDfa<N>::Lookup *lookup;
     const uint32_t             end;
     const bool                 cased;
+    const bool                 prefix;
 
-    TableMatcher(const TableDfa<N>::Lookup *lookup_in, uint32_t end_in, bool cased_in)
-      noexcept : lookup(lookup_in), end(end_in), cased(cased_in) {}
+    TableMatcher(const TableDfa<N>::Lookup *lookup_in, uint32_t end_in, bool cased_in, bool prefix_in)
+      noexcept : lookup(lookup_in), end(end_in), cased(cased_in), prefix(prefix_in) {}
     
     bool is_cased() const noexcept { return cased; }
+    bool is_prefix() const noexcept { return prefix; }
     static constexpr S start() noexcept { return S::start(); }
 
     uint8_t match_edit_distance(S s) const noexcept { return s.edits(end); }
@@ -473,9 +475,10 @@ TableDfa<N>::make_lookup(const std::vector<uint32_t> &str)->std::vector<Lookup>
 }
 
 template <uint8_t N>
-TableDfa<N>::TableDfa(std::vector<uint32_t> str, bool is_cased)
+TableDfa<N>::TableDfa(std::vector<uint32_t> str, bool is_cased, bool is_prefix)
   : _lookup(make_lookup(str)),
-    _is_cased(is_cased)
+    _is_cased(is_cased),
+    _is_prefix(is_prefix)
 {
 }
 
@@ -486,7 +489,7 @@ template <uint8_t N>
 LevenshteinDfa::MatchResult
 TableDfa<N>::match(std::string_view u8str) const
 {
-    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased);
+    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased, _is_prefix);
     return MatchAlgorithm<N>::match(matcher, u8str);
 }
 
@@ -494,7 +497,7 @@ template <uint8_t N>
 LevenshteinDfa::MatchResult
 TableDfa<N>::match(std::string_view u8str, std::string& successor_out) const
 {
-    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased);
+    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased, _is_prefix);
     return MatchAlgorithm<N>::match(matcher, u8str, successor_out);
 }
 
@@ -502,7 +505,7 @@ template <uint8_t N>
 LevenshteinDfa::MatchResult
 TableDfa<N>::match(std::string_view u8str, std::vector<uint32_t>& successor_out) const
 {
-    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased);
+    TableMatcher<N> matcher(_lookup.data(), _lookup.size() - 1, _is_cased, _is_prefix);
     return MatchAlgorithm<N>::match(matcher, u8str, successor_out);
 }
 

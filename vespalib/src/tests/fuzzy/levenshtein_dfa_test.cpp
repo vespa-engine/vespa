@@ -24,12 +24,13 @@ using CasingAndDfaType = std::tuple<LevenshteinDfa::Casing, LevenshteinDfa::DfaT
 namespace {
 
 std::optional<uint32_t> do_calculate(std::string_view left, std::string_view right, uint32_t threshold,
-                                     LevenshteinDfa::Casing casing, LevenshteinDfa::DfaType dfa_type)
+                                     LevenshteinDfa::Casing casing, LevenshteinDfa::DfaType dfa_type,
+                                     LevenshteinDfa::Matching matching)
 {
-    auto dfa_lhs = LevenshteinDfa::build(left, threshold, casing, dfa_type);
+    auto dfa_lhs = LevenshteinDfa::build(left, threshold, casing, dfa_type, matching);
     auto maybe_match_lhs = dfa_lhs.match(right);
 
-    auto dfa_rhs = LevenshteinDfa::build(right, threshold, casing, dfa_type);
+    auto dfa_rhs = LevenshteinDfa::build(right, threshold, casing, dfa_type, matching);
     auto maybe_match_rhs = dfa_rhs.match(left);
 
     EXPECT_EQ(maybe_match_lhs.matches(), maybe_match_rhs.matches());
@@ -38,6 +39,12 @@ std::optional<uint32_t> do_calculate(std::string_view left, std::string_view rig
         return {maybe_match_lhs.edits()};
     }
     return std::nullopt;
+}
+
+std::optional<uint32_t> do_calculate(std::string_view left, std::string_view right, uint32_t threshold,
+                                     LevenshteinDfa::Casing casing, LevenshteinDfa::DfaType dfa_type)
+{
+    return do_calculate(left, right, threshold, casing, dfa_type, LevenshteinDfa::Matching::FullString);
 }
 
 std::optional<uint32_t> do_calculate(std::u8string_view left, std::u8string_view right, uint32_t threshold,
@@ -74,6 +81,16 @@ struct LevenshteinDfaTest : TestWithParam<CasingAndDfaType> {
         return do_calculate(left, right, threshold, casing(), dfa_type());
     }
 
+    static std::optional<uint32_t> prefix_calculate(std::string_view left, std::string_view right, uint32_t threshold) {
+        // Prefix matching is not symmetric, cannot use do_calculate() as it implicitly checks this.
+        auto dfa = LevenshteinDfa::build(left, threshold, casing(), dfa_type(), LevenshteinDfa::Matching::Prefix);
+        auto maybe_match = dfa.match(right);
+        if (maybe_match.matches()) {
+            return {maybe_match.edits()};
+        }
+        return std::nullopt;
+    }
+
 };
 
 // All the baseline DFA tests use lowercase only, so they should have the exact same outcome
@@ -98,6 +115,7 @@ TEST_P(LevenshteinDfaTest, edge_cases_have_correct_edit_distance) {
         EXPECT_EQ(calculate("abc", "ab", max),   std::optional{1}) << max;
         EXPECT_EQ(calculate("abc", "abcd", max), std::optional{1}) << max;
         EXPECT_EQ(calculate("a", "", max),       std::optional{1}) << max;
+        EXPECT_EQ(calculate("", "", max),        std::optional{0}) << max;
     }
     EXPECT_EQ(calculate("bc", "abcd", 2),  std::optional{2});
     EXPECT_EQ(calculate("ab", "abcd", 2),  std::optional{2});
@@ -109,6 +127,7 @@ TEST_P(LevenshteinDfaTest, edge_cases_have_correct_edit_distance) {
     EXPECT_EQ(calculate("ab", "", 2),      std::optional{2});
     EXPECT_EQ(calculate("abc", "", 2),     std::nullopt);
     EXPECT_EQ(calculate("abc", "123", 2),  std::nullopt);
+    EXPECT_EQ(calculate("abcde", "xad", 2), std::nullopt);
 }
 
 TEST_P(LevenshteinDfaTest, distance_is_in_utf32_code_point_space) {
@@ -122,6 +141,37 @@ TEST_P(LevenshteinDfaTest, distance_is_in_utf32_code_point_space) {
     EXPECT_EQ(calculate(u8"カラオケ", u8"カraオケ", 2), std::optional{2});
     EXPECT_EQ(calculate(u8"kaラオケ", u8"カラオケ", 2), std::optional{2});
     EXPECT_EQ(calculate(u8"カラオケ", u8"カラoke", 2), std::nullopt);
+}
+
+TEST_P(LevenshteinDfaTest, can_match_in_target_string_prefix_mode) {
+    for (auto max : {1, 2}) {
+        EXPECT_EQ(prefix_calculate("",    "literally anything", max), std::optional{0});
+        EXPECT_EQ(prefix_calculate("",    "", max),        std::optional{0});
+        EXPECT_EQ(prefix_calculate("x",   "", max),        std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "abc", max),     std::optional{0});
+        EXPECT_EQ(prefix_calculate("abc", "abcd", max),    std::optional{0});
+        EXPECT_EQ(prefix_calculate("abc", "abcdef", max),  std::optional{0});
+        EXPECT_EQ(prefix_calculate("abc", "ab", max),      std::optional{1});
+        EXPECT_EQ(prefix_calculate("ac",  "abcdef", max),  std::optional{1});
+        EXPECT_EQ(prefix_calculate("acd", "abcdef", max),  std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "xabcdef", max), std::optional{1});
+        EXPECT_EQ(prefix_calculate("bc",  "abcdef", max),  std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "acb", max),     std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "acdefg", max),  std::optional{1});
+        EXPECT_EQ(prefix_calculate("acb", "abcdef", max),  std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "abd", max),     std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "abdcfgh", max), std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "abdefgh", max), std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "xbc", max),     std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "xbcdefg", max), std::optional{1});
+        EXPECT_EQ(prefix_calculate("abc", "xy", max),      std::nullopt);
+    }
+    EXPECT_EQ(prefix_calculate("abc", "xxabc", 2),   std::optional{2});
+    EXPECT_EQ(prefix_calculate("abc", "xxabcd", 2),  std::optional{2});
+    EXPECT_EQ(prefix_calculate("abcxx", "abc", 2),   std::optional{2});
+    EXPECT_EQ(prefix_calculate("abcxx", "abcd", 2),  std::optional{2});
+    EXPECT_EQ(prefix_calculate("xy",  "", 2), std::optional{2});
+    EXPECT_EQ(prefix_calculate("xyz", "", 2), std::nullopt);
 }
 
 void test_dfa_successor(const LevenshteinDfa& dfa, std::string_view source,
@@ -182,9 +232,20 @@ TEST_P(LevenshteinDfaTest, can_generate_successors_to_mismatching_source_strings
                             "\xf0\x9f\xa4\xa9""food");    // <starry eyed emoji>food
 
     // Note that as a general rule, emojis are fickle beasts to deal with since a single
-    // emoji often takes up multiple code points, which we consider separate characters
-    // but a user sees as a single actual rendered glyph.
+    // emoji often takes up multiple code points. We consider these as separate characters
+    // but from a Unicode perspective they are considered part of an "extended grapheme
+    // cluster", from which the actually rendered glyph is derived.
     // Multi-code point character edit distance support is left as an exercise for the reader :D
+}
+
+TEST_P(LevenshteinDfaTest, can_generate_successors_with_prefix_match_mode) {
+    auto dfa = LevenshteinDfa::build("ban", 1, casing(), dfa_type(), LevenshteinDfa::Matching::Prefix);
+    // There is no difference at all in successor output when using Prefix mode as opposed to
+    // FullString mode, but since we match _more_ source strings in prefix mode we cannot
+    // simply run the same test set for both modes. This just tests that the wiring seems fine.
+    test_dfa_successor(dfa, "",      "\x01""an");
+    test_dfa_successor(dfa, "xy",    "yan");
+    test_dfa_successor(dfa, "bolle", "bon");
 }
 
 TEST_P(LevenshteinDfaTest, successor_is_well_defined_for_max_unicode_code_point_input) {
@@ -332,13 +393,21 @@ std::string bits_to_str(T v) {
     return ret;
 }
 
-using CasingAndDfaTypeAndMaxEdits = std::tuple<LevenshteinDfa::Casing, LevenshteinDfa::DfaType, uint32_t>;
+using CasingAndDfaTypeAndMaxEdits = std::tuple<
+    LevenshteinDfa::Casing,
+    LevenshteinDfa::DfaType,
+    LevenshteinDfa::Matching,
+    uint32_t
+>;
 
 struct LevenshteinDfaSuccessorTest : TestWithParam<CasingAndDfaTypeAndMaxEdits> {
-    // Print test suffix as e.g. "/Uncased_Explicit_1" instead of just a GTest-chosen number.
+    // Print test suffix as e.g. "/Uncased_Explicit_FullString_1" instead of just a GTest-chosen number.
     static std::string stringify_params(const TestParamInfo<ParamType>& info) {
         std::ostringstream ss;
-        ss << std::get<0>(info.param) << '_' << std::get<1>(info.param) << '_' << std::get<2>(info.param);
+        ss << std::get<0>(info.param)
+           << '_' << std::get<1>(info.param)
+           << '_' << std::get<2>(info.param)
+           << '_' << std::get<3>(info.param);
         return ss.str();
     }
 };
@@ -350,6 +419,8 @@ INSTANTIATE_TEST_SUITE_P(SupportedMaxEdits,
                                  Values(LevenshteinDfa::DfaType::Explicit,
                                         LevenshteinDfa::DfaType::Implicit,
                                         LevenshteinDfa::DfaType::Table),
+                                 Values(LevenshteinDfa::Matching::FullString,
+                                        LevenshteinDfa::Matching::Prefix),
                                  Values(1, 2)),
                          LevenshteinDfaSuccessorTest::stringify_params);
 
@@ -369,10 +440,10 @@ INSTANTIATE_TEST_SUITE_P(SupportedMaxEdits,
  * Inspired by approach used by Lucene DFA exhaustive testing.
  */
 TEST_P(LevenshteinDfaSuccessorTest, exhaustive_successor_test) {
-    const auto [casing, dfa_type, max_edits] = GetParam();
+    const auto [casing, dfa_type, matching, max_edits] = GetParam();
     for (uint32_t i = 0; i < 256; ++i) {
         const auto target = bits_to_str(static_cast<uint8_t>(i));
-        auto target_dfa = LevenshteinDfa::build(target, max_edits, casing, dfa_type);
+        auto target_dfa = LevenshteinDfa::build(target, max_edits, casing, dfa_type, matching);
         std::string skip_to, successor;
         for (uint32_t j = 0; j < 256; ++j) {
             const auto source = bits_to_str(static_cast<uint8_t>(j));

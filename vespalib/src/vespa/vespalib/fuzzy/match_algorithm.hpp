@@ -25,11 +25,14 @@ struct MatchAlgorithm {
     static constexpr uint8_t max_edits() noexcept { return MaxEdits; }
 
     /**
-     * Matches UTF-8 source string `source` against the target DFA, optionally generating
+     * Matches UTF-8/32 source string `source` against the target DFA, optionally generating
      * the successor string iff the source string is not within the maximum number of edits
      * of the target string.
      *
-     * The actual match loop is very simple: we try to match the DFA as far as we can
+     * The actual match loop is very simple, but with some subtle differences in semantics
+     * depending on whether the "full string" or "prefix" matching mode is used.
+     *
+     * For the full string matching mode, we try to match the DFA as far as we can
      * before either consuming all input (source string) characters or ending up in a non-
      * matching state before we have consumed all input. In the former case, we may be in
      * a matching state (consider matching "foo" with the target string "food"; after
@@ -38,6 +41,15 @@ struct MatchAlgorithm {
      *
      * If we end up in a matching state, all is well. We simply return a MatchResult with
      * the number of edits the state represents.
+     *
+     * Prefix matching is very similar, but since we're interested in the number of edits
+     * required to transform a _prefix_ of the source into the target string, we cannot
+     * require matching the entire source string in the case that it is longer than the
+     * target (as that would not just be a prefix, after all). We consider a source prefix
+     * to be matched if _any_ DFA state is a match. This may be the initial state.
+     * Since the first match might not yield the minimum edit distance, we traverse the
+     * DFA until it no longer matches and return the smallest encountered distance as the
+     * final result.
      *
      * The interesting bit happens the string does _not_ match and we are asked to provide a
      * _successor_ string that _does_ match and is strictly greater in lexicographic order.
@@ -143,6 +155,18 @@ struct MatchAlgorithm {
      * successor "foyd" (and _not_ "FOyd"), as the latter would imply a completely different
      * ordering when compared byte-wise against an implicitly lowercased dictionary.
      *
+     * The successor generation algorithm generalizes without changes to work as expected
+     * when prefix matching is used. This is because the target string represents the
+     * prefix and the successor consequently represents the smallest possible greater prefix.
+     *
+     * Proof by contradiction: S is a source string that does _not_ prefix match target
+     * string T, and S' is the returned successor. Assume that discarding (skipping) all
+     * candidate source strings C with S < C < S' misses at least one such candidate C'
+     * that has a prefix matching T. This means that it must be possible to traverse the
+     * DFA with source string C' and end up in a matching state. But by definition the
+     * successor S' is the smallest possible lexicographically greater string that can
+     * possibly match the DFA for T; a contradiction.
+     *
      * TODO let matcher know if source string is pre-normalized (i.e. lowercased).
      */
     template <DfaMatcher Matcher, typename SuccessorT>
@@ -158,6 +182,9 @@ struct MatchAlgorithm {
 
         StateType state = matcher.start();
         while (u8_reader.hasMore()) {
+            if (matcher.is_prefix() && matcher.is_match(state)) {
+                return minimal_matching_prefix_distance(matcher, state, u8_reader);
+            }
             const auto pos_before_char = static_cast<uint32_t>(successor_out.size());
             const uint32_t raw_mch     = u8_reader.getChar();
             const uint32_t mch         = normalized_match_char(raw_mch, matcher.is_cased());
@@ -198,6 +225,9 @@ struct MatchAlgorithm {
         Utf8Reader u8_reader(source.data(), source.size());
         StateType state = matcher.start();
         while (u8_reader.hasMore()) {
+            if (matcher.is_prefix() && matcher.is_match(state)) {
+                return minimal_matching_prefix_distance(matcher, state, u8_reader);
+            }
             const uint32_t mch = normalized_match_char(u8_reader.getChar(), matcher.is_cased());
             auto maybe_next    = matcher.match_input(state, mch);
             if (matcher.can_match(maybe_next)) {
@@ -211,6 +241,41 @@ struct MatchAlgorithm {
             return MatchResult::make_match(max_edits(), edits);
         }
         return MatchResult::make_mismatch(max_edits());
+    }
+
+    /**
+     * Follows the DFA (in an already matching state) until it no longer matches, keeping
+     * track of the minimum edit distance encountered. This is used to compute the minimum
+     * number of edits during prefix matching, as just returning the edit distance of the
+     * _first_ matching state may not result in the minimum.
+     *
+     * Example 1: matching the source string 'bananas' against the prefix target 'ban' with
+     * max edits 2 will be in a matching state already after consuming 'b' (can append 2
+     * characters after), but had we processed the remaining characters we would end up with
+     * the actual prefix edit distance of 0.
+     *
+     * Example 2: matching the source string 'abcdef' against target 'acd' with max edits 2
+     * will be in a matching state after 'a' (2 edits), but the minimal edit prefix is 'abcd'
+     * (1 edit). This demonstrates that we may have to process more than |target| number of
+     * source characters to get a minimal distance.
+     */
+    template <DfaMatcher Matcher>
+    static MatchResult minimal_matching_prefix_distance(const Matcher& matcher,
+                                                        typename Matcher::StateType state,
+                                                        Utf8Reader& u8_reader)
+    {
+        auto min_edits = matcher.match_edit_distance(state);
+        while (u8_reader.hasMore()) {
+            const uint32_t mch = normalized_match_char(u8_reader.getChar(), matcher.is_cased());
+            auto maybe_next    = matcher.match_input(state, mch);
+            if (matcher.can_match(maybe_next)) {
+                state = maybe_next;
+                min_edits = std::min(min_edits, matcher.match_edit_distance(state));
+            } else {
+                break;
+            }
+        }
+        return MatchResult::make_match(max_edits(), min_edits);
     }
 
     /**

@@ -20,6 +20,12 @@ concept DfaMatcher = requires(T a, std::string u8str, std::vector<uint32_t> u32s
     // matching to have the expected semantics, the actual target string must be pre-lowercased.
     { a.is_cased() } -> std::same_as<bool>;
 
+    // Whether the matching is performed in prefix mode. In prefix mode, a source string is
+    // considered a match if it matches the target string at any point during DFA traversal.
+    // I.e. the source string "bananas" prefix-matched against the target (prefix) "ban" will
+    // be returned as a match with 0 edits.
+    { a.is_prefix() } -> std::same_as<bool>;
+
     // Initial (starting) state of the DFA
     { a.start() } -> std::same_as<typename T::StateType>;
 

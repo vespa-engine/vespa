@@ -13,14 +13,16 @@ class ImplicitLevenshteinDfa final : public LevenshteinDfa::Impl {
     std::string                 _target_as_utf8;
     std::vector<uint32_t>       _target_utf8_char_offsets;
     const bool                  _is_cased;
+    const bool                  _is_prefix;
 public:
     using MatchResult = LevenshteinDfa::MatchResult;
 
-    ImplicitLevenshteinDfa(std::vector<uint32_t> str, bool is_cased)
+    ImplicitLevenshteinDfa(std::vector<uint32_t> str, bool is_cased, bool is_prefix)
         : _u32_str_buf(std::move(str)),
           _target_as_utf8(),
           _target_utf8_char_offsets(),
-          _is_cased(is_cased)
+          _is_cased(is_cased),
+          _is_prefix(is_prefix)
     {
         precompute_utf8_target_with_offsets();
     }
