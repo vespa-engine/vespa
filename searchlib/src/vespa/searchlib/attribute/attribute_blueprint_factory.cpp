@@ -166,7 +166,7 @@ public:
             return {0.5, lookup_cost(indirections), lookup_strict_cost(indirections)};
         } else {
             double rel_est = abs_to_rel_est(_hit_estimate.est_hits(), docid_limit);
-            return {rel_est, btree_cost(), btree_strict_cost(rel_est)};
+            return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est)};
         }
     }
 
@@ -519,8 +519,9 @@ public:
             double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
                 return abs_to_rel_est(term.posting_size, docid_limit);
             }
-            double cost(const IDirectPostingStore::LookupResult &) const noexcept {
-                return btree_cost();
+            double cost(const IDirectPostingStore::LookupResult &term) const noexcept {
+                double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
+                return btree_cost(rel_est);
             }
             double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
                 double rel_est = abs_to_rel_est(term.posting_size, docid_limit);

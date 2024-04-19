@@ -192,8 +192,9 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::calculate_flow_stats(uin
         double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
             return abs_to_rel_est(term.posting_size, docid_limit);
         }
-        double cost(const IDirectPostingStore::LookupResult &) const noexcept {
-            return search::queryeval::flow::btree_cost();
+        double cost(const IDirectPostingStore::LookupResult &term) const noexcept {
+            double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
+            return search::queryeval::flow::btree_cost(rel_est);
         }
         double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
             double rel_est = abs_to_rel_est(term.posting_size, docid_limit);

@@ -261,7 +261,7 @@ public:
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         double rel_est = abs_to_rel_est(_posting_itr.size(), docid_limit);
-        return {rel_est, btree_cost(), btree_strict_cost(rel_est)};
+        return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est)};
     }
     
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
