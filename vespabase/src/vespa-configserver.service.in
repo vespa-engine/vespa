@@ -12,7 +12,7 @@ ExecStop=@CMAKE_INSTALL_PREFIX@/bin/vespa-stop-configserver
 LimitNOFILE=32768:262144
 LimitCORE=0:infinity
 LimitNPROC=32768:409600
-LimitStack=8388608:16777216
+LimitSTACK=8388608:16777216
 
 [Install]
 WantedBy=multi-user.target
