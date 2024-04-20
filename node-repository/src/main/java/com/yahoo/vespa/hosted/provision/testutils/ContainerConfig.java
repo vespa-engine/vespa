@@ -27,6 +27,7 @@ public class ContainerConfig {
                  <accesslog type='disabled'/>
                  <component id='com.yahoo.test.ManualClock'/>
                  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>
+                 <component id='com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDeployer'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockInfraDeployer'/>
@@ -34,7 +35,6 @@ public class ContainerConfig {
                  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDuperModel'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>
-                 <component id='com.yahoo.vespa.hosted.provision.autoscale.QuestMetricsDb'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockMetricsFetcher'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>
                  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider'/>
