@@ -188,7 +188,8 @@ public class Preparer {
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
                                              Supplier<Integer> nextIndex, LockedNodeList allNodes) {
         validateAccount(requested.cloudAccount(), application, allNodes);
-        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
+        int extraNodesNeeded = extraNodesNeeded(application, cluster, requested, allNodes);
+        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, extraNodesNeeded, nextIndex, nodeRepository);
         IP.Allocation.Context allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
                                                                              requested.cloudAccount().isExclave(nodeRepository.zone()),
                                                                              nodeRepository.nameResolver());
@@ -211,6 +212,17 @@ public class Preparer {
                                                application + " during bootstrap deployment: " + requested);
         }
         return allocation;
+    }
+
+    private int extraNodesNeeded(ApplicationId application, ClusterSpec cluster, NodeSpec requested, LockedNodeList allNodes) {
+        if ( ! cluster.isStateful()) return 0;
+        if ( ! requested.count().isPresent()) return 0;
+        int currentGroupSize = allNodes.owner(application).cluster(cluster.id()).state(Node.State.active).not().retired().group(0).size();
+        long currentGroupCount = allNodes.owner(application).cluster(cluster.id()).state(Node.State.active).not().retired().stream()
+                                         .map(node -> node.allocation().get().membership().cluster().group().get()).distinct().count();
+        int newGroupSize = requested.groupSize();
+        int surplusPerGroup = Math.max(0, currentGroupSize - newGroupSize);
+        return surplusPerGroup * (int) currentGroupCount;
     }
 
     private void validateAccount(CloudAccount requestedAccount, ApplicationId application, LockedNodeList allNodes) {

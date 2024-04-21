@@ -55,6 +55,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     final boolean exclusiveSwitch;
 
     /** True if this node belongs to a group which will not be needed after this deployment */
+    // TODO: Always false
     final boolean isSurplus;
 
     /** This node does not exist in the node repository yet */
