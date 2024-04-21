@@ -288,13 +288,13 @@ public class ProvisioningTest {
         assertEquals("Superfluous container nodes are also dirtyed",
                      4-2 + 5-2 + 1 + 4-2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
         assertEquals("Superfluous content nodes are retired",
-                     5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
+                     5-3 + 6-3 -1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // increase content slightly
         SystemState state6 = prepare(application1, 2, 2, 4, 3, defaultResources, tester);
         tester.activate(application1, state6.allHosts);
         assertEquals("One content node is unretired",
-                     5-4 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
+                     5-4 + 6-3 -1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // Then reserve more
         SystemState state7 = prepare(application1, 8, 2, 2, 2, defaultResources, tester);
@@ -505,7 +505,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
-        tester.makeReadyHosts(31, hostFlavor.resources()).activateTenantHosts();
+        tester.makeReadyHosts(32, hostFlavor.resources()).activateTenantHosts();
 
         ApplicationId app1 = ProvisioningTester.applicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();

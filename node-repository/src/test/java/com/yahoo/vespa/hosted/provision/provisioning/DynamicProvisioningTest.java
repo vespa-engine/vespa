@@ -553,6 +553,34 @@ public class DynamicProvisioningTest {
                        2, 1, resources);
     }
 
+    @Test
+    public void split_into_two_groups() {
+        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20, 200, 0.1, fast, local)));
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
+                                                                    .flavors(flavors)
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors))
+                                                                    .nameResolver(nameResolver)
+                                                                    .build();
+
+        tester.activateTenantHosts();
+
+        ApplicationId app1 = applicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
+
+        System.out.println("Initial deployment ----------------------");
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 1, 2, 20, 200, fast, StorageType.any)));
+        tester.assertNodes("Initial deployment: 1 group",
+                           6, 1, 2, 20, 200, fast, remote, app1, cluster1);
+
+        System.out.println("Split into 2 groups ---------------------");
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 2, 2, 20, 200, fast, StorageType.any)));
+        tester.assertNodes("Change to 2 groups: Gets 6 active non-retired nodes",
+                           6, 2, 2, 20, 200, fast, remote, app1, cluster1);
+        List<Node> retired = tester.nodeRepository().nodes().list().owner(app1).cluster(cluster1.id()).state(Node.State.active).retired().asList();
+        assertEquals("... and in addition 3 retired nodes", 3, retired.size());
+    }
+
     private ProvisioningTester tester(boolean sharing) {
         var hostProvisioner = new MockHostProvisioner(new NodeFlavors(ProvisioningTester.createConfig()).getFlavors(), nameResolver, 0);
         return new ProvisioningTester.Builder().dynamicProvisioning(true, sharing).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();

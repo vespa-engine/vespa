@@ -179,6 +179,13 @@ class NodeAllocation {
         if (violatesExclusivity(candidate) != NodeCandidate.ExclusivityViolation.NONE) return Retirement.violatesExclusivity;
         if (requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) return Retirement.violatesHostFlavor;
         if (candidate.violatesSpares) return Retirement.violatesSpares;
+
+        var group = candidate.allocation().get().membership().cluster().group();
+        if (cluster.isStateful() && group.isPresent() && requested.count().isPresent()) {
+            long nodesInGroup = nodes.values().stream().filter(n -> groupOf(n).equals(group) && ! isRetired(n)).count();
+            if (nodesInGroup >= requested.groupSize())
+                return Retirement.groupSurplus;
+        }
         return Retirement.none;
     }
 
@@ -288,6 +295,10 @@ class NodeAllocation {
 
     private Optional<ClusterSpec.Group> groupOf(NodeCandidate candidate) {
         return candidate.allocation().flatMap(a -> a.membership().cluster().group());
+    }
+
+    private boolean isRetired(NodeCandidate candidate) {
+        return candidate.allocation().map(a -> a.membership().retired()).orElse(false);
     }
 
     private Node resize(Node node) {
@@ -463,6 +474,7 @@ class NodeAllocation {
         violatesHostFlavor("node violates host flavor"),
         violatesHostFlavorGeneration("node violates host flavor generation"),
         violatesSpares("node is assigned to a host we want to use as a spare"),
+        groupSurplus("group has enough nodes"),
         none("");
 
         private final String description;
