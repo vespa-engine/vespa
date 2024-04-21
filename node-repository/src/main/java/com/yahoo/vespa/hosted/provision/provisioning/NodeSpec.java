@@ -80,11 +80,9 @@ public interface NodeSpec {
         return false;
     }
 
-    NodeSpec withExtra(int nodeCount);
-
     static NodeSpec from(int nodeCount, int groupCount, NodeResources resources, boolean exclusive, boolean canFail,
                          CloudAccount cloudAccount, Duration hostTTL) {
-        return new CountNodeSpec(nodeCount, groupCount, resources, 0, exclusive, canFail, canFail, cloudAccount, hostTTL);
+        return new CountNodeSpec(nodeCount, groupCount, resources, exclusive, canFail, canFail, cloudAccount, hostTTL);
     }
 
     static NodeSpec from(NodeType type, CloudAccount cloudAccount) {
@@ -97,20 +95,17 @@ public interface NodeSpec {
         private final int count;
         private final int groups;
         private final NodeResources requestedNodeResources;
-        private final int extraNodesNeeded;
         private final boolean exclusive;
         private final boolean canFail;
         private final boolean considerRetiring;
         private final CloudAccount cloudAccount;
         private final Duration hostTTL;
 
-        private CountNodeSpec(int count, int groups, NodeResources resources, int extraNodesNeeded,
-                              boolean exclusive, boolean canFail,
+        private CountNodeSpec(int count, int groups, NodeResources resources, boolean exclusive, boolean canFail,
                               boolean considerRetiring, CloudAccount cloudAccount, Duration hostTTL) {
             this.count = count;
             this.groups = groups;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
-            this.extraNodesNeeded = extraNodesNeeded; // ... due to reducing group size
             this.exclusive = exclusive;
             this.canFail = canFail;
             this.considerRetiring = considerRetiring;
@@ -153,11 +148,11 @@ public interface NodeSpec {
 
         @Override
         public int fulfilledDeficitCount(int count) {
-            return Math.max(this.count + extraNodesNeeded - count, 0);
+            return Math.max(this.count - count, 0);
         }
 
         public NodeSpec withoutRetiring() {
-            return new CountNodeSpec(count, groups, requestedNodeResources, extraNodesNeeded, exclusive, canFail, false, cloudAccount, hostTTL);
+            return new CountNodeSpec(count, groups, requestedNodeResources, exclusive, canFail, false, cloudAccount, hostTTL);
         }
 
         @Override
@@ -190,10 +185,6 @@ public interface NodeSpec {
 
         @Override
         public Duration hostTTL() { return hostTTL; }
-
-        public NodeSpec withExtra(int nodeCount) {
-            return new CountNodeSpec(count, groups, requestedNodeResources, nodeCount, exclusive, canFail, considerRetiring, cloudAccount, hostTTL);
-        }
 
         @Override
         public String toString() {
@@ -267,8 +258,6 @@ public interface NodeSpec {
         public CloudAccount cloudAccount() {
             return cloudAccount;
         }
-
-        public NodeSpec withExtra(int nodeCount) { return this; }
 
         @Override
         public String toString() { return "request for nodes of type '" + type + "'"; }
