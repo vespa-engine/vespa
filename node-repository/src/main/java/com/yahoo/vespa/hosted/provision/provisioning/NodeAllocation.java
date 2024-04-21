@@ -54,7 +54,7 @@ class NodeAllocation {
     private final NodeSpec requested;
 
     /** The node candidates this has accepted so far, keyed on hostname */
-    public final Map<String, NodeCandidate> nodes = new LinkedHashMap<>();
+    private final Map<String, NodeCandidate> nodes = new LinkedHashMap<>();
 
     /** The number of already allocated nodes of compatible size */
     private int acceptedAndCompatible = 0;
