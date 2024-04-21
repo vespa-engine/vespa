@@ -188,8 +188,8 @@ public class Preparer {
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
                                              Supplier<Integer> nextIndex, LockedNodeList allNodes) {
         validateAccount(requested.cloudAccount(), application, allNodes);
-        int extraNodesNeeded = extraNodesNeeded(application, cluster, requested, allNodes);
-        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, extraNodesNeeded, nextIndex, nodeRepository);
+        requested = requested.withExtra(extraNodesNeeded(application, cluster, requested, allNodes));
+        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
         IP.Allocation.Context allocationContext = IP.Allocation.Context.from(nodeRepository.zone().cloud().name(),
                                                                              requested.cloudAccount().isExclave(nodeRepository.zone()),
                                                                              nodeRepository.nameResolver());

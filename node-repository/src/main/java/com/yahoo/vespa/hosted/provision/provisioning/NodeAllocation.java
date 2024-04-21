@@ -53,8 +53,6 @@ class NodeAllocation {
     /** The requested nodes of this list */
     private final NodeSpec requested;
 
-    private final int extraNodesNeeded;
-
     /** The node candidates this has accepted so far, keyed on hostname */
     public final Map<String, NodeCandidate> nodes = new LinkedHashMap<>();
 
@@ -88,12 +86,11 @@ class NodeAllocation {
     private final Optional<String> requiredHostFlavor;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
-                   int extraNodesNeeded, Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
+                   Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
         this.requested = requested;
-        this.extraNodesNeeded = extraNodesNeeded;
         this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
         this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
@@ -309,7 +306,7 @@ class NodeAllocation {
 
     /** Returns true if no more nodes are needed in this list */
     public boolean saturated() {
-        return requested.saturatedBy(acceptedAndCompatible - extraNodesNeeded);
+        return requested.saturatedBy(acceptedAndCompatible);
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
@@ -423,7 +420,7 @@ class NodeAllocation {
 
     /** Returns the number of nodes accepted this far */
     private int acceptedAndCompatibleOrResizable() {
-        if (nodeType() == NodeType.tenant) return acceptedAndCompatibleOrResizable - extraNodesNeeded; // xxx
+        if (nodeType() == NodeType.tenant) return acceptedAndCompatibleOrResizable;
         // Infrastructure nodes are always allocated by type. Count all nodes as accepted so that we never exceed
         // the wanted number of nodes for the type.
         return allNodes.nodeType(nodeType()).size();
