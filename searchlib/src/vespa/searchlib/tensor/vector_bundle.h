@@ -39,7 +39,6 @@ public:
     ~VectorBundle() = default;
     uint32_t subspaces() const noexcept { return _subspaces; }
     vespalib::eval::TypedCells cells(uint32_t subspace) const noexcept {
-        assert(subspace < _subspaces);
         return {static_cast<const char*>(_data) + _subspace_mem_size * subspace, _cell_type, _subspace_size};
     }
 };

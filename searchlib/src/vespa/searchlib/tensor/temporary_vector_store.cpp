@@ -38,7 +38,6 @@ struct ConvertCellsSelector
 template <typename FloatType>
 ConstArrayRef<FloatType>
 TemporaryVectorStore<FloatType>::internal_convert(TypedCells cells, size_t offset) noexcept {
-    assert(cells.size * 2 == _tmpSpace.size());
     ArrayRef<FloatType> where(_tmpSpace.data() + offset, cells.size);
     using MyTypify = vespalib::eval::TypifyCellType;
     using MySelector = ConvertCellsSelector<FloatType>;

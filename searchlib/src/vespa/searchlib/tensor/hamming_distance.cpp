@@ -28,7 +28,6 @@ public:
         if constexpr (std::is_same<Int8Float, FloatType>::value) {
             return (double) vespalib::binary_hamming_distance(_lhs_vector.data(), rhs_vector.data(), sz);
         } else {
-            assert(sz == rhs_vector.size());
             size_t sum = 0;
             for (size_t i = 0; i < sz; ++i) {
                 sum += (_lhs_vector[i] == rhs_vector[i]) ? 0 : 1;
