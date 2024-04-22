@@ -267,7 +267,7 @@ public class DynamicProvisioningTester {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources, CloudAccount enclaveAccount, boolean exclusive, boolean bestCase) {
+        public NodeResources requestToReal(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb());
         }
 
