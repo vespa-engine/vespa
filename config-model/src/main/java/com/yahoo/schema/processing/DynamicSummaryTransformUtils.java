@@ -39,20 +39,6 @@ public class DynamicSummaryTransformUtils {
         return (type.equals(DataType.getArray(DataType.STRING)));
     }
 
-    /**
-     * Whether a summary field must be populated by the source field with the given type in an indexing script.
-     */
-    public static boolean summaryFieldIsPopulatedBySourceField(DataType sourceFieldType) {
-        return false;
-    }
-
-    /**
-     * Whether a summary field is required as an extra field in the document type.
-     */
-    public static boolean summaryFieldIsRequiredInDocumentType(SummaryField summaryField) {
-        return summaryFieldIsPopulatedBySourceField(summaryField.getDataType());
-    }
-
     public static String getSource(SummaryField summaryField, Schema schema) {
         // Summary fields with the original supported type is always present in the document type.
         // However, if the source of that summary field is a single explicit source that exists in the schema we

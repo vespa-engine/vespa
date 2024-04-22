@@ -6,15 +6,11 @@ import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.document.Field;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
-import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 /**
  * This processor creates a {@link com.yahoo.schema.document.SDDocumentType} for each {@link Schema}
