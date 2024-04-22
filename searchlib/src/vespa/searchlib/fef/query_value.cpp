@@ -12,6 +12,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <cerrno>
 
 using document::TensorDataType;

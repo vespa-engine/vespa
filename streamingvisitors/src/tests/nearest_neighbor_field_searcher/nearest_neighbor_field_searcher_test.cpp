@@ -13,6 +13,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vsm/searcher/mock_field_searcher_env.h>
 #include <vespa/vsm/searcher/nearest_neighbor_field_searcher.h>
+#include <vespa/vespalib/objects/nbostream.h>
+
 
 using namespace search::attribute::test;
 using namespace search::attribute;

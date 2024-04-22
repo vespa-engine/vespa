@@ -4,6 +4,7 @@
 
 #include "distance_function.h"
 #include <vespa/eval/eval/typed_cells.h>
+#include <memory>
 
 namespace search::tensor {
 

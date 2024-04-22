@@ -4,6 +4,7 @@
 
 #include "attributesaver.h"
 #include <vespa/vespalib/stllike/allocator.h>
+#include <memory>
 
 namespace search::predicate { class ISaver; }
 

@@ -8,6 +8,9 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/objects/nbostream.h>
+
+
 
 using search::tensor::TensorBufferStore;
 using vespalib::datastore::EntryRef;

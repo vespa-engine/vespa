@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <mutex>
 #include <condition_variable>
 

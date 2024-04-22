@@ -10,6 +10,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/execution_profiler.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <algorithm>
 #include <cassert>
 
