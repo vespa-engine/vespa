@@ -29,12 +29,10 @@ public:
         }
     }
     double calc(TypedCells rhs) const noexcept override {
-        size_t sz = _lhs.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
-        assert(sz == rhs_vector.size());
         auto a = _lhs.data();
         auto b = rhs_vector.data();
-        double dot_product = _computer.dotProduct(a, b, sz);
+        double dot_product = _computer.dotProduct(a, b, _lhs.size());
         double distance = _lhs_norm_sq - dot_product;
         return distance;
     }

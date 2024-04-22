@@ -11,7 +11,7 @@ EmptySubspace::EmptySubspace(const SubspaceType& type)
 {
     _empty_space.resize(type.mem_size());
     // Set size to zero to signal empty/invalid subspace
-    _cells = vespalib::eval::TypedCells(&_empty_space[0], type.cell_type(), 0);
+    _cells = vespalib::eval::TypedCells(_empty_space.data(), type.cell_type(), 0);
 }
 
 EmptySubspace::~EmptySubspace() = default;

@@ -31,7 +31,6 @@ public:
     double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
-        assert(sz == rhs_vector.size());
         auto a = _lhs.data();
         auto b = rhs_vector.data();
         double b_norm_sq = _computer.dotProduct(b, b, sz);

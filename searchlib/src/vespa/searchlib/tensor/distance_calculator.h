@@ -45,7 +45,7 @@ public:
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
             double min_rawscore = _dist_fun->min_rawscore();
-            if (cells.size == 0) [[unlikely]] {
+            if ( ! cells.valid() ) [[unlikely]] {
                 return min_rawscore;
             }
             return std::max(min_rawscore, _dist_fun->to_rawscore(_dist_fun->calc(cells)));
@@ -66,7 +66,7 @@ public:
     double calc_with_limit(uint32_t docid, double limit) const noexcept {
         if (has_single_subspace) {
             auto cells = _attr_tensor.get_vector(docid, 0);
-            if (cells.size == 0) [[unlikely]] {
+            if ( ! cells.valid() ) [[unlikely]] {
                 return std::numeric_limits<double>::max();
             }
             return _dist_fun->calc_with_limit(cells, limit);
