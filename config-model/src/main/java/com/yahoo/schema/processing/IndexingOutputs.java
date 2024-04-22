@@ -34,33 +34,25 @@ public class IndexingOutputs extends Processor {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
 
-            Set<String> summaryFields = new TreeSet<>();
-            findSummaryTo(schema, field, summaryFields, summaryFields);
-            MyConverter converter = new MyConverter(schema, field, summaryFields, validate);
+            findSummaryTo(schema, field);
+            MyConverter converter = new MyConverter(schema, field, validate);
             field.setIndexingScript(schema.getName(), (ScriptExpression)converter.convert(script));
         }
     }
 
-    public void findSummaryTo(Schema schema, SDField field, Set<String> dynamicSummary, Set<String> staticSummary) {
+    public void findSummaryTo(Schema schema, SDField field) {
         var summaryFields = schema.getSummaryFields(field);
-        if (summaryFields.isEmpty()) {
-            fillSummaryToFromField(field, dynamicSummary, staticSummary);
-        } else {
-            fillSummaryToFromSearch(schema, field, summaryFields, dynamicSummary, staticSummary);
-        }
+        fillSummaryToFromSearch(schema, field, summaryFields);
     }
 
-    private void fillSummaryToFromSearch(Schema schema, SDField field, List<SummaryField> summaryFields,
-                                         Set<String> dynamicSummary, Set<String> staticSummary) {
+    private void fillSummaryToFromSearch(Schema schema, SDField field, List<SummaryField> summaryFields) {
         for (SummaryField summaryField : summaryFields) {
-            fillSummaryToFromSummaryField(schema, field, summaryField, dynamicSummary, staticSummary);
+            fillSummaryToFromSummaryField(schema, field, summaryField);
         }
     }
 
-    private void fillSummaryToFromSummaryField(Schema schema, SDField field, SummaryField summaryField,
-                                               Set<String> dynamicSummary, Set<String> staticSummary) {
+    private void fillSummaryToFromSummaryField(Schema schema, SDField field, SummaryField summaryField) {
         SummaryTransform summaryTransform = summaryField.getTransform();
-        String summaryName = summaryField.getName();
         if (summaryTransform.isDynamic() && summaryField.getSourceCount() > 2) {
             // Avoid writing to summary fields that have more than a single input field, as that is handled by the
             // summary rewriter in the search core.
@@ -68,30 +60,11 @@ public class IndexingOutputs extends Processor {
         }
         if (summaryTransform.isDynamic()) {
             DataType fieldType = field.getDataType();
-            if (!DynamicSummaryTransformUtils.summaryFieldIsPopulatedBySourceField(fieldType)) {
-                if (!DynamicSummaryTransformUtils.isSupportedType(fieldType)) {
-                    warn(schema, field, "Dynamic summaries are only supported for fields of type " +
-                            "string and array<string>, ignoring summary field '" + summaryField.getName() +
-                            "' for sd field '" + field.getName() + "' of type " +
-                            fieldType.getName() + ".");
-                }
-                return;
-            }
-            dynamicSummary.add(summaryName);
-        } else if (summaryTransform != SummaryTransform.ATTRIBUTE &&
-                summaryTransform != SummaryTransform.TOKENS &&
-                summaryTransform != SummaryTransform.ATTRIBUTE_TOKENS) {
-            staticSummary.add(summaryName);
-        }
-    }
-
-    private static void fillSummaryToFromField(SDField field, Set<String> dynamicSummary, Set<String> staticSummary) {
-        for (SummaryField summaryField : field.getSummaryFields().values()) {
-            String summaryName = summaryField.getName();
-            if (summaryField.getTransform().isDynamic()) {
-                dynamicSummary.add(summaryName);
-            } else {
-                staticSummary.add(summaryName);
+            if (!DynamicSummaryTransformUtils.isSupportedType(fieldType)) {
+                warn(schema, field, "Dynamic summaries are only supported for fields of type " +
+                        "string and array<string>, ignoring summary field '" + summaryField.getName() +
+                        "' for sd field '" + field.getName() + "' of type " +
+                        fieldType.getName() + ".");
             }
         }
     }
@@ -100,13 +73,11 @@ public class IndexingOutputs extends Processor {
 
         final Schema schema;
         final Field field;
-        final Set<String> summaryFields;
         final boolean validate;
 
-        MyConverter(Schema schema, Field field, Set<String> summaryFields, boolean validate) {
+        MyConverter(Schema schema, Field field, boolean validate) {
             this.schema = schema;
             this.field = field;
-            this.summaryFields = summaryFields.isEmpty() ? Set.of(field.getName()) : summaryFields;
             this.validate = validate;
         }
 
@@ -134,18 +105,7 @@ public class IndexingOutputs extends Processor {
             } else if (exp instanceof IndexExpression) {
                 ret.add(new IndexExpression(field.getName()));
             } else if (exp instanceof SummaryExpression) {
-                for (String fieldName : summaryFields) {
-                    ret.add(new SummaryExpression(fieldName));
-                }
-                /*
-                 * Write to summary field source. AddExtraFieldsToDocument processor adds the "copy"
-                 * summary transform to summary fields without a corresponding explicitly declared
-                 * document field (2023-11-01). Future vespa versions will stop adding document
-                 * fields for those summary fields.
-                 */
-                if (!summaryFields.contains(field.getName())) {
-                    ret.add(new SummaryExpression(field.getName()));
-                }
+                ret.add(new SummaryExpression(field.getName()));
             } else {
                 throw new UnsupportedOperationException(exp.getClass().getName());
             }

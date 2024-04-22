@@ -78,7 +78,7 @@ public class IndexingOutputsTestCase {
                 """;
         var builder = ApplicationBuilder.createFromString(sd);
         var schema = builder.getSchema();
-        assertEquals("{ input foo | summary baz | summary bar; }",
+        assertEquals("{ input foo | summary bar; }",
                 schema.getConcreteField("bar").getIndexingScript().toString());
     }
 }

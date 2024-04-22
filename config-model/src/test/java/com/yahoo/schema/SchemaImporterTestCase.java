@@ -40,7 +40,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
 
         SDDocumentType document = schema.getDocument();
         assertEquals("simple", document.getName());
-        assertEquals(20, document.getFieldCount());
+        assertEquals(19, document.getFieldCount());
 
         SDField field;
         Attribute attribute;

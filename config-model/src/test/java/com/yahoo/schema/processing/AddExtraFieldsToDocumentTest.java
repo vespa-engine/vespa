@@ -43,9 +43,9 @@ public class AddExtraFieldsToDocumentTest {
         assertSummary(schema, "foo", "my_a", SummaryTransform.COPY, "a");
         assertSummary(schema, "foo", "my_b", SummaryTransform.COPY, "b");
         assertSummary(schema, "foo", "my_c", SummaryTransform.ATTRIBUTE, "c");
-        // Extra fields should still be created
-        assertField(schema, "my_a", DataType.STRING);
-        assertField(schema,"my_b", DataType.INT);
+        // Extra fields should not be created
+        assertNull(schema.getDocument().getField("my_a"));
+        assertNull(schema.getDocument().getField("my_b"));
         assertNull(schema.getDocument().getField("my_c"));
     }
 
@@ -78,11 +78,4 @@ public class AddExtraFieldsToDocumentTest {
         assertEquals(transform, field.getTransform());
         assertEquals(source, field.getSingleSource());
     }
-
-    private void assertField(Schema schema, String name, DataType type) {
-        var field = schema.getDocument().getField(name);
-        assertNotNull(field);
-        assertEquals(field.getDataType(), type);
-    }
-
 }
