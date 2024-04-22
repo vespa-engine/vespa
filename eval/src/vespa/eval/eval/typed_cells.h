@@ -36,6 +36,7 @@ struct TypedCells {
     TypedCells(const TypedCells &other) noexcept = default;
     TypedCells & operator= (TypedCells &&other) noexcept = default;
     TypedCells & operator= (const TypedCells &other) noexcept = default;
+    bool valid() const noexcept { return size != 0; }
 };
 
 } // namespace

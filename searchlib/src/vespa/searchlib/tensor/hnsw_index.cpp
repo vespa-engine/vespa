@@ -303,12 +303,29 @@ HnswIndex<type>::remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32
     _graph.set_link_array(remove_from, level, new_links);
 }
 
+namespace {
+
+double
+calc_distance_helper(const BoundDistanceFunction &df, vespalib::eval::TypedCells rhs)
+{
+    if (!rhs.valid()) [[unlikely]] {
+        /*
+         * We are in a read thread and the write thread has removed the
+         * tensor.
+         */
+        return std::numeric_limits<double>::max();
+    }
+    return df.calc(rhs);
+}
+
+}
+
 template <HnswIndexType type>
 double
 HnswIndex<type>::calc_distance(const BoundDistanceFunction &df, uint32_t rhs_nodeid) const
 {
     auto rhs = get_vector(rhs_nodeid);
-    return df.calc(rhs);
+    return calc_distance_helper(df, rhs);
 }
 
 template <HnswIndexType type>
@@ -316,7 +333,7 @@ double
 HnswIndex<type>::calc_distance(const BoundDistanceFunction &df, uint32_t rhs_docid, uint32_t rhs_subspace) const
 {
     auto rhs = get_vector(rhs_docid, rhs_subspace);
-    return df.calc(rhs);
+    return calc_distance_helper(df, rhs);
 }
 
 template <HnswIndexType type>
