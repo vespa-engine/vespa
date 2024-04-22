@@ -43,7 +43,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         maxTokens = config.maxTokens();
 
         // Only used if GPU is not used
-        var defaultThreadCount = Runtime.getRuntime().availableProcessors() - 2;
+        var defaultThreadCount = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1);
 
         var modelFile = config.model().toFile().getAbsolutePath();
         var modelParams = new ModelParameters()
