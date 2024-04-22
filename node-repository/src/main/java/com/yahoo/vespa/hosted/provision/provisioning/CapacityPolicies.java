@@ -51,6 +51,8 @@ public class CapacityPolicies {
     private ClusterResources applyOn(ClusterResources resources, Capacity capacity, ApplicationId application, boolean exclusive) {
         int nodes = decideSize(resources.nodes(), capacity.isRequired(), application.instance().isTester());
         int groups = Math.min(resources.groups(), nodes); // cannot have more groups than nodes
+        while (groups > 1 && nodes % groups != 0)
+            groups--; // Must be divisible by the number of groups
         var nodeResources = decideNodeResources(resources.nodeResources(), capacity.isRequired(), exclusive);
         return new ClusterResources(nodes, groups, nodeResources);
     }
