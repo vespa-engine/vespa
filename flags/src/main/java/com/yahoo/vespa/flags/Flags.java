@@ -423,7 +423,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static UnboundBooleanFlag NEW_PATH_FOR_DISK_ENCRYPTION_KEY_METADATA  = defineFeatureFlag(
-            "new-path-for-disk-encryption-key-metadata", false,
+            "new-path-for-disk-encryption-key-metadata", true,
             List.of("hmusum"), "2024-04-08", "2024-06-01",
             "Whether to read and write disk encryption key to new path",
             "Will be read only on boot.");
