@@ -62,8 +62,17 @@ public:
         _vectors[docid] = vec;
         return *this;
     }
+    void clear(uint32_t docid) {
+        if (docid < _vectors.size()) {
+            _vectors[docid].clear();
+        }
+    }
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override {
-        return get_vectors(docid).cells(subspace);
+        auto bundle = get_vectors(docid);
+        if (subspace < bundle.subspaces()) {
+            return bundle.cells(subspace);
+        }
+        return { nullptr, _subspace_type.cell_type(), 0 };
     }
     VectorBundle get_vectors(uint32_t docid) const noexcept override {
         ArrayRef ref(_vectors[docid]);
@@ -276,6 +285,12 @@ public:
     uint32_t get_active_nodes() const noexcept {
         return index->get_active_nodes();
     }
+
+    /*
+     * Simulate race where writer has cleared a tensor while read thread still
+     * use old graph.
+     */
+    void writer_clears_tensor(uint32_t docid) { vectors.clear(docid); }
 
     static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;
 };
@@ -827,6 +842,14 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_can_be_saved_and_loaded)
     this->check_savetest_index("after load");
 }
 
+TYPED_TEST(HnswIndexTest, search_during_remove)
+{
+    this->init(false);
+    this->make_savetest_index();
+    this->writer_clears_tensor(4);
+    this->expect_top_3_by_docid("{0, 0}", {0, 0}, {7});
+}
+
 using HnswMultiIndexTest = HnswIndexTest<HnswIndex<HnswIndexType::MULTI>>;
 
 namespace {
@@ -1020,6 +1043,17 @@ TYPED_TEST(TwoPhaseTest, two_phase_add)
     // 1 filtered out because it was removed
     // 5 filtered out because it was updated
     this->expect_levels(nodeids[0], {{2}, {4}});
+}
+
+TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove)
+{
+    this->init(false);
+    this->make_savetest_index();
+    this->writer_clears_tensor(4);
+    auto prepared = this->prepare_add(2, 1);
+    this->remove_document(4);
+    this->complete_add(2, std::move(prepared));
+    EXPECT_EQ(2, this->get_active_nodes());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
