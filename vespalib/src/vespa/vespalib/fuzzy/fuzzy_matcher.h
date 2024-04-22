@@ -24,6 +24,7 @@ private:
     uint32_t _max_edit_distance; // max edit distance
     uint32_t _prefix_size;       // prefix of a term that is considered frozen, i.e. non-fuzzy
     bool     _is_cased;
+    bool     _is_prefix;
 
     std::vector<uint32_t> _folded_term_codepoints;
 
@@ -34,7 +35,7 @@ public:
     FuzzyMatcher();
     FuzzyMatcher(const FuzzyMatcher &) = delete;
     FuzzyMatcher & operator = (const FuzzyMatcher &) = delete;
-    FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased);
+    FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased, bool is_prefix);
     ~FuzzyMatcher();
 
     [[nodiscard]] bool isMatch(std::string_view target) const;

@@ -75,31 +75,47 @@ std::string_view maybe_consume_into(std::string_view str, T& val_out) {
     return str.substr(ptr - str.data());
 }
 
-// Parse optional max edits and prefix lock length from term string.
+// Parse optional prefix match mode, max edits and prefix lock length from term string.
 // Syntax:
-//   "term"      -> {2, 0, "term"} (default max edits & prefix length)
-//   "{1}term"   -> {1, 0, "term"}
-//   "{1,3}term" -> {1, 3, "term"}
+//   "term"           -> {2, 0, false, "term"} (default max edits, prefix length and prefix match mode)
+//   "{p}term"        -> {2, 0, true, "term"}
+//   "{1}term"        -> {1, 0, false, "term"}
+//   "{p1}term"       -> {1, 0, true, "term"}
+//   "{1,3}term"      -> {1, 3, false, "term"}
+//   "{p1,3}term"     -> {1, 3, true, "term"}
+// .. and so on
 //
 // Note: this is not a "proper" parser (it accepts empty numeric values); only for testing!
-std::tuple<uint8_t, uint32_t, std::string_view> parse_fuzzy_params(std::string_view term) {
+std::tuple<uint8_t, uint32_t, bool, std::string_view> parse_fuzzy_params(std::string_view term) {
+    std::string_view orig_term = term;
     if (term.empty() || term[0] != '{') {
-        return {2, 0, term};
+        return {2, 0, false, term};
     }
+    term = term.substr(1); // skip '{'
     uint8_t  max_edits = 2;
     uint32_t prefix_length = 0;
-    term = maybe_consume_into(term.substr(1), max_edits);
+    bool prefix_match = false;
+    if (!term.empty() && term[0] == 'p') {
+        prefix_match = true;
+        term = term.substr(1); // skip 'p'
+    }
+    if (!term.empty() && term[0] == '}') {
+        return {2, 0, prefix_match, term.substr(1)};
+    }
+    term = maybe_consume_into(term, max_edits);
     if (term.empty() || (term[0] != ',' && term[0] != '}')) {
-        throw std::invalid_argument("malformed fuzzy params at (or after) max_edits");
+        throw std::invalid_argument("malformed fuzzy params at (or after) max_edits: " +
+                                    std::string(term) + " in string " + std::string(orig_term));
     }
     if (term[0] == '}') {
-        return {max_edits, prefix_length, term.substr(1)};
+        return {max_edits, prefix_length, prefix_match, term.substr(1)};
     }
     term = maybe_consume_into(term.substr(1), prefix_length);
     if (term.empty() || term[0] != '}') {
-        throw std::invalid_argument("malformed fuzzy params at (or after) prefix_length");
+        throw std::invalid_argument("malformed fuzzy params at (or after) prefix_length: " +
+                                    std::string(term) + " in string " + std::string(orig_term));
     }
-    return {max_edits, prefix_length, term.substr(1)};
+    return {max_edits, prefix_length, prefix_match, term.substr(1)};
 }
 
 }
@@ -115,9 +131,10 @@ private:
             if (pt.second == TermType::REGEXP) {
                 qtv.push_back(std::make_unique<RegexpTerm>(eqnr.create(), pt.first, effective_index, TermType::REGEXP, normalizing));
             } else if (pt.second == TermType::FUZZYTERM) {
-                auto [max_edits, prefix_length, actual_term] = parse_fuzzy_params(pt.first);
+                auto [max_edits, prefix_lock_length, prefix_match, actual_term] = parse_fuzzy_params(pt.first);
                 qtv.push_back(std::make_unique<FuzzyTerm>(eqnr.create(), vespalib::stringref(actual_term.data(), actual_term.size()),
-                                                          effective_index, TermType::FUZZYTERM, normalizing, max_edits, prefix_length));
+                                                          effective_index, TermType::FUZZYTERM, normalizing, max_edits,
+                                                          prefix_lock_length, prefix_match));
             } else {
                 qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, effective_index, pt.second, normalizing));
             }
@@ -531,25 +548,29 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     return true;
 }
 
-TEST("parsing of test-only fuzzy term params can extract numeric values") {
+void check_fuzzy_param_parsing(std::string_view term, std::string_view exp_term,
+                               uint8_t exp_max_edits, uint32_t exp_prefix_length, bool exp_prefix)
+{
     uint8_t max_edits = 0;
-    uint32_t prefix_length = 1234;
+    uint32_t prefix_length = 0;
+    bool prefix = false;
     std::string_view out;
 
-    std::tie(max_edits, prefix_length, out) = parse_fuzzy_params("myterm");
-    EXPECT_EQUAL(max_edits, 2u);
-    EXPECT_EQUAL(prefix_length, 0u);
-    EXPECT_EQUAL(out, "myterm");
+    std::tie(max_edits, prefix_length, prefix, out) = parse_fuzzy_params(term);
+    EXPECT_EQUAL(static_cast<uint32_t>(max_edits), static_cast<uint32_t>(exp_max_edits)); // don't print as char...
+    EXPECT_EQUAL(prefix_length, exp_prefix_length);
+    EXPECT_EQUAL(prefix, exp_prefix);
+    EXPECT_EQUAL(out, exp_term);
 
-    std::tie(max_edits, prefix_length, out) = parse_fuzzy_params("{3}myterm");
-    EXPECT_EQUAL(max_edits, 3u);
-    EXPECT_EQUAL(prefix_length, 0u);
-    EXPECT_EQUAL(out, "myterm");
+}
 
-    std::tie(max_edits, prefix_length, out) = parse_fuzzy_params("{2,70}myterm");
-    EXPECT_EQUAL(max_edits, 2u);
-    EXPECT_EQUAL(prefix_length, 70u);
-    EXPECT_EQUAL(out, "myterm");
+TEST("parsing of test-only fuzzy term params can extract expected values") {
+    check_fuzzy_param_parsing("myterm",        "myterm", 2, 0,  false);
+    check_fuzzy_param_parsing("{3}myterm",     "myterm", 3, 0,  false);
+    check_fuzzy_param_parsing("{p}myterm",     "myterm", 2, 0,  true);
+    check_fuzzy_param_parsing("{p1}myterm",    "myterm", 1, 0,  true);
+    check_fuzzy_param_parsing("{2,70}myterm",  "myterm", 2, 70, false);
+    check_fuzzy_param_parsing("{p2,70}myterm", "myterm", 2, 70, true);
 }
 
 TEST("verify correct term parsing") {
@@ -638,6 +659,14 @@ TEST("utf8 substring search with empty term")
     EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
     assertString(fs, "", "abc", Hits());
     assertFieldInfo(fs, "", "abc", QTFieldInfo().setFieldLength(0));
+}
+
+Hits is_hit() {
+    return Hits().add({0, 0});
+}
+
+Hits no_hits() {
+    return {};
 }
 
 TEST("utf8 suffix search") {
@@ -835,6 +864,37 @@ TEST("utf8 flexible searcher fuzzy matching treats field as 1 word") {
     TEST_DO(assertFieldInfo(fs, "%{1}foo bar baz", "foo jar baz", QTFieldInfo(0, 1, 1)));
     // Mismatch case
     TEST_DO(assertFieldInfo(fs, "%{1}foo", "foo bar baz", QTFieldInfo(0, 0, 1)));
+}
+
+TEST("utf8 flexible searcher supports fuzzy prefix matching") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    TEST_DO(assertString(fs, "%{p0}z",     "zoid",      is_hit()));
+    TEST_DO(assertString(fs, "%{p0}zo",    "zoid",      is_hit()));
+    TEST_DO(assertString(fs, "%{p0}zo",    "Zoid",      is_hit())); // uncased
+    TEST_DO(assertString(fs, "%{p0}Zo",    "zoid",      is_hit())); // uncased
+    TEST_DO(assertString(fs, "%{p0}zoid",  "zoid",      is_hit()));
+    TEST_DO(assertString(fs, "%{p0}x",     "zoid",      no_hits()));
+    TEST_DO(assertString(fs, "%{p1}zo",    "boid",      is_hit()));
+    TEST_DO(assertString(fs, "%{p1}zo",    "blid",      no_hits()));
+    TEST_DO(assertString(fs, "%{p1}yam",   "hamburger", is_hit()));
+    TEST_DO(assertString(fs, "%{p1}yam",   "humbug",    no_hits()));
+    TEST_DO(assertString(fs, "%{p2}yam",   "humbug",    is_hit()));
+    TEST_DO(assertString(fs, "%{p2}catfo", "dogfood",   no_hits()));
+    TEST_DO(assertString(fs, "%{p3}catfo", "dogfood",   is_hit()));
+    TEST_DO(assertString(fs, "%{p100}abcd", "anything you want", is_hit())); // trivially matches
+}
+
+TEST("utf8 flexible searcher supports fuzzy prefix matching combined with prefix locking") {
+    UTF8FlexibleStringFieldSearcher fs(0);
+    TEST_DO(assertString(fs, "%{p0,4}zoid",     "zoid",        is_hit()));
+    TEST_DO(assertString(fs, "%{p0,4}zoidber",  "zoidberg",    is_hit()));
+    TEST_DO(assertString(fs, "%{p1,4}zoidber",  "zoidburg",    is_hit()));
+    TEST_DO(assertString(fs, "%{p1,4}zoidber",  "zoidblurgh",  no_hits()));
+    TEST_DO(assertString(fs, "%{p1,4}zoidbe",   "zoidblurgh",  is_hit()));
+    TEST_DO(assertString(fs, "%{p1,4}zoidberg", "boidberg",    no_hits()));
+    TEST_DO(assertString(fs, "%{p1,4}zoidber",  "zoidburger",  is_hit()));
+    TEST_DO(assertString(fs, "%{p1,4}zoidber",  "zoidbananas", no_hits()));
+    TEST_DO(assertString(fs, "%{p2,4}zoidber",  "zoidbananas", is_hit()));
 }
 
 TEST("bool search") {

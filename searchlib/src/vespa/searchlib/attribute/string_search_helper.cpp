@@ -49,17 +49,19 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased, vespali
                 ? vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None)
                 : vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
     } else if (isFuzzy()) {
-        auto max_edit_dist = term.getFuzzyMaxEditDistance();
+        const auto max_edit_dist = term.fuzzy_max_edit_distance();
         _fuzzyMatcher = std::make_unique<vespalib::FuzzyMatcher>(term.getTerm(),
                                                                  max_edit_dist,
-                                                                 term.getFuzzyPrefixLength(),
-                                                                 isCased());
+                                                                 term.fuzzy_prefix_lock_length(),
+                                                                 isCased(),
+                                                                 term.fuzzy_prefix_match());
         if ((fuzzy_matching_algorithm != FMA::BruteForce) &&
             (max_edit_dist > 0 && max_edit_dist <= 2)) {
             _dfa_fuzzy_matcher = std::make_unique<DfaFuzzyMatcher>(term.getTerm(),
                                                                    max_edit_dist,
-                                                                   term.getFuzzyPrefixLength(),
+                                                                   term.fuzzy_prefix_lock_length(),
                                                                    isCased(),
+                                                                   term.fuzzy_prefix_match(),
                                                                    to_dfa_type(fuzzy_matching_algorithm));
         }
     } else if (isCased()) {

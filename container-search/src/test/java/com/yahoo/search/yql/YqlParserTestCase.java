@@ -437,23 +437,27 @@ public class YqlParserTestCase {
         QueryTree x = parse("select foo from bar where baz contains fuzzy(\"a b\")");
         Item root = x.getRoot();
         assertSame(FuzzyItem.class, root.getClass());
-        assertEquals("baz", ((FuzzyItem) root).getIndexName());
-        assertEquals("a b", ((FuzzyItem) root).stringValue());
-        assertEquals(FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE, ((FuzzyItem) root).getMaxEditDistance());
-        assertEquals(FuzzyItem.DEFAULT_PREFIX_LENGTH, ((FuzzyItem) root).getPrefixLength());
+        var fuzzy = (FuzzyItem) root;
+        assertEquals("baz", fuzzy.getIndexName());
+        assertEquals("a b", fuzzy.stringValue());
+        assertEquals(FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE, fuzzy.getMaxEditDistance());
+        assertEquals(FuzzyItem.DEFAULT_PREFIX_LENGTH, fuzzy.getPrefixLength());
+        assertFalse(fuzzy.isPrefixMatch());
     }
 
     @Test
     void testFuzzyAnnotations() {
         QueryTree x = parse(
-                "select foo from bar where baz contains ({maxEditDistance: 3, prefixLength: 10}fuzzy(\"a b\"))"
+                "select foo from bar where baz contains ({maxEditDistance: 3, prefixLength: 10, prefix: true}fuzzy(\"a b\"))"
         );
         Item root = x.getRoot();
         assertSame(FuzzyItem.class, root.getClass());
-        assertEquals("baz", ((FuzzyItem) root).getIndexName());
-        assertEquals("a b", ((FuzzyItem) root).stringValue());
-        assertEquals(3, ((FuzzyItem) root).getMaxEditDistance());
-        assertEquals(10, ((FuzzyItem) root).getPrefixLength());
+        var fuzzy = (FuzzyItem) root;
+        assertEquals("baz", fuzzy.getIndexName());
+        assertEquals("a b", fuzzy.stringValue());
+        assertEquals(3, fuzzy.getMaxEditDistance());
+        assertEquals(10, fuzzy.getPrefixLength());
+        assertTrue(fuzzy.isPrefixMatch());
     }
 
     @Test

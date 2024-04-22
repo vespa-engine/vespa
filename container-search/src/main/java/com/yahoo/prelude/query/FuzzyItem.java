@@ -16,15 +16,21 @@ public class FuzzyItem extends TermItem {
 
     private int maxEditDistance;
     private int prefixLength;
+    private boolean prefixMatch;
 
     public static int DEFAULT_MAX_EDIT_DISTANCE = 2;
     public static int DEFAULT_PREFIX_LENGTH = 0;
 
-    public FuzzyItem(String indexName, boolean isFromQuery, String term, int maxEditDistance, int prefixLength) {
+    public FuzzyItem(String indexName, boolean isFromQuery, String term, int maxEditDistance, int prefixLength, boolean prefixMatch) {
         super(indexName, isFromQuery, null);
         setValue(term);
         setMaxEditDistance(maxEditDistance);
         setPrefixLength(prefixLength);
+        setPrefixMatch(prefixMatch);
+    }
+
+    public FuzzyItem(String indexName, boolean isFromQuery, String term, int maxEditDistance, int prefixLength) {
+        this(indexName, isFromQuery, term, maxEditDistance, prefixLength, false);
     }
 
     public void setMaxEditDistance(int maxEditDistance) {
@@ -41,6 +47,19 @@ public class FuzzyItem extends TermItem {
 
     public int getMaxEditDistance() {
         return this.maxEditDistance;
+    }
+
+    public boolean isPrefixMatch() {
+        return this.prefixMatch;
+    }
+
+    public void setPrefixMatch(boolean prefixMatch) {
+        this.prefixMatch = prefixMatch;
+    }
+
+    @Override
+    protected boolean hasPrefixMatchSemantics() {
+        return this.prefixMatch;
     }
 
     @Override
@@ -89,43 +108,39 @@ public class FuzzyItem extends TermItem {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!super.equals(obj)) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        FuzzyItem other = (FuzzyItem) obj;
-        if (!this.term.equals(other.term)) return false;
-        if (this.maxEditDistance != other.maxEditDistance) return false;
-        if (this.prefixLength != other.prefixLength) return false;
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        FuzzyItem fuzzyItem = (FuzzyItem) o;
+        return maxEditDistance == fuzzyItem.maxEditDistance &&
+                prefixLength == fuzzyItem.prefixLength &&
+                prefixMatch == fuzzyItem.prefixMatch &&
+                Objects.equals(term, fuzzyItem.term);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), term, maxEditDistance, prefixLength);
+        return Objects.hash(super.hashCode(), term, maxEditDistance, prefixLength, prefixMatch);
     }
 
     @Override
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
-        buffer.append("(");
+        buffer.append('(');
         buffer.append(this.term);
-        buffer.append(",");
+        buffer.append(',');
         buffer.append(this.maxEditDistance);
-        buffer.append(",");
+        buffer.append(',');
         buffer.append(this.prefixLength);
-        buffer.append(")");
-        buffer.append(" ");
+        buffer.append(',');
+        buffer.append(this.prefixMatch);
+        buffer.append(") ");
     }
 
     @Override
     protected void encodeThis(ByteBuffer buffer) {
+        // Prefix matching is communicated via term header flags
         super.encodeThis(buffer);
         putString(getIndexedString(), buffer);
         IntegerCompressor.putCompressedPositiveNumber(this.maxEditDistance, buffer);

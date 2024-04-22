@@ -201,7 +201,8 @@ private:
         replicate(node, _builder.addFuzzyTerm(
                 node.getTerm(), node.getView(),
                 node.getId(), node.getWeight(),
-                node.getMaxEditDistance(), node.getPrefixLength()));
+                node.max_edit_distance(), node.prefix_lock_length(),
+                node.prefix_match()));
     }
 
     std::unique_ptr<TermVector> replicate_subterms(const InTerm& original) {

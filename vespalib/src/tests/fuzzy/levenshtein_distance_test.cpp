@@ -74,7 +74,11 @@ TEST(LevenshteinDistance, prefix_match_edge_cases) {
     EXPECT_EQ(prefix_calculate("xy",  "", 2), std::optional{2});
     EXPECT_EQ(prefix_calculate("xyz", "", 2), std::nullopt);
 
-    // Max edits > 2 cases; not supported by DFA implementation.
+    // Max edits not in {1, 2} cases; not supported by DFA implementation.
+    EXPECT_EQ(prefix_calculate("", "", 0),         std::optional{0});
+    EXPECT_EQ(prefix_calculate("abc", "abc", 0),   std::optional{0});
+    EXPECT_EQ(prefix_calculate("abc", "abcde", 0), std::optional{0});
+    EXPECT_EQ(prefix_calculate("abc", "dbc", 0),   std::nullopt);
     EXPECT_EQ(prefix_calculate("abc", "", 3),      std::optional{3});
     EXPECT_EQ(prefix_calculate("abc", "xy", 3),    std::optional{3});
     EXPECT_EQ(prefix_calculate("abc", "xyz", 3),   std::optional{3});
