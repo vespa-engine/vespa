@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/searchcommon/attribute/collectiontype.h>
 #include <cmath>
 #include <cstddef>
 
@@ -39,6 +41,22 @@ namespace search::queryeval::flow {
  */
 inline double heap_cost(double my_est, size_t num_children) {
     return my_est * std::log2(std::max(size_t(1), num_children));
+}
+
+/**
+ * Returns the number of memory indirections needed when doing lookups
+ * in an attribute with the given type.
+ */
+inline size_t get_num_indirections(const attribute::BasicType& basic_type,
+                                   const attribute::CollectionType& col_type) {
+    size_t res = 0;
+    if (basic_type == attribute::BasicType::STRING) {
+        res += 1;
+    }
+    if (col_type != attribute::CollectionType::SINGLE) {
+        res += 1;
+    }
+    return res;
 }
 
 // Non-strict cost of lookup based matching in an attribute (not fast-search).

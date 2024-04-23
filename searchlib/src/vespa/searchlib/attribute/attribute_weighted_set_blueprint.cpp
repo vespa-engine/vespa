@@ -2,19 +2,18 @@
 
 #include "attribute_weighted_set_blueprint.h"
 #include "multi_term_hash_filter.hpp"
+#include <vespa/searchcommon/attribute/hit_estimate_flow_stats_adapter.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
-#include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
+#include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
-
 
 namespace search {
 
@@ -130,20 +129,11 @@ AttributeWeightedSetBlueprint::sort(queryeval::InFlow in_flow)
 queryeval::FlowStats
 AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 {
-    struct MyAdapter {
-        uint32_t docid_limit;
-        MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
-        double estimate(const AttrHitEstimate &est) const noexcept {
-            return est.is_unknown() ? 0.5 : abs_to_rel_est(est.est_hits(), docid_limit);
-        }
-        double cost(const AttrHitEstimate &) const noexcept { return 1.0; }
-        double strict_cost(const AttrHitEstimate &est) const noexcept {
-            return est.is_unknown() ? 1.0 : abs_to_rel_est(est.est_hits(), docid_limit);
-        }
-    };
-    double est = OrFlow::estimate_of(MyAdapter(docid_limit), _estimates);
-    return {est, OrFlow::cost_of(MyAdapter(docid_limit), _estimates, false),
-            OrFlow::cost_of(MyAdapter(docid_limit), _estimates, true) + queryeval::flow::heap_cost(est, _estimates.size())};
+    using MyAdapter = attribute::HitEstimateFlowStatsAdapter;
+    size_t num_indirections = queryeval::flow::get_num_indirections(_attr.getBasicType(), _attr.getCollectionType());
+    double est = OrFlow::estimate_of(MyAdapter(docid_limit, num_indirections), _estimates);
+    return {est, OrFlow::cost_of(MyAdapter(docid_limit, num_indirections), _estimates, false),
+            OrFlow::cost_of(MyAdapter(docid_limit, num_indirections), _estimates, true) + queryeval::flow::heap_cost(est, _estimates.size())};
 }
 
 queryeval::SearchIterator::UP

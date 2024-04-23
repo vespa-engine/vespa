@@ -3,6 +3,7 @@
 #pragma once
 
 #include "direct_multi_term_blueprint.h"
+#include "direct_posting_store_flow_stats_adapter.h"
 #include "multi_term_or_filter_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -186,21 +187,7 @@ queryeval::FlowStats
 DirectMultiTermBlueprint<PostingStoreType, SearchType>::calculate_flow_stats(uint32_t docid_limit) const
 {
     using OrFlow = search::queryeval::OrFlow;
-    struct MyAdapter {
-        uint32_t docid_limit;
-        MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
-        double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
-            return abs_to_rel_est(term.posting_size, docid_limit);
-        }
-        double cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-            double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
-            return search::queryeval::flow::btree_cost(rel_est);
-        }
-        double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-            double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
-            return search::queryeval::flow::btree_strict_cost(rel_est);
-        }
-    };
+    using MyAdapter = DirectPostingStoreFlowStatsAdapter;
     double est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
     // Iterator benchmarking has shown that non-strict cost is different for attributes
     // that support using a reverse hash filter (see use_hash_filter()).
