@@ -547,11 +547,9 @@ TYPED_TEST(HnswIndexTest, manual_insert)
     this->init(false);
     EXPECT_EQ(0, this->get_active_nodes());
 
-    std::vector<uint32_t> nbl;
-    HnswTestNode empty{nbl};
-    this->index->set_node(1, empty);
+    this->index->set_node(1, std::vector<uint32_t>());
     EXPECT_EQ(1, this->get_active_nodes());
-    this->index->set_node(2, empty);
+    this->index->set_node(2, std::vector<uint32_t>());
     EXPECT_EQ(2, this->get_active_nodes());
 
     HnswTestNode three{{1,2}};
@@ -563,7 +561,7 @@ TYPED_TEST(HnswIndexTest, manual_insert)
 
     this->expect_entry_point(1, 0);
 
-    HnswTestNode twolevels{{{1},nbl}};
+    HnswTestNode twolevels{{{1},std::vector<uint32_t>()}};
     this->index->set_node(4, twolevels);
 
     this->expect_entry_point(4, 1);
@@ -641,11 +639,9 @@ TYPED_TEST(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
 TYPED_TEST(HnswIndexTest, shrink_called_simple)
 {
     this->init(false);
-    std::vector<uint32_t> nbl;
-    HnswTestNode empty{nbl};
+    HnswTestNode empty{std::vector<uint32_t>()};
     this->index->set_node(1, empty);
-    nbl.push_back(1);
-    HnswTestNode nb1{nbl};
+    HnswTestNode nb1{std::vector<uint32_t>(1, 1)};
     this->index->set_node(2, nb1);
     this->index->set_node(3, nb1);
     this->index->set_node(4, nb1);
@@ -681,11 +677,9 @@ TYPED_TEST(HnswIndexTest, shrink_called_simple)
 TYPED_TEST(HnswIndexTest, shrink_called_heuristic)
 {
     this->init(true);
-    std::vector<uint32_t> nbl;
-    HnswTestNode empty{nbl};
+    HnswTestNode empty{std::vector<uint32_t>()};
     this->index->set_node(1, empty);
-    nbl.push_back(1);
-    HnswTestNode nb1{nbl};
+    HnswTestNode nb1{std::vector<uint32_t>(1, 1)};
     this->index->set_node(2, nb1);
     this->index->set_node(3, nb1);
     this->index->set_node(4, nb1);
