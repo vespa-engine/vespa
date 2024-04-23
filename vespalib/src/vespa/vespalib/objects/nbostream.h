@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
+#include "nbo.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/bfloat16.h>
-#include "nbo.h"
+#include <vector>
 
 namespace vespalib {
 
@@ -22,7 +22,7 @@ public:
     using Buffer = Array<char>;
     using Alloc = alloc::Alloc;
     enum State { ok=0, eof=0x01, oob=0x02};
-    nbostream(size_t initialSize=1024);
+    explicit nbostream(size_t initialSize=1024);
 protected:
     nbostream(const void * buf, size_t sz, bool longLivedBuffer);
 public:
@@ -220,7 +220,7 @@ public:
 
 class nbostream_longlivedbuf : public nbostream {
 public:
-    nbostream_longlivedbuf(size_t initialSize=1024);
+    explicit nbostream_longlivedbuf(size_t initialSize=1024);
     nbostream_longlivedbuf(const void * buf, size_t sz);
 };
 

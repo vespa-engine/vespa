@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::tensor::TensorBufferOperations;

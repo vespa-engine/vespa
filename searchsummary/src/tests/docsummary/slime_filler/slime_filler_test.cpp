@@ -36,6 +36,7 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using document::ArrayFieldValue;
 using document::BoolFieldValue;

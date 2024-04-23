@@ -6,6 +6,7 @@
 #include "tensor_attribute_constants.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
 
 using vespalib::GenerationHandler;
