@@ -2,6 +2,7 @@
 
 #include "intermediate_blueprint_factory.h"
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <iomanip>
 #include <sstream>
 
 namespace search::queryeval::test {
