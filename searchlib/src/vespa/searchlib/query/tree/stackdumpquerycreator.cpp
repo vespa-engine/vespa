@@ -17,7 +17,7 @@ StackDumpQueryCreatorHelper::populateMultiTerm(SimpleQueryStackDumpIterator &que
         ParseItem::ItemType type = queryStack.getType();
         switch (type) {
             case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-                mt.addTerm(queryStack.getIntergerTerm(), queryStack.GetWeight());
+                mt.addTerm(queryStack.getIntegerTerm(), queryStack.GetWeight());
                 break;
             case ParseItem::ITEM_PURE_WEIGHTED_STRING:
                 mt.addTerm(queryStack.getTerm(), queryStack.GetWeight());
