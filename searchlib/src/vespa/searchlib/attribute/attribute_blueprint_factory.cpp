@@ -5,6 +5,7 @@
 #include "attribute_object_visitor.h"
 #include "attribute_weighted_set_blueprint.h"
 #include "direct_multi_term_blueprint.h"
+#include "direct_posting_store_flow_stats_adapter.h"
 #include "i_docid_posting_store.h"
 #include "i_docid_with_weight_posting_store.h"
 #include "in_term_search.h"
@@ -513,21 +514,7 @@ public:
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         using OrFlow = search::queryeval::OrFlow;
-        struct MyAdapter {
-            uint32_t docid_limit;
-            explicit MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
-            double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
-                return abs_to_rel_est(term.posting_size, docid_limit);
-            }
-            double cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-                double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
-                return btree_cost(rel_est);
-            }
-            double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-                double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
-                return btree_strict_cost(rel_est);
-            }
-        };
+        using MyAdapter = attribute::DirectPostingStoreFlowStatsAdapter;
         double child_est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
         double my_est = abs_to_rel_est(_scores.getScoresToTrack(), docid_limit);
         double est = (child_est + my_est) / 2.0;
