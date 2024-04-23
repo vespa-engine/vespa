@@ -2,7 +2,6 @@
 
 #include "hnsw_index.h"
 #include "bitvector_visited_tracker.h"
-#include "distance_function.h"
 #include "hash_set_visited_tracker.h"
 #include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
@@ -145,6 +144,9 @@ PreparedAddDoc::~PreparedAddDoc() = default;
 PreparedAddDoc::PreparedAddDoc(PreparedAddDoc&& other) noexcept = default;
 }
 
+SelectResult::SelectResult() noexcept = default;
+SelectResult::~SelectResult() = default;
+
 template <HnswIndexType type>
 ArrayStoreConfig
 HnswIndex<type>::make_default_level_array_store_config()
@@ -201,7 +203,7 @@ HnswIndex<type>::have_closer_distance(HnswTraversalCandidate candidate, const Hn
 
 template <HnswIndexType type>
 template <typename HnswCandidateVectorT>
-typename HnswIndex<type>::SelectResult
+SelectResult
 HnswIndex<type>::select_neighbors_simple(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
 {
     HnswCandidateVectorT sorted(neighbors);
@@ -219,7 +221,7 @@ HnswIndex<type>::select_neighbors_simple(const HnswCandidateVectorT& neighbors, 
 
 template <HnswIndexType type>
 template <typename HnswCandidateVectorT>
-typename HnswIndex<type>::SelectResult
+SelectResult
 HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
 {
     SelectResult result;
@@ -248,7 +250,7 @@ HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbor
 
 template <HnswIndexType type>
 template <typename HnswCandidateVectorT>
-typename HnswIndex<type>::SelectResult
+SelectResult
 HnswIndex<type>::select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const
 {
     if (_cfg.heuristic_select_neighbors()) {
@@ -582,7 +584,7 @@ HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_
 }
 
 template <HnswIndexType type>
-typename HnswIndex<type>::LinkArray
+LinkArray
 HnswIndex<type>::filter_valid_nodeids(uint32_t level, const typename PreparedAddNode::Links &neighbors, uint32_t self_nodeid)
 {
     LinkArray valid;
@@ -995,7 +997,7 @@ HnswIndex<type>::get_node(uint32_t nodeid) const
 {
     auto levels_ref = _graph.acquire_levels_ref(nodeid);
     if (!levels_ref.valid()) {
-        return HnswTestNode();
+        return {};
     }
     auto levels = _graph.levels_store.get(levels_ref);
     HnswTestNode::LevelArray result;
@@ -1005,7 +1007,7 @@ HnswIndex<type>::get_node(uint32_t nodeid) const
         std::sort(result_links.begin(), result_links.end());
         result.push_back(result_links);
     }
-    return HnswTestNode(result);
+    return {std::move(result)};
 }
 
 template <HnswIndexType type>
