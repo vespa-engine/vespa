@@ -180,7 +180,16 @@ template <HnswIndexType type>
 bool
 HnswIndex<type>::have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& result) const
 {
-    auto df = _distance_ff->for_insertion_vector(get_vector(candidate.nodeid));
+    auto candidate_vector = get_vector(candidate.nodeid);
+    if (!candidate_vector.valid()) {
+        /*
+         * We are in a read thread and the write thread has removed the
+         * tensor for the candidate. Return true to prevent the candidate
+         * from being considered.
+         */
+        return true;
+    }
+    auto df = _distance_ff->for_insertion_vector(candidate_vector);
     for (const auto & neighbor : result) {
         double dist = calc_distance(*df, neighbor.nodeid);
         if (dist < candidate.distance) {
