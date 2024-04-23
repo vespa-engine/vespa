@@ -22,7 +22,7 @@ class UrlDownloader implements Downloader {
 
     private static final Logger log = Logger.getLogger(UrlDownloader.class.getName());
     private static final String CONTENTS_FILE_NAME = "contents";
-    private static final String USER_AGENT_MODEL_DOWNLOADER = "Vespa.ai config-proxy url model downloader (https://github.com/vespa-engine/vespa)";
+    private static final String USER_AGENT_MODEL_DOWNLOADER = "Vespa/8.x (model download - https://github.com/vespa-engine/vespa)";
 
     @Override
     public Optional<File> downloadFile(String url, File downloadDir) throws IOException {
