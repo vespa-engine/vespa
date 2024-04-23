@@ -44,7 +44,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
     }
 
     @Override
-    public NodeResources requestToReal(NodeResources advertisedResources, CloudAccount enclaveAccount, boolean exclusive, boolean bestCase) {
+    public NodeResources requestToReal(NodeResources advertisedResources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
         var consideredFlavors = consideredFlavorsGivenAdvertised(advertisedResources);
         double memoryOverhead = consideredFlavors.stream()
                                                  .mapToDouble(flavor -> resourcesCalculator.memoryOverhead(flavor, advertisedResources, false))
