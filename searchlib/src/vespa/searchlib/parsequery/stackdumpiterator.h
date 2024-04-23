@@ -145,7 +145,7 @@ public:
 
     vespalib::stringref getIndexName() const noexcept { return _curr_index_name; }
     vespalib::stringref getTerm() const noexcept { return _curr_term; }
-    int64_t getIntergerTerm() const noexcept { return _curr_integer_term; }
+    int64_t getIntegerTerm() const noexcept { return _curr_integer_term; }
 
     static vespalib::stringref DEFAULT_INDEX;
 };

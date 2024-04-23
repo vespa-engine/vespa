@@ -159,7 +159,7 @@ private:
                 t = &builder.addStringTerm(term, pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
                 char buf[24];
-                auto res = std::to_chars(buf, buf + sizeof(buf), queryStack.getIntergerTerm(), 10);
+                auto res = std::to_chars(buf, buf + sizeof(buf), queryStack.getIntegerTerm(), 10);
                 t = &builder.addNumberTerm(vespalib::stringref(buf, res.ptr - buf), pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PREFIXTERM) {
                 t = &builder.addPrefixTerm(term, view, id, weight);
