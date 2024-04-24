@@ -25,8 +25,8 @@ public:
     uint32_t _activeBuffers;
     uint32_t _holdBuffers;
 
-    MemoryStats();
-    MemoryStats& operator+=(const MemoryStats& rhs);
+    MemoryStats() noexcept;
+    MemoryStats& operator+=(const MemoryStats& rhs) noexcept;
 };
 
 }
