@@ -20,6 +20,7 @@
 #include <vespa/vespalib/util/fake_doom.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <type_traits>
 #include <vector>
 
@@ -46,13 +47,19 @@ class MyDocVectorAccess : public DocVectorAccess {
 private:
     using Vector = std::vector<FloatType>;
     using ArrayRef = vespalib::ConstArrayRef<FloatType>;
-    std::vector<Vector> _vectors;
-    SubspaceType        _subspace_type;
+    mutable std::vector<Vector> _vectors;
+    SubspaceType                _subspace_type;
+    mutable uint32_t            _get_vector_count;
+    mutable uint32_t            _schedule_clear_tensor;
+    mutable uint32_t            _cleared_tensor_docid;
 
 public:
     MyDocVectorAccess()
         : _vectors(),
-          _subspace_type(ValueType::make_type(get_cell_type<FloatType>(), {{"dims", 2}}))
+          _subspace_type(ValueType::make_type(get_cell_type<FloatType>(), {{"dims", 2}})),
+          _get_vector_count(0),
+          _schedule_clear_tensor(0),
+          _cleared_tensor_docid(0)
     {
     }
     MyDocVectorAccess& set(uint32_t docid, const Vector& vec) {
@@ -62,12 +69,20 @@ public:
         _vectors[docid] = vec;
         return *this;
     }
-    void clear(uint32_t docid) {
+    void clear(uint32_t docid) const {
         if (docid < _vectors.size()) {
             _vectors[docid].clear();
         }
     }
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override {
+        ++_get_vector_count;
+        if (_schedule_clear_tensor != 0) {
+            if (--_schedule_clear_tensor == 0) {
+                // Simulate race where writer thread has cleared a tensor.
+                clear(docid);
+                _cleared_tensor_docid = docid;
+            }
+        }
         auto bundle = get_vectors(docid);
         if (subspace < bundle.subspaces()) {
             return bundle.cells(subspace);
@@ -82,7 +97,72 @@ public:
     }
 
     void clear() { _vectors.clear(); }
+
+    uint32_t get_vector_count() const noexcept { return _get_vector_count; }
+    void clear_cleared_tensor_docid() { _cleared_tensor_docid = 0; }
+    uint32_t get_cleared_tensor_docid() const noexcept { return _cleared_tensor_docid; }
+    void set_schedule_clear_tensor(uint32_t v) { _schedule_clear_tensor = v; }
 };
+
+class MyBoundDistanceFunction : public BoundDistanceFunction {
+    std::unique_ptr<BoundDistanceFunction> _real;
+
+public:
+    MyBoundDistanceFunction(std::unique_ptr<BoundDistanceFunction> real)
+        : _real(std::move(real))
+    {
+    }
+
+    ~MyBoundDistanceFunction() override;
+
+    double convert_threshold(double threshold) const noexcept override {
+        return _real->convert_threshold(threshold);
+    }
+    double to_rawscore(double distance) const noexcept override {
+        return _real->to_rawscore(distance);
+    }
+    double to_distance(double rawscore) const noexcept override {
+        return _real->to_distance(rawscore);
+    }
+
+    double min_rawscore() const noexcept override { return _real->min_rawscore(); }
+
+    double calc(TypedCells rhs) const noexcept override {
+        EXPECT_TRUE(rhs.valid());
+        return _real->calc(rhs);
+    }
+
+    double calc_with_limit(TypedCells rhs, double limit) const noexcept override {
+        EXPECT_TRUE(rhs.valid());
+        return _real->calc_with_limit(rhs, limit);
+    }
+};
+
+MyBoundDistanceFunction::~MyBoundDistanceFunction() = default;
+
+class MyDistanceFunctionFactory : public DistanceFunctionFactory
+{
+    std::unique_ptr<DistanceFunctionFactory> _real;
+public:
+    MyDistanceFunctionFactory(std::unique_ptr<DistanceFunctionFactory> real)
+        : _real(std::move(real))
+    {
+    }
+
+    ~MyDistanceFunctionFactory() override;
+
+    std::unique_ptr<BoundDistanceFunction> for_query_vector(TypedCells lhs) override {
+        EXPECT_TRUE(lhs.valid());
+        return std::make_unique<MyBoundDistanceFunction>(_real->for_query_vector(lhs));
+    }
+
+    std::unique_ptr<BoundDistanceFunction> for_insertion_vector(TypedCells lhs) override {
+        EXPECT_TRUE(lhs.valid());
+        return std::make_unique<MyBoundDistanceFunction>(_real->for_insertion_vector(lhs));
+    }
+};
+
+MyDistanceFunctionFactory::~MyDistanceFunctionFactory() = default;
 
 struct LevelGenerator : public RandomLevelGenerator {
     uint32_t level;
@@ -117,10 +197,14 @@ public:
 
     ~HnswIndexTest() override;
 
-    auto dff() {
+    auto dff_real() {
         return search::tensor::make_distance_function_factory(
                 search::attribute::DistanceMetric::Euclidean,
                 vespalib::eval::CellType::FLOAT);
+    }
+
+    auto dff() {
+        return std::make_unique<MyDistanceFunctionFactory>(dff_real());
     }
 
     void init(bool heuristic_select_neighbors) {
@@ -291,6 +375,11 @@ public:
      * use old graph.
      */
     void writer_clears_tensor(uint32_t docid) { vectors.clear(docid); }
+
+    uint32_t get_vector_count() const noexcept { return vectors.get_vector_count(); }
+    void clear_cleared_tensor_docid() { vectors.clear_cleared_tensor_docid(); }
+    uint32_t get_cleared_tensor_docid() const noexcept { return vectors.get_cleared_tensor_docid(); }
+    void set_schedule_clear_tensor(uint32_t v) { vectors.set_schedule_clear_tensor(v); }
 
     static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;
 };
@@ -982,6 +1071,7 @@ public:
                .set(1, {3, 7}).set(2, {7, 1}).set(3, {11, 7})
                .set(7, {6, 5}).set(8, {5, 5}).set(9, {6, 6});
     }
+    ~TwoPhaseTest() override;
     using UP = std::unique_ptr<PrepareResult>;
     UP prepare_add(uint32_t docid, uint32_t max_level = 0) {
         this->level_generator->level = max_level;
@@ -993,7 +1083,48 @@ public:
         this->index->complete_add_document(docid, std::move(up));
         this->commit();
     }
+
+    uint32_t prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const vespalib::string& label);
+    void prepare_insert_during_remove(bool heuristic_select_neighbors);
 };
+
+template <typename IndexType>
+TwoPhaseTest<IndexType>::~TwoPhaseTest() = default;
+
+template <typename IndexType>
+uint32_t
+TwoPhaseTest<IndexType>::prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const vespalib::string& label)
+{
+    SCOPED_TRACE(label);
+    this->init(heuristic_select_neighbors);
+    this->vectors.clear();
+    this->vectors.set(4, {1, 3}).set(2, {7, 1}).set(7, {6, 5});
+    this->make_savetest_index();
+    auto old_get_vector_count = this->get_vector_count();
+    this->set_schedule_clear_tensor(schedule_clear_tensor);
+    this->clear_cleared_tensor_docid();
+    auto prepared = this->prepare_add(2, 1);
+    auto result = this->get_vector_count() - old_get_vector_count;
+    auto cleared_tensor_docid = this->get_cleared_tensor_docid();
+    if (cleared_tensor_docid != 0) {
+        this->remove_document(cleared_tensor_docid);
+    }
+    this->complete_add(2, std::move(prepared));
+    EXPECT_EQ(((cleared_tensor_docid == 0u) ? 3 : 2), this->get_active_nodes());
+    return result;
+}
+
+template <typename IndexType>
+void
+TwoPhaseTest<IndexType>::prepare_insert_during_remove(bool heuristic_select_neighbors)
+{
+    auto get_vector_counts = prepare_insert_during_remove_pass(heuristic_select_neighbors, 0, "No clear tensor");
+    for (uint32_t schedule_clear_tensor = 1; schedule_clear_tensor <= get_vector_counts; ++schedule_clear_tensor) {
+        vespalib::asciistream os;
+        os << "Writer thread cleared tensor for get_vector (" << schedule_clear_tensor << " of " << get_vector_counts << ")";
+        prepare_insert_during_remove_pass(heuristic_select_neighbors, schedule_clear_tensor, os.str());
+    }
+}
 
 TYPED_TEST_SUITE(TwoPhaseTest, HnswIndexTestTypes);
 
@@ -1039,15 +1170,14 @@ TYPED_TEST(TwoPhaseTest, two_phase_add)
     this->expect_levels(nodeids[0], {{2}, {4}});
 }
 
-TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove)
+TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove_simple_select_neighbors)
 {
-    this->init(false);
-    this->make_savetest_index();
-    this->writer_clears_tensor(4);
-    auto prepared = this->prepare_add(2, 1);
-    this->remove_document(4);
-    this->complete_add(2, std::move(prepared));
-    EXPECT_EQ(2, this->get_active_nodes());
+    this->prepare_insert_during_remove(false);
+}
+
+TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove_heuristic_select_neighbors)
+{
+    this->prepare_insert_during_remove(true);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
