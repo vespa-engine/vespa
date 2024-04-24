@@ -22,11 +22,11 @@ private:
     struct ElemWithGen {
         T elem;
         generation_t gen;
-        ElemWithGen(T elem_in, generation_t gen_in)
+        ElemWithGen(T elem_in, generation_t gen_in) noexcept
             : elem(std::move(elem_in)),
               gen(gen_in)
         {}
-        size_t byte_size() const {
+        size_t byte_size() const noexcept {
             if constexpr (track_bytes_held) {
                 return elem->byte_size();
             }
@@ -54,7 +54,7 @@ private:
     void reclaim_internal(generation_t oldest_used_gen, Func callback);
 
 public:
-    GenerationHoldList();
+    GenerationHoldList() noexcept;
     ~GenerationHoldList();
 
     /**
@@ -99,7 +99,7 @@ public:
     template<typename Func>
     void reclaim_all(Func callback);
 
-    size_t get_held_bytes() const { return _held_bytes.load(std::memory_order_relaxed); }
+    size_t get_held_bytes() const noexcept { return _held_bytes.load(std::memory_order_relaxed); }
 
     // Static size of _phase_2_list might depend on std::deque implementation
     static constexpr size_t sizeof_phase_2_list = sizeof(ElemWithGenList);

@@ -83,7 +83,7 @@ public:
     using value_type = T;
     using size_type = size_t;
 
-    Array(const Alloc & initial=Alloc::alloc());
+    Array(const Alloc & initial=Alloc::alloc()) noexcept;
     Array(size_t sz, const Alloc & initial=Alloc::alloc());
     Array(Alloc && buf, size_t sz) noexcept;
     Array(Array &&rhs) noexcept;

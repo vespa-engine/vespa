@@ -4,7 +4,7 @@
 
 namespace vespalib::datastore {
 
-MemoryStats::MemoryStats()
+MemoryStats::MemoryStats() noexcept
     : _alloc_entries(0),
       _used_entries(0),
       _dead_entries(0),
@@ -20,7 +20,7 @@ MemoryStats::MemoryStats()
 }
 
 MemoryStats&
-MemoryStats::operator+=(const MemoryStats& rhs)
+MemoryStats::operator+=(const MemoryStats& rhs) noexcept
 {
     _alloc_entries += rhs._alloc_entries;
     _used_entries += rhs._used_entries;
