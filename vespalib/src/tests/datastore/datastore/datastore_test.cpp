@@ -475,7 +475,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 {
     constexpr size_t BASE_ALLOCATED = 4228;
-    constexpr size_t BASE_USED = 284;
+    constexpr size_t BASE_USED = 276;
     MyStore s;
     MyRef r = s.addEntry(10);
     s.addEntry(20);
@@ -494,7 +494,7 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
 {
     constexpr size_t BASE_ALLOCATED = 4228;
-    constexpr size_t BASE_USED = 284;
+    constexpr size_t BASE_USED = 276;
     MyStore s;
     MyRef r1 = s.addEntry(10);
     MyRef r2 = s.addEntry(20);
@@ -667,9 +667,9 @@ TEST(DataStoreTest, can_reuse_active_buffer_as_primary_buffer)
 TEST(DataStoreTest, control_static_sizes) {
     EXPECT_EQ(96, sizeof(BufferTypeBase));
     EXPECT_EQ(24, sizeof(FreeList));
-    EXPECT_EQ(48, sizeof(BufferFreeList));
+    EXPECT_EQ(40, sizeof(BufferFreeList));
     EXPECT_EQ(1, sizeof(BufferState::State));
-    EXPECT_EQ(120, sizeof(BufferState));
+    EXPECT_EQ(112, sizeof(BufferState));
     BufferState bs;
     EXPECT_EQ(0, bs.size());
 }

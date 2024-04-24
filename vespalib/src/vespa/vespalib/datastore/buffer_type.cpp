@@ -16,7 +16,7 @@ constexpr float DEFAULT_ALLOC_GROW_FACTOR = 0.2;
 }
 
 void
-BufferTypeBase::CleanContext::extraBytesCleaned(size_t value)
+BufferTypeBase::CleanContext::extraBytesCleaned(size_t value) noexcept
 {
     size_t extra_used_bytes = _extraUsedBytes.load(std::memory_order_relaxed);
     size_t extra_hold_bytes = _extraHoldBytes.load(std::memory_order_relaxed);
@@ -68,7 +68,7 @@ BufferTypeBase::~BufferTypeBase()
 }
 
 EntryCount
-BufferTypeBase::get_reserved_entries(uint32_t bufferId) const
+BufferTypeBase::get_reserved_entries(uint32_t bufferId) const noexcept
 {
     return bufferId == 0 ? 1u : 0u;
 }
@@ -99,7 +99,7 @@ BufferTypeBase::on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* used_
 }
 
 void
-BufferTypeBase::on_free(EntryCount used_entries)
+BufferTypeBase::on_free(EntryCount used_entries) noexcept
 {
     --_holdBuffers;
     assert(_hold_used_entries >= used_entries);
@@ -130,7 +130,7 @@ BufferTypeBase::is_dynamic_array_buffer_type() const noexcept
 }
 
 void
-BufferTypeBase::clamp_max_entries(uint32_t max_entries)
+BufferTypeBase::clamp_max_entries(uint32_t max_entries) noexcept
 {
     _max_entries = std::min(_max_entries, max_entries);
     _min_entries = std::min(_min_entries, _max_entries);
@@ -186,7 +186,7 @@ BufferTypeBase::calc_entries_to_alloc(uint32_t bufferId, EntryCount free_entries
 }
 
 uint32_t
-BufferTypeBase::get_scaled_num_entries_for_new_buffer() const
+BufferTypeBase::get_scaled_num_entries_for_new_buffer() const noexcept
 {
     uint32_t active_buffers_count = get_active_buffers_count();
     if (active_buffers_count <= 1u || _num_entries_for_new_buffer == 0u) {
@@ -200,7 +200,7 @@ BufferTypeBase::get_scaled_num_entries_for_new_buffer() const
     return scaled_result;
 }
 
-BufferTypeBase::AggregatedBufferCounts::AggregatedBufferCounts()
+BufferTypeBase::AggregatedBufferCounts::AggregatedBufferCounts() noexcept
     : _counts()
 {
 }
@@ -226,7 +226,7 @@ BufferTypeBase::AggregatedBufferCounts::remove_buffer(const std::atomic<EntryCou
 }
 
 BufferTypeBase::BufferCounts
-BufferTypeBase::AggregatedBufferCounts::last_buffer() const
+BufferTypeBase::AggregatedBufferCounts::last_buffer() const noexcept
 {
     BufferCounts result;
     assert(!_counts.empty());
@@ -237,7 +237,7 @@ BufferTypeBase::AggregatedBufferCounts::last_buffer() const
 }
 
 BufferTypeBase::BufferCounts
-BufferTypeBase::AggregatedBufferCounts::all_buffers() const
+BufferTypeBase::AggregatedBufferCounts::all_buffers() const noexcept
 {
     BufferCounts result;
     for (const auto& elem : _counts) {

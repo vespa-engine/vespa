@@ -31,11 +31,7 @@ class BufferState
 public:
     using Alloc = vespalib::alloc::Alloc;
 
-    enum class State : uint8_t {
-        FREE,
-        ACTIVE,
-        HOLD
-    };
+    enum class State : uint8_t { FREE, ACTIVE, HOLD };
 
 private:
     InternalBufferStats _stats;
@@ -56,7 +52,7 @@ public:
      * compaction should always be used to free up whole buffers.
      */
 
-    BufferState();
+    BufferState() noexcept;
     BufferState(const BufferState &) = delete;
     BufferState & operator=(const BufferState &) = delete;
     ~BufferState();
@@ -103,31 +99,31 @@ public:
      */
     void free_entries(EntryRef ref, size_t num_entries, size_t ref_offset);
 
-    BufferStats& stats() { return _stats; }
-    const BufferStats& stats() const { return _stats; }
+    BufferStats& stats() noexcept { return _stats; }
+    const BufferStats& stats() const noexcept { return _stats; }
 
-    void enable_free_list(FreeList& type_free_list) { _free_list.enable(type_free_list); }
-    void disable_free_list() { _free_list.disable(); }
+    void enable_free_list(FreeList& type_free_list) noexcept { _free_list.enable(type_free_list); }
+    void disable_free_list() noexcept { _free_list.disable(); }
 
-    size_t size() const { return _stats.size(); }
-    size_t capacity() const { return _stats.capacity(); }
-    size_t remaining() const { return _stats.remaining(); }
+    size_t size() const noexcept { return _stats.size(); }
+    size_t capacity() const noexcept { return _stats.capacity(); }
+    size_t remaining() const noexcept { return _stats.remaining(); }
     void dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer);
-    uint32_t getTypeId() const { return _typeId; }
-    uint32_t getArraySize() const { return _arraySize; }
-    bool getCompacting() const { return _compacting; }
-    void setCompacting() { _compacting = true; }
+    uint32_t getTypeId() const noexcept { return _typeId; }
+    uint32_t getArraySize() const noexcept { return _arraySize; }
+    bool getCompacting() const noexcept { return _compacting; }
+    void setCompacting() noexcept { _compacting = true; }
     void fallback_resize(uint32_t bufferId, size_t free_entries_needed, std::atomic<void*>& buffer, Alloc &holdBuffer);
 
-    bool isActive(uint32_t typeId) const {
+    bool isActive(uint32_t typeId) const noexcept {
         return (isActive() && (_typeId == typeId));
     }
-    bool isActive() const { return (getState() == State::ACTIVE); }
-    bool isOnHold() const { return (getState() == State::HOLD); }
-    bool isFree() const { return (getState() == State::FREE); }
-    State getState() const { return _state.load(std::memory_order_relaxed); }
-    const BufferTypeBase *getTypeHandler() const { return _typeHandler.load(std::memory_order_relaxed); }
-    BufferTypeBase *getTypeHandler() { return _typeHandler.load(std::memory_order_relaxed); }
+    bool isActive() const noexcept { return (getState() == State::ACTIVE); }
+    bool isOnHold() const noexcept { return (getState() == State::HOLD); }
+    bool isFree() const noexcept { return (getState() == State::FREE); }
+    State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
+    const BufferTypeBase *getTypeHandler() const noexcept { return _typeHandler.load(std::memory_order_relaxed); }
+    BufferTypeBase *getTypeHandler() noexcept { return _typeHandler.load(std::memory_order_relaxed); }
 
     void resume_primary_buffer(uint32_t buffer_id);
 };
@@ -141,7 +137,7 @@ public:
     uint32_t getTypeId() const noexcept { return _typeId; }
     uint32_t get_array_size() const noexcept { return _array_size; }
     BufferState * get_state_relaxed() noexcept { return _state.load(std::memory_order_relaxed); }
-    const BufferState * get_state_acquire() const { return _state.load(std::memory_order_acquire); }
+    const BufferState * get_state_acquire() const noexcept  { return _state.load(std::memory_order_acquire); }
     uint32_t get_entry_size() const noexcept { return _entry_size; }
     void setTypeId(uint32_t typeId) noexcept { _typeId = typeId; }
     void set_array_size(uint32_t arraySize) noexcept { _array_size = arraySize; }

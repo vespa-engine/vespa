@@ -49,7 +49,7 @@ public:
 
     void reclaim_all_entry_refs() override;
 
-    bool getCompacting(EntryRef ref) {
+    bool getCompacting(EntryRef ref) noexcept {
         return getBufferState(RefType(ref).bufferId()).getCompacting();
     }
 
