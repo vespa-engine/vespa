@@ -30,7 +30,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart
  * valid JSON representation of a feed.
  *
  * @author Steinar Knutsen
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class JsonReader {
 

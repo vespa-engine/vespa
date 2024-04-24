@@ -15,7 +15,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * This code is based on v2 code, but restructured so stream reading code is in one dedicated class.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class StreamReaderV3 {
 

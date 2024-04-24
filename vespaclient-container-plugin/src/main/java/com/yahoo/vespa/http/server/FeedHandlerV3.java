@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * One client has one ClientFeederV3 shared between all client threads.
  * Contains logic for shutting down cleanly as the server is upgraded.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
 

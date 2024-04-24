@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * Filter based on the parent host value (for virtualized nodes).
  * 
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class ParentHostFilter {
 

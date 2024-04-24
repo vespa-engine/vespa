@@ -4,7 +4,7 @@ package com.yahoo.messagebus;
 /**
  * This is an implementation of the {@link ThrottlePolicy} that passes all requests (no real throttling).
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class AllPassThrottlePolicy implements ThrottlePolicy {
 

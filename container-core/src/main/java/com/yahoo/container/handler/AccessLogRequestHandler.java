@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 /**
  * Exposes access log through http.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class AccessLogRequestHandler extends ThreadedHttpRequestHandler {
 
