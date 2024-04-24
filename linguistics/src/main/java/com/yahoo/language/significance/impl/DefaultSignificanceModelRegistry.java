@@ -2,7 +2,6 @@
 package com.yahoo.language.significance.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationConfig;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.Language;
 import com.yahoo.language.significance.SignificanceModel;
@@ -10,10 +9,12 @@ import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.search.significance.config.SignificanceConfig;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Default implementation of {@link SignificanceModelRegistry}.
@@ -28,40 +29,30 @@ public class DefaultSignificanceModelRegistry implements SignificanceModelRegist
     @Inject
     public DefaultSignificanceModelRegistry(SignificanceConfig cfg) {
         this.models = new EnumMap<>(Language.class);
-        ObjectMapper objectMapper = new ObjectMapper();
         for (var model : cfg.model()) {
-            try {
-                SignificanceModelFile file = objectMapper.readValue(model.path().toFile(), SignificanceModelFile.class);
-
-                for (var pair : file.languages().entrySet()) {
-                    addModel(
-                            Language.fromLanguageTag(pair.getKey()), new DefaultSignificanceModel(pair.getValue(), file.id()));
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to load model from " + model.path(), e);
-            }
+           addModel(model.path());
         }
     }
 
     public DefaultSignificanceModelRegistry(List<Path> models) {
         this.models = new EnumMap<>(Language.class);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        for (var model : models) {
-            try {
-                SignificanceModelFile file = objectMapper.readValue(model.toFile(), SignificanceModelFile.class);
-                for (var pair : file.languages().entrySet()) {
-                    addModel(
-                            Language.fromLanguageTag(pair.getKey()), new DefaultSignificanceModel(pair.getValue(), file.id()));
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to load model from " + model, e);
-            }
+        for (var path : models) {
+            addModel(path);
         }
     }
 
-    public void addModel(Language lang, SignificanceModel model) {
-        this.models.put(lang, model);
+    public void addModel(Path path) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            SignificanceModelFile file = objectMapper.readValue(path.toFile(), SignificanceModelFile.class);
+            for (var pair : file.languages().entrySet()) {
+                this.models.put(
+                        Language.fromLanguageTag(pair.getKey()),
+                        new DefaultSignificanceModel(pair.getValue(), file.id()));
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to load model from " + path, e);
+        }
     }
 
     @Override

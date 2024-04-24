@@ -6,8 +6,6 @@
     "en": {
       "description" : "english model",
       "document-count" : 14,
-      "language" : "en",
-      "word-count" : 5,
       "document-frequencies" : {
         "usa" : 2,
         "hello": 3,
@@ -19,8 +17,6 @@
     "nb": {
       "description" : "norwegian model",
       "document-count" : 20,
-      "language" : "en",
-      "word-count" : 7,
       "document-frequencies" : {
         "usa" : 2,
         "hello": 10,

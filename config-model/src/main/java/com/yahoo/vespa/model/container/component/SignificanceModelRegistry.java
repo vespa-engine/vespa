@@ -32,8 +32,9 @@ public class SignificanceModelRegistry extends SimpleComponent implements Signif
         super(new ComponentModel(BundleInstantiationSpecification.fromStrings(CLASS, CLASS, BUNDLE)));
         if (spec != null) {
 
-        for (Element modelElement : XML.getChildren(spec, "model")) {
-            addConfig(Model.fromXml(deployState, modelElement, Set.of(SIGNIFICANCE_MODEL)).modelReference());
+            for (Element modelElement : XML.getChildren(spec, "model")) {
+                addConfig(Model.fromXml(deployState, modelElement, Set.of(SIGNIFICANCE_MODEL)).modelReference());
+            }
         }
     }
 
@@ -56,7 +57,7 @@ public class SignificanceModelRegistry extends SimpleComponent implements Signif
     }
 
 
-    class SignificanceModelConfig {
+    static class SignificanceModelConfig {
         private final ModelReference path;
 
         public SignificanceModelConfig(ModelReference path) {

@@ -2,13 +2,17 @@
   "version" : "1.0",
   "id" : "test::1",
   "description" : "desc",
-  "corpus-size" : 10,
-  "language" : "en",
-  "word-count" : 4,
-  "frequencies" : {
-    "usa" : 2,
-    "hello": 3,
-    "world": 5,
-    "test": 2
+  "languages" : {
+    "en": {
+      "description" : "english model",
+      "document-count" : 10,
+      "language" : "en",
+      "document-frequencies" : {
+        "usa" : 2,
+        "hello": 3,
+        "world": 5,
+        "test": 2
+      }
+    }
   }
 }

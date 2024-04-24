@@ -15,7 +15,9 @@ import com.yahoo.search.significance.SignificanceSearcher;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 
 import static com.yahoo.test.JunitCompat.assertEquals;
@@ -30,10 +32,10 @@ public class SignificanceSearcherTest {
     SignificanceSearcher searcher;
 
     public SignificanceSearcherTest() {
-        HashMap<Language, Path> map = new HashMap<>();
-        map.put(Language.ENGLISH, Path.of("src/test/java/com/yahoo/search/significance/model/en.json"));
+        List<Path> models = new ArrayList<>();
+        models.add( Path.of("src/test/java/com/yahoo/search/significance/model/en.json"));
 
-        significanceModelRegistry = new DefaultSignificanceModelRegistry(map);
+        significanceModelRegistry = new DefaultSignificanceModelRegistry(models);
         searcher = new SignificanceSearcher(significanceModelRegistry);
     }
 

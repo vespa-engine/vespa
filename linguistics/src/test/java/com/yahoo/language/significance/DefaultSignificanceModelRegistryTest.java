@@ -64,8 +64,14 @@ public class DefaultSignificanceModelRegistryTest {
 
         DefaultSignificanceModelRegistry defaultSignificanceModelRegistry = new DefaultSignificanceModelRegistry(models);
 
-        var englishModel = defaultSignificanceModelRegistry.getModel(Language.ENGLISH);
-        var norwegianModel = defaultSignificanceModelRegistry.getModel(Language.NORWEGIAN_BOKMAL);
+        var optionalEnglishModel = defaultSignificanceModelRegistry.getModel(Language.ENGLISH);
+        var optionalNorwegianModel = defaultSignificanceModelRegistry.getModel(Language.NORWEGIAN_BOKMAL);
+
+        assertTrue(optionalEnglishModel.isPresent());
+        assertTrue(optionalNorwegianModel.isPresent());
+
+        var englishModel = optionalEnglishModel.get();
+        var norwegianModel = optionalNorwegianModel.get();
 
         assertNotNull(englishModel);
         assertNotNull(norwegianModel);
