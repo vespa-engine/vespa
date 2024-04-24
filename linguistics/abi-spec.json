@@ -803,7 +803,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract com.yahoo.language.significance.DocumentFrequency documentFrequency(java.lang.String)"
+      "public abstract com.yahoo.language.significance.DocumentFrequency documentFrequency(java.lang.String)",
+      "public abstract java.lang.String getId()"
     ],
     "fields" : [ ]
   },

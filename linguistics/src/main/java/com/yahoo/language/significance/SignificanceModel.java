@@ -9,4 +9,6 @@ import com.yahoo.api.annotations.Beta;
 @Beta
 public interface SignificanceModel {
     DocumentFrequency documentFrequency(String word);
+
+    String getId();
 }
