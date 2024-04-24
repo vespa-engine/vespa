@@ -84,6 +84,12 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag FIX_CONFIG_SERVER_HEAP = defineFeatureFlag(
+            "fix-config-server-heap", false,
+            List.of("hakonhall"), "2024-04-23", "2024-05-23",
+            "Base the calculation of the config server JVM heap size on the amount of memory available to the container.",
+            "Takes effect on start of config server Podman container");
+
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
