@@ -207,7 +207,7 @@ Documents = element documents {
 ContentNode = element node {
     GenericConfig* &
     service.attlist &
-    attribute distribution-key { xsd:nonNegativeInteger } &
+    attribute distribution-key { xsd:nonNegativeInteger { maxInclusive = "65534" } } &
     attribute capacity { xsd:double { minExclusive = "0.0" } }? &
     attribute mmap-core-limit { xsd:nonNegativeInteger }? &
     attribute core-on-oom { xsd:boolean }? &

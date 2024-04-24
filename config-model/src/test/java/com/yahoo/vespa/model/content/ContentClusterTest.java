@@ -54,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -1260,7 +1261,7 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void verifyt_max_tls_size() throws Exception {
+    void verify_max_tls_size() throws Exception {
         var flavor = new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().name("test").minDiskAvailableGb(100)));
         assertEquals(21474836480L, resolveMaxTLSSize(Optional.empty()));
         assertEquals(2147483648L, resolveMaxTLSSize(Optional.of(flavor)));
@@ -1485,6 +1486,24 @@ public class ContentClusterTest extends ContentBaseTest {
         assertFalse(resolveDistributorOperationCancellationConfig(0));
         assertTrue(resolveDistributorOperationCancellationConfig(1));
         assertTrue(resolveDistributorOperationCancellationConfig(2));
+    }
+
+    @Test
+    void node_distribution_key_outside_legal_range_is_disallowed() {
+        // Only [0, UINT16_MAX - 1] is a valid range. UINT16_MAX is a special content layer-internal
+        // sentinel value that must never be used by actual nodes.
+        for (int distKey : List.of(-1, 65535, 65536, 100000)) {
+            assertThrows(IllegalArgumentException.class, () ->
+                    parse("""
+                            <content version="1.0" id="storage">
+                              <documents/>
+                              <redundancy>1</redundancy>
+                              <group>
+                                <node hostalias='mockhost' distribution-key='%d' />
+                              </group>
+                            </content>""".formatted(distKey)
+                        ));
+        }
     }
 
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {
