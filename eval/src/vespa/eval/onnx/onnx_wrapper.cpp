@@ -163,7 +163,7 @@ class OnnxString {
 private:
     static Ort::AllocatorWithDefaultOptions _alloc;
     Ort::AllocatedStringPtr _str;
-    OnnxString(Ort::AllocatedStringPtr str) : _str(std::move(str)) {}
+    OnnxString(Ort::AllocatedStringPtr str) noexcept : _str(std::move(str)) {}
 public:
     OnnxString(const OnnxString &rhs) = delete;
     OnnxString &operator=(const OnnxString &rhs) = delete;
