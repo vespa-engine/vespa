@@ -253,6 +253,12 @@ SimpleIndex<Posting, Key, DocId>::getDocumentCount(vespalib::datastore::EntryRef
 };
 
 template <typename Posting, typename Key, typename DocId>
+size_t
+SimpleIndex<Posting, Key, DocId>::get_frozen_document_count(vespalib::datastore::EntryRef ref) const {
+    return _btree_posting_lists.frozenSize(ref);
+};
+
+template <typename Posting, typename Key, typename DocId>
 bool
 SimpleIndex<Posting, Key, DocId>::shouldRemoveVectorPosting(size_t size, double ratio) const {
     return size < _config.lower_vector_size_threshold || ratio < _config.lower_docid_freq_threshold;
