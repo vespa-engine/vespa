@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * avoid using a threadpool that has no effect with all the extra that comes with it. V2 has one instance per thread
  * on the client, while this is one instance for all threads.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 class ClientFeederV3 {
 

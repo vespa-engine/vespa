@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * This class keeps some information from the access log from the requests in memory. It is thread-safe.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class CircularArrayAccessLogKeeper {
     public static final int SIZE = 1000;

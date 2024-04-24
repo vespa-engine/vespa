@@ -11,7 +11,7 @@ import java.io.InputStream;
 
 /**
  * Class for creating FeedReader based on dataFormat.
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class FeedReaderFactory {
     private static final int MARK_READLIMIT = 200;

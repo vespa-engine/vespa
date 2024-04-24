@@ -11,7 +11,7 @@ import com.yahoo.vespaxmlparser.FeedOperation;
 /**
  * Keeps an operation with its message.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 class DocumentOperationMessageV3 {
 
