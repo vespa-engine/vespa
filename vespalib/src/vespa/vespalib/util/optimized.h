@@ -16,15 +16,15 @@ namespace vespalib {
 class Optimized
 {
 public:
-    static int msbIdx(unsigned int v);
-    static int msbIdx(unsigned long v);
-    static int msbIdx(unsigned long long v);
-    static int lsbIdx(unsigned int v);
-    static int lsbIdx(unsigned long v);
-    static int lsbIdx(unsigned long long v);
-    static constexpr int popCount(unsigned int v) { return __builtin_popcount(v); }
-    static constexpr int popCount(unsigned long v) { return __builtin_popcountl(v); }
-    static constexpr int popCount(unsigned long long v) { return __builtin_popcountll(v); }
+    static int msbIdx(unsigned int v) noexcept;
+    static int msbIdx(unsigned long v) noexcept;
+    static int msbIdx(unsigned long long v) noexcept;
+    static int lsbIdx(unsigned int v) noexcept;
+    static int lsbIdx(unsigned long v) noexcept;
+    static int lsbIdx(unsigned long long v) noexcept;
+    static constexpr int popCount(unsigned int v) noexcept { return __builtin_popcount(v); }
+    static constexpr int popCount(unsigned long v) noexcept { return __builtin_popcountl(v); }
+    static constexpr int popCount(unsigned long long v) noexcept { return __builtin_popcountll(v); }
 };
 
 /**
@@ -64,43 +64,43 @@ public:
  **/
 
 #ifdef __x86_64__
-inline int Optimized::msbIdx(unsigned int v) {
+inline int Optimized::msbIdx(unsigned int v) noexcept {
     unsigned int result;
     __asm __volatile("bsrl %0,%0" : "=r" (result) : "0" (v));
     return result;
 }
-inline int Optimized::lsbIdx(unsigned int v) {
+inline int Optimized::lsbIdx(unsigned int v) noexcept {
     unsigned int result;
     __asm __volatile("bsfl %0,%0" : "=r" (result) : "0" (v));
     return result;
 }
-inline int Optimized::msbIdx(unsigned long v) {
+inline int Optimized::msbIdx(unsigned long v) noexcept {
     unsigned long result;
     __asm __volatile("bsrq %0,%0" : "=r" (result) : "0" (v));
     return result;
 }
-inline int Optimized::lsbIdx(unsigned long v) {
+inline int Optimized::lsbIdx(unsigned long v) noexcept {
     unsigned long result;
     __asm __volatile("bsfq %0,%0" : "=r" (result) : "0" (v));
     return result;
 }
-inline int Optimized::msbIdx(unsigned long long v) {
+inline int Optimized::msbIdx(unsigned long long v) noexcept {
     unsigned long long result;
     __asm __volatile("bsrq %0,%0" : "=r" (result) : "0" (v));
     return result;
 }
-inline int Optimized::lsbIdx(unsigned long long v) {
+inline int Optimized::lsbIdx(unsigned long long v) noexcept {
     unsigned long long result;
     __asm __volatile("bsfq %0,%0" : "=r" (result) : "0" (v));
     return result;
 }
 #else
-inline int Optimized::msbIdx(unsigned int v) { return v ? sizeof(unsigned int) * 8 - 1 - __builtin_clz(v) : 0; }
-inline int Optimized::msbIdx(unsigned long v) { return v ? sizeof(unsigned long) * 8 - 1 - __builtin_clzl(v) : 0; }
-inline int Optimized::msbIdx(unsigned long long v) { return v ? sizeof(unsigned long long) * 8 - 1 - __builtin_clzll(v) : 0; }
-inline int Optimized::lsbIdx(unsigned int v) { return v ? __builtin_ctz(v) : 0; }
-inline int Optimized::lsbIdx(unsigned long v) { return v ? __builtin_ctzl(v) : 0; }
-inline int Optimized::lsbIdx(unsigned long long v) { return v ? __builtin_ctzll(v) : 0; }
+inline int Optimized::msbIdx(unsigned int v) noexcept { return v ? sizeof(unsigned int) * 8 - 1 - __builtin_clz(v) : 0; }
+inline int Optimized::msbIdx(unsigned long v) noexcept { return v ? sizeof(unsigned long) * 8 - 1 - __builtin_clzl(v) : 0; }
+inline int Optimized::msbIdx(unsigned long long v) noexcept  { return v ? sizeof(unsigned long long) * 8 - 1 - __builtin_clzll(v) : 0; }
+inline int Optimized::lsbIdx(unsigned int v) noexcept { return v ? __builtin_ctz(v) : 0; }
+inline int Optimized::lsbIdx(unsigned long v) noexcept { return v ? __builtin_ctzl(v) : 0; }
+inline int Optimized::lsbIdx(unsigned long long v) noexcept { return v ? __builtin_ctzll(v) : 0; }
 #endif
 
 #define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))

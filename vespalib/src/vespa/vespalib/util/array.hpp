@@ -148,15 +148,15 @@ void Array<T>::increase(size_t n)
 }
 
 template <typename T>
-Array<T>::Array(const Alloc & initial)
+Array<T>::Array(const Alloc & initial) noexcept
     : _array(initial.create(0)),
       _sz(0)
 { }
 
 template <typename T>
-Array<T>::Array(Alloc && buf, size_t sz) noexcept :
-    _array(std::move(buf)),
-    _sz(sz)
+Array<T>::Array(Alloc && buf, size_t sz) noexcept
+    : _array(std::move(buf)),
+      _sz(sz)
 {
 }
 
@@ -170,25 +170,25 @@ Array<T>::Array(Array &&rhs) noexcept
 }
 
 template <typename T>
-Array<T>::Array(size_t sz, const Alloc & initial) :
-    _array(initial.create(sz * sizeof(T))),
-    _sz(sz)
+Array<T>::Array(size_t sz, const Alloc & initial)
+    : _array(initial.create(sz * sizeof(T))),
+      _sz(sz)
 {
     construct(array(0), _sz, std::is_trivially_default_constructible<T>());
 }
 
 template <typename T>
-Array<T>::Array(size_t sz, T value, const Alloc & initial) :
-    _array(initial.create(sz * sizeof(T))),
-    _sz(sz)
+Array<T>::Array(size_t sz, T value, const Alloc & initial)
+    : _array(initial.create(sz * sizeof(T))),
+      _sz(sz)
 {
     construct(array(0), _sz, value, std::is_trivially_copyable<T>());
 }
 
 template <typename T>
-Array<T>::Array(const_iterator begin_, const_iterator end_, const Alloc & initial) :
-    _array(initial.create(begin_ != end_ ? sizeof(T) * (end_-begin_) : 0)),
-    _sz(end_-begin_)
+Array<T>::Array(const_iterator begin_, const_iterator end_, const Alloc & initial)
+    : _array(initial.create(begin_ != end_ ? sizeof(T) * (end_-begin_) : 0)),
+      _sz(end_-begin_)
 {
     construct(array(0), begin_, _sz, std::is_trivially_copyable<T>());
 }

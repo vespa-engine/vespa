@@ -84,7 +84,7 @@ private:
         : _alloc(allocator->alloc(sz)),
           _allocator(allocator)
     { }
-    Alloc(const MemoryAllocator * allocator) noexcept
+    explicit Alloc(const MemoryAllocator * allocator) noexcept
         : _alloc(),
           _allocator(allocator)
     { }
@@ -102,19 +102,19 @@ namespace vespalib {
 
 /// Rounds up to the closest number that is a power of 2
 inline size_t
-roundUp2inN(size_t minimum) {
+roundUp2inN(size_t minimum) noexcept {
     return 2ul << Optimized::msbIdx(minimum - 1);
 }
 
 /// Rounds minElems up to the closest number where minElems*elemSize is a power of 2
 inline size_t
-roundUp2inN(size_t minElems, size_t elemSize) {
+roundUp2inN(size_t minElems, size_t elemSize) noexcept {
     return roundUp2inN(minElems * elemSize)/elemSize;
 }
 
 template <typename T>
 size_t
-roundUp2inN(size_t elems) {
+roundUp2inN(size_t elems) noexcept {
     return roundUp2inN(elems, sizeof(T));
 }
 

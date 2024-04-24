@@ -19,12 +19,12 @@ private:
     size_t	 _byte_size;
 
 public:
-    GenerationHeldBase(size_t byte_size_in)
+    GenerationHeldBase(size_t byte_size_in) noexcept
         : _byte_size(byte_size_in)
     { }
 
     virtual ~GenerationHeldBase();
-    size_t byte_size() const { return _byte_size; }
+    constexpr size_t byte_size() const noexcept { return _byte_size; }
 };
 
 using GenerationHolderParent = GenerationHoldList<GenerationHeldBase::UP, true, false>;
@@ -35,7 +35,7 @@ using GenerationHolderParent = GenerationHoldList<GenerationHeldBase::UP, true, 
  */
 class GenerationHolder : public GenerationHolderParent {
 public:
-    GenerationHolder();
+    GenerationHolder() noexcept;
 };
 
 }

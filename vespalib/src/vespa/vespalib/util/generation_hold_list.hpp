@@ -12,7 +12,7 @@ void
 GenerationHoldList<T, track_bytes_held, use_deque>::assign_generation_internal(generation_t current_gen)
 {
     for (auto& elem : _phase_1_list) {
-        _phase_2_list.push_back(ElemWithGen(std::move(elem), current_gen));
+        _phase_2_list.emplace_back(std::move(elem), current_gen);
     }
     _phase_1_list.clear();
 }
@@ -40,7 +40,7 @@ GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_internal(generation_
 }
 
 template <typename T, bool track_bytes_held, bool use_deque>
-GenerationHoldList<T, track_bytes_held, use_deque>::GenerationHoldList()
+GenerationHoldList<T, track_bytes_held, use_deque>::GenerationHoldList() noexcept
     : _phase_1_list(),
       _phase_2_list(),
       _held_bytes()

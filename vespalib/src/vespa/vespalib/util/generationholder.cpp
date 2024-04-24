@@ -12,7 +12,7 @@ template void GenerationHolderParent::reclaim_internal
 
 GenerationHeldBase::~GenerationHeldBase() = default;
 
-GenerationHolder::GenerationHolder()
+GenerationHolder::GenerationHolder() noexcept
     : GenerationHolderParent()
 {
 }
