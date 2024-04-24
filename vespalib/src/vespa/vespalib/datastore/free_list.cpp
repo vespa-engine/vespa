@@ -6,7 +6,7 @@
 
 namespace vespalib::datastore {
 
-FreeList::FreeList()
+FreeList::FreeList() noexcept
     : _free_lists()
 {
 }
@@ -23,7 +23,7 @@ FreeList::attach(BufferFreeList& buf_list)
 }
 
 void
-FreeList::detach(BufferFreeList& buf_list)
+FreeList::detach(BufferFreeList& buf_list) noexcept
 {
     if (!_free_lists.empty() && (_free_lists.back() == &buf_list)) {
         _free_lists.pop_back();

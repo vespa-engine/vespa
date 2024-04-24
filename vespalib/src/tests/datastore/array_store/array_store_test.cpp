@@ -278,10 +278,10 @@ TYPED_TEST(NumberStoreTest, control_static_sizes) {
     MemoryUsage usage = this->store.getMemoryUsage();
     if (this->simple_buffers()) {
         EXPECT_EQ(202140u, usage.allocatedBytes());
-        EXPECT_EQ(197680u, usage.usedBytes());
+        EXPECT_EQ(197648u, usage.usedBytes());
     } else {
         EXPECT_EQ(202328u, usage.allocatedBytes());
-        EXPECT_EQ(197568u, usage.usedBytes());
+        EXPECT_EQ(197536u, usage.usedBytes());
     }
 }
 
