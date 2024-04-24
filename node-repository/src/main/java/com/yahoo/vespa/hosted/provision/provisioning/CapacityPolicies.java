@@ -49,15 +49,13 @@ public class CapacityPolicies {
     }
 
     private ClusterResources applyOn(ClusterResources resources, Capacity capacity, ApplicationId application, boolean exclusive) {
-        int nodes = decideSize(resources.nodes(), capacity.isRequired(), application.instance().isTester());
-        int groups = Math.min(resources.groups(), nodes); // cannot have more groups than nodes
-        while (groups > 1 && nodes % groups != 0)
-            groups--; // Must be divisible by the number of groups
+        int nodes = decideCount(resources.nodes(), capacity.isRequired(), application.instance().isTester());
+        int groups = decideGroups(resources.nodes(), resources.groups(), nodes);
         var nodeResources = decideNodeResources(resources.nodeResources(), capacity.isRequired(), exclusive);
         return new ClusterResources(nodes, groups, nodeResources);
     }
 
-    private int decideSize(int requested, boolean required, boolean isTester) {
+    private int decideCount(int requested, boolean required, boolean isTester) {
         if (isTester) return 1;
 
         if (required) return requested;
@@ -67,6 +65,14 @@ public class CapacityPolicies {
             case staging -> requested <= 1 ? requested : Math.max(2, requested / 10);
             case prod -> requested;
         };
+    }
+
+    private int decideGroups(int requestedNodes, int requestedGroups, int decidedNodes) {
+        if (requestedNodes == decidedNodes) return requestedGroups;
+        int groups = Math.min(requestedGroups, decidedNodes); // cannot have more groups than nodes
+        while (groups > 1 && decidedNodes % groups != 0)
+            groups--; // Must be divisible by the number of groups
+        return groups;
     }
 
     private NodeResources decideNodeResources(NodeResources target, boolean required, boolean exclusive) {
