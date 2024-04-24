@@ -422,12 +422,6 @@ public class Flags {
             "Role definitions for the system",
             "Takes effect immediately");
 
-    public static UnboundBooleanFlag NEW_PATH_FOR_DISK_ENCRYPTION_KEY_METADATA  = defineFeatureFlag(
-            "new-path-for-disk-encryption-key-metadata", true,
-            List.of("hmusum"), "2024-04-08", "2024-06-01",
-            "Whether to read and write disk encryption key to new path",
-            "Will be read only on boot.");
-
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 1,
             List.of("vekterli"), "2024-04-12", "2025-01-01",
