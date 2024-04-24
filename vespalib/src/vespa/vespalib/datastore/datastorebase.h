@@ -64,10 +64,10 @@ public:
      */
     void switch_primary_buffer(uint32_t typeId, size_t entries_needed);
 
-    vespalib::MemoryUsage getMemoryUsage() const;
-    vespalib::MemoryUsage getDynamicMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const noexcept;
+    vespalib::MemoryUsage getDynamicMemoryUsage() const noexcept;
 
-    vespalib::AddressSpace getAddressSpaceUsage() const;
+    vespalib::AddressSpace getAddressSpaceUsage() const noexcept;
 
     /**
      * Get the primary buffer id for the given type id.
@@ -135,7 +135,7 @@ public:
     /**
      * Disable free list management.
      */
-    void disableFreeLists();
+    void disableFreeLists() noexcept;
     void disable_entry_hold_list();
 
     bool has_free_lists_enabled() const { return _freeListsEnabled; }
@@ -143,38 +143,38 @@ public:
     /**
      * Returns the free list for the given type id.
      */
-    FreeList &getFreeList(uint32_t typeId) {
+    FreeList &getFreeList(uint32_t typeId) noexcept {
         return _free_lists[typeId];
     }
 
     /**
      * Returns aggregated memory statistics for all buffers in this data store.
      */
-    MemoryStats getMemStats() const;
+    MemoryStats getMemStats() const noexcept;
 
     /**
      * Assume that no readers are present while data structure is being initialized.
      */
-    void setInitializing(bool initializing) { _initializing = initializing; }
+    void setInitializing(bool initializing) noexcept { _initializing = initializing; }
 
-    uint32_t getTypeId(uint32_t bufferId) const {
+    uint32_t getTypeId(uint32_t bufferId) const noexcept {
         return _buffers[bufferId].getTypeId();
     }
 
     void finishCompact(const std::vector<uint32_t> &toHold);
 
-    vespalib::GenerationHolder &getGenerationHolder() {
+    vespalib::GenerationHolder &getGenerationHolder() noexcept {
         return _genHolder;
     }
 
     // need object location before construction
-    static vespalib::GenerationHolder &getGenerationHolderLocation(DataStoreBase &self) {
+    static vespalib::GenerationHolder &getGenerationHolderLocation(DataStoreBase &self) noexcept {
         return self._genHolder;
     }
 
     std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
-    uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
-    void inc_compaction_count() const { ++_compaction_count; }
+    uint64_t get_compaction_count() const noexcept { return _compaction_count.load(std::memory_order_relaxed); }
+    void inc_compaction_count() const noexcept { ++_compaction_count; }
     bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }
 
     /**
@@ -184,9 +184,9 @@ public:
      */
     virtual void reclaim_entry_refs(generation_t oldest_used_gen) = 0;
 
-    uint32_t get_entry_size(uint32_t type_id) { return _typeHandlers[type_id]->entry_size(); }
+    uint32_t get_entry_size(uint32_t type_id) noexcept { return _typeHandlers[type_id]->entry_size(); }
 
-    void* getBuffer(uint32_t bufferId) { return _buffers[bufferId].get_buffer_relaxed(); }
+    void* getBuffer(uint32_t bufferId) noexcept { return _buffers[bufferId].get_buffer_relaxed(); }
 
 protected:
     DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t max_entries);
@@ -196,7 +196,7 @@ protected:
         EntryRef ref;
         size_t   num_entries;
 
-        EntryRefHoldElem(EntryRef ref_in, size_t num_entries_in)
+        EntryRefHoldElem(EntryRef ref_in, size_t num_entries_in) noexcept
             : ref(ref_in),
               num_entries(num_entries_in)
         {}
@@ -223,7 +223,7 @@ private:
         uint32_t           _typeId;
 
         FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t used_entries,
-                     BufferTypeBase *typeHandler, uint32_t typeId);
+                     BufferTypeBase *typeHandler, uint32_t typeId) noexcept;
 
         ~FallbackHold() override;
     };
@@ -247,12 +247,12 @@ private:
      */
     void on_active(uint32_t bufferId, uint32_t typeId, size_t entries_needed);
 
-    void inc_hold_buffer_count();
+    void inc_hold_buffer_count() noexcept;
     void fallback_resize(uint32_t bufferId, size_t entries_needed);
-    uint32_t getFirstFreeBufferId();
+    uint32_t getFirstFreeBufferId() noexcept;
 
     template<typename FuncType>
-    void for_each_buffer(FuncType func) {
+    void for_each_buffer(FuncType func) noexcept {
         uint32_t buffer_id_limit = get_bufferid_limit_relaxed();
         for (uint32_t i = 0; i < buffer_id_limit; i++) {
             func(*(_buffers[i].get_state_relaxed()));

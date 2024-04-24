@@ -48,7 +48,7 @@ primary_buffer_too_dead(const BufferState &state)
 }
 
 DataStoreBase::FallbackHold::FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t used_entries,
-                                          BufferTypeBase *typeHandler, uint32_t typeId)
+                                          BufferTypeBase *typeHandler, uint32_t typeId) noexcept
     : GenerationHeldBase(bytesSize),
       _buffer(std::move(buffer)),
       _used_entries(used_entries),
@@ -68,7 +68,7 @@ class DataStoreBase::BufferHold : public GenerationHeldBase {
     uint32_t _bufferId;
 
 public:
-    BufferHold(size_t bytesSize, DataStoreBase &dsb, uint32_t bufferId)
+    BufferHold(size_t bytesSize, DataStoreBase &dsb, uint32_t bufferId) noexcept
         : GenerationHeldBase(bytesSize),
           _dsb(dsb),
           _bufferId(bufferId)
@@ -159,7 +159,7 @@ DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t entries_need
 }
 
 uint32_t
-DataStoreBase::getFirstFreeBufferId() {
+DataStoreBase::getFirstFreeBufferId() noexcept {
     uint32_t buffer_id = 0;
     for (auto & buffer : _buffers) {
         BufferState * state = buffer.get_state_relaxed();
@@ -268,7 +268,7 @@ DataStoreBase::dropBuffers()
 }
 
 vespalib::MemoryUsage
-DataStoreBase::getDynamicMemoryUsage() const
+DataStoreBase::getDynamicMemoryUsage() const noexcept
 {
     auto stats = getMemStats();
     vespalib::MemoryUsage usage;
@@ -280,7 +280,7 @@ DataStoreBase::getDynamicMemoryUsage() const
 }
 
 vespalib::MemoryUsage
-DataStoreBase::getMemoryUsage() const {
+DataStoreBase::getMemoryUsage() const noexcept {
     auto usage = getDynamicMemoryUsage();
     size_t extra_allocated = 0;
     extra_allocated += _buffers.capacity() * sizeof(BufferAndMeta);
@@ -319,7 +319,7 @@ DataStoreBase::enableFreeLists()
 }
 
 void
-DataStoreBase::disableFreeLists()
+DataStoreBase::disableFreeLists() noexcept
 {
     for_each_buffer([](BufferState & state) { state.disable_free_list(); });
     _freeListsEnabled = false;
@@ -335,7 +335,7 @@ DataStoreBase::disable_entry_hold_list()
 }
 
 MemoryStats
-DataStoreBase::getMemStats() const
+DataStoreBase::getMemStats() const noexcept
 {
     MemoryStats stats;
 
@@ -368,7 +368,7 @@ DataStoreBase::getMemStats() const
 }
 
 vespalib::AddressSpace
-DataStoreBase::getAddressSpaceUsage() const
+DataStoreBase::getAddressSpaceUsage() const noexcept
 {
     uint32_t buffer_id_limit = get_bufferid_limit_acquire();
     size_t used_entries = 0;
@@ -520,7 +520,7 @@ DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const
 }
 
 void
-DataStoreBase::inc_hold_buffer_count()
+DataStoreBase::inc_hold_buffer_count() noexcept
 {
     assert(_hold_buffer_count < std::numeric_limits<uint32_t>::max());
     ++_hold_buffer_count;
