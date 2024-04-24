@@ -49,9 +49,9 @@ public class SignificanceModelTestCase {
 
     private SignificanceConfig assertSignificancePresent(ApplicationContainerCluster cluster) {
 
-        var id = new ComponentId("com.yahoo.search.significance.impl.DefaultSignificanceModelRegistry");
+        var id = new ComponentId("com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry");
         var significance = (SignificanceModelRegistry) cluster.getComponentsMap().get(id);
-        assertEquals("com.yahoo.search.significance.impl.DefaultSignificanceModelRegistry", significance.getClassId().getName());
+        assertEquals("com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry", significance.getClassId().getName());
         var cfgBuilder = new SignificanceConfig.Builder();
         significance.getConfig(cfgBuilder);
         return cfgBuilder.build();

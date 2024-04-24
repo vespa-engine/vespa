@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -43,12 +44,12 @@ public class DefaultSignificanceModelRegistry implements SignificanceModelRegist
 
 
     @Override
-    public SignificanceModel getModel(Language language) throws IllegalArgumentException {
+    public Optional<SignificanceModel> getModel(Language language) {
         if (!models.containsKey(language))
         {
-            throw new IllegalArgumentException("No model for language " + language);
+            return Optional.empty();
         }
-        return models.get(language);
+        return Optional.of(models.get(language));
     }
 
 

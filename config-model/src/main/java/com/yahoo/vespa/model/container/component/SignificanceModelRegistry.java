@@ -23,19 +23,20 @@ import static com.yahoo.vespa.model.container.xml.ModelIdResolver.SIGNIFICANCE_M
  */
 public class SignificanceModelRegistry extends SimpleComponent implements SignificanceConfig.Producer {
 
-    private static final String CLASS = "com.yahoo.search.significance.impl.DefaultSignificanceModelRegistry";
-    private static final String BUNDLE = "linguistics";
+    private static final String CLASS = "com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry";
+    private static final String BUNDLE = null;
 
-    private final List<SignificanceModelConfig> configList;
+    private final List<SignificanceModelConfig> configList = new ArrayList<>();
 
     public SignificanceModelRegistry(DeployState deployState, Element spec) {
         super(new ComponentModel(BundleInstantiationSpecification.fromStrings(CLASS, CLASS, BUNDLE)));
-        configList = new ArrayList<>();
+        if (spec != null) {
 
-        for (Element modelElement : XML.getChildren(spec, "model")) {
-            addConfig(
-                    modelElement.getAttribute("language"),
-                    Model.fromXml(deployState, modelElement, Set.of(SIGNIFICANCE_MODEL)).modelReference());
+            for (Element modelElement : XML.getChildren(spec, "model")) {
+                addConfig(
+                        modelElement.getAttribute("language"),
+                        Model.fromXml(deployState, modelElement, Set.of(SIGNIFICANCE_MODEL)).modelReference());
+            }
         }
     }
 

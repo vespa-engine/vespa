@@ -159,7 +159,7 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
 
     @Test
     public void require_all_default_chains_are_correct() {
-        assertEquals(61, chainsConfig.components().size());
+        assertEquals(63, chainsConfig.components().size());
         assertEquals(10, chainsConfig.chains().size());
         validateVespaPhasesChain(findChain("vespaPhases"));
         validateNativeChain(findChain("native"));

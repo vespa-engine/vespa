@@ -816,7 +816,7 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract com.yahoo.language.significance.SignificanceModel getModel(com.yahoo.language.Language)"
+      "public abstract java.util.Optional getModel(com.yahoo.language.Language)"
     ],
     "fields" : [ ]
   }
