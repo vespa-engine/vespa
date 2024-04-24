@@ -28,11 +28,11 @@ public:
         std::atomic<size_t> &_extraUsedBytes;
         std::atomic<size_t> &_extraHoldBytes;
     public:
-        CleanContext(std::atomic<size_t>& extraUsedBytes, std::atomic<size_t>& extraHoldBytes)
+        CleanContext(std::atomic<size_t>& extraUsedBytes, std::atomic<size_t>& extraHoldBytes) noexcept
             : _extraUsedBytes(extraUsedBytes),
               _extraHoldBytes(extraHoldBytes)
         {}
-        void extraBytesCleaned(size_t value);
+        void extraBytesCleaned(size_t value) noexcept;
     };
 
     BufferTypeBase(const BufferTypeBase &rhs) = delete;
@@ -50,7 +50,7 @@ public:
      * Return number of reserved entries at start of buffer, to avoid
      * invalid reference.
      */
-    virtual EntryCount get_reserved_entries(uint32_t bufferId) const;
+    virtual EntryCount get_reserved_entries(uint32_t bufferId) const noexcept;
 
     /**
      * Initialize reserved elements at start of buffer.
@@ -62,7 +62,7 @@ public:
     size_t getArraySize() const noexcept { return _arraySize; }
     virtual void on_active(uint32_t bufferId, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries, void* buffer);
     void on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries);
-    virtual void on_free(EntryCount used_entries);
+    virtual void on_free(EntryCount used_entries) noexcept;
     void resume_primary_buffer(uint32_t buffer_id, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries);
     virtual const alloc::MemoryAllocator* get_memory_allocator() const;
     virtual bool is_dynamic_array_buffer_type() const noexcept;
@@ -72,20 +72,20 @@ public:
      */
     virtual size_t calc_entries_to_alloc(uint32_t bufferId, EntryCount free_entries_needed, bool resizing) const;
 
-    void clamp_max_entries(uint32_t max_entries);
+    void clamp_max_entries(uint32_t max_entries) noexcept;
 
-    uint32_t get_active_buffers_count() const { return _active_buffers.size(); }
+    uint32_t get_active_buffers_count() const noexcept { return _active_buffers.size(); }
     const std::vector<uint32_t>& get_active_buffers() const noexcept { return _active_buffers; }
-    size_t get_max_entries() const { return _max_entries; }
-    uint32_t get_scaled_num_entries_for_new_buffer() const;
+    size_t get_max_entries() const noexcept { return _max_entries; }
+    uint32_t get_scaled_num_entries_for_new_buffer() const noexcept;
     uint32_t get_num_entries_for_new_buffer() const noexcept { return _num_entries_for_new_buffer; }
 protected:
 
     struct BufferCounts {
         EntryCount used_entries;
         EntryCount dead_entries;
-        BufferCounts() : used_entries(0), dead_entries(0) {}
-        BufferCounts(EntryCount used_entries_in, EntryCount dead_entries_in)
+        BufferCounts() noexcept : used_entries(0), dead_entries(0) {}
+        BufferCounts(EntryCount used_entries_in, EntryCount dead_entries_in) noexcept
             : used_entries(used_entries_in), dead_entries(dead_entries_in)
         {}
     };
@@ -106,12 +106,12 @@ protected:
         std::vector<ActiveBufferCounts> _counts;
 
     public:
-        AggregatedBufferCounts();
+        AggregatedBufferCounts() noexcept;
         void add_buffer(const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries);
         void remove_buffer(const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries);
-        BufferCounts last_buffer() const;
-        BufferCounts all_buffers() const;
-        bool empty() const { return _counts.empty(); }
+        BufferCounts last_buffer() const noexcept;
+        BufferCounts all_buffers() const noexcept;
+        bool empty() const noexcept { return _counts.empty(); }
     };
 
     uint32_t _entry_size;   // Number of bytes in an allocation unit

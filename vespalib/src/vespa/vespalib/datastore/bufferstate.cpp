@@ -10,7 +10,7 @@ using vespalib::alloc::MemoryAllocator;
 
 namespace vespalib::datastore {
 
-BufferState::BufferState()
+BufferState::BufferState() noexcept
     : _stats(),
       _free_list(_stats.dead_entries_ref()),
       _typeHandler(nullptr),
@@ -36,11 +36,11 @@ namespace {
 struct AllocResult {
     size_t entries;
     size_t bytes;
-    AllocResult(size_t entries_, size_t bytes_) : entries(entries_), bytes(bytes_) {}
+    AllocResult(size_t entries_, size_t bytes_) noexcept : entries(entries_), bytes(bytes_) {}
 };
 
 size_t
-roundUpToMatchAllocator(size_t sz)
+roundUpToMatchAllocator(size_t sz) noexcept
 {
     if (sz == 0) {
         return 0;
@@ -60,7 +60,7 @@ AllocResult
 calc_allocation(uint32_t bufferId,
                 BufferTypeBase &typeHandler,
                 size_t free_entries_needed,
-                bool resizing)
+                bool resizing) noexcept
 {
     size_t alloc_entries = typeHandler.calc_entries_to_alloc(bufferId, free_entries_needed, resizing);
     size_t entry_size = typeHandler.entry_size();
@@ -72,7 +72,7 @@ calc_allocation(uint32_t bufferId,
         allocBytes = maxAllocBytes;
     }
     size_t adjusted_alloc_entries = (allocBytes - buffer_underflow_size) / entry_size;
-    return AllocResult(adjusted_alloc_entries, allocBytes);
+    return {adjusted_alloc_entries, allocBytes};
 }
 
 }
