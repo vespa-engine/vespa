@@ -29,7 +29,7 @@ public class ClusterModel {
     /** If we have less than this query rate, we cannot be fully confident in our load data, which influences some decisions. */
     public static final double queryRateGivingFullConfidence = 100.0;
 
-    static final double idealQueryCpuLoad = 0.8;
+    static final double idealQueryCpuLoad = 0.75;
     static final double idealWriteCpuLoad = 0.95;
 
     static final double idealContainerMemoryLoad = 0.8;
