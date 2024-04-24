@@ -32,24 +32,24 @@ protected:
     std::atomic<size_t> _extra_hold_bytes;
 
 public:
-    BufferStats();
+    BufferStats() noexcept;
 
-    size_t size() const { return _used_entries.load(std::memory_order_relaxed); }
-    size_t capacity() const { return _alloc_entries.load(std::memory_order_relaxed); }
-    size_t remaining() const { return capacity() - size(); }
+    size_t size() const noexcept { return _used_entries.load(std::memory_order_relaxed); }
+    size_t capacity() const noexcept { return _alloc_entries.load(std::memory_order_relaxed); }
+    size_t remaining() const noexcept { return capacity() - size(); }
 
-    void pushed_back(size_t num_entries) {
+    void pushed_back(size_t num_entries) noexcept {
         _used_entries.store(size() + num_entries, std::memory_order_relaxed);
     }
 
-    size_t dead_entries() const { return _dead_entries.load(std::memory_order_relaxed); }
-    size_t hold_entries() const { return _hold_entries.load(std::memory_order_relaxed); }
-    size_t extra_used_bytes() const { return _extra_used_bytes.load(std::memory_order_relaxed); }
-    size_t extra_hold_bytes() const { return _extra_hold_bytes.load(std::memory_order_relaxed); }
+    size_t dead_entries() const noexcept { return _dead_entries.load(std::memory_order_relaxed); }
+    size_t hold_entries() const noexcept { return _hold_entries.load(std::memory_order_relaxed); }
+    size_t extra_used_bytes() const noexcept { return _extra_used_bytes.load(std::memory_order_relaxed); }
+    size_t extra_hold_bytes() const noexcept { return _extra_hold_bytes.load(std::memory_order_relaxed); }
 
-    void inc_extra_used_bytes(size_t value) { _extra_used_bytes.store(extra_used_bytes() + value, std::memory_order_relaxed); }
+    void inc_extra_used_bytes(size_t value) noexcept { _extra_used_bytes.store(extra_used_bytes() + value, std::memory_order_relaxed); }
 
-    void add_to_mem_stats(size_t entry_size, MemoryStats& stats) const;
+    void add_to_mem_stats(size_t entry_size, MemoryStats& stats) const noexcept;
 };
 
 /**
@@ -57,19 +57,19 @@ public:
  */
 class InternalBufferStats : public BufferStats {
 public:
-    InternalBufferStats();
-    void clear();
-    void set_alloc_entries(size_t value) { _alloc_entries.store(value, std::memory_order_relaxed); }
-    void set_dead_entries(size_t value) { _dead_entries.store(value, std::memory_order_relaxed); }
-    void set_hold_entries(size_t value) { _hold_entries.store(value, std::memory_order_relaxed); }
-    void inc_dead_entries(size_t value) { _dead_entries.store(dead_entries() + value, std::memory_order_relaxed); }
-    void inc_hold_entries(size_t value) { _hold_entries.store(hold_entries() + value, std::memory_order_relaxed); }
-    void dec_hold_entries(size_t value);
-    void inc_extra_hold_bytes(size_t value) { _extra_hold_bytes.store(extra_hold_bytes() + value, std::memory_order_relaxed); }
-    std::atomic<EntryCount>& used_entries_ref() { return _used_entries; }
-    std::atomic<EntryCount>& dead_entries_ref() { return _dead_entries; }
-    std::atomic<size_t>& extra_used_bytes_ref() { return _extra_used_bytes; }
-    std::atomic<size_t>& extra_hold_bytes_ref() { return _extra_hold_bytes; }
+    InternalBufferStats() noexcept;
+    void clear() noexcept;
+    void set_alloc_entries(size_t value) noexcept { _alloc_entries.store(value, std::memory_order_relaxed); }
+    void set_dead_entries(size_t value) noexcept { _dead_entries.store(value, std::memory_order_relaxed); }
+    void set_hold_entries(size_t value) noexcept { _hold_entries.store(value, std::memory_order_relaxed); }
+    void inc_dead_entries(size_t value) noexcept { _dead_entries.store(dead_entries() + value, std::memory_order_relaxed); }
+    void inc_hold_entries(size_t value) noexcept { _hold_entries.store(hold_entries() + value, std::memory_order_relaxed); }
+    void dec_hold_entries(size_t value) noexcept;
+    void inc_extra_hold_bytes(size_t value) noexcept { _extra_hold_bytes.store(extra_hold_bytes() + value, std::memory_order_relaxed); }
+    std::atomic<EntryCount>& used_entries_ref() noexcept { return _used_entries; }
+    std::atomic<EntryCount>& dead_entries_ref() noexcept { return _dead_entries; }
+    std::atomic<size_t>& extra_used_bytes_ref() noexcept { return _extra_used_bytes; }
+    std::atomic<size_t>& extra_hold_bytes_ref() noexcept { return _extra_hold_bytes; }
 };
 
 }
