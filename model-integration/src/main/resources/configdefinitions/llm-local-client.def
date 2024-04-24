@@ -5,13 +5,13 @@ package=ai.vespa.llm.clients
 model model
 
 # Maximum number of requests to handle in parallel pr container node
-parallelRequests int default=10
+parallelRequests int default=1
 
 # Additional number of requests to put in queue for processing before starting to reject new requests
 maxQueueSize int default=10
 
 # Use GPU
-useGpu bool default=false
+useGpu bool default=true
 
 # Maximum number of model layers to run on GPU
 gpuLayers int default=1000000
@@ -22,7 +22,7 @@ threads int default=-1
 
 # Context size for the model
 # Context is divided between parallel requests. So for 10 parallel requests, each "slot" gets 1/10 of the context
-contextSize int default=512
+contextSize int default=4096
 
 # Maximum number of tokens to process in one request - overriden by inference parameters
 maxTokens int default=512
