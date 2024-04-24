@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/config.h>
 #include <vespa/vespalib/util/optimized.h>
 #include <cstring>
 
@@ -23,6 +24,14 @@ populationCount(const uint64_t *a, size_t sz) {
     }
     return count;
 }
+
+#ifdef VESPA_USE_THREAD_SANITIZER
+/*
+ * Source bitvectors might be modified due to feeding during search.
+ */
+template<typename T, unsigned ChunkSize>
+T get(const void * base, bool invert)__attribute__((no_sanitize("thread")));
+#endif
 
 template<typename T, unsigned ChunkSize>
 T get(const void * base, bool invert) {
