@@ -64,7 +64,7 @@ public class PrometheusModel implements Enumeration<MetricFamilySamples> {
             for (var packet : packets) {
                 Number metric = packet.metrics().get(metricId);
                 if (metric != null) {
-                    sampleList.add(createSample(serviceId, metricId, metric, packet.timestamp, packet.dimensions()));
+                    sampleList.add(createSample(serviceId, metricId, metric, 1000 * packet.timestamp, packet.dimensions()));
                 }
             }
         }));
