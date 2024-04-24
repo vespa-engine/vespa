@@ -157,7 +157,7 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().get().owner().equals(application))
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
                 .filter(node -> node.state() == Node.State.active || canStillAllocate(node))
-                .map(node -> candidateFrom(node, false))
+                .map(node -> candidateFrom(node))
                 .forEach(candidates::add);
     }
 
@@ -166,13 +166,13 @@ public class NodePrioritizer {
         allNodes.stream()
                 .filter(node -> node.type() == requested.type())
                 .filter(node -> node.state() == Node.State.ready)
-                .map(node -> candidateFrom(node, false))
+                .map(node -> candidateFrom(node))
                 .filter(n -> !n.violatesSpares || canAllocateToSpareHosts)
                 .forEach(candidates::add);
     }
 
     /** Create a candidate from given pre-existing node */
-    private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
+    private NodeCandidate candidateFrom(Node node) {
         Optional<Node> optionalParent = allNodes.parentOf(node);
         if (optionalParent.isPresent()) {
             Node parent = optionalParent.get();
@@ -180,7 +180,6 @@ public class NodePrioritizer {
                                              capacity.availableCapacityOf(parent),
                                              parent,
                                              spareHosts.contains(parent),
-                                             isSurplus,
                                              false,
                                              parent.exclusiveToApplicationId().isEmpty()
                                              && requested.canResize(node.resources(),
@@ -189,7 +188,7 @@ public class NodePrioritizer {
                                                                     topologyChange,
                                                                     currentClusterSize));
         } else {
-            return NodeCandidate.createStandalone(node, isSurplus, false);
+            return NodeCandidate.createStandalone(node, false);
         }
     }
 
