@@ -188,6 +188,8 @@ TOKEN :
 | < SUFFIX: "suffix" >
 | < CONSTANT: "constant">
 | < ONNX_MODEL: "onnx-model">
+| < SIGNIFICANCE: "significance">
+| < USE_MODEL: "use-model">
 | < INTRAOP_THREADS: "intraop-threads">
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
@@ -1761,7 +1763,8 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | matchFeatures(profile)
       | summaryFeatures(profile)
       | onnxModelInProfile(profile)
-      | strict(profile) )
+      | strict(profile)
+      | significance(profile))
 }
 
 /**
@@ -2112,6 +2115,22 @@ void strict(ParsedRankProfile profile) :
     <STRICT> <COLON> (
         ( <TRUE> { profile.setStrict(true); } ) |
         ( <FALSE> { profile.setStrict(false); } )
+    )
+}
+
+void significance(ParsedRankProfile profile) :
+{}
+{
+    <SIGNIFICANCE> lbrace() (significanceItem(profile) (<NL>)*)* <RBRACE>
+    {}
+}
+
+void significanceItem(ParsedRankProfile profile) :
+{}
+{
+    <USE_MODEL> <COLON> (
+        ( <TRUE>  { profile.setUseSignificanceModel(true);  } ) |
+        ( <FALSE> { profile.setUseSignificanceModel(false); } )
     )
 }
 
@@ -2710,6 +2729,7 @@ String identifierWithDash() :
     | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
     | <TERMWISE_LIMIT>
     | <UPPER_BOUND>
+    | <USE_MODEL>
     ) { return token.image; }
 }
 
@@ -2812,6 +2832,7 @@ String identifier() : { }
       | <STEMMING>
       | <STRENGTH>
       | <STRICT>
+      | <SIGNIFICANCE>
       | <STRING>
       | <STRUCT>
       | <SUBSTRING>

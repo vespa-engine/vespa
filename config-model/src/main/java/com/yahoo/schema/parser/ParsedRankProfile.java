@@ -44,6 +44,7 @@ class ParsedRankProfile extends ParsedBlock {
     private String inheritedMatchFeatures = null;
     private String secondPhaseExpression = null;
     private Boolean strict = null;
+    private Boolean useSignificanceModel = null;
     private final List<MutateOperation> mutateOperations = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, Boolean> fieldsRankFilter = new LinkedHashMap<>();
@@ -95,6 +96,8 @@ class ParsedRankProfile extends ParsedBlock {
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
     Optional<Boolean> isStrict() { return Optional.ofNullable(this.strict); }
+
+    Optional<Boolean> isUseSignificanceModel() { return Optional.ofNullable(this.useSignificanceModel); }
 
     void addSummaryFeatures(FeatureList features) { this.summaryFeatures.add(features); }
     void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
@@ -218,6 +221,10 @@ class ParsedRankProfile extends ParsedBlock {
         this.strict = strict;
     }
 
+    void setUseSignificanceModel(boolean useSignificanceModel) {
+        verifyThat(this.useSignificanceModel == null, "already has use-model");
+        this.useSignificanceModel = useSignificanceModel;
+    }
     void setTermwiseLimit(double limit) {
         verifyThat(termwiseLimit == null, "already has termwise-limit");
         this.termwiseLimit = limit;

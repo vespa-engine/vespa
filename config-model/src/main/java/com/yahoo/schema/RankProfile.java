@@ -141,6 +141,8 @@ public class RankProfile implements Cloneable {
 
     private Boolean strict;
 
+    private Boolean useSignificanceModel;
+
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
 
@@ -214,6 +216,15 @@ public class RankProfile implements Cloneable {
 
     public void setStrict(Boolean strict) {
         this.strict = strict;
+    }
+
+    public void setUseSignificanceModel(Boolean useSignificanceModel) {
+        this.useSignificanceModel = useSignificanceModel;
+    }
+
+    public Boolean useSignificanceModel() {
+        if (useSignificanceModel != null) return useSignificanceModel;
+        return uniquelyInherited(p -> p.useSignificanceModel(), "use-model").orElse(null);
     }
 
     /**

@@ -39,6 +39,7 @@ public class ConvertParsedRanking {
             profile.inherit(name);
 
         parsed.isStrict().ifPresent(value -> profile.setStrict(value));
+        parsed.isUseSignificanceModel().ifPresent(value -> profile.setUseSignificanceModel(value));
 
         for (var constant : parsed.getConstants().values())
             profile.add(constant);
