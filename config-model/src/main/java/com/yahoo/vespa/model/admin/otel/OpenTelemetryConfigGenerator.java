@@ -280,16 +280,19 @@ public class OpenTelemetryConfigGenerator {
         if (zone == null) return "noCloud";
         return zone.cloud().name().value();
     }
+
     private String getDeploymentCluster(ClusterSpec cluster) {
-        return String.join(".", applicationId.toFullString(),
-                           zone.environment().value(), zone.region().value(),
+        String appString = applicationId == null ? "none.noapp.nope" : applicationId.toFullString();
+        return String.join(".", appString,
+                           zone == null ? "dev" : zone.environment().value(),
+                           zone == null ? "local" : zone.region().value(),
                            cluster.id().value());
     }
 
     private Map<String, String> serviceAttributes(Service svc) {
         Map<String, String> dimvals = new LinkedHashMap<>();
-        dimvals.put("service_name", svc.getServiceName()); // used to be "instance"
-        dimvals.put("service_type", svc.getServiceType()); // added, do we need it?
+        dimvals.put("instance", svc.getServiceName()); // should maybe be "local_service_name" ?
+        dimvals.put("instanceType", svc.getServiceType()); // maybe "local_service_type", or remove
         String cName = svc.getServicePropertyString("clustername", null);
         if (cName != null) {
             // what about "clusterid" below, is it always the same?
@@ -303,9 +306,9 @@ public class OpenTelemetryConfigGenerator {
         if (hostResource != null) {
             hostResource.spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
                     dimvals.put(PublicDimensions.DEPLOYMENT_CLUSTER, getDeploymentCluster(cluster));
-                    // same as above?
+                    // overrides value above
                     dimvals.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
-                    // same as above?
+                    // alternative to above
                     dimvals.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
                     cluster.group().ifPresent(group -> dimvals.put(PublicDimensions.GROUP_ID, group.toString()));
                 });

@@ -4,10 +4,18 @@ package com.yahoo.vespa.model.admin.otel;
 import com.yahoo.config.model.ApplicationConfigProducerRoot.StatePortInfo;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.Host;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import org.junit.jupiter.api.Test;
 import java.util.List;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -17,14 +25,28 @@ public class OpenTelemetryConfigGeneratorTest {
 
     @Test
     void testBuildsYaml() {
-        var generator = new OpenTelemetryConfigGenerator(null, null);
+        var app = ApplicationId.from("mytenant", "myapp", "myinstance");
+        var generator = new OpenTelemetryConfigGenerator(null, app);
         var root = new MockRoot();
-        var mockPort1 = new StatePortInfo("localhost", 19098,
-                                          new MockService(root, "sentinel"));
+
+        var mockHost = new Host(root, "localhost2.local");
+        var mockVersion = new com.yahoo.component.Version(8);
+        var mockCluster = ClusterMembership.from("container/feeding/2/3", mockVersion, Optional.empty());
+        var noResource = NodeResources.unspecified();
+        var mockHostSpec = new HostSpec("localhost1.local",
+                                        noResource, noResource, noResource,
+                                        mockCluster,
+                                        Optional.empty(), Optional.empty(), Optional.empty());
+        var mockHostResource = new HostResource(mockHost, mockHostSpec);
+        var mockSvc1 = new MockService(root, "sentinel");
+        mockSvc1.setHostResource(mockHostResource);
+        var mockPort1 = new StatePortInfo("localhost", 19098, mockSvc1);
+
         var mockSvc2 = new MockService(root, "searchnode");
         mockSvc2.setProp("clustername", "mycluster");
         mockSvc2.setProp("clustertype", "mockup");
         var mockPort2 = new StatePortInfo("other.host.local", 19102, mockSvc2);
+
         generator.addStatePorts(List.of(mockPort1, mockPort2));
         String yaml = generator.generate();
         // System.err.println(">>>\n" + yaml + "\n<<<");
