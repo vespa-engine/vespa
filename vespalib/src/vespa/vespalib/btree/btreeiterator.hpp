@@ -52,7 +52,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-clearPath(uint32_t pathSize)
+clearPath(uint32_t pathSize) noexcept
 {
     uint32_t level = _pathSize;
     while (level > pathSize) {
@@ -84,18 +84,7 @@ BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::~B
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-setupEnd()
-{
-    _leaf.invalidate();
-}
-
-
-template <typename KeyT, typename DataT, typename AggrT,
-          uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
-void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-end()
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::end() noexcept
 {
     if (_pathSize == 0) {
         if (_leafRoot == nullptr)
@@ -126,8 +115,7 @@ end()
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-end(BTreeNode::Ref rootRef)
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::end(BTreeNode::Ref rootRef) noexcept
 {
     if (!rootRef.valid()) {
         setupEmpty();
@@ -167,7 +155,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-findNextLeafNode()
+findNextLeafNode() noexcept
 {
     uint32_t pidx;
     for (pidx = 0; pidx < _pathSize; ++pidx) {
@@ -195,7 +183,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-findPrevLeafNode()
+findPrevLeafNode() noexcept
 {
     uint32_t pidx;
     for (pidx = 0; pidx < _pathSize; ++pidx) {
@@ -225,8 +213,7 @@ findPrevLeafNode()
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-begin()
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::begin() noexcept
 {
     uint32_t pidx = _pathSize;
     if (pidx > 0u) {
@@ -251,8 +238,7 @@ begin()
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-begin(BTreeNode::Ref rootRef)
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::begin(BTreeNode::Ref rootRef) noexcept
 {
     if (!rootRef.valid()) {
         setupEmpty();
@@ -288,8 +274,7 @@ begin(BTreeNode::Ref rootRef)
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-rbegin()
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::rbegin() noexcept
 {
     uint32_t pidx = _pathSize;
     if (pidx > 0u) {
@@ -310,10 +295,7 @@ rbegin()
         const LeafNodeType *lnode(_allocator->mapLeafRef(node));
         _leaf.setNodeAndIdx(lnode, lnode->validSlots() - 1);
     } else {
-        _leaf.setNodeAndIdx(_leafRoot,
-                            (_leafRoot != nullptr) ?
-                            _leafRoot->validSlots() - 1 :
-                            0u);
+        _leaf.setNodeAndIdx(_leafRoot, (_leafRoot != nullptr) ? _leafRoot->validSlots() - 1 : 0u);
     }
 }
 
@@ -322,7 +304,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 const AggrT &
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-getAggregated() const
+getAggregated() const noexcept
 {
     // XXX: Undefined behavior if tree is empty.
     uint32_t pidx = _pathSize;
@@ -340,7 +322,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 size_t
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-position(uint32_t levels) const
+position(uint32_t levels) const noexcept
 {
     assert(_pathSize >= levels);
     if (_leaf.getNode() == nullptr)
@@ -393,8 +375,7 @@ position(uint32_t levels) const
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-BTreeIteratorBase(BTreeNode::Ref root,
-                  const NodeAllocatorType &allocator)
+BTreeIteratorBase(BTreeNode::Ref root, const NodeAllocatorType &allocator) noexcept
     : _leaf(nullptr, 0u),
       _path(),
       _pathSize(0),
@@ -467,7 +448,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 ssize_t
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-operator-(const BTreeIteratorBase &rhs) const
+operator-(const BTreeIteratorBase &rhs) const noexcept
 {
     if (_leaf.getNode() == nullptr) {
         if (rhs._leaf.getNode() == nullptr)
@@ -497,7 +478,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 bool
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-identical(const BTreeIteratorBase &rhs) const
+identical(const BTreeIteratorBase &rhs) const noexcept
 {
     if (_pathSize != rhs._pathSize || _leaf != rhs._leaf) {
         HDR_ABORT("should not be reached");
@@ -518,7 +499,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-set_subtree_position(const InternalNodeType* node, uint32_t level, uint32_t idx, size_t position)
+set_subtree_position(const InternalNodeType* node, uint32_t level, uint32_t idx, size_t position) noexcept
 {
     /*
      * Walk down subtree adjusting iterator for new partial position.
@@ -550,7 +531,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-step_forward(size_t steps)
+step_forward(size_t steps) noexcept
 {
     auto lnode = _leaf.getNode();
     if (lnode == nullptr) {
@@ -600,8 +581,7 @@ step_forward(size_t steps)
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
-BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-step_backward(size_t steps)
+BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::step_backward(size_t steps) noexcept
 {
     int64_t remaining_steps = steps;
     if (remaining_steps == 0) {
@@ -651,11 +631,10 @@ step_backward(size_t steps)
     set_subtree_position(node, level, idx, -remaining_steps);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-lower_bound(const KeyType & key, CompareT comp)
+lower_bound(const KeyType & key, CompareT comp) noexcept
 {
     if (_pathSize == 0) {
         if (_leafRoot == nullptr)
@@ -696,11 +675,10 @@ lower_bound(const KeyType & key, CompareT comp)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-lower_bound(BTreeNode::Ref rootRef, const KeyType & key, CompareT comp)
+lower_bound(BTreeNode::Ref rootRef, const KeyType & key, CompareT comp) noexcept
 {
     if (!rootRef.valid()) {
         setupEmpty();
@@ -748,11 +726,10 @@ lower_bound(BTreeNode::Ref rootRef, const KeyType & key, CompareT comp)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-seek(const KeyType & key, CompareT comp)
+seek(const KeyType & key, CompareT comp) noexcept
 {
     if (TraitsT::BINARY_SEEK) {
         binarySeek(key, comp);
@@ -761,11 +738,10 @@ seek(const KeyType & key, CompareT comp)
     }
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-binarySeek(const KeyType & key, CompareT comp)
+binarySeek(const KeyType & key, CompareT comp) noexcept
 {
     const LeafNodeType *lnode = _leaf.getNode();
     uint32_t lidx = _leaf.getIdx() + 1;
@@ -806,11 +782,10 @@ binarySeek(const KeyType & key, CompareT comp)
     _leaf.setIdx(lidx);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-linearSeek(const KeyType & key, CompareT comp)
+linearSeek(const KeyType & key, CompareT comp) noexcept
 {
     const LeafNodeType *lnode = _leaf.getNode();
     uint32_t lidx = _leaf.getIdx() + 1;
@@ -858,11 +833,10 @@ linearSeek(const KeyType & key, CompareT comp)
     _leaf.setIdx(lidx);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-seekPast(const KeyType & key, CompareT comp)
+seekPast(const KeyType & key, CompareT comp) noexcept
 {
     if (TraitsT::BINARY_SEEK) {
         binarySeekPast(key, comp);
@@ -871,11 +845,10 @@ seekPast(const KeyType & key, CompareT comp)
     }
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-binarySeekPast(const KeyType & key, CompareT comp)
+binarySeekPast(const KeyType & key, CompareT comp) noexcept
 {
     const LeafNodeType *lnode = _leaf.getNode();
     uint32_t lidx = _leaf.getIdx() + 1;
@@ -916,11 +889,10 @@ binarySeekPast(const KeyType & key, CompareT comp)
     _leaf.setIdx(lidx);
 }
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-linearSeekPast(const KeyType & key, CompareT comp)
+linearSeekPast(const KeyType & key, CompareT comp) noexcept
 {
     const LeafNodeType *lnode = _leaf.getNode();
     uint32_t lidx = _leaf.getIdx() + 1;
@@ -970,11 +942,10 @@ linearSeekPast(const KeyType & key, CompareT comp)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-validate(BTreeNode::Ref rootRef, CompareT comp)
+validate(BTreeNode::Ref rootRef, CompareT comp) noexcept
 {
     bool frozen = false;
     if (!rootRef.valid()) {
@@ -1036,8 +1007,7 @@ validate(BTreeNode::Ref rootRef, CompareT comp)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 BTreeNode::Ref
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 moveFirstLeafNode(BTreeNode::Ref rootRef)
@@ -1100,11 +1070,9 @@ moveFirstLeafNode(BTreeNode::Ref rootRef)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
-BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-moveNextLeafNode()
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::moveNextLeafNode()
 {
     uint32_t level = 0;
     uint32_t levels = _pathSize;
@@ -1146,11 +1114,9 @@ moveNextLeafNode()
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
-BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-writeKey(const KeyType & key)
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::writeKey(const KeyType & key) noexcept
 {
     LeafNodeType * lnode = getLeafNode();
     lnode->writeKey(_leaf.getIdx(), key);
@@ -1170,12 +1136,11 @@ writeKey(const KeyType & key)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 template <class AggrCalcT>
 void
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-updateData(const DataType & data, [[maybe_unused]] const AggrCalcT &aggrCalc)
+updateData(const DataType & data, [[maybe_unused]] const AggrCalcT &aggrCalc) noexcept
 {
     LeafNodeType * lnode = getLeafNode();
     if constexpr (AggrCalcT::hasAggregated() && AggrCalcT::aggregate_over_values()) {
@@ -1198,8 +1163,7 @@ updateData(const DataType & data, [[maybe_unused]] const AggrCalcT &aggrCalc)
             const PathElement & pe = _path[i];
             InternalNodeType * inode = pe.getWNode();
             AggrT oldpa(inode->getAggregated());
-            if (aggrCalc.update(inode->getAggregated(),
-                                oldca, ca)) {
+            if (aggrCalc.update(inode->getAggregated(), oldca, ca)) {
                 Aggregator::recalc(*inode, *_allocator, aggrCalc);
             }
             AggrT pa(inode->getAggregated());
@@ -1212,11 +1176,9 @@ updateData(const DataType & data, [[maybe_unused]] const AggrCalcT &aggrCalc)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 BTreeNode::Ref
-BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-thaw(BTreeNode::Ref rootRef)
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::thaw(BTreeNode::Ref rootRef)
 {
     assert(_leaf.getNode() != nullptr && _compatLeafNode.get() == nullptr);
     if (!_leaf.getNode()->getFrozen())
@@ -1226,20 +1188,17 @@ thaw(BTreeNode::Ref rootRef)
         LeafNodeType *leafNode = allocator.mapLeafRef(rootRef);
         assert(leafNode == _leaf.getNode());
         assert(leafNode == _leafRoot);
-        LeafNodeTypeRefPair thawedLeaf = allocator.thawNode(rootRef,
-                                                             leafNode);
+        LeafNodeTypeRefPair thawedLeaf = allocator.thawNode(rootRef, leafNode);
         _leaf.setNode(thawedLeaf.data);
         _leafRoot = thawedLeaf.data;
         return thawedLeaf.ref;
     }
     assert(_leafRoot == nullptr);
-    assert(_path[_pathSize - 1].getNode() ==
-           allocator.mapInternalRef(rootRef));
+    assert(_path[_pathSize - 1].getNode() == allocator.mapInternalRef(rootRef));
     BTreeNode::Ref childRef(_path[0].getNode()->getChild(_path[0].getIdx()));
     LeafNodeType *leafNode = allocator.mapLeafRef(childRef);
     assert(leafNode == _leaf.getNode());
-    LeafNodeTypeRefPair thawedLeaf = allocator.thawNode(childRef,
-                                                         leafNode);
+    LeafNodeTypeRefPair thawedLeaf = allocator.thawNode(childRef, leafNode);
     _leaf.setNode(thawedLeaf.data);
     childRef = thawedLeaf.ref;
     uint32_t level = 0;
@@ -1247,10 +1206,9 @@ thaw(BTreeNode::Ref rootRef)
     while (level < levels) {
         PathElement &pe = _path[level];
         InternalNodeType *node(pe.getWNode());
-        BTreeNode::Ref nodeRef = level + 1 < levels ?
-                                 _path[level + 1].getNode()->
-                                 getChild(_path[level + 1].getIdx()) :
-                                 rootRef;
+        BTreeNode::Ref nodeRef = (level + 1 < levels)
+                ? _path[level + 1].getNode()->getChild(_path[level + 1].getIdx())
+                : rootRef;
         assert(node == allocator.mapInternalRef(nodeRef));
         if (!node->getFrozen()) {
             node->set_child_relaxed(pe.getIdx(), childRef);
@@ -1267,8 +1225,7 @@ thaw(BTreeNode::Ref rootRef)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 template <class AggrCalcT>
 BTreeNode::Ref
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
@@ -1295,16 +1252,14 @@ insertFirst(const KeyType &key, const DataType &data,
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 bool
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
-setLeafNodeIdx(uint32_t idx, const LeafNodeType *splitLeafNode)
+setLeafNodeIdx(uint32_t idx, const LeafNodeType *splitLeafNode) noexcept
 {
     uint32_t leafSlots = _leaf.getNode()->validSlots();
     if (idx >= leafSlots) {
-        _leaf.setNodeAndIdx(splitLeafNode, 
-                            idx - leafSlots);
+        _leaf.setNodeAndIdx(splitLeafNode, idx - leafSlots);
         if (_pathSize == 0) {
             _leafRoot = splitLeafNode;
         }
@@ -1316,8 +1271,7 @@ setLeafNodeIdx(uint32_t idx, const LeafNodeType *splitLeafNode)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 template <class AggrCalcT>
 BTreeNode::Ref
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
@@ -1349,8 +1303,7 @@ addLevel(BTreeNode::Ref rootRef, BTreeNode::Ref splitNodeRef,
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 BTreeNode::Ref
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 removeLevel(BTreeNode::Ref rootRef, InternalNodeType *rootNode)
@@ -1367,8 +1320,7 @@ removeLevel(BTreeNode::Ref rootRef, InternalNodeType *rootNode)
 }
 
 
-template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::
 removeLast(BTreeNode::Ref rootRef)
