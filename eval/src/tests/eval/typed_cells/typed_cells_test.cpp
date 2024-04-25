@@ -593,4 +593,15 @@ TEST("require that self-updating cached function pointer 'sum' with return value
     EXPECT_NOT_EQUAL(op.self.my_fun, (&sum<double>));
 }
 
+TEST("require that non_existing_attribute_value can be controlled") {
+    float values[3] = {0,1,2};
+    EXPECT_FALSE(TypedCells().non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(values, CellType::FLOAT, 3).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<double>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<float>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<Int8Float>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<BFloat16>()).non_existing_attribute_value());
+    EXPECT_TRUE(TypedCells::create_non_existing_attribute_value(values, CellType::FLOAT, 3).non_existing_attribute_value());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
