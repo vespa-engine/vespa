@@ -28,7 +28,7 @@ public class NodeMetricGathererTest {
         MetricsPacket packet = builders.remove(0).build();
 
         assertEquals("host_life", packet.service.id);
-        assertEquals(123, packet.timestamp);
+        assertEquals(123, packet.timestamp().getEpochSecond());
         assertEquals(12L, packet.metrics().get(MetricId.toMetricId("uptime")));
         assertEquals(1L, packet.metrics().get(MetricId.toMetricId("alive")));
         assertEquals(Set.of(ConsumerId.toConsumerId("Vespa")), packet.consumers());

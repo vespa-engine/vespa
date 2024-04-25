@@ -226,7 +226,7 @@ public class MetricsManagerTest {
 
     private Instant getAdjustedTimestamp(Instant startTime, Instant metricTime) {
         MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId("foo"))
-                .timestamp(metricTime.getEpochSecond());
+                .timestamp(metricTime);
         return MetricsManager.adjustTimestamp(builder, startTime).getTimestamp();
     }
 

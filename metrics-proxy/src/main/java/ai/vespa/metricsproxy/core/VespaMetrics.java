@@ -104,7 +104,7 @@ public class VespaMetrics {
     private MetricsPacket.Builder getHealth(VespaService service) {
         HealthMetric health = service.getHealth();
         return new MetricsPacket.Builder(service.getMonitoringName())
-                .timestamp(System.currentTimeMillis() / 1000)
+                .timestamp(Instant.now())
                 .statusCode(health.getStatus().ordinal())  // TODO: MetricsPacket should use StatusCode instead of int
                 .statusMessage(health.getMessage())
                 .putDimensions(service.getDimensions())
@@ -228,7 +228,7 @@ public class VespaMetrics {
     }
 
     private static void setMetaInfo(MetricsPacket.Builder builder, Instant timestamp) {
-        builder.timestamp(timestamp.getEpochSecond())
+        builder.timestamp(timestamp)
                 .statusCode(0)
                 .statusMessage("Data collected successfully");
     }

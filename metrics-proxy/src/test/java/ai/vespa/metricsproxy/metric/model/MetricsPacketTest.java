@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.metric.model;
 import ai.vespa.metricsproxy.metric.Metric;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,7 +28,7 @@ public class MetricsPacketTest {
             MetricsPacket packet = new MetricsPacket.Builder(null)
                     .statusCode(0)
                     .statusMessage("")
-                    .timestamp(0L)
+                    .timestamp(Instant.EPOCH)
                     .build();
             fail("Expected exception due to null service.");
         } catch (Exception e) {

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.time.Instant;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
@@ -19,15 +20,18 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
 public class GenericNode {
 
     @JsonProperty("timestamp")
-    public Long timestamp;
+    public Long timestamp = Instant.EPOCH.getEpochSecond();
 
     @JsonProperty("metrics")
     public List<GenericMetrics> metrics;
 
-    public GenericNode() { }
+    public GenericNode() {}
 
-    GenericNode(Long timestamp, List<GenericMetrics> metrics) {
-        this.timestamp = timestamp;
+    GenericNode(Instant timestamp, List<GenericMetrics> metrics) {
+        this.timestamp = timestamp.getEpochSecond();
         this.metrics = metrics;
+    }
+    public Instant timeAsInstant() {
+        return Instant.ofEpochSecond(timestamp);
     }
 }

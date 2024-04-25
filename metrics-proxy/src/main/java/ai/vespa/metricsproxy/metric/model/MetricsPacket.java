@@ -29,13 +29,13 @@ public class MetricsPacket {
 
     public final int statusCode;
     public final String statusMessage;
-    public final long timestamp;
     public final ServiceId service;
+    private final Instant timestamp;
     private final Map<MetricId, Number> metrics;
     private final Map<DimensionId, String> dimensions;
     private final Set<ConsumerId> consumers;
 
-    private MetricsPacket(int statusCode, String statusMessage, long timestamp, ServiceId service,
+    private MetricsPacket(int statusCode, String statusMessage, Instant timestamp, ServiceId service,
                           Map<MetricId, Number> metrics, Map<DimensionId, String> dimensions, Set<ConsumerId> consumers ) {
         this.statusCode = statusCode;
         this.statusMessage = statusMessage;
@@ -48,7 +48,9 @@ public class MetricsPacket {
 
     public Map<MetricId, Number> metrics() { return metrics; }
     public Map<DimensionId, String> dimensions() { return dimensions; }
-    public Set<ConsumerId> consumers() { return consumers;}
+    public Set<ConsumerId> consumers() { return consumers; }
+    public Instant timestamp() { return timestamp; }
+    public ServiceId service() { return service; }
 
     @Override
     public String toString() {
@@ -76,7 +78,7 @@ public class MetricsPacket {
         private ServiceId service;
         private int statusCode = 0;
         private String statusMessage = "";
-        private long timestamp = 0L;
+        private Instant timestamp = Instant.EPOCH;
         private Map<MetricId, Number> metrics = new LinkedHashMap<>();
         private final Map<DimensionId, String> dimensions = new LinkedHashMap<>();
         private Set<ConsumerId> consumers = Set.of();
@@ -102,7 +104,7 @@ public class MetricsPacket {
             return this;
         }
 
-        public Builder timestamp(Long timestamp) {
+        public Builder timestamp(Instant timestamp) {
             if (timestamp != null) this.timestamp = timestamp;
             return this;
         }
@@ -194,7 +196,7 @@ public class MetricsPacket {
             return ! metrics.isEmpty();
         }
 
-        public Instant getTimestamp() { return Instant.ofEpochSecond(timestamp); }
+        public Instant getTimestamp() { return timestamp; }
 
     }
 
