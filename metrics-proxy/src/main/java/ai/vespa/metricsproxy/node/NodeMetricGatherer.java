@@ -15,6 +15,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.state.FileWrapper;
 import com.yahoo.container.jdisc.state.HostLifeGatherer;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -56,7 +57,7 @@ public class NodeMetricGatherer {
 
     protected static void addObjectToBuilders(List<MetricsPacket.Builder> builders, JsonNode object)  {
         MetricsPacket.Builder builder = new MetricsPacket.Builder(ServiceId.toServiceId(object.get("application").textValue()));
-        builder.timestamp(object.get("timestamp").longValue());
+        builder.timestamp(Instant.ofEpochSecond(object.get("timestamp").longValue()));
         if (object.has("metrics")) {
             JsonNode metrics = object.get("metrics");
             Iterator<?> keys = metrics.fieldNames();

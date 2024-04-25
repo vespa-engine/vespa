@@ -55,7 +55,7 @@ public class HttpHandlerTestBase {
         MetricsManager metricsManager = TestUtil.createMetricsManager(vespaServices, getMetricsConsumers(), getApplicationDimensions(), getNodeDimensions());
         metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
-                        .timestamp(Instant.now().getEpochSecond())
+                        .timestamp(Instant.now())
                         .putMetrics(List.of(new Metric(MetricId.toMetricId(CPU_METRIC), 12.345)))));
         return metricsManager;
     }

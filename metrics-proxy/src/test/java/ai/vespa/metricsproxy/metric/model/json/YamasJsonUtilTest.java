@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -43,7 +44,7 @@ public class YamasJsonUtilTest {
 
     @Test
     public void timestamp_0_in_packet_is_translated_to_null_in_json_model() throws IOException {
-        MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo")).timestamp(0L).build();
+        MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo")).timestamp(Instant.EPOCH).build();
         JsonNode json = metrics(packet, true);
         assertFalse(json.has("timestamp"));
     }

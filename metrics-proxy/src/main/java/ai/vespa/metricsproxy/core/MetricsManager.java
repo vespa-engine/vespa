@@ -152,7 +152,7 @@ public class MetricsManager {
     static MetricsPacket.Builder adjustTimestamp(MetricsPacket.Builder builder, Instant startTime) {
         Duration age = Duration.between(startTime, builder.getTimestamp());
         if (age.abs().minusMinutes(1).isNegative())
-            builder.timestamp(startTime.getEpochSecond());
+            builder.timestamp(startTime);
         return builder;
     }
 

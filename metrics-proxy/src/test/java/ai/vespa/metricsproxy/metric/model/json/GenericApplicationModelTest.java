@@ -7,6 +7,7 @@ import ai.vespa.metricsproxy.metric.model.StatusCode;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -51,13 +52,13 @@ public class GenericApplicationModelTest {
     @Test
     public void metrics_packets_can_be_converted_to_generic_json_model() throws Exception {
         var nodePacket = new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
-                .timestamp(123456L)
+                .timestamp(Instant.ofEpochSecond(123456L))
                 .putMetric(toMetricId("node-metric"), 1.234)
                 .putDimension(toDimensionId("node-dim"), "node-dim-value")
                 .build();
 
         var servicePacket = new MetricsPacket.Builder(toServiceId("my-service"))
-                .timestamp(123456L)
+                .timestamp(Instant.ofEpochSecond(123456L))
                 .statusCode(0)
                 .putMetric(toMetricId("service-metric"), 1234)
                 .putDimension(toDimensionId("service-dim"), "service-dim-value")
@@ -94,7 +95,7 @@ public class GenericApplicationModelTest {
 
     private MetricsPacket createMetricsPacket(String service, Number metricsValue, boolean isNode) {
         return new MetricsPacket.Builder(isNode ? VESPA_NODE_SERVICE_ID : toServiceId(service))
-                .timestamp(1234L)
+                .timestamp(Instant.ofEpochSecond(1234L))
                 .statusCode(0)
                 .putMetric(toMetricId(service + "-metric"), metricsValue)
                 .putDimension(toDimensionId(service + "-dim"), isNode ? "node-dim-value" : "service-dim-value")

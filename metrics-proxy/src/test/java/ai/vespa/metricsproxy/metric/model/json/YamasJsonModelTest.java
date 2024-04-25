@@ -65,7 +65,7 @@ public class YamasJsonModelTest {
         MetricsPacket metricsPacket = YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build();
 
         // Do some sanity checking
-        assertEquals(toServiceId("vespa.searchnode"), metricsPacket.service);
+        assertEquals(toServiceId("vespa.searchnode"), metricsPacket.service());
         assertTrue(metricsPacket.consumers().contains(toConsumerId("Vespa")));
         assertEquals(5.555555555E9, metricsPacket.metrics().get(toMetricId("memory_rss")).doubleValue(), 0.1d); //Not using custom double rendrer
 

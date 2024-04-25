@@ -32,7 +32,7 @@ public class PrometheusUtil {
         }
 
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
-                .collect(Collectors.groupingBy(packet -> packet.service));
+                .collect(Collectors.groupingBy(MetricsPacket::service));
 
         List<MetricFamilySamples> statusMetrics = new ArrayList<>(packetsByService.size());
         packetsByService.forEach(((serviceId, packets) -> {
@@ -41,9 +41,9 @@ public class PrometheusUtil {
                 var firstPacket = packets.get(0);
                 var statusMetricName = serviceName + "_status";
                 // MetricsPacket status 0 means OK, but it's the opposite in Prometheus.
-                var statusMetricValue = (firstPacket.statusCode == 0) ? 1 : 0;
+                var statusMetricValue = (firstPacket.statusCode() == 0) ? 1 : 0;
                 var sampleList = List.of(new Collector.MetricFamilySamples.Sample(statusMetricName, List.of(), List.of(),
-                        statusMetricValue, firstPacket.timestamp * 1000));
+                        statusMetricValue, firstPacket.timestamp().toEpochMilli()));
                 statusMetrics.add(new Collector.MetricFamilySamples(statusMetricName, Collector.Type.UNKNOWN, "status of service", sampleList));
             }
         }));
