@@ -12,6 +12,7 @@
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
 #include <vespa/searchlib/tensor/subspace_type.h>
+#include <vespa/searchlib/tensor/empty_subspace.h>
 #include <vespa/searchlib/tensor/vector_bundle.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
@@ -49,6 +50,7 @@ private:
     using ArrayRef = vespalib::ConstArrayRef<FloatType>;
     mutable std::vector<Vector> _vectors;
     SubspaceType                _subspace_type;
+    EmptySubspace               _empty;
     mutable uint32_t            _get_vector_count;
     mutable uint32_t            _schedule_clear_tensor;
     mutable uint32_t            _cleared_tensor_docid;
@@ -57,6 +59,7 @@ public:
     MyDocVectorAccess()
         : _vectors(),
           _subspace_type(ValueType::make_type(get_cell_type<FloatType>(), {{"dims", 2}})),
+          _empty(_subspace_type),
           _get_vector_count(0),
           _schedule_clear_tensor(0),
           _cleared_tensor_docid(0)
@@ -87,7 +90,7 @@ public:
         if (subspace < bundle.subspaces()) {
             return bundle.cells(subspace);
         }
-        return { nullptr, _subspace_type.cell_type(), 0 };
+        return _empty.cells();
     }
     VectorBundle get_vectors(uint32_t docid) const noexcept override {
         ArrayRef ref(_vectors[docid]);
@@ -128,12 +131,12 @@ public:
     double min_rawscore() const noexcept override { return _real->min_rawscore(); }
 
     double calc(TypedCells rhs) const noexcept override {
-        EXPECT_TRUE(rhs.valid());
+        EXPECT_FALSE(rhs.non_existing_attribute_value());
         return _real->calc(rhs);
     }
 
     double calc_with_limit(TypedCells rhs, double limit) const noexcept override {
-        EXPECT_TRUE(rhs.valid());
+        EXPECT_FALSE(rhs.non_existing_attribute_value());
         return _real->calc_with_limit(rhs, limit);
     }
 };
@@ -152,12 +155,12 @@ public:
     ~MyDistanceFunctionFactory() override;
 
     std::unique_ptr<BoundDistanceFunction> for_query_vector(TypedCells lhs) override {
-        EXPECT_TRUE(lhs.valid());
+        EXPECT_FALSE(lhs.non_existing_attribute_value());
         return std::make_unique<MyBoundDistanceFunction>(_real->for_query_vector(lhs));
     }
 
     std::unique_ptr<BoundDistanceFunction> for_insertion_vector(TypedCells lhs) override {
-        EXPECT_TRUE(lhs.valid());
+        EXPECT_FALSE(lhs.non_existing_attribute_value());
         return std::make_unique<MyBoundDistanceFunction>(_real->for_insertion_vector(lhs));
     }
 };

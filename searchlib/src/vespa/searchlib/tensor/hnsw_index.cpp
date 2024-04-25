@@ -183,7 +183,7 @@ bool
 HnswIndex<type>::have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& result) const
 {
     auto candidate_vector = get_vector(candidate.nodeid);
-    if (!candidate_vector.valid()) {
+    if (candidate_vector.non_existing_attribute_value()) {
         /*
          * We are in a read thread and the write thread has removed the
          * tensor for the candidate. Return true to prevent the candidate
@@ -319,7 +319,7 @@ namespace {
 double
 calc_distance_helper(const BoundDistanceFunction &df, vespalib::eval::TypedCells rhs)
 {
-    if (!rhs.valid()) [[unlikely]] {
+    if (rhs.non_existing_attribute_value()) [[unlikely]] {
         /*
          * We are in a read thread and the write thread has removed the
          * tensor.
