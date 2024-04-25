@@ -27,9 +27,9 @@ import static java.util.stream.Collectors.joining;
  */
 public class MetricsPacket {
 
-    public final int statusCode;
-    public final String statusMessage;
-    public final ServiceId service;
+    private final int statusCode;
+    private final String statusMessage;
+    private final ServiceId service;
     private final Instant timestamp;
     private final Map<MetricId, Number> metrics;
     private final Map<DimensionId, String> dimensions;
@@ -51,6 +51,8 @@ public class MetricsPacket {
     public Set<ConsumerId> consumers() { return consumers; }
     public Instant timestamp() { return timestamp; }
     public ServiceId service() { return service; }
+    public int statusCode() { return statusCode; }
+    public String statusMessage() { return statusMessage; }
 
     @Override
     public String toString() {

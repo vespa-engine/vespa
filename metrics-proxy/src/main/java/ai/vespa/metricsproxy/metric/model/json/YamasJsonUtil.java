@@ -125,12 +125,12 @@ public class YamasJsonUtil {
     private static void toJson(MetricsPacket metric, JsonGenerator generator, boolean addStatus) throws IOException {
         generator.writeStartObject();
         if (addStatus) {
-            generator.writeNumberField("status_code", metric.statusCode);
+            generator.writeNumberField("status_code", metric.statusCode());
         }
         if ( ! Instant.EPOCH.equals(metric.timestamp())) {
             generator.writeNumberField("timestamp", metric.timestamp().getEpochSecond());
         }
-        generator.writeStringField("application", metric.service.id);
+        generator.writeStringField("application", metric.service().id);
 
         if ( ! metric.metrics().isEmpty()) {
             generator.writeObjectFieldStart("metrics");
@@ -161,7 +161,7 @@ public class YamasJsonUtil {
             generator.writeEndObject();
         }
         if (addStatus) {
-            generator.writeStringField("status_msg", metric.statusMessage);
+            generator.writeStringField("status_msg", metric.statusMessage());
         }
         generator.writeEndObject();
     }

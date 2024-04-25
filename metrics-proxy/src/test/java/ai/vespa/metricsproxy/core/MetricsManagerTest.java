@@ -165,7 +165,7 @@ public class MetricsManagerTest {
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         MetricsPacket extraPacket = null;
         for (MetricsPacket packet : packets) {
-            if (packet.service.equals(serviceId)) extraPacket = packet;
+            if (packet.service().equals(serviceId)) extraPacket = packet;
         }
         assertNotNull(extraPacket);
     }

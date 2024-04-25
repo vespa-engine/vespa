@@ -50,7 +50,7 @@ public class GenericJsonUtil {
 
     public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets, Node node) {
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
-                .collect(Collectors.groupingBy(packet -> packet.service, LinkedHashMap::new, toList()));
+                .collect(Collectors.groupingBy(MetricsPacket::service, LinkedHashMap::new, toList()));
 
         var jsonModel = new GenericJsonModel();
         if (node != null) {
@@ -67,8 +67,8 @@ public class GenericJsonUtil {
             var genericService = packets.stream().findFirst()
                     .map(firstPacket -> new GenericService(serviceId.id,
                                                            firstPacket.timestamp(),
-                                                           StatusCode.values()[firstPacket.statusCode],
-                                                           firstPacket.statusMessage,
+                                                           StatusCode.values()[firstPacket.statusCode()],
+                                                           firstPacket.statusMessage(),
                                                            genericMetricsList))
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
