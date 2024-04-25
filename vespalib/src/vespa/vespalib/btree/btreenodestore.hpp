@@ -14,7 +14,7 @@ void
 BTreeNodeBufferType<EntryType>::initialize_reserved_entries(void *buffer, EntryCount reserved_entries)
 {
     ParentType::initialize_reserved_entries(buffer, reserved_entries);
-    EntryType *e = static_cast<EntryType *>(buffer);
+    auto *e = static_cast<EntryType *>(buffer);
     for (size_t j = reserved_entries; j != 0; --j) {
         e->freeze();
         ++e;

@@ -54,7 +54,7 @@ public:
     BTreeNodeAllocator();
     ~BTreeNodeAllocator();
 
-    void disableFreeLists() {
+    void disableFreeLists() noexcept {
         _nodeStore.disableFreeLists();
     }
 
@@ -111,57 +111,57 @@ public:
 
     void reclaim_all_memory();
 
-    static bool isValidRef(BTreeNode::Ref ref) { return NodeStore::isValidRef(ref); }
+    static bool isValidRef(BTreeNode::Ref ref) noexcept { return NodeStore::isValidRef(ref); }
 
-    bool isLeafRef(BTreeNode::Ref ref) const {
+    bool isLeafRef(BTreeNode::Ref ref) const noexcept {
         if (!isValidRef(ref))
             return false;
         return _nodeStore.isLeafRef(ref);
     }
 
-    const InternalNodeType *mapInternalRef(BTreeNode::Ref ref) const {
+    const InternalNodeType *mapInternalRef(BTreeNode::Ref ref) const noexcept {
         return _nodeStore.mapInternalRef(ref);
     }
 
-    InternalNodeType *mapInternalRef(BTreeNode::Ref ref) {
+    InternalNodeType *mapInternalRef(BTreeNode::Ref ref) noexcept {
         return _nodeStore.mapInternalRef(ref);
     }
 
-    const LeafNodeType *mapLeafRef(BTreeNode::Ref ref) const {
+    const LeafNodeType *mapLeafRef(BTreeNode::Ref ref) const noexcept {
         return _nodeStore.mapLeafRef(ref);
     }
 
-    LeafNodeType *mapLeafRef(BTreeNode::Ref ref) {
+    LeafNodeType *mapLeafRef(BTreeNode::Ref ref) noexcept {
         return _nodeStore.mapLeafRef(ref);
     }
 
     template <typename NodeType>
-    const NodeType *mapRef(BTreeNode::Ref ref) const {
+    const NodeType *mapRef(BTreeNode::Ref ref) const noexcept {
         return _nodeStore.template mapRef<NodeType>(ref);
     }
 
     template <typename NodeType>
-    NodeType *mapRef(BTreeNode::Ref ref) {
+    NodeType *mapRef(BTreeNode::Ref ref) noexcept {
         return _nodeStore.template mapRef<NodeType>(ref);
     }
 
     InternalNodeTypeRefPair moveInternalNode(const InternalNodeType *node);
     LeafNodeTypeRefPair moveLeafNode(const LeafNodeType *node);
-    uint32_t validLeaves(BTreeNode::Ref ref) const;
+    uint32_t validLeaves(BTreeNode::Ref ref) const noexcept;
 
     /*
      * Extract level from ref.
      */
-    uint32_t getLevel(BTreeNode::Ref ref) const;
-    const KeyT &getLastKey(BTreeNode::Ref node) const;
-    const AggrT &getAggregated(BTreeNode::Ref node) const;
+    uint32_t getLevel(BTreeNode::Ref ref) const noexcept;
+    const KeyT &getLastKey(BTreeNode::Ref node) const noexcept;
+    const AggrT &getAggregated(BTreeNode::Ref node) const noexcept;
 
-    vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const noexcept;
 
     vespalib::string toString(BTreeNode::Ref ref) const;
     vespalib::string toString(const BTreeNode * node) const;
 
-    bool getCompacting(EntryRef ref) { return _nodeStore.getCompacting(ref); }
+    bool getCompacting(EntryRef ref) noexcept { return _nodeStore.getCompacting(ref); }
 
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy) { return _nodeStore.start_compact_worst(compaction_strategy); }
 
@@ -175,7 +175,7 @@ public:
         _nodeStore.foreach(ref, func);
     }
 
-    const NodeStore &getNodeStore() const { return _nodeStore; }
+    const NodeStore &getNodeStore() const noexcept { return _nodeStore; }
 };
 
 extern template class BTreeNodeAllocator<uint32_t, uint32_t, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
