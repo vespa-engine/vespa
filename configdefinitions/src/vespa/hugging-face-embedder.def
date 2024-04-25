@@ -18,6 +18,8 @@ transformerTokenTypeIds  string default=token_type_ids
 # Output name
 transformerOutput string default=last_hidden_state
 
+prependQuery string default=""
+prependDocument string default=""
 
 # Normalize tensors from tokenizer
 normalize bool default=false

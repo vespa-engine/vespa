@@ -94,8 +94,14 @@ HuggingFaceEmbedder =
    element transformer-token-type-ids { xsd:string }? &
    element transformer-output { xsd:string }? &
    element normalize { xsd:boolean }? &
+   PrependResources? &
    OnnxModelExecutionParams &
    EmbedderPoolingStrategy
+
+PrependResources = element prepend {
+  element query { xsd:string }? &
+  element document { xsd:string }?
+}
 
 SpladeEmbedder =
    attribute type { "splade-embedder" } &
