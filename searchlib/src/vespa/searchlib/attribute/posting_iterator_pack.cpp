@@ -10,17 +10,10 @@ template <typename IteratorType, typename RefType>
 PostingIteratorPack<IteratorType, RefType>::~PostingIteratorPack() = default;
 
 template <typename IteratorType, typename RefType>
-PostingIteratorPack<IteratorType, RefType>::PostingIteratorPack(std::vector<IteratorType> &&children)
+PostingIteratorPack<IteratorType, RefType>::PostingIteratorPack(std::vector<IteratorType> &&children) noexcept
     : _children(std::move(children))
 {
     assert(_children.size() <= std::numeric_limits<ref_t>::max());
-}
-
-template <typename IteratorType, typename RefType>
-bool
-PostingIteratorPack<IteratorType, RefType>::can_handle_iterators(size_t num_iterators)
-{
-    return num_iterators <= std::numeric_limits<ref_t>::max();
 }
 
 template <typename IteratorType, typename RefType>
@@ -48,14 +41,14 @@ PostingIteratorPack<IteratorType, RefType>::or_hits_into(BitVector &result, uint
 
 template <>
 int32_t
-PostingIteratorPack<DocidIterator, uint16_t>::get_weight(ref_t, uint32_t)
+PostingIteratorPack<DocidIterator, uint16_t>::get_weight(ref_t, uint32_t) noexcept
 {
     return 1;
 }
 
 template <>
 int32_t
-PostingIteratorPack<DocidIterator, uint32_t>::get_weight(ref_t, uint32_t)
+PostingIteratorPack<DocidIterator, uint32_t>::get_weight(ref_t, uint32_t) noexcept
 {
     return 1;
 }
