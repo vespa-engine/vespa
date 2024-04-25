@@ -147,10 +147,9 @@ BTreeNode::Ref
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 thawNode(BTreeNode::Ref node)
 {
-    if (isLeafRef(node))
-        return thawNode(node, mapLeafRef(node)).ref;
-    else
-        return thawNode(node, mapInternalRef(node)).ref;
+    return isLeafRef(node)
+        ? thawNode(node, mapLeafRef(node)).ref
+        : thawNode(node, mapInternalRef(node)).ref;
 }
 
 
@@ -158,8 +157,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-holdNode(BTreeNode::Ref nodeRef,
-         InternalNodeType *node)
+holdNode(BTreeNode::Ref nodeRef, InternalNodeType *node)
 {
     if (node->getFrozen()) {
         _nodeStore.hold_entry(nodeRef);
@@ -174,8 +172,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-holdNode(BTreeNode::Ref nodeRef,
-         LeafNodeType *node)
+holdNode(BTreeNode::Ref nodeRef, LeafNodeType *node)
 {
     if (node->getFrozen()) {
         _nodeStore.hold_entry(nodeRef);
@@ -318,12 +315,11 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 uint32_t
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-validLeaves(BTreeNode::Ref ref) const
+validLeaves(BTreeNode::Ref ref) const noexcept
 {
-    if (isLeafRef(ref))
-        return mapLeafRef(ref)->validSlots();
-    else
-        return mapInternalRef(ref)->validLeaves();
+    return isLeafRef(ref)
+        ? mapLeafRef(ref)->validSlots()
+        : mapInternalRef(ref)->validLeaves();
 }
 
 
@@ -331,12 +327,11 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 uint32_t
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-getLevel(BTreeNode::Ref ref) const
+getLevel(BTreeNode::Ref ref) const noexcept
 {
-    if (isLeafRef(ref))
-        return BTreeNode::LEAF_LEVEL;
-    else
-        return mapInternalRef(ref)->getLevel();
+    return isLeafRef(ref)
+        ? BTreeNode::LEAF_LEVEL
+        : mapInternalRef(ref)->getLevel();
 }
 
 
@@ -344,12 +339,11 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 const KeyT &
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-getLastKey(BTreeNode::Ref node) const
+getLastKey(BTreeNode::Ref node) const noexcept
 {
-    if (isLeafRef(node))
-        return mapLeafRef(node)->getLastKey();
-    else
-        return mapInternalRef(node)->getLastKey();
+    return isLeafRef(node)
+        ? mapLeafRef(node)->getLastKey()
+        : mapInternalRef(node)->getLastKey();
 }
 
 
@@ -357,7 +351,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 const AggrT &
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-getAggregated(BTreeNode::Ref node) const
+getAggregated(BTreeNode::Ref node) const noexcept
 {
     if (!node.valid())
         return LeafNodeType::getEmptyAggregated();
@@ -372,10 +366,9 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 vespalib::MemoryUsage
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-getMemoryUsage() const
+getMemoryUsage() const noexcept
 {
-    vespalib::MemoryUsage usage = _nodeStore.getMemoryUsage();
-    return usage;
+    return _nodeStore.getMemoryUsage();
 }
 
 template <typename KeyT, typename DataT, typename AggrT,
