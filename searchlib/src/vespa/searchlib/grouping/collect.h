@@ -13,7 +13,7 @@ public:
     Collect(const Collect &) = delete;
     Collect & operator = (const Collect &) = delete;
 protected:
-    Collect(const aggregation::Group & protoType);
+    explicit Collect(const aggregation::Group & protoType);
     ~Collect();
     void preFill(GroupRef gr, const aggregation::Group & r);
     void createCollectors(GroupRef gr);
@@ -55,9 +55,9 @@ private:
      */
     class ResultAccessor {
     public:
-        ResultAccessor() : _bluePrint(NULL), _aggregator(NULL), _offset(0) { }
+        ResultAccessor() noexcept : _bluePrint(nullptr), _aggregator(nullptr), _offset(0) { }
         ResultAccessor(const aggregation::AggregationResult & aggregator, size_t offset);
-        void setResult(const expression::ResultNode & result, uint8_t * base) {
+        void setResult(const expression::ResultNode & result, uint8_t * base) const {
             result.encode(base+_offset);
         }
         const expression::ResultNode & getResult(expression::ResultNode & result, const uint8_t * base) const {
@@ -86,8 +86,8 @@ private:
         mutable vespalib::IdentifiablePtr<aggregation::AggregationResult> _aggregator;
         uint32_t       _offset;
     };
-    using AggregatorBacking = vespalib::Array<uint8_t>;
-    using ResultAccessorList = vespalib::Array<ResultAccessor>;
+    using AggregatorBacking = std::vector<uint8_t>;
+    using ResultAccessorList = std::vector<ResultAccessor>;
     class SortInfo {
     public:
         SortInfo() noexcept : _index(0), _sign(1) { }
@@ -98,10 +98,10 @@ private:
         uint8_t _index;  // Which index in the aggragators should be used for sorting this level.
         int8_t  _sign;   // And which way. positive number -> ascending, negative number descending.
     };
-    size_t             _aggregatorSize;  // This is the bytesize required to store the aggrgate values per bucket.
-    ResultAccessorList _aggregator;      // These are the accessors to use when accessing the results.
-    AggregatorBacking  _aggrBacking;     // This is the storage for the accessors.
-    std::vector<SortInfo> _sortInfo;     // Generated cheap sortInfo, to avoid accessing more complicated data.
+    size_t                _aggregatorSize;  // This is the bytesize required to store the aggrgate values per bucket.
+    ResultAccessorList    _aggregator;      // These are the accessors to use when accessing the results.
+    AggregatorBacking     _aggrBacking;     // This is the storage for the accessors.
+    std::vector<SortInfo> _sortInfo;        // Generated cheap sortInfo, to avoid accessing more complicated data.
 };
 
 }

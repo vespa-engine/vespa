@@ -19,7 +19,7 @@ class RcuVectorHeld : public GenerationHeldBase
 public:
     RcuVectorHeld(size_t size, T&& data);
 
-    ~RcuVectorHeld();
+    ~RcuVectorHeld() override;
 };
 
 
