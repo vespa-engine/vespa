@@ -11,7 +11,8 @@ namespace vespalib::eval {
 
 struct TypedCells {
     const void *data;
-    size_t      size:56;
+    size_t      size:55;
+    bool        _non_existing_attribute_value:1;
     CellType    type;
 
     explicit TypedCells(ConstArrayRef<double> cells) noexcept : data(cells.begin()), size(cells.size()), type(CellType::DOUBLE) {}
@@ -21,6 +22,12 @@ struct TypedCells {
 
     TypedCells() noexcept : data(nullptr), size(0), type(CellType::DOUBLE) {}
     TypedCells(const void *dp, CellType ct, size_t sz) noexcept : data(dp), size(sz), type(ct) {}
+
+    static TypedCells create_non_existing_attribute_value(const void *dp, CellType ct, size_t sz) {
+        TypedCells cells(dp, ct, sz);
+        cells._non_existing_attribute_value = true;
+        return cells;
+    }
 
     template <typename T> bool check_type() const noexcept  { return check_cell_type<T>(type); }
 
@@ -36,7 +43,13 @@ struct TypedCells {
     TypedCells(const TypedCells &other) noexcept = default;
     TypedCells & operator= (TypedCells &&other) noexcept = default;
     TypedCells & operator= (const TypedCells &other) noexcept = default;
-    bool valid() const noexcept { return size != 0; }
+    /**
+     * This signals that this actually points to a value that is the default value
+     * when no value has set for the attribute.
+     * TODO: This does not belong here, but as it is used as an interface multiple places it must be so
+     *       until we come up with a better solution.
+     */
+    bool non_existing_attribute_value() const noexcept { return _non_existing_attribute_value; }
 };
 
 } // namespace
