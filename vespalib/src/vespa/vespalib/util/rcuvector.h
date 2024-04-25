@@ -173,7 +173,7 @@ public:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
     explicit RcuVector(GrowStrategy growStrategy);
-    ~RcuVector();
+    ~RcuVector() override;
 
     generation_t getGeneration() const noexcept { return _generation; }
     void setGeneration(generation_t generation) noexcept { _generation = generation; }
