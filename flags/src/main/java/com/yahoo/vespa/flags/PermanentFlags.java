@@ -410,6 +410,11 @@ public class PermanentFlags {
             "triggered",
             "Takes effect immediately");
 
+    public static final UnboundIntFlag MAX_CERTIFICATES_PER_HOUR = defineIntFlag(
+            "max-certificates-per-hour", 10,
+            "The number of certificates can be provisioned per hour, before throttling is triggered",
+            "Takes effect immediately");
+
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", true,
             "Drop pagecache. " +
