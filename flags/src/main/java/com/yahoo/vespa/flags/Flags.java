@@ -84,6 +84,12 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag NEW_RESOURCES_FORMULA = defineFeatureFlag(
+            "new-resources-formula", true,
+            List.of("hakonhall"), "2024-04-25", "2024-05-25",
+            "Use an easier to understand formula for calculating the memory and disk resources",
+            "Takes effect on next deployment of an applications.");
+
     public static final UnboundBooleanFlag FIX_CONFIG_SERVER_HEAP = defineFeatureFlag(
             "fix-config-server-heap", false,
             List.of("hakonhall"), "2024-04-23", "2024-05-23",

@@ -14,7 +14,6 @@ using vespalib::make_string;
 namespace search::queryeval {
 
 using MatchParams = ParallelWeakAndSearch::MatchParams;
-using RankParams = ParallelWeakAndSearch::RankParams;
 
 namespace wand {
 
@@ -22,7 +21,7 @@ namespace { bool should_monitor_wand() { return LOG_WOULD_LOG(spam); } }
 
 
 template <typename VectorizedTerms, typename FutureHeap, typename PastHeap, bool IS_STRICT>
-class ParallelWeakAndSearchImpl : public ParallelWeakAndSearch
+class ParallelWeakAndSearchImpl final : public ParallelWeakAndSearch
 {
 private:
     fef::TermFieldMatchData       &_tfmd;
@@ -120,8 +119,7 @@ insertMonitoringSearchIterator(const wand::Terms &terms)
     for (size_t i = 0; i < terms.size(); ++i) {
         wand::Term &t = retval[i];
         t.search = new MonitoringSearchIterator
-            (make_string("w%d:e%u:m%" PRId64 "",
-                         t.weight, t.estHits, DotProductScorer::calculateMaxScore(t)),
+            (make_string("w%d:e%u:m%" PRId64 "", t.weight, t.estHits, DotProductScorer::calculateMaxScore(t)),
              SearchIterator::UP(t.search), true);
     }
     return retval;
@@ -167,11 +165,9 @@ ParallelWeakAndSearch::createArrayWand(const Terms &terms,
                                        RankParams &&rankParams,
                                        bool strict)
 {
-    if (strict) {
-        return wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>(terms, matchParams, std::move(rankParams));
-    } else {
-        return wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>(terms, matchParams, std::move(rankParams));
-    }
+    return strict
+        ? wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>(terms, matchParams, std::move(rankParams))
+        : wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>(terms, matchParams, std::move(rankParams));
 }
 
 SearchIterator::UP
@@ -180,11 +176,9 @@ ParallelWeakAndSearch::createHeapWand(const Terms &terms,
                                       RankParams &&rankParams,
                                       bool strict)
 {
-    if (strict) {
-        return wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, true>(terms, matchParams, std::move(rankParams));
-    } else {
-        return wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, false>(terms, matchParams, std::move(rankParams));
-    }
+    return strict
+        ? wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, true>(terms, matchParams, std::move(rankParams))
+        : wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, false>(terms, matchParams, std::move(rankParams));
 }
 
 SearchIterator::UP
@@ -193,11 +187,9 @@ ParallelWeakAndSearch::create(const Terms &terms,
                               RankParams &&rankParams,
                               bool strict)
 {
-    if (terms.size() < 128) {
-        return createArrayWand(terms, matchParams, std::move(rankParams), strict);
-    } else {
-        return createHeapWand(terms, matchParams, std::move(rankParams), strict);
-    }
+    return (terms.size() < 128)
+        ? createArrayWand(terms, matchParams, std::move(rankParams), strict)
+        : createHeapWand(terms, matchParams, std::move(rankParams), strict);
 }
 
 //-----------------------------------------------------------------------------
@@ -206,9 +198,11 @@ namespace {
 
 template <typename VectorizedTerms, typename FutureHeap, typename PastHeap>
 SearchIterator::UP create_helper(search::fef::TermFieldMatchData &tfmd, VectorizedTerms &&terms, const MatchParams &params, bool strict) {
-    return (strict)
-        ? SearchIterator::UP(new wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, true>(tfmd, std::move(terms), params))
-        : SearchIterator::UP( new wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, false>(tfmd, std::move(terms), params));
+    if (strict) {
+        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, true>>(tfmd, std::move(terms), params);
+    } else {
+        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, false>>(tfmd, std::move(terms), params);
+    }
 }
 
 template <typename VectorizedTerms>
@@ -236,19 +230,20 @@ ParallelWeakAndSearch::create(search::fef::TermFieldMatchData &tfmd,
         // reverse-wrap direct iterators into old API to be compatible with monitoring
         fef::MatchDataLayout layout;
         std::vector<fef::TermFieldHandle> handles;
+        handles.reserve(weights.size());
         for (size_t i = 0; i < weights.size(); ++i) {
             handles.push_back(layout.allocTermField(tfmd.getFieldId()));
         }
         fef::MatchData::UP childrenMatchData = layout.createMatchData();
         assert(childrenMatchData->getNumTermFields() == dict_entries.size());
         wand::Terms terms;
+        terms.reserve(dict_entries.size());
         for (size_t i = 0; i < dict_entries.size(); ++i) {
-            terms.push_back(wand::Term(new DocidWithWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
-                                       weights[i],
-                                       dict_entries[i].posting_size,
-                                       childrenMatchData->resolveTermField(handles[i])));
+            terms.emplace_back(new DocidWithWeightSearchIterator(*(childrenMatchData->resolveTermField(handles[i])), attr, dict_entries[i]),
+                               weights[i],
+                               dict_entries[i].posting_size,
+                               childrenMatchData->resolveTermField(handles[i]));
         }
-        assert(terms.size() == dict_entries.size());
         return create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict);
     }
 }

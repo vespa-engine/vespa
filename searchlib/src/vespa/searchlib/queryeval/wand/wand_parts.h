@@ -26,7 +26,6 @@ using ref_t = uint16_t;
 
 using Attr = IDirectPostingStore;
 using AttrDictEntry = Attr::LookupResult;
-using AttrDictEntries = std::vector<AttrDictEntry>;
 
 //-----------------------------------------------------------------------------
 
@@ -55,14 +54,14 @@ struct Term {
 namespace {
 
 struct Ident {
-    template <typename T> T operator()(const T &t) const { return t; }
+    template <typename T> T operator()(const T &t) const noexcept { return t; }
 };
 
 struct NumericOrder {
     size_t my_size;
-    NumericOrder(size_t my_size_in) : my_size(my_size_in) {}
-    size_t size() const { return my_size; }
-    ref_t operator[](size_t idx) const { return idx; }
+    explicit NumericOrder(size_t my_size_in) noexcept : my_size(my_size_in) {}
+    size_t size() const noexcept { return my_size; }
+    ref_t operator[](size_t idx) const noexcept { return idx; }
 };
 
 template <typename F, typename Order>
@@ -84,25 +83,25 @@ int32_t get_max_weight(const SearchIterator &search) {
 
 struct TermInput {
     const Terms &terms;
-    TermInput(const Terms &terms_in) : terms(terms_in) {}
-    size_t size() const { return terms.size(); }
-    int32_t get_weight(ref_t ref) const { return terms[ref].weight; }
-    uint32_t get_est_hits(ref_t ref) const { return terms[ref].estHits; }
-    int32_t get_max_weight(ref_t ref) const { return ::search::queryeval::wand::get_max_weight(*(terms[ref].search)); }
-    docid_t get_initial_docid(ref_t ref) const { return terms[ref].search->getDocId(); }
+    explicit TermInput(const Terms &terms_in) noexcept : terms(terms_in) {}
+    size_t size() const noexcept  { return terms.size(); }
+    int32_t get_weight(ref_t ref) const noexcept { return terms[ref].weight; }
+    uint32_t get_est_hits(ref_t ref) const noexcept { return terms[ref].estHits; }
+    int32_t get_max_weight(ref_t ref) const noexcept { return ::search::queryeval::wand::get_max_weight(*(terms[ref].search)); }
+    docid_t get_initial_docid(ref_t ref) const noexcept { return terms[ref].search->getDocId(); }
 };
 
 struct AttrInput {
     const std::vector<int32_t> &weights;
     const std::vector<IDirectPostingStore::LookupResult> &dict_entries;
     AttrInput(const std::vector<int32_t> &weights_in,
-              const std::vector<IDirectPostingStore::LookupResult> &dict_entries_in)
+              const std::vector<IDirectPostingStore::LookupResult> &dict_entries_in) noexcept
         : weights(weights_in), dict_entries(dict_entries_in) {}
-    size_t size() const { return weights.size(); }
-    int32_t get_weight(ref_t ref) const { return weights[ref]; }
-    uint32_t get_est_hits(ref_t ref) const { return dict_entries[ref].posting_size; }
-    int32_t get_max_weight(ref_t ref) const { return dict_entries[ref].max_weight; }
-    docid_t get_initial_docid(ref_t) const { return SearchIterator::beginId(); }
+    size_t size() const noexcept { return weights.size(); }
+    int32_t get_weight(ref_t ref) const noexcept { return weights[ref]; }
+    uint32_t get_est_hits(ref_t ref) const noexcept { return dict_entries[ref].posting_size; }
+    int32_t get_max_weight(ref_t ref) const noexcept { return dict_entries[ref].max_weight; }
+    docid_t get_initial_docid(ref_t) const noexcept { return SearchIterator::beginId(); }
 };
 
 template <typename Input>
@@ -111,7 +110,7 @@ struct MaxSkipOrder {
     const Input &input;
     const std::vector<score_t> &max_score;
     MaxSkipOrder(docid_t docIdLimit, const Input &input_in,
-                 const std::vector<score_t> &max_score_in)
+                 const std::vector<score_t> &max_score_in) noexcept
         : estNumDocs(1.0), input(input_in), max_score(max_score_in)
     {
         estNumDocs = std::max(estNumDocs, docIdLimit - 1.0);
@@ -119,10 +118,10 @@ struct MaxSkipOrder {
             estNumDocs = std::max(estNumDocs, (double)input.get_est_hits(i));
         }
     }
-    double p_not_hit(double estHits) const {
+    double p_not_hit(double estHits) const noexcept {
         return ((estNumDocs - estHits) / (estNumDocs));
     }
-    bool operator()(ref_t a, ref_t b) const {
+    bool operator()(ref_t a, ref_t b) const noexcept {
         return ((p_not_hit(input.get_est_hits(a)) * max_score[a]) > (p_not_hit(input.get_est_hits(b)) * max_score[b]));
     }
 };
@@ -158,7 +157,7 @@ private:
     IteratorPack         _iteratorPack;
 
 public:
-    VectorizedState();
+    VectorizedState() noexcept;
     VectorizedState(VectorizedState &&) noexcept;
     VectorizedState & operator=(VectorizedState &&) noexcept;
     ~VectorizedState();
@@ -184,7 +183,7 @@ public:
 };
 
 template <typename IteratorPack>
-VectorizedState<IteratorPack>::VectorizedState()
+VectorizedState<IteratorPack>::VectorizedState() noexcept
     : _docId(),
       _weight(),
       _maxScore(),
@@ -292,10 +291,10 @@ struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
  **/
 struct DocIdOrder {
     const docid_t *termPos;
-    DocIdOrder(docid_t *pos) : termPos(pos) {}
-    bool at_end(ref_t ref) const { return termPos[ref] == search::endDocId; }
-    docid_t get_pos(ref_t ref) const { return termPos[ref]; }
-    bool operator()(ref_t a, ref_t b) const {
+    explicit DocIdOrder(docid_t *pos) noexcept : termPos(pos) {}
+    bool at_end(ref_t ref) const noexcept { return termPos[ref] == search::endDocId; }
+    docid_t get_pos(ref_t ref) const noexcept { return termPos[ref]; }
+    bool operator()(ref_t a, ref_t b) const noexcept {
         return (termPos[a] < termPos[b]);
     }
 };
@@ -358,7 +357,7 @@ DualHeap<FutureHeap, PastHeap>::DualHeap(const DocIdOrder &futureCmp, size_t siz
 }
 
 template <typename FutureHeap, typename PastHeap>
-DualHeap<FutureHeap, PastHeap>::~DualHeap() { }
+DualHeap<FutureHeap, PastHeap>::~DualHeap() = default;
 
 template <typename FutureHeap, typename PastHeap>
 void
@@ -399,11 +398,11 @@ DualHeap<FutureHeap, PastHeap>::stringify() const {
 struct TermFrequencyScorer
 {
     // weight * idf, scaled to fixedpoint
-    static score_t calculateMaxScore(double estHits, double weight) {
+    static score_t calculateMaxScore(double estHits, double weight) noexcept {
         return (score_t) (TermFrequencyScorer_TERM_SCORE_FACTOR * weight / (1.0 + log(1.0 + (estHits / 1000.0))));
     }
 
-    static score_t calculateMaxScore(const Term &term) {
+    static score_t calculateMaxScore(const Term &term) noexcept {
         return calculateMaxScore(term.estHits, term.weight) + 1;
     }
 
@@ -424,9 +423,9 @@ struct DotProductScorer
     static score_t calculateMaxScore(const Term &term) {
         int32_t maxWeight = std::numeric_limits<int32_t>::max();
         const PostingInfo *postingInfo = term.search->getPostingInfo();
-        if (postingInfo != NULL) {
-            const MinMaxPostingInfo *minMax = dynamic_cast<const MinMaxPostingInfo *>(postingInfo);
-            if (minMax != NULL) {
+        if (postingInfo != nullptr) {
+            const auto *minMax = dynamic_cast<const MinMaxPostingInfo *>(postingInfo);
+            if (minMax != nullptr) {
                 maxWeight = minMax->getMaxWeight();
             }
         }
