@@ -107,17 +107,13 @@ public:
     }
 
     template <typename T, typename U>
-    nbostream &
-    operator<<(const std::pair<T, U> &val)
-    {
+    nbostream & operator<<(const std::pair<T, U> &val) {
         *this << val.first << val.second;
         return *this;
     }
 
     template <typename T, typename U>
-    nbostream &
-    operator>>(std::pair<T, U> &val)
-    {
+    nbostream & operator>>(std::pair<T, U> &val) {
         *this >> val.first >> val.second;
         return *this;
     }
