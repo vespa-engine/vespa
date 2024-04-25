@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @file persistence.h
- *
- * Persistence related commands, like put, get & remove
+  * Persistence related commands, like put, get & remove
  */
 #pragma once
 
@@ -10,6 +8,7 @@
 #include <vespa/storageapi/defs.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
+#include <optional>
 
 namespace document {
     class DocumentUpdate;
@@ -117,19 +116,31 @@ class UpdateCommand : public TestAndSetCommand {
     std::shared_ptr<document::DocumentUpdate> _update;
     Timestamp _timestamp;
     Timestamp _oldTimestamp;
+    std::optional<bool> _create_if_missing; // caches the value held (possibly lazily deserialized) in _update
 
 public:
     UpdateCommand(const document::Bucket &bucket,
                   const std::shared_ptr<document::DocumentUpdate>&, Timestamp);
     ~UpdateCommand() override;
 
-    void setTimestamp(Timestamp ts) { _timestamp = ts; }
-    void setOldTimestamp(Timestamp ts) { _oldTimestamp = ts; }
+    void setTimestamp(Timestamp ts) noexcept { _timestamp = ts; }
+    void setOldTimestamp(Timestamp ts) noexcept { _oldTimestamp = ts; }
+
+    [[nodiscard]] bool has_cached_create_if_missing() const noexcept {
+        return _create_if_missing.has_value();
+    }
+    // It is the caller's responsibility to ensure this value matches that of _update->getCreateIfNonExisting()
+    void set_cached_create_if_missing(bool create) noexcept {
+        _create_if_missing = create;
+    }
 
     const std::shared_ptr<document::DocumentUpdate>& getUpdate() const { return _update; }
     const document::DocumentId& getDocumentId() const override;
     Timestamp getTimestamp() const { return _timestamp; }
     Timestamp getOldTimestamp() const { return _oldTimestamp; }
+
+    // May throw iff has_cached_create_if_missing() == false, otherwise noexcept.
+    [[nodiscard]] bool create_if_missing() const;
 
     const document::DocumentType * getDocumentType() const override;
     vespalib::string getSummary() const override;

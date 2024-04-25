@@ -668,7 +668,7 @@ TwoPhaseUpdateOperation::applyUpdateToDocument(document::Document& doc) const
 bool
 TwoPhaseUpdateOperation::shouldCreateIfNonExistent() const
 {
-    return _updateCmd->getUpdate()->getCreateIfNonExistent();
+    return _updateCmd->create_if_missing();
 }
 
 bool

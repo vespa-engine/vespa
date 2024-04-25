@@ -166,4 +166,10 @@ public class UpdateDocumentMessage extends TestAndSetMessage {
     public void setCondition(TestAndSetCondition condition) {
         this.update.setCondition(condition);
     }
+
+    boolean createIfMissing() {
+        deserialize();
+        return update.getCreateIfNonExistent();
+    }
+
 }

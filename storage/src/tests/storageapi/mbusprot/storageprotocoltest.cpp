@@ -262,7 +262,6 @@ TEST_P(StorageProtocolTest, response_metadata_is_propagated) {
 TEST_P(StorageProtocolTest, update) {
     auto update = std::make_shared<document::DocumentUpdate>(_docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
     update->addUpdate(FieldUpdate(_testDoc->getField("headerval")).addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(17))));
-
     update->addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("headerval", "testdoctype1.headerval > 0"));
 
     auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
@@ -282,6 +281,37 @@ TEST_P(StorageProtocolTest, update) {
     EXPECT_EQ(Timestamp(14), reply2->getTimestamp());
     EXPECT_EQ(Timestamp(8), reply->getOldTimestamp());
     EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
+}
+
+TEST_P(StorageProtocolTest, update_request_create_if_missing_flag_is_propagated) {
+    auto make_update_cmd = [&](bool create_if_missing, bool cached) {
+        auto update = std::make_shared<document::DocumentUpdate>(
+                _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
+        update->addUpdate(FieldUpdate(_testDoc->getField("headerval")).addUpdate(
+                std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(17))));
+        update->addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("headerval", "testdoctype1.headerval > 0"));
+        update->setCreateIfNonExistent(create_if_missing);
+        auto cmd = std::make_shared<UpdateCommand>(_bucket, update, 14);
+        if (cached) {
+            cmd->set_cached_create_if_missing(create_if_missing);
+        }
+        return cmd;
+    };
+
+    auto check_flag_propagation = [&](bool create_if_missing, bool cached) {
+        auto cmd = make_update_cmd(create_if_missing, cached);
+        EXPECT_EQ(cmd->has_cached_create_if_missing(), cached);
+        EXPECT_EQ(cmd->create_if_missing(), create_if_missing);
+
+        auto cmd2 = copyCommand(cmd);
+        EXPECT_EQ(cmd2->has_cached_create_if_missing(), cached);
+        EXPECT_EQ(cmd2->create_if_missing(), create_if_missing);
+    };
+
+    check_flag_propagation(false, false);
+    check_flag_propagation(true,  false);
+    check_flag_propagation(false, true);
+    check_flag_propagation(true,  true);
 }
 
 TEST_P(StorageProtocolTest, get) {
@@ -880,7 +910,7 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(sizeof(BucketInfoCommand), sizeof(BucketCommand));
     EXPECT_EQ(sizeof(TestAndSetCommand), sizeof(BucketInfoCommand) + sizeof(vespalib::string));
     EXPECT_EQ(sizeof(PutCommand),        sizeof(TestAndSetCommand) + 40);
-    EXPECT_EQ(sizeof(UpdateCommand),     sizeof(TestAndSetCommand) + 32);
+    EXPECT_EQ(sizeof(UpdateCommand),     sizeof(TestAndSetCommand) + 40);
     EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 112);
     EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + 184);
 }

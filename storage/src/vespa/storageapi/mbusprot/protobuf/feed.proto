@@ -31,11 +31,18 @@ message Update {
 }
 
 message UpdateRequest {
-    Bucket bucket                 = 1;
-    Update update                 = 2;
-    uint64 new_timestamp          = 3;
-    uint64 expected_old_timestamp = 4; // If zero; no expectation.
-    TestAndSetCondition condition = 5;
+    enum CreateIfMissing {
+        UNSPECIFIED = 0; // Legacy fallback: must deserialize `update` to find flag value
+        TRUE        = 1;
+        FALSE       = 2;
+    }
+
+    Bucket              bucket                 = 1;
+    Update              update                 = 2;
+    uint64              new_timestamp          = 3;
+    uint64              expected_old_timestamp = 4; // If zero; no expectation.
+    TestAndSetCondition condition              = 5;
+    CreateIfMissing     create_if_missing      = 6;
 }
 
 message UpdateResponse {

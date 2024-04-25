@@ -29,7 +29,7 @@ UpdateOperation::UpdateOperation(const DistributorNodeContext& node_ctx,
       _msg(msg),
       _entries(std::move(entries)),
       _new_timestamp(_msg->getTimestamp()),
-      _is_auto_create_update(_msg->getUpdate()->getCreateIfNonExistent()),
+      _is_auto_create_update(_msg->create_if_missing()),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
       _bucketSpace(bucketSpace),
@@ -112,6 +112,9 @@ UpdateOperation::onStart(DistributorStripeMessageSender& sender)
             copyMessageSettings(*_msg, *command);
             command->setOldTimestamp(_msg->getOldTimestamp());
             command->setCondition(_msg->getCondition());
+            if (_msg->has_cached_create_if_missing()) {
+                command->set_cached_create_if_missing(_msg->create_if_missing());
+            }
             messages.emplace_back(std::move(command), node);
         }
 

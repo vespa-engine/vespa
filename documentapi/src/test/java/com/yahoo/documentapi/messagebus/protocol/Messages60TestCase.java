@@ -504,6 +504,7 @@ public class Messages60TestCase extends MessagesTestBase {
                 assertEquals(msg.getNewTimestamp(), deserializedMsg.getNewTimestamp());
                 assertEquals(msg.getOldTimestamp(), deserializedMsg.getOldTimestamp());
                 assertEquals(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
+                assertFalse(msg.createIfMissing());
             }
         }
     }

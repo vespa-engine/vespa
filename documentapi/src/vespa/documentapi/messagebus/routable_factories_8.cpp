@@ -312,6 +312,10 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::update_document_message_f
             }
             dest.set_expected_old_timestamp(src.getOldTimestamp());
             dest.set_force_assign_timestamp(src.getNewTimestamp());
+            if (src.has_cached_create_if_missing()) {
+                dest.set_create_if_missing(src.create_if_missing() ? protobuf::UpdateDocumentRequest_CreateIfMissing_TRUE
+                                                                   : protobuf::UpdateDocumentRequest_CreateIfMissing_FALSE);
+            }
         },
         [type_repo = std::move(repo)](const protobuf::UpdateDocumentRequest& src) {
             auto msg = std::make_unique<UpdateDocumentMessage>();
@@ -321,6 +325,9 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::update_document_message_f
             }
             msg->setOldTimestamp(src.expected_old_timestamp());
             msg->setNewTimestamp(src.force_assign_timestamp());
+            if (src.create_if_missing() != protobuf::UpdateDocumentRequest_CreateIfMissing_UNSPECIFIED) {
+                msg->set_cached_create_if_missing(src.create_if_missing() == protobuf::UpdateDocumentRequest_CreateIfMissing_TRUE);
+            }
             return msg;
         }
     );

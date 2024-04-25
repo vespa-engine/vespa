@@ -2,6 +2,7 @@
 #pragma once
 
 #include "testandsetmessage.h"
+#include <optional>
 
 namespace document { class DocumentUpdate; }
 
@@ -10,9 +11,10 @@ namespace documentapi {
 class UpdateDocumentMessage : public TestAndSetMessage {
 private:
     using DocumentUpdateSP = std::shared_ptr<document::DocumentUpdate>;
-    DocumentUpdateSP _documentUpdate;
-    uint64_t         _oldTime;
-    uint64_t         _newTime;
+    DocumentUpdateSP    _documentUpdate;
+    uint64_t            _oldTime;
+    uint64_t            _newTime;
+    std::optional<bool> _create_if_missing;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -28,21 +30,21 @@ public:
      * Constructs a new document message for deserialization.
      */
     UpdateDocumentMessage();
-    ~UpdateDocumentMessage();
+    ~UpdateDocumentMessage() override;
 
     /**
      * Constructs a new document update message.
      *
      * @param documentUpdate The document update to perform.
      */
-    UpdateDocumentMessage(DocumentUpdateSP documentUpdate);
+    explicit UpdateDocumentMessage(DocumentUpdateSP documentUpdate);
 
     /**
      * Returns the document update to perform.
      *
      * @return The update.
      */
-    DocumentUpdateSP stealDocumentUpdate() const { return std::move(_documentUpdate); }
+    [[nodiscard]] DocumentUpdateSP stealDocumentUpdate() const { return std::move(_documentUpdate); }
     const document::DocumentUpdate & getDocumentUpdate() const { return *_documentUpdate; }
     /**
      * Sets the document update to perform.
@@ -56,21 +58,21 @@ public:
      *
      * @return The document timestamp.
      */
-    uint64_t getOldTimestamp() const { return _oldTime; }
+    [[nodiscard]] uint64_t getOldTimestamp() const noexcept { return _oldTime; }
 
     /**
      * Sets the timestamp required for this update to be applied.
      *
      * @param time The timestamp to set.
      */
-    void setOldTimestamp(uint64_t time) { _oldTime = time; }
+    void setOldTimestamp(uint64_t time) noexcept { _oldTime = time; }
 
     /**
      * Returns the timestamp to assign to the updated document.
      *
      * @return The document timestamp.
      */
-    uint64_t getNewTimestamp() const { return _newTime; }
+    [[nodiscard]] uint64_t getNewTimestamp() const noexcept { return _newTime; }
 
     /**
      * Sets the timestamp to assign to the updated document.
@@ -78,6 +80,18 @@ public:
      * @param time The timestamp to set.
      */
     void setNewTimestamp(uint64_t time) { _newTime = time; }
+
+    void set_cached_create_if_missing(bool create) noexcept {
+        _create_if_missing = create;
+    }
+
+    [[nodiscard]] bool has_cached_create_if_missing() const noexcept {
+        return _create_if_missing.has_value();
+    }
+    // Note: iff has_cached_create_if_missing() == false, this will trigger a deserialization of the
+    // underlying DocumentUpdate instance, which might throw an exception on deserialization failure.
+    // Otherwise, this is noexcept.
+    [[nodiscard]] bool create_if_missing() const;
 
     bool hasSequenceId() const override;
     uint64_t getSequenceId() const override;

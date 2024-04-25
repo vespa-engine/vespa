@@ -176,8 +176,52 @@ public class Messages80TestCase extends MessagesTestBase {
     }
 
     class UpdateDocumentMessageTest implements RunnableTest {
-        @Override
-        public void run() {
+
+        UpdateDocumentMessage makeUpdateWithCreateIfMissing(boolean createIfMissing) {
+            var docType = protocol.getDocumentTypeManager().getDocumentType("testdoc");
+            var update = new DocumentUpdate(docType, new DocumentId("id:ns:testdoc::"));
+            update.addFieldPathUpdate(new RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0"));
+            update.setCreateIfNonExistent(createIfMissing);
+
+            var msg = new UpdateDocumentMessage(update);
+            msg.setNewTimestamp(777);
+            msg.setOldTimestamp(666);
+            msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
+            return msg;
+        }
+
+        void testLegacyCreateIfMissingFlagCanBeDeserializedFromDocumentUpdate() {
+            // Legacy binary files were created _prior_ to the createIfMissing flag being
+            // written as part of the serialization process.
+            forEachLanguage((lang) -> {
+                var msg = (UpdateDocumentMessage) deserialize(
+                        "UpdateDocumentMessage-legacy-no-create-if-missing",
+                        DocumentProtocol.MESSAGE_UPDATEDOCUMENT, lang);
+                assertFalse(msg.createIfMissing());
+
+                msg = (UpdateDocumentMessage) deserialize(
+                        "UpdateDocumentMessage-legacy-with-create-if-missing",
+                        DocumentProtocol.MESSAGE_UPDATEDOCUMENT, lang);
+                assertTrue(msg.createIfMissing());
+            });
+        }
+
+        void checkDeserialization(Language lang, String name, boolean expectedCreate) {
+            var msg = (UpdateDocumentMessage) deserialize(name, DocumentProtocol.MESSAGE_UPDATEDOCUMENT, lang);
+            assertEquals(expectedCreate, msg.createIfMissing());
+        };
+
+        void testCreateIfMissingFlagIsPropagated() {
+            serialize("UpdateDocumentMessage-no-create-if-missing",   makeUpdateWithCreateIfMissing(false));
+            serialize("UpdateDocumentMessage-with-create-if-missing", makeUpdateWithCreateIfMissing(true));
+
+            forEachLanguage((lang) -> {
+                checkDeserialization(lang, "UpdateDocumentMessage-no-create-if-missing",   false);
+                checkDeserialization(lang, "UpdateDocumentMessage-with-create-if-missing", true);
+            });
+        }
+
+        void testAllUpdateFieldsArePropagated() {
             var docType = protocol.getDocumentTypeManager().getDocumentType("testdoc");
             var update = new DocumentUpdate(docType, new DocumentId("id:ns:testdoc::"));
             update.addFieldPathUpdate(new RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0"));
@@ -196,6 +240,13 @@ public class Messages80TestCase extends MessagesTestBase {
                 assertEquals(msg.getOldTimestamp(), deserializedMsg.getOldTimestamp());
                 assertEquals(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
             });
+        }
+
+        @Override
+        public void run() {
+            testAllUpdateFieldsArePropagated();
+            testLegacyCreateIfMissingFlagCanBeDeserializedFromDocumentUpdate();
+            testCreateIfMissingFlagIsPropagated();
         }
     }
 

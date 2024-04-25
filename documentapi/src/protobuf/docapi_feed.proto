@@ -39,11 +39,18 @@ message PutDocumentResponse {
 }
 
 message UpdateDocumentRequest {
+    enum CreateIfMissing {
+        UNSPECIFIED = 0; // Legacy fallback: must deserialize `update` to find flag value
+        TRUE        = 1;
+        FALSE       = 2;
+    }
+
     // Note: update contains embedded document ID
     DocumentUpdate      update                 = 1;
     TestAndSetCondition condition              = 2;
     uint64              expected_old_timestamp = 3;
     uint64              force_assign_timestamp = 4;
+    CreateIfMissing     create_if_missing      = 5;
 }
 
 message UpdateDocumentResponse {
