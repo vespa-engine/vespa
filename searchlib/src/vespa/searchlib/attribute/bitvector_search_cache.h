@@ -10,6 +10,8 @@
 #include <atomic>
 
 namespace search { class BitVector; }
+namespace vespalib { class MemoryUsage; }
+
 namespace search::attribute {
 
 /**
@@ -37,6 +39,7 @@ private:
 
     mutable std::shared_mutex _mutex;
     std::atomic<uint64_t>     _size;
+    size_t                    _entries_extra_memory_usage;
     Cache _cache;
 
 public:
@@ -45,6 +48,7 @@ public:
     void insert(const vespalib::string &term, std::shared_ptr<Entry> entry);
     std::shared_ptr<Entry> find(const vespalib::string &term) const;
     size_t size() const { return _size.load(std::memory_order_relaxed); }
+    vespalib::MemoryUsage get_memory_usage() const;
     void clear();
 };
 
