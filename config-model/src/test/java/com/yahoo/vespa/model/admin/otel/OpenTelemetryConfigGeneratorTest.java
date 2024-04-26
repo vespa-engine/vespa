@@ -6,8 +6,12 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -25,8 +29,9 @@ public class OpenTelemetryConfigGeneratorTest {
 
     @Test
     void testBuildsYaml() {
+        var mockZone = new Zone(SystemName.PublicCd, Environment.prod, RegionName.from("mock"));
         var app = ApplicationId.from("mytenant", "myapp", "myinstance");
-        var generator = new OpenTelemetryConfigGenerator(null, app);
+        var generator = new OpenTelemetryConfigGenerator(mockZone, app);
         var root = new MockRoot();
 
         var mockHost = new Host(root, "localhost2.local");

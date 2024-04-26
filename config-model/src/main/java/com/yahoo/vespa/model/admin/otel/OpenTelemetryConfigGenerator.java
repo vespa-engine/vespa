@@ -97,7 +97,9 @@ public class OpenTelemetryConfigGenerator {
             // attributes on all metrics from this /state/v1 port
             g.writeStartObject();
             for (var entry : dimVals.entrySet()) {
-                g.writeStringField(entry.getKey(), entry.getValue());
+                if (entry.getValue() != null) {
+                    g.writeStringField(entry.getKey(), entry.getValue());
+                }
             }
             g.writeEndObject();
         }
@@ -163,6 +165,7 @@ public class OpenTelemetryConfigGenerator {
         g.writeEndObject();
     }
     private void addAttributeInsert(JsonGenerator g, String key, String value) throws java.io.IOException {
+        if (value == null) return;
         g.writeStartObject();
         g.writeStringField("key", key);
         g.writeStringField("value", value);
@@ -253,39 +256,41 @@ public class OpenTelemetryConfigGenerator {
     }
 
     private String zoneAttr() {
-        if (zone == null) return "noZone";
+        if (zone == null) return null;
         return zone.environment().value() + "." + zone.region().value();
     }
     private String appIdAttr() {
-        if (applicationId == null) return "noApp";
+        if (applicationId == null) return null;
         return applicationId.toFullString();
     }
     private String systemAttr() {
-        if (zone == null) return "noSystem";
+        if (zone == null) return null;
         return zone.system().value();
     }
     private String tenantAttr() {
-        if (applicationId == null) return "noTenant";
+        if (applicationId == null) return null;
         return applicationId.tenant().value();
     }
     private String appNameAttr() {
-        if (applicationId == null) return "noAppName";
+        if (applicationId == null) return null;
         return applicationId.application().value();
     }
     private String appInstanceAttr() {
-        if (applicationId == null) return "noAppInstance";
+        if (applicationId == null) return null;
         return applicationId.instance().value();
     }
     private String cloudAttr() {
-        if (zone == null) return "noCloud";
+        if (zone == null) return null;
         return zone.cloud().name().value();
     }
 
     private String getDeploymentCluster(ClusterSpec cluster) {
-        String appString = applicationId == null ? "none.noapp.nope" : applicationId.toFullString();
+        if (applicationId == null) return null;
+        if (zone == null) return null;
+        String appString = applicationId.toFullString();
         return String.join(".", appString,
-                           zone == null ? "dev" : zone.environment().value(),
-                           zone == null ? "local" : zone.region().value(),
+                           zone.environment().value(),
+                           zone.region().value(),
                            cluster.id().value());
     }
 
