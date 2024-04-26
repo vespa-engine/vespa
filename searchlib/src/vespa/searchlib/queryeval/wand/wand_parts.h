@@ -163,7 +163,7 @@ public:
     ~VectorizedState();
 
     template <typename Scorer, typename Input>
-    std::vector<ref_t> init_state(const Input &input, uint32_t docIdLimit);
+    std::vector<ref_t> init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit);
 
     docid_t *docId() { return &(_docId[0]); }
     const int32_t *weight() const { return &(_weight[0]); }
@@ -202,14 +202,14 @@ VectorizedState<IteratorPack>::operator=(VectorizedState &&) noexcept = default;
 template <typename IteratorPack>
 template <typename Scorer, typename Input>
 std::vector<ref_t>
-VectorizedState<IteratorPack>::init_state(const Input &input, uint32_t docIdLimit) {
+VectorizedState<IteratorPack>::init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit) {
     std::vector<ref_t> order;
     std::vector<score_t> max_scores;
     order.reserve(input.size());
     max_scores.reserve(input.size());
     for (size_t i = 0; i < input.size(); ++i) {
         order.push_back(i);
-        max_scores.push_back(Scorer::calculate_max_score(input, i));
+        max_scores.push_back(scorer.calculate_max_score(input, i));
     }
     std::sort(order.begin(), order.end(), MaxSkipOrder<Input>(docIdLimit, input, max_scores));
     _docId = assemble([&input](ref_t ref){ return input.get_initial_docid(ref); }, order);
@@ -238,7 +238,7 @@ private:
 
 public:
     template <typename Scorer>
-    VectorizedIteratorTerms(const Terms &t, const Scorer &, uint32_t docIdLimit,
+    VectorizedIteratorTerms(const Terms &t, const Scorer & scorer, uint32_t docIdLimit,
                             fef::MatchData::UP childrenMatchData);
     VectorizedIteratorTerms(VectorizedIteratorTerms &&) noexcept;
     VectorizedIteratorTerms & operator=(VectorizedIteratorTerms &&) noexcept;
@@ -250,11 +250,11 @@ public:
 };
 
 template <typename Scorer>
-VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer &, uint32_t docIdLimit,
+VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer & scorer, uint32_t docIdLimit,
                                                  fef::MatchData::UP childrenMatchData)
     : _terms()
 {
-    std::vector<ref_t> order = init_state<Scorer>(TermInput(t), docIdLimit);
+    std::vector<ref_t> order = init_state<Scorer>(TermInput(t), scorer, docIdLimit);
     _terms = assemble([&t](ref_t ref){ return t[ref]; }, order);
     iteratorPack() = SearchIteratorPack(assemble([&t](ref_t ref){ return t[ref].search; }, order),
                                         assemble([&t](ref_t ref){ return t[ref].matchData; }, order),
@@ -268,10 +268,10 @@ struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
     VectorizedAttributeTerms(const std::vector<int32_t> &weights,
                              const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
                              const IDocidWithWeightPostingStore &attr,
-                             const Scorer &,
+                             const Scorer & scorer,
                              docid_t docIdLimit)
     {
-        std::vector<ref_t> order = init_state<Scorer>(AttrInput(weights, dict_entries), docIdLimit);
+        std::vector<ref_t> order = init_state<Scorer>(AttrInput(weights, dict_entries), scorer, docIdLimit);
         std::vector<DocidWithWeightIterator> iterators;
         iterators.reserve(order.size());
         for (size_t i = 0; i < order.size(); ++i) {
@@ -398,16 +398,16 @@ DualHeap<FutureHeap, PastHeap>::stringify() const {
 struct TermFrequencyScorer
 {
     // weight * idf, scaled to fixedpoint
-    static score_t calculateMaxScore(double estHits, double weight) noexcept {
+    score_t calculateMaxScore(double estHits, double weight) const noexcept {
         return (score_t) (TermFrequencyScorer_TERM_SCORE_FACTOR * weight / (1.0 + log(1.0 + (estHits / 1000.0))));
     }
 
-    static score_t calculateMaxScore(const Term &term) noexcept {
+    score_t calculateMaxScore(const Term &term) const noexcept {
         return calculateMaxScore(term.estHits, term.weight) + 1;
     }
 
     template <typename Input>
-    static score_t calculate_max_score(const Input &input, ref_t ref) {
+    score_t calculate_max_score(const Input &input, ref_t ref) const noexcept {
         return calculateMaxScore(input.get_est_hits(ref), input.get_weight(ref)) + 1;
     }
 };
@@ -521,10 +521,10 @@ private:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_present_score(VectorizedTerms &terms, Heaps &heaps, score_t &max_score, const Scorer &, AboveThreshold &&aboveThreshold) {
+    bool check_present_score(VectorizedTerms &terms, Heaps &heaps, score_t &max_score, const Scorer & scorer, AboveThreshold &&aboveThreshold) {
         ref_t *end = heaps.present_end();
         for (ref_t *ref = heaps.present_begin(); ref != end; ++ref) {
-            score_t term_score = Scorer::calculateScore(terms, *ref, _candidate);
+            score_t term_score = scorer.calculateScore(terms, *ref, _candidate);
             _partial_score += term_score;
             max_score -= (terms.maxScore(*ref) - term_score);
             if (!aboveThreshold(max_score)) {
@@ -535,11 +535,11 @@ private:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_past_score(VectorizedTerms &terms, Heaps &heaps, score_t &max_score, const Scorer &, AboveThreshold &&aboveThreshold) {
+    bool check_past_score(VectorizedTerms &terms, Heaps &heaps, score_t &max_score, const Scorer & scorer, AboveThreshold &&aboveThreshold) {
         while (heaps.has_past() && !aboveThreshold(_partial_score)) {
             heaps.pop_past();
             if (step_term(terms, heaps.last_present())) {
-                score_t term_score = Scorer::calculateScore(terms, heaps.last_present(), _candidate);
+                score_t term_score = scorer.calculateScore(terms, heaps.last_present(), _candidate);
                 _partial_score += term_score;
                 max_score -= (terms.maxScore(heaps.last_present()) - term_score);
             } else {
@@ -618,7 +618,7 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_score(VectorizedTerms &terms, Heaps &heaps, Scorer &&scorer, AboveThreshold &&aboveThreshold) {
+    bool check_score(VectorizedTerms &terms, Heaps &heaps, const Scorer &scorer, AboveThreshold &&aboveThreshold) {
         _partial_score = 0;
         score_t max_score = _maxUpperBound;
         if (check_present_score(terms, heaps, max_score, scorer, aboveThreshold)) {
@@ -630,12 +630,12 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer>
-    score_t get_full_score(VectorizedTerms &terms, Heaps &heaps, Scorer &&) {
+    score_t get_full_score(VectorizedTerms &terms, Heaps &heaps, const Scorer & scorer) {
         score_t score = _partial_score;
         while (heaps.has_past()) {
             heaps.pop_any_past();
             if (step_term(terms, heaps.last_present())) {
-                score += Scorer::calculateScore(terms, heaps.last_present(), _candidate);
+                score += scorer.calculateScore(terms, heaps.last_present(), _candidate);
             } else {
                 evict_last_present(terms, heaps);
             }
