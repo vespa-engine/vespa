@@ -6,6 +6,8 @@
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 #include <vespa/vespalib/stllike/string.h>
 
+namespace vespalib { class MemoryUsage; }
+
 namespace search::attribute {
 
 class BitVectorSearchCache;
@@ -62,6 +64,7 @@ public:
 
     std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
     virtual std::unique_ptr<AttributeReadGuard> makeReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, bool stableEnumGuard) const;
+    vespalib::MemoryUsage get_memory_usage() const;
 
 protected:
     vespalib::string                           _name;

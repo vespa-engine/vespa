@@ -12,9 +12,11 @@
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 
 #include <vespa/log/log.h>
@@ -23,6 +25,7 @@ LOG_SETUP(".proton.server.fast_access_doc_subdb");
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerialNum;
+using search::attribute::ImportedAttributeVector;
 using search::index::Schema;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
@@ -85,16 +88,38 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          attrMgrResult);
 }
 
+namespace {
+
+vespalib::hash_set<vespalib::string>
+get_attribute_names(const proton::IAttributeManager& mgr)
+{
+    vespalib::hash_set<vespalib::string> both;
+    std::vector<AttributeGuard> list;
+    mgr.getAttributeListAll(list);
+    for (const auto& attr : list) {
+        both.insert(attr->getName());
+    }
+    auto imported = mgr.getImportedAttributes();
+    if (imported != nullptr) {
+        std::vector<std::shared_ptr<ImportedAttributeVector>> i_list;
+        imported->getAll(i_list);
+        for (const auto& attr : i_list) {
+            both.insert(attr->getName());
+        }
+    }
+    return both;
+}
+
+}
+
 void
 FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 {
     if (_addMetrics) {
         // register attribute metrics
-        std::vector<AttributeGuard> list;
-        attrMgrResult->getAttributeListAll(list);
+        auto list = get_attribute_names(*attrMgrResult);
         for (const auto &attr : list) {
-            const AttributeVector &v = *attr;
-            _metricsWireService.addAttribute(_subAttributeMetrics, v.getName());
+            _metricsWireService.addAttribute(_subAttributeMetrics, attr);
         }
     }
     _initAttrMgr = attrMgrResult;
@@ -141,33 +166,20 @@ void
 FastAccessDocSubDB::reconfigureAttributeMetrics(const proton::IAttributeManager &newMgr,
                                                 const proton::IAttributeManager &oldMgr)
 {
-    std::set<vespalib::string> toAdd;
-    std::set<vespalib::string> toRemove;
-    std::vector<AttributeGuard> newList;
-    std::vector<AttributeGuard> oldList;
-    newMgr.getAttributeList(newList);
-    oldMgr.getAttributeList(oldList);
-    for (const auto &newAttr : newList) {
-        if (std::find_if(oldList.begin(),
-                         oldList.end(),
-                         AttributeGuardComp(newAttr->getName())) ==
-            oldList.end()) {
-            toAdd.insert(newAttr->getName());
+    auto old_list = get_attribute_names(oldMgr);
+    auto new_list = get_attribute_names(newMgr);
+
+    for (const auto &attrName : new_list) {
+        if (old_list.contains(attrName)) {
+            continue;
         }
-    }
-    for (const auto &oldAttr : oldList) {
-        if (std::find_if(newList.begin(),
-                         newList.end(),
-                         AttributeGuardComp(oldAttr->getName())) ==
-            newList.end()) {
-            toRemove.insert(oldAttr->getName());
-        }
-    }
-    for (const auto &attrName : toAdd) {
         LOG(debug, "reconfigureAttributeMetrics(): addAttribute='%s'", attrName.c_str());
         _metricsWireService.addAttribute(_subAttributeMetrics, attrName);
     }
-    for (const auto &attrName : toRemove) {
+    for (const auto &attrName : old_list) {
+        if (new_list.contains(attrName)) {
+            continue;
+        }
         LOG(debug, "reconfigureAttributeMetrics(): removeAttribute='%s'", attrName.c_str());
         _metricsWireService.removeAttribute(_subAttributeMetrics, attrName);
     }
