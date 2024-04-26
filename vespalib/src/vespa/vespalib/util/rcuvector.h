@@ -17,8 +17,7 @@ class RcuVectorHeld : public GenerationHeldBase
     T _data;
 
 public:
-    RcuVectorHeld(size_t size, T&& data);
-
+    RcuVectorHeld(size_t size, T&& data) noexcept;
     ~RcuVectorHeld() override;
 };
 
@@ -49,11 +48,11 @@ private:
     GrowStrategy          _growStrategy;
     GenerationHolderType &_genHolder;
 
-    size_t calcNewSize(size_t baseSize) const;
-    size_t calcNewSize() const;
+    size_t calcNewSize(size_t baseSize) const noexcept;
+    size_t calcNewSize() const noexcept;
     void expand(size_t newCapacity);
     void expandAndInsert(const T & v);
-    void update_vector_start();
+    void update_vector_start() noexcept;
 protected:
     virtual void onReallocation();
 
@@ -80,12 +79,12 @@ public:
      * isFull() should be called from writer only.
      * Const type qualifier removed to prevent call from readers.
      **/
-    bool isFull() { return _data.size() == _data.capacity(); }
+    bool isFull() noexcept { return _data.size() == _data.capacity(); }
 
     /**
      * Return the combined memory usage for this instance.
      **/
-    virtual MemoryUsage getMemoryUsage() const;
+    virtual MemoryUsage getMemoryUsage() const noexcept;
 
     // vector interface
     // no swap method, use reset() to forget old capacity and holds
@@ -106,28 +105,28 @@ public:
         }
     }
 
-    bool empty() const { return _data.empty(); }
+    bool empty() const noexcept { return _data.empty(); }
     /*
      * size() should be called from writer only.
      * Const type qualifier removed to prevent call from readers.
      */
-    size_t size()  { return _data.size(); }
+    size_t size() noexcept { return _data.size(); }
     /*
      * get_size() should be called from writer only or with proper lock held.
      * Used in predicate attribute by reader (causing data race).
      */
-    size_t get_size() const { return _data.size(); }
+    size_t get_size() const noexcept{ return _data.size(); }
     /*
      * capacity() should be called from writer only.
      * Const type qualifier removed to prevent call from readers.
      */
-    size_t capacity() { return _data.capacity(); }
+    size_t capacity() noexcept { return _data.capacity(); }
     void clear() { _data.clear(); }
     /*
      * operator[]() should be called from writer only.
      * Overload with const type qualifier removed to prevent call from readers.
      */
-    T & operator[](size_t i) { return _data[i]; }
+    T & operator[](size_t i) noexcept { return _data[i]; }
     /*
      * Readers holding a generation guard can call acquire_elem_ref(i)
      * to get a const reference to element i. Array bound must be handled
@@ -153,7 +152,7 @@ public:
 };
 
 template <typename T>
-class RcuVector : public RcuVectorBase<T>
+class RcuVector final : public RcuVectorBase<T>
 {
 private:
     using generation_t         = typename RcuVectorBase<T>::generation_t;
@@ -173,18 +172,18 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVector(GrowStrategy growStrategy);
-    ~RcuVector();
+    explicit RcuVector(GrowStrategy growStrategy);
+    ~RcuVector() override;
 
-    generation_t getGeneration() const { return _generation; }
-    void setGeneration(generation_t generation) { _generation = generation; }
+    generation_t getGeneration() const noexcept { return _generation; }
+    void setGeneration(generation_t generation) noexcept { _generation = generation; }
 
     /**
      * Remove all old data vectors where generation < firstUsed.
      **/
     void reclaim_memory(generation_t oldest_used_gen);
 
-    MemoryUsage getMemoryUsage() const override;
+    MemoryUsage getMemoryUsage() const noexcept override;
 };
 
 }

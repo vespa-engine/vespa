@@ -102,10 +102,9 @@ HnswGraph<type>::histograms() const
     for (size_t i = 0; i < num_nodes; ++i) {
         auto levels_ref = acquire_levels_ref(i);
         if (levels_ref.valid()) {
-            uint32_t levels = 0;
             uint32_t l0links = 0;
             auto level_array = levels_store.get(levels_ref);
-            levels = level_array.size();
+            uint32_t levels = level_array.size();
             if (levels > 0) {
                 auto links_ref = level_array[0].load_acquire();
                 auto link_array = links_store.get(links_ref);
