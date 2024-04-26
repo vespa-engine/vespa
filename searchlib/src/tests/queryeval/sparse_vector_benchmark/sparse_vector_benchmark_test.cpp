@@ -9,7 +9,6 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
-#include <vespa/vespalib/util/rand48.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
@@ -27,9 +26,9 @@ namespace {
 
 struct Writer {
     FILE *file;
-    Writer(const std::string &file_name) {
+    explicit Writer(const std::string &file_name) {
         file = fopen(file_name.c_str(), "w");
-        assert(file != 0);
+        assert(file != nullptr);
     }
     void write(const char *data, size_t size) const {
         fwrite(data, 1, size, file);
@@ -53,7 +52,7 @@ private:
     Writer _html;
 
 public:
-    Report(const std::string &file) : _html(file) {
+    explicit Report(const std::string &file) : _html(file) {
         _html.fmt("<html>\n");
         _html.fmt("<head><title>Sparse Vector Search Benchmark Report</title></head>\n");
         _html.fmt("<body>\n");
@@ -82,7 +81,7 @@ private:
 
 public:
     using UP = std::unique_ptr<Graph>;
-    Graph(const std::string &file) : _writer(file) {}
+    explicit Graph(const std::string &file) : _writer(file) {}
     void addValue(double x, double y) { _writer.fmt("%g %g\n", x, y); }
 };
 
@@ -98,8 +97,10 @@ private:
 public:
     using UP = std::unique_ptr<Plot>;
 
-    Plot(const std::string &title) : _name(vespalib::make_string("plot.%d", _plots++)), _graphs(0),
-                                     _writer(vespalib::make_string("%s.gnuplot", _name.c_str())) {
+    explicit Plot(const std::string &title)
+        : _name(vespalib::make_string("plot.%d", _plots++)), _graphs(0),
+          _writer(vespalib::make_string("%s.gnuplot", _name.c_str()))
+    {
         std::string png_file = vespalib::make_string("%s.png", _name.c_str());
         _writer.fmt("set term png size 1200,800\n");
         _writer.fmt("set output '%s'\n", png_file.c_str());
@@ -118,10 +119,10 @@ public:
         _writer.fmt("%s '%s' using 1:2 title '%s' w lines",
                     (_graphs == 0) ? "plot " : ",", file.c_str(), legend.c_str());
         ++_graphs;
-        return Graph::UP(new Graph(file));
+        return std::make_unique<Graph>(file);
     }
 
-    static UP createPlot(const std::string &title) { return UP(new Plot(title)); }
+    static UP createPlot(const std::string &title) { return std::make_unique<Plot>(title); }
 };
 
 int Plot::_plots = 0;
@@ -137,19 +138,19 @@ struct ChildFactory {
     ChildFactory() {}
     virtual std::string name() const = 0;
     virtual SearchIterator::UP createChild(uint32_t idx, uint32_t limit) const = 0;
-    virtual ~ChildFactory() {}
+    virtual ~ChildFactory() = default;
 };
 
 struct SparseVectorFactory {
     virtual std::string name() const = 0;
     virtual SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const = 0;
-    virtual ~SparseVectorFactory() {}
+    virtual ~SparseVectorFactory() = default;
 };
 
 struct FilterStrategy {
     virtual std::string name() const = 0;
     virtual SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const = 0;
-    virtual ~FilterStrategy() {}
+    virtual ~FilterStrategy() = default;
 };
 
 //-----------------------------------------------------------------------------
@@ -158,7 +159,7 @@ struct ModSearch : SearchIterator {
     uint32_t step;
     uint32_t limit;
     ModSearch(uint32_t step_in, uint32_t limit_in) : step(step_in), limit(limit_in) { setDocId(step); }
-    virtual void doSeek(uint32_t docid) override {
+    void doSeek(uint32_t docid) override {
         assert(docid > getDocId());
         uint32_t hit = (docid / step) * step;
         if (hit < docid) {
@@ -171,14 +172,14 @@ struct ModSearch : SearchIterator {
             setAtEnd();
         }
     }
-    virtual void doUnpack(uint32_t) override {}
+    void doUnpack(uint32_t) override {}
 };
 
 struct ModSearchFactory : ChildFactory {
     uint32_t bias;
     ModSearchFactory() : bias(1) {}
     explicit ModSearchFactory(int b) : bias(b) {}
-    virtual std::string name() const override {
+    std::string name() const override {
         return vespalib::make_string("ModSearch(%u)", bias);
     }
     SearchIterator::UP createChild(uint32_t idx, uint32_t limit) const override {
@@ -190,14 +191,14 @@ struct ModSearchFactory : ChildFactory {
 
 struct VespaWandFactory : SparseVectorFactory {
     uint32_t n;
-    VespaWandFactory(uint32_t n_in) : n(n_in) {}
-    virtual std::string name() const override {
+    explicit VespaWandFactory(uint32_t n_in) noexcept : n(n_in) {}
+    std::string name() const override {
         return vespalib::make_string("VespaWand(%u)", n);
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         wand::Terms terms;
         for (size_t i = 0; i < childCnt; ++i) {
-            terms.push_back(wand::Term(childFactory.createChild(i, limit), default_weight, limit / (i + 1)));
+            terms.emplace_back(childFactory.createChild(i, limit), default_weight, limit / (i + 1));
         }
         return WeakAndSearch::create(terms, n, true);
     }
@@ -205,16 +206,16 @@ struct VespaWandFactory : SparseVectorFactory {
 
 struct RiseWandFactory : SparseVectorFactory {
     uint32_t n;
-    RiseWandFactory(uint32_t n_in) : n(n_in) {}
-    virtual std::string name() const override {
+    explicit RiseWandFactory(uint32_t n_in) : n(n_in) {}
+    std::string name() const override {
         return vespalib::make_string("RiseWand(%u)", n);
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         wand::Terms terms;
         for (size_t i = 0; i < childCnt; ++i) {
-            terms.push_back(wand::Term(childFactory.createChild(i, limit), default_weight, limit / (i + 1)));
+            terms.emplace_back(childFactory.createChild(i, limit), default_weight, limit / (i + 1));
         }
-        return SearchIterator::UP(new rise::TermFrequencyRiseWand(terms, n));
+        return std::make_unique<rise::TermFrequencyRiseWand>(terms, n);
     }
 };
 
@@ -230,7 +231,7 @@ struct WeightedSetFactory : SparseVectorFactory {
             tfmd.tagAsNotNeeded();
         }
     }
-    virtual std::string name() const override {
+    std::string name() const override {
         return vespalib::make_string("WeightedSet%s%s", (field_is_filter ? "-filter" : ""), (tfmd.isNotNeeded() ? "-unranked" : ""));
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
@@ -257,7 +258,7 @@ struct DotProductFactory : SparseVectorFactory {
             tfmd.tagAsNotNeeded();
         }
     }
-    virtual std::string name() const override {
+    std::string name() const override {
         return vespalib::make_string("DotProduct%s%s", (field_is_filter ? "-filter" : ""), (tfmd.isNotNeeded() ? "-unranked" : ""));
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
@@ -280,7 +281,7 @@ struct DotProductFactory : SparseVectorFactory {
 };
 
 struct OrFactory : SparseVectorFactory {
-    virtual std::string name() const override {
+    std::string name() const override {
         return vespalib::make_string("Or");
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
@@ -295,7 +296,7 @@ struct OrFactory : SparseVectorFactory {
 //-----------------------------------------------------------------------------
 
 struct NoFilterStrategy : FilterStrategy {
-    virtual std::string name() const override {
+    std::string name() const override {
         return vespalib::make_string("NoFilter");
     }
     SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
@@ -332,8 +333,8 @@ struct NegativeFilterAfterStrategy : FilterStrategy {
 struct Result {
     vespalib::duration time;
     uint32_t num_hits;
-    Result() : time(max_time), num_hits(0) {}
-    Result(vespalib::duration t, uint32_t n) : time(t), num_hits(n) {}
+    Result() noexcept : time(max_time), num_hits(0) {}
+    Result(vespalib::duration t, uint32_t n) noexcept : time(t), num_hits(n) {}
     void combine(const Result &r) {
         if (time == max_time) {
             *this = r;
@@ -357,7 +358,7 @@ Result run_single_benchmark(FilterStrategy &filterStrategy, SparseVectorFactory 
         ++num_hits;
         sb.unpack(sb.getDocId());
     }
-    return Result(timer.elapsed(), num_hits);
+    return {timer.elapsed(), num_hits};
 }
 
 //-----------------------------------------------------------------------------
@@ -384,8 +385,7 @@ public:
     void benchmark(SparseVectorFactory &svf, const std::vector<uint32_t> &child_counts) {
         Graph::UP graph = _plot->createGraph(svf.name());
         fprintf(stderr, "  search operator: %s\n", svf.name().c_str());
-        for (size_t i = 0; i < child_counts.size(); ++i) {
-            uint32_t childCnt = child_counts[i];
+        for (unsigned int childCnt : child_counts) {
             Result result;
             for (int j = 0; j < 5; ++j) {
                 result.combine(run_single_benchmark(_filterStrategy, svf, _childFactory, childCnt, _limit));
