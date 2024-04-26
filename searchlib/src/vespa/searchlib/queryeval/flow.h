@@ -122,9 +122,18 @@ struct MinOrCost {
     }
 };
 
+// The difference in cost of doing 'after' seeks instead of 'before'
+// seeks against a collection of strict iterators. This formula is
+// used to estimate the cost of forcing an iterator to be strict in a
+// non-strict context as well as calculating the change in cost when
+// changing the order of strict iterators.
+inline double strict_cost_diff(double before, double after) {
+    return 0.2 * (after - before);
+}
+
 // estimate the cost of evaluating a strict child in a non-strict context
 inline double forced_strict_cost(const FlowStats &stats, double rate) {
-    return 0.2 * (rate - stats.estimate) + stats.strict_cost;
+    return stats.strict_cost + strict_cost_diff(stats.estimate, rate);
 }
 
 // would it be faster to force a non-strict child to be strict
@@ -195,6 +204,16 @@ double ordered_cost_of(ADAPTER adapter, const T &children, F flow, bool allow_fo
     return total_cost;
 }
 
+static double actual_cost_of(auto adapter, const auto &children, auto flow, auto cost_of) noexcept {
+    double total_cost = 0.0;
+    for (const auto &child: children) {
+        double child_cost = cost_of(child, InFlow(flow.strict(), flow.flow()));
+        flow.update_cost(total_cost, child_cost);
+        flow.add(adapter.estimate(child));
+    }
+    return total_cost;
+}
+
 auto select_strict_and_child(auto adapter, const auto &children, size_t first, double est, bool native_strict) {
     double cost = 0.0;
     size_t best_idx = first;
@@ -218,10 +237,10 @@ auto select_strict_and_child(auto adapter, const auto &children, size_t first, d
                 break;
             }
             target = candidate;
-            my_diff += (0.2 * child.estimate - 0.2 * other.estimate);
+            my_diff += strict_cost_diff(other.estimate, child.estimate);
             if (candidate == 0 && native_strict) {
                 // the first iterator produces its own in-flow
-                my_diff += (0.2 * child.estimate - 0.2 * other.estimate);
+                my_diff += strict_cost_diff(other.estimate, child.estimate);
             }
             // note that 'my_diff' might overestimate the cost
             // (underestimate the benefit) of inserting 'child' before

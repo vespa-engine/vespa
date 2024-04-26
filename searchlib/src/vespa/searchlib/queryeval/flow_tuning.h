@@ -5,6 +5,7 @@
 #include <vespa/searchcommon/attribute/collectiontype.h>
 #include <cmath>
 #include <cstddef>
+#include "flow.h"
 
 namespace search::queryeval::flow {
 
@@ -81,17 +82,15 @@ inline double lookup_strict_cost(size_t num_indirections) {
  * Estimates the cost of evaluating an always strict iterator (e.g. btree) in a non-strict context.
  *
  * When the estimate and strict cost is low, this models the cost of checking whether
- * the seek docid matches the docid the iterator is already positioned at (the 0.2 factor).
+ * the seek docid matches the docid the iterator is already positioned at.
  *
  * The resulting non-strict cost is most accurate when the inflow is 1.0.
  * The resulting non-strict cost is highly underestimated when the inflow goes to 0.0.
  * It is important to have a better estimate at higher inflows,
  * as the latency (time) penalty is higher if choosing wrong.
- *
- * Note: This formula is equal to forced_strict_cost() in flow.h.
  */
 inline double non_strict_cost_of_strict_iterator(double estimate, double strict_cost) {
-    return 0.2 * (1.0 - estimate) + strict_cost;
+    return strict_cost + strict_cost_diff(estimate, 1.0);
 }
 
 // Strict cost of matching in a btree posting list (e.g. fast-search attribute or memory index field).
