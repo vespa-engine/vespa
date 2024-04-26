@@ -43,10 +43,7 @@ private:
 
 public:
     WeakAndSearchLR(const Terms &terms, uint32_t n)
-        : _terms(terms,
-                 TermFrequencyScorer(),
-                 0,
-                 fef::MatchData::UP()),
+        : _terms(terms, TermFrequencyScorer(), 0, {}),
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
           _algo(),
           _threshold(1),

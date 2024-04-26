@@ -25,18 +25,18 @@ struct TestIterator : public SearchIterator
           _useInfo(useInfo),
           _unpackDocId(0)
     {}
-    virtual void doSeek(uint32_t docId) override {
+    void doSeek(uint32_t docId) override {
         (void) docId;
     }
-    virtual void doUnpack(uint32_t docId) override {
+    void doUnpack(uint32_t docId) override {
         _unpackDocId = docId;
         _tfmd.appendPosition(TermFieldMatchDataPosition(0, 0, _termWeight, 1));
     }
-    virtual const PostingInfo *getPostingInfo() const override {
-        return (_useInfo ? &_info : NULL);
+    const PostingInfo *getPostingInfo() const override {
+        return (_useInfo ? &_info : nullptr);
     }
     static UP create(int32_t maxWeight, int32_t termWeight, bool useInfo) {
-        return UP(new TestIterator(maxWeight, termWeight, useInfo));
+        return std::make_unique<TestIterator>(maxWeight, termWeight, useInfo);
     }
 };
 

@@ -15,8 +15,12 @@ namespace rise {
 
 struct TermFreqScorer
 {
-    static int64_t calculateMaxScore(const wand::Term &term) {
-        return TermFrequencyScorer::calculateMaxScore(term);
+    [[no_unique_address]] TermFrequencyScorer _termFrequencyScorer;
+    TermFreqScorer() noexcept
+        : _termFrequencyScorer()
+    { }
+    int64_t calculateMaxScore(const wand::Term &term) const noexcept {
+        return _termFrequencyScorer.calculateMaxScore(term);
     }
     static int64_t calculateScore(const wand::Term &term, uint32_t docId) {
         term.search->unpack(docId);
@@ -43,9 +47,13 @@ private:
         //const addr_t *const *_streamPayloads;
 
     public:
-        StreamComparator(const docid_t *streamDocIds);
+        explicit StreamComparator(const docid_t *streamDocIds) noexcept
+            : _streamDocIds(streamDocIds)
+        { }
         //const addr_t *const *streamPayloads);
-        inline bool operator()(const uint16_t a, const uint16_t b);
+        bool operator()(const uint16_t a, const uint16_t b) const noexcept {
+            return (_streamDocIds[a] < _streamDocIds[b]);
+        }
     };
 
     // number of streams present in the query
@@ -66,6 +74,7 @@ private:
 
     // comparator that compares two streams
     StreamComparator _streamComparator;
+    [[no_unique_address]] Scorer _scorer;
 
     //-------------------------------------------------------------------------
     // variables used for scoring and pruning
@@ -86,7 +95,7 @@ private:
      *
      * @return  whether a valid pivot index is found
      */
-    bool _findPivotFeatureIdx(const score_t threshold, uint32_t &pivotIdx);
+    bool _findPivotFeatureIdx(score_t threshold, uint32_t &pivotIdx);
 
     /**
      * let the first numStreamsToMove streams in the stream
@@ -94,7 +103,7 @@ private:
      *
      * @param numStreamsToMove  the number of streams that should move
      */
-    void _moveStreamsAndSort(const uint32_t numStreamsToMove);
+    void _moveStreamsAndSort(uint32_t numStreamsToMove);
 
     /**
      * let the first numStreamsToMove streams in the stream
@@ -106,7 +115,7 @@ private:
      * @param desiredDocId  desired doc id
      *
      */
-    void _moveStreamsToDocAndSort(const uint32_t numStreamsToMove, const docid_t desiredDocId);
+    void _moveStreamsToDocAndSort(uint32_t numStreamsToMove, docid_t desiredDocId);
 
     /**
      * do sort and merge for WAND
@@ -115,18 +124,18 @@ private:
      *                                           be sorted and then merge sort with the rest
      *
      */
-    void _sortMerge(const uint32_t numStreamsToSort);
+    void _sortMerge(uint32_t numStreamsToSort);
 
 public:
     RiseWand(const Terms &terms, uint32_t n);
-    ~RiseWand();
+    ~RiseWand() override;
     void next();
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
 };
 
-using TermFrequencyRiseWand = RiseWand<TermFreqScorer, std::greater_equal<uint64_t> >;
-using DotProductRiseWand = RiseWand<DotProductScorer, std::greater<uint64_t> >;
+using TermFrequencyRiseWand = RiseWand<TermFreqScorer, std::greater_equal<> >;
+using DotProductRiseWand = RiseWand<DotProductScorer, std::greater<> >;
 
 } // namespacve rise
 
