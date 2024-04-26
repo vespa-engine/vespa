@@ -88,6 +88,8 @@ public class EmbedderTestCase {
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
         assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
+        assertEquals("Represent this sentence for searching relevant passages:", embedderCfg.prependQuery());
+        assertEquals("passage:", embedderCfg.prependDocument());
     }
 
     @Test
@@ -101,6 +103,8 @@ public class EmbedderTestCase {
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
         assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
         assertEquals(-1, tokenizerCfg.maxLength());
+        assertEquals("Represent this sentence for searching relevant passages:", embedderCfg.prependQuery());
+        assertEquals("passage:", embedderCfg.prependDocument());
     }
 
     @Test
