@@ -74,7 +74,7 @@ private:
 
     // comparator that compares two streams
     StreamComparator _streamComparator;
-    Scorer _scorer;
+    [[no_unique_address]] Scorer _scorer;
 
     //-------------------------------------------------------------------------
     // variables used for scoring and pruning
