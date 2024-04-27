@@ -672,15 +672,15 @@ HnswIndex<type>::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
     std::vector<PairDist> pairs;
     for (uint32_t i = 0; i + 1 < cluster.size(); ++i) {
         uint32_t n_id_1 = cluster[i];
+        TypedCells n_cells_1 = get_vector(n_id_1);
+        if (n_cells_1.non_existing_attribute_value()) [[unlikely]] continue;
         LinkArrayRef n_list_1 = _graph.get_link_array(n_id_1, level);
-        std::unique_ptr<BoundDistanceFunction> df;
+        std::unique_ptr<BoundDistanceFunction> df = _distance_ff->for_insertion_vector(n_cells_1);
         for (uint32_t j = i + 1; j < cluster.size(); ++j) {
             uint32_t n_id_2 = cluster[j];
-            if (has_link_to(n_list_1, n_id_2)) continue;
-            if (!df) {
-                df = _distance_ff->for_insertion_vector(get_vector(n_id_1));
+            if ( ! has_link_to(n_list_1, n_id_2)) {
+                pairs.emplace_back(n_id_1, n_id_2, calc_distance(*df, n_id_2));
             }
-            pairs.emplace_back(n_id_1, n_id_2, calc_distance(*df, n_id_2));
         }
     }
     std::sort(pairs.begin(), pairs.end());
