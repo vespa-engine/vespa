@@ -43,7 +43,8 @@ public class LocalProviderSpec {
                             com.yahoo.search.searchers.ValidateFuzzySearcher.class,
                             com.yahoo.search.yql.FieldFiller.class,
                             com.yahoo.search.searchers.InputCheckingSearcher.class,
-                            com.yahoo.search.searchers.ContainerLatencySearcher.class);
+                            com.yahoo.search.searchers.ContainerLatencySearcher.class,
+                            com.yahoo.search.significance.SignificanceSearcher.class);
 
     public final String clusterName;
 

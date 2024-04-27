@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake3
 %global _vespa_abseil_cpp_version 20240116.1
-%global _vespa_build_depencencies_version 1.3.0
+%global _vespa_build_depencencies_version 1.3.1
 %global _vespa_gtest_version 1.14.0
 %global _vespa_protobuf_version 5.26.1
 %global _use_vespa_abseil_cpp 1
@@ -157,14 +157,14 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: xxhash-libs >= 0.8.1
 %endif
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.4
+Requires: vespa-openssl >= 3.1.5
 %else
 Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.4-1
-Requires: vespa-libzstd >= 1.5.4-1
+Requires: vespa-libzstd >= 1.5.6-1
 %if 0%{?el8}
-Requires: vespa-openblas >= 0.3.26
+Requires: vespa-openblas >= 0.3.27
 %else
 Requires: openblas-serial
 %endif
@@ -188,7 +188,7 @@ Summary: Vespa - The open big data serving engine - C++ libraries
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: libicu
 %if 0%{?el8}
-Requires: vespa-openssl >= 3.1.4
+Requires: vespa-openssl >= 3.1.5
 %else
 Requires: openssl-libs
 %endif
@@ -204,9 +204,9 @@ Requires: vespa-protobuf = %{_vespa_protobuf_version}
 Requires: vespa-protobuf = %{_vespa_protobuf_version}
 Requires: llvm-libs
 %endif
-Requires: vespa-onnxruntime = 1.17.1
+Requires: vespa-onnxruntime = 1.17.3
 %if 0%{?el8} || 0%{?el9}
-Requires: vespa-jllama = 3.0.0
+Requires: vespa-jllama = 3.0.1
 %endif
 
 %description libs

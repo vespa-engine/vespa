@@ -225,6 +225,9 @@ class QueryNodeConverter : public QueryVisitor {
         if (!node.usePositionData()) {
             flags |= ParseItem::IFLAG_NOPOSITIONDATA;
         }
+        if (node.prefix_match()) {
+            flags |= ParseItem::IFLAG_PREFIX_MATCH;
+        }
         if (flags != 0) {
             features |= ParseItem::IF_FLAGS;
         }
@@ -289,8 +292,8 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(FuzzyTerm &node) override {
         createTerm(node, ParseItem::ITEM_FUZZY);
-        appendCompressedPositiveNumber(node.getMaxEditDistance());
-        appendCompressedPositiveNumber(node.getPrefixLength());
+        appendCompressedPositiveNumber(node.max_edit_distance());
+        appendCompressedPositiveNumber(node.prefix_lock_length());
     }
 
     void visit(NearestNeighborTerm &node) override {

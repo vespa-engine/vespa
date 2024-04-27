@@ -113,7 +113,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         QueryTerm::string ssTerm;
         if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
             char buf[24];
-            auto res = std::to_chars(buf, buf + sizeof(buf), queryRep.getIntergerTerm(), 10);
+            auto res = std::to_chars(buf, buf + sizeof(buf), queryRep.getIntegerTerm(), 10);
             ssTerm.assign(buf, res.ptr - buf);
         } else {
             ssTerm = queryRep.getTerm();
@@ -130,7 +130,8 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 qt = std::make_unique<RegexpTerm>(factory.create(), ssTerm, ssIndex, TermType::REGEXP, normalize_mode);
             } else if (sTerm == TermType::FUZZYTERM) {
                 qt = std::make_unique<FuzzyTerm>(factory.create(), ssTerm, ssIndex, TermType::FUZZYTERM, normalize_mode,
-                                                 queryRep.getFuzzyMaxEditDistance(), queryRep.getFuzzyPrefixLength());
+                                                 queryRep.fuzzy_max_edit_distance(), queryRep.fuzzy_prefix_lock_length(),
+                                                 queryRep.has_prefix_match_semantics());
             } else [[likely]] {
                 qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm, normalize_mode);
             }
@@ -236,7 +237,7 @@ QueryNode::populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt,
             break;
         case ParseItem::ITEM_PURE_WEIGHTED_LONG:
         {
-            auto res = std::to_chars(buf, buf + sizeof(buf), queryRep.getIntergerTerm(), 10);
+            auto res = std::to_chars(buf, buf + sizeof(buf), queryRep.getIntegerTerm(), 10);
             subterm.assign(buf, res.ptr - buf);
             term = std::make_unique<QueryTerm>(std::unique_ptr<QueryNodeResultBase>(), subterm, "",
                                                QueryTermSimple::Type::WORD, Normalizing::NONE);

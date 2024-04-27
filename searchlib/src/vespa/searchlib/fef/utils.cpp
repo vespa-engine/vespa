@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "rank_program.h"
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vector>
 #include <cassert>
 

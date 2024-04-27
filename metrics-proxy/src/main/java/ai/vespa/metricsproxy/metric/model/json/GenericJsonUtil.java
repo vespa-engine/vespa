@@ -50,7 +50,7 @@ public class GenericJsonUtil {
 
     public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets, Node node) {
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
-                .collect(Collectors.groupingBy(packet -> packet.service, LinkedHashMap::new, toList()));
+                .collect(Collectors.groupingBy(MetricsPacket::service, LinkedHashMap::new, toList()));
 
         var jsonModel = new GenericJsonModel();
         if (node != null) {
@@ -66,13 +66,13 @@ public class GenericJsonUtil {
                     .toList();
             var genericService = packets.stream().findFirst()
                     .map(firstPacket -> new GenericService(serviceId.id,
-                                                           firstPacket.timestamp,
-                                                           StatusCode.values()[firstPacket.statusCode],
-                                                           firstPacket.statusMessage,
+                                                           firstPacket.timestamp(),
+                                                           StatusCode.values()[firstPacket.statusCode()],
+                                                           firstPacket.statusMessage(),
                                                            genericMetricsList))
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
-                jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
+                jsonModel.node = new GenericNode(genericService.timeAsInstant(), genericService.metrics);
             } else {
                 genericServices.add(genericService);
 
@@ -107,13 +107,13 @@ public class GenericJsonUtil {
         if (node.metrics == null || node.metrics.isEmpty()) {
             return List.of(new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                                          .statusCode(StatusCode.UP.ordinal())
-                                         .timestamp(node.timestamp));
+                                         .timestamp(node.timeAsInstant()));
         }
 
         for (var genericMetrics : node.metrics) {
             var packet = new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                     .statusCode(StatusCode.UP.ordinal())
-                    .timestamp(node.timestamp);
+                    .timestamp(node.timeAsInstant());
             addMetrics(genericMetrics, packet);
             packets.add(packet);
         }
@@ -138,7 +138,7 @@ public class GenericJsonUtil {
         return new MetricsPacket.Builder(ServiceId.toServiceId(service.name))
                 .statusCode(StatusCode.fromString(service.status.code).ordinal())
                 .statusMessage(service.status.description)
-                .timestamp(service.timestamp);
+                .timestamp(service.timeAsInstant());
     }
 
     private static void addMetrics(GenericMetrics genericMetrics, MetricsPacket.Builder packet) {

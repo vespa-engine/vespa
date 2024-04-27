@@ -166,6 +166,7 @@ private:
                    double ratio, size_t vector_length) const;
     double getDocumentRatio(size_t document_count, uint32_t doc_id_limit) const;
     size_t getDocumentCount(vespalib::datastore::EntryRef ref) const;
+    size_t get_frozen_document_count(vespalib::datastore::EntryRef ref) const;
     bool shouldCreateVectorPosting(size_t size, double ratio) const;
     bool shouldRemoveVectorPosting(size_t size, double ratio) const;
     size_t getVectorPostingSize(const PostingVector &vector) const {
@@ -226,7 +227,7 @@ template<typename FunctionType>
 void
 SimpleIndex<Posting, Key, DocId>::foreach_frozen_key(vespalib::datastore::EntryRef ref, Key key, FunctionType func) const {
     auto it = _vector_posting_lists.getFrozenView().find(key);
-    double ratio = getDocumentRatio(getDocumentCount(ref), _limit_provider.getDocIdLimit());
+    double ratio = getDocumentRatio(get_frozen_document_count(ref), _limit_provider.getDocIdLimit());
     if (it.valid() && ratio > _config.foreach_vector_threshold) {
         auto &vector = *it.getData();
         size_t size = getVectorPostingSize(vector);

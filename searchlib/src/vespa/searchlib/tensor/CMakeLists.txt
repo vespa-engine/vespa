@@ -24,6 +24,7 @@ vespa_add_library(searchlib_tensor OBJECT
     hnsw_multi_best_neighbors.cpp
     hnsw_nodeid_mapping.cpp
     hnsw_single_best_neighbors.cpp
+    hnsw_test_node.cpp
     imported_tensor_attribute_vector.cpp
     imported_tensor_attribute_vector_read_guard.cpp
     inv_log_level_generator.cpp

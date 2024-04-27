@@ -26,8 +26,10 @@ private:
 
     const char* skip_prefix(const char* word) const;
 public:
-    DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, vespalib::fuzzy::LevenshteinDfa::DfaType dfa_type);
-    DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased); // Defaults to table-based DFA
+    DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, bool prefix_match,
+                    vespalib::fuzzy::LevenshteinDfa::DfaType dfa_type);
+    // Defaults to table-based DFA:
+    DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, bool prefix_match);
     ~DfaFuzzyMatcher();
 
     [[nodiscard]] static constexpr bool supports_max_edits(uint8_t edits) noexcept {

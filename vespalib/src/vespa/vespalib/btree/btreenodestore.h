@@ -13,7 +13,7 @@ namespace vespalib::btree {
 class BTreeNodeReclaimer
 {
 public:
-    static void reclaim(BTreeNode * node) {
+    static void reclaim(BTreeNode * node) noexcept {
         node->unFreeze();
     }
 };
@@ -78,44 +78,44 @@ public:
 
     ~BTreeNodeStore();
 
-    void disableFreeLists() { _store.disableFreeLists(); }
+    void disableFreeLists() noexcept { _store.disableFreeLists(); }
     void disable_entry_hold_list() { _store.disable_entry_hold_list(); }
 
-    static bool isValidRef(EntryRef ref) { return ref.valid(); }
+    static bool isValidRef(EntryRef ref) noexcept { return ref.valid(); }
 
-    bool isLeafRef(EntryRef ref) const {
+    bool isLeafRef(EntryRef ref) const noexcept {
         RefType iRef(ref);
         return _store.getTypeId(iRef.bufferId()) == NODETYPE_LEAF;
     }
 
-    const InternalNodeType *mapInternalRef(EntryRef ref) const {
+    const InternalNodeType *mapInternalRef(EntryRef ref) const noexcept {
         RefType iRef(ref);
         return _store.getEntry<InternalNodeType>(iRef);
     }
 
-    InternalNodeType *mapInternalRef(EntryRef ref) {
+    InternalNodeType *mapInternalRef(EntryRef ref) noexcept {
         RefType iRef(ref);
         return _store.getEntry<InternalNodeType>(iRef);
     }
 
-    const LeafNodeType *mapLeafRef(EntryRef ref) const {
+    const LeafNodeType *mapLeafRef(EntryRef ref) const noexcept {
         RefType iRef(ref);
         return _store.getEntry<LeafNodeType>(iRef);
     }
 
-    LeafNodeType *mapLeafRef(EntryRef ref) {
+    LeafNodeType *mapLeafRef(EntryRef ref) noexcept {
         RefType iRef(ref);
         return _store.getEntry<LeafNodeType>(iRef);
     }
 
     template <typename NodeType>
-    const NodeType *mapRef(EntryRef ref) const {
+    const NodeType *mapRef(EntryRef ref) const noexcept {
         RefType iRef(ref);
         return _store.getEntry<NodeType>(iRef);
     }
 
     template <typename NodeType>
-    NodeType *mapRef(EntryRef ref) {
+    NodeType *mapRef(EntryRef ref) noexcept {
         RefType iRef(ref);
         return _store.getEntry<NodeType>(iRef);
     }
@@ -163,7 +163,7 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    datastore::MemoryStats getMemStats() const {
+    datastore::MemoryStats getMemStats() const noexcept {
         return _store.getMemStats();
     }
 
@@ -177,16 +177,16 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    vespalib::MemoryUsage getMemoryUsage() const {
+    vespalib::MemoryUsage getMemoryUsage() const noexcept {
         return _store.getMemoryUsage();
     }
 
     // Inherit doc from DataStoreT
-    bool getCompacting(EntryRef ref) {
+    bool getCompacting(EntryRef ref) noexcept {
         return _store.getCompacting(ref);
     }
 
-    bool has_held_buffers() const {
+    bool has_held_buffers() const noexcept {
         return _store.has_held_buffers();
     }
 

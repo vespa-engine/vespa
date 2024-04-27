@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "collect.h"
-#include <vespa/vespalib/util/array.hpp>
 #include <cassert>
 
 using namespace search::expression;
@@ -48,8 +47,7 @@ Collect::~Collect()
         assert((_aggrBacking.size() % _aggregatorSize) == 0);
         for (size_t i(0), m(_aggrBacking.size()/_aggregatorSize); i < m; i++) {
             uint8_t * base(&_aggrBacking[ i * _aggregatorSize]);
-            for (size_t j(0), k(_aggregator.size()); j < k; j++) {
-                ResultAccessor & r = _aggregator[j];
+            for (auto & r : _aggregator) {
                 r.destroy(base);
             }
         }
@@ -74,8 +72,8 @@ void
 Collect::collect(GroupRef gr, uint32_t docId, double rank)
 {
     uint8_t * base(&_aggrBacking[getAggrBase(gr)]);
-    for (size_t i(0), m(_aggregator.size()); i < m; i++) {
-        _aggregator[i].aggregate(base, docId, rank);
+    for (auto & i : _aggregator) {
+        i.aggregate(base, docId, rank);
     }
 }
 
@@ -86,8 +84,7 @@ Collect::createCollectors(GroupRef gr)
     if (offset == _aggrBacking.size()) {
         _aggrBacking.resize(getAggrBase(GroupRef(gr.getRef() + 1)));
         uint8_t * base(&_aggrBacking[offset]);
-        for (size_t i(0), m(_aggregator.size()); i < m; i++) {
-            ResultAccessor & r = _aggregator[i];
+        for (auto & r : _aggregator) {
             r.create(base);
         }
     }

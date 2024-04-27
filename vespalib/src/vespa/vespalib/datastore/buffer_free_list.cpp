@@ -14,13 +14,13 @@ BufferFreeList::attach()
 }
 
 void
-BufferFreeList::detach()
+BufferFreeList::detach() noexcept
 {
     assert(_free_list != nullptr);
     _free_list->detach(*this);
 }
 
-BufferFreeList::BufferFreeList(std::atomic<EntryCount>& dead_entries)
+BufferFreeList::BufferFreeList(std::atomic<EntryCount>& dead_entries) noexcept
     : _dead_entries(dead_entries),
       _free_list(),
       _free_refs()
@@ -34,7 +34,7 @@ BufferFreeList::~BufferFreeList()
 }
 
 void
-BufferFreeList::enable(FreeList& free_list)
+BufferFreeList::enable(FreeList& free_list) noexcept
 {
     assert(_free_list == nullptr);
     assert(_free_refs.empty());
@@ -42,7 +42,7 @@ BufferFreeList::enable(FreeList& free_list)
 }
 
 void
-BufferFreeList::disable()
+BufferFreeList::disable() noexcept
 {
     if (!empty()) {
         detach();
@@ -59,7 +59,7 @@ BufferFreeList::push_entry(EntryRef ref) {
     _free_refs.push_back(ref);
 }
 EntryRef
-BufferFreeList::pop_entry() {
+BufferFreeList::pop_entry() noexcept {
     EntryRef ret = _free_refs.back();
     _free_refs.pop_back();
     if (empty()) {

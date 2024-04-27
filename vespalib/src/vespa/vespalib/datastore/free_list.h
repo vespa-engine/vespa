@@ -19,18 +19,18 @@ private:
     std::vector<BufferFreeList*> _free_lists;
 
 public:
-    FreeList();
+    FreeList() noexcept;
     ~FreeList();
-    FreeList(FreeList&&) = default; // Needed for emplace_back() during setup.
+    FreeList(FreeList&&) noexcept = default; // Needed for emplace_back() during setup.
     FreeList(const FreeList&) = delete;
     FreeList& operator=(const FreeList&) = delete;
     FreeList& operator=(BufferFreeList&&) = delete;
     void attach(BufferFreeList& buf_list);
-    void detach(BufferFreeList& buf_list);
+    void detach(BufferFreeList& buf_list) noexcept;
 
-    bool empty() const { return _free_lists.empty(); }
-    size_t size() const { return _free_lists.size(); }
-    EntryRef pop_entry() {
+    bool empty() const noexcept { return _free_lists.empty(); }
+    size_t size() const noexcept { return _free_lists.size(); }
+    EntryRef pop_entry() noexcept {
         return _free_lists.back()->pop_entry();
     }
 };

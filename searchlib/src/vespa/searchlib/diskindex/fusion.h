@@ -4,6 +4,7 @@
 
 #include "fusion_output_index.h"
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/array.h>
 
 namespace search {
 class IFlushToken;

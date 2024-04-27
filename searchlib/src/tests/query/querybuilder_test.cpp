@@ -117,7 +117,7 @@ Node::UP createQueryTree() {
             builder.add_true_node();
             builder.add_false_node();
         }
-        builder.addFuzzyTerm(str[5], view[5], id[5], weight[5], 3, 1);
+        builder.addFuzzyTerm(str[5], view[5], id[5], weight[5], 3, 1, false);
     }
     Node::UP node = builder.build();
     ASSERT_TRUE(node.get());
@@ -326,8 +326,8 @@ void checkQueryTreeTypes(Node *node) {
 
     auto* fuzzy_term = as_node<FuzzyTerm>(and_node->getChildren()[12]);
     EXPECT_TRUE(checkTerm(fuzzy_term, str[5], view[5], id[5], weight[5]));
-    EXPECT_EQUAL(3u, fuzzy_term->getMaxEditDistance());
-    EXPECT_EQUAL(1u, fuzzy_term->getPrefixLength());
+    EXPECT_EQUAL(3u, fuzzy_term->max_edit_distance());
+    EXPECT_EQUAL(1u, fuzzy_term->prefix_lock_length());
 }
 
 struct AbstractTypes {
@@ -452,8 +452,9 @@ struct MyTrue : TrueQueryNode {};
 struct MyFalse : FalseQueryNode {};
 struct MyFuzzyTerm : FuzzyTerm {
     MyFuzzyTerm(const Type &t, const string &f, int32_t i, Weight w,
-                uint32_t m, uint32_t p)
-            : FuzzyTerm(t, f, i, w, m, p) {
+                uint32_t m, uint32_t p, bool prefix_match)
+        : FuzzyTerm(t, f, i, w, m, p, prefix_match)
+    {
     }
 };
 struct MyInTerm : InTerm {
@@ -645,23 +646,27 @@ TEST("require that All Range Syntaxes Work") {
     EXPECT_TRUE(range2 == range_term->getTerm());
 }
 
-TEST("require that fuzzy node can be created") {
-    QueryBuilder<SimpleQueryNodeTypes> builder;
-    builder.addFuzzyTerm("term", "view", 0, Weight(0), 3, 1);
-    Node::UP node = builder.build();
+TEST("fuzzy node can be created") {
+    for (bool prefix_match : {false, true}) {
+        QueryBuilder<SimpleQueryNodeTypes> builder;
+        builder.addFuzzyTerm("term", "view", 0, Weight(0), 3, 1, prefix_match);
+        Node::UP node = builder.build();
 
-    string stackDump = StackDumpCreator::create(*node);
-    {
-        SimpleQueryStackDumpIterator iterator(stackDump);
-        Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
-        FuzzyTerm *fuzzy_node = as_node<FuzzyTerm>(new_node.get());
-        EXPECT_EQUAL(3u, fuzzy_node->getMaxEditDistance());
-        EXPECT_EQUAL(1u, fuzzy_node->getPrefixLength());
-    }
-    {
-        search::QueryTermSimple::UP queryTermSimple = search::QueryTermDecoder::decodeTerm(stackDump);
-        EXPECT_EQUAL(3u, queryTermSimple->getFuzzyMaxEditDistance());
-        EXPECT_EQUAL(1u, queryTermSimple->getFuzzyPrefixLength());
+        string stackDump = StackDumpCreator::create(*node);
+        {
+            SimpleQueryStackDumpIterator iterator(stackDump);
+            Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+            auto *fuzzy_node = as_node<FuzzyTerm>(new_node.get());
+            EXPECT_EQUAL(3u, fuzzy_node->max_edit_distance());
+            EXPECT_EQUAL(1u, fuzzy_node->prefix_lock_length());
+            EXPECT_EQUAL(prefix_match, fuzzy_node->prefix_match());
+        }
+        {
+            search::QueryTermSimple::UP queryTermSimple = search::QueryTermDecoder::decodeTerm(stackDump);
+            EXPECT_EQUAL(3u, queryTermSimple->fuzzy_max_edit_distance());
+            EXPECT_EQUAL(1u, queryTermSimple->fuzzy_prefix_lock_length());
+            EXPECT_EQUAL(prefix_match, queryTermSimple->fuzzy_prefix_match());
+        }
     }
 }
 

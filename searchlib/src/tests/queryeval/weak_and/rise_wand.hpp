@@ -19,6 +19,7 @@ RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n)
       _streamIndices(new uint16_t[terms.size()]),
       _streamIndicesAux(new uint16_t[terms.size()]),
       _streamComparator(_streamDocIds),
+      _scorer(),
       _n(n),
       _limit(1),
       _streamScores(new score_t[terms.size()]),
@@ -26,7 +27,7 @@ RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n)
       _terms(terms)
 {
     for (size_t i = 0; i < terms.size(); ++i) {
-        _terms[i].maxScore = Scorer::calculateMaxScore(terms[i]);
+        _terms[i].maxScore = _scorer.calculateMaxScore(terms[i]);
         _streamScores[i] = _terms[i].maxScore;
         _streams.push_back(terms[i].search);
     }
@@ -46,8 +47,8 @@ RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n)
 template <typename Scorer, typename Cmp>
 RiseWand<Scorer, Cmp>::~RiseWand()
 {
-    for (size_t i = 0; i < _streams.size(); ++i) {
-        delete _streams[i];
+    for (auto * stream : _streams) {
+        delete stream;
     }
     delete [] _streamScores;
     delete [] _streamIndicesAux;
@@ -137,8 +138,7 @@ RiseWand<Scorer, Cmp>::_moveStreamsAndSort(const uint32_t numStreamsToMove)
 
 template <typename Scorer, typename Cmp>
 void
-RiseWand<Scorer, Cmp>::_moveStreamsToDocAndSort(const uint32_t numStreamsToMove,
-                                   const docid_t desiredDocId)
+RiseWand<Scorer, Cmp>::_moveStreamsToDocAndSort(const uint32_t numStreamsToMove, const docid_t desiredDocId)
 {
     for (uint32_t i=0; i<numStreamsToMove; ++i) {
         _streams[_streamIndices[i]]->seek(desiredDocId);
@@ -195,7 +195,7 @@ RiseWand<Scorer, Cmp>::doUnpack(uint32_t docid)
 {
     score_t score = 0;
     for (size_t i = 0; i <= _lastPivotIdx; ++i) {
-        score += Scorer::calculateScore(_terms[_streamIndices[i]], docid);
+        score += _scorer.calculateScore(_terms[_streamIndices[i]], docid);
     }
     if (_scores.size() < _n || _scores.front() < score) {
         _scores.push(score);
@@ -207,29 +207,6 @@ RiseWand<Scorer, Cmp>::doUnpack(uint32_t docid)
         }
     }
 }
-
-/**
- ************ BEGIN STREAM COMPARTOR *********************
- */
-template <typename Scorer, typename Cmp>
-RiseWand<Scorer, Cmp>::StreamComparator::StreamComparator(
-        const docid_t *streamDocIds)
-    : _streamDocIds(streamDocIds)
-{
-}
-
-template <typename Scorer, typename Cmp>
-inline bool
-RiseWand<Scorer, Cmp>::StreamComparator::operator()(const uint16_t a,
-                                       const uint16_t b)
-{
-    if (_streamDocIds[a] < _streamDocIds[b]) return true;
-    return false;
-}
-
-/**
- ************ END STREAM COMPARTOR *********************
- */
 
 } // namespace rise
 

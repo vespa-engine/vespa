@@ -165,7 +165,7 @@ public class MetricsManagerTest {
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         MetricsPacket extraPacket = null;
         for (MetricsPacket packet : packets) {
-            if (packet.service.equals(serviceId)) extraPacket = packet;
+            if (packet.service().equals(serviceId)) extraPacket = packet;
         }
         assertNotNull(extraPacket);
     }
@@ -226,7 +226,7 @@ public class MetricsManagerTest {
 
     private Instant getAdjustedTimestamp(Instant startTime, Instant metricTime) {
         MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId("foo"))
-                .timestamp(metricTime.getEpochSecond());
+                .timestamp(metricTime);
         return MetricsManager.adjustTimestamp(builder, startTime).getTimestamp();
     }
 

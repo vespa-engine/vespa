@@ -10,6 +10,7 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using document::DeserializeException;
 using vespalib::alloc::MemoryAllocator;

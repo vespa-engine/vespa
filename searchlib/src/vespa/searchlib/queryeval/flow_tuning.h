@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/searchcommon/attribute/collectiontype.h>
 #include <cmath>
 #include <cstddef>
+#include "flow.h"
 
 namespace search::queryeval::flow {
 
@@ -41,6 +44,22 @@ inline double heap_cost(double my_est, size_t num_children) {
     return my_est * std::log2(std::max(size_t(1), num_children));
 }
 
+/**
+ * Returns the number of memory indirections needed when doing lookups
+ * in an attribute with the given type.
+ */
+inline size_t get_num_indirections(const attribute::BasicType& basic_type,
+                                   const attribute::CollectionType& col_type) {
+    size_t res = 0;
+    if (basic_type == attribute::BasicType::STRING) {
+        res += 1;
+    }
+    if (col_type != attribute::CollectionType::SINGLE) {
+        res += 1;
+    }
+    return res;
+}
+
 // Non-strict cost of lookup based matching in an attribute (not fast-search).
 // Test used: IteratorBenchmark::analyze_term_search_in_attributes_non_strict
 inline double lookup_cost(size_t num_indirections) {
@@ -63,17 +82,15 @@ inline double lookup_strict_cost(size_t num_indirections) {
  * Estimates the cost of evaluating an always strict iterator (e.g. btree) in a non-strict context.
  *
  * When the estimate and strict cost is low, this models the cost of checking whether
- * the seek docid matches the docid the iterator is already positioned at (the 0.2 factor).
+ * the seek docid matches the docid the iterator is already positioned at.
  *
  * The resulting non-strict cost is most accurate when the inflow is 1.0.
  * The resulting non-strict cost is highly underestimated when the inflow goes to 0.0.
  * It is important to have a better estimate at higher inflows,
  * as the latency (time) penalty is higher if choosing wrong.
- *
- * Note: This formula is equal to forced_strict_cost() in flow.h.
  */
 inline double non_strict_cost_of_strict_iterator(double estimate, double strict_cost) {
-    return 0.2 * (1.0 - estimate) + strict_cost;
+    return strict_cost + strict_cost_diff(estimate, 1.0);
 }
 
 // Strict cost of matching in a btree posting list (e.g. fast-search attribute or memory index field).

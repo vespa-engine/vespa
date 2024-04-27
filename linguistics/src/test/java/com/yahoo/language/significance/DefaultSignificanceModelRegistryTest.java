@@ -8,9 +8,7 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -27,10 +25,16 @@ public class DefaultSignificanceModelRegistryTest {
 
         DefaultSignificanceModelRegistry defaultSignificanceModelRegistry = new DefaultSignificanceModelRegistry(models);
 
-        var englishModel = defaultSignificanceModelRegistry.getModel(Language.ENGLISH);
-        var norwegianModel = defaultSignificanceModelRegistry.getModel(Language.NORWEGIAN_BOKMAL);
+        var optionalEnglishModel = defaultSignificanceModelRegistry.getModel(Language.ENGLISH);
+        var optionalNorwegianModel = defaultSignificanceModelRegistry.getModel(Language.NORWEGIAN_BOKMAL);
 
-        assertThrows(IllegalArgumentException.class, () -> defaultSignificanceModelRegistry.getModel(Language.FRENCH));
+        assertTrue(optionalEnglishModel.isPresent());
+        assertTrue(optionalNorwegianModel.isPresent());
+
+        var englishModel = optionalEnglishModel.get();
+        var norwegianModel = optionalNorwegianModel.get();
+
+        assertTrue( defaultSignificanceModelRegistry.getModel(Language.FRENCH).isEmpty());
 
         assertNotNull(englishModel);
         assertNotNull(norwegianModel);

@@ -53,16 +53,28 @@ struct PreparedAddNode {
 
 struct PreparedFirstAddDoc : public PrepareResult {};
 
-struct PreparedAddDoc : public PrepareResult {
+struct PreparedAddDoc final : public PrepareResult {
     using ReadGuard = vespalib::GenerationHandler::Guard;
     uint32_t docid;
     ReadGuard read_guard;
     std::vector<PreparedAddNode> nodes;
     PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in) noexcept;
-    ~PreparedAddDoc();
+    ~PreparedAddDoc() override;
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
 }
+
+using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
+struct SelectResult {
+    HnswTraversalCandidateVector used;
+    LinkArray unused;
+    SelectResult() noexcept;
+    SelectResult(const SelectResult &) = delete;
+    SelectResult & operator=(const SelectResult &) = delete;
+    SelectResult(SelectResult &&) noexcept = default;
+    ~SelectResult();
+};
+
 template <HnswIndexType type>
 class HnswIndex : public NearestNeighborIndex {
 public:
@@ -85,7 +97,6 @@ protected:
 
     using LinkArrayStore = typename GraphType::LinkArrayStore;
     using LinkArrayRef = typename GraphType::LinkArrayRef;
-    using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 
     using LevelArrayRef = typename GraphType::LevelArrayRef;
 
@@ -125,11 +136,6 @@ protected:
      * Used by select_neighbors_heuristic().
      */
     bool have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& curr_result) const;
-    struct SelectResult {
-        HnswTraversalCandidateVector used;
-        LinkArray unused;
-        ~SelectResult() {}
-    };
     template <typename HnswCandidateVectorT>
     SelectResult select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
     template <typename HnswCandidateVectorT>

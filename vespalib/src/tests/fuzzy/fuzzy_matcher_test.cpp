@@ -33,7 +33,7 @@ TEST(FuzzyMatcherTest, get_suffix_edge_cases) {
 }
 
 TEST(FuzzyMatcherTest, fuzzy_match_empty_prefix) {
-    FuzzyMatcher fuzzy("abc", 2, 0, false);
+    FuzzyMatcher fuzzy("abc", 2, 0, false, false);
     EXPECT_TRUE(fuzzy.isMatch("abc"));
     EXPECT_TRUE(fuzzy.isMatch("ABC"));
     EXPECT_TRUE(fuzzy.isMatch("ab1"));
@@ -42,15 +42,15 @@ TEST(FuzzyMatcherTest, fuzzy_match_empty_prefix) {
 }
 
 TEST(FuzzyMatcherTest, fuzzy_match_cased) {
-    FuzzyMatcher fuzzy("abc", 2, 0, true);
+    FuzzyMatcher fuzzy("abc", 2, 0, true, false);
     EXPECT_TRUE(fuzzy.isMatch("abc"));
     EXPECT_TRUE(fuzzy.isMatch("abC"));
     EXPECT_TRUE(fuzzy.isMatch("aBC"));
     EXPECT_FALSE(fuzzy.isMatch("ABC"));
 }
 
-TEST(FuzzyMatcherTest, fuzzy_match_with_prefix) {
-    FuzzyMatcher fuzzy("abcdef", 2, 2, false);
+TEST(FuzzyMatcherTest, fuzzy_match_with_prefix_locking) {
+    FuzzyMatcher fuzzy("abcdef", 2, 2, false, false);
     EXPECT_TRUE(fuzzy.isMatch("abcdef"));
     EXPECT_TRUE(fuzzy.isMatch("ABCDEF"));
     EXPECT_TRUE(fuzzy.isMatch("abcde1"));
@@ -59,22 +59,43 @@ TEST(FuzzyMatcherTest, fuzzy_match_with_prefix) {
     EXPECT_FALSE(fuzzy.isMatch("12cdef"));
 }
 
-TEST(FuzzyMatcherTest, get_prefix_is_empty) {
-    FuzzyMatcher fuzzy("whatever", 2, 0, false);
+TEST(FuzzyMatcherTest, get_prefix_lock_length_is_zero) {
+    FuzzyMatcher fuzzy("whatever", 2, 0, false, false);
     EXPECT_EQ(fuzzy.getPrefix(), "");
 }
 
 TEST(FuzzyMatcherTest, term_is_empty) {
-    FuzzyMatcher fuzzy("", 2, 0, false);
+    FuzzyMatcher fuzzy("", 2, 0, false, false);
     EXPECT_TRUE(fuzzy.isMatch(""));
     EXPECT_TRUE(fuzzy.isMatch("a"));
     EXPECT_TRUE(fuzzy.isMatch("aa"));
     EXPECT_FALSE(fuzzy.isMatch("aaa"));
 }
 
-TEST(FuzzyMatcherTest, get_prefix_non_empty) {
-    FuzzyMatcher fuzzy("abcd", 2, 2, false);
+TEST(FuzzyMatcherTest, get_prefix_lock_length_non_zero) {
+    FuzzyMatcher fuzzy("abcd", 2, 2, false, false);
     EXPECT_EQ(fuzzy.getPrefix(), "ab");
+}
+
+TEST(FuzzyMatcherTest, fuzzy_prefix_matching_without_prefix_lock_length) {
+    FuzzyMatcher fuzzy("abc", 1, 0, false, true);
+    EXPECT_EQ(fuzzy.getPrefix(), "");
+    EXPECT_TRUE(fuzzy.isMatch("abc"));
+    EXPECT_TRUE(fuzzy.isMatch("abcdefgh"));
+    EXPECT_TRUE(fuzzy.isMatch("ab"));
+    EXPECT_TRUE(fuzzy.isMatch("abd"));
+    EXPECT_TRUE(fuzzy.isMatch("xabc"));
+    EXPECT_FALSE(fuzzy.isMatch("xy"));
+}
+
+TEST(FuzzyMatcherTest, fuzzy_prefix_matching_with_prefix_lock_length) {
+    FuzzyMatcher fuzzy("zoid", 1, 2, false, true);
+    EXPECT_EQ(fuzzy.getPrefix(), "zo");
+    EXPECT_TRUE(fuzzy.isMatch("zoidberg"));
+    EXPECT_TRUE(fuzzy.isMatch("zold"));
+    EXPECT_TRUE(fuzzy.isMatch("zoldberg"));
+    EXPECT_FALSE(fuzzy.isMatch("zoxx"));
+    EXPECT_FALSE(fuzzy.isMatch("loid"));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

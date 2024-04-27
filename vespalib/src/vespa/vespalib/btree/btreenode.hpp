@@ -42,7 +42,7 @@ template <typename KeyT, uint32_t NumSlots>
 template <typename CompareT>
 uint32_t
 BTreeNodeT<KeyT, NumSlots>::
-lower_bound(uint32_t sidx, const KeyT & key, CompareT comp) const
+lower_bound(uint32_t sidx, const KeyT & key, CompareT comp) const noexcept
 {
     const KeyT * itr = std::lower_bound<const KeyT *, KeyT, CompareT>
         (_keys + sidx, _keys + validSlots(), key, comp);
@@ -52,9 +52,8 @@ lower_bound(uint32_t sidx, const KeyT & key, CompareT comp) const
 template <typename KeyT, uint32_t NumSlots>
 template <typename CompareT>
 uint32_t
-BTreeNodeT<KeyT, NumSlots>::lower_bound(const KeyT & key, CompareT comp) const
+BTreeNodeT<KeyT, NumSlots>::lower_bound(const KeyT & key, CompareT comp) const noexcept
 {
-    
     const KeyT * itr = std::lower_bound<const KeyT *, KeyT, CompareT>
         (_keys, _keys + validSlots(), key, comp);
     return itr - _keys;
@@ -65,7 +64,7 @@ template <typename KeyT, uint32_t NumSlots>
 template <typename CompareT>
 uint32_t
 BTreeNodeT<KeyT, NumSlots>::
-upper_bound(uint32_t sidx, const KeyT & key, CompareT comp) const
+upper_bound(uint32_t sidx, const KeyT & key, CompareT comp) const noexcept
 {
     const KeyT * itr = std::upper_bound<const KeyT *, KeyT, CompareT>
         (_keys + sidx, _keys + validSlots(), key, comp);
@@ -75,7 +74,7 @@ upper_bound(uint32_t sidx, const KeyT & key, CompareT comp) const
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx, const KeyT &key, const DataT &data)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx, const KeyT &key, const DataT &data) noexcept
 {
     assert(validSlots() < NodeType::maxSlots());
     assert(!getFrozen());
@@ -90,10 +89,8 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx, const KeyT &key,
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::splitInsert(NodeType *splitNode,
-                                                       uint32_t idx,
-                                                       const KeyT &key,
-                                                       const DataT &data)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::
+splitInsert(NodeType *splitNode, uint32_t idx, const KeyT &key, const DataT &data) noexcept
 {
     assert(!getFrozen());
     assert(!splitNode->getFrozen());
@@ -114,7 +111,7 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::splitInsert(NodeType *splitNode,
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::remove(uint32_t idx)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::remove(uint32_t idx) noexcept
 {
     assert(!getFrozen());
     for (uint32_t i = idx + 1; i < validSlots(); ++i) {
@@ -129,7 +126,7 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::remove(uint32_t idx)
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
 BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::
-stealAllFromLeftNode(const NodeType *victim)
+stealAllFromLeftNode(const NodeType *victim) noexcept
 {
     assert(validSlots() + victim->validSlots() <= NodeType::maxSlots());
     assert(!getFrozen());
@@ -147,7 +144,7 @@ stealAllFromLeftNode(const NodeType *victim)
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
 BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::
-stealAllFromRightNode(const NodeType *victim)
+stealAllFromRightNode(const NodeType *victim) noexcept
 {
     assert(validSlots() + victim->validSlots() <= NodeType::maxSlots());
     assert(!getFrozen());
@@ -161,7 +158,7 @@ stealAllFromRightNode(const NodeType *victim)
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
 BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::
-stealSomeFromLeftNode(NodeType *victim)
+stealSomeFromLeftNode(NodeType *victim) noexcept
 {
     assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
     assert(!getFrozen());
@@ -184,7 +181,7 @@ stealSomeFromLeftNode(NodeType *victim)
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
 BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::
-stealSomeFromRightNode(NodeType *victim)
+stealSomeFromRightNode(NodeType *victim) noexcept
 {
     assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
     assert(!getFrozen());
@@ -207,7 +204,7 @@ stealSomeFromRightNode(NodeType *victim)
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from, uint32_t to)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from, uint32_t to) noexcept
 {
     assert(from < to);
     assert(to <= validSlots());
@@ -224,7 +221,7 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from, uint32_t to
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean()
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean() noexcept
 {
     if (validSlots() == 0)
         return;
@@ -235,7 +232,7 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean()
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanFrozen()
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanFrozen() noexcept
 {
     assert(validSlots() <= NodeType::maxSlots());
     assert(getFrozen());
@@ -256,8 +253,7 @@ template <typename NodeAllocatorType>
 void
 BTreeInternalNode<KeyT, AggrT, NumSlots>::
 splitInsert(BTreeInternalNode *splitNode, uint32_t idx, const KeyT &key,
-            const BTreeNode::Ref &data,
-            NodeAllocatorType &allocator)
+            const BTreeNode::Ref &data, NodeAllocatorType &allocator) noexcept
 {
     assert(!getFrozen());
     assert(!splitNode->getFrozen());
@@ -287,7 +283,7 @@ splitInsert(BTreeInternalNode *splitNode, uint32_t idx, const KeyT &key,
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 void
 BTreeInternalNode<KeyT, AggrT, NumSlots>::
-stealAllFromLeftNode(const BTreeInternalNode *victim)
+stealAllFromLeftNode(const BTreeInternalNode *victim) noexcept
 {
     ParentType::stealAllFromLeftNode(victim);
     _validLeaves += victim->_validLeaves;
@@ -296,7 +292,7 @@ stealAllFromLeftNode(const BTreeInternalNode *victim)
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 void
 BTreeInternalNode<KeyT, AggrT, NumSlots>::
-stealAllFromRightNode(const BTreeInternalNode *victim)
+stealAllFromRightNode(const BTreeInternalNode *victim) noexcept
 {
     ParentType::stealAllFromRightNode(victim);
     _validLeaves += victim->_validLeaves;
@@ -305,7 +301,7 @@ stealAllFromRightNode(const BTreeInternalNode *victim)
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeAllocatorType>
 uint32_t
-BTreeInternalNode<KeyT, AggrT, NumSlots>::countValidLeaves(uint32_t start, uint32_t end, NodeAllocatorType &allocator)
+BTreeInternalNode<KeyT, AggrT, NumSlots>::countValidLeaves(uint32_t start, uint32_t end, NodeAllocatorType &allocator) noexcept
 {
     assert(start <= end);
     assert(end <= validSlots());
@@ -320,7 +316,7 @@ template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeAllocatorType>
 void
 BTreeInternalNode<KeyT, AggrT, NumSlots>::
-stealSomeFromLeftNode(BTreeInternalNode *victim, NodeAllocatorType &allocator)
+stealSomeFromLeftNode(BTreeInternalNode *victim, NodeAllocatorType &allocator) noexcept
 {
     uint16_t oldValidSlots = validSlots();
     ParentType::stealSomeFromLeftNode(victim);
@@ -334,7 +330,7 @@ template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeAllocatorType>
 void
 BTreeInternalNode<KeyT, AggrT, NumSlots>::
-stealSomeFromRightNode(BTreeInternalNode *victim, NodeAllocatorType &allocator)
+stealSomeFromRightNode(BTreeInternalNode *victim, NodeAllocatorType &allocator) noexcept
 {
     uint16_t oldValidSlots = validSlots();
     ParentType::stealSomeFromRightNode(victim);
@@ -346,7 +342,7 @@ stealSomeFromRightNode(BTreeInternalNode *victim, NodeAllocatorType &allocator)
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 void
-BTreeInternalNode<KeyT, AggrT, NumSlots>::clean()
+BTreeInternalNode<KeyT, AggrT, NumSlots>::clean() noexcept
 {
     ParentType::clean();
     _validLeaves = 0;
@@ -355,7 +351,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::clean()
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 void
-BTreeInternalNode<KeyT, AggrT, NumSlots>::cleanFrozen()
+BTreeInternalNode<KeyT, AggrT, NumSlots>::cleanFrozen() noexcept
 {
     ParentType::cleanFrozen();
     _validLeaves = 0;
@@ -364,7 +360,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::cleanFrozen()
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeStoreType, typename FunctionType>
 void
-BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach_key(NodeStoreType &store, FunctionType func) const {
+BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach_key(NodeStoreType &store, FunctionType func) const noexcept {
     const BTreeNode::ChildRef *it = this->_data;
     const BTreeNode::ChildRef *ite = it + _validSlots;
     if (this->getLevel() > 1u) {
@@ -385,7 +381,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach_key(NodeStoreType &store, Func
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeStoreType, typename FunctionType>
 void
-BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach_key_range(NodeStoreType &store, uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
+BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach_key_range(NodeStoreType &store, uint32_t start_idx, uint32_t end_idx, FunctionType func) const noexcept {
     const BTreeNode::ChildRef *it = this->_data;
     const BTreeNode::ChildRef *ite = it + end_idx;
     it += start_idx;
@@ -403,7 +399,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach_key_range(NodeStoreType &store
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeStoreType, typename FunctionType>
 void
-BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach(NodeStoreType &store, FunctionType func) const {
+BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach(NodeStoreType &store, FunctionType func) const noexcept {
     const BTreeNode::ChildRef *it = this->_data;
     const BTreeNode::ChildRef *ite = it + _validSlots;
     if (this->getLevel() > 1u) {
@@ -436,7 +432,7 @@ BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize) noexcept
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 template <typename FunctionType>
 void
-BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key(FunctionType func) const {
+BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key(FunctionType func) const noexcept {
     const KeyT *it = _keys;
     const KeyT *ite = it + _validSlots;
     for (; it != ite; ++it) {
@@ -450,7 +446,7 @@ BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key(FunctionType func) cons
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 template <typename FunctionType>
 void
-BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const {
+BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const noexcept {
     const KeyT *it = _keys;
     const KeyT *ite = it + end_idx;
     it += start_idx;
@@ -462,7 +458,7 @@ BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key_range(uint32_t start_id
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 template <typename FunctionType>
 void
-BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach(FunctionType func) const {
+BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach(FunctionType func) const noexcept {
     const KeyT *it = _keys;
     const KeyT *ite = it + _validSlots;
     uint32_t idx = 0;

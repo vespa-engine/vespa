@@ -778,7 +778,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addSignificance(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         Element significanceElement = XML.getChild(spec, "significance");
-        if (significanceElement == null) return;
 
         SignificanceModelRegistry significanceModelRegistry = new SignificanceModelRegistry(deployState, significanceElement);
         cluster.addComponent(significanceModelRegistry);

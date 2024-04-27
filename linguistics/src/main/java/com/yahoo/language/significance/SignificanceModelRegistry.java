@@ -4,10 +4,12 @@ package com.yahoo.language.significance;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.language.Language;
 
+import java.util.Optional;
+
 /**
  * @author MariusArhaug
  */
 @Beta
 public interface SignificanceModelRegistry {
-    SignificanceModel getModel(Language language);
+    Optional<SignificanceModel> getModel(Language language);
 }

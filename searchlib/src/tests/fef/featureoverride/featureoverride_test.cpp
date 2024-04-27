@@ -14,6 +14,8 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/objects/nbostream.h>
+
 
 using namespace search::features;
 using namespace search::fef::test;

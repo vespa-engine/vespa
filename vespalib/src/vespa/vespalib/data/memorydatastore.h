@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/array.h>
 #include <vector>
 #include <mutex>
 

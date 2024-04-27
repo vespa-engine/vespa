@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -42,7 +43,7 @@ public class YamasJsonUtil {
         return new MetricsPacket.Builder(ServiceId.toServiceId(jsonModel.application))
                 .statusCode(jsonModel.status_code)
                 .statusMessage(jsonModel.status_msg)
-                .timestamp(jsonModel.timestamp)
+                .timestamp(Instant.ofEpochSecond(jsonModel.timestamp))
                 .putMetrics(jsonModel.getMetricsList())
                 .putDimensions(jsonModel.getDimensionsById())
                 .addConsumers(jsonModel.getYamasConsumers());
@@ -124,12 +125,12 @@ public class YamasJsonUtil {
     private static void toJson(MetricsPacket metric, JsonGenerator generator, boolean addStatus) throws IOException {
         generator.writeStartObject();
         if (addStatus) {
-            generator.writeNumberField("status_code", metric.statusCode);
+            generator.writeNumberField("status_code", metric.statusCode());
         }
-        if (metric.timestamp != 0) {
-            generator.writeNumberField("timestamp", metric.timestamp);
+        if ( ! Instant.EPOCH.equals(metric.timestamp())) {
+            generator.writeNumberField("timestamp", metric.timestamp().getEpochSecond());
         }
-        generator.writeStringField("application", metric.service.id);
+        generator.writeStringField("application", metric.service().id);
 
         if ( ! metric.metrics().isEmpty()) {
             generator.writeObjectFieldStart("metrics");
@@ -160,7 +161,7 @@ public class YamasJsonUtil {
             generator.writeEndObject();
         }
         if (addStatus) {
-            generator.writeStringField("status_msg", metric.statusMessage);
+            generator.writeStringField("status_msg", metric.statusMessage());
         }
         generator.writeEndObject();
     }

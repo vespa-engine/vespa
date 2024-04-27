@@ -551,24 +551,31 @@ public class VespaSerializer {
         static String fuzzyAnnotations(FuzzyItem fuzzyItem) {
             boolean isMaxEditDistanceSet = fuzzyItem.getMaxEditDistance() != FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE;
             boolean isPrefixLengthSet = fuzzyItem.getPrefixLength() != FuzzyItem.DEFAULT_PREFIX_LENGTH;
-            boolean anyAnnotationSet = isMaxEditDistanceSet || isPrefixLengthSet;
+            boolean isPrefixMatch = fuzzyItem.isPrefixMatch();
+            boolean anyAnnotationSet = isMaxEditDistanceSet || isPrefixLengthSet || isPrefixMatch;
+
+            if (!anyAnnotationSet) {
+                return "";
+            }
 
             StringBuilder builder = new StringBuilder();
-            if (anyAnnotationSet) {
-                builder.append("{");
-            }
+            builder.append("{");
             if (isMaxEditDistanceSet) {
                 builder.append(MAX_EDIT_DISTANCE + ":").append(fuzzyItem.getMaxEditDistance());
-            }
-            if (isMaxEditDistanceSet && isPrefixLengthSet) {
-                builder.append(",");
+                if (isPrefixLengthSet || isPrefixMatch) {
+                    builder.append(",");
+                }
             }
             if (isPrefixLengthSet) {
                 builder.append(PREFIX_LENGTH + ":").append(fuzzyItem.getPrefixLength());
+                if (isPrefixMatch) {
+                    builder.append(",");
+                }
             }
-            if (anyAnnotationSet) {
-                builder.append("}");
+            if (isPrefixMatch) {
+                builder.append(PREFIX).append(':').append(fuzzyItem.isPrefixMatch());
             }
+            builder.append("}");
             return builder.toString();
         }
     }

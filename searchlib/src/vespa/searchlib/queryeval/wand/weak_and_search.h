@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include "wand_parts.h"
+#include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 struct WeakAndSearch : SearchIterator {
     using Terms = wand::Terms;
@@ -21,6 +20,4 @@ struct WeakAndSearch : SearchIterator {
     static SearchIterator::UP create(const Terms &terms, uint32_t n, bool strict);
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

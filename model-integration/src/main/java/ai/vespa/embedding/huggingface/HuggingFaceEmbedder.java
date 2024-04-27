@@ -39,6 +39,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final OnnxEvaluator evaluator;
     private final PoolingStrategy poolingStrategy;
 
+    private final String prependQuery;
+
+    private final String prependDocument;
+
     @Inject
     public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config) {
         this.runtime = runtime;
@@ -47,6 +51,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         tokenTypeIdsName = config.transformerTokenTypeIds();
         outputName = config.transformerOutput();
         normalize = config.normalize();
+        prependQuery = config.prependQuery();
+        prependDocument = config.prependDocument();
         var tokenizerPath = Paths.get(config.tokenizerPath().toString());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
@@ -113,7 +119,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         if (!tensorType.dimensions().get(0).isIndexed()) {
             throw new IllegalArgumentException("Error in embedding to type '" + tensorType + "': dimension should be indexed.");
         }
-        var embeddingResult = lookupOrEvaluate(context, text);
+        var embeddingResult = lookupOrEvaluate(context, prependInstruction(text, context));
         IndexedTensor tokenEmbeddings = embeddingResult.output;
         if (tensorType.valueType() == TensorType.Value.INT8) {
             return binaryQuantization(embeddingResult, tensorType);
@@ -121,6 +127,16 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             Tensor result = poolingStrategy.toSentenceEmbedding(tensorType, tokenEmbeddings, embeddingResult.attentionMask);
             return  normalize ? normalize(result, tensorType) : result;
         }
+    }
+
+    String prependInstruction(String text, Context context) {
+        if (prependQuery != null && !prependQuery.isEmpty() && context.getDestination().startsWith("query")) {
+            return prependQuery + " " + text;
+        }
+        if (prependDocument != null && !prependDocument.isEmpty()){
+            return prependDocument + " " + text;
+        }
+        return text;
     }
 
     Tensor normalize(Tensor embedding, TensorType tensorType) {

@@ -113,9 +113,18 @@ public:
     uint32_t getUniqueId() const noexcept { return _currUniqueId; }
 
     // Get the flags of the current item.
-    bool hasNoRankFlag() const noexcept { return (_currFlags & ParseItem::IFLAG_NORANK) != 0; }
-    bool hasSpecialTokenFlag() const noexcept { return (_currFlags & ParseItem::IFLAG_SPECIALTOKEN) != 0; }
-    bool hasNoPositionDataFlag() const noexcept { return (_currFlags & ParseItem::IFLAG_NOPOSITIONDATA) != 0; }
+    [[nodiscard]] bool hasNoRankFlag() const noexcept {
+        return (_currFlags & ParseItem::IFLAG_NORANK) != 0;
+    }
+    [[nodiscard]] bool hasSpecialTokenFlag() const noexcept {
+        return (_currFlags & ParseItem::IFLAG_SPECIALTOKEN) != 0;
+    }
+    [[nodiscard]] bool hasNoPositionDataFlag() const noexcept {
+        return (_currFlags & ParseItem::IFLAG_NOPOSITIONDATA) != 0;
+    }
+    [[nodiscard]] bool has_prefix_match_semantics() const noexcept {
+        return (_currFlags & ParseItem::IFLAG_PREFIX_MATCH) != 0;
+    }
 
     uint32_t getArity() const noexcept { return _currArity; }
 
@@ -127,16 +136,16 @@ public:
     bool getAllowApproximate() const noexcept { return (_extraIntArg2 != 0); }
     uint32_t getExploreAdditionalHits() const noexcept { return _extraIntArg3; }
 
-    // fuzzy match arguments
-    uint32_t getFuzzyMaxEditDistance() const noexcept { return _extraIntArg1; }
-    uint32_t getFuzzyPrefixLength() const noexcept { return _extraIntArg2; }
+    // fuzzy match arguments (see also: has_prefix_match_semantics() for fuzzy prefix matching)
+    [[nodiscard]] uint32_t fuzzy_max_edit_distance() const noexcept { return _extraIntArg1; }
+    [[nodiscard]] uint32_t fuzzy_prefix_lock_length() const noexcept { return _extraIntArg2; }
 
     std::unique_ptr<query::PredicateQueryTerm> getPredicateQueryTerm();
     std::unique_ptr<query::TermVector> get_terms();
 
     vespalib::stringref getIndexName() const noexcept { return _curr_index_name; }
     vespalib::stringref getTerm() const noexcept { return _curr_term; }
-    int64_t getIntergerTerm() const noexcept { return _curr_integer_term; }
+    int64_t getIntegerTerm() const noexcept { return _curr_integer_term; }
 
     static vespalib::stringref DEFAULT_INDEX;
 };

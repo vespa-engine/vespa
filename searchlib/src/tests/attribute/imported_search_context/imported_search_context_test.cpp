@@ -508,6 +508,7 @@ assertBitVector(const std::vector<uint32_t> &expDocIds, const BitVector &bitVect
 TEST_F("Entry is inserted into search cache if bit vector posting list is used", SearchCacheFixture)
 {
     EXPECT_EQUAL(0u, f.imported_attr->getSearchCache()->size());
+    auto old_mem_usage = f.imported_attr->get_memory_usage();
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::FULL, true);
     TermFieldMatchData match;
@@ -515,6 +516,9 @@ TEST_F("Entry is inserted into search cache if bit vector posting list is used",
     TEST_DO(f.assertSearch({3, 5}, *iter));
 
     EXPECT_EQUAL(1u, f.imported_attr->getSearchCache()->size());
+    auto new_mem_usage = f.imported_attr->get_memory_usage();
+    EXPECT_LESS(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
+    EXPECT_LESS(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
     auto cacheEntry = f.imported_attr->getSearchCache()->find("5678");
     EXPECT_EQUAL(cacheEntry->docIdLimit, f.get_imported_attr()->getNumDocs());
     TEST_DO(assertBitVector({3, 5}, *cacheEntry->bitVector));

@@ -5,6 +5,7 @@
 #include "attribute_object_visitor.h"
 #include "attribute_weighted_set_blueprint.h"
 #include "direct_multi_term_blueprint.h"
+#include "direct_posting_store_flow_stats_adapter.h"
 #include "i_docid_posting_store.h"
 #include "i_docid_with_weight_posting_store.h"
 #include "in_term_search.h"
@@ -12,6 +13,7 @@
 #include "predicate_attribute.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/hit_estimate_flow_stats_adapter.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
@@ -24,23 +26,23 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/field_spec.hpp>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
-#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/vespalib/util/regexp.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/regexp.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <charconv>
 
 #include <vespa/log/log.h>
@@ -92,6 +94,7 @@ using search::queryeval::StrictHeapOrSearch;
 using search::queryeval::WeightedSetTermBlueprint;
 using search::queryeval::flow::btree_cost;
 using search::queryeval::flow::btree_strict_cost;
+using search::queryeval::flow::get_num_indirections;
 using search::queryeval::flow::lookup_cost;
 using search::queryeval::flow::lookup_strict_cost;
 using search::tensor::DenseTensorAttribute;
@@ -121,19 +124,6 @@ private:
     vespalib::string & _scratchPad;
 };
 //-----------------------------------------------------------------------------
-
-size_t
-get_num_indirections(const BasicType& basic_type, const CollectionType& col_type)
-{
-    size_t res = 0;
-    if (basic_type == BasicType::STRING) {
-        res += 1;
-    }
-    if (col_type != CollectionType::SINGLE) {
-        res += 1;
-    }
-    return res;
-}
 
 /**
  * Blueprint for creating regular, stack-based attribute iterators.
@@ -292,20 +282,11 @@ public:
     }
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         using OrFlow = search::queryeval::OrFlow;
-        struct MyAdapter {
-            uint32_t docid_limit;
-            explicit MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
-            double estimate(const AttrHitEstimate &est) const noexcept {
-                return est.is_unknown() ? 0.5 : abs_to_rel_est(est.est_hits(), docid_limit);
-            }
-            double cost(const AttrHitEstimate &) const noexcept { return 1.0; }
-            double strict_cost(const AttrHitEstimate &est) const noexcept {
-                return est.is_unknown() ? 1.0 : abs_to_rel_est(est.est_hits(), docid_limit);
-            }
-        };
-        double est = OrFlow::estimate_of(MyAdapter(docid_limit), _estimates);
-        return {est, OrFlow::cost_of(MyAdapter(docid_limit), _estimates, false),
-                OrFlow::cost_of(MyAdapter(docid_limit), _estimates, true) + queryeval::flow::heap_cost(est, _estimates.size())};
+        using MyAdapter = attribute::HitEstimateFlowStatsAdapter;
+        size_t indirections = queryeval::flow::get_num_indirections(_attribute.getBasicType(), _attribute.getCollectionType());
+        double est = OrFlow::estimate_of(MyAdapter(docid_limit, indirections), _estimates);
+        return {est, OrFlow::cost_of(MyAdapter(docid_limit, indirections), _estimates, false),
+                OrFlow::cost_of(MyAdapter(docid_limit, indirections), _estimates, true) + queryeval::flow::heap_cost(est, _estimates.size())};
     }
 
     SearchIterator::UP
@@ -513,21 +494,7 @@ public:
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         using OrFlow = search::queryeval::OrFlow;
-        struct MyAdapter {
-            uint32_t docid_limit;
-            explicit MyAdapter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
-            double estimate(const IDirectPostingStore::LookupResult &term) const noexcept {
-                return abs_to_rel_est(term.posting_size, docid_limit);
-            }
-            double cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-                double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
-                return btree_cost(rel_est);
-            }
-            double strict_cost(const IDirectPostingStore::LookupResult &term) const noexcept {
-                double rel_est = abs_to_rel_est(term.posting_size, docid_limit);
-                return btree_strict_cost(rel_est);
-            }
-        };
+        using MyAdapter = attribute::DirectPostingStoreFlowStatsAdapter;
         double child_est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
         double my_est = abs_to_rel_est(_scores.getScoresToTrack(), docid_limit);
         double est = (child_est + my_est) / 2.0;

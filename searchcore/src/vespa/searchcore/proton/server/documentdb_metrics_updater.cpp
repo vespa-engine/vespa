@@ -9,19 +9,23 @@
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdb_metrics_updater");
 
 using search::LidUsageStats;
+using search::attribute::ImportedAttributeVector;
 using vespalib::CacheStats;
 using vespalib::MemoryUsage;
 
@@ -139,6 +143,18 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
                 fillTempAttributeMetrics(totalMetrics, attr->getName(), memoryUsage, bitVectors);
                 if (subMetrics != nullptr) {
                     fillTempAttributeMetrics(*subMetrics, attr->getName(), memoryUsage, bitVectors);
+                }
+            }
+            auto imported = attrMgr->getImportedAttributes();
+            if (imported != nullptr) {
+                std::vector<std::shared_ptr<ImportedAttributeVector>> i_list;
+                imported->getAll(i_list);
+                for (const auto& attr : i_list) {
+                    auto memory_usage = attr->get_memory_usage();
+                    fillTempAttributeMetrics(totalMetrics,  attr->getName(), memory_usage, 0);
+                    if (subMetrics != nullptr) {
+                        fillTempAttributeMetrics(*subMetrics,  attr->getName(), memory_usage, 0);
+                    }
                 }
             }
         }

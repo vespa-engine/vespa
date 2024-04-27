@@ -1,39 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/typed_cells.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/arrayref.h>
 #include <memory>
 
 using namespace vespalib;
+using namespace eval;
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Low-level typed cells reference
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
-enum class CellType : char { DOUBLE, FLOAT, INT };
-template <typename T> bool check_type(CellType type);
-template <> bool check_type<double>(CellType type) { return (type == CellType::DOUBLE); }
-template <> bool check_type<float>(CellType type) { return (type == CellType::FLOAT); }
-template <> bool check_type<int>(CellType type) { return (type == CellType::INT); }
-
-struct TypedCells {
-    const void *data;
-    CellType type;
-    size_t size:56;
-    explicit TypedCells(ConstArrayRef<double> cells) : data(cells.begin()), type(CellType::DOUBLE), size(cells.size()) {}
-    explicit TypedCells(ConstArrayRef<float> cells) : data(cells.begin()), type(CellType::FLOAT), size(cells.size()) {}
-    explicit TypedCells(ConstArrayRef<int> cells) : data(cells.begin()), type(CellType::INT), size(cells.size()) {}
-    template <typename T> bool check_type() const { return ::check_type<T>(type); }
-    template <typename T> ConstArrayRef<T> typify() const {
-        assert(check_type<T>());
-        return ConstArrayRef<T>((const T *)data, size);        
-    }
-    template <typename T> ConstArrayRef<T> unsafe_typify() const {
-        return ConstArrayRef<T>((const T *)data, size);
-    }
-};
 
 TEST("require that structures are of expected size") {
     EXPECT_EQUAL(sizeof(void*), 8u);
@@ -102,27 +76,27 @@ struct Typify {
         switch(a.type) {
         case CellType::DOUBLE: return T::call(a.unsafe_typify<double>(), std::forward<Args>(args)...);
         case CellType::FLOAT: return T::call(a.unsafe_typify<float>(), std::forward<Args>(args)...);
-        case CellType::INT: return T::call(a.unsafe_typify<int>(), std::forward<Args>(args)...);
+        case CellType::INT8: return T::call(a.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
+        default: abort();
         }
-        abort();
     }
     template <typename A, typename... Args>
     static auto typify_2(A &&a, const TypedCells &b, Args &&...args) {
         switch(b.type) {
         case CellType::DOUBLE: return T::call(std::forward<A>(a), b.unsafe_typify<double>(), std::forward<Args>(args)...);
         case CellType::FLOAT: return T::call(std::forward<A>(a), b.unsafe_typify<float>(), std::forward<Args>(args)...);
-        case CellType::INT: return T::call(std::forward<A>(a), b.unsafe_typify<int>(), std::forward<Args>(args)...);
+        case CellType::INT8: return T::call(std::forward<A>(a), b.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
+        default: abort();
         }
-        abort();
     }
     template <typename A, typename B, typename... Args>
     static auto typify_3(A &&a, B &&b, const TypedCells &c, Args &&...args) {
         switch(c.type) {
         case CellType::DOUBLE: return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<double>(), std::forward<Args>(args)...);
         case CellType::FLOAT: return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<float>(), std::forward<Args>(args)...);
-        case CellType::INT: return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<int>(), std::forward<Args>(args)...);
+        case CellType::INT8: return T::call(std::forward<A>(a), std::forward<B>(b), c.unsafe_typify<Int8Float>(), std::forward<Args>(args)...);
+        default: abort();
         }
-        abort();
     }
 };
 
@@ -200,15 +174,15 @@ struct Dispatch1 {
 //-----------------------------------------------------------------------------
 
 TEST("require that direct dispatch 'a op b -> c' works") {
-    std::vector<int>      a({1,2,3});
-    std::vector<float>    b({1.5,2.5,3.5});
-    std::vector<double>   c(3, 0.0);
-    ConstArrayRef<int>    a_ref(a);
-    ConstArrayRef<float>  b_ref(b);
-    ConstArrayRef<double> c_ref(c);
-    TypedCells            a_cells(a);
-    TypedCells            b_cells(b);
-    TypedCells            c_cells(c);
+    std::vector<Int8Float>   a({1,2,3});
+    std::vector<float>       b({1.5,2.5,3.5});
+    std::vector<double>      c(3, 0.0);
+    ConstArrayRef<Int8Float> a_ref(a);
+    ConstArrayRef<float>     b_ref(b);
+    ConstArrayRef<double>    c_ref(c);
+    TypedCells               a_cells(a);
+    TypedCells               b_cells(b);
+    TypedCells               c_cells(c);
 
     Dispatch3<CellwiseAdd>::call(a_cells, b_cells, c_cells, 3);
     Dispatch3<CellwiseAdd>::call(a_cells, b_ref, c_cells, 3);
@@ -225,13 +199,13 @@ TEST("require that direct dispatch 'a op b -> c' works") {
 }
 
 TEST("require that direct dispatch 'dot product' with return value works") {
-    std::vector<int>      a({1,2,3});
-    std::vector<float>    b({1.5,2.5,3.5});
-    ConstArrayRef<int>    a_ref(a);
-    ConstArrayRef<float>  b_ref(b);
-    TypedCells            a_cells(a);
-    TypedCells            b_cells(b);
-    double                expect = 1.5 + (2 * 2.5) + (3 * 3.5);
+    std::vector<Int8Float>    a({1,2,3});
+    std::vector<float>        b({1.5,2.5,3.5});
+    ConstArrayRef<Int8Float>  a_ref(a);
+    ConstArrayRef<float>      b_ref(b);
+    TypedCells                a_cells(a);
+    TypedCells                b_cells(b);
+    double                    expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
     EXPECT_EQUAL(expect, Dispatch2<DotProduct>::call(a_cells, b_cells, 3));
     EXPECT_EQUAL(expect, Dispatch2<DotProduct>::call(a_cells, b_ref, 3));
@@ -240,10 +214,10 @@ TEST("require that direct dispatch 'dot product' with return value works") {
 }
 
 TEST("require that direct dispatch 'sum' with return value works") {
-    std::vector<int>      a({1,2,3});
-    ConstArrayRef<int>    a_ref(a);
-    TypedCells            a_cells(a);
-    double                expect = (1 + 2 + 3);
+    std::vector<Int8Float>    a({1,2,3});
+    ConstArrayRef<Int8Float>  a_ref(a);
+    TypedCells                a_cells(a);
+    double                    expect = (1 + 2 + 3);
 
     EXPECT_EQUAL(expect, Dispatch1<Sum>::call(a_cells));
     EXPECT_EQUAL(expect, Dispatch1<Sum>::call(a_ref));
@@ -259,7 +233,7 @@ struct CellwiseAdd2 {
     virtual void call(const TypedCells &a, const TypedCells &b, const TypedCells &c, size_t cnt) const = 0;
     template <typename A, typename B, typename C>
     static std::unique_ptr<CellwiseAdd2> create();
-    virtual ~CellwiseAdd2() {}
+    virtual ~CellwiseAdd2() = default;
 };
 
 template <typename A, typename B, typename C>
@@ -286,7 +260,7 @@ struct DotProduct2 {
     virtual double call(const TypedCells &a, const TypedCells &b, size_t cnt) const = 0;
     template <typename A, typename B>
     static std::unique_ptr<DotProduct2> create();
-    virtual ~DotProduct2() {}
+    virtual ~DotProduct2() = default;
 };
 
 template <typename A, typename B>
@@ -314,7 +288,7 @@ struct Sum2 {
     virtual double call(const TypedCells &a) const = 0;
     template <typename A>
     static std::unique_ptr<Sum2> create();
-    virtual ~Sum2() {}
+    virtual ~Sum2() = default;
 };
 
 template <typename A>
@@ -343,9 +317,9 @@ std::unique_ptr<T> create(CellType a_type) {
     switch(a_type) {
     case CellType::DOUBLE: return T::template create<double, Args...>();
     case CellType::FLOAT:  return T::template create<float, Args...>();
-    case CellType::INT:    return T::template create<int, Args...>();
+    case CellType::INT8:   return T::template create<Int8Float, Args...>();
+    default: abort();
     }
-    abort();
 }
 
 template <typename T, typename... Args>
@@ -353,9 +327,9 @@ std::unique_ptr<T> create(CellType a_type, CellType b_type) {
     switch(b_type) {
     case CellType::DOUBLE: return create<T, double, Args...>(a_type);
     case CellType::FLOAT:  return create<T, float, Args...>(a_type);
-    case CellType::INT:    return create<T, int, Args...>(a_type);
+    case CellType::INT8:   return create<T, Int8Float, Args...>(a_type);
+    default: abort();
     }
-    abort();
 }
 
 template <typename T>
@@ -363,20 +337,20 @@ std::unique_ptr<T> create(CellType a_type, CellType b_type, CellType c_type) {
     switch(c_type) {
     case CellType::DOUBLE: return create<T, double>(a_type, b_type);
     case CellType::FLOAT:  return create<T, float>(a_type, b_type);
-    case CellType::INT:    return create<T, int>(a_type, b_type);
+    case CellType::INT8:   return create<T, Int8Float>(a_type, b_type);
+    default: abort();
     }
-    abort();
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("require that pre-resolved subclass 'a op b -> c' works") {
-    std::vector<int>      a({1,2,3});
-    std::vector<float>    b({1.5,2.5,3.5});
-    std::vector<double>   c(3, 0.0);
-    TypedCells            a_cells(a);
-    TypedCells            b_cells(b);
-    TypedCells            c_cells(c);
+    std::vector<Int8Float> a({1,2,3});
+    std::vector<float>     b({1.5,2.5,3.5});
+    std::vector<double>    c(3, 0.0);
+    TypedCells             a_cells(a);
+    TypedCells             b_cells(b);
+    TypedCells             c_cells(c);
 
     auto op = create<CellwiseAdd2>(a_cells.type, b_cells.type, c_cells.type);
     op->call(a_cells, b_cells, c_cells, 3);
@@ -387,11 +361,11 @@ TEST("require that pre-resolved subclass 'a op b -> c' works") {
 }
 
 TEST("require that pre-resolved subclass 'dot product' with return value works") {
-    std::vector<int>      a({1,2,3});
-    std::vector<float>    b({1.5,2.5,3.5});
-    TypedCells            a_cells(a);
-    TypedCells            b_cells(b);
-    double                expect = 1.5 + (2 * 2.5) + (3 * 3.5);
+    std::vector<Int8Float> a({1,2,3});
+    std::vector<float>     b({1.5,2.5,3.5});
+    TypedCells             a_cells(a);
+    TypedCells             b_cells(b);
+    double                 expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
     auto op = create<DotProduct2>(a_cells.type, b_cells.type);
     
@@ -399,9 +373,9 @@ TEST("require that pre-resolved subclass 'dot product' with return value works")
 }
 
 TEST("require that pre-resolved subclass 'sum' with return value works") {
-    std::vector<int>      a({1,2,3});
-    TypedCells            a_cells(a);
-    double                expect = (1 + 2 + 3);
+    std::vector<Int8Float> a({1,2,3});
+    TypedCells             a_cells(a);
+    double                 expect = (1 + 2 + 3);
 
     auto op = create<Sum2>(a_cells.type);
 
@@ -419,9 +393,9 @@ auto get_fun(CellType a_type) {
     switch(a_type) {
     case CellType::DOUBLE: return T::template get_fun<double, Args...>();
     case CellType::FLOAT:  return T::template get_fun<float, Args...>();
-    case CellType::INT:    return T::template get_fun<int, Args...>();
+    case CellType::INT8:   return T::template get_fun<Int8Float, Args...>();
+    default: abort();
     }
-    abort();
 }
 
 template <typename T, typename... Args>
@@ -429,9 +403,9 @@ auto get_fun(CellType a_type, CellType b_type) {
     switch(b_type) {
     case CellType::DOUBLE: return get_fun<T, double, Args...>(a_type);
     case CellType::FLOAT:  return get_fun<T, float, Args...>(a_type);
-    case CellType::INT:    return get_fun<T, int, Args...>(a_type);
+    case CellType::INT8:   return get_fun<T, Int8Float, Args...>(a_type);
+    default: abort();
     }
-    abort();
 }
 
 template <typename T>
@@ -439,9 +413,9 @@ auto get_fun(CellType a_type, CellType b_type, CellType c_type) {
     switch(c_type) {
     case CellType::DOUBLE: return get_fun<T, double>(a_type, b_type);
     case CellType::FLOAT:  return get_fun<T, float>(a_type, b_type);
-    case CellType::INT:    return get_fun<T, int>(a_type, b_type);
+    case CellType::INT8:   return get_fun<T, Int8Float>(a_type, b_type);
+    default: abort();
     }
-    abort();
 }
 
 //-----------------------------------------------------------------------------
@@ -575,17 +549,17 @@ Sum3::Self::Self()
 //-----------------------------------------------------------------------------
 
 TEST("require that self-updating cached function pointer 'a op b -> c' works") {
-    std::vector<int>      a({1,2,3});
-    std::vector<float>    b({1.5,2.5,3.5});
-    std::vector<double>   c(3, 0.0);
-    TypedCells            a_cells(a);
-    TypedCells            b_cells(b);
-    TypedCells            c_cells(c);
+    std::vector<Int8Float>  a({1,2,3});
+    std::vector<float>      b({1.5,2.5,3.5});
+    std::vector<double>     c(3, 0.0);
+    TypedCells              a_cells(a);
+    TypedCells              b_cells(b);
+    TypedCells              c_cells(c);
 
     CellwiseAdd3 op;
     EXPECT_EQUAL(op.self.my_fun, (&cellwise_add<double,double,double>));
     op.call(a_cells, b_cells, c_cells, 3);
-    EXPECT_EQUAL(op.self.my_fun, (&cellwise_add<int,float,double>));
+    EXPECT_EQUAL(op.self.my_fun, (&cellwise_add<Int8Float,float,double>));
     EXPECT_NOT_EQUAL(op.self.my_fun, (&cellwise_add<double,double,double>));
 
     EXPECT_EQUAL(c[0], 2.5);
@@ -594,29 +568,40 @@ TEST("require that self-updating cached function pointer 'a op b -> c' works") {
 }
 
 TEST("require that self-updating cached function pointer 'dot product' with return value works") {
-    std::vector<int>      a({1,2,3});
-    std::vector<float>    b({1.5,2.5,3.5});
-    TypedCells            a_cells(a);
-    TypedCells            b_cells(b);
-    double                expect = 1.5 + (2 * 2.5) + (3 * 3.5);
+    std::vector<Int8Float>  a({1,2,3});
+    std::vector<float>      b({1.5,2.5,3.5});
+    TypedCells              a_cells(a);
+    TypedCells              b_cells(b);
+    double                  expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
     DotProduct3 op;
     EXPECT_EQUAL(op.self.my_fun, (&dot_product<double,double>));
     EXPECT_EQUAL(expect, op.call(a_cells, b_cells, 3));
-    EXPECT_EQUAL(op.self.my_fun, (&dot_product<int,float>));
+    EXPECT_EQUAL(op.self.my_fun, (&dot_product<Int8Float,float>));
     EXPECT_NOT_EQUAL(op.self.my_fun, (&dot_product<double,double>));
 }
 
 TEST("require that self-updating cached function pointer 'sum' with return value works") {
-    std::vector<int>      a({1,2,3});
-    TypedCells            a_cells(a);
-    double                expect = (1 + 2 + 3);
+    std::vector<Int8Float> a({1,2,3});
+    TypedCells             a_cells(a);
+    double                 expect = (1 + 2 + 3);
 
     Sum3 op;
     EXPECT_EQUAL(op.self.my_fun, (&sum<double>));
     EXPECT_EQUAL(expect, op.call(a_cells));
-    EXPECT_EQUAL(op.self.my_fun, (&sum<int>));
+    EXPECT_EQUAL(op.self.my_fun, (&sum<Int8Float>));
     EXPECT_NOT_EQUAL(op.self.my_fun, (&sum<double>));
+}
+
+TEST("require that non_existing_attribute_value can be controlled") {
+    float values[3] = {0,1,2};
+    EXPECT_FALSE(TypedCells().non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(values, CellType::FLOAT, 3).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<double>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<float>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<Int8Float>()).non_existing_attribute_value());
+    EXPECT_FALSE(TypedCells(ConstArrayRef<BFloat16>()).non_existing_attribute_value());
+    EXPECT_TRUE(TypedCells::create_non_existing_attribute_value(values, CellType::FLOAT, 3).non_existing_attribute_value());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

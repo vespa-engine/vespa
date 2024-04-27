@@ -9,6 +9,7 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using search::attribute::BasicType;
 using search::attribute::CollectionType;

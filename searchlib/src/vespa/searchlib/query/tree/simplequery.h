@@ -163,8 +163,10 @@ struct SimpleNearestNeighborTerm : NearestNeighborTerm {
 struct SimpleFuzzyTerm : FuzzyTerm {
     SimpleFuzzyTerm(const Type &term, vespalib::stringref view,
                      int32_t id, Weight weight,
-                     uint32_t maxEditDistance, uint32_t prefixLength)
-            : FuzzyTerm(term, view, id, weight, maxEditDistance, prefixLength) {
+                     uint32_t max_edit_distance, uint32_t prefix_lock_length,
+                     bool prefix_match)
+        : FuzzyTerm(term, view, id, weight, max_edit_distance, prefix_lock_length, prefix_match)
+    {
     }
     ~SimpleFuzzyTerm() override;
 };

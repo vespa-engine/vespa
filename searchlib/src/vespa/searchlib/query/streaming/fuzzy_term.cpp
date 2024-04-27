@@ -13,20 +13,21 @@ constexpr bool normalizing_implies_cased(Normalizing norm) noexcept {
 
 FuzzyTerm::FuzzyTerm(std::unique_ptr<QueryNodeResultBase> result_base, stringref term,
                      const string& index, Type type, Normalizing normalizing,
-                     uint8_t max_edits, uint32_t prefix_size)
+                     uint8_t max_edits, uint32_t prefix_lock_length, bool prefix_match)
     : QueryTerm(std::move(result_base), term, index, type, normalizing),
       _dfa_matcher(),
       _fallback_matcher()
 {
-    setFuzzyMaxEditDistance(max_edits);
-    setFuzzyPrefixLength(prefix_size);
+    set_fuzzy_max_edit_distance(max_edits);
+    set_fuzzy_prefix_lock_length(prefix_lock_length);
+    set_fuzzy_prefix_match(prefix_match);
 
     std::string_view term_view(term.data(), term.size());
     const bool cased = normalizing_implies_cased(normalizing);
     if (attribute::DfaFuzzyMatcher::supports_max_edits(max_edits)) {
-        _dfa_matcher = std::make_unique<attribute::DfaFuzzyMatcher>(term_view, max_edits, prefix_size, cased);
+        _dfa_matcher = std::make_unique<attribute::DfaFuzzyMatcher>(term_view, max_edits, prefix_lock_length, cased, prefix_match);
     } else {
-        _fallback_matcher = std::make_unique<vespalib::FuzzyMatcher>(term_view, max_edits, prefix_size, cased);
+        _fallback_matcher = std::make_unique<vespalib::FuzzyMatcher>(term_view, max_edits, prefix_lock_length, cased, prefix_match);
     }
 }
 

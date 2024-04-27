@@ -37,11 +37,11 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
         SDDocumentType docType = schema.getDocument();
         assertNotNull(docType);
         assertNotNull(docType.getField("foo"));
-        assertNotNull(docType.getField("bar"));
-        assertNotNull(docType.getField("cox"));
+        assertNull(docType.getField("bar"));
+        assertNull(docType.getField("cox"));
         assertNotNull(docType.getField("mytags"));
-        assertNotNull(docType.getField("alltags"));
-        assertEquals(5, docType.getFieldCount());
+        assertNull(docType.getField("alltags"));
+        assertEquals(2, docType.getFieldCount());
     }
 
     @Test

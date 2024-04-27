@@ -248,10 +248,11 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
       _type(type),
       _diversityCutoffStrict(false),
       _valid(true),
+      _fuzzy_prefix_match(false),
       _term(term_),
       _diversityAttribute(),
-      _fuzzyMaxEditDistance(2),
-      _fuzzyPrefixLength(0)
+      _fuzzy_max_edit_distance(2),
+      _fuzzy_prefix_lock_length(0)
 {
     if (isFullRange(_term)) {
         stringref rest(_term.c_str() + 1, _term.size() - 2);

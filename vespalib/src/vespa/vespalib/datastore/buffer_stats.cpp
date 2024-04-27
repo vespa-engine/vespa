@@ -5,7 +5,7 @@
 
 namespace vespalib::datastore {
 
-BufferStats::BufferStats()
+BufferStats::BufferStats() noexcept
     : _alloc_entries(0),
       _used_entries(0),
       _hold_entries(0),
@@ -16,7 +16,7 @@ BufferStats::BufferStats()
 }
 
 void
-BufferStats::add_to_mem_stats(size_t entry_size, MemoryStats& stats) const
+BufferStats::add_to_mem_stats(size_t entry_size, MemoryStats& stats) const noexcept
 {
     size_t extra_used = extra_used_bytes();
     stats._alloc_entries += capacity();
@@ -29,13 +29,13 @@ BufferStats::add_to_mem_stats(size_t entry_size, MemoryStats& stats) const
     stats._holdBytes += (hold_entries() * entry_size) + extra_hold_bytes();
 }
 
-InternalBufferStats::InternalBufferStats()
+InternalBufferStats::InternalBufferStats() noexcept
     : BufferStats()
 {
 }
 
 void
-InternalBufferStats::clear()
+InternalBufferStats::clear() noexcept
 {
     _alloc_entries.store(0, std::memory_order_relaxed);
     _used_entries.store(0, std::memory_order_relaxed);
@@ -46,7 +46,7 @@ InternalBufferStats::clear()
 }
 
 void
-InternalBufferStats::dec_hold_entries(size_t value)
+InternalBufferStats::dec_hold_entries(size_t value) noexcept
 {
     EntryCount elems = hold_entries();
     assert(elems >= value);

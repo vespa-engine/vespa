@@ -91,21 +91,27 @@ template void
 PostingListParams::get<bool>(const vespalib::string &key, bool &val) const;
 
 template void
-PostingListParams::set<int32_t>(const vespalib::string &key, const int32_t &val);
+PostingListParams::set<int>(const vespalib::string& key, const int& val);
 
 template void
-PostingListParams::get<int32_t>(const vespalib::string &key, int32_t &val) const;
+PostingListParams::get<int>(const vespalib::string& key, int& val) const;
 
 template void
-PostingListParams::set<uint32_t>(const vespalib::string &key, const uint32_t &val);
+PostingListParams::set<unsigned int>(const vespalib::string& key, const unsigned int& val);
 
 template void
-PostingListParams::get<uint32_t>(const vespalib::string &key, uint32_t &val) const;
+PostingListParams::get<unsigned int>(const vespalib::string& key, unsigned int& val) const;
 
 template void
-PostingListParams::set<uint64_t>(const vespalib::string &key, const uint64_t &val);
+PostingListParams::set<unsigned long>(const vespalib::string& key, const unsigned long& val);
 
 template void
-PostingListParams::get<uint64_t>(const vespalib::string &key, uint64_t &val) const;
+PostingListParams::get<unsigned long>(const vespalib::string& key, unsigned long& val) const;
+
+template void
+PostingListParams::set<unsigned long long>(const vespalib::string& key, const unsigned long long& val);
+
+template void
+PostingListParams::get<unsigned long long>(const vespalib::string& key, unsigned long long& val) const;
 
 }

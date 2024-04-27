@@ -37,6 +37,14 @@ public abstract class ContentNode extends AbstractService
         rpc_num_targets = featureFlags.rpcNumTargets();
         rpc_events_before_wakeup = featureFlags.rpcEventsBeforeWakeup();
 
+        // <node>-level distribution key range validation is initially done through the XML schema,
+        // but we also check it here in the case of programmatic content node instantiations.
+        // Only [0, UINT16_MAX - 1] is a valid range. UINT16_MAX is a special content layer-internal
+        // sentinel value that must never be used by actual nodes.
+        if (distributionKey < 0 || distributionKey >= 65535) {
+            throw new IllegalArgumentException("Distribution key %d is outside valid range [0, 65534]".formatted(distributionKey));
+        }
+
         initialize();
         setProp("clustertype", "content");
         setProp("clustername", clusterName);

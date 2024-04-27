@@ -4,7 +4,6 @@
 
 #include "entryref.h"
 #include "buffer_type.h"
-#include <vespa/vespalib/util/array.h>
 
 namespace vespalib::datastore {
 
@@ -17,29 +16,29 @@ class FreeList;
  */
 class BufferFreeList {
 private:
-    using EntryRefArray = vespalib::Array<EntryRef>;
+    using EntryRefArray = std::vector<EntryRef>;
 
     std::atomic<EntryCount>& _dead_entries;
-    FreeList* _free_list;
-    EntryRefArray _free_refs;
+    FreeList                *_free_list;
+    EntryRefArray            _free_refs;
 
     void attach();
-    void detach();
+    void detach() noexcept;
 
 public:
-    BufferFreeList(std::atomic<EntryCount>& dead_entrie);
+    explicit BufferFreeList(std::atomic<EntryCount>& dead_entries) noexcept;
     ~BufferFreeList();
-    BufferFreeList(BufferFreeList&&) = default; // Needed for emplace_back() during setup.
+    BufferFreeList(BufferFreeList&&) noexcept = default; // Needed for emplace_back() during setup.
     BufferFreeList(const BufferFreeList&) = delete;
     BufferFreeList& operator=(const BufferFreeList&) = delete;
     BufferFreeList& operator=(BufferFreeList&&) = delete;
-    void enable(FreeList& free_list);
-    void disable();
+    void enable(FreeList& free_list) noexcept;
+    void disable() noexcept;
 
-    bool enabled() const { return _free_list != nullptr; }
-    bool empty() const { return _free_refs.empty(); }
+    bool enabled() const noexcept { return _free_list != nullptr; }
+    bool empty() const noexcept { return _free_refs.empty(); }
     void push_entry(EntryRef ref);
-    EntryRef pop_entry();
+    EntryRef pop_entry() noexcept;
 };
 
 }

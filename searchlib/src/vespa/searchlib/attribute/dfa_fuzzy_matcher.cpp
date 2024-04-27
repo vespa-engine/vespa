@@ -44,8 +44,12 @@ extract_suffix(std::string_view target, uint32_t prefix_size)
 
 }
 
-DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, LevenshteinDfa::DfaType dfa_type)
-    : _dfa(vespalib::fuzzy::LevenshteinDfa::build(extract_suffix(target, prefix_size), max_edits, (cased ? LevenshteinDfa::Casing::Cased : LevenshteinDfa::Casing::Uncased), dfa_type)),
+DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size,
+                                 bool cased, bool prefix_match, LevenshteinDfa::DfaType dfa_type)
+    : _dfa(vespalib::fuzzy::LevenshteinDfa::build(extract_suffix(target, prefix_size), max_edits,
+                                                  (cased ? LevenshteinDfa::Casing::Cased : LevenshteinDfa::Casing::Uncased),
+                                                  dfa_type, // TODO reorder args
+                                                  (prefix_match ? LevenshteinDfa::Matching::Prefix : LevenshteinDfa::Matching::FullString))),
       _successor(),
       _prefix(extract_prefix(target, prefix_size, cased)),
       _prefix_size(prefix_size),
@@ -54,8 +58,8 @@ DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uin
     _successor = _prefix;
 }
 
-DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased)
-    : DfaFuzzyMatcher(target, max_edits, prefix_size, cased, LevenshteinDfa::DfaType::Table)
+DfaFuzzyMatcher::DfaFuzzyMatcher(std::string_view target, uint8_t max_edits, uint32_t prefix_size, bool cased, bool prefix_match)
+    : DfaFuzzyMatcher(target, max_edits, prefix_size, cased, prefix_match, LevenshteinDfa::DfaType::Table)
 {
 }
 

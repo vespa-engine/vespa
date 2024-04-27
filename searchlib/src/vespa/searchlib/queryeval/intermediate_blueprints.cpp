@@ -318,6 +318,11 @@ OrBlueprint::calculate_flow_stats(uint32_t) const {
             OrFlow::cost_of(get_children(), true) + flow::heap_cost(est, get_children().size())};
 }
 
+double
+OrBlueprint::estimate_self_cost(InFlow in_flow) const noexcept {
+    return in_flow.strict() ? flow::heap_cost(estimate(), get_children().size()) : 0.0;
+}
+
 Blueprint::HitEstimate
 OrBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
@@ -431,6 +436,11 @@ WeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
             OrFlow::cost_of(get_children(), true) + flow::heap_cost(est, get_children().size())};
 }
 
+double
+WeakAndBlueprint::estimate_self_cost(InFlow in_flow) const noexcept {
+    return in_flow.strict() ? flow::heap_cost(estimate(), get_children().size()) : 0.0;
+}
+
 Blueprint::HitEstimate
 WeakAndBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
@@ -507,6 +517,11 @@ NearBlueprint::calculate_flow_stats(uint32_t) const {
             AndFlow::cost_of(get_children(), true) + childCnt() * est};
 }
 
+double
+NearBlueprint::estimate_self_cost(InFlow) const noexcept {
+    return childCnt() * estimate();
+}
+
 Blueprint::HitEstimate
 NearBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
@@ -570,6 +585,11 @@ ONearBlueprint::calculate_flow_stats(uint32_t) const {
     return {est,
             AndFlow::cost_of(get_children(), false) + childCnt() * est,
             AndFlow::cost_of(get_children(), true) + childCnt() * est};
+}
+
+double
+ONearBlueprint::estimate_self_cost(InFlow) const noexcept {
+    return childCnt() * estimate();
 }
 
 Blueprint::HitEstimate

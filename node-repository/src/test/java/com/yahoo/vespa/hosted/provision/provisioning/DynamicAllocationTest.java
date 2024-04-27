@@ -399,7 +399,7 @@ public class DynamicAllocationTest {
     }
 
     @Test
-    public void node_resources_are_relaxed_in_dev() {
+    public void node_resources_are_reduced_in_dev() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
         tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
@@ -416,6 +416,22 @@ public class DynamicAllocationTest {
         assertEquals(0.1, hosts.get(0).advertisedResources().bandwidthGbps(), 0.000001);
         assertEquals("Slow nodes are allowed in dev and preferred because they are cheaper",
                      NodeResources.DiskSpeed.slow, hosts.get(0).advertisedResources().diskSpeed());
+    }
+
+    @Test
+    public void node_resources_are_reduced_in_staging() {
+        var resources = new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.fast);
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.staging, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(3, new Flavor(resources), NodeType.host, 10, true);
+        tester.activateTenantHosts();
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("1").build();
+
+        List<HostSpec> hosts = tester.prepare(application, cluster, 36, 2, resources);
+        tester.activate(application, hosts);
+        assertEquals(3, hosts.size());
+        assertEquals(1, hosts.stream().map(host -> host.membership().get().cluster().group().get()).distinct().count());
     }
 
     @Test

@@ -12,6 +12,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Locale;
 
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_SERVICE_ID;
@@ -172,10 +173,10 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     public void all_timestamps_are_equal_and_non_zero() {
         GenericJsonModel jsonModel = getResponseAsGenericJsonModel(DEFAULT_CONSUMER);
 
-        Long nodeTimestamp = jsonModel.node.timestamp;
-        assertNotEquals(0L, (long) nodeTimestamp);
+        Instant nodeTimestamp = jsonModel.node.timeAsInstant();
+        assertNotEquals(Instant.EPOCH, nodeTimestamp);
         for (var service : jsonModel.services)
-            assertEquals(nodeTimestamp, service.timestamp);
+            assertEquals(nodeTimestamp, service.timeAsInstant());
     }
 
     @Test

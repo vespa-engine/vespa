@@ -6,6 +6,7 @@
 #include "value_type.h"
 #include "typed_cells.h"
 #include <vespa/vespalib/util/string_id.h>
+#include <memory>
 
 namespace vespalib::eval {
 
@@ -16,7 +17,7 @@ struct Value {
     using UP = std::unique_ptr<Value>;
     using CREF = std::reference_wrapper<const Value>;
     virtual const ValueType &type() const = 0;
-    virtual ~Value() {}
+    virtual ~Value() = default;
 
     // Root lookup structure for mapping labels to dense subspace indexes
     struct Index {
@@ -40,7 +41,7 @@ struct Value {
             // create_view will be extracted here.
             virtual bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) = 0;
 
-            virtual ~View() {}
+            virtual ~View() = default;
         };
 
         // total number of mappings (equal to the number of dense subspaces)
@@ -50,7 +51,7 @@ struct Value {
         // labels from a subset of the mapped dimensions.
         virtual std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const = 0;
 
-        virtual ~Index() {}
+        virtual ~Index() = default;
     };
     virtual TypedCells cells() const = 0;
     virtual const Index &index() const = 0;

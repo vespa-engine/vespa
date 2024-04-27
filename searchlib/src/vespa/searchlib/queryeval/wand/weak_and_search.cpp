@@ -43,10 +43,7 @@ private:
 
 public:
     WeakAndSearchLR(const Terms &terms, uint32_t n)
-        : _terms(terms,
-                 TermFrequencyScorer(),
-                 0,
-                 fef::MatchData::UP()),
+        : _terms(terms, TermFrequencyScorer(), 0, {}),
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
           _algo(),
           _threshold(1),
@@ -109,9 +106,9 @@ SearchIterator::UP
 WeakAndSearch::createArrayWand(const Terms &terms, uint32_t n, bool strict)
 {
     if (strict) {
-        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>(terms, n));
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>>(terms, n);
     } else {
-        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>(terms, n));
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>>(terms, n);
     }
 }
 
@@ -119,9 +116,9 @@ SearchIterator::UP
 WeakAndSearch::createHeapWand(const Terms &terms, uint32_t n, bool strict)
 {
     if (strict) {
-        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, true>(terms, n));
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, true>>(terms, n);
     } else {
-        return SearchIterator::UP(new wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, false>(terms, n));
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, false>>(terms, n);
     }
 }
 

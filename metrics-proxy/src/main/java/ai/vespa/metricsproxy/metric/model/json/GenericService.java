@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 
+import java.time.Instant;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
@@ -35,11 +37,15 @@ public class GenericService {
     public GenericService() { }
 
     // TODO: take StatusCode instead of int
-    GenericService(String name, Long timestamp, StatusCode statusCode, String message, List<GenericMetrics> metrics) {
+    GenericService(String name, Instant timestamp, StatusCode statusCode, String message, List<GenericMetrics> metrics) {
         this.name = name;
-        this.timestamp = timestamp;
+        this.timestamp = timestamp.getEpochSecond();
         status = new Status(statusCode, message);
         this.metrics = metrics;
+    }
+
+    public Instant timeAsInstant() {
+        return Instant.ofEpochSecond(timestamp);
     }
 
 

@@ -55,14 +55,13 @@ public class ValidateFuzzySearcherTestCase {
         searcher = new ValidateFuzzySearcher();
     }
 
-    private String makeQuery(String attribute, String query, int maxEditDistance, int prefixLength) {
-        return "select * from sources * where " + attribute +
-                " contains ({maxEditDistance:" + maxEditDistance + ", prefixLength:" + prefixLength +"}" +
-                "fuzzy(\"" + query + "\"))";
+    private String makeQuery(String attribute, String query, int maxEditDistance, int prefixLength, boolean prefixMatch) {
+        return "select * from sources * where %s contains ({maxEditDistance:%d,prefixLength:%d,prefix:%b}fuzzy(\"%s\"))"
+                .formatted(attribute, maxEditDistance, prefixLength, prefixMatch, query);
     }
 
     private String makeQuery(String attribute, String query) {
-        return makeQuery(attribute, query, 2, 0);
+        return makeQuery(attribute, query, 2, 0, false);
     }
 
 
@@ -76,7 +75,7 @@ public class ValidateFuzzySearcherTestCase {
             if (validAttributes.contains(attribute)) {
                 assertNull(r.hits().getError());
             } else {
-                assertErrMsg("FUZZY(fuzzy,2,0) " + attribute + ":fuzzy field is not a string attribute", r);
+                assertErrMsg("FUZZY(fuzzy,2,0,false) " + attribute + ":fuzzy field is not a string attribute", r);
             }
         }
     }
@@ -85,28 +84,28 @@ public class ValidateFuzzySearcherTestCase {
     void testInvalidEmptyStringQuery() {
         String q = makeQuery("string_single", "");
         Result r = doSearch(searcher, q);
-        assertErrMsg("FUZZY(,2,0) string_single: fuzzy query must be non-empty", r);
+        assertErrMsg("FUZZY(,2,0,false) string_single: fuzzy query must be non-empty", r);
     }
 
     @Test
     void testInvalidQueryWrongMaxEditDistance() {
-        String q = makeQuery("string_single", "fuzzy", -1, 0);
+        String q = makeQuery("string_single", "fuzzy", -1, 0, false);
         Result r = doSearch(searcher, q);
-        assertErrMsg("FUZZY(fuzzy,-1,0) string_single:fuzzy has invalid maxEditDistance -1: Must be >= 0", r);
+        assertErrMsg("FUZZY(fuzzy,-1,0,false) string_single:fuzzy has invalid maxEditDistance -1: Must be >= 0", r);
     }
 
     @Test
     void testInvalidQueryWrongPrefixLength() {
-        String q = makeQuery("string_single", "fuzzy", 2, -1);
+        String q = makeQuery("string_single", "fuzzy", 2, -1, true);
         Result r = doSearch(searcher, q);
-        assertErrMsg("FUZZY(fuzzy,2,-1) string_single:fuzzy has invalid prefixLength -1: Must be >= 0", r);
+        assertErrMsg("FUZZY(fuzzy,2,-1,true) string_single:fuzzy has invalid prefixLength -1: Must be >= 0", r);
     }
 
     @Test
     void testInvalidQueryWrongAttributeName() {
         String q = makeQuery("wrong_name", "fuzzy");
         Result r = doSearch(searcher, q);
-        assertErrMsg("FUZZY(fuzzy,2,0) wrong_name:fuzzy field is not a string attribute", r);
+        assertErrMsg("FUZZY(fuzzy,2,0,false) wrong_name:fuzzy field is not a string attribute", r);
     }
 
     private static void assertErrMsg(String message, Result r) {

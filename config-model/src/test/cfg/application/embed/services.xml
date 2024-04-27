@@ -12,6 +12,10 @@
       <transformer-token-type-ids>my_token_type_ids</transformer-token-type-ids>
       <transformer-output>my_output</transformer-output>
       <normalize>true</normalize>
+      <prepend>
+        <query>Represent this sentence for searching relevant passages:</query>
+        <document>passage:</document>
+      </prepend>
       <onnx-execution-mode>parallel</onnx-execution-mode>
       <onnx-intraop-threads>10</onnx-intraop-threads>
       <onnx-interop-threads>8</onnx-interop-threads>

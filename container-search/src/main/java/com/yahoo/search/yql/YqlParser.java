@@ -1385,7 +1385,14 @@ public class YqlParser implements Parser {
                 FuzzyItem.DEFAULT_PREFIX_LENGTH,
                 PREFIX_LENGTH_DESCRIPTION);
 
-        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength);
+        boolean prefixMatch = getAnnotation(
+                ast,
+                PREFIX,
+                Boolean.class,
+                Boolean.FALSE,
+                "setting for whether to use prefix match of input data");
+
+        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength, prefixMatch);
         return leafStyleSettings(ast, fuzzy);
     }
 

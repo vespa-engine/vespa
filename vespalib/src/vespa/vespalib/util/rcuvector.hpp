@@ -9,7 +9,7 @@
 namespace vespalib {
 
 template <typename T>
-RcuVectorHeld<T>::RcuVectorHeld(size_t size, T&& data)
+RcuVectorHeld<T>::RcuVectorHeld(size_t size, T&& data) noexcept
     : GenerationHeldBase(size),
       _data(std::move(data))
 { }
@@ -18,12 +18,12 @@ template <typename T>
 RcuVectorHeld<T>::~RcuVectorHeld() = default;
 
 template <typename T>
-size_t RcuVectorBase<T>::calcNewSize(size_t baseSize) const {
+size_t RcuVectorBase<T>::calcNewSize(size_t baseSize) const noexcept {
     return _growStrategy.calc_new_size(baseSize);
 }
 
 template <typename T>
-size_t RcuVectorBase<T>::calcNewSize() const {
+size_t RcuVectorBase<T>::calcNewSize() const noexcept {
     return calcNewSize(_data.capacity());
 }
 
@@ -135,7 +135,7 @@ RcuVectorBase<T>::RcuVectorBase(GrowStrategy growStrategy,
 
 template <typename T>
 MemoryUsage
-RcuVectorBase<T>::getMemoryUsage() const
+RcuVectorBase<T>::getMemoryUsage() const noexcept
 {
     MemoryUsage retval;
     retval.incAllocatedBytes(_data.capacity() * sizeof(T));
@@ -145,7 +145,7 @@ RcuVectorBase<T>::getMemoryUsage() const
 
 template <typename T>
 void
-RcuVectorBase<T>::update_vector_start()
+RcuVectorBase<T>::update_vector_start() noexcept
 {
     _vector_start.store(_data.data(), std::memory_order_release);
 }
@@ -193,7 +193,7 @@ RcuVector<T>::reclaim_memory(generation_t oldest_used_gen)
 
 template <typename T>
 MemoryUsage
-RcuVector<T>::getMemoryUsage() const
+RcuVector<T>::getMemoryUsage() const noexcept
 {
     MemoryUsage retval(RcuVectorBase<T>::getMemoryUsage());
     retval.mergeGenerationHeldBytes(_genHolderStore.get_held_bytes());

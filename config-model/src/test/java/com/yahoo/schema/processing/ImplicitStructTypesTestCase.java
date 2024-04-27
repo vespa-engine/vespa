@@ -34,9 +34,9 @@ public class ImplicitStructTypesTestCase extends AbstractSchemaTestCase {
         assertNotNull(docType);
 
         assertField(docType, "doc_str", DataType.STRING);
-        assertField(docType, "doc_str_sum", DataType.STRING);
+        assertNoField(docType, "doc_str_sum");
         assertField(docType, "doc_uri", DataType.URI);
-        assertField(docType, "docsum_str", DataType.STRING);
+        assertNoField(docType, "docsum_str");
     }
 
     @SuppressWarnings({ "UnusedDeclaration" })
@@ -58,6 +58,11 @@ public class ImplicitStructTypesTestCase extends AbstractSchemaTestCase {
         assertNotNull(field);
         assertEquals(type, field.getDataType());
         assertTrue(field instanceof SDField);
+    }
+
+    private static void assertNoField(SDDocumentType docType, String fieldName) {
+        var field = getSecretField(docType, fieldName);
+        assertNull(field);
     }
 
     private static Field getSecretField(SDDocumentType docType, String fieldName) {

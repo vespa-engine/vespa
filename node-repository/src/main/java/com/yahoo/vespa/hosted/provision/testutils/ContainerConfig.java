@@ -8,7 +8,7 @@ import com.yahoo.config.provision.SystemName;
  * For running NodeRepository API with some mocked data.
  * This is used by both NodeAdmin and NodeRepository tests.
  *
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public class ContainerConfig {
 

@@ -6,8 +6,8 @@
 #include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vector>
-#include <cstdint>
 #include <cassert>
+#include <cstdlib>
 
 namespace vespalib::eval {
 
@@ -105,9 +105,9 @@ struct CellMeta {
     // normalize to make sure scalar values have cell type double
     static constexpr CellMeta normalize(CellType cell_type, bool is_scalar) {
         if (is_scalar) {
-            return CellMeta(CellType::DOUBLE, true);
+            return {CellType::DOUBLE, true};
         } else {
-            return CellMeta(cell_type, false);
+            return {cell_type, false};
         }
     }
 

@@ -1150,8 +1150,9 @@ public class SelectParser implements Parser {
 
         Integer maxEditDistance = getIntegerAnnotation(MAX_EDIT_DISTANCE, annotations, FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE);
         Integer prefixLength = getIntegerAnnotation(PREFIX_LENGTH, annotations, FuzzyItem.DEFAULT_PREFIX_LENGTH);
+        boolean prefixMatch = getBoolAnnotation(PREFIX, annotations, Boolean.FALSE);
 
-        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength);
+        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength, prefixMatch);
 
         return leafStyleSettings(getAnnotations(value), fuzzy);
     }

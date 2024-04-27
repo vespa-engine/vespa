@@ -33,7 +33,7 @@
 
         <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
-        <error-prone-annotations.vespa.version>2.26.1</error-prone-annotations.vespa.version>
+        <error-prone-annotations.vespa.version>2.27.0</error-prone-annotations.vespa.version>
         <guava.vespa.version>33.1.0-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
         <j2objc-annotations.vespa.version>3.0.0</j2objc-annotations.vespa.version>
@@ -68,8 +68,8 @@
         <assertj.vespa.version>3.25.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.705</aws-sdk.vespa.version>
-        <athenz.vespa.version>1.11.56</athenz.vespa.version>
+        <aws-sdk.vespa.version>1.12.710</aws-sdk.vespa.version>
+        <athenz.vespa.version>1.11.57</athenz.vespa.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -79,7 +79,7 @@
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
         <bouncycastle.vespa.version>1.78.1</bouncycastle.vespa.version>
-        <byte-buddy.vespa.version>1.14.13</byte-buddy.vespa.version>
+        <byte-buddy.vespa.version>1.14.14</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
         <commons-codec.vespa.version>1.16.1</commons-codec.vespa.version>
@@ -118,7 +118,7 @@
         <junit.platform.vespa.version>1.10.2</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <kherud.llama.vespa.version>3.0.1</kherud.llama.vespa.version>
-        <luben.zstd.vespa.version>1.5.6-2</luben.zstd.vespa.version>
+        <luben.zstd.vespa.version>1.5.6-3</luben.zstd.vespa.version>
         <lucene.vespa.version>9.10.0</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.2</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
@@ -128,8 +128,8 @@
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
         <netty.vespa.version>4.1.109.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
-        <onnxruntime.vespa.version>1.17.1</onnxruntime.vespa.version>
-        <opennlp.vespa.version>2.3.2</opennlp.vespa.version>
+        <onnxruntime.vespa.version>1.17.3</onnxruntime.vespa.version>
+        <opennlp.vespa.version>2.3.3</opennlp.vespa.version>
         <opentest4j.vespa.version>1.3.0</opentest4j.vespa.version>
         <org.json.vespa.version>20240303</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
@@ -140,7 +140,7 @@
         <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.3</plexus-xml.vespa.version>
         <protobuf.vespa.version>3.25.3</protobuf.vespa.version>
-        <questdb.vespa.version>7.4.0</questdb.vespa.version>
+        <questdb.vespa.version>7.4.2</questdb.vespa.version>
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
         <snappy.vespa.version>1.1.10.5</snappy.vespa.version>
         <surefire.vespa.version>3.2.5</surefire.vespa.version>
@@ -182,7 +182,7 @@
         <maven-plugin-tools.vespa.version>3.12.0</maven-plugin-tools.vespa.version>
         <maven-resources-plugin.vespa.version>3.3.1</maven-resources-plugin.vespa.version>
         <maven-resolver.vespa.version>1.9.19</maven-resolver.vespa.version>
-        <maven-shade-plugin.vespa.version>3.5.2</maven-shade-plugin.vespa.version>
+        <maven-shade-plugin.vespa.version>3.5.3</maven-shade-plugin.vespa.version>
         <maven-site-plugin.vespa.version>3.12.1</maven-site-plugin.vespa.version>
         <maven-source-plugin.vespa.version>3.3.1</maven-source-plugin.vespa.version>
         <properties-maven-plugin.vespa.version>1.2.1</properties-maven-plugin.vespa.version>

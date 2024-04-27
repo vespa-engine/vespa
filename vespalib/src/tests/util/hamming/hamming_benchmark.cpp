@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/util/binary_hamming_distance.h>
 #include <vector>
+#include <cinttypes>
 #include <cstdlib>
 #include <cstdint>
 #include <cstdio>
@@ -35,6 +36,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    printf("%lu vectors of %lu bits, repeated %lu times. Sum of distances = %lu\n", num_vectors, vector_length*8, num_reps, sum);
+    printf("%lu vectors of %lu bits, repeated %lu times. Sum of distances = %" PRIu64 "\n", num_vectors, vector_length*8, num_reps, sum);
     return 0;
 }

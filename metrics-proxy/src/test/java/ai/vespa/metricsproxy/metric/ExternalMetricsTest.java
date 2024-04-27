@@ -46,7 +46,7 @@ public class ExternalMetricsTest {
 
         List<MetricsPacket.Builder> packets = externalMetrics.getMetrics();
         assertEquals(1, packets.size());
-        assertEquals(SERVICE_ID, packets.get(0).build().service);
+        assertEquals(SERVICE_ID, packets.get(0).build().service());
     }
 
     @Test

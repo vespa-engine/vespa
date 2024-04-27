@@ -2,6 +2,8 @@
 package ai.vespa.metricsproxy.http.prometheus;
 
 import ai.vespa.metricsproxy.http.HttpHandlerTestBase;
+import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil;
 import ai.vespa.metricsproxy.service.DummyService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -10,9 +12,14 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
+import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
+import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
+import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -96,5 +103,22 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
                 return s;
         }
         throw new IllegalArgumentException("No line containing string: " + searchString);
+    }
+
+    @Test
+    public void timestamp_is_in_milliseconds() {
+        Instant packetTimestamp = Instant.ofEpochMilli(123456789L);
+        var servicePacket = new MetricsPacket.Builder(toServiceId("my-service"))
+                .timestamp(packetTimestamp)
+                .statusCode(0)
+                .putMetric(toMetricId("service-metric"), 1234)
+                .putDimension(toDimensionId("service-dim"), "service-dim-value")
+                .build();
+        var model = PrometheusUtil.toPrometheusModel(List.of(servicePacket));
+        assertTrue(model.hasMoreElements());
+        var metricsFamily = model.nextElement();
+        assertEquals(1, metricsFamily.samples.size());
+        var sample = metricsFamily.samples.get(0);
+        assertEquals(Instant.ofEpochMilli(sample.timestampMs), packetTimestamp);
     }
 }

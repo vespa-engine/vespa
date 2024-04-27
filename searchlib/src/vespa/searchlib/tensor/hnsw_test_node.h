@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 namespace search::tensor {
@@ -19,14 +20,18 @@ private:
     LevelArray _levels;
 
 public:
-    HnswTestNode() : _levels() {}
-    HnswTestNode(const LinkArray& level_0) : _levels() { _levels.push_back(level_0); }
-    HnswTestNode(const LevelArray& levels_in) : _levels(levels_in) {}
-    bool empty() const { return _levels.empty(); }
-    size_t size() const { return _levels.size(); }
-    const LevelArray& levels() const { return _levels; }
-    const LinkArray& level(size_t idx) const { return _levels[idx]; }
-    bool operator==(const HnswTestNode& rhs) {
+    HnswTestNode() noexcept;
+    HnswTestNode(const HnswTestNode &) = delete;
+    HnswTestNode & operator=(const HnswTestNode &) = delete;
+    HnswTestNode(HnswTestNode &&) noexcept = default;
+    ~HnswTestNode();
+    HnswTestNode(LinkArray&& level_0) : _levels() { _levels.push_back(std::move(level_0)); }
+    HnswTestNode(LevelArray&& levels_in) : _levels(std::move(levels_in)) {}
+    bool empty() const noexcept { return _levels.empty(); }
+    size_t size() const noexcept { return _levels.size(); }
+    const LevelArray& levels() const noexcept { return _levels; }
+    const LinkArray& level(size_t idx) const noexcept { return _levels[idx]; }
+    bool operator==(const HnswTestNode& rhs) noexcept  {
         return _levels == rhs._levels;
     }
 };
