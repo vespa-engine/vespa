@@ -133,9 +133,9 @@ public class IntermediateCollection {
             var parser = new SchemaParser(stream, deployLogger, modelProperties);
             try {
                 parser.rankProfile(schema);
-            } catch (ParseException pe) {
+            } catch (ParseException | TokenMgrException e) {
                 throw new ParseException("Failed parsing rank-profile from '" + reader.getName() + "': " +
-                                         stream.formatException(Exceptions.toMessageString(pe)));
+                                         stream.formatException(Exceptions.toMessageString(e)));
             }
         } catch (java.io.IOException ex) {
             throw new IllegalArgumentException("Failed reading from '" + reader.getName() + "': " + ex.getMessage());

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.parser;
 
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.reader.NamedReader;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
@@ -232,5 +233,16 @@ public class IntermediateCollectionTestCase {
         assertTrue(ex.getMessage().startsWith("Inheritance/reference cycle for documents: "));
     }
 
+    @Test
+    void can_detect_errors_in_rank_profile_outside_schema() {
+        var collection = new IntermediateCollection();
+        collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
+        var exception = assertThrows(ParseException.class, () -> {
+            collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity2/invalid_comment.profile");
+        });
+        var message = exception.getMessage();
+        assertTrue(message.contains("Failed parsing rank-profile from 'src/test/derived/rankprofilemodularity2/invalid_comment.profile'"));
+        assertTrue(message.contains("Lexical error at line 3, column 6"), message);
+    }
 
 }
