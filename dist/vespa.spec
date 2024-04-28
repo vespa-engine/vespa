@@ -206,7 +206,7 @@ Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.17.3
 %if 0%{?el8} || 0%{?el9}
-Requires: vespa-jllama = 3.0.1
+Requires: vespa-jllama = 3.0.1-2
 %endif
 
 %description libs
