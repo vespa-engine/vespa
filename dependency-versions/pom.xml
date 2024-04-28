@@ -82,7 +82,7 @@
         <byte-buddy.vespa.version>1.14.14</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
-        <commons-codec.vespa.version>1.16.1</commons-codec.vespa.version>
+        <commons-codec.vespa.version>1.17.0</commons-codec.vespa.version>
         <commons-collections.vespa.version>3.2.2</commons-collections.vespa.version>
         <commons-csv.vespa.version>1.10.0</commons-csv.vespa.version>
         <commons-digester.vespa.version>3.2</commons-digester.vespa.version>
