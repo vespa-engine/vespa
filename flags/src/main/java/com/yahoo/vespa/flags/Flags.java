@@ -449,6 +449,12 @@ public class Flags {
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
 
+    public static UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
+            "encrypt-disk", true,
+            List.of("hmusum"), "2024-04-29", "2024-06-01",
+            "Whether to encrypt disk when provisioning new hosts",
+            "Will be read only on boot.");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
