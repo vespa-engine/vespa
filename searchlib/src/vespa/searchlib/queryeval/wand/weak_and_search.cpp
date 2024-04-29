@@ -150,4 +150,3 @@ template SearchIterator::UP WeakAndSearch::createArrayWand<wand::TermFrequencySc
 template SearchIterator::UP WeakAndSearch::createHeapWand<wand::TermFrequencyScorer>(const Terms &terms, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict);
 
 }
-
