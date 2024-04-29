@@ -329,6 +329,10 @@ public:
         static search::tensor::DistanceFunctionFactory::UP my_dist_fun = search::tensor::make_distance_function_factory(search::attribute::DistanceMetric::Euclidean, vespalib::eval::CellType::DOUBLE);
         return *my_dist_fun;
     }
+
+    uint32_t check_consistency(uint32_t) const noexcept override {
+        return 0;
+    }
 };
 
 class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {

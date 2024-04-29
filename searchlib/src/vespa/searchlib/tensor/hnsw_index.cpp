@@ -679,7 +679,10 @@ HnswIndex<type>::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
         for (uint32_t j = i + 1; j < cluster.size(); ++j) {
             uint32_t n_id_2 = cluster[j];
             if ( ! has_link_to(n_list_1, n_id_2)) {
-                pairs.emplace_back(n_id_1, n_id_2, calc_distance(*df, n_id_2));
+                auto n_cells_2 = get_vector(n_id_2);
+                if (!n_cells_2.non_existing_attribute_value()) {
+                    pairs.emplace_back(n_id_1, n_id_2, df->calc(n_cells_2));
+                }
             }
         }
     }
@@ -1118,6 +1121,32 @@ HnswIndex<type>::count_reachable_nodes() const
             );
     }
     return {found_cnt, true};
+}
+
+template <HnswIndexType type>
+uint32_t
+HnswIndex<type>::get_subspaces(uint32_t docid) const noexcept
+{
+    if constexpr (type == HnswIndexType::SINGLE) {
+        return (docid < _graph.nodes.get_size() && _graph.nodes.get_elem_ref(docid).levels_ref().load_relaxed().valid()) ? 1 : 0;
+    } else {
+        return _id_mapping.get_ids(docid).size();
+    }
+}
+
+template <HnswIndexType type>
+uint32_t
+HnswIndex<type>::check_consistency(uint32_t docid_limit) const noexcept
+{
+    uint32_t inconsistencies = 0;
+    for (uint32_t docid = 1; docid < docid_limit; ++docid) {
+        auto index_subspaces = get_subspaces(docid);
+        auto store_subspaces = get_vectors(docid).subspaces();
+        if (index_subspaces != store_subspaces) {
+            ++inconsistencies;
+        }
+    }
+    return inconsistencies;
 }
 
 template class HnswIndex<HnswIndexType::SINGLE>;
