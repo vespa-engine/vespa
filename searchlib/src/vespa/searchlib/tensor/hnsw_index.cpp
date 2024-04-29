@@ -1125,10 +1125,10 @@ HnswIndex<type>::count_reachable_nodes() const
 
 template <HnswIndexType type>
 uint32_t
-HnswIndex<type>::get_subspaces(uint32_t docid) noexcept
+HnswIndex<type>::get_subspaces(uint32_t docid) const noexcept
 {
-    if (type == HnswIndexType::SINGLE) {
-        return (docid < _graph.nodes.size() && _graph.nodes[docid].levels_ref().load_relaxed().valid()) ? 1 : 0;
+    if constexpr (type == HnswIndexType::SINGLE) {
+        return (docid < _graph.nodes.get_size() && _graph.nodes.get_elem_ref(docid).levels_ref().load_relaxed().valid()) ? 1 : 0;
     } else {
         return _id_mapping.get_ids(docid).size();
     }
@@ -1136,7 +1136,7 @@ HnswIndex<type>::get_subspaces(uint32_t docid) noexcept
 
 template <HnswIndexType type>
 uint32_t
-HnswIndex<type>::check_consistency(uint32_t docid_limit) noexcept
+HnswIndex<type>::check_consistency(uint32_t docid_limit) const noexcept
 {
     uint32_t inconsistencies = 0;
     for (uint32_t docid = 1; docid < docid_limit; ++docid) {

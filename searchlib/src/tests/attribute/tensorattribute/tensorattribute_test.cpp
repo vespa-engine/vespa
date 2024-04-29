@@ -330,7 +330,7 @@ public:
         return *my_dist_fun;
     }
 
-    uint32_t check_consistency(uint32_t) noexcept override {
+    uint32_t check_consistency(uint32_t) const noexcept override {
         return 0;
     }
 };
