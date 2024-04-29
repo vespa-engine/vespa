@@ -179,6 +179,21 @@ namespace onsummary {
 
 namespace temporary {
 
+const vespalib::string WeakAndRange::NAME("vespa.weakand.range");
+const double WeakAndRange::DEFAULT_VALUE(0.0);
+
+double
+WeakAndRange::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+WeakAndRange::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
 }
 
 namespace mutate {

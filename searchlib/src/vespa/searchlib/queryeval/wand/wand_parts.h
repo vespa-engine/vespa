@@ -384,7 +384,7 @@ DualHeap<FutureHeap, PastHeap>::stringify() const {
 }
 //-----------------------------------------------------------------------------
 
-#define TermFrequencyScorer_TERM_SCORE_FACTOR 1000000.0
+constexpr double TermFrequencyScorer_TERM_SCORE_FACTOR = 1000000.0;
 
 /**
  * Scorer used with WeakAndAlgorithm that calculates a pseudo term frequency
@@ -416,9 +416,13 @@ public:
           _range(range),
           _max_idf(Bm25Executor::calculate_inverse_document_frequency(1, _num_docs))
     { }
+    double apply_range(double idf) const noexcept {
+        return (1.0 - _range)*_max_idf + _range * idf;
+    }
     // weight * idf, scaled to fixedpoint
     score_t calculateMaxScore(double estHits, double weight) const noexcept {
-        return weight * Bm25Executor::calculate_inverse_document_frequency(estHits, _num_docs);
+        return score_t(TermFrequencyScorer_TERM_SCORE_FACTOR * weight *
+                       apply_range(Bm25Executor::calculate_inverse_document_frequency(estHits, _num_docs)));
     }
 
     score_t calculateMaxScore(const Term &term) const noexcept {

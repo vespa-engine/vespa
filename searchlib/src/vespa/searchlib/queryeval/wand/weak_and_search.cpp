@@ -145,6 +145,7 @@ WeakAndSearch::create(const Terms &terms, uint32_t n, bool strict)
 //-----------------------------------------------------------------------------
 
 template SearchIterator::UP WeakAndSearch::create<wand::TermFrequencyScorer>(const Terms &terms, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict);
+template SearchIterator::UP WeakAndSearch::create<wand::Bm25TermFrequencyScorer>(const Terms &terms, const wand::Bm25TermFrequencyScorer & scorer, uint32_t n, bool strict);
 template SearchIterator::UP WeakAndSearch::createArrayWand<wand::TermFrequencyScorer>(const Terms &terms, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict);
 template SearchIterator::UP WeakAndSearch::createHeapWand<wand::TermFrequencyScorer>(const Terms &terms, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict);
 

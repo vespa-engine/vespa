@@ -492,9 +492,9 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                            _weights[i],
                            getChild(i).getState().estimate().estHits);
     }
-    return (true)
+    return (_idf_range == 0.0)
         ? WeakAndSearch::create(terms, wand::TermFrequencyScorer(), _n, strict())
-        : WeakAndSearch::create(terms, wand::Bm25TermFrequencyScorer(get_docid_limit(), 1.0), _n, strict());
+        : WeakAndSearch::create(terms, wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict());
 }
 
 SearchIterator::UP
