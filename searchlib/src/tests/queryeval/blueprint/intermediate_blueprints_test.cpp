@@ -27,8 +27,9 @@
 LOG_SETUP("blueprint_test");
 
 using namespace search::queryeval;
-using namespace search::fef;
 using namespace search::query;
+using search::fef::MatchData;
+using search::queryeval::Blueprint;
 using search::BitVector;
 using BlueprintVector = std::vector<std::unique_ptr<Blueprint>>;
 using vespalib::Slime;

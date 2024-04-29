@@ -29,17 +29,17 @@ struct Stats {
     size_t unpackCnt;
     size_t skippedDocs;
     size_t skippedHits;
-    Stats() : hitCnt(0), seekCnt(0), unpackCnt(0),
+    Stats() noexcept : hitCnt(0), seekCnt(0), unpackCnt(0),
               skippedDocs(0), skippedHits(0) {}
-    void hit() {
+    void hit() noexcept {
         ++hitCnt;
     }
-    void seek(size_t docs, size_t hits) {
+    void seek(size_t docs, size_t hits) noexcept {
         ++seekCnt;
         skippedDocs += docs;
         skippedHits += hits;
     }
-    void unpack() {
+    void unpack() noexcept {
         ++unpackCnt;
     }
     void print() {
@@ -77,7 +77,7 @@ struct ModSearch : SearchIterator {
         }
     }
     void doUnpack(uint32_t docid) override {
-        if (tfmd != NULL) {
+        if (tfmd != nullptr) {
             tfmd->reset(docid);
             search::fef::TermFieldMatchDataPosition pos;
             pos.setElementWeight(info.getMaxWeight());
@@ -96,16 +96,16 @@ ModSearch::~ModSearch() = default;
 struct WandFactory {
     virtual std::string name() const = 0;
     virtual SearchIterator::UP create(const wand::Terms &terms) = 0;
-    virtual ~WandFactory() {}
+    virtual ~WandFactory() = default;
 };
 
 struct VespaWandFactory : WandFactory {
     uint32_t n;
-    VespaWandFactory(uint32_t n_in) : n(n_in) {}
+    explicit VespaWandFactory(uint32_t n_in) noexcept : n(n_in) {}
     ~VespaWandFactory() override;
-    virtual std::string name() const override { return make_string("VESPA WAND (n=%u)", n); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(WeakAndSearch::create(terms, n, true));
+    std::string name() const override { return make_string("VESPA WAND (n=%u)", n); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return WeakAndSearch::create(terms, n, true);
     }
 };
 
@@ -113,11 +113,11 @@ VespaWandFactory::~VespaWandFactory() = default;
 
 struct VespaArrayWandFactory : WandFactory {
     uint32_t n;
-    VespaArrayWandFactory(uint32_t n_in) : n(n_in) {}
+    explicit VespaArrayWandFactory(uint32_t n_in) noexcept : n(n_in) {}
     ~VespaArrayWandFactory() override;
-    virtual std::string name() const override { return make_string("VESPA ARRAY WAND (n=%u)", n); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(WeakAndSearch::createArrayWand(terms, n, true));
+    std::string name() const override { return make_string("VESPA ARRAY WAND (n=%u)", n); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return WeakAndSearch::createArrayWand(terms, wand::TermFrequencyScorer(), n, true);
     }
 };
 
@@ -125,11 +125,11 @@ VespaArrayWandFactory::~VespaArrayWandFactory() = default;
 
 struct VespaHeapWandFactory : WandFactory {
     uint32_t n;
-    VespaHeapWandFactory(uint32_t n_in) : n(n_in) {}
+    explicit VespaHeapWandFactory(uint32_t n_in) noexcept : n(n_in) {}
     ~VespaHeapWandFactory() override;
-    virtual std::string name() const override { return make_string("VESPA HEAP WAND (n=%u)", n); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(WeakAndSearch::createHeapWand(terms, n, true));
+    std::string name() const override { return make_string("VESPA HEAP WAND (n=%u)", n); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return WeakAndSearch::createHeapWand(terms, wand::TermFrequencyScorer(), n, true);
     }
 };
 
@@ -138,39 +138,39 @@ VespaHeapWandFactory::~VespaHeapWandFactory() = default;
 struct VespaParallelWandFactory : public WandFactory {
     SharedWeakAndPriorityQueue scores;
     TermFieldMatchData rootMatchData;
-    VespaParallelWandFactory(uint32_t n) : scores(n), rootMatchData() {}
+    explicit VespaParallelWandFactory(uint32_t n) noexcept : scores(n), rootMatchData() {}
     ~VespaParallelWandFactory() override;
-    virtual std::string name() const override { return make_string("VESPA PWAND (n=%u)", scores.getScoresToTrack()); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(ParallelWeakAndSearch::create(terms,
+    std::string name() const override { return make_string("VESPA PWAND (n=%u)", scores.getScoresToTrack()); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return ParallelWeakAndSearch::create(terms,
                         PWMatchParams(scores, 0, 1, 1),
-                        PWRankParams(rootMatchData, MatchData::UP()), true));
+                        PWRankParams(rootMatchData, {}), true);
     }
 };
 
 VespaParallelWandFactory::~VespaParallelWandFactory() = default;
 
 struct VespaParallelArrayWandFactory : public VespaParallelWandFactory {
-    VespaParallelArrayWandFactory(uint32_t n) : VespaParallelWandFactory(n) {}
+    VespaParallelArrayWandFactory(uint32_t n) noexcept : VespaParallelWandFactory(n) {}
     ~VespaParallelArrayWandFactory() override;
-    virtual std::string name() const override { return make_string("VESPA ARRAY PWAND (n=%u)", scores.getScoresToTrack()); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(ParallelWeakAndSearch::createArrayWand(terms,
+    std::string name() const override { return make_string("VESPA ARRAY PWAND (n=%u)", scores.getScoresToTrack()); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return ParallelWeakAndSearch::createArrayWand(terms,
                         PWMatchParams(scores, 0, 1, 1),
-                        PWRankParams(rootMatchData, MatchData::UP()), true));
+                        PWRankParams(rootMatchData, {}), true);
     }
 };
 
 VespaParallelArrayWandFactory::~VespaParallelArrayWandFactory() = default;
 
 struct VespaParallelHeapWandFactory : public VespaParallelWandFactory {
-    VespaParallelHeapWandFactory(uint32_t n) : VespaParallelWandFactory(n) {}
+    explicit VespaParallelHeapWandFactory(uint32_t n) noexcept : VespaParallelWandFactory(n) {}
     ~VespaParallelHeapWandFactory() override;
-    virtual std::string name() const override { return make_string("VESPA HEAP PWAND (n=%u)", scores.getScoresToTrack()); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(ParallelWeakAndSearch::createHeapWand(terms,
+    std::string name() const override { return make_string("VESPA HEAP PWAND (n=%u)", scores.getScoresToTrack()); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return ParallelWeakAndSearch::createHeapWand(terms,
                         PWMatchParams(scores, 0, 1, 1),
-                        PWRankParams(rootMatchData, MatchData::UP()), true));
+                        PWRankParams(rootMatchData, {}), true);
     }
 };
 
@@ -178,11 +178,11 @@ VespaParallelHeapWandFactory::~VespaParallelHeapWandFactory() = default;
 
 struct TermFrequencyRiseWandFactory : WandFactory {
     uint32_t n;
-    TermFrequencyRiseWandFactory(uint32_t n_in) : n(n_in) {}
+    explicit TermFrequencyRiseWandFactory(uint32_t n_in) noexcept : n(n_in) {}
     ~TermFrequencyRiseWandFactory() override;
-    virtual std::string name() const override { return make_string("RISE WAND TF (n=%u)", n); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(new rise::TermFrequencyRiseWand(terms, n));
+    std::string name() const override { return make_string("RISE WAND TF (n=%u)", n); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return std::make_unique<rise::TermFrequencyRiseWand>(terms, n);
     }
 };
 
@@ -190,11 +190,11 @@ TermFrequencyRiseWandFactory::~TermFrequencyRiseWandFactory() = default;
 
 struct DotProductRiseWandFactory : WandFactory {
     uint32_t n;
-    DotProductRiseWandFactory(uint32_t n_in) : n(n_in) {}
+    explicit DotProductRiseWandFactory(uint32_t n_in) noexcept : n(n_in) {}
     ~DotProductRiseWandFactory() override;
-    virtual std::string name() const override { return make_string("RISE WAND DP (n=%u)", n); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
-        return SearchIterator::UP(new rise::DotProductRiseWand(terms, n));
+    std::string name() const override { return make_string("RISE WAND DP (n=%u)", n); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
+        return std::make_unique<rise::DotProductRiseWand>(terms, n);
     }
 };
 
@@ -204,13 +204,13 @@ struct FilterFactory : WandFactory {
     WandFactory &factory;
     Stats stats;
     uint32_t n;
-    FilterFactory(WandFactory &f, uint32_t n_in) : factory(f), n(n_in) {}
+    FilterFactory(WandFactory &f, uint32_t n_in) noexcept : factory(f), n(n_in) {}
     ~FilterFactory() override;
-    virtual std::string name() const override { return make_string("Filter (mod=%u) [%s]", n, factory.name().c_str()); }
-    virtual SearchIterator::UP create(const wand::Terms &terms) override {
+    std::string name() const override { return make_string("Filter (mod=%u) [%s]", n, factory.name().c_str()); }
+    SearchIterator::UP create(const wand::Terms &terms) override {
         AndNotSearch::Children children;
         children.push_back(factory.create(terms));
-        children.emplace_back(new ModSearch(stats, n, search::endDocId, n, NULL));
+        children.emplace_back(new ModSearch(stats, n, search::endDocId, n, nullptr));
         return AndNotSearch::create(std::move(children), true);
     }
 };
@@ -220,8 +220,8 @@ FilterFactory::~FilterFactory() = default;
 struct Setup {
     Stats    stats;
     vespalib::duration  minTime;
-    Setup() : stats(), minTime(10000s) {}
-    virtual ~Setup() {}
+    Setup() noexcept : stats(), minTime(10000s) {}
+    virtual ~Setup() = default;
     virtual std::string name() const = 0;
     virtual SearchIterator::UP create() = 0;
     void perform() {
@@ -256,10 +256,10 @@ struct WandSetup : Setup {
     MatchData::UP matchData;
     WandSetup(WandFactory &f, uint32_t c, uint32_t l) : Setup(), factory(f), childCnt(c), limit(l), weight(100), matchData() {}
     ~WandSetup() override;
-    virtual std::string name() const override {
+    std::string name() const override {
         return make_string("Wand Setup (terms=%u,docs=%u) [%s]", childCnt, limit, factory.name().c_str());
     }
-    virtual SearchIterator::UP create() override {
+    SearchIterator::UP create() override {
         MatchDataLayout layout;
         std::vector<TermFieldHandle> handles;
         for (size_t i = 0; i < childCnt; ++i) {

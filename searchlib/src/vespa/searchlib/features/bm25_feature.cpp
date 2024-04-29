@@ -68,7 +68,7 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
 }
 
 double
-Bm25Executor::calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count)
+Bm25Executor::calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count) noexcept
 {
     return std::log(1 + (static_cast<double>(total_doc_count - matching_doc_count + 0.5) /
                          static_cast<double>(matching_doc_count + 0.5)));
