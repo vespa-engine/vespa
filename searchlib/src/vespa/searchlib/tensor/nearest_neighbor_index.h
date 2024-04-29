@@ -114,6 +114,9 @@ public:
                                                          double distance_threshold) const = 0;
 
     virtual DistanceFunctionFactory &distance_function_factory() const = 0;
+
+    // Used when checking consistency during load
+    virtual uint32_t check_consistency(uint32_t docid_limit) noexcept = 0;
 };
 
 }

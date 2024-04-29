@@ -936,6 +936,36 @@ TYPED_TEST(HnswIndexTest, search_during_remove)
     this->expect_top_3_by_docid("{0, 0}", {0, 0}, {7});
 }
 
+TYPED_TEST(HnswIndexTest, inconsistent_index)
+{
+    this->init(false);
+    this->vectors.clear();
+    this->vectors.set(1, {1, 3}).set(2, {7, 1}).set(3, {6, 5}).set(4, {8, 3}).set(5, {10, 3});
+    this->add_document(1);
+    this->add_document(2);
+    this->add_document(3);
+    this->add_document(4);
+    this->add_document(5);
+    this->expect_entry_point(1, 0);
+    this->expect_level_0(1, {2, 3});
+    this->expect_level_0(2, {1, 3, 4, 5});
+    this->expect_level_0(3, {1, 2, 4});
+    this->expect_level_0(4, {2, 3, 5});
+    this->expect_level_0(5, {2, 4});
+    EXPECT_EQ(0, this->index->check_consistency(6));
+    // Remove vector for docid 5 but don't update index.
+    this->vectors.clear(5);
+    EXPECT_EQ(1, this->index->check_consistency(6));
+    /*
+     * Removing document 2 causes mutual reconnect for nodes [1, 3, 4, 5]
+     * where nodes 1 and 5 are not previously connected. Distance from
+     * node 1 to node 5 cannot be calculated due to missing vector.
+     */
+    this->remove_document(2);
+    // No reconnect for node without vector
+    this->expect_level_0(5, {4});
+}
+
 using HnswMultiIndexTest = HnswIndexTest<HnswIndex<HnswIndexType::MULTI>>;
 
 namespace {

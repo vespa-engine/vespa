@@ -322,11 +322,25 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
             if (!load_index()) {
                 return false;
             }
+            if (dense_store == nullptr) {
+                check_consistency(docid_limit);
+            }
         } else {
             build_index(executor, docid_limit);
         }
     }
     return true;
+}
+
+void
+TensorAttributeLoader::check_consistency(uint32_t docid_limit)
+{
+    auto before = vespalib::steady_clock::now();
+    uint32_t inconsistencies = _index->check_consistency(docid_limit);
+    auto after = vespalib::steady_clock::now();
+    double elapsed = vespalib::to_s(after - before);
+    LOG(info, "%u inconsistencies detected after loading index for attribute %s, (check used %6.3fs)",
+        inconsistencies, _attr.getName().c_str(), elapsed);
 }
 
 }

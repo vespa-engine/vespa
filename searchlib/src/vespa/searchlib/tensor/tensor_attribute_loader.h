@@ -34,6 +34,7 @@ class TensorAttributeLoader {
     void load_tensor_store(search::attribute::BlobSequenceReader& reader, uint32_t docid_limit);
     void build_index(vespalib::Executor* executor, uint32_t docid_limit);
     bool load_index();
+    void check_consistency(uint32_t docid_limit);
 
 public:
     TensorAttributeLoader(TensorAttribute& attr, GenerationHandler& generation_handler, RefVector& ref_vector, TensorStore& store, NearestNeighborIndex* index);

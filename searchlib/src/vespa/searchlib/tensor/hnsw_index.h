@@ -193,6 +193,7 @@ protected:
     LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, internal::PreparedAddDoc &op);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, internal::PreparedAddNode &prepared_node);
+    uint32_t get_subspaces(uint32_t docid) noexcept;
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunctionFactory::UP distance_ff,
               RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg);
@@ -247,6 +248,8 @@ public:
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }
 
     uint32_t get_active_nodes() const noexcept { return _graph.get_active_nodes(); }
+
+    uint32_t check_consistency(uint32_t docid_limit) noexcept override;
 
     // Should only be used by unit tests.
     HnswTestNode get_node(uint32_t nodeid) const;
