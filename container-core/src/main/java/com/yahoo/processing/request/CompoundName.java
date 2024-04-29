@@ -97,7 +97,7 @@ public final class CompoundName {
                 if (end == start) throw new IllegalArgumentException("'" + name + "' is not a legal compound name. " +
                                                                      "Consecutive, leading or trailing dots are not allowed.");
                 String subName = this.name.substring(start, end);
-                CompoundName cached = useCache ? cache.get(subName) : null;
+                CompoundName cached = cache.get(subName);
                 children[j] = cached != null ? cached
                                              : new CompoundName(subName,
                                                                 this.lowerCasedName.substring(start, end),
