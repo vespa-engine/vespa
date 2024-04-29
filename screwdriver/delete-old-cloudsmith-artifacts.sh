@@ -2,7 +2,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 set -euo pipefail
-MAX_NUMBER_OF_RELEASES=45
+MAX_NUMBER_OF_RELEASES=40
 
 # Cloudsmith repo
 rpm --import 'https://dl.cloudsmith.io/public/vespa/open-source-rpms/gpg.0F3DA3C70D35DA7B.key'
