@@ -159,28 +159,46 @@ TEST_F(DocumentApiConverterTest, forwarded_put) {
 }
 
 TEST_F(DocumentApiConverterTest, update) {
-    auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, defaultDocId);
-    documentapi::UpdateDocumentMessage updateMsg(update);
-    updateMsg.setOldTimestamp(1234);
-    updateMsg.setNewTimestamp(5678);
-    updateMsg.setCondition(my_condition);
+    auto do_test_update = [&](bool create_if_missing) {
+        auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, defaultDocId);
+        update->setCreateIfNonExistent(create_if_missing);
+        documentapi::UpdateDocumentMessage updateMsg(update);
+        updateMsg.setOldTimestamp(1234);
+        updateMsg.setNewTimestamp(5678);
+        updateMsg.setCondition(my_condition);
+        EXPECT_FALSE(updateMsg.has_cached_create_if_missing());
+        EXPECT_EQ(updateMsg.create_if_missing(), create_if_missing);
 
-    auto updateCmd = toStorageAPI<api::UpdateCommand>(updateMsg);
-    EXPECT_EQ(defaultBucket, updateCmd->getBucket());
-    ASSERT_EQ(update.get(), updateCmd->getUpdate().get());
-    EXPECT_EQ(api::Timestamp(1234), updateCmd->getOldTimestamp());
-    EXPECT_EQ(api::Timestamp(5678), updateCmd->getTimestamp());
-    EXPECT_EQ(my_condition, updateCmd->getCondition());
+        auto updateCmd = toStorageAPI<api::UpdateCommand>(updateMsg);
+        EXPECT_EQ(defaultBucket, updateCmd->getBucket());
+        ASSERT_EQ(update.get(), updateCmd->getUpdate().get());
+        EXPECT_EQ(api::Timestamp(1234), updateCmd->getOldTimestamp());
+        EXPECT_EQ(api::Timestamp(5678), updateCmd->getTimestamp());
+        EXPECT_EQ(my_condition, updateCmd->getCondition());
+        EXPECT_FALSE(updateCmd->has_cached_create_if_missing());
+        EXPECT_EQ(updateCmd->create_if_missing(), create_if_missing);
 
-    auto mbusReply = updateMsg.createReply();
-    ASSERT_TRUE(mbusReply.get());
-    toStorageAPI<api::UpdateReply>(*mbusReply, *updateCmd);
+        auto mbusReply = updateMsg.createReply();
+        ASSERT_TRUE(mbusReply.get());
+        toStorageAPI<api::UpdateReply>(*mbusReply, *updateCmd);
 
-    auto mbusUpdate = toDocumentAPI<documentapi::UpdateDocumentMessage>(*updateCmd);
-    ASSERT_EQ((&mbusUpdate->getDocumentUpdate()), update.get());
-    EXPECT_EQ(api::Timestamp(1234), mbusUpdate->getOldTimestamp());
-    EXPECT_EQ(api::Timestamp(5678), mbusUpdate->getNewTimestamp());
-    EXPECT_EQ(my_condition, mbusUpdate->getCondition());
+        auto mbusUpdate = toDocumentAPI<documentapi::UpdateDocumentMessage>(*updateCmd);
+        ASSERT_EQ((&mbusUpdate->getDocumentUpdate()), update.get());
+        EXPECT_EQ(api::Timestamp(1234), mbusUpdate->getOldTimestamp());
+        EXPECT_EQ(api::Timestamp(5678), mbusUpdate->getNewTimestamp());
+        EXPECT_EQ(my_condition, mbusUpdate->getCondition());
+        EXPECT_EQ(mbusUpdate->create_if_missing(), create_if_missing);
+
+        // Cached value of create_if_missing should override underlying update's value
+        updateCmd->set_cached_create_if_missing(!create_if_missing);
+        EXPECT_TRUE(updateCmd->has_cached_create_if_missing());
+        EXPECT_EQ(updateCmd->create_if_missing(), !create_if_missing);
+        mbusUpdate = toDocumentAPI<documentapi::UpdateDocumentMessage>(*updateCmd);
+        EXPECT_TRUE(mbusUpdate->has_cached_create_if_missing());
+        EXPECT_EQ(mbusUpdate->create_if_missing(), !create_if_missing);
+    };
+    do_test_update(false);
+    do_test_update(true);
 }
 
 TEST_F(DocumentApiConverterTest, remove) {

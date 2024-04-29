@@ -49,13 +49,13 @@ struct UpdateOperationTest : Test, DistributorStripeTestUtil {
                         const api::ReturnCode& result = api::ReturnCode());
 
     std::shared_ptr<UpdateOperation>
-    sendUpdate(const std::string& bucketState, bool create_if_missing = false);
+    sendUpdate(const std::string& bucketState, bool create_if_missing = false, bool cache_create_flag = false);
 
     document::BucketId _bId;
 };
 
 std::shared_ptr<UpdateOperation>
-UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_missing)
+UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_missing, bool cache_create_flag)
 {
     auto update = std::make_shared<document::DocumentUpdate>(
             *_repo, *_html_type,
@@ -67,6 +67,9 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
     addNodesToBucketDB(_bId, bucketState);
 
     auto msg = std::make_shared<api::UpdateCommand>(makeDocumentBucket(document::BucketId(0)), update, 100);
+    if (cache_create_flag) {
+        msg->set_cached_create_if_missing(create_if_missing);
+    }
 
     return std::make_shared<UpdateOperation>(
             node_context(), operation_context(), getDistributorBucketSpace(), msg, std::vector<BucketDatabase::Entry>(),
@@ -269,6 +272,22 @@ TEST_F(UpdateOperationTest, cancelled_nodes_are_not_updated_in_db) {
     EXPECT_EQ("BucketId(0x400000000000cac4) : "
               "node(idx=1,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)",
               dumpBucket(_bId));
+}
+
+TEST_F(UpdateOperationTest, cached_create_if_missing_is_propagated_to_fanout_requests) {
+    setup_stripe(1, 1, "distributor:1 storage:1");
+    for (bool cache_flag : {false, true}) {
+        for (bool create_if_missing : {false, true}) {
+            std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3", create_if_missing, cache_flag));
+            DistributorMessageSenderStub sender;
+            cb->start(sender);
+
+            ASSERT_EQ("Update => 0", sender.getCommands(true));
+            auto& cmd = dynamic_cast<api::UpdateCommand&>(*sender.command(0));
+            EXPECT_EQ(cmd.has_cached_create_if_missing(), cache_flag);
+            EXPECT_EQ(cmd.create_if_missing(), create_if_missing);
+        }
+    }
 }
 
 }

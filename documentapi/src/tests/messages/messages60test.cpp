@@ -406,7 +406,7 @@ TEST_F(Messages60Test, testUpdateDocumentMessage) {
     msg.setNewTimestamp(777u);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(sizeof(TestAndSetMessage) + 32, sizeof(UpdateDocumentMessage));
+    EXPECT_EQ(sizeof(TestAndSetMessage) + 40, sizeof(UpdateDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + 93u + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {

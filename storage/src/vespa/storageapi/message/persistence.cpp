@@ -105,11 +105,21 @@ UpdateCommand::UpdateCommand(const document::Bucket &bucket, const document::Doc
     : TestAndSetCommand(MessageType::UPDATE, bucket),
       _update(update),
       _timestamp(time),
-      _oldTimestamp(0)
+      _oldTimestamp(0),
+      _create_if_missing()
 {
     if ( ! _update) {
         throw vespalib::IllegalArgumentException("Cannot update a null update", VESPA_STRLOC);
     }
+}
+
+bool
+UpdateCommand::create_if_missing() const
+{
+    if (_create_if_missing.has_value()) {
+        return *_create_if_missing;
+    }
+    return _update->getCreateIfNonExistent();
 }
 
 const document::DocumentType *

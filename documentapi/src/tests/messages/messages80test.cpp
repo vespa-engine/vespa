@@ -29,7 +29,7 @@ TEST(MessagesTest, concrete_types_have_expected_sizes) {
     EXPECT_EQ(sizeof(PutDocumentMessage),    sizeof(TestAndSetMessage) + 32);
     EXPECT_EQ(sizeof(WriteDocumentReply),    112u);
     EXPECT_EQ(sizeof(UpdateDocumentReply),   120u);
-    EXPECT_EQ(sizeof(UpdateDocumentMessage), sizeof(TestAndSetMessage) + 32);
+    EXPECT_EQ(sizeof(UpdateDocumentMessage), sizeof(TestAndSetMessage) + 40);
     EXPECT_EQ(sizeof(RemoveDocumentMessage), sizeof(TestAndSetMessage) + 104);
     EXPECT_EQ(sizeof(RemoveDocumentReply),   120u);
 }
@@ -42,6 +42,14 @@ struct Messages80Test : MessageFixture {
     }
 
     void try_visitor_reply(const std::string& filename, uint32_t type);
+
+    void check_update_create_flag(uint32_t lang, const std::string& name, bool expected_create, bool expected_cached) {
+        auto obj = deserialize(name, DocumentProtocol::MESSAGE_UPDATEDOCUMENT, lang);
+        ASSERT_TRUE(obj);
+        auto& msg = dynamic_cast<UpdateDocumentMessage&>(*obj);
+        EXPECT_EQ(msg.has_cached_create_if_missing(), expected_cached);
+        EXPECT_EQ(msg.create_if_missing(), expected_create);
+    };
 };
 
 namespace {
@@ -178,6 +186,48 @@ TEST_F(Messages80Test, update_document_message) {
         EXPECT_GT(decoded.getApproxSize(), 0u); // Actual value depends on protobuf size
         EXPECT_EQ(decoded.getCondition().getSelection(), msg.getCondition().getSelection());
     }
+}
+
+TEST_F(Messages80Test, update_create_if_missing_flag_can_be_read_from_legacy_update_propagation) {
+    // Legacy binary files were created _prior_ to the create_if_missing flag being
+    // written as part of the serialization process.
+    for (auto lang : languages()) {
+        check_update_create_flag(lang, "UpdateDocumentMessage-legacy-no-create-if-missing",   false, false);
+        check_update_create_flag(lang, "UpdateDocumentMessage-legacy-with-create-if-missing", true,  false);
+    }
+}
+
+TEST_F(Messages80Test, update_create_if_missing_flag_is_propagated) {
+    const DocumentTypeRepo& repo = type_repo();
+    const document::DocumentType& docType = *repo.getDocumentType("testdoc");
+
+    auto make_update_msg = [&](bool create_if_missing, bool cache_flag) {
+        auto doc_update = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
+        doc_update->addFieldPathUpdate(std::make_unique<document::RemoveFieldPathUpdate>("intfield", "testdoc.intfield > 0"));
+        doc_update->setCreateIfNonExistent(create_if_missing);
+        auto msg = std::make_shared<UpdateDocumentMessage>(std::move(doc_update));
+        msg->setOldTimestamp(666u);
+        msg->setNewTimestamp(777u);
+        msg->setCondition(TestAndSetCondition("There's just one condition"));
+        if (cache_flag) {
+            msg->set_cached_create_if_missing(create_if_missing);
+        }
+        return msg;
+    };
+
+    serialize("UpdateDocumentMessage-no-create-if-missing",   *make_update_msg(false, true));
+    serialize("UpdateDocumentMessage-with-create-if-missing", *make_update_msg(true,  true));
+
+    for (auto lang : languages()) {
+        check_update_create_flag(lang, "UpdateDocumentMessage-no-create-if-missing",   false, true);
+        check_update_create_flag(lang, "UpdateDocumentMessage-with-create-if-missing", true,  true);
+    }
+    // The Java protocol implementation always serializes with a cached create-flag,
+    // but the C++ side does it conditionally. So these files are only checked for C++.
+    serialize("UpdateDocumentMessage-no-create-if-missing-uncached",   *make_update_msg(false, false));
+    serialize("UpdateDocumentMessage-with-create-if-missing-uncached", *make_update_msg(true,  false));
+    check_update_create_flag(LANG_CPP, "UpdateDocumentMessage-no-create-if-missing-uncached",   false, false);
+    check_update_create_flag(LANG_CPP, "UpdateDocumentMessage-with-create-if-missing-uncached", true,  false);
 }
 
 TEST_F(Messages80Test, update_document_reply) {

@@ -5,6 +5,7 @@
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 namespace documentapi {
 
@@ -12,14 +13,16 @@ UpdateDocumentMessage::UpdateDocumentMessage() :
     TestAndSetMessage(),
     _documentUpdate(),
     _oldTime(0),
-    _newTime(0)
+    _newTime(0),
+    _create_if_missing()
 {}
 
 UpdateDocumentMessage::UpdateDocumentMessage(document::DocumentUpdate::SP documentUpdate) :
     TestAndSetMessage(),
     _documentUpdate(),
     _oldTime(0),
-    _newTime(0)
+    _newTime(0),
+    _create_if_missing()
 {
     setDocumentUpdate(std::move(documentUpdate));
 }
@@ -57,6 +60,16 @@ UpdateDocumentMessage::setDocumentUpdate(document::DocumentUpdate::SP documentUp
         throw vespalib::IllegalArgumentException("Document update can not be null.", VESPA_STRLOC);
     }
     _documentUpdate = std::move(documentUpdate);
+}
+
+bool
+UpdateDocumentMessage::create_if_missing() const
+{
+    if (_create_if_missing.has_value()) {
+        return *_create_if_missing;
+    }
+    assert(_documentUpdate);
+    return _documentUpdate->getCreateIfNonExistent();
 }
 
 }

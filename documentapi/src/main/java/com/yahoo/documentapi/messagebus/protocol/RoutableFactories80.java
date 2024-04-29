@@ -387,6 +387,8 @@ abstract class RoutableFactories80 {
                     if (apiMsg.getCondition().isPresent()) {
                         builder.setCondition(toProtoTasCondition(apiMsg.getCondition()));
                     }
+                    builder.setCreateIfMissing(apiMsg.createIfMissing() ? DocapiFeed.UpdateDocumentRequest.CreateIfMissing.TRUE
+                                                                        : DocapiFeed.UpdateDocumentRequest.CreateIfMissing.FALSE);
                     return builder.build();
                 })
                 .decoderWithRepo(DocapiFeed.UpdateDocumentRequest.parser(), (protoMsg, repo) -> {
@@ -396,6 +398,8 @@ abstract class RoutableFactories80 {
                     if (protoMsg.hasCondition()) {
                         msg.setCondition(fromProtoTasCondition(protoMsg.getCondition()));
                     }
+                    // We ignore the createIfMissing field here since it can always be fetched eagerly
+                    // from the DocumentUpdate instance itself.
                     return msg;
                 })
                 .build();

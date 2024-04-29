@@ -465,6 +465,10 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::UpdateCommand& msg)
         if (msg.getCondition().isPresent()) {
             set_tas_condition(*req.mutable_condition(), msg.getCondition());
         }
+        if (msg.has_cached_create_if_missing()) {
+            req.set_create_if_missing(msg.create_if_missing() ? protobuf::UpdateRequest_CreateIfMissing_TRUE
+                                                              : protobuf::UpdateRequest_CreateIfMissing_FALSE);
+        }
     });
 }
 
@@ -481,6 +485,9 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeUpdateCommand(BBuf& buf)
         cmd->setOldTimestamp(req.expected_old_timestamp());
         if (req.has_condition()) {
             cmd->setCondition(get_tas_condition(req.condition()));
+        }
+        if (req.create_if_missing() != protobuf::UpdateRequest_CreateIfMissing_UNSPECIFIED) {
+            cmd->set_cached_create_if_missing(req.create_if_missing() == protobuf::UpdateRequest_CreateIfMissing_TRUE);
         }
         return cmd;
     });
