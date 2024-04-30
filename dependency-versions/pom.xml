@@ -68,7 +68,7 @@
         <assertj.vespa.version>3.25.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.710</aws-sdk.vespa.version>
+        <aws-sdk.vespa.version>1.12.711</aws-sdk.vespa.version>
         <athenz.vespa.version>1.11.57</athenz.vespa.version>
         <!-- Athenz END -->
 
