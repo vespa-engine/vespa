@@ -14,8 +14,11 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.query.Ranking;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
@@ -32,15 +35,30 @@ public class SignificanceSearcher extends Searcher {
 
     public final static String SIGNIFICANCE = "Significance";
     private final SignificanceModelRegistry significanceModelRegistry;
+    private final RankProfilesConfig rankProfilesConfig;
+
+    private final HashMap<String, Boolean> useModel = new HashMap<>();
 
 
     @Inject
-    public SignificanceSearcher(SignificanceModelRegistry significanceModelRegistry) {
+    public SignificanceSearcher(SignificanceModelRegistry significanceModelRegistry, RankProfilesConfig rankProfilesConfig) {
         this.significanceModelRegistry = significanceModelRegistry;
+        this.rankProfilesConfig = rankProfilesConfig;
+
+        for (RankProfilesConfig.Rankprofile profile : rankProfilesConfig.rankprofile()) {
+            for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
+                if (property.name().equals("vespa.significance.use_model")) {
+                    useModel.put(profile.name(), Boolean.parseBoolean(property.value()));
+                }
+            }
+        }
     }
 
     @Override
     public Result search(Query query, Execution execution) {
+        Ranking ranking = query.getRanking();
+        if (!useModel.containsKey(ranking.getProfile()) || !useModel.get(ranking.getProfile())) return execution.search(query);
+
         Language language = query.getModel().getParsingLanguage();
         Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
 

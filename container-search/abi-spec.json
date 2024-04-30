@@ -5499,6 +5499,8 @@
       "public com.yahoo.search.query.ranking.RankProperties getProperties()",
       "public void setListFeatures(boolean)",
       "public boolean getListFeatures()",
+      "public void setUseSignificance(boolean)",
+      "public boolean getUseSignificance()",
       "public com.yahoo.search.query.ranking.MatchPhase getMatchPhase()",
       "public com.yahoo.search.query.ranking.GlobalPhase getGlobalPhase()",
       "public com.yahoo.search.query.ranking.Matching getMatching()",

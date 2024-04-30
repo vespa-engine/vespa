@@ -113,6 +113,8 @@ public class Ranking implements Cloneable {
 
     private SoftTimeout softTimeout = new SoftTimeout();
 
+    private boolean useSignificance = false;
+
     public Ranking(Query parent) {
         this.parent = parent;
         this.rankFeatures = new RankFeatures(this);
@@ -216,6 +218,14 @@ public class Ranking implements Cloneable {
 
     /** Returns whether rank features should be dumped with the result of this query, default false */
     public boolean getListFeatures() { return listFeatures; }
+
+    /** Set whether to use significance in ranking */
+    @com.yahoo.api.annotations.Beta
+    public void setUseSignificance(boolean useSignificance) { this.useSignificance = useSignificance; }
+
+    /** Returns whether to use significance in ranking */
+    @com.yahoo.api.annotations.Beta
+    public boolean getUseSignificance() { return useSignificance; }
 
     /** Returns the match phase rank settings of this. This is never null. */
     public MatchPhase getMatchPhase() { return matchPhase; }
