@@ -90,6 +90,7 @@ class WeakAndBlueprint : public IntermediateBlueprint
 {
 private:
     uint32_t              _n;
+    float                 _idf_range;
     std::vector<uint32_t> _weights;
 
     AnyFlow my_flow(InFlow in_flow) const override;
@@ -107,7 +108,8 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
-    explicit WeakAndBlueprint(uint32_t n) noexcept : _n(n) {}
+    explicit WeakAndBlueprint(uint32_t n) noexcept : WeakAndBlueprint(n, 0.0) {}
+    WeakAndBlueprint(uint32_t n, float idf_range) noexcept : _n(n), _idf_range(idf_range), _weights() {}
     ~WeakAndBlueprint() override;
     void addTerm(Blueprint::UP bp, uint32_t weight) {
         addChild(std::move(bp));

@@ -178,6 +178,18 @@ namespace mutate {
 
 // Add temporary flags used for safe rollout of new features here
 namespace temporary {
+/**
+ * A number in the range [0,1] for the effective idf range for WeakAndOperator.
+ * 1.0 will give the complete range as used by default by bm25.
+ * scaled_idf = (1.0 - range) * max_idf + (range * idf)
+ * 0.0 which is default gives default legacy behavior.
+ **/
+struct WeakAndRange {
+    static const vespalib::string NAME;
+    static const double DEFAULT_VALUE;
+    static double lookup(const Properties &props);
+    static double lookup(const Properties &props, double defaultValue);
+};
 }
 
 namespace mutate::on_match {

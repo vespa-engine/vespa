@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cmath>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/features/bm25_feature.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/iterator_pack.h>
 #include <vespa/searchlib/attribute/posting_iterator_pack.h>
@@ -13,19 +12,15 @@
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cmath>
 
 namespace search::queryeval::wand {
 
 //-----------------------------------------------------------------------------
 
-struct Term;
-using Terms = std::vector<Term>;
 using score_t = int64_t;
 using docid_t = uint32_t;
 using ref_t = uint16_t;
-
-using Attr = IDirectPostingStore;
-using AttrDictEntry = Attr::LookupResult;
 
 //-----------------------------------------------------------------------------
 
@@ -46,7 +41,7 @@ struct Term {
     Term(SearchIterator *s, int32_t w, uint32_t e) noexcept : Term(s, w, e, nullptr) {}
     Term(SearchIterator::UP s, int32_t w, uint32_t e) noexcept : Term(s.release(), w, e, nullptr) {}
 };
-
+using Terms = std::vector<Term>;
 //-----------------------------------------------------------------------------
 
 // input manipulation utilities
@@ -75,7 +70,7 @@ auto assemble(const F &f, const Order &order)->std::vector<decltype(f(0))> {
 }
 
 int32_t get_max_weight(const SearchIterator &search) {
-    const MinMaxPostingInfo *minMax = dynamic_cast<const MinMaxPostingInfo *>(search.getPostingInfo());
+    const auto *minMax = dynamic_cast<const MinMaxPostingInfo *>(search.getPostingInfo());
     return (minMax != nullptr) ? minMax->getMaxWeight() : std::numeric_limits<int32_t>::max();
 }
 
@@ -291,7 +286,7 @@ struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
  **/
 struct DocIdOrder {
     const docid_t *termPos;
-    explicit DocIdOrder(docid_t *pos) noexcept : termPos(pos) {}
+    explicit DocIdOrder(const docid_t *pos) noexcept : termPos(pos) {}
     bool at_end(ref_t ref) const noexcept { return termPos[ref] == search::endDocId; }
     docid_t get_pos(ref_t ref) const noexcept { return termPos[ref]; }
     bool operator()(ref_t a, ref_t b) const noexcept {
@@ -389,7 +384,7 @@ DualHeap<FutureHeap, PastHeap>::stringify() const {
 }
 //-----------------------------------------------------------------------------
 
-#define TermFrequencyScorer_TERM_SCORE_FACTOR 1000000.0
+constexpr double TermFrequencyScorer_TERM_SCORE_FACTOR = 1000000.0;
 
 /**
  * Scorer used with WeakAndAlgorithm that calculates a pseudo term frequency
@@ -410,6 +405,38 @@ struct TermFrequencyScorer
     score_t calculate_max_score(const Input &input, ref_t ref) const noexcept {
         return calculateMaxScore(input.get_est_hits(ref), input.get_weight(ref)) + 1;
     }
+};
+
+class Bm25TermFrequencyScorer
+{
+public:
+    using Bm25Executor = features::Bm25Executor;
+    Bm25TermFrequencyScorer(uint32_t num_docs, float range) noexcept
+        : _num_docs(num_docs),
+          _range(range),
+          _max_idf(Bm25Executor::calculate_inverse_document_frequency(1, _num_docs))
+    { }
+    double apply_range(double idf) const noexcept {
+        return (1.0 - _range)*_max_idf + _range * idf;
+    }
+    // weight * scaled_bm25_idf, scaled to fixedpoint
+    score_t calculateMaxScore(double estHits, double weight) const noexcept {
+        return score_t(TermFrequencyScorer_TERM_SCORE_FACTOR * weight *
+                       apply_range(Bm25Executor::calculate_inverse_document_frequency(estHits, _num_docs)));
+    }
+
+    score_t calculateMaxScore(const Term &term) const noexcept {
+        return calculateMaxScore(term.estHits, term.weight) + 1;
+    }
+
+    template <typename Input>
+    score_t calculate_max_score(const Input &input, ref_t ref) const noexcept {
+        return calculateMaxScore(input.get_est_hits(ref), input.get_weight(ref)) + 1;
+    }
+private:
+    uint32_t _num_docs;
+    float    _range;
+    double   _max_idf;
 };
 
 //-----------------------------------------------------------------------------
@@ -453,14 +480,14 @@ struct DotProductScorer
 // used with parallel wand where we can safely discard hits based on score
 struct GreaterThan {
     score_t threshold;
-    GreaterThan(score_t t) : threshold(t) {}
+    explicit GreaterThan(score_t t) noexcept : threshold(t) {}
     bool operator()(score_t score) const { return (score > threshold); }
 };
 
 // used with old-style vespa wand to ensure at least AND'ish results
 struct GreaterThanEqual {
     score_t threshold;
-    GreaterThanEqual(score_t t) : threshold(t) {}
+    explicit GreaterThanEqual(score_t t) noexcept : threshold(t) {}
     bool operator()(score_t score) const { return (score >= threshold); }
 };
 

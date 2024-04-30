@@ -340,6 +340,7 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
     double upper_limit = GlobalFilterUpperLimit::lookup(rank_properties, rank_setup.get_global_filter_upper_limit());
     double target_hits_max_adjustment_factor = TargetHitsMaxAdjustmentFactor::lookup(rank_properties, rank_setup.get_target_hits_max_adjustment_factor());
     auto fuzzy_matching_algorithm = FuzzyAlgorithm::lookup(rank_properties, rank_setup.get_fuzzy_matching_algorithm());
+    double weakand_range = temporary::WeakAndRange::lookup(rank_properties, rank_setup.get_weakand_range());
 
     // Note that we count the reserved docid 0 as active.
     // This ensures that when searchable-copies=1, the ratio is 1.0.
@@ -348,7 +349,8 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
     return {lower_limit * active_hit_ratio,
             upper_limit * active_hit_ratio,
             target_hits_max_adjustment_factor,
-            fuzzy_matching_algorithm};
+            fuzzy_matching_algorithm,
+            weakand_range};
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

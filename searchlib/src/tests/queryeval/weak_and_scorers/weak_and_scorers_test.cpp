@@ -63,4 +63,27 @@ TEST("require that DotProductScorer calculates term score")
     EXPECT_EQUAL(11u, itr->_unpackDocId);
 }
 
+TEST("test bm25 idf scorer for wand")
+{
+    wand::Bm25TermFrequencyScorer scorer(1000000, 1.0);
+    EXPECT_EQUAL(13410046, scorer.calculateMaxScore(1, 1));
+    EXPECT_EQUAL(11464136, scorer.calculateMaxScore(10, 1));
+    EXPECT_EQUAL(6907256,  scorer.calculateMaxScore(1000, 1));
+    EXPECT_EQUAL(4605121,  scorer.calculateMaxScore(10000, 1));
+    EXPECT_EQUAL(2302581,  scorer.calculateMaxScore(100000, 1));
+    EXPECT_EQUAL(693147,   scorer.calculateMaxScore(500000, 1));
+    EXPECT_EQUAL(105360,   scorer.calculateMaxScore(900000, 1));
+    EXPECT_EQUAL(10050,    scorer.calculateMaxScore(990000, 1));
+}
+
+TEST("test limited range of bm25 idf scorer for wand")
+{
+    wand::Bm25TermFrequencyScorer scorer08(1000000, 0.8);
+    wand::Bm25TermFrequencyScorer scorer10(1000000, 1.0);
+    EXPECT_EQUAL(8207814,  scorer08.calculateMaxScore(1000, 1));
+    EXPECT_EQUAL(2690049,  scorer08.calculateMaxScore(990000, 1));
+    EXPECT_EQUAL(6907256,  scorer10.calculateMaxScore(1000, 1));
+    EXPECT_EQUAL(10050,  scorer10.calculateMaxScore(990000, 1));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

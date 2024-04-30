@@ -9,6 +9,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/vespalib/util/issue.h>
 
 using namespace search::queryeval;
@@ -21,7 +22,7 @@ namespace {
 struct Mixer {
     std::unique_ptr<OrBlueprint> attributes;
 
-    Mixer() : attributes() {}
+    Mixer() noexcept: attributes() {}
 
     void addAttribute(Blueprint::UP attr) {
         if ( ! attributes) {
@@ -66,7 +67,7 @@ private:
     void buildIntermediate(IntermediateBlueprint *b, NodeType &n) __attribute__((noinline));
 
     void buildWeakAnd(ProtonWeakAnd &n) {
-        auto *wand = new WeakAndBlueprint(n.getTargetNumHits());
+        auto *wand = new WeakAndBlueprint(n.getTargetNumHits(), _requestContext.get_attribute_blueprint_params().weakand_range);
         Blueprint::UP result(wand);
         for (auto node : n.getChildren()) {
             uint32_t weight = getWeightFromNode(*node).percent();

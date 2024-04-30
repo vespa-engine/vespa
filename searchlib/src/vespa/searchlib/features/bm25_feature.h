@@ -39,7 +39,7 @@ public:
                  double k1_param,
                  double b_param);
 
-    double static calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count);
+    double static calculate_inverse_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count) noexcept;
 
     void handle_bind_match_data(const fef::MatchData& match_data) override;
     void execute(uint32_t docId) override;
