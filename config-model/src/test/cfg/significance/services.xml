@@ -8,9 +8,9 @@
   <container version="1.0">
     <search>
         <significance>
-            <model language="en" model-id="idf-wiki-english" path="models/idf-english-wiki.json.zst"/>
-            <model language="no" path="models/idf-norwegian-wiki.json.zst" />
-            <model language="ru" url="https://some/uri/blob.json" />
+            <model model-id="idf-wiki-english" path="models/idf-english-wiki.json.zst"/>
+            <model path="models/idf-norwegian-wiki.json.zst" />
+            <model url="https://some/uri/blob.json" />
         </significance>
     </search>
   </container>

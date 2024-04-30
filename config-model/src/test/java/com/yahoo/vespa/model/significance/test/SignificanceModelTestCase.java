@@ -37,9 +37,6 @@ public class SignificanceModelTestCase {
         ApplicationContainerCluster containerCluster = vespaModel.getContainerClusters().get("container");
         var significanceConfig = assertSignificancePresent(containerCluster);
         assertEquals(3, significanceConfig.model().size());
-        assertEquals("en", significanceConfig.model().get(0).language());
-        assertEquals("no", significanceConfig.model().get(1).language());
-        assertEquals("ru", significanceConfig.model().get(2).language());
 
         assertEquals("models/idf-norwegian-wiki.json.zst", modelReference(significanceConfig.model().get(1), "path").path().orElseThrow().value());
         assertEquals("https://some/uri/blob.json", modelReference(significanceConfig.model().get(2), "path").url().orElseThrow().value());

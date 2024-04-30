@@ -33,17 +33,15 @@ public class SignificanceModelRegistry extends SimpleComponent implements Signif
         if (spec != null) {
 
             for (Element modelElement : XML.getChildren(spec, "model")) {
-                addConfig(
-                        modelElement.getAttribute("language"),
-                        Model.fromXml(deployState, modelElement, Set.of(SIGNIFICANCE_MODEL)).modelReference());
+                addConfig(Model.fromXml(deployState, modelElement, Set.of(SIGNIFICANCE_MODEL)).modelReference());
             }
         }
     }
 
 
-    public void addConfig(String language, ModelReference path) {
+    public void addConfig(ModelReference path) {
         configList.add(
-                new SignificanceModelConfig(language, path)
+                new SignificanceModelConfig(path)
         );
     }
 
@@ -53,19 +51,16 @@ public class SignificanceModelRegistry extends SimpleComponent implements Signif
         builder.model(
                 configList.stream()
                 .map(config -> new SignificanceConfig.Model.Builder()
-                        .language(config.language)
                         .path(config.path)
                 ).toList()
         );
     }
 
 
-    class SignificanceModelConfig {
-        private final String language;
+    static class SignificanceModelConfig {
         private final ModelReference path;
 
-        public SignificanceModelConfig(String language, ModelReference path) {
-            this.language = language;
+        public SignificanceModelConfig(ModelReference path) {
             this.path = path;
         }
 

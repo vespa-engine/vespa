@@ -138,7 +138,7 @@ Threadpool = element threadpool {
 }
 
 Significance = element significance {
-    element model { attribute language { xsd:string } & ModelReference }*
+    element model { ModelReference }*
 }
 
 Clients = element clients {
