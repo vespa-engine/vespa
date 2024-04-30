@@ -418,18 +418,25 @@ TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& t
                                      std::unique_ptr<PrepareResult> prepare_result)
 {
     if (_index && !prepare_result) {
-        // The tensor cells are unchanged
-        if (!_is_dense) {
-            // but labels might have changed.
-            EntryRef ref = _tensorStore.store_tensor(tensor);
-            assert(ref.valid());
-            setTensorRef(docid, ref);
+        VectorBundle vectors(tensor.cells().data, tensor.index().size(), _subspace_type);
+        if (tensor_cells_are_unchanged(docid, vectors)) {
+            // The tensor cells are unchanged
+            if (!_is_dense) {
+                // but labels might have changed.
+                EntryRef ref = _tensorStore.store_tensor(tensor);
+                assert(ref.valid());
+                setTensorRef(docid, ref);
+            }
+            return;
         }
-        return;
     }
     internal_set_tensor(docid, tensor);
     if (_index) {
-        _index->complete_add_document(docid, std::move(prepare_result));
+        if (prepare_result) {
+            _index->complete_add_document(docid, std::move(prepare_result));
+        } else {
+            _index->add_document(docid);
+        }
     }
 }
 

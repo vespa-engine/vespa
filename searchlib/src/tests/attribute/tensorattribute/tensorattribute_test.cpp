@@ -210,8 +210,10 @@ public:
     }
     void expect_entry(uint32_t exp_docid, const DoubleVector& exp_vector, const EntryVector& entries) const {
         EXPECT_EQUAL(1u, entries.size());
-        EXPECT_EQUAL(exp_docid, entries.back().first);
-        EXPECT_EQUAL(exp_vector, entries.back().second);
+        if (entries.size() >= 1u) {
+            EXPECT_EQUAL(exp_docid, entries.back().first);
+            EXPECT_EQUAL(exp_vector, entries.back().second);
+        }
     }
     void expect_add(uint32_t exp_docid, const DoubleVector& exp_vector) const {
         expect_entry(exp_docid, exp_vector, _adds);
@@ -1081,7 +1083,21 @@ TEST_F("Populates address space usage in mixed tensor attribute with hnsw index"
 class DenseTensorAttributeMockIndex : public Fixture {
 public:
     DenseTensorAttributeMockIndex() : Fixture(vec_2d_spec, FixtureTraits().mock_hnsw()) {}
+    void add_vec_a();
 };
+
+void
+DenseTensorAttributeMockIndex::add_vec_a()
+{
+    auto& index = mock_index();
+    auto vec_a = vec_2d(3, 5);
+    auto prepare_result = prepare_set_tensor(1, vec_a);
+    index.expect_prepare_add(1, {3, 5});
+    complete_set_tensor(1, vec_a, std::move(prepare_result));
+    assertGetTensor(vec_a, 1);
+    index.expect_complete_add(1, {3, 5});
+    index.clear();
+}
 
 TEST_F("setTensor() updates nearest neighbor index", DenseTensorAttributeMockIndex)
 {
@@ -1101,15 +1117,7 @@ TEST_F("setTensor() updates nearest neighbor index", DenseTensorAttributeMockInd
 TEST_F("nearest neighbor index can be updated in two phases", DenseTensorAttributeMockIndex)
 {
     auto& index = f.mock_index();
-    {
-        auto vec_a = vec_2d(3, 5);
-        auto prepare_result = f.prepare_set_tensor(1, vec_a);
-        index.expect_prepare_add(1, {3, 5});
-        f.complete_set_tensor(1, vec_a, std::move(prepare_result));
-        f.assertGetTensor(vec_a, 1);
-        index.expect_complete_add(1, {3, 5});
-    }
-    index.clear();
+    f.add_vec_a();
     {
         // Replaces previous value.
         auto vec_b = vec_2d(7, 9);
@@ -1125,15 +1133,7 @@ TEST_F("nearest neighbor index can be updated in two phases", DenseTensorAttribu
 TEST_F("nearest neighbor index is NOT updated when tensor value is unchanged", DenseTensorAttributeMockIndex)
 {
     auto& index = f.mock_index();
-    {
-        auto vec_a = vec_2d(3, 5);
-        auto prepare_result = f.prepare_set_tensor(1, vec_a);
-        index.expect_prepare_add(1, {3, 5});
-        f.complete_set_tensor(1, vec_a, std::move(prepare_result));
-        f.assertGetTensor(vec_a, 1);
-        index.expect_complete_add(1, {3, 5});
-    }
-    index.clear();
+    f.add_vec_a();
     {
         // Replaces previous value with the same value
         auto vec_b = vec_2d(3, 5);
@@ -1143,6 +1143,39 @@ TEST_F("nearest neighbor index is NOT updated when tensor value is unchanged", D
         f.complete_set_tensor(1, vec_b, std::move(prepare_result));
         f.assertGetTensor(vec_b, 1);
         index.expect_empty_complete_add();
+        index.expect_empty_add();
+    }
+}
+
+TEST_F("nearest neighbor index is updated when value changes from A to B to A", DenseTensorAttributeMockIndex)
+{
+    auto& index = f.mock_index();
+    f.add_vec_a();
+    {
+        // Prepare replace of A with B
+        auto vec_b = vec_2d(7, 9);
+        auto prepare_result_b = f.prepare_set_tensor(1, vec_b);
+        index.expect_prepare_add(1, {7, 9});
+        index.clear();
+        // Prepare replace of B with A, but prepare sees original A
+        auto vec_a = vec_2d(3, 5);
+        auto prepare_result_a = f.prepare_set_tensor(1, vec_a);
+        EXPECT_TRUE(prepare_result_a.get() == nullptr);
+        index.expect_empty_prepare_add();
+        index.clear();
+        // Complete set B
+        f.complete_set_tensor(1, vec_b, std::move(prepare_result_b));
+        index.expect_remove(1, {3, 5});
+        f.assertGetTensor(vec_b, 1);
+        index.expect_complete_add(1, {7, 9});
+        index.expect_empty_add();
+        index.clear();
+        // Complete set A, no prepare result but tensor cells changed
+        f.complete_set_tensor(1, vec_a, std::move(prepare_result_a));
+        index.expect_remove(1, {7, 9});
+        index.expect_empty_complete_add();
+        index.expect_add(1, {3, 5});
+        f.assertGetTensor(vec_a, 1);
     }
 }
 
