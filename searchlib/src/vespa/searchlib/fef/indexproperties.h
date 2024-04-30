@@ -181,7 +181,7 @@ namespace temporary {
 /**
  * A number in the range [0,1] for the effective idf range for WeakAndOperator.
  * 1.0 will give the complete range as used by default by bm25.
- * idf = (1.0 - range) + (range * idf)
+ * scaled_idf = (1.0 - range) * max_idf + (range * idf)
  * 0.0 which is default gives default legacy behavior.
  **/
 struct WeakAndRange {

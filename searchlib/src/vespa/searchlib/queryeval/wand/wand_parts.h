@@ -419,7 +419,7 @@ public:
     double apply_range(double idf) const noexcept {
         return (1.0 - _range)*_max_idf + _range * idf;
     }
-    // weight * idf, scaled to fixedpoint
+    // weight * scaled_bm25_idf, scaled to fixedpoint
     score_t calculateMaxScore(double estHits, double weight) const noexcept {
         return score_t(TermFrequencyScorer_TERM_SCORE_FACTOR * weight *
                        apply_range(Bm25Executor::calculate_inverse_document_frequency(estHits, _num_docs)));
