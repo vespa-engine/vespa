@@ -236,7 +236,8 @@ strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, Planning
         timer.after();
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
-    return {timer.min_time() * 1000.0, hits + 1, hits, flow, flow.strict_cost, get_class_name(*ctx.iterator), factory.get_name(*ctx.blueprint)};
+    double actual_cost = ctx.blueprint->estimate_actual_cost(InFlow(true));
+    return {timer.min_time() * 1000.0, hits + 1, hits, flow, actual_cost, get_class_name(*ctx.iterator), factory.get_name(*ctx.blueprint)};
 }
 
 template <bool do_unpack>
@@ -269,7 +270,7 @@ non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, doub
         timer.after();
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
-    double actual_cost = flow.cost * filter_hit_ratio;
+    double actual_cost = ctx.blueprint->estimate_actual_cost(InFlow(filter_hit_ratio));
     return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, get_class_name(*ctx.iterator), factory.get_name(*ctx.blueprint)};
 }
 
@@ -429,21 +430,23 @@ to_string(bool val)
 void
 print_result_header()
 {
-    std::cout << "|   chn | f_ratio | o_ratio | a_ratio |   f.est |    f.cost | f.scost |     hits |    seeks |  time_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | blueprint |" << std::endl;
+    std::cout << "|   chn | f_ratio | o_ratio | a_ratio |   f.est |    f.cost | f.act_cost | f.scost | f.act_scost |     hits |    seeks |  time_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | blueprint |" << std::endl;
 }
 
 void
-print_result(const BenchmarkResult& res, uint32_t children, double op_hit_ratio, double filter_hit_ratio, uint32_t num_docs)
+print_result(const BenchmarkResult& res, uint32_t children, double op_hit_ratio, InFlow in_flow, uint32_t num_docs)
 {
     std::cout << std::fixed << std::setprecision(5)
               << "| " << std::setw(5) << children
-              << " | " << std::setw(7) << filter_hit_ratio
+              << " | " << std::setw(7) << in_flow.rate()
               << " | " << std::setw(7) << op_hit_ratio
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
               << " | " << std::setw(6) << res.flow.estimate
               << std::setprecision(4)
               << " | " << std::setw(9) << res.flow.cost
+              << " | " << std::setw(10) << (res.flow.cost * in_flow.rate())
               << " | " << std::setw(7) << res.flow.strict_cost
+              << " | " << std::setw(11) << (in_flow.strict() ? res.flow.strict_cost : flow::forced_strict_cost(res.flow, in_flow.rate()))
               << " | " << std::setw(8) << res.hits
               << " | " << std::setw(8) << res.seeks
               << std::setprecision(3)
@@ -640,7 +643,7 @@ run_benchmark_case(const BenchmarkCaseSetup& setup)
                 if (filter_hit_ratio * setup.filter_crossover_factor <= op_hit_ratio) {
                     auto res = benchmark_search(*factory, setup.num_docs + 1,
                                                 setup.bcase.strict_context, setup.bcase.force_strict, setup.bcase.unpack_iterator, filter_hit_ratio, PlanningAlgo::Cost);
-                    print_result(res, children, op_hit_ratio, filter_hit_ratio, setup.num_docs);
+                    print_result(res, children, op_hit_ratio, InFlow(setup.bcase.strict_context, filter_hit_ratio), setup.num_docs);
                     result.add(res);
                 }
             }
@@ -975,8 +978,23 @@ TEST(IteratorBenchmark, analyze_OR_non_strict_fs)
     for (auto or_hit_ratio : {0.01, 0.1, 0.5}) {
         BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {false}, {or_hit_ratio},
                              {2, 4, 6, 8, 10, 100, 1000});
+        //setup.force_strict = true;
         setup.filter_hit_ratios = gen_ratios(or_hit_ratio, 10.0, 13);
         run_benchmarks(setup);
+    }
+}
+
+TEST(IteratorBenchmark, analyze_OR_non_strict_fs_child_est_adjust)
+{
+    for (auto or_hit_ratio : {0.01, 0.1, 0.5}) {
+        for (uint32_t children : {2, 4, 6, 8, 10, 100, 1000}) {
+            double child_est = or_hit_ratio / children;
+            BenchmarkSetup setup(num_docs, {int32_fs}, {QueryOperator::Or}, {false}, {or_hit_ratio},
+                                 {children});
+            //setup.force_strict = true;
+            setup.filter_hit_ratios = gen_ratios(child_est, 10.0, 13);
+            run_benchmarks(setup);
+        }
     }
 }
 
