@@ -220,9 +220,11 @@ public class Ranking implements Cloneable {
     public boolean getListFeatures() { return listFeatures; }
 
     /** Set whether to use significance in ranking */
+    @com.yahoo.api.annotations.Beta
     public void setUseSignificance(boolean useSignificance) { this.useSignificance = useSignificance; }
 
     /** Returns whether to use significance in ranking */
+    @com.yahoo.api.annotations.Beta
     public boolean getUseSignificance() { return useSignificance; }
 
     /** Returns the match phase rank settings of this. This is never null. */
