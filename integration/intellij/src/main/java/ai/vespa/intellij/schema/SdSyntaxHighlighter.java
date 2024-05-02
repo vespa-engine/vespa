@@ -102,6 +102,7 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         keyWords.add(SdTypes.ONNX_MODEL);
         keyWords.add(SdTypes.ANNOTATION);
         keyWords.add(SdTypes.RANK_PROFILE);
+        keyWords.add(SdTypes.SIGNIFICANCE);
         keyWords.add(SdTypes.MATCH_PHASE);
         keyWords.add(SdTypes.FIRST_PHASE);
         keyWords.add(SdTypes.EXPRESSION);
