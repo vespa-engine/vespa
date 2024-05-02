@@ -270,7 +270,6 @@ public class DocumentUpdateTestCase {
         DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("id:ns:my_type::foo:"));
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(1)));
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(2)));
-
         assertEquals(1, update.fieldUpdates().size());
         FieldUpdate fieldUpdate = update.getFieldUpdate(field);
         assertNotNull(fieldUpdate);
