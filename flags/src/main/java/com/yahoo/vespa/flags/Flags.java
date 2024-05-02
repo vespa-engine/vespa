@@ -91,7 +91,7 @@ public class Flags {
             "Takes effect on next deployment of an applications.");
 
     public static final UnboundBooleanFlag FIX_CONFIG_SERVER_HEAP = defineFeatureFlag(
-            "fix-config-server-heap", false,
+            "fix-config-server-heap", true,
             List.of("hakonhall"), "2024-04-23", "2024-05-23",
             "Base the calculation of the config server JVM heap size on the amount of memory available to the container.",
             "Takes effect on start of config server Podman container");
