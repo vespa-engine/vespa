@@ -318,26 +318,26 @@ struct Sample {
     }
 };
 
-double find_crossover(const char *type, const auto &calculate_at, double delta) {
+double find_crossover(const char *type, const char *a, const char *b, const auto &calculate_at, double delta) {
     double min = delta;
     double max = 1.0;
     fprintf(stderr, "looking for %s crossover in the range [%g, %g]...\n", type, min, max);
     auto at_min = calculate_at(min);
     auto at_max = calculate_at(max);
-    fprintf(stderr, "  before: [%s, %s], after: [%s, %s]\n",
-            at_min.first.str().c_str(), at_max.first.str().c_str(),
-            at_min.second.str().c_str(), at_max.second.str().c_str());
-    auto best_before = [](auto values) { return (values.first < values.second); };
-    if (best_before(at_min) == best_before(at_max)) {
+    fprintf(stderr, "  %s: [%s, %s], %s: [%s, %s]\n",
+            a, at_min.first.str().c_str(), at_max.first.str().c_str(),
+            b, at_min.second.str().c_str(), at_max.second.str().c_str());
+    auto a_best = [](auto values) { return (values.first < values.second); };
+    if (a_best(at_min) == a_best(at_max)) {
         fprintf(stderr, "  NO %s CROSSOVER FOUND\n", type);
         return 0.0;
     }
     while (max > (min + delta)) {
         double x = (min + max) / 2.0;
         auto at_x = calculate_at(x);
-        fprintf(stderr, "  best@%g: %s (%s vs %s)\n", x, best_before(at_x) ? "before" : "after",
+        fprintf(stderr, "  best@%g: %s (%s vs %s)\n", x, a_best(at_x) ? a : b,
                 at_x.first.str().c_str(), at_x.second.str().c_str());
-        if (best_before(at_min) == best_before(at_x)) {
+        if (a_best(at_min) == a_best(at_x)) {
             min = x;
             at_min = at_x;
         } else {
@@ -410,11 +410,11 @@ void analyze_crossover(BenchmarkBlueprintFactory &fixed, std::function<std::uniq
     std::vector<double> results;
     std::vector<const char *> names;
     names.push_back("time crossover");
-    results.push_back(find_crossover("TIME", combine(estimate_AND_time_ms), delta));
+    results.push_back(find_crossover("TIME", "before", "after", combine(estimate_AND_time_ms), delta));
     names.push_back("cost crossover");
-    results.push_back(find_crossover("COST", combine(calculate_AND_cost), delta));
+    results.push_back(find_crossover("COST", "before", "after", combine(calculate_AND_cost), delta));
     names.push_back("abs_est crossover");
-    results.push_back(find_crossover("ABS_EST", combine(first_abs_est), delta));
+    results.push_back(find_crossover("ABS_EST", "before", "after", combine(first_abs_est), delta));
     sample_at("COST", combine(calculate_AND_cost), results, names);
     sample_at("TIME", combine(estimate_AND_time_ms), results, names);
 }
@@ -1024,6 +1024,22 @@ TEST(IteratorBenchmark, analyze_btree_vs_bitvector_iterators_strict)
 {
     BenchmarkSetup setup(num_docs, {int32_fs, int32_fs_rf}, {QueryOperator::Term}, {true}, {0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0}, {1});
     run_benchmarks(setup);
+}
+
+TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
+    for (double hit_ratio: { 0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009,
+                              0.01,  0.02,  0.03,  0.04,  0.05,  0.06,  0.07,  0.08,  0.09,
+                               0.1,   0.2,   0.3,   0.4,   0.5,   0.6,   0.7,   0.8,   0.9,
+                              0.91,  0.92,  0.93,  0.94,  0.95,  0.96,  0.97,  0.98,  0.99, 1.0})
+    {
+        auto btree = make_blueprint_factory(int32_array_fs, QueryOperator::Term, num_docs, 0, hit_ratio, 1, false);
+        auto array = make_blueprint_factory(   int32_array, QueryOperator::Term, num_docs, 0, hit_ratio, 1, false);
+        auto time_ms = [&](auto &bpf, double in_flow) {
+                           return Sample(benchmark_search(bpf, num_docs + 1, false, false, false, in_flow, PlanningAlgo::Cost).time_ms);
+                       };
+        auto calculate_at = [&](double in_flow) { return std::make_pair(time_ms(*btree, in_flow), time_ms(*array, in_flow)); };
+        fprintf(stderr, "btree/array crossover@%5.3f: %8.6f\n", hit_ratio, find_crossover("TIME", "btree", "array", calculate_at, 0.0001));
+    }
 }
 
 int main(int argc, char **argv) {
