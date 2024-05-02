@@ -19,6 +19,7 @@ import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeVal
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseValidator;
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
+import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLocalLLMValidator;
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
@@ -129,6 +130,7 @@ public class Validation {
         new CertificateRemovalChangeValidator().validate(execution);
         new RedundancyValidator().validate(execution);
         new RestartOnDeployForOnnxModelChangesValidator().validate(execution);
+        new RestartOnDeployForLocalLLMValidator().validate(execution);
     }
 
     public interface Context {
