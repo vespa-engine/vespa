@@ -256,26 +256,18 @@ public class SelectParser implements Parser {
     }
 
     private Item buildFunctionCall(String key, Inspector value) {
-        switch (key) {
-            case WAND:
-                return buildWand(key, value);
-            case WEIGHTED_SET:
-                return buildWeightedSet(key, value);
-            case DOT_PRODUCT:
-                return buildDotProduct(key, value);
-            case GEO_LOCATION:
-                return buildGeoLocation(key, value);
-            case NEAREST_NEIGHBOR:
-                return buildNearestNeighbor(key, value);
-            case PREDICATE:
-                return buildPredicate(key, value);
-            case RANK:
-                return buildRank(key, value);
-            case WEAK_AND:
-                return buildWeakAnd(key, value);
-            default:
-                throw newUnexpectedArgumentException(key, DOT_PRODUCT, NEAREST_NEIGHBOR, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
-        }
+        return switch (key) {
+            case WAND -> buildWand(key, value);
+            case WEIGHTED_SET -> buildWeightedSet(key, value);
+            case DOT_PRODUCT -> buildDotProduct(key, value);
+            case GEO_LOCATION -> buildGeoLocation(key, value);
+            case NEAREST_NEIGHBOR -> buildNearestNeighbor(key, value);
+            case PREDICATE -> buildPredicate(key, value);
+            case RANK -> buildRank(key, value);
+            case WEAK_AND -> buildWeakAnd(key, value);
+            default ->
+                    throw newUnexpectedArgumentException(key, DOT_PRODUCT, NEAREST_NEIGHBOR, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
+        };
     }
 
     private void addItemsFromInspector(CompositeItem item, Inspector inspector){
@@ -312,15 +304,11 @@ public class SelectParser implements Parser {
     private HashMap<Integer, Inspector> childMap(Inspector inspector) {
         HashMap<Integer, Inspector> children = new HashMap<>();
         if (inspector.type() == ARRAY){
-            inspector.traverse((ArrayTraverser) (index, new_value) -> {
-                children.put(index, new_value);
-            });
+            inspector.traverse((ArrayTraverser) children::put);
 
         } else if (inspector.type() == OBJECT){
             if (inspector.field("children").valid()){
-                inspector.field("children").traverse((ArrayTraverser) (index, new_value) -> {
-                    children.put(index, new_value);
-                });
+                inspector.field("children").traverse((ArrayTraverser) children::put);
             }
         }
         return children;
@@ -336,9 +324,7 @@ public class SelectParser implements Parser {
     private HashMap<String, Inspector> getAnnotationMapFromAnnotationInspector(Inspector annotation) {
         HashMap<String, Inspector> attributes = new HashMap<>();
         if (annotation.type() == OBJECT){
-            annotation.traverse((ObjectTraverser) (index, new_value) -> {
-                attributes.put(index, new_value);
-            });
+            annotation.traverse((ObjectTraverser) attributes::put);
         }
         return attributes;
     }
@@ -346,9 +332,7 @@ public class SelectParser implements Parser {
     private HashMap<String, Inspector> getAnnotationMap(Inspector inspector) {
         HashMap<String, Inspector> attributes = new HashMap<>();
         if (inspector.type() == OBJECT && inspector.field("attributes").valid()){
-            inspector.field("attributes").traverse((ObjectTraverser) (index, new_value) -> {
-                attributes.put(index, new_value);
-            });
+            inspector.field("attributes").traverse((ObjectTraverser) attributes::put);
         }
         return attributes;
     }
@@ -487,7 +471,6 @@ public class SelectParser implements Parser {
         return item;
     }
 
-    @SuppressWarnings("deprecation")
     private CompositeItem buildWeakAnd(String key, Inspector value) {
         WeakAndItem weakAnd = new WeakAndItem();
         addItemsFromInspector(weakAnd, value);
@@ -576,8 +559,7 @@ public class SelectParser implements Parser {
                     }
                 });
             }
-            if (out instanceof IntItem && annotations != null) {
-                IntItem number = (IntItem) out;
+            if (out instanceof IntItem number && annotations != null) {
                 Integer hitLimit = getCappedRangeSearchParameter(annotations);
                 if (hitLimit != null) {
                     number.setHitLimit(hitLimit);
@@ -631,12 +613,13 @@ public class SelectParser implements Parser {
             throw new IllegalArgumentException("The first array element under 'equals' should be a field name string " +
                                                "but was " + children.get(0));
         String field = children.get(0).asString();
-        switch (children.get(1).type()) {
-            case BOOL: return new BoolItem(children.get(1).asBool(), field);
-            case LONG: return new IntItem(children.get(1).asLong(), field);
-            default: throw new IllegalArgumentException("The second array element under 'equals' should be a boolean " +
-                                                        "or int value but was " + children.get(1));
-        }
+        return switch (children.get(1).type()) {
+            case BOOL -> new BoolItem(children.get(1).asBool(), field);
+            case LONG -> new IntItem(children.get(1).asLong(), field);
+            default ->
+                    throw new IllegalArgumentException("The second array element under 'equals' should be a boolean " +
+                                                       "or int value but was " + children.get(1));
+        };
     }
 
     private Item buildRange(String key, Inspector value) {
@@ -661,15 +644,15 @@ public class SelectParser implements Parser {
                 throw new IllegalArgumentException("Expected a numeric argument to range, but got the string '" + bound.asString() + "'");
             }
             if (operator.equals("=")) {
-                bounds[0] = (bound.type() == DOUBLE) ? Number.class.cast(bound.asDouble()) : Number.class.cast(bound.asLong());
+                bounds[0] = (bound.type() == DOUBLE) ? (Number) bound.asDouble() : (Number) bound.asLong();
                 operators[0] = operator;
                 equals[0] = true;
             }
             if (operator.equals(">=") || operator.equals(">")){
-                bounds[0] = (bound.type() == DOUBLE) ? Number.class.cast(bound.asDouble()) : Number.class.cast(bound.asLong());
+                bounds[0] = (bound.type() == DOUBLE) ? (Number) bound.asDouble() : (Number) bound.asLong();
                 operators[0] = operator;
             } else if (operator.equals("<=") || operator.equals("<")){
-                bounds[1] = (bound.type() == DOUBLE) ? Number.class.cast(bound.asDouble()) : Number.class.cast(bound.asLong());
+                bounds[1] = (bound.type() == DOUBLE) ? (Number) bound.asDouble() : (Number) bound.asLong();
                 operators[1] = operator;
             }
 
@@ -680,20 +663,13 @@ public class SelectParser implements Parser {
         }
         else if (operators[0] == null || operators[1] == null) {
             int index = (operators[0] == null) ? 1 : 0;
-            switch (operators[index]){
-                case ">=":
-                    range = buildGreaterThanOrEquals(field, bounds[index].toString());
-                    break;
-                case ">":
-                    range = buildGreaterThan(field, bounds[index].toString());
-                    break;
-                case "<":
-                    range = buildLessThan(field, bounds[index].toString());
-                    break;
-                case "<=":
-                    range = buildLessThanOrEquals(field, bounds[index].toString());
-                    break;
-            }
+            range = switch (operators[index]) {
+                case ">=" -> buildGreaterThanOrEquals(field, bounds[index].toString());
+                case ">" -> buildGreaterThan(field, bounds[index].toString());
+                case "<" -> buildLessThan(field, bounds[index].toString());
+                case "<=" -> buildLessThanOrEquals(field, bounds[index].toString());
+                default -> range;
+            };
         }
         else {
             range = instantiateRangeItem(bounds[0], bounds[1], field, operators[0].equals(">"), operators[1].equals("<"));
@@ -890,7 +866,7 @@ public class SelectParser implements Parser {
         String possibleLeafFunctionName = (possibleLeafFunction.size() > 1) ? getInspectorKey(possibleLeafFunction.get(1)) : "";
         if (FUNCTION_CALLS.contains(key)) {
             return instantiateCompositeLeaf(field, key, value);
-        } else if ( ! possibleLeafFunctionName.equals("")){
+        } else if (!possibleLeafFunctionName.isEmpty()){
            return instantiateCompositeLeaf(field, possibleLeafFunctionName, valueListFromInspector(value).get(1).field(possibleLeafFunctionName));
         } else {
             return instantiateWordItem(field, key, value);
@@ -898,24 +874,16 @@ public class SelectParser implements Parser {
     }
 
     private Item instantiateCompositeLeaf(String field, String key, Inspector value) {
-        switch (key) {
-            case SAME_ELEMENT:
-                return instantiateSameElementItem(field, key, value);
-            case PHRASE:
-                return instantiatePhraseItem(field, key, value);
-            case NEAR:
-                return instantiateNearItem(field, key, value);
-            case ONEAR:
-                return instantiateONearItem(field, key, value);
-            case EQUIV:
-                return instantiateEquivItem(field, key, value);
-            case FUZZY:
-                return instantiateFuzzyItem(field, key, value);
-            case ALTERNATIVES:
-                return instantiateWordAlternativesItem(field, key, value);
-            default:
-                throw newUnexpectedArgumentException(key, EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT);
-        }
+        return switch (key) {
+            case SAME_ELEMENT -> instantiateSameElementItem(field, key, value);
+            case PHRASE -> instantiatePhraseItem(field, key, value);
+            case NEAR -> instantiateNearItem(field, key, value);
+            case ONEAR -> instantiateONearItem(field, key, value);
+            case EQUIV -> instantiateEquivItem(field, key, value);
+            case FUZZY -> instantiateFuzzyItem(field, key, value);
+            case ALTERNATIVES -> instantiateWordAlternativesItem(field, key, value);
+            default -> throw newUnexpectedArgumentException(key, EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT);
+        };
     }
 
     private Item instantiateWordItem(String field, String key, Inspector value) {
@@ -944,8 +912,8 @@ public class SelectParser implements Parser {
         Preconditions.checkArgument((prefixMatch ? 1 : 0)
                         + (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
                 "Only one of prefix, substring and suffix can be set.");
-        final TaggableItem wordItem;
 
+        WordItem wordItem;
         if (exactMatch) {
             wordItem = new ExactStringItem(wordData, fromQuery);
         } else if (prefixMatch) {
@@ -958,13 +926,11 @@ public class SelectParser implements Parser {
             wordItem = new WordItem(wordData, fromQuery);
         }
 
-        if (wordItem instanceof WordItem) {
-            prepareWord(field, value, (WordItem) wordItem);
-        }
+        prepareWord(field, value, wordItem);
         if (language != Language.ENGLISH)
-            ((Item)wordItem).setLanguage(language);
+            wordItem.setLanguage(language);
 
-        return (Item) leafStyleSettings(getAnnotations(value), wordItem);
+        return leafStyleSettings(getAnnotations(value), wordItem);
     }
 
     private Language decideParsingLanguage(Inspector value, String wordData) {
@@ -974,9 +940,8 @@ public class SelectParser implements Parser {
         if (language != Language.UNKNOWN) return language;
 
         Optional<Language> explicitLanguage = query.getExplicitLanguage();
-        if (explicitLanguage.isPresent()) return explicitLanguage.get();
+        return explicitLanguage.orElse(Language.ENGLISH);
 
-        return Language.ENGLISH;
     }
 
     private void prepareWord(String field, Inspector value, WordItem wordItem) {
@@ -1094,7 +1059,7 @@ public class SelectParser implements Parser {
         Integer distance = getIntegerAnnotation(DISTANCE, getAnnotationMap(value), null);
 
         if (distance != null) {
-            near.setDistance((int)distance);
+            near.setDistance(distance);
         }
         return near;
     }
@@ -1120,7 +1085,8 @@ public class SelectParser implements Parser {
     private Item instantiateEquivItem(String field, String key, Inspector value) {
 
         HashMap<Integer, Inspector> children = childMap(value);
-        Preconditions.checkArgument(children.size() >= 2, "Expected 2 or more arguments, got %s.", children.size());
+        Preconditions.checkArgument(children.size() >= 2,
+                                    "Expected 2 or more arguments, got %s.", children.size());
 
         EquivItem equiv = new EquivItem();
         equiv.setIndexName(field);
@@ -1159,8 +1125,9 @@ public class SelectParser implements Parser {
 
     private Item instantiateWordAlternativesItem(String field, String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
-        Preconditions.checkArgument(children.size() >= 1, "Expected 1 or more arguments, got %s.", children.size());
-        Preconditions.checkArgument(children.get(0).type() == OBJECT, "Expected OBJECT, got %s.", children.get(0).type());
+        Preconditions.checkArgument(!children.isEmpty(), "Expected 1 or more arguments, got none");
+        Preconditions.checkArgument(children.get(0).type() == OBJECT,
+                                    "Expected OBJECT, got %s.", children.get(0).type());
 
         List<WordAlternativesItem.Alternative> terms = new ArrayList<>();
 

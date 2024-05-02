@@ -56,6 +56,11 @@ public class SelectTestCase {
     //------------------------------------------------------------------- "where" tests
 
     @Test
+    void testSimple() {
+        assertParse("{'contains' : ['title', 'madonna']}", "title:madonna");
+    }
+
+    @Test
     void test_contains() {
         ObjectNode json = jsonMapper.createObjectNode();
         ArrayNode arrayNode = jsonMapper.createArrayNode();
@@ -65,16 +70,9 @@ public class SelectTestCase {
     }
 
     @Test
-    void test() {
-        assertParse("{'contains' : ['title', 'madonna']}",
-                "title:madonna");
-    }
-
-
-    @Test
     void testDottedFieldNames() {
         assertParse("{ 'contains' : ['my.nested.title', 'madonna']}",
-                "my.nested.title:madonna");
+                    "my.nested.title:madonna");
     }
 
     @Test
@@ -360,12 +358,12 @@ public class SelectTestCase {
     @Test
     void testRaw() {
         Item root = parseWhere("{ \"contains\":[ \"baz\", \"yoni jo dima\" ] }").getRoot();
-        assertTrue(root instanceof WordItem);
+        assertInstanceOf(WordItem.class, root);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
 
         root = parseWhere("{ \"contains\": { \"children\" : [\"baz\", \"yoni jo dima\"], \"attributes\" : {\"grammar\" : \"raw\"} } }").getRoot();
-        assertTrue(root instanceof WordItem);
+        assertInstanceOf(WordItem.class, root);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
     }

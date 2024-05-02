@@ -188,13 +188,8 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         return Collections.unmodifiableCollection(fieldPathUpdates);
     }
 
-    /** Returns the type of the document this updates
-     *
-     * @return The document type of the document
-     */
-    public DocumentType getDocumentType() {
-        return documentType;
-    }
+    /** Returns the type of the document this updates. */
+    public DocumentType getDocumentType() { return documentType; }
 
     /**
      * Sets the document type. Use only while deserializing - changing the document type after creation
