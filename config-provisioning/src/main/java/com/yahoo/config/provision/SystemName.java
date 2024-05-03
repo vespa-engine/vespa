@@ -25,6 +25,7 @@ public enum SystemName {
 
     /** Continuous deployment system for testing the Public system */
     PublicCd(true, true),
+    PublicCdMigration(true, true),
 
     /** Local development system */
     dev(false, false);
@@ -48,6 +49,7 @@ public enum SystemName {
             case "main": return main;
             case "public": return Public;
             case "publiccd": return PublicCd;
+            case "publiccdmigration": return PublicCdMigration;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
         }
     }
@@ -59,6 +61,7 @@ public enum SystemName {
             case main: return "main";
             case Public: return "public";
             case PublicCd: return "publiccd";
+            case PublicCdMigration: return "publiccdmigration";
             default : throw new IllegalStateException();
         }
     }
