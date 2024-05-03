@@ -11,9 +11,9 @@ namespace search::queryeval {
 //-----------------------------------------------------------------------------
 
 FlowStats
-EmptyBlueprint::calculate_flow_stats(uint32_t docid_limit) const
+EmptyBlueprint::calculate_flow_stats(uint32_t) const
 {
-    return default_flow_stats(docid_limit, 0, 0);
+    return {0.0, 0.2, 0.0};
 }
 
 SearchIterator::UP

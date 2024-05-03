@@ -576,7 +576,9 @@ void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
     bp1.asSlime(SlimeInserter(a));
     bp2.asSlime(SlimeInserter(b));
     if (expect_eq) {
-        EXPECT_TRUE(vespalib::slime::are_equal(a.get(), b.get(), cmp_hook));
+        if(!EXPECT_TRUE(vespalib::slime::are_equal(a.get(), b.get(), cmp_hook))) {
+            fprintf(stderr, "a: %s\n\nb: %s\n\n", bp1.asString().c_str(), bp2.asString().c_str());
+        }
     } else {
         EXPECT_FALSE(vespalib::slime::are_equal(a.get(), b.get(), cmp_hook));
     }
@@ -614,13 +616,14 @@ TEST_F("test SourceBlender below AND partial optimization", SourceBlenderTestFix
 
     auto expect = std::make_unique<AndBlueprint>();
     addLeafs(*expect, {1,2,3});
-    expect->addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
 
     auto blender = std::make_unique<SourceBlenderBlueprint>(f.selector_1);
     blender->addChild(addLeafsWithSourceId(3, std::make_unique<AndBlueprint>(), {{30,  3}, {300, 3}}));
     blender->addChild(addLeafsWithSourceId(2, std::make_unique<AndBlueprint>(), {{20,   2}, {200,  2}, {2000, 2}}));
     blender->addChild(addLeafsWithSourceId(1, std::make_unique<AndBlueprint>(), {{10,   1}, {100,  1}, {1000, 1}}));
     expect->addChild(std::move(blender));
+
+    expect->addChild(addLeafsWithSourceId(std::make_unique<SourceBlenderBlueprint>(f.selector_2), {{10, 1}, {20, 2}}));
 
     optimize_and_compare(std::move(top), std::move(expect));
 }
@@ -1402,7 +1405,7 @@ TEST("cost for ANDNOT") {
 
 TEST("cost for SB") {
     InvalidSelector sel;
-    verify_cost(make::SB(sel), 1.3, 1.3); // max
+    verify_cost(make::SB(sel), 1.3+1.0, 1.3+(1.0-0.8*0.7*0.5)); // max, non_strict+1.0, strict+est
 }
 
 TEST("cost for NEAR") {

@@ -201,6 +201,7 @@ public:
     explicit SourceBlenderBlueprint(const ISourceSelector &selector) noexcept;
     ~SourceBlenderBlueprint() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
+    double estimate_self_cost(InFlow in_flow) const noexcept override;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
