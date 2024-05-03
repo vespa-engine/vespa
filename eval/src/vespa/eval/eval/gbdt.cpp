@@ -154,6 +154,9 @@ Optimize::select_best(const ForestStats &stats,
     if ((stats.tree_sizes.back().size > 12) && (path_len > 2500.0)) {
         return apply_chain(VMForest::optimize_chain, stats, trees);
     }
+    if (stats.total_size > 25000) {
+        return apply_chain(VMForest::optimize_chain, stats, trees);
+    }
     return Optimize::Result();
 }
 
