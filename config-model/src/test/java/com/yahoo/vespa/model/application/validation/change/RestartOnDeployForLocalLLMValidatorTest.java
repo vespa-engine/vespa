@@ -19,22 +19,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class RestartOnDeployForLocalLLMValidatorTest {
 
+    public static final String OPENAI_LLM_COMPONENT = "ai.vespa.llm.clients.OpenAI";
+    public static final String LOCAL_LLM_COMPONENT = "ai.vespa.llm.clients.LocalLLM";
+
     @Test
     void validate_no_restart_on_deploy() {
-        VespaModel current = createModelWithComponent("ai.vespa.llm.clients.OpenAI");
-        VespaModel next = createModelWithComponent("ai.vespa.llm.clients.OpenAI");
+        VespaModel current = createModelWithComponent(OPENAI_LLM_COMPONENT);
+        VespaModel next = createModelWithComponent(LOCAL_LLM_COMPONENT);
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(0, result.size());
     }
 
     @Test
     void validate_restart_on_deploy() {
-        VespaModel current = createModelWithComponent("ai.vespa.llm.clients.LocalLLM");
-        VespaModel next = createModelWithComponent("ai.vespa.llm.clients.LocalLLM");
+        VespaModel current = createModelWithComponent(LOCAL_LLM_COMPONENT);
+        VespaModel next = createModelWithComponent(LOCAL_LLM_COMPONENT);
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertTrue(result.get(0).validationId().isEmpty());
-        assertEquals("Restarting services in container cluster 'cluster1' because of local LLM use", result.get(0).getMessage());
+        assertEquals("Need to restart services in cluster 'cluster1' due to use of local LLM", result.get(0).getMessage());
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
