@@ -21,7 +21,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  */
 public class RestartOnDeployForLocalLLMValidator implements ChangeValidator {
 
-    private static final String LOCAL_LLM_COMPONENT = "ai.vespa.llm.clients.LocalLLM";
+    public static final String LOCAL_LLM_COMPONENT = ai.vespa.llm.clients.LocalLLM.class.getName();
 
     private static final Logger log = Logger.getLogger(RestartOnDeployForLocalLLMValidator.class.getName());
 

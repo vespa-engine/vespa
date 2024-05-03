@@ -19,21 +19,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class RestartOnDeployForLocalLLMValidatorTest {
 
-    public static final String OPENAI_LLM_COMPONENT = "ai.vespa.llm.clients.OpenAI";
-    public static final String LOCAL_LLM_COMPONENT = "ai.vespa.llm.clients.LocalLLM";
+    private static final String LOCAL_LLM_COMPONENT = RestartOnDeployForLocalLLMValidator.LOCAL_LLM_COMPONENT;
 
     @Test
     void validate_no_restart_on_deploy() {
-        VespaModel current = createModelWithComponent(OPENAI_LLM_COMPONENT);
-        VespaModel next = createModelWithComponent(LOCAL_LLM_COMPONENT);
+        VespaModel current = createModel();
+        VespaModel next = createModel(withComponent(LOCAL_LLM_COMPONENT));
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(0, result.size());
     }
 
     @Test
     void validate_restart_on_deploy() {
-        VespaModel current = createModelWithComponent(LOCAL_LLM_COMPONENT);
-        VespaModel next = createModelWithComponent(LOCAL_LLM_COMPONENT);
+        VespaModel current = createModel(withComponent(LOCAL_LLM_COMPONENT));
+        VespaModel next = createModel(withComponent(LOCAL_LLM_COMPONENT));
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertTrue(result.get(0).validationId().isEmpty());
@@ -46,19 +45,27 @@ public class RestartOnDeployForLocalLLMValidatorTest {
                                                 deployStateBuilder().previousModel(current).build());
     }
 
-    private static VespaModel createModelWithComponent(String componentClass) {
+    private static VespaModel createModel(String component) {
         var xml = """
                 <services version='1.0'>
                   <container id='cluster1' version='1.0'>
                     <http>
                       <server id='server1' port='8080'/>
                     </http>
-                    <component id="llm" class="%s" />
+                    %s
                   </container>
                 </services>
-                """.formatted(componentClass);
+                """.formatted(component);
         DeployState.Builder builder = deployStateBuilder();
         return new VespaModelCreatorWithMockPkg(null, xml).create(builder);
+    }
+
+    private static VespaModel createModel() {
+        return createModel("");
+    }
+
+    private static String withComponent(String componentClass) {
+        return "<component id='llm' class='%s' />".formatted(componentClass);
     }
 
     private static DeployState.Builder deployStateBuilder() {
