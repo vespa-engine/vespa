@@ -33,6 +33,10 @@ public class ClusterStatsAggregatorTest {
             assertEquals(expectedStats.build(), aggregator.getAggregatedStatsForDistributor(distributorIndex));
         }
 
+        public void verifyGlobal(ContentNodeStatsBuilder expectedStats) {
+            assertEquals(expectedStats.build(), aggregator.getAggregatedStats().getGlobalStats());
+        }
+
         boolean hasUpdatesFromAllDistributors() {
             return aggregator.getAggregatedStats().hasUpdatesFromAllDistributors();
         }
@@ -64,6 +68,10 @@ public class ClusterStatsAggregatorTest {
         return Sets.newHashSet(indices);
     }
 
+    private static ContentNodeStatsBuilder globalStatsBuilder() {
+        return ContentNodeStatsBuilder.forNode(-1);
+    }
+
     @Test
     void aggregator_handles_updates_to_single_distributor_and_content_node() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3));
@@ -72,6 +80,9 @@ public class ClusterStatsAggregatorTest {
                 .add(3, "global", 11, 2);
         f.update(1, stats);
         f.verify(stats);
+        f.verifyGlobal(globalStatsBuilder()
+                .add("default", 10, 1)
+                .add("global", 11, 2));
     }
 
     @Test
@@ -80,9 +91,13 @@ public class ClusterStatsAggregatorTest {
 
         f.verify(new ContentClusterStatsBuilder()
                 .add(3, "default", 10 + 14, 1 + 5)
-                .add(3, "global", 11 + 15, 2 + 6)
+                .add(3, "global",  11 + 15, 2 + 6)
                 .add(4, "default", 12 + 16, 3 + 7)
-                .add(4, "global", 13 + 17, 4 + 8));
+                .add(4, "global",  13 + 17, 4 + 8));
+
+        f.verifyGlobal(globalStatsBuilder()
+                .add("default", (10 + 14) + (12 + 16), (1 + 5) + (3 + 7))
+                .add("global",  (11 + 15) + (13 + 17), (2 + 6) + (4 + 8)));
     }
 
     @Test
@@ -94,28 +109,34 @@ public class ClusterStatsAggregatorTest {
 
         f.update(2, new ContentClusterStatsBuilder().add(3, "default", 10, 1));
         f.verify(new ContentClusterStatsBuilder().addInvalid(3, "default", 10, 1));
+        f.verifyGlobal(globalStatsBuilder().addInvalid("default", 10, 1));
 
         f.update(1, new ContentClusterStatsBuilder().add(3, "default", 11, 2));
         f.verify(new ContentClusterStatsBuilder().add(3, "default", 10 + 11, 1 + 2));
+        f.verifyGlobal(globalStatsBuilder().add("default", 10 + 11, 1 + 2));
 
         f.update(2, new ContentClusterStatsBuilder().add(3, "default", 15, 6));
         f.verify(new ContentClusterStatsBuilder().add(3, "default", 11 + 15, 2 + 6));
+        f.verifyGlobal(globalStatsBuilder().add("default", 11 + 15, 2 + 6));
 
         f.update(1, new ContentClusterStatsBuilder().add(3, "default", 16, 7));
         f.verify(new ContentClusterStatsBuilder().add(3, "default", 15 + 16, 6 + 7));
+        f.verifyGlobal(globalStatsBuilder().add("default", 15 + 16, 6 + 7));
 
         f.update(2, new ContentClusterStatsBuilder().add(3, "default", 12, 3));
         f.verify(new ContentClusterStatsBuilder().add(3, "default", 16 + 12, 7 + 3));
+        f.verifyGlobal(globalStatsBuilder().add("default", 16 + 12, 7 + 3));
     }
 
     @Test
-    void aggregator_handles_more_content_nodes_that_distributors() {
+    void aggregator_handles_more_content_nodes_than_distributors() {
         Fixture f = new Fixture(distributorNodes(1), contentNodes(3, 4));
         ContentClusterStatsBuilder stats = new ContentClusterStatsBuilder()
                 .add(3, "default", 10, 1)
                 .add(4, "default", 11, 2);
         f.update(1, stats);
         f.verify(stats);
+        f.verifyGlobal(globalStatsBuilder().add("default", 10 + 11, 1 + 2));
     }
 
     @Test

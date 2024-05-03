@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 public abstract class StateRestApiTest {
 
-    private ClusterControllerMock books;
+    ClusterControllerMock books;
     ClusterControllerMock music;
     StateRestAPI restAPI;
     JsonWriter jsonWriter = new JsonWriter();

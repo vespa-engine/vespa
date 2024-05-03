@@ -93,6 +93,10 @@ public class MetricUpdater {
         metricReporter.set("is-master", isMaster ? 1 : 0);
     }
 
+    public void updateClusterBucketsOutOfSyncRatio(double ratio) {
+        metricReporter.set("cluster-buckets-out-of-sync-ratio", ratio);
+    }
+
     public void addTickTime(long millis, boolean didWork) {
         if (didWork) {
             metricReporter.set("busy-tick-time-ms", millis);

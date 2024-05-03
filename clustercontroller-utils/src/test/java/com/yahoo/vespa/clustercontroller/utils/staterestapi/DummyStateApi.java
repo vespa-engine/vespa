@@ -139,8 +139,8 @@ public class DummyStateApi implements StateRestAPI {
             public UnitMetrics getMetrics() {
                 return new UnitMetrics() {
                     @Override
-                    public Map<String, Long> getMetricMap() {
-                        Map<String, Long> m = new LinkedHashMap<>();
+                    public Map<String, Number> getMetricMap() {
+                        Map<String, Number> m = new LinkedHashMap<>();
                         m.put("doc-count", (long) node.docCount);
                         return m;
                     }
