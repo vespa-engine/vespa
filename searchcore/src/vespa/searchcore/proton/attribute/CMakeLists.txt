@@ -34,6 +34,7 @@ vespa_add_library(searchcore_attribute STATIC
     document_field_retriever.cpp
     filter_attribute_manager.cpp
     flushableattribute.cpp
+    imported_attribute_vector_explorer.cpp
     imported_attributes_context.cpp
     imported_attributes_repo.cpp
     initialized_attributes_result.cpp
