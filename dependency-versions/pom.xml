@@ -34,7 +34,7 @@
         <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
         <error-prone-annotations.vespa.version>2.27.1</error-prone-annotations.vespa.version>
-        <guava.vespa.version>33.1.0-jre</guava.vespa.version>
+        <guava.vespa.version>33.2.0-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
         <j2objc-annotations.vespa.version>3.0.0</j2objc-annotations.vespa.version>
         <jackson2.vespa.version>2.16.2</jackson2.vespa.version>
