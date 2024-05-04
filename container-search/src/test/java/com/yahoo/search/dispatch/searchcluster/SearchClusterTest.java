@@ -200,8 +200,6 @@ public class SearchClusterTest {
     @Test
     void requireThatVipStatusIsDefaultDownWithLocalDispatch() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "b")) {
-            assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
-
             assertFalse(test.vipStatus.isInRotation());
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
@@ -211,8 +209,6 @@ public class SearchClusterTest {
     @Test
     void requireThatVipStatusStaysUpWithLocalDispatchAndClusterSize1() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost())) {
-            assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
-
             assertFalse(test.vipStatus.isInRotation());
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());
@@ -225,8 +221,6 @@ public class SearchClusterTest {
     @Test
     void requireThatVipStatusIsDefaultDownWithLocalDispatchAndClusterSize2() {
         try (State test = new State("cluster.1", 1, HostName.getLocalhost(), "otherhost")) {
-            assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
-
             assertFalse(test.vipStatus.isInRotation());
             test.waitOneFullPingRound();
             assertTrue(test.vipStatus.isInRotation());

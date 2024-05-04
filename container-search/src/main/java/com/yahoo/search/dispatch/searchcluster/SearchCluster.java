@@ -226,17 +226,20 @@ public class SearchCluster implements NodeManager<Node> {
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
-        boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.activeDocuments(), group.activeDocuments());
-        trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments());
+        boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.hasSufficientCoverage(),
+                                                                      group.activeDocuments(), group.activeDocuments(), group.activeDocuments());
+        trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments(), group.activeDocuments());
     }
 
     private void pingIterationCompletedMultipleGroups(SearchGroupsImpl groups) {
         groups.groups().forEach(Group::aggregateNodeValues);
-        long medianDocuments = groups.medianDocumentsPerGroup();
+        long medianDocuments = groups.medianDocumentCount();
+        long maxDocuments = groups.maxDocumentCount();
         for (Group group : groups.groups()) {
-            boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.activeDocuments(), medianDocuments);
+            boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.hasSufficientCoverage(),
+                                                                          group.activeDocuments(), medianDocuments, maxDocuments);
             updateSufficientCoverage(group, sufficientCoverage);
-            trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
+            trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments, maxDocuments);
         }
     }
 
@@ -261,7 +264,7 @@ public class SearchCluster implements NodeManager<Node> {
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
-    private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments) {
+    private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments, long maxDocuments) {
         if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
         boolean changed = group.fullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
@@ -278,7 +281,7 @@ public class SearchCluster implements NodeManager<Node> {
                         unresponsive.append('\n').append(node);
                 }
                 String message = "Cluster " + clusterId + ": " + group + " has reduced coverage: " +
-                                 "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
+                                 "Active documents: " + group.activeDocuments() + "/" + maxDocuments + ", " +
                                  "Target active documents: " + group.targetActiveDocuments() + ", " +
                                  "working nodes: " + group.workingNodes() + "/" + group.nodes().size() +
                                  ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive);
