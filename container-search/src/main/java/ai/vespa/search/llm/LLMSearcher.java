@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Beta
 public class LLMSearcher extends Searcher {
 
-    private static Logger log = Logger.getLogger(LLMSearcher.class.getName());
+    private static final Logger log = Logger.getLogger(LLMSearcher.class.getName());
 
     private static final String API_KEY_HEADER = "X-LLM-API-KEY";
     private static final String STREAM_PROPERTY = "stream";
@@ -202,7 +202,7 @@ public class LLMSearcher extends Searcher {
 
     private static class TokenStats {
 
-        private long start;
+        private final long start;
         private long timeToFirstToken;
         private long timeToLastToken;
         private long tokens = 0;
