@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Module local test of the basic property name building block.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class CompoundNameTestCase {
 
@@ -30,22 +30,22 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    final void testLast() {
+    void testLast() {
         assertEquals(NAME.substring(NAME.lastIndexOf('.') + 1), C_NAME.last());
     }
 
     @Test
-    final void testFirst() {
+    void testFirst() {
         assertEquals(NAME.substring(0, NAME.indexOf('.')), C_NAME.first());
     }
 
     @Test
-    final void testRest() {
+    void testRest() {
         verifyStrict(NAME.substring(NAME.indexOf('.') + 1), C_NAME.rest());
     }
 
     @Test
-    final void testRestN() {
+    void testRestN() {
         verifyStrict("a.b.c.d.e", C_abcde.rest(0));
         verifyStrict("b.c.d.e", C_abcde.rest(1));
         verifyStrict("c.d.e", C_abcde.rest(2));
@@ -53,8 +53,9 @@ public class CompoundNameTestCase {
         verifyStrict("e", C_abcde.rest(4));
         verifyStrict(CompoundName.empty, C_abcde.rest(5));
     }
+
     @Test
-    final void testFirstN() {
+    void testFirstN() {
         verifyStrict("a.b.c.d.e", C_abcde.first(5));
         verifyStrict("a.b.c.d", C_abcde.first(4));
         verifyStrict("a.b.c", C_abcde.first(3));
@@ -64,15 +65,32 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    final void testPrefix() {
-        CompoundName abc = CompoundName.from("a.b.c");
-        assertTrue(abc.hasPrefix(CompoundName.empty));
-        assertTrue(abc.hasPrefix(CompoundName.from("a")));
-        assertTrue(abc.hasPrefix(CompoundName.from("a.b")));
-        assertTrue(abc.hasPrefix(CompoundName.from("a.b.c")));
+    void testPrefix() {
+        CompoundName abcc = CompoundName.from("a.b.cc");
+        assertTrue(abcc.hasPrefix(CompoundName.empty));
+        assertTrue(abcc.hasPrefix(CompoundName.from("a")));
+        assertTrue(abcc.hasPrefix(CompoundName.from("a.b")));
+        assertTrue(abcc.hasPrefix(CompoundName.from("a.b.cc")));
 
-        assertFalse(abc.hasPrefix(CompoundName.from("a.b.c.d")));
-        assertFalse(abc.hasPrefix(CompoundName.from("a.b.d")));
+        assertFalse(abcc.hasPrefix(CompoundName.from("a.b.c")));
+        assertFalse(abcc.hasPrefix(CompoundName.from("a.b.c.d")));
+        assertFalse(abcc.hasPrefix(CompoundName.from("a.b.d")));
+    }
+
+    @Test
+    void testIllegalCompound() {
+        assertEquals("'a.' is not a legal compound name. Names can not end with a dot.",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> CompoundName.from("a."))
+                             .getMessage());
+        assertEquals("'.b' is not a legal compound name. Consecutive, leading or trailing dots are not allowed.",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> CompoundName.from(".b"))
+                             .getMessage());
+        assertEquals("'a..b' is not a legal compound name. Consecutive, leading or trailing dots are not allowed.",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> CompoundName.from("a..b"))
+                             .getMessage());
     }
 
     @Test
@@ -82,7 +100,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    final void testSize() {
+    void testSize() {
         Splitter s = Splitter.on('.');
         Iterable<String> i = s.split(NAME);
         int n = 0;
@@ -93,23 +111,23 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    final void testGet() {
+    void testGet() {
         String s = C_NAME.get(0);
         assertEquals(NAME.substring(0, NAME.indexOf('.')), s);
     }
 
     @Test
-    final void testIsCompound() {
+    void testIsCompound() {
         assertTrue(C_NAME.isCompound());
     }
 
     @Test
-    final void testIsEmpty() {
+    void testIsEmpty() {
         assertFalse(C_NAME.isEmpty());
     }
 
     @Test
-    final void testAsList() {
+    void testAsList() {
         List<String> l = C_NAME.asList();
         Splitter peoplesFront = Splitter.on('.');
         Iterable<String> answer = peoplesFront.split(NAME);
@@ -121,7 +139,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    final void testEqualsObject() {
+    void testEqualsObject() {
         assertNotEquals(C_NAME, NAME);
         assertNotEquals(C_NAME, null);
         verifyStrict(C_NAME, C_NAME);
@@ -129,7 +147,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    final void testEmptyNonEmpty() {
+    void testEmptyNonEmpty() {
         assertTrue(CompoundName.empty.isEmpty());
         assertEquals(0, CompoundName.empty.size());
         assertFalse(CompoundName.from("a").isEmpty());
@@ -140,7 +158,7 @@ public class CompoundNameTestCase {
     }
 
     @Test
-    final void testGetLowerCasedName() {
+    void testGetLowerCasedName() {
         assertEquals(Lowercase.toLowerCase(NAME), C_NAME.getLowerCasedName());
     }
 
@@ -223,4 +241,5 @@ public class CompoundNameTestCase {
         assertEquals("[one]", CompoundName.from("one").asList().toString());
         assertEquals("[one, two, three]", CompoundName.from("one.two.three").asList().toString());
     }
+
 }

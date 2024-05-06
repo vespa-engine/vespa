@@ -132,7 +132,7 @@ public class ConstantTensorJsonValidator {
     private void consumeTopObject() throws IOException {
         for (var cur = parser.nextToken(); cur != JsonToken.END_OBJECT; cur = parser.nextToken()) {
             assertCurrentTokenIs(JsonToken.FIELD_NAME);
-            String fieldName = parser.currentName();
+            String fieldName = parser.getCurrentName();
             switch (fieldName) {
                 case FIELD_TYPE -> consumeTypeField();
                 case FIELD_VALUES -> consumeValuesField();
@@ -189,7 +189,7 @@ public class ConstantTensorJsonValidator {
         }
         for (var cur = parser.nextToken(); cur != JsonToken.END_OBJECT; cur = parser.nextToken()) {
             assertCurrentTokenIs(JsonToken.FIELD_NAME);
-            validateNumeric(parser.currentName(), parser.nextToken());
+            validateNumeric(parser.getCurrentName(), parser.nextToken());
         }
     }
 
@@ -199,7 +199,7 @@ public class ConstantTensorJsonValidator {
         boolean seenValue = false;
         for (int i = 0; i < 2; i++) {
             assertNextTokenIs(JsonToken.FIELD_NAME);
-            String fieldName = parser.currentName();
+            String fieldName = parser.getCurrentName();
             switch (fieldName) {
                 case FIELD_ADDRESS -> {
                     validateTensorAddress(new HashSet<>(tensorDimensions.keySet()));
@@ -228,13 +228,13 @@ public class ConstantTensorJsonValidator {
         // Iterate within the address key, value pairs
         while ((parser.nextToken() != JsonToken.END_OBJECT)) {
             assertCurrentTokenIs(JsonToken.FIELD_NAME);
-            String dimensionName = parser.currentName();
+            String dimensionName = parser.getCurrentName();
             TensorType.Dimension dimension = tensorDimensions.get(dimensionName);
             if (dimension == null) {
-                throw new InvalidConstantTensorException(parser, String.format("Tensor dimension '%s' does not exist", dimensionName));
+                throw new InvalidConstantTensorException(parser, String.format("Tensor dimension '%s' does not exist", parser.getCurrentName()));
             }
             if (!cellDimensions.contains(dimensionName)) {
-                throw new InvalidConstantTensorException(parser, String.format("Duplicate tensor dimension '%s'", dimensionName));
+                throw new InvalidConstantTensorException(parser, String.format("Duplicate tensor dimension '%s'", parser.getCurrentName()));
             }
             cellDimensions.remove(dimensionName);
             validateLabel(dimension);
@@ -300,7 +300,7 @@ public class ConstantTensorJsonValidator {
     }
 
     private void assertCurrentTokenIs(JsonToken wantedToken) {
-        assertTokenIs(parser.currentToken(), wantedToken);
+        assertTokenIs(parser.getCurrentToken(), wantedToken);
     }
 
     private void assertNextTokenIs(JsonToken wantedToken) throws IOException {
@@ -316,11 +316,11 @@ public class ConstantTensorJsonValidator {
     static class InvalidConstantTensorException extends IllegalArgumentException {
 
         InvalidConstantTensorException(JsonParser parser, String message) {
-            super(message + " " + parser.currentLocation().toString());
+            super(message + " " + parser.getCurrentLocation().toString());
         }
 
         InvalidConstantTensorException(JsonParser parser, Exception base) {
-            super("Failed to parse JSON stream " + parser.currentLocation().toString(), base);
+            super("Failed to parse JSON stream " + parser.getCurrentLocation().toString(), base);
         }
 
         InvalidConstantTensorException(IOException base) {
@@ -412,7 +412,7 @@ public class ConstantTensorJsonValidator {
             boolean seenValues = false;
             for (int i = 0; i < 2; i++) {
                 assertNextTokenIs(JsonToken.FIELD_NAME);
-                String fieldName = parser.currentName();
+                String fieldName = parser.getCurrentName();
                 switch (fieldName) {
                     case FIELD_ADDRESS -> {
                         validateTensorAddress(new HashSet<>(mappedDims));
