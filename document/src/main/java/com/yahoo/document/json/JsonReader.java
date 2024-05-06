@@ -105,7 +105,7 @@ public class JsonReader {
             String condition = null;
             ParsedDocumentOperation operation = null;
             while (JsonToken.END_OBJECT != parser.nextValue()) {
-                switch (parser.currentName()) {
+                switch (parser.getCurrentName()) {
                     case FIELDS -> {
                         documentParseInfo.fieldsBuffer = new LazyTokenBuffer(parser);
                         VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
@@ -177,7 +177,7 @@ public class JsonReader {
             state = END_OF_FEED;
             throw new IllegalArgumentException(r);
         }
-        if (documentParseInfo.isEmpty()) {
+        if ( ! documentParseInfo.isPresent()) {
             state = END_OF_FEED;
             return null;
         }
