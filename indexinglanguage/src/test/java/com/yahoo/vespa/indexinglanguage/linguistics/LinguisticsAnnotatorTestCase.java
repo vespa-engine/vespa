@@ -194,7 +194,7 @@ public class LinguisticsAnnotatorTestCase {
 
         Linguistics linguistics = new SimpleLinguistics();
 
-        LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, new AnnotatorConfig().setMaxTokenLength(12));
+        LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, new AnnotatorConfig().setMaxTokenizeLength(12));
 
         assertTrue(annotator.annotate(shortValue));
         assertEquals(spanTree, shortValue.getSpanTree(SpanTrees.LINGUISTICS));
