@@ -2,14 +2,14 @@
 
 #include "intermediate_blueprint_factory.h"
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <iomanip>
 #include <sstream>
 
 namespace search::queryeval::test {
 
-template <typename BlueprintType>
 char
-IntermediateBlueprintFactory<BlueprintType>::child_name(void* blueprint) const
+IntermediateBlueprintFactory::child_name(void* blueprint) const
 {
     auto itr = _child_names.find(blueprint);
     if (itr != _child_names.end()) {
@@ -18,35 +18,33 @@ IntermediateBlueprintFactory<BlueprintType>::child_name(void* blueprint) const
     return '?';
 }
 
-template <typename BlueprintType>
-IntermediateBlueprintFactory<BlueprintType>::IntermediateBlueprintFactory(vespalib::stringref name)
+IntermediateBlueprintFactory::IntermediateBlueprintFactory(vespalib::stringref name)
     : _name(name),
       _children(),
       _child_names()
 {
 }
 
-template <typename BlueprintType>
-IntermediateBlueprintFactory<BlueprintType>::~IntermediateBlueprintFactory() = default;
+IntermediateBlueprintFactory::~IntermediateBlueprintFactory() = default;
 
-template <typename BlueprintType>
 std::unique_ptr<Blueprint>
-IntermediateBlueprintFactory<BlueprintType>::make_blueprint()
+IntermediateBlueprintFactory::make_blueprint()
 {
-    auto res = std::make_unique<BlueprintType>();
+    auto res = make_self();
     _child_names.clear();
     char name = 'A';
+    uint32_t source = 1;
     for (const auto& factory : _children) {
         auto child = factory->make_blueprint();
         _child_names[child.get()] = name++;
+        child->setSourceId(source++); // ignored by non-source-blender blueprints
         res->addChild(std::move(child));
     }
     return res;
 }
 
-template <typename BlueprintType>
 vespalib::string
-IntermediateBlueprintFactory<BlueprintType>::get_name(Blueprint& blueprint) const
+IntermediateBlueprintFactory::get_name(Blueprint& blueprint) const
 {
     auto* intermediate = blueprint.asIntermediate();
     if (intermediate != nullptr) {
@@ -69,11 +67,29 @@ IntermediateBlueprintFactory<BlueprintType>::get_name(Blueprint& blueprint) cons
     return get_class_name(blueprint);
 }
 
-template class IntermediateBlueprintFactory<AndBlueprint>;
+//-----------------------------------------------------------------------------
 
 AndBlueprintFactory::AndBlueprintFactory()
-    : IntermediateBlueprintFactory<AndBlueprint>("AND")
+  : IntermediateBlueprintFactory("AND")
 {}
 
+std::unique_ptr<IntermediateBlueprint>
+AndBlueprintFactory::make_self() const
+{
+    return std::make_unique<AndBlueprint>();
 }
 
+//-----------------------------------------------------------------------------
+
+SourceBlenderBlueprintFactory::SourceBlenderBlueprintFactory()
+  : IntermediateBlueprintFactory("SB"),
+    _selector(250, "my_source_blender", 1000)
+{}
+
+std::unique_ptr<IntermediateBlueprint>
+SourceBlenderBlueprintFactory::make_self() const
+{
+    return std::make_unique<SourceBlenderBlueprint>(_selector);
+}
+
+}

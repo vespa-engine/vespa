@@ -748,9 +748,8 @@ struct BlueprintFactorySetup {
 
 BlueprintFactorySetup::~BlueprintFactorySetup() = default;
 
-template <typename IntermediateBlueprintFactoryType>
 void
-run_intermediate_blueprint_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
+run_intermediate_blueprint_benchmark(auto factory_factory, const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
 {
     print_intermediate_blueprint_result_header(2);
     double max_speedup = 0.0;
@@ -758,13 +757,13 @@ run_intermediate_blueprint_benchmark(const BlueprintFactorySetup& a, const Bluep
     for (double b_hit_ratio: b.op_hit_ratios) {
         auto b_factory = b.make_factory_shared(num_docs, b_hit_ratio);
         for (double a_hit_ratio : a.op_hit_ratios) {
-            IntermediateBlueprintFactoryType factory;
-            factory.add_child(a.make_factory(num_docs, a_hit_ratio));
-            factory.add_child(b_factory);
+            auto factory = factory_factory();
+            factory->add_child(a.make_factory(num_docs, a_hit_ratio));
+            factory->add_child(b_factory);
             double time_ms_esti = 0.0;
             for (auto algo: {PlanningAlgo::Order, PlanningAlgo::Estimate, PlanningAlgo::Cost,
                              PlanningAlgo::CostForceStrict}) {
-                auto res = benchmark_search(factory, num_docs + 1, true, false, false, 1.0, algo);
+                auto res = benchmark_search(*factory, num_docs + 1, true, false, false, 1.0, algo);
                 print_intermediate_blueprint_result(res, {a_hit_ratio, b_hit_ratio}, algo, num_docs);
                 if (algo == PlanningAlgo::Estimate) {
                     time_ms_esti = res.time_ms;
@@ -789,7 +788,19 @@ void
 run_and_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
 {
     std::cout << "AND[A={" << a.to_string() << "},B={" << b.to_string() << "}]" << std::endl;
-    run_intermediate_blueprint_benchmark<AndBlueprintFactory>(a, b, num_docs);
+    run_intermediate_blueprint_benchmark([](){ return std::make_unique<AndBlueprintFactory>(); }, a, b, num_docs);
+}
+
+void
+run_source_blender_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
+{
+    std::cout << "SB[A={" << a.to_string() << "},B={" << b.to_string() << "}]" << std::endl;
+    auto factory_factory = [&](){
+                               auto factory = std::make_unique<SourceBlenderBlueprintFactory>();
+                               factory->init_selector([](uint32_t i){ return (i%10 == 0) ? 1 : 2; }, num_docs + 1);
+                               return factory;
+                           };
+    run_intermediate_blueprint_benchmark(factory_factory, a, b, num_docs);
 }
 
 //-------------------------------------------------------------------------------------
@@ -970,6 +981,15 @@ TEST(IteratorBenchmark, analyze_AND_bitvector_vs_IN)
         run_and_benchmark({int32_fs, QueryOperator::In, {0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60}, children, true},
                           {int32_fs_rf, QueryOperator::Term, {1.0}, 1, true}, // this setup returns a bitvector matching all documents.
                           num_docs);
+    }
+}
+
+TEST(IteratorBenchmark, analyze_strict_SOURCEBLENDER_memory_and_disk)
+{
+    for (double small_ratio: {0.001, 0.005, 0.01, 0.05}) {
+        run_source_blender_benchmark({str_fs, QueryOperator::Term, {small_ratio}},
+                                     {str_index, QueryOperator::Term, {small_ratio * 10}},
+                                     num_docs);
     }
 }
 
