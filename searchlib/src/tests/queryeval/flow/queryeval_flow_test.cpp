@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/queryeval/flow.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 #include <random>
@@ -346,6 +347,35 @@ TEST(FlowTest, blender_flow_cost_accumulation_is_max) {
         flow.add(0.5); // next child
         flow.update_cost(cost, 7.0);
         EXPECT_EQ(cost, 7.0);
+    }
+}
+
+double my_non_strict_cost(double est, double adjust) {
+    return (1.0/adjust) * flow::forced_strict_cost(FlowStats(est, 0.0, est), adjust);
+}
+
+TEST(FlowTest, non_strict_btree_cost) {
+    for (double est: {0.001, 0.01, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0}) {
+        auto prev = FlowStats(est, 1.0, est);
+        auto base = FlowStats(est, flow::non_strict_cost_of_strict_iterator(est, est), est);
+        auto opt05 = FlowStats(est, my_non_strict_cost(est, 0.5), est);
+        auto opt02 = FlowStats(est, my_non_strict_cost(est, 0.2), est);
+        auto opt01 = FlowStats(est, my_non_strict_cost(est, 0.1), est);
+        auto opt005 = FlowStats(est, my_non_strict_cost(est, 0.05), est);
+        auto opt003 = FlowStats(est, my_non_strict_cost(est, 0.03), est);
+        EXPECT_NEAR(strict_crossover(opt05), 0.5, 1e-6);
+        EXPECT_NEAR(strict_crossover(opt02), 0.2, 1e-6);
+        EXPECT_NEAR(strict_crossover(opt01), 0.1, 1e-6);
+        EXPECT_NEAR(strict_crossover(opt005), 0.05, 1e-6);
+        EXPECT_NEAR(strict_crossover(opt003), 0.03, 1e-6);
+        fprintf(stderr, "est: %5.3f\n", est);
+        fprintf(stderr, "    prev crossover: %6.4f (cost: %6.4f)\n", strict_crossover(prev), prev.cost);
+        fprintf(stderr, "    base crossover: %6.4f (cost: %6.4f)\n", strict_crossover(base), base.cost);
+        fprintf(stderr, "    0.5  crossover: %6.4f (cost: %6.4f)\n", strict_crossover(opt05), opt05.cost);
+        fprintf(stderr, "    0.2  crossover: %6.4f (cost: %6.4f)\n", strict_crossover(opt02), opt02.cost);
+        fprintf(stderr, "    0.1  crossover: %6.4f (cost: %6.4f)\n", strict_crossover(opt01), opt01.cost);
+        fprintf(stderr, "    0.05 crossover: %6.4f (cost: %6.4f)\n", strict_crossover(opt005), opt005.cost);
+        fprintf(stderr, "    0.03 crossover: %6.4f (cost: %6.4f)\n", strict_crossover(opt003), opt003.cost);
     }
 }
 

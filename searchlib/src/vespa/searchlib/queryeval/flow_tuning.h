@@ -90,7 +90,7 @@ inline double lookup_strict_cost(size_t num_indirections) {
  * as the latency (time) penalty is higher if choosing wrong.
  */
 inline double non_strict_cost_of_strict_iterator(double estimate, double strict_cost) {
-    return strict_cost + strict_cost_diff(estimate, 1.0);
+    return 2.0 * (strict_cost + strict_cost_diff(estimate, 0.5));
 }
 
 // Strict cost of matching in a btree posting list (e.g. fast-search attribute or memory index field).

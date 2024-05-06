@@ -37,13 +37,14 @@ get_env_var_with_optional_default() {
 }
 
 readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND "$(pwd)/mvnw")
-
 readonly MAVEN_EXTRA_OPTS=$(get_env_var_with_optional_default VESPA_MAVEN_EXTRA_OPTS)
+readonly MAVEN_TARGET=$(get_env_var_with_optional_default VESPA_MAVEN_TARGET "install")
 echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
+echo "Using maven target: ${MAVEN_TARGET}"
 
 mvn_install() {
-    ${MAVEN_CMD} --batch-mode --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean install ${MAVEN_EXTRA_OPTS} "$@"
+    ${MAVEN_CMD} --batch-mode --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean ${MAVEN_TARGET} ${MAVEN_EXTRA_OPTS} "$@"
 }
 
 force_move() {
@@ -105,7 +106,7 @@ case "$MODE" in
         ;;
     full)
 	echo "Building full set of dependencies."
-        mvn_install -am -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -pl jrt,linguistics,messagebus
+        mvn_install -am -T1C -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -pl jrt,linguistics,messagebus
         ;;
     default)
 	echo "Building default set of dependencies."

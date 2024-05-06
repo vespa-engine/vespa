@@ -33,11 +33,13 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake3
 %global _vespa_abseil_cpp_version 20240116.1
-%global _vespa_build_depencencies_version 1.3.1
+%global _vespa_build_depencencies_version 1.3.2
 %global _vespa_gtest_version 1.14.0
 %global _vespa_protobuf_version 5.26.1
+%global _vespa_openblas_version 0.3.27
 %global _use_vespa_abseil_cpp 1
 %global _use_vespa_protobuf 1
+%global _use_vespa_openblas 1
 
 Name:           vespa
 Version:        _VESPA_VERSION_
@@ -77,7 +79,6 @@ Requires: zstd
 %define _devtoolset_enable /opt/rh/gcc-toolset/enable
 
 %define _use_vespa_gtest 1
-%define _use_vespa_openblas 1
 %define _use_vespa_openssl 1
 
 %if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
@@ -163,11 +164,7 @@ Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.4-1
 Requires: vespa-libzstd >= 1.5.6-1
-%if 0%{?el8}
-Requires: vespa-openblas >= 0.3.27
-%else
-Requires: openblas-serial
-%endif
+Requires: vespa-openblas >= %{_vespa_openblas_version}
 %if 0%{?amzn2023}
 Requires: vespa-re2 = 20210801
 %else

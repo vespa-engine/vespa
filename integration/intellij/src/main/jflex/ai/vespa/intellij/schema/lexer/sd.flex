@@ -149,7 +149,8 @@ WORD = \w+
   "strict"                   { return STRICT; }
   "rank-properties"          { return RANK_PROPERTIES; }
   "inputs"                   { return INPUTS; }
-  
+
+  "significance"             { return SIGNIFICANCE; }
   "first-phase"              { return FIRST_PHASE; }
   "keep-rank-count"          { return KEEP_RANK_COUNT; }
   "rank-score-drop-limit"    { return RANK_SCORE_DROP_LIMIT; }

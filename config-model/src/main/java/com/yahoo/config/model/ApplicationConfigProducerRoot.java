@@ -233,10 +233,7 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
         }
     }
 
-    // add cluster type?
-    // add cluster name?
-    public record StatePortInfo(String hostName, int portNumber,
-                                String serviceName, String serviceType)
+    public record StatePortInfo(String hostName, int portNumber, Service service)
     {}
 
     public List<StatePortInfo> getStatePorts() {
@@ -244,8 +241,6 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
         for (HostResource modelHost : hostSystem().getHosts()) {
             String hostName = modelHost.getHostname();
             for (Service modelService : modelHost.getServices()) {
-                String serviceName = modelService.getServiceName();
-                String serviceType = modelService.getServiceType();
                 PortsMeta portsMeta = modelService.getPortsMeta();
                 for (int i = 0; i < portsMeta.getNumPorts(); i++) {
                     int portNumber = modelService.getRelativePort(i);
@@ -256,7 +251,7 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
                         if (tag.equals("http")) isHttp = true;
                     }
                     if (hasState && isHttp) {
-                        result.add(new StatePortInfo(hostName, portNumber, serviceName, serviceType));
+                        result.add(new StatePortInfo(hostName, portNumber, modelService));
                     }
                 }
             }

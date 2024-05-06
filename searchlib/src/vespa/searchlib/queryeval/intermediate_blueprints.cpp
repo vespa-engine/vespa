@@ -758,7 +758,18 @@ SourceBlenderBlueprint::calculate_flow_stats(uint32_t) const {
         my_cost = std::max(my_cost, child->cost());
         my_strict_cost = std::max(my_strict_cost, child->strict_cost());
     }
-    return {OrFlow::estimate_of(get_children()), my_cost, my_strict_cost};
+    double my_est = OrFlow::estimate_of(get_children());
+    return {my_est, my_cost + 1.0, my_strict_cost + my_est};
+}
+
+double
+SourceBlenderBlueprint::estimate_self_cost(InFlow in_flow) const noexcept
+{
+    if (in_flow.strict()) {
+        return estimate();
+    } else {
+        return in_flow.rate();
+    }
 }
 
 Blueprint::HitEstimate

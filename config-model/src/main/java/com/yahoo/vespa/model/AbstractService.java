@@ -342,6 +342,7 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
         return getServicePropertyString(key, null);
     }
 
+    @Override
     public String getServicePropertyString(String key, String defStr) {
         Object result = serviceProperties.get(key);
         return (result == null) ? defStr : result.toString();
