@@ -8,7 +8,10 @@ model model
 parallelRequests int default=1
 
 # Additional number of requests to put in queue for processing before starting to reject new requests
-maxQueueSize int default=10
+maxQueueSize int default=100
+
+# Max number of milliseoncds to wait in the queue before rejecting a request
+maxQueueWait int default=10000
 
 # Use GPU
 useGpu bool default=true
@@ -24,6 +27,6 @@ threads int default=-1
 # Context is divided between parallel requests. So for 10 parallel requests, each "slot" gets 1/10 of the context
 contextSize int default=4096
 
-# Maximum number of tokens to process in one request - overriden by inference parameters
+# Maximum number of tokens to process in one request - overridden by inference parameters
 maxTokens int default=512
 

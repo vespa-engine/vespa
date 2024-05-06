@@ -3,6 +3,7 @@ package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.AbstractComponent;
@@ -14,10 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -29,14 +34,19 @@ import java.util.logging.Logger;
 public class LocalLLM extends AbstractComponent implements LanguageModel {
 
     private final static Logger logger = Logger.getLogger(LocalLLM.class.getName());
+
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
     private final LlamaModel model;
     private final ThreadPoolExecutor executor;
+    private final long queueTimeoutMilliseconds;
     private final int contextSize;
     private final int maxTokens;
 
     @Inject
     public LocalLLM(LlmLocalClientConfig config) {
         executor = createExecutor(config);
+        queueTimeoutMilliseconds = config.maxQueueWait();
 
         // Maximum number of tokens to generate - need this since some models can just generate infinitely
         maxTokens = config.maxTokens();
@@ -74,6 +84,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         logger.info("Closing LLM model...");
         model.close();
         executor.shutdownNow();
+        scheduler.shutdownNow();
     }
 
     @Override
@@ -104,22 +115,39 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // Todo: more options?
 
         var completionFuture = new CompletableFuture<Completion.FinishReason>();
+        var hasStarted = new AtomicBoolean(false);
         try {
-            executor.submit(() -> {
+            Future<?> future = executor.submit(() -> {
+                hasStarted.set(true);
                 for (LlamaModel.Output output : model.generate(inferParams)) {
                     consumer.accept(Completion.from(output.text, Completion.FinishReason.none));
                 }
                 completionFuture.complete(Completion.FinishReason.stop);
             });
+
+            if (queueTimeoutMilliseconds > 0) {
+                scheduler.schedule(() -> {
+                    if ( ! hasStarted.get()) {
+                        future.cancel(false);
+                        String error = rejectedExecutionReason("Rejected completion due to timeout waiting to start");
+                        completionFuture.completeExceptionally(new LanguageModelException(504, error));
+                    }
+                }, queueTimeoutMilliseconds, TimeUnit.MILLISECONDS);
+            }
+
         } catch (RejectedExecutionException e) {
             // If we have too many requests (active + any waiting in queue), we reject the completion
-            int activeCount = executor.getActiveCount();
-            int queueSize = executor.getQueue().size();
-            String error = String.format("Rejected completion due to too many requests, " +
-                    "%d active, %d in queue", activeCount, queueSize);
+            String error = rejectedExecutionReason("Rejected completion due to too many requests");
             throw new RejectedExecutionException(error);
         }
         return completionFuture;
     }
+
+    private String rejectedExecutionReason(String prepend) {
+        int activeCount = executor.getActiveCount();
+        int queueSize = executor.getQueue().size();
+        return String.format("%s, %d active, %d in queue", prepend, activeCount, queueSize);
+    }
+
 
 }
