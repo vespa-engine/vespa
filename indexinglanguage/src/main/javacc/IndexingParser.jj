@@ -689,7 +689,7 @@ AnnotatorConfig tokenizeCfg() :
 }
 {
     ( <STEM> ( <COLON> str = string() ) ? { val.setStemMode(str); } |
-      <MAX_LENGTH> <COLON>  maxLength = integer() { val.setMaxTokenLength(maxLength); } |
+      <MAX_LENGTH> <COLON>  maxLength = integer() { val.setMaxTokenizeLength(maxLength); } |
       <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integer() { val.setMaxTermOccurrences(maxTermOccurrences); } |
       <NORMALIZE> { val.setRemoveAccents(true); } )+
     { return val; }

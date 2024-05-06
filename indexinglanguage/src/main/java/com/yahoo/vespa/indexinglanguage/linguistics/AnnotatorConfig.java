@@ -82,7 +82,7 @@ public class AnnotatorConfig implements Cloneable {
         return this;
     }
 
-    public AnnotatorConfig setMaxTokenLength(int maxTokenizeLength) {
+    public AnnotatorConfig setMaxTokenizeLength(int maxTokenizeLength) {
         this.maxTokenizeLength = maxTokenizeLength;
         return this;
     }
@@ -91,7 +91,7 @@ public class AnnotatorConfig implements Cloneable {
         return maxTokenizeLength;
     }
 
-    public boolean hasNonDefaultMaxTokenLength() {
+    public boolean hasNonDefaultMaxTokenizeLength() {
         return maxTokenizeLength != DEFAULT_MAX_TOKENIZE_LENGTH;
     }
 
