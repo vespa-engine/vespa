@@ -210,7 +210,8 @@ private:
     }
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         double rel_est = abs_to_rel_est(_activeLids.size(), docid_limit);
-        return {rel_est, bitvector_cost(), bitvector_strict_cost(rel_est)};
+        double do_not_make_me_strict = 1000.0;
+        return {rel_est, bitvector_cost(), do_not_make_me_strict * bitvector_strict_cost(rel_est)};
     }
     SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda) const override
