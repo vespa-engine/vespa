@@ -23,7 +23,7 @@ public class Group {
 
     // Using volatile to ensure visibility for reader.
     // All updates are done in a single writer thread
-    private volatile boolean hasSufficientCoverage = true;
+    private volatile boolean hasSufficientCoverage = false;
     private volatile boolean hasFullCoverage = true;
     private volatile long activeDocuments = 0;
     private volatile long targetActiveDocuments = 0;
