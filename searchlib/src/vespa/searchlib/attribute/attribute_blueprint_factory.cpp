@@ -94,6 +94,7 @@ using search::queryeval::StrictHeapOrSearch;
 using search::queryeval::WeightedSetTermBlueprint;
 using search::queryeval::flow::btree_cost;
 using search::queryeval::flow::btree_strict_cost;
+using search::queryeval::flow::estimate_when_unknown;
 using search::queryeval::flow::get_num_indirections;
 using search::queryeval::flow::lookup_cost;
 using search::queryeval::flow::lookup_strict_cost;
@@ -150,10 +151,9 @@ public:
     search::queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
         if (_hit_estimate.is_unknown()) {
             // E.g. attributes without fast-search are not able to provide a hit estimate.
-            // In this case we just assume matching half of the document corpus.
             // In addition, matching is lookup based, and we are not able to skip documents efficiently when being strict.
             size_t indirections = get_num_indirections(_attr.getBasicType(), _attr.getCollectionType());
-            return {0.5, lookup_cost(indirections), lookup_strict_cost(indirections)};
+            return {estimate_when_unknown(), lookup_cost(indirections), lookup_strict_cost(indirections)};
         } else {
             double rel_est = abs_to_rel_est(_hit_estimate.est_hits(), docid_limit);
             return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est)};

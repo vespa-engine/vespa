@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blueprint.h"
-#include "leaf_blueprints.h"
-#include "emptysearch.h"
-#include "full_search.h"
-#include "field_spec.hpp"
-#include "andsearch.h"
-#include "orsearch.h"
 #include "andnotsearch.h"
+#include "andsearch.h"
+#include "emptysearch.h"
+#include "field_spec.hpp"
+#include "flow_tuning.h"
+#include "full_search.h"
+#include "leaf_blueprints.h"
 #include "matching_elements_search.h"
+#include "orsearch.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
@@ -238,7 +239,7 @@ Blueprint::default_flow_stats(uint32_t docid_limit, uint32_t abs_est, size_t chi
 FlowStats
 Blueprint::default_flow_stats(size_t child_cnt)
 {
-    return {0.5, 1.0 + child_cnt, 1.0 + child_cnt};
+    return {flow::estimate_when_unknown(), 1.0 + child_cnt, 1.0 + child_cnt};
 }
 
 std::unique_ptr<MatchingElementsSearch>
