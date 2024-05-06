@@ -64,8 +64,8 @@ class Json2SingleLevelMap {
     }
 
     void parse(Map<String, String> map, String parent) throws IOException {
-        for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
-            String fieldName = parent + parser.getCurrentName();
+        for (parser.nextToken(); parser.currentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
+            String fieldName = parent + parser.currentName();
             JsonToken token = parser.nextToken();
             if ((token == JsonToken.VALUE_STRING) ||
                 (token == JsonToken.VALUE_NUMBER_FLOAT) ||
@@ -89,9 +89,9 @@ class Json2SingleLevelMap {
     }
 
     private String skipChildren(JsonParser parser, byte [] input) throws IOException {
-        JsonLocation start = parser.getCurrentLocation();
+        JsonLocation start = parser.currentLocation();
         parser.skipChildren();
-        JsonLocation end = parser.getCurrentLocation();
+        JsonLocation end = parser.currentLocation();
         int offset = (int)start.getByteOffset() - 1;
         return new String(input, offset, (int)(end.getByteOffset() - offset), StandardCharsets.UTF_8);
     }

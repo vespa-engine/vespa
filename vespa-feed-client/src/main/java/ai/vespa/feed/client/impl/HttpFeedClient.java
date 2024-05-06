@@ -219,13 +219,13 @@ class HttpFeedClient implements FeedClient {
                             throw new ResultParseException(documentId,
                                                            "Expected 'trace' to be an array, but got '" + parser.currentToken() + "' in: " +
                                                            new String(json, UTF_8));
-                        int start = (int) parser.getTokenLocation().getByteOffset();
+                        int start = (int) parser.currentTokenLocation().getByteOffset();
                         int depth = 1;
                         while (depth > 0) switch (parser.nextToken()) {
                             case START_ARRAY: ++depth; break;
                             case END_ARRAY: --depth; break;
                         }
-                        int end = (int) parser.getTokenLocation().getByteOffset() + 1;
+                        int end = (int) parser.currentTokenLocation().getByteOffset() + 1;
                         trace = new String(json, start, end - start, UTF_8);
                         break;
                     default:
