@@ -54,6 +54,8 @@ public class SignificanceSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
+        // The query might apply to multiple schemas.
+        // If the rank profile name is present in multiple schemas we need to check if the configuration is consistent.
         var rankProfileName = query.getRanking().getProfile();
         var schemas = schemaInfo.newSession(query).schemas();
         var useSignficanceConfiguration = schemas.stream()
@@ -62,7 +64,7 @@ public class SignificanceSearcher extends Searcher {
                 .map(RankProfile::useSignificanceModel)
                 .distinct().toList();
         if (useSignficanceConfiguration.size() != 1) {
-            log.fine(() -> "Inconsistent 'signficance.use-model' configuration for rank profile '%s' for schemas %s. Fallback to disabled"
+            log.fine(() -> "Inconsistent 'significance.use-model' configuration for rank profile '%s' in schemas %s. Fallback to disabled"
                     .formatted(rankProfileName, schemas.stream().map(Schema::name).toList()));
             return execution.search(query);
         }
