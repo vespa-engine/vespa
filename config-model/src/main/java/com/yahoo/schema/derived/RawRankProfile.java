@@ -186,7 +186,6 @@ public class RawRankProfile {
         private RankingExpression globalPhaseRanking;
         private final int globalPhaseRerankCount;
         private final SerializationContext functionSerializationContext;
-        private Boolean useSignificanceModel;
 
         /**
          * Creates a raw rank profile from the given rank profile
@@ -222,7 +221,6 @@ public class RawRankProfile {
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
-            useSignificanceModel = compiled.useSignificanceModel();
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
             List<ExpressionFunction> functionExpressions = functions.values().stream().map(RankProfile.RankingExpressionFunction::function).toList();
@@ -480,9 +478,6 @@ public class RawRankProfile {
             }
             if (targetHitsMaxAdjustmentFactor.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor.getAsDouble())));
-            }
-            if (useSignificanceModel != null) {
-                properties.add(new Pair<>("vespa.significance.use_model", String.valueOf(useSignificanceModel)));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));

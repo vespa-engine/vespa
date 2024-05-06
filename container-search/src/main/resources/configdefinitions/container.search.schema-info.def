@@ -28,6 +28,7 @@ schema[].summaryclass[].fields[].dynamic bool default=false
 schema[].rankprofile[].name string
 schema[].rankprofile[].hasSummaryFeatures bool default=true
 schema[].rankprofile[].hasRankFeatures bool default=true
+schema[].rankprofile[].significance.useModel bool default=false
 # The name of an input (query rank feature) accepted by this profile
 schema[].rankprofile[].input[].name string
 # The tensor type of an input (query rank feature) accepted by this profile
