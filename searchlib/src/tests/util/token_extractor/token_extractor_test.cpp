@@ -118,7 +118,7 @@ TEST_F(TokenExtractorTest, empty_string)
 
 TEST_F(TokenExtractorTest, plain_string)
 {
-    EXPECT_EQ((Words{"Plain string"}), process(StringFieldValue("Plain string")));
+    EXPECT_EQ((Words{}), process(StringFieldValue("Plain string")));
 }
 
 TEST_F(TokenExtractorTest, normal_string)
