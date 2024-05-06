@@ -58,9 +58,9 @@ MMapPool::mmap(size_t sz) {
             }
             buf = ::mmap(nullptr, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
-                fprintf(_G_logFile, "Failed mmaping anonymous of size %ld errno(%d) from : ", sz, errno);
+                fprintf(_G_logFile, "Will exit due to: Failed mmaping anonymous of size %ld errno(%d) from : ", sz, errno);
                 logStackTrace();
-                abort();
+                std::quick_exit(66);
             }
         } else {
             if (_has_hugepage_failure_just_happened) {

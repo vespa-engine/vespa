@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <dlfcn.h>
-#include <ctype.h>
+#include <cctype>
 #include <vespamalloc/util/callstack.h>
 
 namespace vespamalloc {
@@ -33,7 +33,7 @@ verifyAndCopy(const void *addr, char *v, size_t sz) {
 void
 StackReturnEntry::info(FILE * os) const
 {
-    static char tmp[0x400];
+    char tmp[0x400];
     verifyAndCopy(_return, tmp, sizeof(tmp));
     fprintf(os, "%s(%p)", tmp, _return);
 }
@@ -41,8 +41,8 @@ StackReturnEntry::info(FILE * os) const
 asciistream &
 operator << (asciistream & os, const StackReturnEntry & v)
 {
-    static char tmp[0x100];
-    static char t[0x200];
+    char tmp[0x100];
+    char t[0x200];
     verifyAndCopy(v._return, tmp, sizeof(tmp));
     snprintf(t, sizeof(t), "%s(%p)", tmp, v._return);
     return os << t;
