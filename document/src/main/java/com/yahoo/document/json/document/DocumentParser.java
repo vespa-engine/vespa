@@ -61,7 +61,7 @@ public class DocumentParser {
     private boolean parseOneItem(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally) throws IOException {
         parser.nextValue();
         processIndent();
-        if (parser.currentName() == null) return false;
+        if (parser.getCurrentName() == null) return false;
         if (indentLevel == 1L) {
             handleIdentLevelOne(documentParseInfo, docIdAndOperationIsSetExternally);
         } else if (indentLevel == 2L) {
@@ -85,18 +85,17 @@ public class DocumentParser {
 
     private void handleIdentLevelOne(DocumentParseInfo documentParseInfo, boolean docIdAndOperationIsSetExternally)
             throws IOException {
-        JsonToken currentToken = parser.currentToken();
-        String currentName = parser.currentName();
+        JsonToken currentToken = parser.getCurrentToken();
         if ((currentToken == JsonToken.VALUE_TRUE || currentToken == JsonToken.VALUE_FALSE) &&
-                CREATE_IF_NON_EXISTENT.equals(currentName)) {
+                CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
             documentParseInfo.create = Optional.of(currentToken == JsonToken.VALUE_TRUE);
-        } else if (currentToken == JsonToken.VALUE_STRING && CONDITION.equals(currentName)) {
+        } else if (currentToken == JsonToken.VALUE_STRING && CONDITION.equals(parser.getCurrentName())) {
             documentParseInfo.condition = Optional.of(parser.getText());
         } else if (currentToken == JsonToken.VALUE_STRING) {
             // Value is expected to be set in the header not in the document. Ignore any unknown field
             // as well.
             if (! docIdAndOperationIsSetExternally) {
-                documentParseInfo.operationType = operationNameToOperationType(currentName);
+                documentParseInfo.operationType = operationNameToOperationType(parser.getCurrentName());
                 documentParseInfo.documentId = new DocumentId(parser.getText());
             }
         }
@@ -105,7 +104,7 @@ public class DocumentParser {
     private void handleIdentLevelTwo(DocumentParseInfo documentParseInfo) {
         try {
             // "fields" opens a dictionary and is therefore on level two which might be surprising.
-            if (parser.currentToken() == JsonToken.START_OBJECT && FIELDS.equals(parser.currentName())) {
+            if (parser.currentToken() == JsonToken.START_OBJECT && FIELDS.equals(parser.getCurrentName())) {
                 documentParseInfo.fieldsBuffer.bufferObject(parser);
                 processIndent();
             }
