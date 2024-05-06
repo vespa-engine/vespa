@@ -33,7 +33,7 @@ public class LazyTokenBuffer extends TokenBuffer {
     public Supplier<Token> lookahead() {
         return new Supplier<>() {
             int localNesting = nesting();
-            Supplier<Token> buffered = LazyTokenBuffer.super.lookahead();
+            final Supplier<Token> buffered = LazyTokenBuffer.super.lookahead();
             @Override public Token get() {
                 if (localNesting == 0)
                     return null;
@@ -54,7 +54,7 @@ public class LazyTokenBuffer extends TokenBuffer {
             JsonToken token = parser.nextValue();
             if (token == null)
                 throw new IllegalStateException("no more JSON tokens");
-            return new Token(token, parser.getCurrentName(), parser.getText());
+            return new Token(token, parser.currentName(), parser.getText());
         }
         catch (IOException e) {
             throw new IllegalArgumentException("failed reading document JSON", e);
