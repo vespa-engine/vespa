@@ -166,4 +166,36 @@ public class SignificanceSearcherTest {
         assertEquals(w0_1.getSignificance(), w1.getSignificance());
 
     }
+
+    @Test
+    public void failsOnConflictingSignificanceConfiguration() {
+        var musicSchema = new Schema.Builder("music")
+                .add(new DocumentSummary.Builder("default").build())
+                .add(new RankProfile.Builder("significance-ranking")
+                             .setUseSignificanceModel(true)
+                             .build())
+                .build();
+        var albumSchema = new Schema.Builder("album")
+                .add(new DocumentSummary.Builder("default").build())
+                .add(new RankProfile.Builder("significance-ranking")
+                             .setUseSignificanceModel(false)
+                             .build())
+                .build();
+        var searcher = new SignificanceSearcher(
+                significanceModelRegistry, new SchemaInfo(List.of(musicSchema, albumSchema), List.of()));
+
+        var query = new Query();
+        query.getRanking().setProfile("significance-ranking");
+
+        var result = createExecution(searcher).search(query);
+        assertEquals(1, result.hits().getErrorHit().errors().size());
+
+        var errorMessage = result.hits().getError();
+        assertEquals("Inconsistent 'significance' configuration for the rank profile 'significance-ranking' in the schemas [music, album]. " +
+                             "Use 'restrict' to limit the query to a subset of schemas " +
+                             "(https://docs.vespa.ai/en/schemas.html#multiple-schemas). " +
+                             "Specify same 'significance' configuration for all selected schemas " +
+                             "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).",
+                     errorMessage.getDetailedMessage());
+    }
 }
