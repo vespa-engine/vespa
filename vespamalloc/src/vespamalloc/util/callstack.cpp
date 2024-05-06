@@ -2,32 +2,52 @@
 #include <dlfcn.h>
 #include <cctype>
 #include <vespamalloc/util/callstack.h>
+#include <string>
+#include <cxxabi.h>
 
 namespace vespamalloc {
 
-const char *
-dlAddr(const void * func) {
-    static const char * _unknown = "UNKNOWN";
-    const char * funcName = _unknown;
+namespace {
+
+std::string
+demangle(const char *native) {
+    int status = 0;
+    size_t size = 0;
+    char *unmangled = abi::__cxa_demangle(native, nullptr, &size, &status);
+    if (unmangled == nullptr) {
+        return ""; // Demangling failed for some reason. TODO return `native` instead?
+    }
+    std::string result(unmangled);
+    free(unmangled);
+    return result;
+}
+
+
+std::string
+dlAddr(const void *func) {
+    static std::string _unknown = "UNKNOWN";
     Dl_info info;
     int ret = dladdr(func, &info);
     if (ret != 0) {
-        funcName = info.dli_sname;
+        return demangle(info.dli_sname);
     }
-    return funcName;
+    return _unknown;
+}
+
 }
 
 namespace {
 void
 verifyAndCopy(const void *addr, char *v, size_t sz) {
     size_t pos(0);
-    const char *sym = dlAddr(addr);
-    for (; sym && (sym[pos] != '\0') && (pos < sz - 1); pos++) {
+    std::string sym = dlAddr(addr);
+    for (; (pos < sym.size()) && (pos < sz - 1); pos++) {
         char c(sym[pos]);
         v[pos] = isprint(c) ? c : '.';
     }
     v[pos] = '\0';
 }
+
 }
 
 void
