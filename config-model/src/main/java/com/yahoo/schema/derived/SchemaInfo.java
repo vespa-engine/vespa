@@ -183,10 +183,12 @@ public final class SchemaInfo extends Derived {
 
     private void addRankProfilesConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
         for (RankProfileInfo rankProfile : rankProfiles().values()) {
-            var rankProfileConfig = new SchemaInfoConfig.Schema.Rankprofile.Builder();
-            rankProfileConfig.name(rankProfile.name());
-            rankProfileConfig.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
-            rankProfileConfig.hasRankFeatures(rankProfile.hasRankFeatures());
+            var rankProfileConfig = new SchemaInfoConfig.Schema.Rankprofile.Builder()
+                    .name(rankProfile.name())
+                    .hasSummaryFeatures(rankProfile.hasSummaryFeatures())
+                    .hasRankFeatures(rankProfile.hasRankFeatures())
+                    .significance(new SchemaInfoConfig.Schema.Rankprofile.Significance.Builder()
+                                          .useModel(rankProfile.useSignificanceModel()));
             for (var input : rankProfile.inputs().entrySet()) {
                 var inputConfig = new SchemaInfoConfig.Schema.Rankprofile.Input.Builder();
                 inputConfig.name(input.getKey().toString());
@@ -226,6 +228,7 @@ public final class SchemaInfo extends Derived {
         private final String name;
         private final boolean hasSummaryFeatures;
         private final boolean hasRankFeatures;
+        private final boolean useSignificanceModel;
         private final Map<Reference, RankProfile.Input> inputs;
 
         public RankProfileInfo(RankProfile profile) {
@@ -233,11 +236,13 @@ public final class SchemaInfo extends Derived {
             this.hasSummaryFeatures =  ! profile.getSummaryFeatures().isEmpty();
             this.hasRankFeatures =  ! profile.getRankFeatures().isEmpty();
             this.inputs = profile.inputs();
+            useSignificanceModel = profile.useSignificanceModel();
         }
 
         public String name() { return name; }
         public boolean hasSummaryFeatures() { return hasSummaryFeatures; }
         public boolean hasRankFeatures() { return hasRankFeatures; }
+        public boolean useSignificanceModel() { return useSignificanceModel; }
         public Map<Reference, RankProfile.Input> inputs() { return inputs; }
 
     }

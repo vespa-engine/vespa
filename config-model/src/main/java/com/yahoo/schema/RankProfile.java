@@ -222,9 +222,10 @@ public class RankProfile implements Cloneable {
         this.useSignificanceModel = useSignificanceModel;
     }
 
-    public Boolean useSignificanceModel() {
+    public boolean useSignificanceModel() {
         if (useSignificanceModel != null) return useSignificanceModel;
-        return uniquelyInherited(p -> p.useSignificanceModel(), "use-model").orElse(null);
+        return uniquelyInherited(p -> p.useSignificanceModel(), "use-model")
+                .orElse(false); // Disabled by default
     }
 
     /**

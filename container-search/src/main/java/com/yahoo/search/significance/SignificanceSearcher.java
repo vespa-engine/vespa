@@ -15,11 +15,17 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.Ranking;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 
@@ -34,30 +40,34 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 public class SignificanceSearcher extends Searcher {
 
     public final static String SIGNIFICANCE = "Significance";
+
+    private static final Logger log = Logger.getLogger(SignificanceSearcher.class.getName());
+
     private final SignificanceModelRegistry significanceModelRegistry;
-    private final RankProfilesConfig rankProfilesConfig;
-
-    private final HashMap<String, Boolean> useModel = new HashMap<>();
-
+    private final SchemaInfo schemaInfo;
 
     @Inject
-    public SignificanceSearcher(SignificanceModelRegistry significanceModelRegistry, RankProfilesConfig rankProfilesConfig) {
+    public SignificanceSearcher(SignificanceModelRegistry significanceModelRegistry, SchemaInfo schemaInfo) {
         this.significanceModelRegistry = significanceModelRegistry;
-        this.rankProfilesConfig = rankProfilesConfig;
-
-        for (RankProfilesConfig.Rankprofile profile : rankProfilesConfig.rankprofile()) {
-            for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
-                if (property.name().equals("vespa.significance.use_model")) {
-                    useModel.put(profile.name(), Boolean.parseBoolean(property.value()));
-                }
-            }
-        }
+        this.schemaInfo = schemaInfo;
     }
 
     @Override
     public Result search(Query query, Execution execution) {
-        Ranking ranking = query.getRanking();
-        if (!useModel.containsKey(ranking.getProfile()) || !useModel.get(ranking.getProfile())) return execution.search(query);
+        var rankProfileName = query.getRanking().getProfile();
+        var schemas = schemaInfo.newSession(query).schemas();
+        var useSignficanceConfiguration = schemas.stream()
+                .map(schema -> schema.rankProfiles().get(rankProfileName))
+                .filter(Objects::nonNull)
+                .map(RankProfile::useSignificanceModel)
+                .distinct().toList();
+        if (useSignficanceConfiguration.size() != 1) {
+            log.fine(() -> "Inconsistent 'signficance.use-model' configuration for rank profile '%s' for schemas %s. Fallback to disabled"
+                    .formatted(rankProfileName, schemas.stream().map(Schema::name).toList()));
+            return execution.search(query);
+        }
+
+        if (!useSignficanceConfiguration.get(0)) return execution.search(query);
 
         Language language = query.getModel().getParsingLanguage();
         Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
