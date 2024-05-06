@@ -10,7 +10,6 @@ import java.util.Arrays;
 
 /**
  * Parses predicate queries from JSON.
- *
  * Input JSON is assumed to have the following format:
  * {
  *      "features": [
@@ -46,7 +45,7 @@ public class PredicateQueryParser {
         try (JsonParser parser = factory.createParser(json)) {
             skipToken(parser, JsonToken.START_OBJECT);
             while (parser.nextToken() != JsonToken.END_OBJECT) {
-                String fieldName = parser.getCurrentName();
+                String fieldName = parser.currentName();
                 switch (fieldName) {
                     case "features":
                         parseFeatures(parser, JsonParser::getText, featureHandler);
@@ -82,7 +81,7 @@ public class PredicateQueryParser {
         long subqueryBitmap = SubqueryBitmap.DEFAULT_VALUE; // Specifying subquery bitmap is optional.
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            String fieldName = parser.getCurrentName();
+            String fieldName = parser.currentName();
             skipToken(parser, JsonToken.VALUE_STRING, JsonToken.VALUE_NUMBER_INT);
             switch (fieldName) {
                 case "k":
@@ -100,11 +99,11 @@ public class PredicateQueryParser {
         }
         if (key == null) {
             throw new IllegalArgumentException(
-                    String.format("Feature key is missing! (%s)", parser.getCurrentLocation()));
+                    String.format("Feature key is missing! (%s)", parser.currentLocation()));
         }
         if (value == null) {
             throw new IllegalArgumentException(
-                    String.format("Feature value is missing! (%s)", parser.getCurrentLocation()));
+                    String.format("Feature value is missing! (%s)", parser.currentLocation()));
         }
         featureHandler.accept(key, value, subqueryBitmap);
     }
@@ -114,7 +113,7 @@ public class PredicateQueryParser {
         if (Arrays.stream(expected).noneMatch(e -> e.equals(actual))) {
             throw new IllegalArgumentException(
                     String.format("Expected a token in %s, got %s (%s).",
-                            Arrays.toString(expected), actual, parser.getTokenLocation()));
+                            Arrays.toString(expected), actual, parser.currentTokenLocation()));
         }
     }
 
