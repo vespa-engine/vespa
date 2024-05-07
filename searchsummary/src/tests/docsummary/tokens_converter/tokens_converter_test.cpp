@@ -149,7 +149,7 @@ TEST_F(TokensConverterTest, convert_empty_string)
 
 TEST_F(TokensConverterTest, convert_plain_string)
 {
-    vespalib::string exp(R"(["Foo Bar Baz"])");
+    vespalib::string exp(R"([])");
     StringFieldValue plain_string("Foo Bar Baz");
     EXPECT_EQ(exp, convert(plain_string));
 }

@@ -143,8 +143,6 @@ TokenExtractor::extract(std::vector<SpanTerm>& terms, const document::StringFiel
 {
     auto tree = StringFieldValue::findTree(trees, SPANTREE_NAME);
     if (tree == nullptr) {
-        /* field might not be annotated if match type is exact */
-        consider_word(terms, text, Span(0, text.size()), nullptr, doc);
         return;
     }
     for (const Annotation & annotation : *tree) {
