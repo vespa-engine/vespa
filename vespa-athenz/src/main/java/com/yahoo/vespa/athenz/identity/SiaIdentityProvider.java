@@ -86,6 +86,10 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         return createIdentitySslContext(keyManager, trustStoreFile, false);
     }
 
+    public SSLContext createIdentitySslContextWithTrustStore(Path trustStoreFile, boolean includeDefaultTruststore) {
+        return createIdentitySslContext(keyManager, trustStoreFile, includeDefaultTruststore);
+    }
+
     /**
      * Create an SSL context with the given trust store and the key manager from this provider.
      * If the {code includeDefaultTruststore} is true, the default trust store will be included.
