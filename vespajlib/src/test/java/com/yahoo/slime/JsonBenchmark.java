@@ -43,7 +43,7 @@ public class JsonBenchmark {
                 try (JsonParser jsonParser = jsonFactory.createParser(json)) {
                     JsonToken array = jsonParser.nextToken();
                     for (JsonToken token = jsonParser.nextToken(); !JsonToken.END_ARRAY.equals(token); token = jsonParser.nextToken()) {
-                        if (JsonToken.FIELD_NAME.equals(token) && "weight".equals(jsonParser.getCurrentName())) {
+                        if (JsonToken.FIELD_NAME.equals(token) && "weight".equals(jsonParser.currentName())) {
                             token = jsonParser.nextToken();
                             count += jsonParser.getLongValue();
                         }

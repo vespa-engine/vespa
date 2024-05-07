@@ -99,7 +99,7 @@ public class TokenBuffer {
     }
 
     int addFromParser(JsonParser tokens) throws IOException {
-        add(tokens.currentToken(), tokens.getCurrentName(), tokens.getText());
+        add(tokens.currentToken(), tokens.currentName(), tokens.getText());
         return nestingOffset(tokens.currentToken());
     }
 
