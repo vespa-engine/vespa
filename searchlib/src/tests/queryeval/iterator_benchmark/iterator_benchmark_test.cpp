@@ -292,10 +292,6 @@ benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, bool 
     }
 }
 
-
-
-
-
 //-----------------------------------------------------------------------------
 
 double est_forced_strict_cost(double estimate, double strict_cost, double rate) {
@@ -430,15 +426,29 @@ to_string(bool val)
 void
 print_result_header()
 {
-    std::cout << "|   chn | f_ratio | o_ratio | a_ratio |   f.est |    f.cost | f.act_cost | f.scost | f.act_scost |     hits |    seeks |  time_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | blueprint |" << std::endl;
+    std::cout << "| in_flow |   chn | o_ratio | a_ratio |   f.est |    f.cost | f.act_cost | f.scost | f.act_scost |     hits |    seeks |  time_ms |  act_cost | ns_per_seek | ms_per_act_cost | iterator | blueprint |" << std::endl;
+}
+
+std::ostream &operator<<(std::ostream &dst, InFlow in_flow) {
+    auto old_w = dst.width();
+    auto old_p = dst.precision();
+    dst << std::setw(7) << std::setprecision(5);
+    if (in_flow.strict()) {
+        dst << " STRICT";
+    } else {
+        dst << in_flow.rate();
+    }
+    dst << std::setw(old_w);
+    dst << std::setprecision(old_p);
+    return dst;
 }
 
 void
 print_result(const BenchmarkResult& res, uint32_t children, double op_hit_ratio, InFlow in_flow, uint32_t num_docs)
 {
     std::cout << std::fixed << std::setprecision(5)
-              << "| " << std::setw(5) << children
-              << " | " << std::setw(7) << in_flow.rate()
+              << "| " << in_flow
+              << " | " << std::setw(5) << children
               << " | " << std::setw(7) << op_hit_ratio
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
               << " | " << std::setw(6) << res.flow.estimate
@@ -684,23 +694,25 @@ run_benchmarks(const BenchmarkSetup& setup)
 void
 print_intermediate_blueprint_result_header(size_t children)
 {
+    std::cout << "| in_flow";
     // This matches the naming scheme in IntermediateBlueprintFactory.
     char name = 'A';
     for (size_t i = 0; i < children; ++i) {
-        std::cout << "| " << name++ << ".ratio ";
+        std::cout << " | " << name++ << ".ratio";
     }
-    std::cout << "|  flow.cost | flow.scost | flow.est |   ratio |     hits |    seeks | ms_per_cost |  time_ms | algo | blueprint |" << std::endl;
+    std::cout << " |  flow.cost | flow.scost | flow.est |   ratio |     hits |    seeks | ms_per_cost |  time_ms | algo | blueprint |" << std::endl;
 }
 
 void
-print_intermediate_blueprint_result(const BenchmarkResult& res, const std::vector<double>& children_ratios, PlanningAlgo algo, uint32_t num_docs)
+print_intermediate_blueprint_result(const BenchmarkResult& res, const std::vector<double>& children_ratios, PlanningAlgo algo, InFlow in_flow, uint32_t num_docs)
 {
-    std::cout << std::fixed << std::setprecision(5);
+    std::cout << std::fixed << std::setprecision(5)
+              << "| " << in_flow;
     for (auto ratio : children_ratios) {
-        std::cout << "| " << std::setw(7) << ratio << " ";
+        std::cout << " | " << std::setw(7) << ratio;
     }
     std::cout << std::setprecision(5)
-              << "| " << std::setw(10) << res.flow.cost
+              << " | " << std::setw(10) << res.flow.cost
               << " | " << std::setw(10) << res.flow.strict_cost
               << " | " << std::setw(8) << res.flow.estimate
               << " | " << std::setw(7) << ((double) res.hits / (double) num_docs)
@@ -749,7 +761,7 @@ struct BlueprintFactorySetup {
 BlueprintFactorySetup::~BlueprintFactorySetup() = default;
 
 void
-run_intermediate_blueprint_benchmark(auto factory_factory, const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
+run_intermediate_blueprint_benchmark(auto factory_factory, std::vector<InFlow> in_flows, const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
 {
     print_intermediate_blueprint_result_header(2);
     double max_speedup = 0.0;
@@ -761,22 +773,24 @@ run_intermediate_blueprint_benchmark(auto factory_factory, const BlueprintFactor
             factory->add_child(a.make_factory(num_docs, a_hit_ratio));
             factory->add_child(b_factory);
             double time_ms_esti = 0.0;
-            for (auto algo: {PlanningAlgo::Order, PlanningAlgo::Estimate, PlanningAlgo::Cost,
-                             PlanningAlgo::CostForceStrict}) {
-                auto res = benchmark_search(*factory, num_docs + 1, true, false, false, 1.0, algo);
-                print_intermediate_blueprint_result(res, {a_hit_ratio, b_hit_ratio}, algo, num_docs);
-                if (algo == PlanningAlgo::Estimate) {
-                    time_ms_esti = res.time_ms;
-                }
-                if (algo == PlanningAlgo::CostForceStrict) {
-                    double speedup = time_ms_esti / res.time_ms;
-                    if (speedup > max_speedup) {
-                        max_speedup = speedup;
+            for (InFlow in_flow: in_flows) {
+                for (auto algo: {PlanningAlgo::Order, PlanningAlgo::Estimate, PlanningAlgo::Cost,
+                            PlanningAlgo::CostForceStrict}) {
+                    auto res = benchmark_search(*factory, num_docs + 1, in_flow.strict(), false, false, in_flow.rate(), algo);
+                    print_intermediate_blueprint_result(res, {a_hit_ratio, b_hit_ratio}, algo, in_flow, num_docs);
+                    if (algo == PlanningAlgo::Estimate) {
+                        time_ms_esti = res.time_ms;
                     }
-                    if (speedup < min_speedup) {
-                        min_speedup = speedup;
+                    if (algo == PlanningAlgo::CostForceStrict) {
+                        double speedup = time_ms_esti / res.time_ms;
+                        if (speedup > max_speedup) {
+                            max_speedup = speedup;
+                        }
+                        if (speedup < min_speedup) {
+                            min_speedup = speedup;
+                        }
+                        std::cout << "speedup (esti/forc)=" << std::setprecision(4) << speedup << std::endl;
                     }
-                    std::cout << "speedup (esti/forc)=" << std::setprecision(4) << speedup << std::endl;
                 }
             }
         }
@@ -788,7 +802,7 @@ void
 run_and_benchmark(const BlueprintFactorySetup& a, const BlueprintFactorySetup& b, size_t num_docs)
 {
     std::cout << "AND[A={" << a.to_string() << "},B={" << b.to_string() << "}]" << std::endl;
-    run_intermediate_blueprint_benchmark([](){ return std::make_unique<AndBlueprintFactory>(); }, a, b, num_docs);
+    run_intermediate_blueprint_benchmark([](){ return std::make_unique<AndBlueprintFactory>(); }, {true}, a, b, num_docs);
 }
 
 void
@@ -800,7 +814,7 @@ run_source_blender_benchmark(const BlueprintFactorySetup& a, const BlueprintFact
                                factory->init_selector([](uint32_t i){ return (i%10 == 0) ? 1 : 2; }, num_docs + 1);
                                return factory;
                            };
-    run_intermediate_blueprint_benchmark(factory_factory, a, b, num_docs);
+    run_intermediate_blueprint_benchmark(factory_factory, {true, 0.75, 0.5, 0.25, 0.1, 0.01, 0.001}, a, b, num_docs);
 }
 
 //-------------------------------------------------------------------------------------
