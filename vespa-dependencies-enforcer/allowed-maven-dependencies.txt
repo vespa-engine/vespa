@@ -123,9 +123,7 @@ org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}
 org.apache.velocity:velocity-engine-core:${velocity.vespa.version}
 org.apache.yetus:audience-annotations:0.12.0
 org.apache.zookeeper:zookeeper-jute:${zookeeper.client.vespa.version}
-org.apache.zookeeper:zookeeper-jute:3.9.1
 org.apache.zookeeper:zookeeper:${zookeeper.client.vespa.version}
-org.apache.zookeeper:zookeeper:3.9.1
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.assertj:assertj-core:${assertj.vespa.version}
 org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}
