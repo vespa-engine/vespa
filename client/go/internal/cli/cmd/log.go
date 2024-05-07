@@ -25,6 +25,12 @@ func newLogCmd(cli *CLI) *cobra.Command {
 The logs shown can be limited to a relative or fixed period. All timestamps are shown in UTC.
 
 Logs for the past hour are shown if no arguments are given.
+
+This command is not supported for a local endpoint.
+Make note of the container name used to serve the local endpoint, often called "vespa" in the examples,
+then run the container command to dump logs, like:
+* docker exec vespa vespa-logfmt   # dump logs from Docker container named "vespa"
+* podman exec vespa vespa-logfmt   # likewise, for containers running using Podman
 `,
 		Example: `$ vespa log 1h
 $ vespa log --nldequote=false 10m
