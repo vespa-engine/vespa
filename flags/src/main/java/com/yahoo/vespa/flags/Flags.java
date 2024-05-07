@@ -48,6 +48,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag ATHENZ_SERVICE_ACCOUNTS = defineFeatureFlag(
+            "athenz-service-accounts", false,
+            List.of("hakonhall"), "2024-05-06", "2024-07-06",
+            "Whether to provision new GCP VM instances with a service account that are independent " +
+            "of the zone, and aligned with the Athenz service names (configserver and tenant-host).",
+            "Takes effect when provisioning new VM instances");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
