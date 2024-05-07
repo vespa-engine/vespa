@@ -170,6 +170,23 @@ public class SchemaParserTestCase {
         assertEquals(11, field.matchSettings().getMaxTermOccurrences().get());
     }
 
+    @Test
+    void maxTokenLengthCanBeParsed() throws Exception {
+        String input = joinLines
+                ("schema foo {",
+                        "  document foo {",
+                        "    field bar type string {",
+                        "      indexing: summary | index",
+                        "      match { max-token-length: 11 }",
+                        "    }",
+                        "  }",
+                        "}");
+        ParsedSchema schema = parseString(input);
+        var field = schema.getDocument().getFields().get(0);
+        assertEquals("bar", field.name());
+        assertEquals(11, field.matchSettings().getMaxTokenLength().get());
+    }
+
     void checkFileParses(String fileName) throws Exception {
         var schema = parseFile(fileName);
         assertNotNull(schema);

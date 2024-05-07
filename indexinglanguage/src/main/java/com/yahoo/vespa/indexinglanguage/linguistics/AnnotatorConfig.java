@@ -14,14 +14,17 @@ public class AnnotatorConfig implements Cloneable {
     private StemMode stemMode;
     private boolean removeAccents;
     private int maxTermOccurrences;
+    private int maxTokenLength;
     private int maxTokenizeLength;
 
     public static final int DEFAULT_MAX_TERM_OCCURRENCES;
+    private static final int DEFAULT_MAX_TOKEN_LENGTH;
     private static final int DEFAULT_MAX_TOKENIZE_LENGTH;
 
     static {
         IlscriptsConfig defaults = new IlscriptsConfig(new IlscriptsConfig.Builder());
         DEFAULT_MAX_TERM_OCCURRENCES = defaults.maxtermoccurrences();
+        DEFAULT_MAX_TOKEN_LENGTH = defaults.maxtokenlength();
         DEFAULT_MAX_TOKENIZE_LENGTH = defaults.fieldmatchmaxlength();
     }
 
@@ -30,6 +33,7 @@ public class AnnotatorConfig implements Cloneable {
         stemMode = StemMode.NONE;
         removeAccents = false;
         maxTermOccurrences = DEFAULT_MAX_TERM_OCCURRENCES;
+        maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
         maxTokenizeLength = DEFAULT_MAX_TOKENIZE_LENGTH;
     }
 
@@ -38,6 +42,7 @@ public class AnnotatorConfig implements Cloneable {
         stemMode = rhs.stemMode;
         removeAccents = rhs.removeAccents;
         maxTermOccurrences = rhs.maxTermOccurrences;
+        maxTokenLength = rhs.maxTokenLength;
         maxTokenizeLength = rhs.maxTokenizeLength;
     }
 
@@ -82,6 +87,17 @@ public class AnnotatorConfig implements Cloneable {
         return this;
     }
 
+    public AnnotatorConfig setMaxTokenLength(int maxTokenLength) {
+        this.maxTokenLength = maxTokenLength;
+        return this;
+    }
+
+    public int getMaxTokenLength() {
+        return maxTokenLength;
+    }
+
+    public static int getDefaultMaxTokenLength() { return DEFAULT_MAX_TOKEN_LENGTH; }
+
     public AnnotatorConfig setMaxTokenizeLength(int maxTokenizeLength) {
         this.maxTokenizeLength = maxTokenizeLength;
         return this;
@@ -89,6 +105,10 @@ public class AnnotatorConfig implements Cloneable {
 
     public int getMaxTokenizeLength() {
         return maxTokenizeLength;
+    }
+
+    public boolean hasNonDefaultMaxTokenLength() {
+        return maxTokenLength != DEFAULT_MAX_TOKEN_LENGTH;
     }
 
     public boolean hasNonDefaultMaxTokenizeLength() {
@@ -116,6 +136,9 @@ public class AnnotatorConfig implements Cloneable {
         if (maxTermOccurrences != rhs.maxTermOccurrences) {
             return false;
         }
+        if (maxTokenLength != rhs.maxTokenLength) {
+            return false;
+        }
         if (maxTokenizeLength != rhs.maxTokenizeLength) {
             return false;
         }
@@ -125,7 +148,7 @@ public class AnnotatorConfig implements Cloneable {
     @Override
     public int hashCode() {
         return getClass().hashCode() + language.hashCode() + stemMode.hashCode() +
-               Boolean.valueOf(removeAccents).hashCode() + maxTermOccurrences + maxTokenizeLength;
+               Boolean.valueOf(removeAccents).hashCode() + maxTermOccurrences + maxTokenLength + maxTokenizeLength;
     }
 
 }

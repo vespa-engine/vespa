@@ -27,6 +27,7 @@ public class ExpressionTestCase {
         assertExpression(ClearStateExpression.class, "clear_state");
         assertExpression(EchoExpression.class, "echo");
         assertExpression(ExactExpression.class, "exact");
+        assertExpression(ExactExpression.class, "exact max-token-length: 10", Optional.of("exact max-token-length:10"));
         assertExpression(FlattenExpression.class, "flatten");
         assertExpression(ForEachExpression.class, "for_each { 1 }");
         assertExpression(GetFieldExpression.class, "get_field field1");
@@ -73,6 +74,7 @@ public class ExpressionTestCase {
         assertExpression(TokenizeExpression.class, "tokenize stem:\"ALL\"");
         assertExpression(TokenizeExpression.class, "tokenize normalize");
         assertExpression(TokenizeExpression.class, "tokenize max-occurrences: 15", Optional.of("tokenize max-occurrences:15"));
+        assertExpression(TokenizeExpression.class, "tokenize max-token-length: 15", Optional.of("tokenize max-token-length:15"));
         assertExpression(ToLongExpression.class, "to_long");
         assertExpression(ToPositionExpression.class, "to_pos");
         assertExpression(ToStringExpression.class, "to_string");

@@ -33,6 +33,8 @@ public class Matching implements Cloneable, Serializable {
     private Integer maxLength;
     /** Maximum number of occurrences for each term */
     private Integer maxTermOccurrences;
+    /** Maximum number of characters in a token. */
+    private Integer maxTokenLength;
 
     private String exactMatchTerminator = null;
 
@@ -61,6 +63,8 @@ public class Matching implements Cloneable, Serializable {
     public Matching maxLength(int maxLength) { this.maxLength = maxLength; return this; }
     public Integer maxTermOccurrences() { return maxTermOccurrences; }
     public Matching maxTermOccurrences(int maxTermOccurrences) { this.maxTermOccurrences = maxTermOccurrences; return this; }
+    public Integer maxTokenLength() { return maxTokenLength; }
+    public Matching maxTokenLength(int maxTokenLength) { this.maxTokenLength = maxTokenLength; return this; }
     public boolean isTypeUserSet() { return typeUserSet; }
 
     public MatchAlgorithm getAlgorithm() { return algorithm; }

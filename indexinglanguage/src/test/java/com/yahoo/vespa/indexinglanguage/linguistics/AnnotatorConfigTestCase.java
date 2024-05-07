@@ -27,6 +27,8 @@ public class AnnotatorConfigTestCase {
         assertTrue(config.getRemoveAccents());
         config.setRemoveAccents(false);
         assertFalse(config.getRemoveAccents());
+        config.setMaxTokenLength(10);
+        assertEquals(10, config.getMaxTokenLength());
     }
 
     @Test
@@ -35,11 +37,13 @@ public class AnnotatorConfigTestCase {
         config.setLanguage(Language.ARABIC);
         config.setStemMode(StemMode.SHORTEST);
         config.setRemoveAccents(!config.getRemoveAccents());
+        config.setMaxTokenLength(11);
 
         AnnotatorConfig other = new AnnotatorConfig(config);
         assertEquals(config.getLanguage(), other.getLanguage());
         assertEquals(config.getStemMode(), other.getStemMode());
         assertEquals(config.getRemoveAccents(), other.getRemoveAccents());
+        assertEquals(config.getMaxTokenLength(), other.getMaxTokenLength());
     }
 
     @Test
@@ -49,6 +53,7 @@ public class AnnotatorConfigTestCase {
         assertFalse(config.equals(newConfig(Language.SPANISH, StemMode.SHORTEST, false)));
         assertFalse(config.equals(newConfig(Language.DUTCH, StemMode.SHORTEST, false)));
         assertFalse(config.equals(newConfig(Language.DUTCH, StemMode.NONE, false)));
+        assertNotEquals(config, newConfig(Language.DUTCH, StemMode.NONE, true).setMaxTokenLength(10));
         assertEquals(config, newConfig(Language.DUTCH, StemMode.NONE, true));
         assertEquals(config.hashCode(), newConfig(Language.DUTCH, StemMode.NONE, true).hashCode());
     }

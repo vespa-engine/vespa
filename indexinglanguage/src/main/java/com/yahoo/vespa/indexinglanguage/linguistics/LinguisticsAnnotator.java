@@ -78,7 +78,8 @@ public class LinguisticsAnnotator {
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
         for (Token token : tokens)
-            addAnnotationSpan(text.getString(), tree.spanList(), token, config.getStemMode(), termOccurrences);
+            addAnnotationSpan(text.getString(), tree.spanList(), token, config.getStemMode(), termOccurrences,
+                    config.getMaxTokenLength());
 
         if (tree.numAnnotations() == 0) return false;
         text.setSpanTree(tree);
@@ -100,17 +101,22 @@ public class LinguisticsAnnotator {
             return new Annotation(AnnotationTypes.TERM, new StringFieldValue(term));
     }
 
-    private static void addAnnotation(Span here, String term, String orig, TermOccurrences termOccurrences) {
+    private static void addAnnotation(Span here, String term, String orig, TermOccurrences termOccurrences,
+                                      int maxTokenLength) {
+        if (term.length() > maxTokenLength) {
+            return;
+        }
         if (termOccurrences.termCountBelowLimit(term)) {
             here.annotate(termAnnotation(term, orig));
         }
     }
 
-    private static void addAnnotationSpan(String input, SpanList parent, Token token, StemMode mode, TermOccurrences termOccurrences) {
+    private static void addAnnotationSpan(String input, SpanList parent, Token token, StemMode mode,
+                                          TermOccurrences termOccurrences, int maxTokenLength) {
         if ( ! token.isSpecialToken()) {
             if (token.getNumComponents() > 0) {
                 for (int i = 0; i < token.getNumComponents(); ++i) {
-                    addAnnotationSpan(input, parent, token.getComponent(i), mode, termOccurrences);
+                    addAnnotationSpan(input, parent, token.getComponent(i), mode, termOccurrences, maxTokenLength);
                 }
                 return;
             }
@@ -130,18 +136,21 @@ public class LinguisticsAnnotator {
             String lowercasedOrig = toLowerCase(token.getOrig());
             String term = token.getTokenString();
             if (term != null) {
-                addAnnotation(where, term, token.getOrig(), termOccurrences);
+                addAnnotation(where, term, token.getOrig(), termOccurrences, maxTokenLength);
                 if ( ! term.equals(lowercasedOrig))
-                    addAnnotation(where, lowercasedOrig, token.getOrig(), termOccurrences);
+                    addAnnotation(where, lowercasedOrig, token.getOrig(), termOccurrences, maxTokenLength);
             }
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
                 if (! (stem.equals(lowercasedOrig) || stem.equals(term)))
-                    addAnnotation(where, stem, token.getOrig(), termOccurrences);
+                    addAnnotation(where, stem, token.getOrig(), termOccurrences, maxTokenLength);
             }
         } else {
             String term = token.getTokenString();
             if (term == null || term.trim().isEmpty()) return;
+            if (term.length() > maxTokenLength) {
+                return;
+            }
             if (termOccurrences.termCountBelowLimit(term))  {
                 parent.span((int)token.getOffset(), token.getOrig().length()).annotate(termAnnotation(term, token.getOrig()));
             }
