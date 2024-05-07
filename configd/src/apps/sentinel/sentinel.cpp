@@ -103,7 +103,6 @@ main(int argc, char **argv)
         if (vespalib::SignalHandler::CHLD.check()) {
             continue;
         }
-        fds.clear();
         manager.updateActiveFdset(fds);
         constexpr int poll_timeout_ms = 100;
 

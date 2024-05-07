@@ -172,6 +172,7 @@ Manager::handleChildDeaths()
 void
 Manager::updateActiveFdset(std::vector<pollfd> &fds)
 {
+    fds.clear();
     for (const OutputConnection *c : _outputConnections) {
         int fd = c->fd();
         if (fd >= 0) {
