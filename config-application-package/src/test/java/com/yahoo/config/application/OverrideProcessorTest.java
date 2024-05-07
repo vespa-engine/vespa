@@ -2,6 +2,7 @@
 package com.yahoo.config.application;
 
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -11,6 +12,8 @@ import org.w3c.dom.Document;
 
 import javax.xml.transform.TransformerException;
 import java.io.StringReader;
+
+import static com.yahoo.config.provision.Tags.empty;
 
 /**
  * @author Ulf Lilleengen
@@ -366,14 +369,72 @@ public class OverrideProcessorTest {
         assertOverride(input, Environment.dev, RegionName.defaultName(), expected);
     }
 
+    /**
+     * Tests that searchers referred to with idref are overridden per cloud
+     * and that searchers not referred to with idref are not overridden.
+     */
+    @Test
+    public void testSearchersReferredWithIdRefPerCloud() throws TransformerException {
+        String input =
+                """
+                        <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                        <services xmlns:deploy="vespa" xmlns:preprocess="?" version="1.0">
+                        <container id="stateless" version="1.0">
+                          <search>
+                            <searcher id="AwsSearcher" class="ai.vespa.AwsSearcher" bundle="foo"/>
+                            <searcher id="GcpSearcher" class="ai.vespa.GcpSearcher" bundle="foo"/>
+                            <searcher id="OtherSearcher" class="ai.vespa.OtherSearcher" bundle="foo"/>
+                            <chain id="default" inherits="vespa">
+                               <searcher idref="AwsSearcher" deploy:cloud="aws"/>
+                               <searcher idref="GcpSearcher" deploy:cloud="gcp"/>
+                               <searcher idref="OtherSearcher"/>
+                            </chain>
+                          </search>
+                        </container>
+                        "</services>""";
+
+        String expected =
+                """
+                        <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                        <services xmlns:deploy="vespa" xmlns:preprocess="?" version="1.0">
+                        <container id="stateless" version="1.0">
+                          <search>
+                            <searcher id="AwsSearcher" class="ai.vespa.AwsSearcher" bundle="foo"/>
+                            <searcher id="GcpSearcher" class="ai.vespa.GcpSearcher" bundle="foo"/>
+                            <searcher id="OtherSearcher" class="ai.vespa.OtherSearcher" bundle="foo"/>
+                            <chain id="default" inherits="vespa">
+                              <searcher idref="%s"/>
+                              <searcher idref="OtherSearcher"/>
+                            </chain>
+                          </search>
+                        </container>
+                        "</services>""";
+
+        assertOverride(input, "aws", expected.formatted("AwsSearcher"));
+        assertOverride(input, "gcp", expected.formatted("GcpSearcher"));
+    }
+
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {
         assertOverride(input, environment, region, expected);
     }
 
-    private void assertOverride(String input, Environment environment, RegionName region, String expected) throws TransformerException {
-        Document inputDoc = Xml.getDocument(new StringReader(input));
-        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, Cloud.defaultCloud().name(), Tags.empty()).process(inputDoc);
-        TestBase.assertDocument(expected, newDoc);
+    private void assertOverride(String input, Environment environment, RegionName region, String expected) {
+        assertOverride(input, environment, region, Cloud.defaultCloud().name(), expected);
+    }
+
+    private void assertOverride(String input, String cloudName, String expected) {
+        assertOverride(input, Environment.defaultEnvironment(), RegionName.defaultName(), CloudName.from(cloudName), expected);
+    }
+
+    private void assertOverride(String input, Environment environment, RegionName region, CloudName cloudName, String expected) {
+        var inputDoc = Xml.getDocument(new StringReader(input));
+        try {
+            var newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region, cloudName, Tags.empty())
+                    .process(inputDoc);
+            TestBase.assertDocument(expected, newDoc);
+        } catch (TransformerException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
