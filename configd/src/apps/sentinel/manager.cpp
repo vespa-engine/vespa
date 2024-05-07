@@ -170,16 +170,17 @@ Manager::handleChildDeaths()
 }
 
 void
-Manager::updateActiveFdset(fd_set *fds, int *maxNum)
+Manager::updateActiveFdset(std::vector<pollfd> &fds)
 {
-    // ### _Possibly put an assert here if fd is > 1023???
-    for (OutputConnection *c : _outputConnections) {
+    fds.clear();
+    for (const OutputConnection *c : _outputConnections) {
         int fd = c->fd();
         if (fd >= 0) {
-            FD_SET(fd, fds);
-            if (fd >= *maxNum) {
-                *maxNum = fd + 1;
-            }
+            fds.emplace_back();
+            auto &ev = fds.back();
+            ev.fd = fd;
+            ev.events = POLLIN;
+            ev.revents = 0;
         }
     }
 }
