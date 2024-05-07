@@ -5,14 +5,13 @@
   "languages" : {
     "en": {
       "description" : "english model",
-      "document-count" : 16,
+      "document-count" : 12,
       "language" : "en",
       "document-frequencies" : {
         "usa" : 2,
         "hello": 3,
         "world": 5,
-        "test": 2,
-        "additional": 2
+        "test": 2
       }
     }
   }
