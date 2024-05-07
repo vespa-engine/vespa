@@ -8,11 +8,11 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>zookeeper-server-3.9.1</artifactId>
+  <artifactId>zookeeper-server-3.9.2</artifactId>
   <packaging>container-plugin</packaging>
   <version>8-SNAPSHOT</version>
   <properties>
-    <zookeeper.version>3.9.1</zookeeper.version>
+    <zookeeper.version>3.9.2</zookeeper.version>
   </properties>
   <dependencies>
     <dependency>

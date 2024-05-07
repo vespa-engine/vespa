@@ -59,7 +59,7 @@ public class LatencyMetrics {
     /** Returns the average number of intervals that ended in the period per second. */
     public double endHz() { return roundTo3DecimalPlaces(endHz); }
 
-    /** Returns the average load of the implied time periond, for each thread with non-zero load, with 3 decimal places precision. */
+    /** Returns the average load of the implied time period, for each thread with non-zero load, with 3 decimal places precision. */
     public Map<String, Double> loadByThread() {
         Map<String, Double> result = new TreeMap<>();
         loadByThread.forEach((name, load) -> result.put(name, roundTo3DecimalPlaces(load)));
