@@ -29,6 +29,10 @@ public abstract class TypedTransformProvider extends ValueTransformProvider {
     protected final boolean requiresTransform(Expression exp) {
         if (exp instanceof OutputExpression) {
             String fieldName = ((OutputExpression)exp).getFieldName();
+            if (fieldName == null) {
+                // Incomplete output expressions never require a transform.
+                return false;
+            }
             if (exp instanceof AttributeExpression) {
                 Attribute attribute = schema.getAttribute(fieldName);
                 if (attribute == null)
