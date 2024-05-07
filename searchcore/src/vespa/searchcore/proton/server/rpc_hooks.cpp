@@ -241,10 +241,16 @@ RPCHooksBase::getProtonStatus(FRT_RPCRequest *req)
 }
 
 void
-RPCHooksBase::rpc_die(FRT_RPCRequest *)
+RPCHooksBase::rpc_die(FRT_RPCRequest * req)
 {
     LOG(debug, "RPCHooksBase::rpc_die");
-    _exit(0);
+    req->Detach();
+    letProtonDo(makeLambdaTask([req]() {
+        LOG(debug, "Nap for 10ms and then quickly exit.");
+        req->Return();
+        std::this_thread::sleep_for(10ms);
+        std::quick_exit(0);
+    }));
 }
 
 void
