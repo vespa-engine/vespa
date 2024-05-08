@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Handles preprocess:include statements and returns a Document which has all the include statements resolved
  *
  * @author hmusum
- * @since 5.22
  */
 class IncludeProcessor implements PreProcessor {
 

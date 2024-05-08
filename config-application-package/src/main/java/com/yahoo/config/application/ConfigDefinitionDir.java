@@ -11,7 +11,6 @@ import java.util.List;
  * but they cannot conflict with the existing ones.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ConfigDefinitionDir {
     private final File defDir;

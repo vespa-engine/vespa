@@ -11,8 +11,8 @@ public class ValidationProcessor implements PreProcessor {
 
     @Override
     public Document process(Document input) throws IOException, TransformerException {
-        NodeList includeitems = input.getElementsByTagNameNS("http://www.w3.org/2001/XInclude", "*");
-        if (includeitems.getLength() > 0)
+        NodeList includeItems = input.getElementsByTagNameNS("http://www.w3.org/2001/XInclude", "*");
+        if (includeItems.getLength() > 0)
             throw new UnsupportedOperationException("XInclude not supported, use preprocess:include instead");
         return input;
     }
