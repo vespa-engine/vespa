@@ -29,6 +29,12 @@ public class GlobalBucketSyncStatsCalculator {
             totalBuckets   += space.getBucketsTotal();
             pendingBuckets += space.getBucketsPending();
         }
+        // It's currently possible for the reported number of pending buckets to be greater than
+        // the number of total buckets. Example: this can happen if a bucket is present on a single
+        // node, but should have been replicated to 9 more nodes. Since counts are not normalized
+        // across content nodes for a given bucket, this will be counted as 9 pending and 1 total.
+        // Eventually this will settle as 0 pending and 10 total.
+        // TODO report node-normalized pending/total counts from distributors and use these.
         pendingBuckets = Math.min(pendingBuckets, totalBuckets);
         if (totalBuckets <= 0) {
             return Optional.of(0.0); // No buckets; cannot be out of sync by definition
