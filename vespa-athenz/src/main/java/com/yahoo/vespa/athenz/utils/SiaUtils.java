@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.utils;
 
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -132,7 +132,7 @@ public class SiaUtils {
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(keysDirectory)) {
             return StreamSupport.stream(directoryStream.spliterator(), false)
                     .map(path -> path.getFileName().toString())
-                    .filter(fileName -> fileName.endsWith(keyFileSuffix))
+                    .filter(fileName -> fileName.endsWith(keyFileSuffix) && ! fileName.contains(":role."))
                     .map(fileName -> fileName.substring(0, fileName.length() - keyFileSuffix.length()))
                     .map(AthenzService::new)
                     .collect(toList());

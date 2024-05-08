@@ -32,6 +32,7 @@ public class SiaUtilsTest {
         Files.createFile(SiaUtils.getPrivateKeyFile(siaRoot, fooService));
         AthenzService barService = new AthenzService("my.domain.bar");
         Files.createFile(SiaUtils.getPrivateKeyFile(siaRoot, barService));
+        Files.createFile(siaRoot.resolve("keys/my.domain.foo:role.my-role.key.pem"));
 
         List<AthenzIdentity> siaIdentities = SiaUtils.findSiaServices(siaRoot);
         assertEquals(2, siaIdentities.size());
