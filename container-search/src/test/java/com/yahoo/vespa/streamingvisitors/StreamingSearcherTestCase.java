@@ -167,6 +167,7 @@ public class StreamingSearcherTestCase {
         Query[] queries = new Query[4]; // Increase coverage
         for (int i = 0; i<queries.length; i++) {
             Query query = new Query(queryString);
+            query.setTimeout(1000);
             if (i == 0) {
             } else if (i == 1) {
                 query.getPresentation().setSummary("summary");
