@@ -12,6 +12,9 @@ import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.process.TokenType;
+import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
+
+import java.util.OptionalInt;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -20,8 +23,19 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  */
 public final class ExactExpression extends Expression {
 
-    public ExactExpression() {
+    private int maxTokenLength;
+
+    private ExactExpression(OptionalInt maxTokenLength) {
         super(DataType.STRING);
+        this.maxTokenLength = maxTokenLength.isPresent() ? maxTokenLength.getAsInt() : AnnotatorConfig.getDefaultMaxTokenLength();
+    }
+
+    public ExactExpression() {
+        this(OptionalInt.empty());;
+    }
+
+    public ExactExpression(int maxTokenLength) {
+        this(OptionalInt.of(maxTokenLength));
     }
 
     @Override
@@ -36,6 +50,12 @@ public final class ExactExpression extends Expression {
         String next = toLowerCase(prev);
 
         SpanTree tree = output.getSpanTree(SpanTrees.LINGUISTICS);
+        if (next.length() > maxTokenLength) {
+            if (tree != null) {
+                output.removeSpanTree(SpanTrees.LINGUISTICS);
+            }
+            return;
+        }
         SpanList root;
         if (tree == null) {
             root = new SpanList();
@@ -64,8 +84,14 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
-    public String toString() {
-        return "exact";
+    public String toString()
+    {
+        StringBuilder ret = new StringBuilder();
+        ret.append("exact");
+        if (maxTokenLength != AnnotatorConfig.getDefaultMaxTokenLength()) {
+            ret.append(" max-token-length:" + maxTokenLength);
+        }
+        return ret.toString();
     }
 
     @Override

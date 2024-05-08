@@ -63,6 +63,15 @@ public class ExactTestCase {
     }
 
     @Test
+    public void requireThatLongStringsAreNotAnnotated() {
+        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
+        ctx.setValue(new StringFieldValue("foo"));
+        new ExactExpression(2).execute(ctx);
+
+        assertNull(((StringFieldValue)ctx.getValue()).getSpanTree(SpanTrees.LINGUISTICS));
+    }
+
+    @Test
     public void requireThatEmptyStringsAreNotAnnotated() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         ctx.setValue(new StringFieldValue(""));

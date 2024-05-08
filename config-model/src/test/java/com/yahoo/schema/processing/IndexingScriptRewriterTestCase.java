@@ -10,6 +10,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
 import com.yahoo.schema.document.BooleanIndexDefinition;
+import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -152,6 +153,24 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
         field.getMatching().maxTermOccurrences(10);
         field.parseIndexingScript("test", "{ summary | index }");
         assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" max-occurrences:10 | summary test | index test; }",
+                field);
+    }
+
+    @Test
+    void requireThatMaxTokenLengthIsPropagated() {
+        var field = new SDField("test", DataType.STRING);
+        field.getMatching().maxTokenLength(10);
+        field.parseIndexingScript("test", "{ summary | index }");
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" max-token-length:10 | summary test | index test; }",
+                field);
+    }
+
+    @Test
+    void requireThatMaxTokenLengthIsPropagatedForWordMatch() {
+        var field = new SDField("test", DataType.STRING);
+        field.getMatching().maxTokenLength(10).setType(MatchType.WORD);
+        field.parseIndexingScript("test", "{ summary | index }");
+        assertIndexingScript("{ input test | exact max-token-length:10 | summary test | index test; }",
                 field);
     }
 

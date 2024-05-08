@@ -70,6 +70,10 @@ public class TextMatch extends Processor {
             if (maxTermOccurrences != null) {
                 ret.setMaxTermOccurrences(maxTermOccurrences);
             }
+            var maxTokenLength = fieldMatching.maxTokenLength();
+            if (maxTokenLength != null) {
+                ret.setMaxTokenLength(maxTokenLength);
+            }
         }
         return ret;
     }
