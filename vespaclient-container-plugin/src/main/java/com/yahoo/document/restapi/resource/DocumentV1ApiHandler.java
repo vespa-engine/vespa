@@ -1397,6 +1397,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             Phaser phaser = new Phaser(2); // Synchronize this thread (dispatch) with the visitor callback thread.
             AtomicReference<String> error = new AtomicReference<>(); // Set if error occurs during processing of visited documents.
             callback.onStart(response, fullyApplied);
+            final AtomicLong locallyReceivedDocCount = new AtomicLong(0);
             VisitorControlHandler controller = new VisitorControlHandler() {
                 final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, visitTimeout(request), MILLISECONDS) : null;
                 final AtomicReference<VisitorSession> session = new AtomicReference<>();
@@ -1410,7 +1411,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         try (response) {
                             callback.onEnd(response);
 
-                            response.writeDocumentCount(getVisitorStatistics() == null ? 0 : getVisitorStatistics().getDocumentsVisited());
+                            // Locally tracked document count is only correct if we have a local data handler.
+                            // Otherwise, we have to report the statistics received transitively from the content nodes.
+                            long statsDocCount = (getVisitorStatistics() != null ? getVisitorStatistics().getDocumentsVisited() : 0);
+                            response.writeDocumentCount(parameters.getLocalDataHandler() != null ? locallyReceivedDocCount.get() : statsDocCount);
 
                             if (session.get() != null)
                                 response.writeTrace(session.get().getTrace());
@@ -1456,6 +1460,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         if (m instanceof PutDocumentMessage put) document = put.getDocumentPut().getDocument();
                         else if (parameters.visitRemoves() && m instanceof RemoveDocumentMessage remove) removeId = remove.getDocumentId();
                         else throw new UnsupportedOperationException("Got unsupported message type: " + m.getClass().getName());
+                        locallyReceivedDocCount.getAndAdd(1);
                         callback.onDocument(response,
                                             document,
                                             removeId,
