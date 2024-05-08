@@ -30,6 +30,7 @@ class StateV1HealthMonitor implements HealthMonitor {
     @Override
     public void close() {
         periodicExecution.cancel();
+        updater.close();
     }
 
 }
