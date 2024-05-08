@@ -13,7 +13,7 @@ public class ContentNodeStatsBuilder {
         this.nodeIndex = nodeIndex;
     }
 
-    static ContentNodeStatsBuilder forNode(int nodeIndex) {
+    public static ContentNodeStatsBuilder forNode(int nodeIndex) {
         return new ContentNodeStatsBuilder(nodeIndex);
     }
 
@@ -21,12 +21,16 @@ public class ContentNodeStatsBuilder {
         return add(bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
     }
 
+    public ContentNodeStatsBuilder addInvalid(String bucketSpace, long bucketsTotal, long bucketsPending) {
+        return add(bucketSpace, ContentNodeStats.BucketSpaceStats.invalid(bucketsTotal, bucketsPending));
+    }
+
     public ContentNodeStatsBuilder add(String bucketSpace, ContentNodeStats.BucketSpaceStats bucketSpaceStats) {
         stats.put(bucketSpace, bucketSpaceStats);
         return this;
     }
 
-    ContentNodeStats build() {
+    public ContentNodeStats build() {
         return new ContentNodeStats(nodeIndex, stats);
     }
 }

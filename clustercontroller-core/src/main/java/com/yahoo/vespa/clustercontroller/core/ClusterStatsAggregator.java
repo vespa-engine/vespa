@@ -38,6 +38,9 @@ public class ClusterStatsAggregator {
     // Maps the content node index to the content node stats for that node.
     // This MUST be kept up-to-date with distributorToStats;
     private final ContentClusterStats aggregatedStats;
+    // This is the aggregate of aggregates across content nodes, allowing a reader to
+    // get a O(1) view of all merges pending in the cluster.
+    private final ContentNodeStats globallyAggregatedNodeStats = new ContentNodeStats(-1);
 
     ClusterStatsAggregator(Set<Integer> distributors, Set<Integer> storageNodes) {
         this.distributors = distributors;
@@ -58,6 +61,10 @@ public class ClusterStatsAggregator {
                 return aggregatedStats;
             }
 
+            @Override
+            public ContentNodeStats getGlobalStats() {
+                return globallyAggregatedNodeStats;
+            }
         };
     }
 
@@ -96,12 +103,14 @@ public class ClusterStatsAggregator {
             ContentNodeStats statsToAdd = clusterStats.getNodeStats(nodeIndex);
             if (statsToAdd != null) {
                 contentNode.add(statsToAdd);
+                globallyAggregatedNodeStats.add(statsToAdd);
             }
 
             if (prevClusterStats != null) {
                 ContentNodeStats statsToSubtract = prevClusterStats.getNodeStats(nodeIndex);
                 if (statsToSubtract != null) {
                     contentNode.subtract(statsToSubtract);
+                    globallyAggregatedNodeStats.subtract(statsToSubtract);
                 }
             }
         }

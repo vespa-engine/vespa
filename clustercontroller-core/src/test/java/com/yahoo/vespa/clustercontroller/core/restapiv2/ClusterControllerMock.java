@@ -15,6 +15,8 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
     private final int fleetControllerIndex;
     Integer fleetControllerMaster;
     private final StringBuilder events = new StringBuilder();
+    ContentNodeStats globalClusterStats = new ContentNodeStats(-1);
+    boolean enableGlobalStatsReporting = false;
 
     ClusterControllerMock(ContentCluster cluster, ClusterState state,
                           ClusterStateBundle publishedClusterStateBundle,
@@ -87,6 +89,22 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
                 events.append("returnedRpcAddress(").append(node.getNode()).append(")\n");
             }
 
+        };
+        context.aggregatedClusterStats = new AggregatedClusterStats() {
+            @Override
+            public boolean hasUpdatesFromAllDistributors() {
+                return enableGlobalStatsReporting;
+            }
+
+            @Override
+            public ContentClusterStats getStats() {
+                return null;
+            }
+
+            @Override
+            public ContentNodeStats getGlobalStats() {
+                return globalClusterStats;
+            }
         };
     }
 

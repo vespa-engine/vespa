@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
+import com.yahoo.vespa.clustercontroller.core.ContentNodeStatsBuilder;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
 import org.junit.jupiter.api.Test;
 
@@ -104,5 +105,46 @@ public class ClusterTest extends StateRestApiTest {
                        }
                      }""",
                      jsonWriter.createJson(response).toPrettyString());
+    }
+
+    @Test
+    void emit_cluster_stats_if_present() throws Exception {
+        setUp(true);
+        books.globalClusterStats.add(ContentNodeStatsBuilder.forNode(-1).add("default", 10, 4).build());
+        books.enableGlobalStatsReporting = true;
+        UnitResponse response = restAPI.getState(new StateRequest("books", 0));
+        assertEquals("""
+                     {
+                       "state" : {
+                         "generated" : {
+                           "state" : "up",
+                           "reason" : ""
+                         }
+                       },
+                       "metrics" : {
+                         "cluster-buckets-out-of-sync-ratio" : 0.4
+                       },
+                       "service" : {
+                         "storage" : {
+                           "link" : "/cluster/v2/books/storage"
+                         },
+                         "distributor" : {
+                           "link" : "/cluster/v2/books/distributor"
+                         }
+                       },
+                       "distribution-states" : {
+                         "published" : {
+                           "baseline" : "distributor:4 storage:4",
+                           "bucket-spaces" : [ {
+                             "name" : "default",
+                             "state" : "distributor:4 storage:4 .3.s:m"
+                           }, {
+                             "name" : "global",
+                             "state" : "distributor:4 storage:4"
+                           } ]
+                         }
+                       }
+                     }""",
+                jsonWriter.createJson(response).toPrettyString());
     }
 }
