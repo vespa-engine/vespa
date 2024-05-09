@@ -57,7 +57,7 @@ func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 func NewThrottler(connections int) Throttler { return newThrottler(connections, time.Now) }
 
 func (t *dynamicThrottler) Sent() {
-	currentInflight := t.targetInflight.Load()
+	currentInflight := t.TargetInflight()
 	t.sent++
 	if t.sent*t.sent*t.sent < 100*currentInflight*currentInflight {
 		return

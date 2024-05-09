@@ -33,7 +33,7 @@ public class DynamicThrottler extends StaticThrottler {
 
     @Override
     public void sent(long __, CompletableFuture<HttpResponse> ___) {
-        double currentInflight = targetInflight.get();
+        double currentInflight = targetInflight();
         if (++sent * sent * sent < 1e2 * currentInflight * currentInflight)
             return;
 
