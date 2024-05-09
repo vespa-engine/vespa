@@ -28,7 +28,7 @@ public class DynamicThrottler extends StaticThrottler {
 
     public DynamicThrottler(FeedClientBuilderImpl builder) {
         super(builder);
-        targetInflight = new AtomicLong(8 * minInflight);
+        targetInflight = new AtomicLong(minInflight);
     }
 
     @Override
