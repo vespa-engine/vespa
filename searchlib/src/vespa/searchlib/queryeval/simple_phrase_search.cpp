@@ -191,16 +191,14 @@ SimplePhraseSearch::doSeek(uint32_t doc_id) {
 void
 SimplePhraseSearch::doStrictSeek(uint32_t doc_id) {
     uint32_t next_candidate = doc_id;
-    while (getDocId() < doc_id || getDocId() == beginId()) {
-        getChildren()[0]->seek(next_candidate + 1);
-        next_candidate = getChildren()[0]->getDocId();
+    auto &best_child = *getChildren()[_eval_order[0]];
+    while (getDocId() < doc_id) {
+        best_child.seek(next_candidate + 1);
+        next_candidate = best_child.getDocId();
         if (isAtEnd(next_candidate)) {
             setAtEnd();
             return;
         }
-        // child must behave as strict.
-        assert(next_candidate > doc_id && next_candidate != beginId());
-
         phraseSeek(next_candidate);
     }
 }
