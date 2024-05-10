@@ -450,6 +450,12 @@ public class Flags {
             "Whether to encrypt disk when provisioning new hosts",
             "Will be read only on boot.");
 
+    public static UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
+            "hubspot-sync-tenants", false,
+            List.of("bjorncs"), "2024-05-07", "2025-01-01",
+            "Whether to sync tenants to HubSpot",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
