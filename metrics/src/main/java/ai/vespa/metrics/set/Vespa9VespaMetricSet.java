@@ -211,6 +211,10 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED.rate());
         addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_FAILED.rate());
 
+        // Embedders
+        addMetric(metrics, ContainerMetrics.EMBEDDER_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
+
         return metrics;
     }
 

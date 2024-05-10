@@ -116,10 +116,6 @@ public class VespaMetricSet {
         // Routing layer metrics
         addMetric(metrics, RoutingLayerMetrics.WORKER_CONNECTIONS.max()); // Hosted Vespa only (routing layer)
 
-        // Embedders
-        addMetric(metrics, ContainerMetrics.EMBEDDER_LATENCY, EnumSet.of(max, sum, count));
-        addMetric(metrics, ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
-
         return metrics;
     }
 
@@ -236,6 +232,10 @@ public class VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.FEED_HTTP_REQUESTS, EnumSet.of(count, rate));
+
+        // Embedders
+        addMetric(metrics, ContainerMetrics.EMBEDDER_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
 
         // Deprecated metrics. TODO: Remove on Vespa 9.
         addMetric(metrics, ContainerMetrics.SERVER_REJECTED_REQUESTS, EnumSet.of(rate, count));
