@@ -1397,7 +1397,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             Phaser phaser = new Phaser(2); // Synchronize this thread (dispatch) with the visitor callback thread.
             AtomicReference<String> error = new AtomicReference<>(); // Set if error occurs during processing of visited documents.
             callback.onStart(response, fullyApplied);
-            final AtomicLong receivedDocsCount = new AtomicLong(0);
             VisitorControlHandler controller = new VisitorControlHandler() {
                 final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, visitTimeout(request), MILLISECONDS) : null;
                 final AtomicReference<VisitorSession> session = new AtomicReference<>();
@@ -1411,7 +1410,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         try (response) {
                             callback.onEnd(response);
 
-                            response.writeDocumentCount(receivedDocsCount.get());
+                            response.writeDocumentCount(getVisitorStatistics() == null ? 0 : getVisitorStatistics().getDocumentsVisited());
 
                             if (session.get() != null)
                                 response.writeTrace(session.get().getTrace());
@@ -1457,7 +1456,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         if (m instanceof PutDocumentMessage put) document = put.getDocumentPut().getDocument();
                         else if (parameters.visitRemoves() && m instanceof RemoveDocumentMessage remove) removeId = remove.getDocumentId();
                         else throw new UnsupportedOperationException("Got unsupported message type: " + m.getClass().getName());
-                        receivedDocsCount.getAndAdd(1);
                         callback.onDocument(response,
                                             document,
                                             removeId,
