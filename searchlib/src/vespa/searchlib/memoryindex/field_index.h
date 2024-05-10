@@ -87,13 +87,7 @@ public:
     vespalib::MemoryUsage getMemoryUsage() const override;
     PostingListStore &getPostingListStore() { return _postingListStore; }
 
-    void commit() override {
-        _remover.flush();
-        freeze();
-        assign_generation();
-        incGeneration();
-        reclaim_memory();
-    }
+    void commit() override;
 
     /**
      * Should only by used by unit tests.
