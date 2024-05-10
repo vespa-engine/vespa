@@ -167,10 +167,10 @@ public class DynamicThrottlePolicy extends StaticThrottlePolicy {
     }
 
     /**
-     * Determines where on each latency level the attractor sits. 2 is at the very end, and makes this to *boom*.
+     * Determines where on each latency level the attractor sits. 2 is at the very end, and makes this go *boom*.
      * 0.2 is at the very start, and makes the algorithm more conservative. Probably fine to stay away from this.
      */
-    // Original javadoc is non-sense, but kept for historical reasons.
+    // Original javadoc is nonsense, but kept for historical reasons.
     /*
      * Sets the lower efficiency threshold at which the algorithm should perform window size back off. Efficiency is
      * the correlation between throughput and window size. The algorithm will increase the window size until efficiency

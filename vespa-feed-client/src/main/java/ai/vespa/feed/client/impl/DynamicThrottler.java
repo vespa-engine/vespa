@@ -28,12 +28,12 @@ public class DynamicThrottler extends StaticThrottler {
 
     public DynamicThrottler(FeedClientBuilderImpl builder) {
         super(builder);
-        targetInflight = new AtomicLong(8 * minInflight);
+        targetInflight = new AtomicLong(minInflight);
     }
 
     @Override
     public void sent(long __, CompletableFuture<HttpResponse> ___) {
-        double currentInflight = targetInflight.get();
+        double currentInflight = targetInflight();
         if (++sent * sent * sent < 1e2 * currentInflight * currentInflight)
             return;
 
