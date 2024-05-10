@@ -9,6 +9,7 @@ import com.yahoo.vespa.athenz.api.AthenzRole;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,6 +20,7 @@ import java.util.stream.Stream;
 public class AccessTokenResponseEntity {
     private final AthenzAccessToken accessToken;
     private final Instant expiryTime;
+    // roles can be null (not set in the json response)
     private final List<AthenzRole> roles;
 
     public AccessTokenResponseEntity(
@@ -29,7 +31,8 @@ public class AccessTokenResponseEntity {
         this.accessToken =  new AthenzAccessToken(accessToken);
         // We do not know from when, so best we can do is assume now ...
         this.expiryTime = Instant.now().plusSeconds(expiresIn);
-        this.roles = Stream.of(roles.split(" "))
+        this.roles = Optional.ofNullable(roles).stream()
+                .flatMap(r -> Stream.of(r.split(" ")))
                 .map(AthenzResourceName::fromString)
                 .map(AthenzRole::fromResourceName)
                 .toList();
