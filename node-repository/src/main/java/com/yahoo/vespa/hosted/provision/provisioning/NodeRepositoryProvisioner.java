@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;

@@ -1,17 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.provisioning;
+package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Exclusivity;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -24,10 +15,9 @@ import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines the policies for assigning cluster capacity in various environments
+ * Defines the policies for assigning cluster capacity in various environments.
  *
  * @author bratseth
- * @see NodeResourceLimits
  */
 public class CapacityPolicies {
 
@@ -162,15 +152,6 @@ public class CapacityPolicies {
         return Architecture.valueOf(adminClusterNodeArchitecture.with(INSTANCE_ID, instance.serializedForm()).value());
     }
 
-    /**
-     * Returns the resources for the newest version not newer than that requested in the cluster spec.
-     */
-    static NodeResources versioned(ClusterSpec spec, Map<Version, NodeResources> resources) {
-        return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
-                              "no default resources applicable for " + spec + " among: " + resources)
-                .getValue();
-    }
-
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
         return zone.cloud().name() == CloudName.AZURE || zone.cloud().name() == CloudName.GCP
@@ -190,6 +171,15 @@ public class CapacityPolicies {
         if (capacity.cloudAccount().isPresent()) return requestedCluster.withExclusivity(true); // Implicit exclusive
         boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
         return requestedCluster.withExclusivity(exclusive);
+    }
+
+    /**
+     * Returns the resources for the newest version not newer than that requested in the cluster spec.
+     */
+    private static NodeResources versioned(ClusterSpec spec, Map<Version, NodeResources> resources) {
+        return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
+                              "no default resources applicable for " + spec + " among: " + resources)
+                       .getValue();
     }
 
 }

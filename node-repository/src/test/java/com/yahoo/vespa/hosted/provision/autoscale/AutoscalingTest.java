@@ -13,7 +13,7 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import org.junit.Test;
 

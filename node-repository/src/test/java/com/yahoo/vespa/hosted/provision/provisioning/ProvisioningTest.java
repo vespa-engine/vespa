@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -46,12 +47,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -1114,12 +1117,12 @@ public class ProvisioningTest {
                                                        new Version("6"), new NodeResources(1, 1, 1, 1));
 
         assertThrows(NullPointerException.class,
-                     () -> CapacityPolicies.versioned(spec.vespaVersion("5.0").build(), resources));
-        assertEquals(new NodeResources(1, 1, 1, 1), CapacityPolicies.versioned(spec.vespaVersion("6.0").build(), resources));
-        assertEquals(new NodeResources(2, 2, 2, 2), CapacityPolicies.versioned(spec.vespaVersion("7.0").build(), resources));
-        assertEquals(new NodeResources(2, 2, 2, 2), CapacityPolicies.versioned(spec.vespaVersion("7.1").build(), resources));
-        assertEquals(new NodeResources(3, 3, 3, 3), CapacityPolicies.versioned(spec.vespaVersion("8.0").build(), resources));
-        assertEquals(new NodeResources(3, 3, 3, 3), CapacityPolicies.versioned(spec.vespaVersion("9.0").build(), resources));
+                     () -> versioned(spec.vespaVersion("5.0").build(), resources));
+        assertEquals(new NodeResources(1, 1, 1, 1), versioned(spec.vespaVersion("6.0").build(), resources));
+        assertEquals(new NodeResources(2, 2, 2, 2), versioned(spec.vespaVersion("7.0").build(), resources));
+        assertEquals(new NodeResources(2, 2, 2, 2), versioned(spec.vespaVersion("7.1").build(), resources));
+        assertEquals(new NodeResources(3, 3, 3, 3), versioned(spec.vespaVersion("8.0").build(), resources));
+        assertEquals(new NodeResources(3, 3, 3, 3), versioned(spec.vespaVersion("9.0").build(), resources));
     }
 
     @Test
@@ -1290,6 +1293,15 @@ public class ProvisioningTest {
 
     private ClusterResources resources(int nodes, int groups, double vcpu, double memory, double disk) {
         return new ClusterResources(nodes, groups, new NodeResources(vcpu, memory, disk, 0.1));
+    }
+
+    /**
+     * Returns the resources for the newest version not newer than that requested in the cluster spec.
+     */
+    static NodeResources versioned(ClusterSpec spec, Map<Version, NodeResources> resources) {
+        return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
+                              "no default resources applicable for " + spec + " among: " + resources)
+                       .getValue();
     }
 
 }

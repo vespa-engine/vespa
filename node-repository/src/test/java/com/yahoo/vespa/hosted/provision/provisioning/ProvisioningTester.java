@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
