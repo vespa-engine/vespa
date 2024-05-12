@@ -207,7 +207,7 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
     public int spareCount() { return spareCount; }
 
-    public Exclusivity exclusiveAllocation() { return exclusivity; }
+    public Exclusivity exclusivity() { return exclusivity; }
 
     /**
      * Returns ACLs for the children of the given host.

@@ -202,7 +202,7 @@ public class Preparer {
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
                                                           nodeRepository.spareCount(),
-                                                          nodeRepository.exclusiveAllocation().allocation(cluster));
+                                                          nodeRepository.exclusivity().allocation(cluster));
         allocation.offer(prioritizer.collect());
         if (requested.type() == NodeType.tenant && !requested.canFail() && allocation.changes()) {
             // This should not happen and indicates a bug in the allocation code because boostrap redeployment
@@ -237,8 +237,8 @@ public class Preparer {
 
     private HostSharing hostSharing(ClusterSpec cluster, NodeType hostType) {
         if ( hostType.isSharable())
-            return nodeRepository.exclusiveAllocation().provisioning(cluster) ? HostSharing.provision :
-                   nodeRepository.exclusiveAllocation().allocation(cluster) ? HostSharing.exclusive :
+            return nodeRepository.exclusivity().provisioning(cluster) ? HostSharing.provision :
+                   nodeRepository.exclusivity().allocation(cluster) ? HostSharing.exclusive :
                    HostSharing.any;
         else
             return HostSharing.any;

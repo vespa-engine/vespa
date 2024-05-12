@@ -171,7 +171,7 @@ public class ClusterModel {
     }
 
     public boolean isExclusive() {
-        return nodeRepository.exclusiveAllocation().allocation(clusterSpec);
+        return nodeRepository.exclusivity().allocation(clusterSpec);
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
@@ -441,7 +441,7 @@ public class ClusterModel {
                                                                                          application.id());
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
                                                                           cloudAccount(),
-                                                                          nodeRepository.exclusiveAllocation().allocation(clusterSpec),
+                                                                          nodeRepository.exclusivity().allocation(clusterSpec),
                                                                           false).memoryGb();
             }
             else {
