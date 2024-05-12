@@ -124,7 +124,7 @@
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
         <maven-xml-impl.vespa.version>4.0.0-alpha-13</maven-xml-impl.vespa.version>
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
-        <mockito.vespa.version>5.11.0</mockito.vespa.version>
+        <mockito.vespa.version>5.12.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
         <netty.vespa.version>4.1.109.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
