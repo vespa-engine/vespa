@@ -133,7 +133,7 @@ public class ProvisioningTester {
                                                  true,
                                                  spareCount);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, new MockMetric());
-        this.capacityPolicies = new CapacityPolicies(nodeRepository);
+        this.capacityPolicies = new CapacityPolicies(zone, nodeRepository.exclusivity(), flagSource);
         this.provisionLogger = new InMemoryProvisionLogger();
         this.loadBalancerService = loadBalancerService;
     }

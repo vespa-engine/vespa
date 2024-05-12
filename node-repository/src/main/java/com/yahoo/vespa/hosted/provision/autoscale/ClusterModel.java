@@ -48,6 +48,7 @@ public class ClusterModel {
     private static final double fixedCpuCostFraction = 0.1;
 
     private final NodeRepository nodeRepository;
+    private final CapacityPolicies capacityPolicies;
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
@@ -84,6 +85,7 @@ public class ClusterModel {
                         MetricsDb metricsDb,
                         Clock clock) {
         this.nodeRepository = nodeRepository;
+        this.capacityPolicies = new CapacityPolicies(nodeRepository.zone(), nodeRepository.exclusivity(), nodeRepository.flagSource());
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -108,6 +110,7 @@ public class ClusterModel {
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
         this.nodeRepository = nodeRepository;
+        this.capacityPolicies = new CapacityPolicies(nodeRepository.zone(), nodeRepository.exclusivity(), nodeRepository.flagSource());
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -436,9 +439,9 @@ public class ClusterModel {
 
         double averageReal() {
             if (nodes.isEmpty()) { // we're estimating
-                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(cluster.minResources().nodeResources(),
-                                                                                         clusterSpec,
-                                                                                         application.id());
+                var initialResources = capacityPolicies.specifyFully(cluster.minResources().nodeResources(),
+                                                                     clusterSpec,
+                                                                     application.id());
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
                                                                           cloudAccount(),
                                                                           nodeRepository.exclusivity().allocation(clusterSpec),

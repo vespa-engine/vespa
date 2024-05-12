@@ -77,7 +77,7 @@ public class DynamicProvisioningTester {
 
         hostResourcesCalculator = resourcesCalculator;
         autoscaler = new Autoscaler(nodeRepository());
-        capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
+        capacityPolicies = new CapacityPolicies(zone, provisioningTester.nodeRepository().exclusivity(), flagSource);
     }
 
     public InMemoryProvisionLogger provisionLogger() { return provisioningTester.provisionLogger(); }

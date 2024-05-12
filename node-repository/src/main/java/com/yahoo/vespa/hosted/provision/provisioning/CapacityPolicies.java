@@ -8,12 +8,13 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -30,14 +31,14 @@ import static java.util.Objects.requireNonNull;
  */
 public class CapacityPolicies {
 
-    private final NodeRepository nodeRepository;
     private final Zone zone;
+    private final Exclusivity exclusivity;
     private final StringFlag adminClusterNodeArchitecture;
 
-    public CapacityPolicies(NodeRepository nodeRepository) {
-        this.nodeRepository = nodeRepository;
-        this.zone = nodeRepository.zone();
-        this.adminClusterNodeArchitecture = PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(nodeRepository.flagSource());
+    public CapacityPolicies(Zone zone, Exclusivity exclusivity, FlagSource flagSource) {
+        this.zone = zone;
+        this.exclusivity = exclusivity;
+        this.adminClusterNodeArchitecture = PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(flagSource);
     }
 
     public Capacity applyOn(Capacity capacity, ApplicationId application, boolean exclusive) {
@@ -106,7 +107,7 @@ public class CapacityPolicies {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
-            if (nodeRepository.exclusivity().allocation(clusterSpec)) {
+            if (exclusivity.allocation(clusterSpec)) {
                 return smallestExclusiveResources().with(architecture);
             }
 

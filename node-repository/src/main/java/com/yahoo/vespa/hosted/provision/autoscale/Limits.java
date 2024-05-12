@@ -68,7 +68,7 @@ public class Limits {
     public Limits fullySpecified(ClusterSpec clusterSpec, NodeRepository nodeRepository, ApplicationId applicationId) {
         if (this.isEmpty()) throw new IllegalStateException("Unspecified limits can not be made fully specified");
 
-        var capacityPolicies = new CapacityPolicies(nodeRepository);
+        var capacityPolicies = new CapacityPolicies(nodeRepository.zone(), nodeRepository.exclusivity(), nodeRepository.flagSource());
         return new Limits(capacityPolicies.specifyFully(min, clusterSpec, applicationId),
                           capacityPolicies.specifyFully(max, clusterSpec, applicationId),
                           groupSize);

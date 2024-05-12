@@ -66,7 +66,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                      Metric metric) {
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
-        this.capacityPolicies = new CapacityPolicies(nodeRepository);
+        this.capacityPolicies = new CapacityPolicies(nodeRepository.zone(), nodeRepository.exclusivity(), nodeRepository.flagSource());
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService()
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
