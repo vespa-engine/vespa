@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -63,16 +64,18 @@ public class CapacityCheckerTester {
     CapacityCheckerTester() {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
+        var flagSource = new InMemoryFlagSource();
         nodeRepository = new NodeRepository(f,
                                             new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             zone,
+                                            new Exclusivity(zone, flagSource),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),
                                             Optional.empty(),
-                                            new InMemoryFlagSource(),
+                                            flagSource,
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,

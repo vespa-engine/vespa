@@ -14,6 +14,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -121,6 +122,7 @@ public class ProvisioningTester {
                                                  curator,
                                                  clock,
                                                  zone,
+                                                 new Exclusivity(zone, flagSource),
                                                  nameResolver,
                                                  containerImage,
                                                  Optional.empty(),

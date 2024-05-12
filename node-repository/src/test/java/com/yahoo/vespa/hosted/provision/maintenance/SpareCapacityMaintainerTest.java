@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
@@ -258,16 +259,19 @@ public class SpareCapacityMaintainerTest {
         private SpareCapacityMaintainerTester(int maxIterations) {
             NodeFlavors flavors = new NodeFlavors(new FlavorConfigBuilder().build());
             ManualClock clock = new ManualClock();
+            var zone = new Zone(Environment.prod, RegionName.from("us-east-3"));
+            var flagSource = new InMemoryFlagSource();
             nodeRepository = new NodeRepository(flavors,
                                                 new EmptyProvisionServiceProvider(),
                                                 new MockCurator(),
                                                 clock,
-                                                new Zone(Environment.prod, RegionName.from("us-east-3")),
+                                                zone,
+                                                new Exclusivity(zone, flagSource),
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 Optional.empty(),
                                                 Optional.empty(),
-                                                new InMemoryFlagSource(),
+                                                flagSource,
                                                 new MemoryMetricsDb(clock),
                                                 new OrchestratorMock(),
                                                 true,

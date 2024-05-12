@@ -27,7 +27,7 @@ public class NodeResourceLimits {
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
     public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ClusterSpec cluster) {
-        boolean exclusive = nodeRepository.exclusiveAllocation(cluster);
+        boolean exclusive = nodeRepository.exclusiveAllocation().allocation(cluster);
         if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(cluster, exclusive))
             illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster, exclusive));
         if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(cluster, exclusive))
@@ -104,7 +104,7 @@ public class NodeResourceLimits {
     }
 
     private double minRealVcpu(ClusterSpec cluster) {
-        return minAdvertisedVcpu(cluster, nodeRepository.exclusiveAllocation(cluster));
+        return minAdvertisedVcpu(cluster, nodeRepository.exclusiveAllocation().allocation(cluster));
     }
 
     private static double minRealMemoryGb(ClusterSpec cluster) {

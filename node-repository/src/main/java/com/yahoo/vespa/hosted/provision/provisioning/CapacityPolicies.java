@@ -106,7 +106,7 @@ public class CapacityPolicies {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
-            if (nodeRepository.exclusiveAllocation(clusterSpec)) {
+            if (nodeRepository.exclusiveAllocation().allocation(clusterSpec)) {
                 return smallestExclusiveResources().with(architecture);
             }
 

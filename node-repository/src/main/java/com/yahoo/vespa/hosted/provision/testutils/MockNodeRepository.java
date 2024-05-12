@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -90,6 +91,7 @@ public class MockNodeRepository extends NodeRepository {
               curator,
               Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
               zone,
+              new Exclusivity(zone, new InMemoryFlagSource()),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               Optional.empty(),
