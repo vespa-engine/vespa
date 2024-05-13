@@ -53,7 +53,8 @@ public class Flags {
             List.of("hakonhall"), "2024-05-06", "2024-07-06",
             "Whether to provision new GCP VM instances with a service account that are independent " +
             "of the zone, and aligned with the Athenz service names (configserver and tenant-host).",
-            "Takes effect when provisioning new VM instances");
+            "Takes effect when provisioning new VM instances",
+            APPLICATION, INSTANCE_ID);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
