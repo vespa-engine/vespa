@@ -290,7 +290,7 @@ public class DocumentV1ApiTest {
             parameters.getLocalDataHandler().onMessage(new RemoveDocumentMessage(new DocumentId("id:space:music::t-square-truth")), tokens.get(3));
             VisitorStatistics statistics = new VisitorStatistics();
             statistics.setBucketsVisited(1);
-            statistics.setDocumentsVisited(3);
+            statistics.setDocumentsVisited(123); // Ignored in favor of tracking actually emitted entries
             parameters.getControlHandler().onVisitorStatistics(statistics);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
@@ -323,7 +323,7 @@ public class DocumentV1ApiTest {
                             "remove": "id:space:music::t-square-truth"
                            }
                          ],
-                         "documentCount": 3,
+                         "documentCount": 4,
                          "trace": [
                            { "message": "Tracy Chapman" },
                            {
@@ -441,13 +441,18 @@ public class DocumentV1ApiTest {
             assertEquals("[Content:cluster=content]", parameters.getRemoteDataHandler());
             assertEquals("[document]", parameters.fieldSet());
             assertEquals(60_000L, parameters.getSessionTimeoutMs());
+            VisitorStatistics statistics = new VisitorStatistics();
+            statistics.setBucketsVisited(1);
+            statistics.setDocumentsVisited(2);
+            // Visiting with remote data handlers should report the remotely aggregated statistics
+            parameters.getControlHandler().onVisitorStatistics(statistics);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destinationCluster=content&selection=true&cluster=content&timeout=60", POST);
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
-                         "documentCount": 0
+                         "documentCount": 2
                        }""",
                        response.readAll());
         assertEquals(200, response.getStatus());
@@ -488,7 +493,7 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
-                         "documentCount": 0
+                         "documentCount": 1
                        }""",
                        response.readAll());
         assertEquals(200, response.getStatus());
@@ -542,7 +547,7 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
-                         "documentCount": 0,
+                         "documentCount": 1,
                          "message": "boom"
                        }""",
                        response.readAll());
