@@ -456,6 +456,12 @@ public class Flags {
             "Whether to sync tenants to HubSpot",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag REMOVE_ORPHANED_DNS_RECORDS = defineFeatureFlag(
+            "remove-orphaned-dns-records", false,
+            List.of("mpolden"), "2024-05-07", "2024-10-01",
+            "Whether EndpointDnsMaintainer should remove orphaned records instead of logging them",
+            "Takes effect on next maintenance run");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
