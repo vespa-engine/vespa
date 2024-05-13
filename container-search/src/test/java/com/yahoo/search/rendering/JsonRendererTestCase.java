@@ -1532,7 +1532,7 @@ public class JsonRendererTestCase {
                 + "}";
         assertEquals(
                 "Unexpected character ('a' (code 97)): was expecting comma to separate Object entries\n" +
-                        " at [Source: (String)\"{    \"root\": {        \"invalidvalue\": 1adsf,    }}\"; line: 1, column: 41]",
+                        " at [Source: (String)\"{    \"root\": {        \"invalidvalue\": 1adsf,    }}\"; line: 1, column: 40]",
                 validateJSON(json));
     }
 
