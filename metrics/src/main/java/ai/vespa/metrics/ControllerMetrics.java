@@ -42,6 +42,8 @@ public enum ControllerMetrics implements VespaMetrics {
     DNS_QUEUED_REQUESTS("dns.queuedRequests", Unit.REQUEST, "Queued DNS requests"),
     ZMS_QUOTA_USAGE("zms.quota.usage", Unit.FRACTION, "ZMS Quota usage per resource type"),
     COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
+    COREDUMP_REPORT_FAILED("coredump.failed.report", Unit.FAILURE, "Controller: Core dump report failed"),
+    COREDUMP_FIND_FAILED("coredump.failed.find", Unit.FAILURE, "Controller: Core dumps find failed"),
     AUTH0_EXCEPTIONS("auth0.exceptions", Unit.FAILURE, "Controller: Auth0 exceptions"),
     CERTIFICATE_POOL_AVAILABLE("certificate_pool_available", Unit.FRACTION, "Available certificates in the pool, fraction of configured size"),
     BILLING_EXCEPTIONS("billing.exceptions", Unit.FAILURE, "Controller: Billing related exceptions"),
