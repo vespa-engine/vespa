@@ -36,18 +36,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     std::string clusterName("storage");
     vdstestlib::DirConfig dc;
     vdstestlib::DirConfig::Config* config;
-    config = &dc.addConfig("fleetcontroller");
-    config->set("cluster_name", clusterName);
-    config->set("index", "0");
-    config->set("zookeeper_server", "\"\"");
-    config->set("total_distributor_count", "10");
-    config->set("total_storage_count", "10");
-    config = &dc.addConfig("upgrading");
-    config = &dc.addConfig("load-type");
-    config = &dc.addConfig("bucket");
-    config = &dc.addConfig("messagebus");
-    config = &dc.addConfig("stor-prioritymapping");
-    config = &dc.addConfig("stor-bucketdbupdater");
     config = &dc.addConfig("metricsmanager");
     config->set("consumer[2]");
     config->set("consumer[0].name", "\"status\"");
@@ -71,16 +59,8 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     // Easier to see what goes wrong with only 1 thread per disk.
     config->set("num_threads", "1");
     config->set("num_response_threads", "1");
-    config->set("maximum_versions_of_single_document_stored", "0");
-    config->set("keep_remove_time_period", "2000000000");
-    config->set("revert_time_period", "2000000000");
-    // Don't want test to call exit()
-    config->set("fail_disk_after_error_count", "0");
-    config = &dc.addConfig("stor-bouncer");
     config = &dc.addConfig("stor-server");
     config->set("cluster_name", clusterName);
-    config->set("enable_dead_lock_detector", "false");
-    config->set("enable_dead_lock_detector_warnings", "false");
     config->set("max_merges_per_node", "25");
     config->set("max_merge_queue_size", "20");
     config->set("resource_exhaustion_merge_back_pressure_duration_secs", "15.0");

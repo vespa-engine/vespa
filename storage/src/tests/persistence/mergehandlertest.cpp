@@ -220,11 +220,11 @@ void
 MergeHandlerTest::setUpChain(ChainPos pos) {
     _nodes.clear();
     if (pos != FRONT) {
-        _nodes.push_back(api::MergeBucketCommand::Node(2, false));
+        _nodes.emplace_back(2, false);
     }
-    _nodes.push_back(api::MergeBucketCommand::Node(0, false));
+    _nodes.emplace_back(0, false);
     if (pos != BACK) {
-        _nodes.push_back(api::MergeBucketCommand::Node(1, false));
+        _nodes.emplace_back(1, false);
     }
 }
 
