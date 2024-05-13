@@ -46,7 +46,7 @@ import java.util.TreeMap;
  *
  * @author bratseth
  */
-public class SDField extends Field implements TypedKey, ImmutableSDField {
+public class SDField extends Field implements ImmutableSDField {
 
     /** Use this field for modifying index-structure, even if it doesn't have any indexing code */
     private boolean indexStructureField = false;
@@ -315,7 +315,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
             }
-            if ((subType == null) && (structFields.size() > 0)) {
+            if ((subType == null) && (!structFields.isEmpty())) {
                 throw new IllegalArgumentException("Cannot find matching (repo=" + sdoc + ") for subfields in "
                                                    + this + " [" + getDataType() + getDataType().getClass() +
                                                    "] with " + structFields.size() + " struct fields");
@@ -627,7 +627,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
 
     public Attribute addAttribute(Attribute attribute) {
         String name = attribute.getName();
-        if (name == null || "".equals(name)) {
+        if (name == null || name.isEmpty()) {
             name = getName();
             attribute.setName(name);
         }
