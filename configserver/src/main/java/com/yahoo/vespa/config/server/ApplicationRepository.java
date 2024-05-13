@@ -1136,7 +1136,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public double getQuotaUsageRate(ApplicationId applicationId) {
         var application = getApplication(applicationId);
-        return application.getModel().provisioned().all().values().stream()
+        return application.getModel().provisioned().capacities().values().stream()
                 .map(Capacity::maxResources)// TODO: This may be unspecified -> 0
                 .mapToDouble(resources -> resources.nodes() * resources.nodeResources().cost())
                 .sum();

@@ -39,6 +39,8 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.documentmodel.DocumentModel;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
@@ -79,6 +81,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Version vespaVersion;
     private final Set<ContainerEndpoint> endpoints;
     private final Zone zone; // TODO: Zone is set separately both here and in properties
+    private final FlagSource flagSource;
     private final QueryProfiles queryProfiles;
     private final SemanticRules semanticRules;
     private final ImportedMlModels importedModels;
@@ -118,6 +121,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Set<ContainerEndpoint> endpoints,
                         Collection<MlModelImporter> modelImporters,
                         Zone zone,
+                        FlagSource flagSource,
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
                         Instant now,
@@ -143,6 +147,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.configDefinitionRepo = configDefinitionRepo;
         this.endpoints = Set.copyOf(endpoints);
         this.zone = zone;
+        this.flagSource = flagSource;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = importMlModels(applicationPackage, modelImporters, executor);
@@ -273,6 +278,8 @@ public class DeployState implements ConfigDefinitionStore {
     /** Returns the zone in which this is currently running */
     public Zone zone() { return zone; }
 
+    public FlagSource flagSource() { return flagSource; }
+
     public QueryProfiles getQueryProfiles() { return queryProfiles; }
 
     public SemanticRules getSemanticRules() { return semanticRules; }
@@ -330,6 +337,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Set<ContainerEndpoint> endpoints = Set.of();
         private Collection<MlModelImporter> modelImporters = List.of();
         private Zone zone = Zone.defaultZone();
+        private FlagSource flagSource = new InMemoryFlagSource();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
         private boolean accessLoggingEnabledByDefault = true;
@@ -404,6 +412,11 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder zone(Zone zone) {
             this.zone = zone;
+            return this;
+        }
+
+        public Builder flagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
             return this;
         }
 
@@ -483,6 +496,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    endpoints,
                                    modelImporters,
                                    zone,
+                                   flagSource,
                                    queryProfiles,
                                    semanticRules,
                                    now,

@@ -54,6 +54,12 @@ public class QuotaValidatorTest {
     }
 
     @Test
+    void test_deploy_within_quota_budget_because_in_dev() {
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(devZone));
+        tester.deploy(null, getServices(10), Environment.dev, null, CONTAINER_CLUSTER);
+    }
+
+    @Test
     void test_deploy_above_quota_budget_in_publiccd() {
         var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota.withBudget(BigDecimal.ONE)).setZone(publicCdZone));
         try {

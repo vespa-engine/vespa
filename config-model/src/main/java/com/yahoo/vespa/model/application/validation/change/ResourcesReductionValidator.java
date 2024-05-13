@@ -60,9 +60,9 @@ public class ResourcesReductionValidator implements ChangeValidator {
      * This will always yield specified node resources on hosted instances and never on self-hosted instances.
      */
     private ClusterResources clusterResources(ClusterSpec.Id id, VespaModel model) {
-        if ( ! model.provisioned().all().containsKey(id)) return null;
+        if ( ! model.provisioned().capacities().containsKey(id)) return null;
 
-        ClusterResources resources = model.provisioned().all().get(id).maxResources();
+        ClusterResources resources = model.provisioned().capacities().get(id).maxResources();
         if ( ! resources.nodeResources().isUnspecified()) return resources;
 
         var containerCluster = model.getContainerClusters().get(id.value());

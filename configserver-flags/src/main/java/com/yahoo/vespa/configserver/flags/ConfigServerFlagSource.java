@@ -13,6 +13,7 @@ import java.nio.file.FileSystems;
  * @author hakonhall
  */
 public class ConfigServerFlagSource extends OrderedFlagSource {
+
     @Inject
     public ConfigServerFlagSource(FlagsDb flagsDb) {
         this(FileSystems.getDefault(), flagsDb);
@@ -21,4 +22,5 @@ public class ConfigServerFlagSource extends OrderedFlagSource {
     ConfigServerFlagSource(FileSystem fileSystem, FlagsDb flagsDb) {
         super(new BootstrapFlagSource(fileSystem), new ZooKeeperFlagSource(flagsDb));
     }
+
 }

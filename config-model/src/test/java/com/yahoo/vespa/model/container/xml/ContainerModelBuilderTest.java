@@ -598,7 +598,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                                 .setCloudAccount(cloudAccount))
                 .build());
         assertEquals(2, model.hostSystem().getHosts().size());
-        assertEquals(List.of(cloudAccount), model.provisioned().all().values()
+        assertEquals(List.of(cloudAccount), model.provisioned().capacities().values()
                                                  .stream()
                                                  .map(capacity -> capacity.cloudAccount().get())
                                                  .toList());

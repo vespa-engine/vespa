@@ -258,7 +258,7 @@ public class ClusterInfoTest {
                                   .provisioned(provisioner.provisioned())
                                   .build();
         new VespaModel(new NullConfigModelRegistry(), deployState);
-        return deployState.provisioned().all();
+        return deployState.provisioned().capacities();
     }
 
 }
