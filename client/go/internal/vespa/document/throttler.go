@@ -37,8 +37,8 @@ type dynamicThrottler struct {
 
 func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 	var (
-		minInflight = 16 * int64(connections)
-		maxInflight = 256 * minInflight // 4096 max streams per connection on the server side
+		minInflight = 2 * int64(connections)
+		maxInflight = 256 * minInflight // 512 max streams per connection on the server side
 	)
 	t := &dynamicThrottler{
 		minInflight: minInflight,
@@ -49,7 +49,7 @@ func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 		start: nowFunc(),
 		now:   nowFunc,
 	}
-	t.targetInflight.Store(8 * minInflight)
+	t.targetInflight.Store(minInflight)
 	t.targetTimesTen.Store(10 * maxInflight)
 	return t
 }
@@ -57,7 +57,7 @@ func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 func NewThrottler(connections int) Throttler { return newThrottler(connections, time.Now) }
 
 func (t *dynamicThrottler) Sent() {
-	currentInflight := t.targetInflight.Load()
+	currentInflight := t.TargetInflight()
 	t.sent++
 	if t.sent*t.sent*t.sent < 100*currentInflight*currentInflight {
 		return
@@ -73,8 +73,12 @@ func (t *dynamicThrottler) Sent() {
 	t.throughputs[index] = currentThroughput
 
 	// Loop over throughput measurements and pick the one which optimises throughput and latency.
-	choice := float64(currentInflight)
+	best := float64(currentInflight)
 	maxObjective := float64(-1)
+	choice := 0
+	j := -1
+	k := -1
+	s := 0.0
 	for i := len(t.throughputs) - 1; i >= 0; i-- {
 		if t.throughputs[i] == 0 {
 			continue // Skip unknown values
@@ -83,10 +87,25 @@ func (t *dynamicThrottler) Sent() {
 		objective := t.throughputs[i] * math.Pow(inflight, throttlerWeight-1) // Optimise throughput (weight), but also latency (1 - weight)
 		if objective > maxObjective {
 			maxObjective = objective
-			choice = inflight
+			best = inflight
+			choice = i
 		}
+		// Additionally, smooth the throughput values, to reduce the impact of noise, and reduce jumpiness
+		if j != -1 {
+			u := t.throughputs[j]
+			if k != -1 {
+				t.throughputs[j] = (2*u + t.throughputs[i] + s) / 4
+			}
+			s = u
+		}
+		k = j
+		j = i
 	}
-	target := int64((rand.Float64()*0.20 + 0.92) * choice) // Random walk, skewed towards increase
+	target := int64((rand.Float64()*0.40+0.84)*best + rand.Float64()*4 - 1) // Random walk, skewed towards increase
+	// If the best inflight is at the high end of the known, we override the random walk to speed up upwards exploration
+	if choice == j && choice+1 < len(t.throughputs) {
+		target = int64(1 + float64(t.minInflight)*math.Pow(256, (float64(choice)+1.5)/float64(len(t.throughputs))))
+	}
 	t.targetInflight.Store(max(t.minInflight, min(t.maxInflight, target)))
 }
 
