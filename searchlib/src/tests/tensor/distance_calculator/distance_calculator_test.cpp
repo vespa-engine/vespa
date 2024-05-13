@@ -9,7 +9,6 @@
 #include <vespa/searchlib/test/attribute_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <iostream>
 
 using namespace search::attribute::test;
 using namespace search::attribute;
