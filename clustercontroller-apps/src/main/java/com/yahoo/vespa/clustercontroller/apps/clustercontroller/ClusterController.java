@@ -11,11 +11,12 @@ import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskSchedul
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.zookeeper.server.VespaZooKeeperServer;
+
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -27,9 +28,10 @@ public class ClusterController extends AbstractComponent
 
     private static final Logger log = Logger.getLogger(ClusterController.class.getName());
     private final JDiscMetricWrapper metricWrapper;
+    private final Object monitor = new Object();
     private final Map<String, FleetController> controllers = new TreeMap<>();
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
-    private final AtomicInteger referents = new AtomicInteger();
+    private final Map<String, Integer> referents = new HashMap<>();
     private final AtomicBoolean shutdown = new AtomicBoolean();
 
     /**
@@ -44,9 +46,9 @@ public class ClusterController extends AbstractComponent
     }
 
     public void setOptions(FleetControllerOptions options, Metric metricImpl) throws Exception {
-        referents.incrementAndGet();
         metricWrapper.updateMetricImplementation(metricImpl);
-        synchronized (controllers) {
+        synchronized (monitor) {
+            referents.merge(options.clusterName(), 1, Integer::sum);
             FleetController controller = controllers.get(options.clusterName());
             if (controller == null) {
                 controller = FleetController.create(options, metricWrapper);
@@ -68,21 +70,34 @@ public class ClusterController extends AbstractComponent
      * we must also let the last configurer shut down this controller, to ensure this is shut down
      * before the ZK server it had injected from the configurers.
      */
-    void countdown() {
-        if (referents.decrementAndGet() == 0)
-            shutdown();
+    void countdown(String clusterName) {
+        synchronized (monitor) {
+            referents.compute(clusterName, (__, count) -> {
+                if (count == null) throw new IllegalStateException("trying to remove unknown cluster: " + clusterName);
+                if (count == 1) {
+                    shutDownController(controllers.remove(clusterName));
+                    status.remove(clusterName);
+                    return null;
+                }
+                return count - 1;
+            });
+        }
+    }
+
+    private void shutDownController(FleetController controller) {
+        if (controller == null) return;
+        try {
+            controller.shutdown();
+        } catch (Exception e) {
+            log.warning("Failed to shut down fleet controller: " + e.getMessage());
+        }
     }
 
     void shutdown() {
         if (shutdown.compareAndSet(false, true)) {
-            synchronized (controllers) {
+            synchronized (monitor) {
                 for (FleetController controller : controllers.values()) {
-                    try {
-                        shutdownController(controller);
-                    }
-                    catch (Exception e) {
-                        log.warning("Failed to shut down fleet controller: " + e.getMessage());
-                    }
+                    shutDownController(controller);
                 }
             }
         }
@@ -90,7 +105,7 @@ public class ClusterController extends AbstractComponent
 
     @Override
     public Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers() {
-        synchronized (controllers) {
+        synchronized (monitor) {
             return new LinkedHashMap<>(controllers);
         }
     }
@@ -103,10 +118,6 @@ public class ClusterController extends AbstractComponent
     @Override
     public Map<String, StatusHandler.ContainerStatusPageServer> getAll() {
         return status;
-    }
-
-    void shutdownController(FleetController controller) throws Exception {
-        controller.shutdown();
     }
 
 }
