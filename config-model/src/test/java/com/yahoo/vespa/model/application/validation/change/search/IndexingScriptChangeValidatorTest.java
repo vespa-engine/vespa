@@ -39,6 +39,21 @@ public class IndexingScriptChangeValidatorTest {
         }
     }
 
+    private static class ComplexFixture extends ContentClusterFixture {
+        IndexingScriptChangeValidator validator;
+        public ComplexFixture(String currentSd, String nextSd) throws Exception {
+            super(createClusterFromEntireSd(currentSd), createClusterFromEntireSd(nextSd));
+            validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
+                    currentDb().getDerivedConfiguration().getSchema(),
+                    nextDb().getDerivedConfiguration().getSchema());
+        }
+
+        @Override
+        public List<VespaConfigChangeAction> validate() {
+            return validator.validate();
+        }
+    }
+
     private static class ScriptFixture {
 
         private final ScriptExpression currentScript;
@@ -56,6 +71,9 @@ public class IndexingScriptChangeValidatorTest {
 
     private static final String FIELD = "field f1 type string";
     private static final String FIELD_F2 = "field f2 type string";
+    private static final String TENSOR_FIELD_F1 = "field f1 type tensor(x[2])";
+    private static final String TENSOR_FIELD_F2 = "field f2 type tensor(x[2])";
+    private static final String TENSOR_FIELD_F3 = "field f3 type tensor(x[2])";
 
     private static VespaConfigChangeAction expectedReindexingAction(String changedMsg, String fromScript, String toScript) {
         return expectedReindexingAction("f1", changedMsg, fromScript, toScript);
@@ -113,6 +131,28 @@ public class IndexingScriptChangeValidatorTest {
                 "{ input f1 | exact | index f1; }",
                 "{ input f1 | ngram 3 | index f1; }"));
     }
+
+    @Test
+    void requireThatAddingIndexAspectForExtraTensorFieldWithChangedInputRequireReindexing() throws Exception {
+        new ComplexFixture(joinLines("schema test {",
+                "  document test {",
+                "    " + TENSOR_FIELD_F1 + " { }",
+                "    " + TENSOR_FIELD_F2 + " { }",
+                "  }",
+                "  " + TENSOR_FIELD_F3 + " { indexing: input f1 | attribute }",
+                "}"),
+                joinLines("schema test {",
+                        "  document test {",
+                        "    " + TENSOR_FIELD_F1 + " { }",
+                        "    " + TENSOR_FIELD_F2 + " { }",
+                        "  }",
+                        "  " + TENSOR_FIELD_F3 + " { indexing: input f2 | index | attribute }",
+                        "}")).
+                assertValidation(List.of(expectedReindexingAction("f3", "add index aspect",
+                                "{ input f1 | attribute f3; }",
+                                "{ input f2 | index f3 | attribute f3; }")));
+    }
+
 
     @Test
     void requireThatSettingDynamicSummaryIsOk() throws Exception {
