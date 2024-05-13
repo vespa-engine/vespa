@@ -9,11 +9,16 @@ import (
 func TestThrottler(t *testing.T) {
 	clock := &manualClock{tick: time.Second}
 	tr := newThrottler(8, clock.now)
+
 	if got, want := tr.TargetInflight(), int64(16); got != want {
 		t.Errorf("got TargetInflight() = %d, but want %d", got, want)
 	}
-	for tr.TargetInflight() < int64(18) {
+	for i := 0; i < 30; i++ {
 		tr.Sent()
+		tr.Success()
+	}
+	if got, want := tr.TargetInflight(), int64(18); got != want {
+		t.Errorf("got TargetInflight() = %d, but want %d", got, want)
 	}
 	tr.Throttled(34)
 	if got, want := tr.TargetInflight(), int64(17); got != want {
