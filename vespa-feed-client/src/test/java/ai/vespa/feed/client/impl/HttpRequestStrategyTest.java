@@ -33,7 +33,6 @@ import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -106,7 +105,7 @@ class HttpRequestStrategyTest {
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
         ExecutionException expected = assertThrows(ExecutionException.class,
                                                    () -> strategy.enqueue(id1, request).get());
-        assertInstanceOf(FeedException.class, expected.getCause());
+        assertTrue(expected.getCause() instanceof FeedException);
         assertEquals("java.lang.RuntimeException: boom", expected.getCause().getMessage());
         assertEquals(1, strategy.stats().requests());
 
@@ -201,7 +200,7 @@ class HttpRequestStrategyTest {
                                                                                     @Override public int retries() { return 1; }
                                                                                 })
                                                                                 .setCircuitBreaker(breaker)
-                                                                                .setConnectionsPerEndpoint(3), // Must be >= 0.5x text ops.
+                                                                                .setConnectionsPerEndpoint(1),
                                                                cluster);
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
