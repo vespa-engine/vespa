@@ -30,7 +30,7 @@ public class ClusterController extends AbstractComponent
     private final JDiscMetricWrapper metricWrapper;
     private final Object monitor = new Object();
     private final Map<String, FleetController> controllers = new TreeMap<>();
-    private final Map<String, StatusHandler.ContainerStatusPageServer> status = new HashMap<>();
+    private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
     private final Map<String, Integer> referents = new HashMap<>();
     private final AtomicBoolean shutdown = new AtomicBoolean();
 
@@ -72,10 +72,15 @@ public class ClusterController extends AbstractComponent
      */
     void countdown(String clusterName) {
         synchronized (monitor) {
-            if (0 == referents.merge(clusterName, -1, Integer::sum)) {
-                shutDownController(controllers.remove(clusterName));
-                status.remove(clusterName);
-            }
+            referents.compute(clusterName, (__, count) -> {
+                if (count == null) throw new IllegalStateException("trying to remove unknown cluster: " + clusterName);
+                if (count == 1) {
+                    shutDownController(controllers.remove(clusterName));
+                    status.remove(clusterName);
+                    return null;
+                }
+                return count - 1;
+            });
         }
     }
 
