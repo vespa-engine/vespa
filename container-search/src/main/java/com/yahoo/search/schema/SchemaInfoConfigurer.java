@@ -22,9 +22,10 @@ class SchemaInfoConfigurer {
         Schema.Builder builder = new Schema.Builder(schemaInfoConfig.name());
 
         for (var profileConfig : schemaInfoConfig.rankprofile()) {
-            RankProfile.Builder profileBuilder = new RankProfile.Builder(profileConfig.name());
-            profileBuilder.setHasSummaryFeatures(profileConfig.hasSummaryFeatures());
-            profileBuilder.setHasRankFeatures(profileConfig.hasRankFeatures());
+            RankProfile.Builder profileBuilder = new RankProfile.Builder(profileConfig.name())
+                    .setHasSummaryFeatures(profileConfig.hasSummaryFeatures())
+                    .setHasRankFeatures(profileConfig.hasRankFeatures())
+                    .setUseSignificanceModel(profileConfig.significance().useModel());
             for (var inputConfig : profileConfig.input())
                 profileBuilder.addInput(inputConfig.name(), RankProfile.InputType.fromSpec(inputConfig.type()));
             builder.add(profileBuilder.build());

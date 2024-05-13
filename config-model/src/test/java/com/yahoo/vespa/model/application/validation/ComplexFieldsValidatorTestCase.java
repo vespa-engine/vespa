@@ -143,6 +143,32 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
+    void logs_warning_when_complex_fields_have_struct_fields_with_index_and_exact_match() throws IOException, SAXException {
+        var logger = new MyLogger();
+        createModelAndValidate(joinLines(
+                "schema test {",
+                "  document test {",
+                "    field nesteds type array<nested> {",
+                "      struct-field foo {",
+                "        indexing: attribute | index",
+                "        match {",
+                "          exact",
+                "          exact-terminator: '@@'",
+                "        }",
+                "      }",
+                "    }",
+                "    struct nested {",
+                "      field foo type string {}",
+                "    }",
+                "  }",
+                "}"), logger);
+        assertTrue(logger.message.toString().contains("For cluster 'mycluster', schema 'test': " +
+                "The following complex fields have struct fields with 'indexing: index' which is " +
+                "not supported and has no effect: nesteds (nesteds.foo). " +
+                "Remove setting or change to 'indexing: attribute' if needed for matching."));
+    }
+
+    @Test
     void validation_passes_when_only_supported_struct_field_attributes_are_used() throws IOException, SAXException {
         createModelAndValidate(joinLines("search test {",
                 "  document test {",

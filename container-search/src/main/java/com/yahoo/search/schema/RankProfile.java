@@ -36,6 +36,7 @@ public class RankProfile {
     private final String name;
     private final boolean hasSummaryFeatures;
     private final boolean hasRankFeatures;
+    private final boolean useSignificanceModel;
     private final Map<String, InputType> inputs;
 
     // Assigned when this is added to a schema
@@ -45,6 +46,7 @@ public class RankProfile {
         this.name = builder.name;
         this.hasSummaryFeatures = builder.hasSummaryFeatures;
         this.hasRankFeatures = builder.hasRankFeatures;
+        this.useSignificanceModel = builder.useSignificanceModel;
         this.inputs = Collections.unmodifiableMap(builder.inputs);
     }
 
@@ -66,6 +68,9 @@ public class RankProfile {
     /** Returns true if this rank profile has rank features. */
     public boolean hasRankFeatures() { return hasRankFeatures; }
 
+    /** Returns true if this rank profile should use significance models. */
+    public boolean useSignificanceModel() { return useSignificanceModel; }
+
     /** Returns the inputs explicitly declared in this rank profile. */
     public Map<String, InputType> inputs() { return inputs; }
 
@@ -76,13 +81,14 @@ public class RankProfile {
         if ( ! other.name.equals(this.name)) return false;
         if ( other.hasSummaryFeatures != this.hasSummaryFeatures) return false;
         if ( other.hasRankFeatures != this.hasRankFeatures) return false;
+        if ( other.useSignificanceModel != this.useSignificanceModel) return false;
         if ( ! other.inputs.equals(this.inputs)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, inputs);
+        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs);
     }
 
     @Override
@@ -95,6 +101,7 @@ public class RankProfile {
         private final String name;
         private boolean hasSummaryFeatures = true;
         private boolean hasRankFeatures = true;
+        private boolean useSignificanceModel = false;
         private final Map<String, InputType> inputs = new LinkedHashMap<>();
 
         public Builder(String name) {
@@ -115,6 +122,8 @@ public class RankProfile {
             inputs.put(name, type);
             return this;
         }
+
+        public Builder setUseSignificanceModel(boolean use) { this.useSignificanceModel = use; return this; }
 
         public RankProfile build() {
             return new RankProfile(this);

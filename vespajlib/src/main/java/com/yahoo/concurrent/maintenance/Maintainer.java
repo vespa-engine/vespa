@@ -109,7 +109,7 @@ public abstract class Maintainer implements Runnable {
     /** Convenience methods to convert attempts and failures into a success factor deviation from the baseline, and return   */
     protected final double asSuccessFactorDeviation(int attempts, int failures) {
         double factor = attempts == 0 ? 1.0 : 1 - (double) failures / attempts;
-        return new BigDecimal(factor - successFactorBaseline).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        return new BigDecimal(factor - successFactorBaseline).setScale(5, RoundingMode.HALF_UP).doubleValue();
     }
 
     /** Returns the interval at which this job is set to run */

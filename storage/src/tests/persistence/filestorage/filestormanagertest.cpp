@@ -93,8 +93,6 @@ struct FileStorTestBase : Test {
     enum {LONG_WAITTIME=60};
     unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<vdstestlib::DirConfig> config;
-    std::unique_ptr<vdstestlib::DirConfig> config2;
-    std::unique_ptr<vdstestlib::DirConfig> smallConfig;
     const int32_t _waitTime;
     const document::DocumentType* _testdoctype1;
 
@@ -167,27 +165,8 @@ struct FileStorTestBase : Test {
         std::string rootOfRoot = "filestormanagertest";
         config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, rootOfRoot));
 
-        config2 = std::make_unique<vdstestlib::DirConfig>(*config);
-        config2->getConfig("stor-server").set("root_folder", rootOfRoot + "-vdsroot.2");
-        config2->getConfig("stor-devices").set("root_folder", rootOfRoot + "-vdsroot.2");
-        config2->getConfig("stor-server").set("node_index", "1");
-
-        smallConfig = std::make_unique<vdstestlib::DirConfig>(*config);
-        vdstestlib::DirConfig::Config& c(smallConfig->getConfig("stor-filestor", true));
-        c.set("initial_index_read", "128");
-        c.set("use_direct_io", "false");
-        c.set("maximum_gap_to_read_through", "64");
-
-        assert(system(vespalib::make_string("rm -rf %s", getRootFolder(*config).c_str()).c_str()) == 0);
-        assert(system(vespalib::make_string("rm -rf %s", getRootFolder(*config2).c_str()).c_str()) == 0);
-        assert(system(vespalib::make_string("mkdir -p %s/disks/d0", getRootFolder(*config).c_str()).c_str()) == 0);
-        assert(system(vespalib::make_string("mkdir -p %s/disks/d0", getRootFolder(*config2).c_str()).c_str()) == 0);
-        try {
-            _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), config->getConfigId());
-            _node->setupDummyPersistence();
-        } catch (config::InvalidConfigException& e) {
-            fprintf(stderr, "%s\n", e.what());
-        }
+        _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), config->getConfigId());
+        _node->setupDummyPersistence();
         _testdoctype1 = _node->getTypeRepo()->getDocumentType("testdoctype1");
     }
 
@@ -227,10 +206,10 @@ struct TestFileStorComponents {
     DummyStorageLink top;
     FileStorManager* manager;
 
-    explicit TestFileStorComponents(FileStorTestBase& test, bool use_small_config = false)
+    explicit TestFileStorComponents(FileStorTestBase& test)
         : manager(nullptr)
     {
-        auto config_uri = config::ConfigUri((use_small_config ? test.smallConfig : test.config)->getConfigId());
+        auto config_uri = config::ConfigUri(test.config->getConfigId());
         auto config = config_from<StorFilestorConfig>(config_uri);
         auto fsm = std::make_unique<FileStorManager>(*config, test._node->getPersistenceProvider(),
                                                      test._node->getComponentRegister(), *test._node, test._node->get_host_info());
@@ -1255,7 +1234,7 @@ createIterator(DummyStorageLink& link,
 }
 
 TEST_F(FileStorManagerTest, visiting) {
-    TestFileStorComponents c(*this, true);
+    TestFileStorComponents c(*this);
     auto& top = c.top;
     // Adding documents to two buckets which we are going to visit
     // We want one bucket in one slotfile, and one bucket with a file split

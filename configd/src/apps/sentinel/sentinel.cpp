@@ -10,7 +10,6 @@
 #include <clocale>
 #include <string>
 #include <unistd.h>
-#include <sys/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sentinel.config-sentinel");
@@ -84,6 +83,7 @@ main(int argc, char **argv)
     }
 
     sentinel::Manager manager(environment);
+    std::vector<pollfd> fds;
     vespalib::steady_time lastTime = vespalib::steady_clock::now();
     while (!stop()) {
         try {
@@ -103,16 +103,10 @@ main(int argc, char **argv)
         if (vespalib::SignalHandler::CHLD.check()) {
             continue;
         }
-        int maxNum = 0;
-        fd_set fds;
-        FD_ZERO(&fds);
-        manager.updateActiveFdset(&fds, &maxNum);
+        manager.updateActiveFdset(fds);
+        constexpr int poll_timeout_ms = 100;
 
-        struct timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = 100000;  //0.1s
-
-        select(maxNum, &fds, nullptr, nullptr, &tv);
+        poll(fds.data(), fds.size(), poll_timeout_ms);
 
         vespalib::steady_time now = vespalib::steady_clock::now();
         if ((now - lastTime) < 10ms) {

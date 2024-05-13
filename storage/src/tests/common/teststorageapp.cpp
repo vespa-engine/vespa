@@ -35,17 +35,16 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
       _node_identity("test_cluster", type, index),
       _initialized(false)
 {
-        // Use config to adjust values
+    // Use config to adjust values
     vespalib::string clusterName = "mycluster";
     uint32_t redundancy = 2;
     uint32_t nodeCount = 10;
     if (!configId.empty()) {
         config::ConfigUri uri(configId);
-        std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
+        auto serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
         clusterName = serverConfig->clusterName;
         if (index == 0xffff) index = serverConfig->nodeIndex;
         redundancy = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(uri.getConfigId(), uri.getContext())->redundancy;
-        nodeCount = config::ConfigGetter<vespa::config::content::FleetcontrollerConfig>::getConfig(uri.getConfigId(), uri.getContext())->totalStorageCount;
     } else {
         if (index == 0xffff) index = 0;
     }

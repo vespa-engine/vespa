@@ -48,6 +48,14 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag ATHENZ_SERVICE_ACCOUNTS = defineFeatureFlag(
+            "athenz-service-accounts", false,
+            List.of("hakonhall"), "2024-05-06", "2024-07-06",
+            "Whether to provision new GCP VM instances with a service account that are independent " +
+            "of the zone, and aligned with the Athenz service names (configserver and tenant-host).",
+            "Takes effect when provisioning new VM instances",
+            APPLICATION, INSTANCE_ID);
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -83,18 +91,6 @@ public class Flags {
             "Max amount of memory holding updates to an attribute before we do a commit.",
             "Takes effect at redeployment",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag NEW_RESOURCES_FORMULA = defineFeatureFlag(
-            "new-resources-formula", true,
-            List.of("hakonhall"), "2024-04-25", "2024-05-25",
-            "Use an easier to understand formula for calculating the memory and disk resources",
-            "Takes effect on next deployment of an applications.");
-
-    public static final UnboundBooleanFlag FIX_CONFIG_SERVER_HEAP = defineFeatureFlag(
-            "fix-config-server-heap", true,
-            List.of("hakonhall"), "2024-04-23", "2024-05-23",
-            "Base the calculation of the config server JVM heap size on the amount of memory available to the container.",
-            "Takes effect on start of config server Podman container");
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
@@ -454,6 +450,18 @@ public class Flags {
             List.of("hmusum"), "2024-04-29", "2024-06-01",
             "Whether to encrypt disk when provisioning new hosts",
             "Will be read only on boot.");
+
+    public static UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
+            "hubspot-sync-tenants", false,
+            List.of("bjorncs"), "2024-05-07", "2025-01-01",
+            "Whether to sync tenants to HubSpot",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag REMOVE_ORPHANED_DNS_RECORDS = defineFeatureFlag(
+            "remove-orphaned-dns-records", false,
+            List.of("mpolden"), "2024-05-07", "2024-10-01",
+            "Whether EndpointDnsMaintainer should remove orphaned records instead of logging them",
+            "Takes effect on next maintenance run");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

@@ -45,7 +45,7 @@ public class ClusterControllerClusterConfigurer extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        if (controller != null) controller.countdown();
+        if (controller != null) controller.countdown(options.clusterName());
     }
 
     FleetControllerOptions getOptions() { return options; }

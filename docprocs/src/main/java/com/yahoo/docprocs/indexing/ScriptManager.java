@@ -72,7 +72,7 @@ public class ScriptManager {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
         ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedders);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
-        parserContext.getAnnotatorConfig().setMaxTokenLength(config.fieldmatchmaxlength());
+        parserContext.getAnnotatorConfig().setMaxTokenizeLength(config.fieldmatchmaxlength());
 
         for (IlscriptsConfig.Ilscript ilscript : config.ilscript()) {
             DocumentType documentType = docTypeMgr.getDocumentType(ilscript.doctype());

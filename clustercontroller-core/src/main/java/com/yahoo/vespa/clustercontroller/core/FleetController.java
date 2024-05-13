@@ -542,6 +542,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             didWork |= metricUpdater.forWork("processNextQueuedRemoteTask", this::processNextQueuedRemoteTask);
             didWork |= metricUpdater.forWork("completeSatisfiedVersionDependentTasks", this::completeSatisfiedVersionDependentTasks);
             didWork |= metricUpdater.forWork("maybePublishOldMetrics", this::maybePublishOldMetrics);
+            updateClusterSyncMetrics();
 
             processingCycle = false;
             ++cycleCount;
@@ -560,6 +561,14 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         }
         if (isRunning()) {
             propagateNewStatesToListeners();
+        }
+    }
+
+    private void updateClusterSyncMetrics() {
+        var stats = stateVersionTracker.getAggregatedClusterStats().getAggregatedStats();
+        if (stats.hasUpdatesFromAllDistributors()) {
+            GlobalBucketSyncStatsCalculator.clusterBucketsOutOfSyncRatio(stats.getGlobalStats())
+                    .ifPresent(metricUpdater::updateClusterBucketsOutOfSyncRatio);
         }
     }
 
@@ -689,6 +698,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         context.cluster = cluster;
         context.currentConsolidatedState = consolidatedClusterState();
         context.publishedClusterStateBundle = stateVersionTracker.getVersionedClusterStateBundle();
+        context.aggregatedClusterStats = stateVersionTracker.getAggregatedClusterStats().getAggregatedStats();
         context.masterInfo = new MasterInterface() {
             @Override public boolean isMaster() { return isMaster; }
             @Override public Integer getMaster() { return masterElectionHandler.getMaster(); }

@@ -134,10 +134,8 @@ abstract class SimpleParser extends StructuredParser {
             if (topLevelItem != null && topLevelItem != not) {
                 // => neutral rank items becomes implicit positives
                 not.addPositiveItem(getItemAsPositiveItem(topLevelItem, not));
-                return not;
-            } else {
-                return not;
             }
+            return not;
         }
         if (topLevelItem != null) {
             return topLevelItem;

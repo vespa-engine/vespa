@@ -48,6 +48,19 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
+    void three_groups_of_which_two_were_just_added() {
+        var tester =  new SearchClusterTester(3, 3);
+
+        tester.setDocsPerNode(100, 0);
+        tester.setDocsPerNode(80, 1);
+        tester.setDocsPerNode(80, 2);
+        tester.pingIterationCompleted();
+        assertTrue(tester.group(0).hasSufficientCoverage());
+        assertFalse(tester.group(1).hasSufficientCoverage());
+        assertFalse(tester.group(2).hasSufficientCoverage());
+    }
+
+    @Test
     void three_groups_one_missing_docs_but_too_few() {
         var tester =  new SearchClusterTester(3, 3);
 
@@ -64,6 +77,10 @@ public class SearchClusterCoverageTest {
     void three_groups_one_has_too_many_docs() {
         var tester =  new SearchClusterTester(3, 3);
 
+        tester.setDocsPerNode(100, 0);
+        tester.setDocsPerNode(100, 1);
+        tester.setDocsPerNode(100, 2);
+        tester.pingIterationCompleted();
         tester.setDocsPerNode(100, 0);
         tester.setDocsPerNode(150, 1);
         tester.setDocsPerNode(100, 2);

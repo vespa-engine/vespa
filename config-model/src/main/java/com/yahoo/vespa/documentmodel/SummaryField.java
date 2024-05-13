@@ -3,10 +3,12 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.schema.document.TypedKey;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -16,7 +18,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author bratseth
  */
-public class SummaryField extends Field implements Cloneable, TypedKey {
+public class SummaryField extends Field implements Cloneable {
 
     /** A source (field name). */
     public static class Source implements Serializable {
@@ -62,7 +64,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
      */
     private Set<Source> sources = new java.util.LinkedHashSet<>();
 
-    private Set<String> destinations  =new java.util.LinkedHashSet<>();
+    private Set<String> destinations  = new java.util.LinkedHashSet<>();
 
     /** True if this field was defined implicitly */
     private boolean implicit = false;

@@ -46,6 +46,7 @@ class OverrideProcessor implements PreProcessor {
     private final Tags tags;
 
     private static final String ID_ATTRIBUTE = "id";
+    private static final String IDREF_ATTRIBUTE = "idref";
     private static final String INSTANCE_ATTRIBUTE = "instance";
     private static final String ENVIRONMENT_ATTRIBUTE = "environment";
     private static final String REGION_ATTRIBUTE = "region";
@@ -200,7 +201,7 @@ class OverrideProcessor implements PreProcessor {
 
     /** Find the most specific element and remove all others. */
     private void retainMostSpecific(Element parent, List<Element> children, Context context) {
-        // Keep track of elements with highest number of matches (might be more than one element with same tag, need a list)
+        // Keep track of elements with the highest number of matches (might be more than one element with same tag, need a list)
         List<Element> bestMatches = new ArrayList<>();
         int bestMatch = 0;
         for (Element child : children) {
@@ -307,42 +308,43 @@ class OverrideProcessor implements PreProcessor {
 
     private Set<InstanceName> getInstances(Element element) {
         String instance = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, INSTANCE_ATTRIBUTE);
-        if (instance == null || instance.isEmpty()) return  Set.of();
+        if (instance.isEmpty()) return Set.of();
         return Arrays.stream(instance.split(" ")).map(InstanceName::from).collect(Collectors.toSet());
     }
 
     private Set<Environment> getEnvironments(Element element) {
         String env = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, ENVIRONMENT_ATTRIBUTE);
-        if (env == null || env.isEmpty()) return Set.of();
+        if (env.isEmpty()) return Set.of();
         return Arrays.stream(env.split(" ")).map(Environment::from).collect(Collectors.toSet());
     }
 
     private Set<RegionName> getRegions(Element element) {
         String reg = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, REGION_ATTRIBUTE);
-        if (reg == null || reg.isEmpty()) return Set.of();
+        if (reg.isEmpty()) return Set.of();
         return Arrays.stream(reg.split(" ")).map(RegionName::from).collect(Collectors.toSet());
     }
 
     private Set<CloudName> getClouds(Element element) {
         String reg = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, CLOUD_ATTRIBUTE);
-        if (reg == null || reg.isEmpty()) return Set.of();
+        if (reg.isEmpty()) return Set.of();
         return Arrays.stream(reg.split(" ")).map(CloudName::from).collect(Collectors.toSet());
     }
 
     private Tags getTags(Element element) {
         String env = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, TAGS_ATTRIBUTE);
-        if (env == null || env.isEmpty()) return Tags.empty();
+        if (env.isEmpty()) return Tags.empty();
         return Tags.fromString(env);
     }
 
     private Map<String, List<Element>> elementsByTagNameAndId(List<Element> children) {
         Map<String, List<Element>> elementsByTagName = new LinkedHashMap<>();
-        // Index by tag name
+        // Index by tag name and optionally add "id" or "idref" to key if they are set
         for (Element child : children) {
             String key = child.getTagName();
-            if (child.hasAttribute(ID_ATTRIBUTE)) {
+            if (child.hasAttribute(ID_ATTRIBUTE))
                 key += child.getAttribute(ID_ATTRIBUTE);
-            }
+            if (child.hasAttribute(IDREF_ATTRIBUTE))
+                key += child.getAttribute(IDREF_ATTRIBUTE);
             if ( ! elementsByTagName.containsKey(key)) {
                 elementsByTagName.put(key, new ArrayList<>());
             }
@@ -382,7 +384,7 @@ class OverrideProcessor implements PreProcessor {
     }
 
     /**
-     * Represents environment and region in a given context.
+     * Represents environments, regions, instances, clouds and tags in a given context.
      */
     private static final class Context {
 

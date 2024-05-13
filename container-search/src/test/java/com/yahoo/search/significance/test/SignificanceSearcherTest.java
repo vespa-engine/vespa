@@ -11,6 +11,10 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.schema.DocumentSummary;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.significance.SignificanceSearcher;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -33,24 +37,18 @@ public class SignificanceSearcherTest {
     SignificanceModelRegistry significanceModelRegistry;
     SignificanceSearcher searcher;
 
-    private static final String CONFIG_DIR = "src/test/resources/config/";
 
     public SignificanceSearcherTest() {
         List<Path> models = new ArrayList<>();
         models.add( Path.of("src/test/java/com/yahoo/search/significance/model/en.json"));
 
-        RankProfilesConfig rpCfg = readConfig("with_significance");
-
-        assertEquals(1, rpCfg.rankprofile().size());
-
+        var schema = new Schema.Builder("music")
+                .add(new DocumentSummary.Builder("default").build())
+                .add(new RankProfile.Builder("significance-ranking")
+                             .setUseSignificanceModel(true)
+                             .build());
         significanceModelRegistry = new DefaultSignificanceModelRegistry(models);
-        searcher = new SignificanceSearcher(significanceModelRegistry, rpCfg);
-    }
-
-    @SuppressWarnings("deprecation")
-    private RankProfilesConfig readConfig(String subDir) {
-        String cfgId = "file:" + CONFIG_DIR + subDir + "/rank-profiles.cfg";
-        return ConfigGetter.getConfig(RankProfilesConfig.class, cfgId);
+        searcher = new SignificanceSearcher(significanceModelRegistry, new SchemaInfo(List.of(schema.build()), List.of()));
     }
 
     private Execution createExecution(SignificanceSearcher searcher) {
@@ -167,5 +165,37 @@ public class SignificanceSearcherTest {
         assertEquals(w0_0.getSignificance(), w0.getSignificance());
         assertEquals(w0_1.getSignificance(), w1.getSignificance());
 
+    }
+
+    @Test
+    public void failsOnConflictingSignificanceConfiguration() {
+        var musicSchema = new Schema.Builder("music")
+                .add(new DocumentSummary.Builder("default").build())
+                .add(new RankProfile.Builder("significance-ranking")
+                             .setUseSignificanceModel(true)
+                             .build())
+                .build();
+        var albumSchema = new Schema.Builder("album")
+                .add(new DocumentSummary.Builder("default").build())
+                .add(new RankProfile.Builder("significance-ranking")
+                             .setUseSignificanceModel(false)
+                             .build())
+                .build();
+        var searcher = new SignificanceSearcher(
+                significanceModelRegistry, new SchemaInfo(List.of(musicSchema, albumSchema), List.of()));
+
+        var query = new Query();
+        query.getRanking().setProfile("significance-ranking");
+
+        var result = createExecution(searcher).search(query);
+        assertEquals(1, result.hits().getErrorHit().errors().size());
+
+        var errorMessage = result.hits().getError();
+        assertEquals("Inconsistent 'significance' configuration for the rank profile 'significance-ranking' in the schemas [music, album]. " +
+                             "Use 'restrict' to limit the query to a subset of schemas " +
+                             "(https://docs.vespa.ai/en/schemas.html#multiple-schemas). " +
+                             "Specify same 'significance' configuration for all selected schemas " +
+                             "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).",
+                     errorMessage.getDetailedMessage());
     }
 }

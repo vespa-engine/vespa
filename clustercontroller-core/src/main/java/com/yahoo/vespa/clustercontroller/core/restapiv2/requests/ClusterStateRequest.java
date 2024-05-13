@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.GlobalBucketSyncStatsCalculator;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
@@ -36,6 +37,11 @@ public class ClusterStateRequest extends Request<Response.ClusterResponse> {
             }
         }
         result.setPublishedState(bundleToDistributionState(context.publishedClusterStateBundle));
+        if (context.aggregatedClusterStats.hasUpdatesFromAllDistributors()) {
+            var stats = context.aggregatedClusterStats.getGlobalStats();
+            var maybeRatio = GlobalBucketSyncStatsCalculator.clusterBucketsOutOfSyncRatio(stats);
+            maybeRatio.ifPresent(r -> result.addMetric("cluster-buckets-out-of-sync-ratio", r));
+        }
         return result;
     }
 

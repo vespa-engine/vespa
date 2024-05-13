@@ -17,6 +17,7 @@ public abstract class RemoteClusterControllerTask {
         public MasterInterface masterInfo;
         public NodeListener nodeListener;
         public SlobrokListener slobrokListener;
+        public AggregatedClusterStats aggregatedClusterStats;
     }
 
     private final Object monitor = new Object();

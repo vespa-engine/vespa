@@ -53,8 +53,8 @@ public class MetricsParser {
             throw new IOException("Expected start of object, got " + parser.currentToken());
         }
 
-        for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
-            String fieldName = parser.getCurrentName();
+        for (parser.nextToken(); parser.currentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
+            String fieldName = parser.currentName();
             JsonToken token = parser.nextToken();
             if (fieldName.equals("metrics")) {
                 parseMetrics(parser, consumer);
@@ -67,12 +67,12 @@ public class MetricsParser {
     }
 
     static private Instant parseSnapshot(JsonParser parser) throws IOException {
-        if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
+        if (parser.currentToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of 'snapshot' object, got " + parser.currentToken());
         }
         Instant timestamp = Instant.now();
-        for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
-            String fieldName = parser.getCurrentName();
+        for (parser.nextToken(); parser.currentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
+            String fieldName = parser.currentName();
             JsonToken token = parser.nextToken();
             if (fieldName.equals("to")) {
                 timestamp = Instant.ofEpochSecond(parser.getLongValue());
@@ -88,12 +88,12 @@ public class MetricsParser {
 
     // 'metrics' object with 'snapshot' and 'values' arrays
     static private void parseMetrics(JsonParser parser, Collector consumer) throws IOException {
-        if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
+        if (parser.currentToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of 'metrics' object, got " + parser.currentToken());
         }
         Instant timestamp = Instant.now();
-        for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
-            String fieldName = parser.getCurrentName();
+        for (parser.nextToken(); parser.currentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
+            String fieldName = parser.currentName();
             JsonToken token = parser.nextToken();
             if (fieldName.equals("snapshot")) {
                 timestamp = parseSnapshot(parser);
@@ -109,7 +109,7 @@ public class MetricsParser {
 
     // 'values' array
     static private void parseMetricValues(JsonParser parser, Instant timestamp, Collector consumer) throws IOException {
-        if (parser.getCurrentToken() != JsonToken.START_ARRAY) {
+        if (parser.currentToken() != JsonToken.START_ARRAY) {
             throw new IOException("Expected start of 'metrics:values' array, got " + parser.currentToken());
         }
 
@@ -126,8 +126,8 @@ public class MetricsParser {
         String description = "";
         Map<DimensionId, String> dim = Map.of();
         List<Map.Entry<String, Number>> values = List.of();
-        for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
-            String fieldName = parser.getCurrentName();
+        for (parser.nextToken(); parser.currentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
+            String fieldName = parser.currentName();
             JsonToken token = parser.nextToken();
             switch (fieldName) {
                 case "name" -> name = parser.getText();
@@ -154,8 +154,8 @@ public class MetricsParser {
 
         Set<Dimension> dimensions = new HashSet<>();
 
-        for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
-            String fieldName = parser.getCurrentName();
+        for (parser.nextToken(); parser.currentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
+            String fieldName = parser.currentName();
             JsonToken token = parser.nextToken();
 
             if (token == JsonToken.VALUE_STRING){
@@ -180,17 +180,16 @@ public class MetricsParser {
 
     private static List<Map.Entry<String, Number>> parseValues(JsonParser parser) throws IOException {
         List<Map.Entry<String, Number>> metrics = new ArrayList<>();
-        for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
-            String fieldName = parser.getCurrentName();
+        for (parser.nextToken(); parser.currentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
+            String metricName = parser.currentName();
             JsonToken token = parser.nextToken();
-            String metricName = fieldName;
             if (token == JsonToken.VALUE_NUMBER_INT) {
                 metrics.add(Map.entry(metricName, parser.getLongValue()));
             } else if (token == JsonToken.VALUE_NUMBER_FLOAT) {
                 double value = parser.getValueAsDouble();
                 metrics.add(Map.entry(metricName, value == ZERO_DOUBLE ? ZERO_DOUBLE : value));
             } else {
-                throw new IllegalArgumentException("Value for aggregator '" + fieldName + "' is not a number");
+                throw new IllegalArgumentException("Value for aggregator '" + metricName + "' is not a number");
             }
         }
         return metrics;

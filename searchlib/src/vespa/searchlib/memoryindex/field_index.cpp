@@ -213,6 +213,17 @@ FieldIndex<interleaved_features>::getMemoryUsage() const
 }
 
 template <bool interleaved_features>
+void
+FieldIndex<interleaved_features>::commit()
+{
+    _remover.flush();
+    freeze();
+    assign_generation();
+    incGeneration();
+    reclaim_memory();
+}
+
+template <bool interleaved_features>
 queryeval::SearchIterator::UP
 FieldIndex<interleaved_features>::make_search_iterator(const vespalib::string& term,
                                                        uint32_t field_id,
@@ -248,7 +259,7 @@ public:
         : SimpleLeafBlueprint(field),
           _guard(),
           _field(field),
-          _posting_itr(posting_itr),
+          _posting_itr(std::move(posting_itr)),
           _feature_store(feature_store),
           _field_id(field_id),
           _query_term(query_term),
@@ -302,7 +313,7 @@ FieldIndex<interleaved_features>::make_term_blueprint(const vespalib::string& te
     auto posting_itr = findFrozen(term);
     bool use_bit_vector = field.isFilter();
     return std::make_unique<MemoryTermBlueprint<interleaved_features>>
-            (std::move(guard), posting_itr, getFeatureStore(), field, field_id, term, use_bit_vector);
+            (std::move(guard), std::move(posting_itr), getFeatureStore(), field, field_id, term, use_bit_vector);
 }
 
 template class FieldIndex<false>;

@@ -6,7 +6,7 @@
 #include <cerrno>
 #include <unistd.h>
 #include <csignal>
-
+#include <poll.h>
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -18,6 +18,7 @@
 #include "llreader.h"
 #include <vespa/log/log.h>
 #include <chrono>
+#include <array>
 
 LOG_SETUP("runserver");
 
@@ -179,8 +180,6 @@ int loop(const char *svc, char * const * run)
         pstdout[0], pstdout[1],
         pstderr[0], pstderr[1]);
 
-    int high = 1 + pstdout[0] + pstderr[0];
-
     pid_t child = fork();
 
     if (child == 0) {
@@ -237,24 +236,24 @@ int loop(const char *svc, char * const * run)
 
     bool outeof = false;
     bool erreof = false;
-
+    constexpr int stdout_idx = 0, stderr_idx = 1;
+    std::array<pollfd, 2> fds{};
     int wstat = 0;
 
     while (child || !outeof || !erreof) {
-        struct timeval timeout;
+        // Entries with negative fds are entirely ignored by the kernel.
+        fds[stdout_idx].fd = !outeof ? pstdout[0] : -1;
+        fds[stdout_idx].events = POLLIN;
+        fds[stdout_idx].revents = 0;
+        fds[stderr_idx].fd = !erreof ? pstderr[0] : -2;
+        fds[stderr_idx].events = POLLIN;
+        fds[stderr_idx].revents = 0;
 
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 100000; // == 100 ms == 1/10 s
-
-        fd_set pipes;
-
-        FD_ZERO(&pipes);
-        if (!outeof) FD_SET(pstdout[0], &pipes);
-        if (!erreof) FD_SET(pstderr[0], &pipes);
-
-        int n = select(high, &pipes, NULL, NULL, &timeout);
+        constexpr int poll_timeout_ms = 100;
+        int n = poll(fds.data(), fds.size(), poll_timeout_ms);
         if (n > 0) {
-            if (FD_ISSET(pstdout[0], &pipes)) {
+            constexpr short ev_mask = POLLIN | POLLERR | POLLHUP;
+            if ((fds[stdout_idx].revents & ev_mask) != 0) {
                 LOG(debug, "out reader has input");
                 if (outReader.blockRead()) {
                     while (outReader.hasInput()) {
@@ -267,7 +266,7 @@ int loop(const char *svc, char * const * run)
                     close(pstdout[0]);
                 }
             }
-            if (FD_ISSET(pstderr[0], &pipes)) {
+            if ((fds[stderr_idx].revents & ev_mask) != 0) {
                 LOG(debug, "err reader has input");
                 if (errReader.blockRead()) {
                     while (errReader.hasInput()) {

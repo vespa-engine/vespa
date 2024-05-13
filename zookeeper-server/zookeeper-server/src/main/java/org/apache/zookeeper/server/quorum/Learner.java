@@ -597,7 +597,6 @@ public class Learner {
                     willSnapshot = false;          // but anything after this needs to go to the transaction log; or
                 }
 
-                self.setCurrentEpoch(newEpoch);
                 sock.setSoTimeout(self.tickTime * self.syncLimit);
                 self.setSyncMode(QuorumPeer.SyncMode.NONE);
                 zk.startupWithoutServing();
@@ -613,6 +612,8 @@ public class Learner {
                     delayedProposals.clear();
                     fzk.syncProcessor.syncFlush();
                 }
+
+                self.setCurrentEpoch(newEpoch);
             }
 
             void flushAcks() throws InterruptedException {

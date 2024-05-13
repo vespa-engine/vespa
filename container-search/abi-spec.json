@@ -8539,6 +8539,7 @@
       "public com.yahoo.search.schema.RankProfile$Builder setHasSummaryFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.search.schema.RankProfile$InputType)",
+      "public com.yahoo.search.schema.RankProfile$Builder setUseSignificanceModel(boolean)",
       "public com.yahoo.search.schema.RankProfile build()"
     ],
     "fields" : [ ]
@@ -8573,6 +8574,7 @@
       "public com.yahoo.search.schema.Schema schema()",
       "public boolean hasSummaryFeatures()",
       "public boolean hasRankFeatures()",
+      "public boolean useSignificanceModel()",
       "public java.util.Map inputs()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

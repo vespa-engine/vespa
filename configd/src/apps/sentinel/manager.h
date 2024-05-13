@@ -9,6 +9,7 @@
 #include "state-api.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/vespalib/net/http/state_server.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/select.h>
 
@@ -54,7 +55,7 @@ public:
     virtual ~Manager();
     bool terminate();
     bool doWork();
-    void updateActiveFdset(fd_set *fds, int *maxNum);
+    void updateActiveFdset(std::vector<pollfd> &fds);
 };
 
 }

@@ -29,11 +29,18 @@ public abstract class ContentClusterFixture {
         nextCluster = createCluster(nextSd);
     }
 
+    protected ContentClusterFixture(ContentCluster currentCluster, ContentCluster nextCluster) {
+        this.currentCluster = currentCluster;
+        this.nextCluster = nextCluster;
+    }
+
     public ContentClusterFixture(String entireSd) throws Exception {
-        currentCluster = new ContentClusterBuilder().build(
-            ContentClusterUtils.createMockRoot(List.of(entireSd)));
-        nextCluster = new ContentClusterBuilder().build(
-            ContentClusterUtils.createMockRoot(List.of(entireSd)));
+        currentCluster = createClusterFromEntireSd(entireSd);
+        nextCluster = createClusterFromEntireSd(entireSd);
+    }
+
+    protected static ContentCluster createClusterFromEntireSd(String sdContent) throws Exception {
+        return new ContentClusterBuilder().build(ContentClusterUtils.createMockRoot(List.of(sdContent)));
     }
 
     private static ContentCluster createCluster(String sdContent) throws Exception {

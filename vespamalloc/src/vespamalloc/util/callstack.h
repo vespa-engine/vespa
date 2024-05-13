@@ -9,8 +9,6 @@
 
 namespace vespamalloc {
 
-const char * dlAddr(const void * addr);
-
 class StackReturnEntry {
 public:
     StackReturnEntry(const void * returnAddress = nullptr,

@@ -16,6 +16,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -75,7 +76,11 @@ public class ExactMatch extends Processor {
         }
         ScriptExpression script = field.getIndexingScript();
         if (new ExpressionSearcher<>(IndexExpression.class).containedIn(script)) {
-            field.setIndexingScript(schema.getName(), (ScriptExpression)new MyProvider(schema).convert(field.getIndexingScript()));
+            var maxTokenLength = field.getMatching().maxTokenLength();
+            if (maxTokenLength == null) {
+                maxTokenLength = AnnotatorConfig.getDefaultMaxTokenLength();
+            }
+            field.setIndexingScript(schema.getName(), (ScriptExpression)new MyProvider(schema, maxTokenLength).convert(field.getIndexingScript()));
         }
     }
 
@@ -85,8 +90,12 @@ public class ExactMatch extends Processor {
 
     private static class MyProvider extends TypedTransformProvider {
 
-        MyProvider(Schema schema) {
+        private int maxTokenLength;
+
+        MyProvider(Schema schema, int maxTokenLength)
+        {
             super(ExactExpression.class, schema);
+            this.maxTokenLength = maxTokenLength;
         }
 
         @Override
@@ -96,7 +105,7 @@ public class ExactMatch extends Processor {
 
         @Override
         protected Expression newTransform(DataType fieldType) {
-            Expression exp = new ExactExpression();
+            Expression exp = new ExactExpression(maxTokenLength);
             if (fieldType instanceof CollectionDataType) {
                 exp = new ForEachExpression(exp);
             }

@@ -10,4 +10,6 @@ public interface AggregatedClusterStats {
 
     ContentClusterStats getStats();
 
+    ContentNodeStats getGlobalStats();
+
 }

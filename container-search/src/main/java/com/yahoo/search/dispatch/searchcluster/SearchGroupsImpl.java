@@ -7,14 +7,17 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * @author baldersheim
+ */
 public class SearchGroupsImpl implements SearchGroups {
 
     private final Map<Integer, Group> groups;
-    private final double minActivedocsPercentage;
+    private final double minActiveDocsPercentage;
 
-    public SearchGroupsImpl(Map<Integer, Group> groups, double minActivedocsPercentage) {
+    public SearchGroupsImpl(Map<Integer, Group> groups, double minActiveDocsPercentage) {
         this.groups = Map.copyOf(groups);
-        this.minActivedocsPercentage = minActivedocsPercentage;
+        this.minActiveDocsPercentage = minActiveDocsPercentage;
     }
 
     @Override public Group get(int id) { return groups.get(id); }
@@ -23,23 +26,38 @@ public class SearchGroupsImpl implements SearchGroups {
     @Override public int size() { return groups.size(); }
 
     @Override
-    public boolean isPartialGroupCoverageSufficient(Collection<Node> nodes) {
-        if (size() == 1)
-            return true;
-        long activeDocuments = nodes.stream().mapToLong(Node::getActiveDocuments).sum();
-        return isGroupCoverageSufficient(activeDocuments, medianDocumentsPerGroup());
+    public boolean isPartialGroupCoverageSufficient(boolean currentIsGroupCoverageSufficient, Collection<Node> nodes) {
+        if (size() == 1) return true;
+        long groupDocumentCount = nodes.stream().mapToLong(Node::getActiveDocuments).sum();
+        return isGroupCoverageSufficient(currentIsGroupCoverageSufficient,
+                                         groupDocumentCount, medianDocumentCount(), maxDocumentCount());
     }
 
-    public boolean isGroupCoverageSufficient(long activeDocuments, long medianDocuments) {
-        if (medianDocuments <= 0) return true;
-        double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
-        return documentCoverage >= minActivedocsPercentage;
+    public boolean isGroupCoverageSufficient(boolean currentIsGroupCoverageSufficient,
+                                             long groupDocumentCount, long medianDocumentCount, long maxDocumentCount) {
+        if (medianDocumentCount <= 0) return true;
+        if (currentIsGroupCoverageSufficient) {
+            // To take a group *out of* rotation, require that it has less active documents than the median.
+            // This avoids scenarios where incorrect accounting in a single group takes all other groups offline.
+            double documentCoverage = 100.0 * (double) groupDocumentCount / medianDocumentCount;
+            return documentCoverage >= minActiveDocsPercentage;
+        }
+        else {
+            // to put a group *in* rotation, require that it has as many documents as the largest group,
+            // to avoid taking groups in too early when the majority of the groups have just been added.
+            double documentCoverage = 100.0 * (double) groupDocumentCount / maxDocumentCount;
+            return documentCoverage >= minActiveDocsPercentage;
+        }
     }
 
-    public long medianDocumentsPerGroup() {
+    public long medianDocumentCount() {
         if (isEmpty()) return 0;
         double[] activeDocuments = groups().stream().mapToDouble(Group::activeDocuments).toArray();
         return (long) Quantiles.median().computeInPlace(activeDocuments);
+    }
+
+    public long maxDocumentCount() {
+        return (long)groups().stream().mapToDouble(Group::activeDocuments).max().orElse(0);
     }
 
 }

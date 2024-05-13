@@ -183,6 +183,7 @@ TOKEN :
 | < GRAM_SIZE: "gram-size" >
 | < MAX_LENGTH: "max-length" >
 | < MAX_OCCURRENCES: "max-occurrences" >
+| < MAX_TOKEN_LENGTH: "max-token-length" >
 | < PREFIX: "prefix" >
 | < SUBSTRING: "substring" >
 | < SUFFIX: "suffix" >
@@ -1368,7 +1369,8 @@ void matchType(ParsedMatchSettings matchInfo) : { }
  */
 void matchItem(ParsedMatchSettings matchInfo) : { }
 {
-    ( matchType(matchInfo) | exactTerminator(matchInfo) | gramSize(matchInfo) | matchSize(matchInfo) | maxTermOccurrences(matchInfo))
+    ( matchType(matchInfo) | exactTerminator(matchInfo) | gramSize(matchInfo) | matchSize(matchInfo) |
+     maxTermOccurrences(matchInfo) | maxTokenLength(matchInfo) )
 }
 
 void exactTerminator(ParsedMatchSettings matchInfo) :
@@ -1410,6 +1412,16 @@ void maxTermOccurrences(ParsedMatchSettings matchInfo) :
 {
     <MAX_OCCURRENCES> <COLON> maxTermOccurrences = integer() {
         matchInfo.setMaxTermOccurrences(maxTermOccurrences);
+    }
+}
+
+void maxTokenLength(ParsedMatchSettings matchInfo) :
+{
+    int maxTokenLength;
+}
+{
+    <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integer() {
+        matchInfo.setMaxTokenLength(maxTokenLength);
     }
 }
 

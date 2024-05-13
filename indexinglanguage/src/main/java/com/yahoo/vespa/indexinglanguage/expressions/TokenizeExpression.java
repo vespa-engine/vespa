@@ -66,8 +66,11 @@ public final class TokenizeExpression extends Expression {
         if (config.getStemMode() != StemMode.NONE) {
             ret.append(" stem:\""+config.getStemMode()+"\"");
         }
-        if (config.hasNonDefaultMaxTokenLength()) {
+        if (config.hasNonDefaultMaxTokenizeLength()) {
             ret.append(" max-length:" + config.getMaxTokenizeLength());
+        }
+        if (config.hasNonDefaultMaxTokenLength()) {
+            ret.append(" max-token-length:" + config.getMaxTokenLength());
         }
         if (config.hasNonDefaultMaxTermOccurrences()) {
             ret.append(" max-occurrences:" + config.getMaxTermOccurrences());

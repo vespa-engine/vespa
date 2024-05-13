@@ -13,7 +13,7 @@ public:
     struct MyElement {
         int32_t  weight;
         uint32_t length;
-        MyElement(int32_t w, uint32_t l) : weight(w), length(l) {}
+        MyElement(int32_t w, uint32_t l) noexcept : weight(w), length(l) {}
     };
     struct MyField {
         uint32_t fieldLength;
@@ -21,7 +21,7 @@ public:
         MyField() : fieldLength(0), elements() {}
         MyElement &getElement(uint32_t eid) {
             while (elements.size() <= eid) {
-                elements.push_back(MyElement(0, 0));
+                elements.emplace_back(0, 0);
             }
             return elements[eid];
         }
@@ -68,6 +68,8 @@ public:
      * @param data     The match data to build in.
      */
     MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data);
+    MatchDataBuilder(const MatchDataBuilder &) = delete;
+    MatchDataBuilder & operator=(const MatchDataBuilder &) = delete;
     ~MatchDataBuilder();
 
     /**
@@ -131,10 +133,6 @@ public:
      * @return Whether or not the content of this could be applied.
      */
     bool apply(uint32_t docId);
-
-private:
-    MatchDataBuilder(const MatchDataBuilder &);             // hide
-    MatchDataBuilder & operator=(const MatchDataBuilder &); // hide
 
 private:
     QueryEnvironment &_queryEnv;

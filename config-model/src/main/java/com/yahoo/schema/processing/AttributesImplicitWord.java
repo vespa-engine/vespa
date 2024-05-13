@@ -2,6 +2,7 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.Schema;
@@ -45,6 +46,8 @@ public class AttributesImplicitWord extends Processor {
     private boolean fieldImplicitlyWordMatch(ImmutableSDField field) {
         // numeric types should not trigger exact-match query parsing
         if (field.getDataType().getPrimitiveType() instanceof NumericDataType) return false;
+        // Tensor type should not trigger exact-match query parsing
+        if (field.getDataType() instanceof TensorDataType) return false;
 
         return (! field.hasIndex()
                 && !field.getAttributes().isEmpty()

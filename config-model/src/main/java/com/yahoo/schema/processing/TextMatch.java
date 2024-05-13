@@ -64,11 +64,15 @@ public class TextMatch extends Processor {
         if (fieldMatching != null) {
             var maxLength = fieldMatching.maxLength();
             if (maxLength != null) {
-                ret.setMaxTokenLength(maxLength);
+                ret.setMaxTokenizeLength(maxLength);
             }
             var maxTermOccurrences = fieldMatching.maxTermOccurrences();
             if (maxTermOccurrences != null) {
                 ret.setMaxTermOccurrences(maxTermOccurrences);
+            }
+            var maxTokenLength = fieldMatching.maxTokenLength();
+            if (maxTokenLength != null) {
+                ret.setMaxTokenLength(maxTokenLength);
             }
         }
         return ret;

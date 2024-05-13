@@ -26,6 +26,7 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
     private static final Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperAdminImpl.class.getName());
 
+
     @SuppressWarnings("try")
     @Override
     public void reconfigure(String connectionSpec, String servers) throws ReconfigException {

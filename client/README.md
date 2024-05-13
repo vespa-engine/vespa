@@ -39,7 +39,7 @@ This is a [work-in-progress javascript app](js/app) for querying a Vespa applica
 
 <!-- ToDo: move this / demote this somehow -->
 
-### vespa_query_dsl
+### vespa\_query\_dsl
 
 This lib is used for composing Vespa
 [YQL queries](https://docs.vespa.ai/en/reference/query-language-reference.html).

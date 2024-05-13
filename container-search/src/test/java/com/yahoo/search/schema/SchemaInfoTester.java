@@ -77,6 +77,7 @@ public class SchemaInfoTester {
                                          .addInput("query(myTensor1)", InputType.fromSpec("tensor(x[10])"))
                                          .build())
                             .add(new RankProfile.Builder("bOnly")
+                                         .setUseSignificanceModel(true)
                                          .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .build());
@@ -129,7 +130,8 @@ public class SchemaInfoTester {
         rankProfileInconsistentB.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(x[10])"));
         schemaB.rankprofile(rankProfileInconsistentB);
         var rankProfileBOnly = new SchemaInfoConfig.Schema.Rankprofile.Builder();
-        rankProfileBOnly.name("bOnly");
+        rankProfileBOnly.name("bOnly")
+                .significance(new SchemaInfoConfig.Schema.Rankprofile.Significance.Builder().useModel(true));
         rankProfileBOnly.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
         schemaB.rankprofile(rankProfileBOnly);
 

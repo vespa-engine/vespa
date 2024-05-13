@@ -34,9 +34,9 @@ public class LightGBMImporter extends ModelImporter {
     private boolean probe(File modelFile) {
         try (JsonParser parser = Jackson.mapper().createParser(modelFile)) {
             while (parser.nextToken() != null) {
-                JsonToken token = parser.getCurrentToken();
+                JsonToken token = parser.currentToken();
                 if (token == JsonToken.FIELD_NAME) {
-                    if ("tree_info".equals(parser.getCurrentName())) return true;
+                    if ("tree_info".equals(parser.currentName())) return true;
                 }
             }
             return false;

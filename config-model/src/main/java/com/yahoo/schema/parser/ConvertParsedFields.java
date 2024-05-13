@@ -44,6 +44,7 @@ public class ConvertParsedFields {
         parsed.getGramSize().ifPresent(gramSize -> field.getMatching().setGramSize(gramSize));
         parsed.getMaxLength().ifPresent(maxLength -> field.getMatching().maxLength(maxLength));
         parsed.getMaxTermOccurrences().ifPresent(maxTermOccurrences -> field.getMatching().maxTermOccurrences(maxTermOccurrences));
+        parsed.getMaxTokenLength().ifPresent(maxTokenLength -> field.getMatching().maxTokenLength(maxTokenLength));
         parsed.getMatchAlgorithm().ifPresent
             (matchingAlgorithm -> field.setMatchingAlgorithm(matchingAlgorithm));
         parsed.getExactTerminator().ifPresent
