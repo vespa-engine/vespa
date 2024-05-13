@@ -37,8 +37,8 @@ type dynamicThrottler struct {
 
 func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 	var (
-		minInflight = 16 * int64(connections)
-		maxInflight = 256 * minInflight // 4096 max streams per connection on the server side
+		minInflight = 2 * int64(connections)
+		maxInflight = 256 * minInflight // 512 max streams per connection on the server side
 	)
 	t := &dynamicThrottler{
 		minInflight: minInflight,
@@ -49,7 +49,7 @@ func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 		start: nowFunc(),
 		now:   nowFunc,
 	}
-	t.targetInflight.Store(8 * minInflight)
+	t.targetInflight.Store(minInflight)
 	t.targetTimesTen.Store(10 * maxInflight)
 	return t
 }
@@ -57,7 +57,7 @@ func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 func NewThrottler(connections int) Throttler { return newThrottler(connections, time.Now) }
 
 func (t *dynamicThrottler) Sent() {
-	currentInflight := t.targetInflight.Load()
+	currentInflight := t.TargetInflight()
 	t.sent++
 	if t.sent*t.sent*t.sent < 100*currentInflight*currentInflight {
 		return
