@@ -25,10 +25,6 @@ namespace storage {
 
 namespace {
 
-vdstestlib::DirConfig initialize(const std::string & rootOfRoot) {
-    return getStandardConfig(true, rootOfRoot);
-}
-
 template<typename T>
 struct ConfigReader : public T::Subscriber
 {
@@ -45,10 +41,10 @@ constexpr uint32_t MERGE_CHUNK_SIZE = 4_Mi;
 
 }
 
-PersistenceTestEnvironment::PersistenceTestEnvironment(const std::string & rootOfRoot)
-    : _config(initialize(rootOfRoot)),
+PersistenceTestEnvironment::PersistenceTestEnvironment()
+    : _config(StorageConfigSet::make_distributor_node_config()),
       _messageKeeper(),
-      _node(NodeIndex(0), _config.getConfigId()),
+      _node(NodeIndex(0), _config->config_uri()),
       _component(_node.getComponentRegister(), "persistence test env"),
       _metrics()
 {
@@ -102,7 +98,7 @@ PersistenceTestUtils::MockBucketLocks::unlock(document::Bucket bucket)
 }
 
 PersistenceTestUtils::PersistenceTestUtils()
-    : _env(std::make_unique<PersistenceTestEnvironment>("todo-make-unique-persistencetestutils")),
+    : _env(std::make_unique<PersistenceTestEnvironment>()),
       _replySender(),
       _bucketOwnershipNotifier(getEnv()._component, getEnv()._fileStorHandler),
       _mock_bucket_locks(),

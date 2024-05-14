@@ -32,7 +32,7 @@ DistributorStripeTestUtil::DistributorStripeTestUtil()
       _done_initializing(true),
       _messageSender(_sender, _senderDown)
 {
-    _config = getStandardConfig(false);
+    _config = StorageConfigSet::make_distributor_node_config();
 }
 
 DistributorStripeTestUtil::~DistributorStripeTestUtil() = default;
@@ -40,7 +40,7 @@ DistributorStripeTestUtil::~DistributorStripeTestUtil() = default;
 void
 DistributorStripeTestUtil::createLinks()
 {
-    _node = std::make_unique<TestDistributorApp>(_config.getConfigId());
+    _node = std::make_unique<TestDistributorApp>(_config->config_uri());
     _metrics = std::make_shared<DistributorMetricSet>();
     _ideal_state_metrics = std::make_shared<IdealStateMetricSet>();
     _stripe = std::make_unique<DistributorStripe>(_node->getComponentRegister(), *_metrics, *_ideal_state_metrics,
@@ -184,8 +184,8 @@ DistributorStripeTestUtil::close()
 {
     _stripe->flush_and_close();
     _sender.clear();
-    _node.reset(0);
-    _config = getStandardConfig(false);
+    _node.reset();
+    _config = StorageConfigSet::make_distributor_node_config();
 }
 
 namespace {

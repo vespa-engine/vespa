@@ -2,6 +2,7 @@
 #pragma once
 
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
@@ -14,8 +15,8 @@ namespace storage {
 class FileStorTestFixture : public ::testing::Test
 {
 public:
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestServiceLayerApp> _node;
-    std::unique_ptr<vdstestlib::DirConfig> _config;
     const document::DocumentType* _testdoctype1;
 
     static const uint32_t MSG_WAIT_TIME = 60 * 1000;

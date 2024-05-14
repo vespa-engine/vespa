@@ -1,5 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/teststorageapp.h>
+#include <tests/common/testhelper.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -9,9 +13,6 @@
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <tests/storageserver/testvisitormessagesession.h>
@@ -45,7 +46,9 @@ api::StorageMessageAddress _address(&_storage, lib::NodeType::STORAGE, 0);
 struct VisitorManagerTest : Test {
 protected:
     static uint32_t docCount;
-    std::vector<document::Document::SP > _documents;
+
+    std::unique_ptr<StorageConfigSet> _config;
+    std::vector<document::Document::SP> _documents;
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
@@ -82,16 +85,16 @@ uint32_t VisitorManagerTest::docCount = 10;
 void
 VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
 {
-    vdstestlib::DirConfig config(getStandardConfig(true));
-    config.getConfig("stor-visitor").set("visitorthreads", "1");
+    _config = StorageConfigSet::make_storage_node_config();
+    _config->visitor_config().visitorthreads = 1;
 
     _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>();
-    _node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(_config->config_uri());
     _node->setupDummyPersistence();
     _node->getStateUpdater().setClusterState(std::make_shared<lib::ClusterState>("storage:1 distributor:1"));
     _top = std::make_unique<DummyStorageLink>();
     using vespa::config::content::core::StorVisitorConfig;
-    auto bootstrap_cfg = config_from<StorVisitorConfig>(config::ConfigUri(config.getConfigId()));
+    auto bootstrap_cfg = config_from<StorVisitorConfig>(_config->config_uri());
     auto vm = std::make_unique<VisitorManager>(*bootstrap_cfg,
                                                _node->getComponentRegister(),
                                                *_messageSessionFactory,
@@ -100,7 +103,7 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
     _manager = vm.get();
     _top->push_back(std::move(vm));
     using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
-    auto filestor_cfg = config_from<StorFilestorConfig>(config::ConfigUri(config.getConfigId()));
+    auto filestor_cfg = config_from<StorFilestorConfig>(_config->config_uri());
     _top->push_back(std::make_unique<FileStorManager>(*filestor_cfg, _node->getPersistenceProvider(),
                                                       _node->getComponentRegister(), *_node, _node->get_host_info()));
     _manager->setTimeBetweenTicks(10);

@@ -5,7 +5,9 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
+#include <tests/common/storage_config_set.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/distributor/stripe_host_info_notifier.h>
 #include <vespa/storage/storageutil/utils.h>
 
@@ -132,8 +134,8 @@ public:
 
     const DistributorConfiguration& getConfig();
 
-    vdstestlib::DirConfig& getDirConfig() {
-        return _config;
+    vespa::config::content::core::StorDistributormanagerConfigBuilder& backing_config() noexcept {
+        return _config->distributor_manager_config();
     }
 
     // TODO explicit notion of bucket spaces for tests
@@ -237,7 +239,7 @@ public:
     void tag_content_node_supports_condition_probing(uint16_t index, bool supported);
 
 protected:
-    vdstestlib::DirConfig _config;
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestDistributorApp> _node;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;

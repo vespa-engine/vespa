@@ -25,14 +25,11 @@ const uint32_t FileStorTestFixture::MSG_WAIT_TIME;
 void
 FileStorTestFixture::setupPersistenceThreads(uint32_t threads)
 {
-    std::string rootOfRoot = "todo-make-unique-filestorefixture";
-    _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, rootOfRoot));
-    _config->getConfig("stor-server").set("root_folder", (rootOfRoot + "-vdsroot.2"));
-    _config->getConfig("stor-devices").set("root_folder", (rootOfRoot + "-vdsroot.2"));
-    _config->getConfig("stor-server").set("node_index", "1");
-    _config->getConfig("stor-filestor").set("num_threads", std::to_string(threads));
+    _config = StorageConfigSet::make_storage_node_config();
+    _config->set_node_index(1);
+    _config->filestor_config().numThreads = threads;
 
-    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(1), _config->getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(1), _config->config_uri());
     _testdoctype1 = _node->getTypeRepo()->getDocumentType("testdoctype1");
 }
 
@@ -77,7 +74,7 @@ FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
 {
     injector.inject(top);
     using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
-    auto config = config_from<StorFilestorConfig>(config::ConfigUri(fixture._config->getConfigId()));
+    auto config = config_from<StorFilestorConfig>(fixture._config->config_uri());
     auto fsm = std::make_unique<FileStorManager>(*config, fixture._node->getPersistenceProvider(),
                                                  fixture._node->getComponentRegister(), *fixture._node, fixture._node->get_host_info());
     manager = fsm.get();

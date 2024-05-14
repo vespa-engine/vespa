@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/teststorageapp.h>
+#include <tests/common/testhelper.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
 #include <vespa/storage/storageserver/statereporter.h>
 #include <vespa/metrics/metricmanager.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -35,7 +36,7 @@ struct StateReporterTest : Test {
     std::unique_ptr<DummyStorageLink> _top;
     DummyApplicationGenerationFether _generationFetcher;
     std::unique_ptr<StateReporter> _stateReporter;
-    std::unique_ptr<vdstestlib::DirConfig> _config;
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<metrics::MetricSet> _topSet;
     std::unique_ptr<metrics::MetricManager> _metricManager;
     std::shared_ptr<FileStorMetrics> _filestorMetrics;
@@ -68,9 +69,8 @@ StateReporterTest::StateReporterTest()
 StateReporterTest::~StateReporterTest() = default;
 
 void StateReporterTest::SetUp() {
-    _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "statereportertest"));
-
-    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->getConfigId());
+    _config = StorageConfigSet::make_storage_node_config();
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->config_uri());
     _node->setupDummyPersistence();
     _clock = &_node->getClock();
     _clock->setAbsoluteTimeInSeconds(1000000);
@@ -90,7 +90,7 @@ void StateReporterTest::SetUp() {
     _filestorMetrics->initDiskMetrics(1, 1);
     _topSet->registerMetric(*_filestorMetrics);
 
-    _metricManager->init(config::ConfigUri(_config->getConfigId()));
+    _metricManager->init(_config->config_uri());
 }
 
 void StateReporterTest::TearDown() {

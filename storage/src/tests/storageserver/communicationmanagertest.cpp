@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/helper/configgetter.hpp>
@@ -65,20 +66,20 @@ wait_for_slobrok_visibility(const CommunicationManager& mgr,
 
 TEST_F(CommunicationManagerTest, simple) {
     mbus::Slobrok slobrok;
-    vdstestlib::DirConfig distConfig(getStandardConfig(false));
-    vdstestlib::DirConfig storConfig(getStandardConfig(true));
-    distConfig.getConfig("stor-server").set("node_index", "1");
-    storConfig.getConfig("stor-server").set("node_index", "1");
-    addSlobrokConfig(distConfig, slobrok);
-    addSlobrokConfig(storConfig, slobrok);
+    auto dist_config = StorageConfigSet::make_distributor_node_config();
+    auto stor_config = StorageConfigSet::make_storage_node_config();
+    dist_config->set_node_index(1);
+    stor_config->set_node_index(1);
+    dist_config->set_slobrok_config_port(slobrok.port());
+    stor_config->set_slobrok_config_port(slobrok.port());
+
+    auto& dist_cfg_uri = dist_config->config_uri();
+    auto& stor_cfg_uri = stor_config->config_uri();
 
     // Set up a "distributor" and a "storage" node with communication
     // managers and a dummy storage link below we can use for testing.
-    TestServiceLayerApp storNode(storConfig.getConfigId());
-    TestDistributorApp distNode(distConfig.getConfigId());
-
-    auto dist_cfg_uri = config::ConfigUri(distConfig.getConfigId());
-    auto stor_cfg_uri = config::ConfigUri(storConfig.getConfigId());
+    TestServiceLayerApp storNode(stor_cfg_uri);
+    TestDistributorApp distNode(dist_cfg_uri);
 
     CommunicationManager distributor(distNode.getComponentRegister(), dist_cfg_uri,
                                      *config_from<CommunicationManagerConfig>(dist_cfg_uri));
@@ -123,23 +124,22 @@ void
 CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
 {
     mbus::Slobrok slobrok;
-    vdstestlib::DirConfig config(getStandardConfig(isContentNode));
-    config.getConfig("stor-server").set("node_index", "1");
-    auto& cfg = config.getConfig("stor-communicationmanager");
-    cfg.set("mbus_content_node_max_pending_count", "12345");
-    cfg.set("mbus_content_node_max_pending_size", "555666");
-    cfg.set("mbus_distributor_node_max_pending_count", "6789");
-    cfg.set("mbus_distributor_node_max_pending_size", "777888");
-    addSlobrokConfig(config, slobrok);
+    auto config = StorageConfigSet::make_node_config(isContentNode);
+    config->set_node_index(1);
+    config->set_slobrok_config_port(slobrok.port());
+    config->communication_manager_config().mbusContentNodeMaxPendingCount = 12345;
+    config->communication_manager_config().mbusContentNodeMaxPendingSize = 555666;
+    config->communication_manager_config().mbusDistributorNodeMaxPendingCount = 6789;
+    config->communication_manager_config().mbusDistributorNodeMaxPendingSize = 777888;
+    auto& cfg_uri = config->config_uri();
 
     std::unique_ptr<TestStorageApp> node;
     if (isContentNode) {
-        node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
+        node = std::make_unique<TestServiceLayerApp>(cfg_uri);
     } else {
-        node = std::make_unique<TestDistributorApp>(config.getConfigId());
+        node = std::make_unique<TestDistributorApp>(cfg_uri);
     }
 
-    auto cfg_uri = config::ConfigUri(config.getConfigId());
     CommunicationManager commMgr(node->getComponentRegister(), cfg_uri,
                                  *config_from<CommunicationManagerConfig>(cfg_uri));
     auto* storageLink = new DummyStorageLink();
@@ -180,12 +180,12 @@ TEST_F(CommunicationManagerTest, stor_pending_limit_configs_are_propagated_to_me
 
 TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     mbus::Slobrok slobrok;
-    vdstestlib::DirConfig storConfig(getStandardConfig(true));
-    storConfig.getConfig("stor-server").set("node_index", "1");
-    addSlobrokConfig(storConfig, slobrok);
-    TestServiceLayerApp storNode(storConfig.getConfigId());
+    auto config = StorageConfigSet::make_storage_node_config();
+    config->set_node_index(1);
+    config->set_slobrok_config_port(slobrok.port());
+    auto& cfg_uri = config->config_uri();
+    TestServiceLayerApp storNode(cfg_uri);
 
-    auto cfg_uri = config::ConfigUri(storConfig.getConfigId());
     CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
                                  *config_from<CommunicationManagerConfig>(cfg_uri));
     auto* storageLink = new DummyStorageLink();
@@ -214,12 +214,12 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
 
 TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
     mbus::Slobrok slobrok;
-    vdstestlib::DirConfig storConfig(getStandardConfig(true));
-    storConfig.getConfig("stor-server").set("node_index", "1");
-    addSlobrokConfig(storConfig, slobrok);
-    TestServiceLayerApp storNode(storConfig.getConfigId());
+    auto config = StorageConfigSet::make_storage_node_config();
+    config->set_node_index(1);
+    config->set_slobrok_config_port(slobrok.port());
+    auto& cfg_uri = config->config_uri();
+    TestServiceLayerApp storNode(cfg_uri);
 
-    auto cfg_uri = config::ConfigUri(storConfig.getConfigId());
     CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
                                  *config_from<CommunicationManagerConfig>(cfg_uri));
     auto* storageLink = new DummyStorageLink();
@@ -249,19 +249,21 @@ struct MockMbusReplyHandler : mbus::IReplyHandler {
 };
 
 struct CommunicationManagerFixture {
+    std::unique_ptr<StorageConfigSet> config;
     MockMbusReplyHandler reply_handler;
     mbus::Slobrok slobrok;
     std::unique_ptr<TestServiceLayerApp> node;
     std::unique_ptr<CommunicationManager> comm_mgr;
     DummyStorageLink* bottom_link;
 
-    CommunicationManagerFixture() {
-        vdstestlib::DirConfig stor_config(getStandardConfig(true));
-        stor_config.getConfig("stor-server").set("node_index", "1");
-        addSlobrokConfig(stor_config, slobrok);
+    CommunicationManagerFixture()
+        : config(StorageConfigSet::make_storage_node_config())
+    {
+        config->set_node_index(1);
+        config->set_slobrok_config_port(slobrok.port());
+        auto& cfg_uri = config->config_uri();
 
-        node = std::make_unique<TestServiceLayerApp>(stor_config.getConfigId());
-        auto cfg_uri = config::ConfigUri(stor_config.getConfigId());
+        node = std::make_unique<TestServiceLayerApp>(cfg_uri);
         comm_mgr = std::make_unique<CommunicationManager>(node->getComponentRegister(), cfg_uri,
                                                           *config_from<CommunicationManagerConfig>(cfg_uri));
         bottom_link = new DummyStorageLink();

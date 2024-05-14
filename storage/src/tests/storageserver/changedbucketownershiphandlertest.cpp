@@ -3,6 +3,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
@@ -28,11 +29,12 @@ using namespace ::testing;
 namespace storage {
 
 struct ChangedBucketOwnershipHandlerTest : Test {
+    std::unique_ptr<StorageConfigSet>    _config;
     std::unique_ptr<TestServiceLayerApp> _app;
-    std::unique_ptr<DummyStorageLink> _top;
-    ChangedBucketOwnershipHandler* _handler;
-    DummyStorageLink* _bottom;
-    document::TestDocMan _testDocRepo;
+    std::unique_ptr<DummyStorageLink>    _top;
+    ChangedBucketOwnershipHandler*       _handler;
+    DummyStorageLink*                    _bottom;
+    document::TestDocMan                 _testDocRepo;
 
     // TODO test: down edge triggered on cluster state with cluster down?
 
@@ -126,11 +128,12 @@ void
 ChangedBucketOwnershipHandlerTest::SetUp()
 {
     using vespa::config::content::PersistenceConfig;
-    vdstestlib::DirConfig config(getStandardConfig(true));
 
-    _app.reset(new TestServiceLayerApp);
-    _top.reset(new DummyStorageLink);
-    _handler = new ChangedBucketOwnershipHandler(*config_from<PersistenceConfig>(config::ConfigUri(config.getConfigId())),
+    _config = StorageConfigSet::make_storage_node_config();
+    _app = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->config_uri());
+    _top = std::make_unique<DummyStorageLink>();
+
+    _handler = new ChangedBucketOwnershipHandler(*config_from<PersistenceConfig>(_config->config_uri()),
                                                  _app->getComponentRegister());
     _top->push_back(std::unique_ptr<StorageLink>(_handler));
     _bottom = new DummyStorageLink;

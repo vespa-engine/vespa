@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/storage_config_set.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -11,7 +12,6 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 
@@ -43,7 +43,7 @@ struct DummyReturnHandler : FRT_IReturnHandler {
 
 struct FixtureBase {
     mbus::Slobrok slobrok;
-    vdstestlib::DirConfig config;
+    std::unique_ptr<StorageConfigSet> config;
     MockOperationDispatcher dispatcher;
     std::unique_ptr<SharedRpcResources> shared_rpc_resources;
     std::unique_ptr<ClusterControllerApiRpcService> cc_service;
@@ -52,12 +52,12 @@ struct FixtureBase {
     FRT_RPCRequest* bound_request{nullptr};
 
     FixtureBase()
-        : config(getStandardConfig(true))
+        : config(StorageConfigSet::make_storage_node_config())
     {
-        config.getConfig("stor-server").set("node_index", "1");
-        addSlobrokConfig(config, slobrok);
+        config->set_node_index(1);
+        config->set_slobrok_config_port(slobrok.port());
 
-        shared_rpc_resources = std::make_unique<SharedRpcResources>(config::ConfigUri(config.getConfigId()), 0, 1, 1);
+        shared_rpc_resources = std::make_unique<SharedRpcResources>(config->config_uri(), 0, 1, 1);
         cc_service = std::make_unique<ClusterControllerApiRpcService>(dispatcher, *shared_rpc_resources);
         shared_rpc_resources->start_server_and_register_slobrok("my_cool_rpc_test");
     }

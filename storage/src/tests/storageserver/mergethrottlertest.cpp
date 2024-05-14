@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
+#include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -36,9 +38,8 @@ using StorServerConfigBuilder = vespa::config::content::core::StorServerConfigBu
 vespalib::string _storage("storage");
 
 std::unique_ptr<StorServerConfig> default_server_config() {
-    vdstestlib::DirConfig dir_config(getStandardConfig(true));
-    auto cfg_uri = ::config::ConfigUri(dir_config.getConfigId());
-    return config_from<StorServerConfig>(cfg_uri);
+    auto config = StorageConfigSet::make_storage_node_config();
+    return config_from<StorServerConfig>(config->config_uri());
 }
 
 struct MergeBuilder {
@@ -153,8 +154,9 @@ struct MergeThrottlerTest : Test {
     static constexpr int _messageWaitTime = 100;
 
     // Using n storage node links and dummy servers
-    std::vector<std::shared_ptr<DummyStorageLink> > _topLinks;
-    std::vector<std::shared_ptr<TestServiceLayerApp> > _servers;
+    std::unique_ptr<StorageConfigSet> _config;
+    std::vector<std::shared_ptr<DummyStorageLink>> _topLinks;
+    std::vector<std::shared_ptr<TestServiceLayerApp>> _servers;
     std::vector<MergeThrottler*> _throttlers;
     std::vector<DummyStorageLink*> _bottomLinks;
 
@@ -198,14 +200,14 @@ MergeThrottlerTest::~MergeThrottlerTest() = default;
 void
 MergeThrottlerTest::SetUp()
 {
-    auto config = default_server_config();
+    _config = StorageConfigSet::make_storage_node_config();
     for (int i = 0; i < _storageNodeCount; ++i) {
-        auto server = std::make_unique<TestServiceLayerApp>(NodeIndex(i));
+        auto server = std::make_unique<TestServiceLayerApp>(NodeIndex(i), _config->config_uri());
         server->setClusterState(lib::ClusterState("distributor:100 storage:100 version:1"));
         std::unique_ptr<DummyStorageLink> top;
 
         top = std::make_unique<DummyStorageLink>();
-        auto* throttler = new MergeThrottler(*config, server->getComponentRegister(), vespalib::HwInfo());
+        auto* throttler = new MergeThrottler(_config->server_config(), server->getComponentRegister(), vespalib::HwInfo());
         // MergeThrottler will be sandwiched in between two dummy links
         top->push_back(std::unique_ptr<StorageLink>(throttler));
         auto* bottom = new DummyStorageLink;

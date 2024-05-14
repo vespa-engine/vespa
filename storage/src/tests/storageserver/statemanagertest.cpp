@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/teststorageapp.h>
+#include <tests/common/testhelper.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/storageserver/statemanager.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -20,6 +21,7 @@ using namespace ::testing;
 namespace storage {
 
 struct StateManagerTest : Test, NodeStateReporter {
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _upper;
     StateManager* _manager;
@@ -46,7 +48,8 @@ struct StateManagerTest : Test, NodeStateReporter {
 };
 
 StateManagerTest::StateManagerTest()
-    : _node(),
+    : _config(),
+      _node(),
       _upper(),
       _manager(nullptr),
       _lower(nullptr)
@@ -56,7 +59,8 @@ StateManagerTest::StateManagerTest()
 void
 StateManagerTest::SetUp()
 {
-    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2));
+    _config = StorageConfigSet::make_storage_node_config();
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2), _config->config_uri());
     // Clock will increase 1 sec per call.
     _node->getClock().setAbsoluteTimeInSeconds(1);
     _upper = std::make_unique<DummyStorageLink>();

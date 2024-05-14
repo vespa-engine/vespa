@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <tests/common/storage_config_set.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <vespa/storage/persistence/persistencethread.h>
@@ -25,11 +26,11 @@ struct MessageKeeper : public MessageSender {
 };
 
 struct PersistenceTestEnvironment {
-    PersistenceTestEnvironment(const std::string & rootOfRoot);
+    PersistenceTestEnvironment();
     ~PersistenceTestEnvironment();
 
     document::TestDocMan _testDocMan;
-    vdstestlib::DirConfig _config;
+    std::unique_ptr<StorageConfigSet> _config;
     MessageKeeper _messageKeeper;
     TestServiceLayerApp _node;
     ServiceLayerComponent _component;
