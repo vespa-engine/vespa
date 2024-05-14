@@ -70,14 +70,14 @@ template class BoundAngularDistance<double>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-AngularDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) {
+AngularDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
     using DFT = BoundAngularDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-AngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) {
+AngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
     using DFT = BoundAngularDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }

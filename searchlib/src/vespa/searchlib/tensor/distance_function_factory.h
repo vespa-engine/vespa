@@ -17,8 +17,8 @@ struct DistanceFunctionFactory {
     using TypedCells = vespalib::eval::TypedCells;
     DistanceFunctionFactory() noexcept = default;
     virtual ~DistanceFunctionFactory() = default;
-    virtual BoundDistanceFunction::UP for_query_vector(TypedCells lhs) = 0;
-    virtual BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) = 0;
+    virtual BoundDistanceFunction::UP for_query_vector(TypedCells lhs) const = 0;
+    virtual BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) const = 0;
     using UP = std::unique_ptr<DistanceFunctionFactory>;
 };
 

@@ -111,7 +111,7 @@ class MyBoundDistanceFunction : public BoundDistanceFunction {
     std::unique_ptr<BoundDistanceFunction> _real;
 
 public:
-    MyBoundDistanceFunction(std::unique_ptr<BoundDistanceFunction> real)
+    explicit MyBoundDistanceFunction(std::unique_ptr<BoundDistanceFunction> real)
         : _real(std::move(real))
     {
     }
@@ -147,19 +147,19 @@ class MyDistanceFunctionFactory : public DistanceFunctionFactory
 {
     std::unique_ptr<DistanceFunctionFactory> _real;
 public:
-    MyDistanceFunctionFactory(std::unique_ptr<DistanceFunctionFactory> real)
+    explicit MyDistanceFunctionFactory(std::unique_ptr<DistanceFunctionFactory> real)
         : _real(std::move(real))
     {
     }
 
     ~MyDistanceFunctionFactory() override;
 
-    std::unique_ptr<BoundDistanceFunction> for_query_vector(TypedCells lhs) override {
+    std::unique_ptr<BoundDistanceFunction> for_query_vector(TypedCells lhs) const override {
         EXPECT_FALSE(lhs.non_existing_attribute_value());
         return std::make_unique<MyBoundDistanceFunction>(_real->for_query_vector(lhs));
     }
 
-    std::unique_ptr<BoundDistanceFunction> for_insertion_vector(TypedCells lhs) override {
+    std::unique_ptr<BoundDistanceFunction> for_insertion_vector(TypedCells lhs) const override {
         EXPECT_FALSE(lhs.non_existing_attribute_value());
         return std::make_unique<MyBoundDistanceFunction>(_real->for_insertion_vector(lhs));
     }

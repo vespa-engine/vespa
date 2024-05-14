@@ -14,8 +14,8 @@ template <typename FloatType>
 class PrenormalizedAngularDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
     PrenormalizedAngularDistanceFunctionFactory() = default;
-    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) override;
-    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) override;
+    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) const override;
+    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) const override;
 };
 
 }

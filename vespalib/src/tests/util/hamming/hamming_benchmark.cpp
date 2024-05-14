@@ -4,7 +4,6 @@
 #include <vector>
 #include <cinttypes>
 #include <cstdlib>
-#include <cstdint>
 #include <cstdio>
 
 using namespace vespalib;
