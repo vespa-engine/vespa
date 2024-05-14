@@ -114,3 +114,7 @@ simulated_bucket_request_latency_msec int default=0
 ## a disjoint subset of the node's buckets, in order to reduce locking contention.
 ## Max value is unspecified, but will be clamped internally.
 content_node_bucket_db_stripe_bits int default=4 restart
+
+## Iff set, a special `pidfile` file is written under the node's root directory upon
+## startup containing the PID of the running process.
+write_pid_file_on_startup bool default=true
