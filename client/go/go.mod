@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/alessio/shellescape v1.4.2
 	github.com/briandowns/spinner v1.23.0
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	// This is the most recent version compatible with Go 1.20. Upgrade when we upgrade our Go version
 	github.com/go-json-experiment/json v0.0.0-20230324203220-04923b7a9528
 	github.com/klauspost/compress v1.17.8
