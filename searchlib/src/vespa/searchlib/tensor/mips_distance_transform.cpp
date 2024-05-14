@@ -76,13 +76,13 @@ public:
 
 template<typename FloatType>
 BoundDistanceFunction::UP
-MipsDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) {
+MipsDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
     return std::make_unique<BoundMipsDistanceFunction<FloatType, false>>(lhs, *_sq_norm_store);
 }
 
 template<typename FloatType>
 BoundDistanceFunction::UP
-MipsDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) {
+MipsDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
     return std::make_unique<BoundMipsDistanceFunction<FloatType, true>>(lhs, *_sq_norm_store);
 };
 

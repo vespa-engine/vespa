@@ -63,14 +63,14 @@ template class BoundEuclideanDistance<double>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-EuclideanDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) {
+EuclideanDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
     using DFT = BoundEuclideanDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
-EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) {
+EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
     using DFT = BoundEuclideanDistance<FloatType>;
     return std::make_unique<DFT>(lhs);
 }

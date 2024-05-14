@@ -14,8 +14,8 @@ namespace search::tensor {
 class GeoDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
     GeoDistanceFunctionFactory() = default;
-    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) override;
-    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) override;
+    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) const override;
+    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) const override;
 };
 
 }

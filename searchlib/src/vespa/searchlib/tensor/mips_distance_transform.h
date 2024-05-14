@@ -62,8 +62,8 @@ public:
     MipsDistanceFunctionFactory() noexcept = default;
     ~MipsDistanceFunctionFactory() override = default;
 
-    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) override;
-    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) override;
+    BoundDistanceFunction::UP for_query_vector(TypedCells lhs) const override;
+    BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) const override;
 };
 
 }

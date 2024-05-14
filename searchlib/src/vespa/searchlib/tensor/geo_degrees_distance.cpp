@@ -82,12 +82,12 @@ public:
 };
 
 BoundDistanceFunction::UP
-GeoDistanceFunctionFactory::for_query_vector(TypedCells lhs) {
+GeoDistanceFunctionFactory::for_query_vector(TypedCells lhs) const {
     return std::make_unique<BoundGeoDistance>(lhs);
 }
 
 BoundDistanceFunction::UP
-GeoDistanceFunctionFactory::for_insertion_vector(TypedCells lhs) {
+GeoDistanceFunctionFactory::for_insertion_vector(TypedCells lhs) const {
     return std::make_unique<BoundGeoDistance>(lhs);
 }
 
