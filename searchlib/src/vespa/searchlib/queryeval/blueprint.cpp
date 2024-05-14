@@ -169,31 +169,6 @@ Blueprint::null_plan(InFlow in_flow, uint32_t docid_limit)
     sort(in_flow);
 }
 
-double
-Blueprint::estimate_actual_cost(InFlow in_flow) const noexcept
-{
-    double res = estimate_strict_cost_diff(in_flow);
-    if (in_flow.strict()) {
-        res += strict_cost();
-    } else {
-        res += in_flow.rate() * cost();
-    }
-    return res;
-}
-
-double
-Blueprint::estimate_strict_cost_diff(InFlow &in_flow) const noexcept
-{
-    if (in_flow.strict()) {
-        REQUIRE(strict());
-    } else if (strict()) {
-        double rate = in_flow.rate();
-        in_flow.force_strict();
-        return flow::strict_cost_diff(estimate(), rate);
-    }
-    return 0.0;
-}
-
 Blueprint::UP
 Blueprint::optimize(Blueprint::UP bp) {
     Blueprint *root = bp.release();
@@ -622,24 +597,6 @@ IntermediateBlueprint::should_do_termwise_eval(const UnpackInfo &unpack, double 
         return false; // higher up will be better
     }
     return (count_termwise_nodes(unpack) > 1);
-}
-
-double
-IntermediateBlueprint::estimate_self_cost(InFlow) const noexcept
-{
-    return 0.0;
-}
-
-double
-IntermediateBlueprint::estimate_actual_cost(InFlow in_flow) const noexcept
-{
-    double res = estimate_strict_cost_diff(in_flow);
-    auto cost_of = [](const auto &child, InFlow child_flow)noexcept{
-                       return child->estimate_actual_cost(child_flow);
-                   };
-    res += flow::actual_cost_of(flow::DefaultAdapter(), _children, my_flow(in_flow), cost_of);
-    res += estimate_self_cost(in_flow);
-    return res;
 }
 
 void

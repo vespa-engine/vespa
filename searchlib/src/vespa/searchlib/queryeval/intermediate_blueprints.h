@@ -67,7 +67,6 @@ public:
     ~OrBlueprint() override;
     bool supports_termwise_children() const override { return true; }
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
-    double estimate_self_cost(InFlow in_flow) const noexcept override;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self(OptimizePass pass) override;
@@ -96,7 +95,6 @@ private:
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
-    double estimate_self_cost(InFlow in_flow) const noexcept override;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     Blueprint::UP get_replacement() override;
@@ -129,7 +127,6 @@ private:
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
-    double estimate_self_cost(InFlow in_flow) const noexcept override;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
@@ -152,7 +149,6 @@ private:
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
-    double estimate_self_cost(InFlow in_flow) const noexcept override;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
@@ -201,7 +197,6 @@ public:
     explicit SourceBlenderBlueprint(const ISourceSelector &selector) noexcept;
     ~SourceBlenderBlueprint() override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
-    double estimate_self_cost(InFlow in_flow) const noexcept override;
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
