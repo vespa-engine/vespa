@@ -26,6 +26,18 @@ using vespalib::make_string_short::fmt;
 const vespalib::string field_name = "myfield";
 double budget_sec = 1.0;
 
+double estimate_actual_cost(Blueprint &bp, InFlow in_flow) {
+    if (in_flow.strict()) {
+        assert(bp.strict());
+        return bp.strict_cost();
+    } else if (bp.strict()) {
+        auto stats = FlowStats::from(flow::DefaultAdapter(), &bp);
+        return flow::forced_strict_cost(stats, in_flow.rate());
+    } else {
+        return bp.cost() * in_flow.rate();
+    }
+}
+
 enum class PlanningAlgo {
     Order,
     Estimate,
@@ -236,7 +248,7 @@ strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, Planning
         timer.after();
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
-    double actual_cost = ctx.blueprint->estimate_actual_cost(InFlow(true));
+    double actual_cost = estimate_actual_cost(*ctx.blueprint, InFlow(true));
     return {timer.min_time() * 1000.0, hits + 1, hits, flow, actual_cost, get_class_name(*ctx.iterator), factory.get_name(*ctx.blueprint)};
 }
 
@@ -270,7 +282,7 @@ non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t docid_limit, doub
         timer.after();
     }
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
-    double actual_cost = ctx.blueprint->estimate_actual_cost(InFlow(filter_hit_ratio));
+    double actual_cost = estimate_actual_cost(*ctx.blueprint, InFlow(filter_hit_ratio));
     return {timer.min_time() * 1000.0, seeks, hits, flow, actual_cost, get_class_name(*ctx.iterator), factory.get_name(*ctx.blueprint)};
 }
 

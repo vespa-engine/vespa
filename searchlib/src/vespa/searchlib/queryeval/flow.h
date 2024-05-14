@@ -204,16 +204,6 @@ double ordered_cost_of(ADAPTER adapter, const T &children, F flow, bool allow_fo
     return total_cost;
 }
 
-static double actual_cost_of(auto adapter, const auto &children, auto flow, auto cost_of) noexcept {
-    double total_cost = 0.0;
-    for (const auto &child: children) {
-        double child_cost = cost_of(child, InFlow(flow.strict(), flow.flow()));
-        flow.update_cost(total_cost, child_cost);
-        flow.add(adapter.estimate(child));
-    }
-    return total_cost;
-}
-
 auto select_strict_and_child(auto adapter, const auto &children, size_t first, double est, bool native_strict) {
     double cost = 0.0;
     size_t best_idx = first;
