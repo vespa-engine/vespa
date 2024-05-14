@@ -62,13 +62,11 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config->set("enable_dead_lock_detector_warnings", "false");
     config->set("max_merges_per_node", "25");
     config->set("max_merge_queue_size", "20");
-    config->set("root_folder",
-                    (storagenode ? "vdsroot" : "vdsroot.distributor"));
-    config->set("is_distributor",
-                    (storagenode ? "false" : "true"));
+    config->set("root_folder", (storagenode ? "vdsroot" : "vdsroot.distributor"));
+    config->set("is_distributor", (storagenode ? "false" : "true"));
+    config->set("write_pid_file_on_startup", "false");
     config = &dc.addConfig("stor-devices");
-    config->set("root_folder",
-                    (storagenode ? "vdsroot" : "vdsroot.distributor"));
+    config->set("root_folder", (storagenode ? "vdsroot" : "vdsroot.distributor"));
     config = &dc.addConfig("stor-status");
     config->set("httpport", "0");
     config = &dc.addConfig("stor-visitor");

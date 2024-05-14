@@ -67,16 +67,12 @@ MetricsTest::~MetricsTest() = default;
 
 void MetricsTest::SetUp() {
     _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "metricstest"));
-    std::filesystem::remove_all(std::filesystem::path(getRootFolder(*_config)));
-    try {
-        _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->getConfigId());
-        _node->setupDummyPersistence();
-        _clock = &_node->getClock();
-        _clock->setAbsoluteTimeInSeconds(1000000);
-        _top = std::make_unique<DummyStorageLink>();
-    } catch (config::InvalidConfigException& e) {
-        fprintf(stderr, "%s\n", e.what());
-    }
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->getConfigId());
+    _node->setupDummyPersistence();
+    _clock = &_node->getClock();
+    _clock->setAbsoluteTimeInSeconds(1000000);
+    _top = std::make_unique<DummyStorageLink>();
+
     _metricManager = std::make_unique<metrics::MetricManager>(std::make_unique<MetricClock>(*_clock));
     _topSet.reset(new metrics::MetricSet("vds", {}, ""));
     {

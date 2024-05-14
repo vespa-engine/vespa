@@ -69,8 +69,7 @@ public:
 
     ~BucketManagerTest() override;
 
-    void setupTestEnvironment(bool fakePersistenceLayer = true,
-                              bool noDelete = false);
+    void setupTestEnvironment();
     void addBucketsToDB(uint32_t count);
     bool wasBlockedDueToLastModified(api::StorageMessage* msg, uint64_t lastModified);
     void insertSingleBucket(const document::BucketId& bucket, const api::BucketInfo& info);
@@ -131,15 +130,9 @@ std::string getMkDirDisk(const std::string & rootFolder, int disk) {
     return os.str();
 }
 
-void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer, bool noDelete)
+void BucketManagerTest::setupTestEnvironment()
 {
     vdstestlib::DirConfig config(getStandardConfig(true, "bucketmanagertest"));
-    std::string rootFolder = getRootFolder(config);
-    if (!noDelete) {
-        assert(system(("rm -rf " + rootFolder).c_str()) == 0);
-    }
-    assert(system(getMkDirDisk(rootFolder, 0).c_str()) == 0);
-    assert(system(getMkDirDisk(rootFolder, 1).c_str()) == 0);
 
     auto repo = std::make_shared<const DocumentTypeRepo>(
                 *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes", FileSpec("../config-doctypes.cfg")));
@@ -153,18 +146,10 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer, bool noD
     auto manager = std::make_unique<BucketManager>(*config_from<StorServerConfig>(config_uri), _node->getComponentRegister());
     _manager = manager.get();
     _top->push_back(std::move(manager));
-    if (fakePersistenceLayer) {
-        auto bottom = std::make_unique<DummyStorageLink>();
-        _bottom = bottom.get();
-        _top->push_back(std::move(bottom));
-    } else {
-        using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
-        auto bottom = std::make_unique<FileStorManager>(*config_from<StorFilestorConfig>(config_uri),
-                                                        _node->getPersistenceProvider(), _node->getComponentRegister(),
-                                                        *_node, _node->get_host_info());
-        _top->push_back(std::move(bottom));
-    }
-    // Generate a doc to use for testing..
+    auto bottom = std::make_unique<DummyStorageLink>();
+    _bottom = bottom.get();
+    _top->push_back(std::move(bottom));
+
     const DocumentType &type(*_node->getTypeRepo()->getDocumentType("text/html"));
     _document = std::make_shared<document::Document>(*_node->getTypeRepo(), type, document::DocumentId("id:ns:text/html::ntnu"));
 }

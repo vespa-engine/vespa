@@ -26,11 +26,7 @@ namespace storage {
 namespace {
 
 vdstestlib::DirConfig initialize(const std::string & rootOfRoot) {
-    vdstestlib::DirConfig config(getStandardConfig(true, rootOfRoot));
-    std::string rootFolder = getRootFolder(config);
-    std::filesystem::remove_all(std::filesystem::path(rootFolder));
-    std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d0", rootFolder.c_str())));
-    return config;
+    return getStandardConfig(true, rootOfRoot);
 }
 
 template<typename T>

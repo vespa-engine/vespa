@@ -155,13 +155,6 @@ VisitorTest::initializeTest(const TestParams& params)
             "visitor_memory_usage_limit",
             std::to_string(params._maxVisitorMemoryUsage));
 
-    std::string rootFolder = getRootFolder(config);
-
-    ::chmod(rootFolder.c_str(), 0755);
-    std::filesystem::remove_all(std::filesystem::path(rootFolder));
-    std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d0", rootFolder.c_str())));
-    std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d1", rootFolder.c_str())));
-
     _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>();
     if (params._autoReplyError.getCode() != mbus::ErrorCode::NONE) {
         _messageSessionFactory->_autoReplyError = params._autoReplyError;
@@ -217,14 +210,12 @@ VisitorTest::initializeTest(const TestParams& params)
     _documents.clear();
     for (uint32_t i=0; i<docCount; ++i) {
         std::ostringstream uri;
-        uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/"
-            << i << ".html";
+        uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/" << i << ".html";
 
         _documents.push_back(Document::SP(
                 _node->getTestDocMan().createDocument(content, uri.str())));
         const document::DocumentType& type(_documents.back()->getType());
-        _documents.back()->setValue(type.getField("headerval"),
-                                    document::IntFieldValue(i % 4));
+        _documents.back()->setValue(type.getField("headerval"), document::IntFieldValue(i % 4));
     }
 }
 

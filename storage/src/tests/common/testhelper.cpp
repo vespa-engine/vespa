@@ -68,6 +68,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     rootFolder += (storagenode ? "vdsroot" : "vdsroot.distributor");
     config->set("root_folder", rootFolder);
     config->set("is_distributor", (storagenode ? "false" : "true"));
+    config->set("write_pid_file_on_startup", "false");
     config = &dc.addConfig("stor-devices");
     config->set("root_folder", rootFolder);
     config = &dc.addConfig("stor-status");

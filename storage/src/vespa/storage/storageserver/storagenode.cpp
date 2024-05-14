@@ -140,7 +140,7 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
     // Initializing state manager early, as others use it init time to
     // update node state according min used bits etc.
     // Needs node type to be set right away. Needs thread pool, index and
-    // dead lock detector too, but not before open()
+    // deadlock detector too, but not before open()
     _stateManager = std::make_unique<StateManager>(
             _context.getComponentRegister(),
             std::move(_hostInfo),
@@ -148,10 +148,10 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
             _singleThreadedDebugMode);
     _context.getComponentRegister().setNodeStateUpdater(*_stateManager);
 
-    // Create VDS root folder, in case it doesn't already exist.
-    // Maybe better to rather fail if it doesn't exist, but tests
-    // might break if we do that. Might alter later.
-    std::filesystem::create_directories(std::filesystem::path(_rootFolder));
+    // Create storage root folder, in case it doesn't already exist.
+    if (!_rootFolder.empty()) {
+        std::filesystem::create_directories(std::filesystem::path(_rootFolder));
+    } // else: running as part of unit tests
 
     initializeNodeSpecific();
 
@@ -192,13 +192,16 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
 
     initializeStatusWebServer();
 
+    if (server_config().writePidFileOnStartup) {
+        assert(!_rootFolder.empty());
         // Write pid file as the last thing we do. If we fail initialization
         // due to an exception we won't run shutdown. Thus we won't remove the
         // pid file if something throws after writing it in initialization.
         // Initialize _pidfile here, such that we can know that we didn't create
         // it in shutdown code for shutdown during init.
-    _pidFile = _rootFolder + "/pidfile";
-    writePidFile(_pidFile);
+        _pidFile = _rootFolder + "/pidfile";
+        writePidFile(_pidFile);
+    }
 }
 
 void
