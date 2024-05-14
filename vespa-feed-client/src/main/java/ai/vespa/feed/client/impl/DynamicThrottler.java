@@ -34,7 +34,7 @@ public class DynamicThrottler extends StaticThrottler {
     @Override
     public void sent(long __, CompletableFuture<HttpResponse> ___) {
         double currentInflight = targetInflight();
-        if (++sent * sent * sent < 1e2 * currentInflight * currentInflight)
+        if (++sent * sent * sent < 1e3 * currentInflight * currentInflight)
             return;
 
         sent = 0;
@@ -63,7 +63,7 @@ public class DynamicThrottler extends StaticThrottler {
             // Additionally, smooth the throughput values, to reduce the impact of noise, and reduce jumpiness.
             if (j != -1) {
                 double t = throughputs[j];
-                if (k != -1) throughputs[j] = (2 * t + throughputs[i] + s) / 4;
+                if (k != -1) throughputs[j] = (18 * t + throughputs[i] + s) / 20;
                 s = t;
             }
             k = j;

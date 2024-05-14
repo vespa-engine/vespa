@@ -17,7 +17,7 @@ class DynamicThrottlerTest {
         DynamicThrottler throttler = new DynamicThrottler(new FeedClientBuilderImpl(List.of(URI.create("http://localhost:8080"))));
         assertEquals(16, throttler.targetInflight());
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 65; i++) {
             throttler.sent(1, null);
             throttler.success();
         }

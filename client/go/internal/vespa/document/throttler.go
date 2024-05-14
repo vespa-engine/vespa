@@ -59,7 +59,7 @@ func NewThrottler(connections int) Throttler { return newThrottler(connections, 
 func (t *dynamicThrottler) Sent() {
 	currentInflight := t.TargetInflight()
 	t.sent++
-	if t.sent*t.sent*t.sent < 100*currentInflight*currentInflight {
+	if t.sent*t.sent*t.sent < 1000*currentInflight*currentInflight {
 		return
 	}
 	t.sent = 0
@@ -94,7 +94,7 @@ func (t *dynamicThrottler) Sent() {
 		if j != -1 {
 			u := t.throughputs[j]
 			if k != -1 {
-				t.throughputs[j] = (2*u + t.throughputs[i] + s) / 4
+				t.throughputs[j] = (18*u + t.throughputs[i] + s) / 20
 			}
 			s = u
 		}
