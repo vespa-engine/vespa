@@ -1,0 +1,20 @@
+{
+  "version" : "1.0",
+  "id" : "1",
+  "description" : "Significance model for input file",
+  "languages" : {
+    "NB" : {
+      "description" : "Document frequency for language",
+      "document-count" : 3,
+      "document-frequencies" : {
+        "fra" : 2,
+        "skriveform" : 3,
+        "nytt" : 2,
+        "kategori" : 3,
+        "eldr" : 3,
+        "omdirigering" : 3,
+        "arbeiderparti" : 3
+      }
+    }
+  }
+}
