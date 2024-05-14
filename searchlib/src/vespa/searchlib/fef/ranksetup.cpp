@@ -195,7 +195,7 @@ RankSetup::compile()
             _firstPhaseRankFeature = parser.featureName();
             _first_phase_resolver->addSeed(_firstPhaseRankFeature);
         } else {
-            vespalib::string e = fmt("invalid feature name for initial rank: '%s'", _firstPhaseRankFeature.c_str());
+            vespalib::string e = fmt("invalid feature name for first phase rank: '%s'", _firstPhaseRankFeature.c_str());
             _warnings.emplace_back(e);
             _compileError = true;
         }
@@ -206,7 +206,7 @@ RankSetup::compile()
             _secondPhaseRankFeature = parser.featureName();
             _second_phase_resolver->addSeed(_secondPhaseRankFeature);
         } else {
-            vespalib::string e = fmt("invalid feature name for final rank: '%s'", _secondPhaseRankFeature.c_str());
+            vespalib::string e = fmt("invalid feature name for second phase rank: '%s'", _secondPhaseRankFeature.c_str());
             _warnings.emplace_back(e);
             _compileError = true;
         }
