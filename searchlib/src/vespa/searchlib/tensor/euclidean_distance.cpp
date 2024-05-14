@@ -44,11 +44,11 @@ public:
         double score = 1.0 / (1.0 + d);
         return score;
     }
-    double calc_with_limit(TypedCells rhs, double limit) const noexcept override {
+    double calc_with_limit(TypedCells rhs, double) const noexcept override {
         vespalib::ConstArrayRef<AttributeCellType> rhs_vector = rhs.unsafe_typify<AttributeCellType>();
         double sum = 0.0;
         size_t sz = _lhs_vector.size();
-        for (size_t i = 0; i < sz && sum <= limit; ++i) {
+        for (size_t i = 0; i < sz; ++i) {
             double diff = _lhs_vector[i] - rhs_vector[i];
             sum += diff*diff;
         }
