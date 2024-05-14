@@ -5,7 +5,7 @@
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/searchlib/tensor/mips_distance_transform.h>
-#include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/classname.h>
 
 using namespace search::tensor;
@@ -16,27 +16,40 @@ using search::attribute::DistanceMetric;
 
 size_t npos = std::string::npos;
 
-void run_calc(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute_noinline__;
-void run_calc_with_limit(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute_noinline__;
+double run_calc(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute_noinline__;
+double run_calc_with_limit(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute_noinline__;
 
-void
+double
 run_calc(size_t iterations, TypedCells b, const BoundDistanceFunction & df) {
-    vespalib::steady_time start = vespalib::steady_clock::now();
-    for (size_t i(0); i < iterations; i++) {
-        df.calc(b);
+    vespalib::BenchmarkTimer timer(1.0);
+    double min_result = std::numeric_limits<double>::max();
+    while (timer.has_budget()) {
+        timer.before();
+        for (size_t i(0); i < iterations; i++) {
+            min_result = std::min(df.calc(b), min_result);
+        }
+        timer.after();
     }
-    vespalib::duration used = vespalib::steady_clock::now() - start;
-    printf("%s::calc: Time used = %1.3f\n", vespalib::getClassName(df).c_str(), vespalib::to_s(used));
+    printf("%s::calc: Time used = %1.3f, min_result=%3.3f\n",
+           vespalib::getClassName(df).c_str(), timer.min_time(), min_result);
+    return min_result;
 }
 
-void
+double
 run_calc_with_limit(size_t iterations, TypedCells b, const BoundDistanceFunction & df) {
-    vespalib::steady_time start = vespalib::steady_clock::now();
-    for (size_t i(0); i < iterations; i++) {
-        df.calc_with_limit(b, std::numeric_limits<double>::max());
+    vespalib::BenchmarkTimer timer(1.0);
+    double min_result = std::numeric_limits<double>::max();
+    while (timer.has_budget()) {
+        timer.before();
+        for (size_t i(0); i < iterations; i++) {
+            min_result = std::min(df.calc_with_limit(b, std::numeric_limits<double>::max()), min_result);
+        }
+        timer.after();
     }
-    vespalib::duration used = vespalib::steady_clock::now() - start;
-    printf("%s::calc_with_limit: Time used = %1.3f\n", vespalib::getClassName(df).c_str(), vespalib::to_s(used));
+
+    printf("%s::calc_with_limit: Time used = %1.3f, min_result=%3.3f\n",
+           vespalib::getClassName(df).c_str(), timer.min_time(), min_result);
+    return min_result;
 }
 
 template<typename T>
@@ -54,8 +67,9 @@ void benchmark(size_t iterations, size_t elems, const DistanceFunctionFactory & 
     }
     TypedCells a_cells(av), b_cells(bv);
 
-    run_calc(iterations, b_cells, *df.for_query_vector(a_cells));
-    run_calc_with_limit(iterations, b_cells, *df.for_query_vector(a_cells));
+    double calc_result = run_calc(iterations, b_cells, *df.for_query_vector(a_cells));
+    double calc_with_limit_result = run_calc_with_limit(iterations, b_cells, *df.for_query_vector(a_cells));
+    assert(calc_result == calc_with_limit_result);
 }
 
 template<typename T>
