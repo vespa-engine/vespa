@@ -40,8 +40,8 @@ public class SignificanceSearcherTest {
 
     public SignificanceSearcherTest() {
         List<Path> models = new ArrayList<>();
-        models.add( Path.of("src/test/java/com/yahoo/search/significance/model/en.json"));
-
+        models.add(Path.of("src/test/java/com/yahoo/search/significance/model/docv1.json"));
+        models.add(Path.of("src/test/java/com/yahoo/search/significance/model/docv2.json"));
         var schema = new Schema.Builder("music")
                 .add(new DocumentSummary.Builder("default").build())
                 .add(new RankProfile.Builder("significance-ranking")
@@ -61,6 +61,26 @@ public class SignificanceSearcherTest {
 
     @Test
     void testSignificanceValueOnSimpleQuery() {
+        Query q = new Query();
+        q.getRanking().setProfile("significance-ranking");
+        AndItem root = new AndItem();
+        WordItem tmp;
+        tmp = new WordItem("hello", true);
+        root.addItem(tmp);
+
+        q.getModel().getQueryTree().setRoot(root);
+
+        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
+        var helloFrequency = model.documentFrequency("hello");
+        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
+        Result r = createExecution(searcher).search(q);
+
+        root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
+        WordItem w0 = (WordItem) root.getItem(0);
+        assertEquals(helloSignificanceValue, w0.getSignificance());
+    }
+    @Test
+    void testSignificanceValueOnSimpleANDQuery() {
 
         Query q = new Query();
         q.getRanking().setProfile("significance-ranking");
@@ -133,7 +153,7 @@ public class SignificanceSearcherTest {
 
         assertEquals(helloSignificanceValue, w0.getSignificance());
         assertEquals(testSignificanceValue, w1.getSignificance());
-        assertEquals(SignificanceSearcher.calculateIDF(10, 2), w3.getSignificance());
+        assertEquals(SignificanceSearcher.calculateIDF(16, 2), w3.getSignificance());
 
     }
 
