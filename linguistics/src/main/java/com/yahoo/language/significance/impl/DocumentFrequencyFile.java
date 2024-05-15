@@ -17,15 +17,14 @@ import java.util.HashMap;
 public class DocumentFrequencyFile {
     private final String description;
 
-    private final int documentCount;
-
+    private final long documentCount;
 
     private final HashMap<String, Long> frequencies;
 
     @JsonCreator
     public DocumentFrequencyFile(
             @JsonProperty("description") String description,
-            @JsonProperty("document-count") int documentCount,
+            @JsonProperty("document-count") long documentCount,
             @JsonProperty("document-frequencies") HashMap<String, Long> frequencies) {
         this.description = description;
         this.documentCount = documentCount;
@@ -36,7 +35,7 @@ public class DocumentFrequencyFile {
     public String description() { return description; }
 
     @JsonProperty("document-count")
-    public int documentCount() { return documentCount; }
+    public long documentCount() { return documentCount; }
 
     @JsonProperty("document-frequencies")
     public HashMap<String, Long> frequencies() { return frequencies; }

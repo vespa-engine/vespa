@@ -45,4 +45,8 @@ public class SignificanceModelFile {
 
     @JsonProperty("languages")
     public HashMap<String, DocumentFrequencyFile> languages() { return languages; }
+
+    public void addLanguage(String language, DocumentFrequencyFile documentFrequencyFile) {
+        languages.put(language, documentFrequencyFile);
+    }
 }
