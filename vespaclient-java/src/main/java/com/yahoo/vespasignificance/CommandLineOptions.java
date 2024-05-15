@@ -25,17 +25,9 @@ public class CommandLineOptions {
     public static final String OUTPUT_OPTION = "out";
     public static final String FIELD_OPTION = "field";
     public static final String LANGUAGE_OPTION = "language";
+    public static final String DOC_TYPE_OPTION = "doc-type";
 
     private final Options options = createOptions();
-    private final InputStream stdIn;
-
-    public CommandLineOptions(InputStream stdIn) {
-        this.stdIn = stdIn;
-    }
-
-    public CommandLineOptions() {
-        this(System.in);
-    }
 
     @SuppressWarnings("AccessStaticViaInstance")
     private static Options createOptions() {
@@ -71,6 +63,12 @@ public class CommandLineOptions {
                 .longOpt(LANGUAGE_OPTION)
                 .build());
 
+        options.addOption(Option.builder("d")
+                .hasArg(true)
+                .desc("Document type identifier")
+                .longOpt(DOC_TYPE_OPTION)
+                .build());
+
         return options;
     }
 
@@ -94,6 +92,7 @@ public class CommandLineOptions {
             builder.setOutputFile(cl.getOptionValue(OUTPUT_OPTION));
             builder.setField(cl.getOptionValue(FIELD_OPTION));
             builder.setLanguage(cl.getOptionValue(LANGUAGE_OPTION));
+            builder.setDocType(cl.getOptionValue(DOC_TYPE_OPTION));
 
             return builder.build();
         } catch (ParseException e) {

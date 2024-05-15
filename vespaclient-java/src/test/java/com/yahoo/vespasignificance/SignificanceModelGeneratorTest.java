@@ -25,14 +25,15 @@ public class SignificanceModelGeneratorTest {
     @TempDir
     private Path tempDir;
 
-    private ClientParameters.Builder createParameters(String inputPath, String outputPath, String field, String language) {
+    private ClientParameters.Builder createParameters(String inputPath, String outputPath, String field, String language, String docType) {
         tempDir.toFile().mkdirs();
 
         return new ClientParameters.Builder()
                 .setInputFile("src/test/files/" + inputPath)
                 .setOutputFile(tempDir.resolve(outputPath).toString())
                 .setField(field)
-                .setLanguage(language);
+                .setLanguage(language)
+                .setDocType(docType);
     }
 
     private SignificanceModelGenerator createSignificanceModelGenerator(ClientParameters params) {
@@ -43,7 +44,7 @@ public class SignificanceModelGeneratorTest {
     void testGenerateSimpleFile() throws IOException {
         String inputPath = "no.jsonl";
         String outputPath = "output.json";
-        ClientParameters params = createParameters(inputPath, outputPath,  "text", "NB").build();
+        ClientParameters params = createParameters(inputPath, outputPath,  "text", "NB", "nb").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params);
         generator.generate();
 
@@ -70,7 +71,7 @@ public class SignificanceModelGeneratorTest {
     void testGenerateFileWithMultipleLanguages() throws IOException {
         String inputPath = "no.jsonl";
         String outputPath = "output.json";
-        ClientParameters params1 = createParameters(inputPath, outputPath, "text", "NB").build();
+        ClientParameters params1 = createParameters(inputPath, outputPath, "text", "NB", "nb").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params1);
         generator.generate();
 
@@ -78,7 +79,7 @@ public class SignificanceModelGeneratorTest {
         assertTrue(outputFile.exists());
 
         String inputPath2 = "en.jsonl";
-        ClientParameters params2 = createParameters(inputPath2,  outputPath, "text", "EN").build();
+        ClientParameters params2 = createParameters(inputPath2,  outputPath, "text", "EN", "en").build();
         generator = createSignificanceModelGenerator(params2);
         generator.generate();
 
@@ -112,7 +113,7 @@ public class SignificanceModelGeneratorTest {
     void testOverwriteExistingDocumentFrequencyLanguage() throws IOException {
         String inputPath = "no.jsonl";
         String outputPath = "output.json";
-        ClientParameters params1 = createParameters(inputPath, outputPath,  "text", "NB").build();
+        ClientParameters params1 = createParameters(inputPath, outputPath,  "text", "NB", "nb").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params1);
         generator.generate();
 
@@ -133,7 +134,7 @@ public class SignificanceModelGeneratorTest {
         assertFalse(oldDf.frequencies().containsKey("nytt"));
 
         String inputPath2 = "no_2.jsonl";
-        ClientParameters params2 = createParameters(inputPath2, outputPath, "text", "NB").build();
+        ClientParameters params2 = createParameters(inputPath2, outputPath, "text", "NB", "nb").build();
         SignificanceModelGenerator generator2 = createSignificanceModelGenerator(params2);
         generator2.generate();
 

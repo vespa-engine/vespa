@@ -69,7 +69,7 @@ public class SignificanceModelGenerator {
 
         language = Language.fromLanguageTag(clientParameters.language);
 
-        docType = new DocumentType(language.languageCode().toLowerCase());
+        docType = new DocumentType(clientParameters.docType);
         docType.addField(new Field(clientParameters.field, DataType.STRING));
         types.registerDocumentType(docType);
     }
@@ -113,7 +113,7 @@ public class SignificanceModelGenerator {
             modelFile = new SignificanceModelFile(VERSION, ID, SIGNIFICANCE_DESCRIPTION, languages);
         }
         try {
-            objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+            //objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
             ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
             writer.writeValue(new File(clientParameters.outputFile), modelFile);
         } catch (IOException e) {

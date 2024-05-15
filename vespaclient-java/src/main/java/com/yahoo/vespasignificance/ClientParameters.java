@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespasignificance;
 
 
@@ -22,17 +23,22 @@ public class ClientParameters {
     // Language for the program
     public final String language;
 
+    // Document type identifier
+    public final String docType;
+
     public ClientParameters(
             boolean help,
             String inputFile,
             String outputFile,
             String field,
-            String language) {
+            String language,
+            String docType) {
         this.help = help;
         this.inputFile = inputFile;
         this.outputFile = outputFile;
         this.field = field;
         this.language = language;
+        this.docType = docType;
     }
 
     public static class Builder {
@@ -41,6 +47,8 @@ public class ClientParameters {
         private String outputFile;
         private String field;
         private String language;
+
+        private String docType;
 
         public Builder setHelp(boolean help) {
             this.help = help;
@@ -66,8 +74,13 @@ public class ClientParameters {
             return this;
         }
 
+        public Builder setDocType(String docType) {
+            this.docType = docType;
+            return this;
+        }
+
         public ClientParameters build() {
-            return new ClientParameters(help, inputFile, outputFile, field, language);
+            return new ClientParameters(help, inputFile, outputFile, field, language, docType);
         }
     }
 }
