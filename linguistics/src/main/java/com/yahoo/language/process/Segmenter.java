@@ -6,7 +6,7 @@ import com.yahoo.language.Language;
 import java.util.List;
 
 /**
- * A segmnenter splits a string into separate segments (such as words) without applying any further
+ * A segmenter splits a string into separate segments (such as words) without applying any further
  * processing (such as stemming) on each segment.
  *
  * This is useful when token processing should be done separately from segmentation, such as in
