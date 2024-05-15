@@ -5,12 +5,12 @@ package com.yahoo.vespasignificance;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.language.significance.impl.DocumentFrequencyFile;
 import com.yahoo.language.significance.impl.SignificanceModelFile;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,21 +22,15 @@ public class SignificanceModelGeneratorTest {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    @BeforeEach
-    void removeTempDirectory() {
-        Path tempDir = Paths.get("src/test/files/temp-output");
-        if (tempDir.toFile().exists()) {
-            tempDir.toFile().delete();
-        }
-    }
+    @TempDir
+    private Path tempDir;
 
-    private static ClientParameters.Builder createParameters(String inputFile, String field, String language) {
-        String outputPath = "src/test/files/temp-dir";
-        Paths.get(outputPath).toFile().mkdirs();
+    private ClientParameters.Builder createParameters(String inputPath, String outputPath, String field, String language) {
+        tempDir.toFile().mkdirs();
 
         return new ClientParameters.Builder()
-                .setInputFile("src/test/files/" + inputFile)
-                .setOutputFile(outputPath + "/output.json")
+                .setInputFile("src/test/files/" + inputPath)
+                .setOutputFile(tempDir.resolve(outputPath).toString())
                 .setField(field)
                 .setLanguage(language);
     }
@@ -45,16 +39,18 @@ public class SignificanceModelGeneratorTest {
         return new SignificanceModelGenerator(params);
     }
 
-
     @Test
     void testGenerateSimpleFile() throws IOException {
-        ClientParameters params = createParameters("no.jsonl", "text", "NB").build();
+        String inputPath = "no.jsonl";
+        String outputPath = "output.json";
+        ClientParameters params = createParameters(inputPath, outputPath,  "text", "NB").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params);
         generator.generate();
 
-        assertTrue(Paths.get("src/test/files/temp-dir/output.json").toFile().exists());
+        File outputFile = new File(tempDir.resolve(outputPath).toString());
+        assertTrue(outputFile.exists());
 
-        SignificanceModelFile modelFile = objectMapper.readValue(Paths.get("src/test/files/temp-dir/output.json").toFile(), SignificanceModelFile.class);
+        SignificanceModelFile modelFile = objectMapper.readValue(outputFile, SignificanceModelFile.class);
 
         HashMap<String, DocumentFrequencyFile> languages = modelFile.languages();
         assertEquals(1, languages.size());
@@ -72,18 +68,24 @@ public class SignificanceModelGeneratorTest {
 
     @Test
     void testGenerateFileWithMultipleLanguages() throws IOException {
-        ClientParameters params1 = createParameters("no.jsonl", "text", "NB").build();
+        String inputPath = "no.jsonl";
+        String outputPath = "output.json";
+        ClientParameters params1 = createParameters(inputPath, outputPath, "text", "NB").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params1);
         generator.generate();
-        assertTrue(Paths.get("src/test/files/temp-dir/output.json").toFile().exists());
 
-        ClientParameters params2 = createParameters("en.jsonl", "text", "EN").build();
+        File outputFile = new File(tempDir.resolve(outputPath).toString());
+        assertTrue(outputFile.exists());
+
+        String inputPath2 = "en.jsonl";
+        ClientParameters params2 = createParameters(inputPath2,  outputPath, "text", "EN").build();
         generator = createSignificanceModelGenerator(params2);
         generator.generate();
 
-        assertTrue(Paths.get("src/test/files/temp-dir/output.json").toFile().exists());
+        outputFile = new File(tempDir.resolve(outputPath).toString());
+        assertTrue(outputFile.exists());
 
-        SignificanceModelFile modelFile = objectMapper.readValue(Paths.get("src/test/files/temp-dir/output.json").toFile(), SignificanceModelFile.class);
+        SignificanceModelFile modelFile = objectMapper.readValue(outputFile, SignificanceModelFile.class);
 
         HashMap<String, DocumentFrequencyFile> languages = modelFile.languages();
 
@@ -108,12 +110,16 @@ public class SignificanceModelGeneratorTest {
 
     @Test
     void testOverwriteExistingDocumentFrequencyLanguage() throws IOException {
-        ClientParameters params1 = createParameters("no.jsonl", "text", "NB").build();
+        String inputPath = "no.jsonl";
+        String outputPath = "output.json";
+        ClientParameters params1 = createParameters(inputPath, outputPath,  "text", "NB").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params1);
         generator.generate();
-        assertTrue(Paths.get("src/test/files/temp-dir/output.json").toFile().exists());
 
-        SignificanceModelFile preUpdatedFile = objectMapper.readValue(Paths.get("src/test/files/temp-dir/output.json").toFile(), SignificanceModelFile.class)
+        File outputFile = new File(tempDir.resolve(outputPath).toString());
+        assertTrue(outputFile.exists());
+
+        SignificanceModelFile preUpdatedFile = objectMapper.readValue(outputFile, SignificanceModelFile.class)
                 ;
         HashMap<String, DocumentFrequencyFile> oldLanguages = preUpdatedFile.languages();
         assertEquals(1, oldLanguages.size());
@@ -126,13 +132,15 @@ public class SignificanceModelGeneratorTest {
         assertEquals(3, oldDf.frequencies().get("skriveform"));
         assertFalse(oldDf.frequencies().containsKey("nytt"));
 
-        ClientParameters params2 = createParameters("no_2.jsonl", "text", "NB").build();
+        String inputPath2 = "no_2.jsonl";
+        ClientParameters params2 = createParameters(inputPath2, outputPath, "text", "NB").build();
         SignificanceModelGenerator generator2 = createSignificanceModelGenerator(params2);
         generator2.generate();
 
-        assertTrue(Paths.get("src/test/files/temp-dir/output.json").toFile().exists());
+        outputFile = new File(tempDir.resolve(outputPath).toString());
+        assertTrue(outputFile.exists());
 
-        SignificanceModelFile modelFile = objectMapper.readValue(Paths.get("src/test/files/temp-dir/output.json").toFile(), SignificanceModelFile.class);
+        SignificanceModelFile modelFile = objectMapper.readValue(outputFile, SignificanceModelFile.class);
 
         HashMap<String, DocumentFrequencyFile> languages = modelFile.languages();
 
