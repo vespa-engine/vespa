@@ -68,12 +68,16 @@ public class AthenzX509CertificateUtils {
     /** @return Athenz unique instance id from the Subject Alternative Name extension */
     public static Optional<String> getInstanceId(List<SubjectAlternativeName> sans) {
         // Prefer instance id from SAN URI over the legacy DNS entry
-        return getAthenzUniqueInstanceIdFromSanUri(sans)
+        return getLastSegmentFromSanUri(sans, "athenz://instanceid/")
                 .or(() -> getAthenzUniqueInstanceIdFromSanDns(sans));
     }
 
-    private static Optional<String> getAthenzUniqueInstanceIdFromSanUri(List<SubjectAlternativeName> sans) {
-        String uriPrefix = "athenz://instanceid/";
+    /** @return Athenz unique instance name from the Subject Alternative Name extension */
+    public static Optional<String> getInstanceName(List<SubjectAlternativeName> sans) {
+        return getLastSegmentFromSanUri(sans, "athenz://instancename/");
+    }
+
+    private static Optional<String> getLastSegmentFromSanUri(List<SubjectAlternativeName> sans, String uriPrefix) {
         return sans.stream()
                 .filter(san -> {
                     if (san.getType() != Type.URI) return false;
