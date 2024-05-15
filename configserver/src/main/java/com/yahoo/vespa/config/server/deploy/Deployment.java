@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.deploy;
 
 import ai.vespa.metrics.ConfigServerMetrics;
-import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ActivationContext;
@@ -19,11 +18,8 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
-import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
-import com.yahoo.vespa.config.server.session.ActivationTriggers;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.NodeRestart;
 import com.yahoo.vespa.config.server.session.ActivationTriggers.Reindexing;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -41,10 +37,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.session.Session.Status.DELETE;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
@@ -181,12 +177,25 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     }
 
     private void storeReindexing(ApplicationId applicationId) {
+        if ( ! applicationRepository.configserverConfig().hostedVespa()) return;
+
+        List<Reindexing> entries = session.getActivationTriggers().reindexings();
+        if (entries.isEmpty()) return;
+
         applicationRepository.modifyReindexing(applicationId, reindexing -> {
-            for (Reindexing entry : session.getActivationTriggers().reindexings())
+            for (Reindexing entry : entries)
                 reindexing = reindexing.withPending(entry.clusterId(), entry.documentType(), session.getSessionId());
 
             return reindexing;
         });
+        deployLogger.log(Level.INFO, String.format("Scheduled reindexing of %d document types across %d clusters: %s",
+                                                   entries.size(),
+                                                   entries.stream().map(Reindexing::clusterId).distinct().count(),
+                                                   entries.stream().collect(groupingBy(Reindexing::clusterId)).entrySet().stream()
+                                                          .map(typesInCluster -> typesInCluster.getKey() + ": " +
+                                                                                 typesInCluster.getValue().stream()
+                                                                                               .map(Reindexing::documentType).collect(joining(", ")))
+                                                          .collect(joining("; "))));
     }
 
     /**
