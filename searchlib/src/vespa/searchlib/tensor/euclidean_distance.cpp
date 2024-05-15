@@ -16,14 +16,11 @@ using vespalib::BFloat16;
 
 template<typename AttributeCellType>
 class BoundEuclideanDistance final : public BoundDistanceFunction {
-    using FloatType = std::conditional_t<std::is_same<AttributeCellType,BFloat16>::value,float,AttributeCellType>;
+    using FloatType = std::conditional_t<std::is_same<AttributeCellType, BFloat16>::value, float, AttributeCellType>;
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
-    static const double *cast(const double * p) { return p; }
-    static const float *cast(const float * p) { return p; }
-    static const int8_t *cast(const Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
 public:
     explicit BoundEuclideanDistance(TypedCells lhs)
         : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator()),

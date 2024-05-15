@@ -6,6 +6,7 @@
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
+using vespalib::eval::Int8Float;
 
 namespace search::tensor {
 
@@ -23,7 +24,7 @@ public:
           _lhs(_tmpSpace.storeLhs(lhs))
     {
         auto a = _lhs.data();
-        _lhs_norm_sq = _computer.dotProduct(a, a, lhs.size);
+        _lhs_norm_sq = _computer.dotProduct(cast(a), cast(a), lhs.size);
         if (_lhs_norm_sq <= 0.0) {
             _lhs_norm_sq = 1.0;
         }
@@ -32,7 +33,7 @@ public:
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         auto a = _lhs.data();
         auto b = rhs_vector.data();
-        double dot_product = _computer.dotProduct(a, b, _lhs.size());
+        double dot_product = _computer.dotProduct(cast(a), cast(b), _lhs.size());
         double distance = _lhs_norm_sq - dot_product;
         return distance;
     }
@@ -76,5 +77,6 @@ PrenormalizedAngularDistanceFunctionFactory<FloatType>::for_insertion_vector(Typ
 
 template class PrenormalizedAngularDistanceFunctionFactory<float>;
 template class PrenormalizedAngularDistanceFunctionFactory<double>;
+template class PrenormalizedAngularDistanceFunctionFactory<Int8Float>;
 
 }

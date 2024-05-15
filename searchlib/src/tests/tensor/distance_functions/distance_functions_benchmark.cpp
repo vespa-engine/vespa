@@ -78,17 +78,17 @@ void benchmark(size_t iterations, size_t elems, const std::string & dist_functio
         benchmark<T>(iterations, elems, EuclideanDistanceFunctionFactory<T>());
     }
     if (dist_functions.find("angular") != npos) {
-        if (std::is_same<T, double>() || std::is_same<T, float>()) {
+        if ( ! std::is_same<T, BFloat16>()) {
             benchmark<T>(iterations, elems, AngularDistanceFunctionFactory<T>());
         }
     }
     if (dist_functions.find("prenorm") != npos) {
-        if (std::is_same<T, double>() || std::is_same<T, float>()) {
+        if ( ! std::is_same<T, BFloat16>()) {
             benchmark<T>(iterations, elems, PrenormalizedAngularDistanceFunctionFactory<T>());
         }
     }
     if (dist_functions.find("mips") != npos) {
-        if (std::is_same<T, double>() || std::is_same<T, float>() || std::is_same<T, Int8Float>()) {
+        if ( !std::is_same<T, BFloat16>()) {
             benchmark<T>(iterations, elems, MipsDistanceFunctionFactory<T>());
         }
     }

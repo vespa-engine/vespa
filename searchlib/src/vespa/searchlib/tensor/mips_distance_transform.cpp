@@ -19,9 +19,6 @@ class BoundMipsDistanceFunction final : public BoundDistanceFunction {
     using ExtraDimT = std::conditional_t<extra_dim,double,std::monostate>;
     [[no_unique_address]] ExtraDimT _lhs_extra_dim;
 
-    static const double *cast(const double * p) { return p; }
-    static const float *cast(const float * p) { return p; }
-    static const int8_t *cast(const Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
 public:
     BoundMipsDistanceFunction(TypedCells lhs, MaximumSquaredNormStore& sq_norm_store)
         : BoundDistanceFunction(),

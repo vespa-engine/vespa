@@ -9,6 +9,7 @@
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
 using vespalib::eval::TypedCells;
+using vespalib::eval::Int8Float;
 
 namespace search::tensor {
 
@@ -26,16 +27,16 @@ public:
           _lhs(_tmpSpace.storeLhs(lhs))
     {
         auto a = _lhs.data();
-        _lhs_norm_sq = _computer.dotProduct(a, a, lhs.size);
+        _lhs_norm_sq = _computer.dotProduct(cast(a), cast(a), lhs.size);
     }
     double calc(TypedCells rhs) const noexcept override {
         size_t sz = _lhs.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         auto a = _lhs.data();
         auto b = rhs_vector.data();
-        double b_norm_sq = _computer.dotProduct(b, b, sz);
+        double b_norm_sq = _computer.dotProduct(cast(b), cast(b), sz);
         double squared_norms = _lhs_norm_sq * b_norm_sq;
-        double dot_product = _computer.dotProduct(a, b, sz);
+        double dot_product = _computer.dotProduct(cast(a), cast(b), sz);
         double div = (squared_norms > 0) ? sqrt(squared_norms) : 1.0;
         double cosine_similarity = dot_product / div;
         double distance = 1.0 - cosine_similarity; // in range [0,2]
@@ -84,5 +85,6 @@ AngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) 
 
 template class AngularDistanceFunctionFactory<float>;
 template class AngularDistanceFunctionFactory<double>;
+template class AngularDistanceFunctionFactory<Int8Float>;
 
 }
