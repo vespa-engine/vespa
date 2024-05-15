@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/message_sender_stub.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
@@ -14,6 +15,7 @@ using namespace ::testing;
 namespace storage {
 
 struct BucketOwnershipNotifierTest : public Test {
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestServiceLayerApp> _app;
     lib::ClusterState _clusterState;
 
@@ -58,7 +60,8 @@ struct BucketOwnershipNotifierTest : public Test {
 void
 BucketOwnershipNotifierTest::SetUp()
 {
-    _app = std::make_unique<TestServiceLayerApp>();
+    _config = StorageConfigSet::make_storage_node_config();
+    _app = std::make_unique<TestServiceLayerApp>(_config->config_uri());
     _app->setDistribution(Redundancy(1), NodeCount(2));
     _app->setClusterState(_clusterState);
 }

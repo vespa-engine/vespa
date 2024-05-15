@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/storage/distributor/statusreporterdelegate.h>
@@ -45,8 +46,8 @@ public:
 }
 
 TEST(StatusReporterDelegateTest, delegate_invokes_delegator_on_status_request) {
-    vdstestlib::DirConfig config(getStandardConfig(false));
-    TestDistributorApp app(config.getConfigId());
+    auto config = StorageConfigSet::make_distributor_node_config();
+    TestDistributorApp app(config->config_uri());
 
     MockDelegator mockDelegator;
     MockStatusReporter reporter;

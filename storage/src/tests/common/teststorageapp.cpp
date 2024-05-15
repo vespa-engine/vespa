@@ -26,12 +26,12 @@ namespace storage {
 
 TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
                                const lib::NodeType& type, NodeIndex index,
-                               vespalib::stringref configId)
+                               const config::ConfigUri& config_uri)
     : TestComponentRegister(ComponentRegisterImpl::UP(std::move(compReg))),
       _compReg(dynamic_cast<StorageComponentRegisterImpl&>(TestComponentRegister::getComponentRegister())),
       _docMan(),
       _nodeStateUpdater(type),
-      _configId(configId),
+      _configId(config_uri.getConfigId()),
       _node_identity("test_cluster", type, index),
       _initialized(false)
 {
@@ -39,17 +39,18 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
     vespalib::string clusterName = "mycluster";
     uint32_t redundancy = 2;
     uint32_t nodeCount = 10;
-    if (!configId.empty()) {
-        config::ConfigUri uri(configId);
-        auto serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
-        clusterName = serverConfig->clusterName;
-        if (index == 0xffff) index = serverConfig->nodeIndex;
-        redundancy = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(uri.getConfigId(), uri.getContext())->redundancy;
-    } else {
-        if (index == 0xffff) index = 0;
+    auto serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(config_uri.getConfigId(), config_uri.getContext());
+    clusterName = serverConfig->clusterName;
+    if (index == 0xffff) {
+        index = serverConfig->nodeIndex;
     }
-    if (index >= nodeCount) nodeCount = index + 1;
-    if (redundancy > nodeCount) redundancy = nodeCount;
+    redundancy = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(config_uri.getConfigId(), config_uri.getContext())->redundancy;
+    if (index >= nodeCount) {
+        nodeCount = index + 1;
+    }
+    if (redundancy > nodeCount) {
+        redundancy = nodeCount;
+    }
 
     _compReg.setNodeInfo(clusterName, type, index);
     _compReg.setNodeStateUpdater(_nodeStateUpdater);
@@ -83,21 +84,17 @@ TestStorageApp::setClusterState(const lib::ClusterState& c)
 }
 
 namespace {
-NodeIndex getIndexFromConfig(vespalib::stringref configId) {
-    if (!configId.empty()) {
-        config::ConfigUri uri(configId);
-        return NodeIndex(
-            config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext())->nodeIndex);
-    }
-    return NodeIndex(0);
+
+NodeIndex node_index_from_config(const config::ConfigUri& uri) {
+    return NodeIndex(config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext())->nodeIndex);
 }
 
 VESPA_THREAD_STACK_TAG(test_executor)
 }
 
-TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
+TestServiceLayerApp::TestServiceLayerApp(NodeIndex index, const config::ConfigUri& config_uri)
     : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(ContentBucketDbOptions()),
-                     lib::NodeType::STORAGE, getIndexFromConfig(configId), configId),
+                     lib::NodeType::STORAGE, index, config_uri),
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
@@ -107,17 +104,9 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
     _nodeStateUpdater.setReportedNodeState(ns);
 }
 
-TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
-                                         vespalib::stringref configId)
-    : TestStorageApp(std::make_unique<ServiceLayerComponentRegisterImpl>(ContentBucketDbOptions()),
-                     lib::NodeType::STORAGE, index, configId),
-      _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
-      _persistenceProvider(),
-      _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
-      _host_info()
+TestServiceLayerApp::TestServiceLayerApp(const config::ConfigUri& config_uri)
+    : TestServiceLayerApp(node_index_from_config(config_uri), config_uri)
 {
-    lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
-    _nodeStateUpdater.setReportedNodeState(ns);
 }
 
 TestServiceLayerApp::~TestServiceLayerApp() = default;
@@ -146,45 +135,37 @@ TestServiceLayerApp::getPersistenceProvider()
 }
 
 namespace {
-    template<typename T>
-    T getConfig(vespalib::stringref configId) {
-        config::ConfigUri uri(configId);
-        return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
-    }
+
+template<typename T>
+[[nodiscard]] T get_config(const config::ConfigUri& uri) {
+    return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
+}
+
 }
 
 void
-TestDistributorApp::configure(vespalib::stringref id)
+TestDistributorApp::configure(const config::ConfigUri& config_uri)
 {
-    if (id.empty()) return;
-    auto dc(getConfig<vespa::config::content::core::StorDistributormanagerConfig>(id));
+    auto dc = get_config<vespa::config::content::core::StorDistributormanagerConfig>(config_uri);
     _compReg.setDistributorConfig(dc);
-    auto vc(getConfig<vespa::config::content::core::StorVisitordispatcherConfig>(id));
+    auto vc = get_config<vespa::config::content::core::StorVisitordispatcherConfig>(config_uri);
     _compReg.setVisitorConfig(vc);
 }
 
-TestDistributorApp::TestDistributorApp(vespalib::stringref configId)
-    : TestStorageApp(
-            std::make_unique<DistributorComponentRegisterImpl>(),
-            lib::NodeType::DISTRIBUTOR, getIndexFromConfig(configId), configId),
+TestDistributorApp::TestDistributorApp(NodeIndex index, const config::ConfigUri& config_uri)
+    : TestStorageApp(std::make_unique<DistributorComponentRegisterImpl>(),
+                     lib::NodeType::DISTRIBUTOR, index, config_uri),
       _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _lastUniqueTimestampRequested(0),
       _uniqueTimestampCounter(0)
 {
     _compReg.setTimeCalculator(*this);
-    configure(configId);
+    configure(config_uri);
 }
 
-TestDistributorApp::TestDistributorApp(NodeIndex index, vespalib::stringref configId)
-    : TestStorageApp(
-            std::make_unique<DistributorComponentRegisterImpl>(),
-            lib::NodeType::DISTRIBUTOR, index, configId),
-      _compReg(dynamic_cast<DistributorComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
-      _lastUniqueTimestampRequested(0),
-      _uniqueTimestampCounter(0)
+TestDistributorApp::TestDistributorApp(const config::ConfigUri& config_uri)
+    : TestDistributorApp(node_index_from_config(config_uri), config_uri)
 {
-    _compReg.setTimeCalculator(*this);
-    configure(configId);
 }
 
 TestDistributorApp::~TestDistributorApp() = default;

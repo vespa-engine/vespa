@@ -38,7 +38,7 @@ struct BucketCheckerInjector : FileStorTestFixture::StorageLinkInjector
     {}
     void inject(DummyStorageLink& link) const override {
         using vespa::config::content::core::StorServerConfig;
-        auto cfg = config_from<StorServerConfig>(config::ConfigUri(_fixture._config->getConfigId()));
+        auto cfg = config_from<StorServerConfig>(_fixture._config->config_uri());
        link.push_back(std::make_unique<ModifiedBucketChecker>(
                _node.getComponentRegister(), _node.getPersistenceProvider(), *cfg));
     }

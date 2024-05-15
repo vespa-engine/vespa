@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/storage_config_set.h>
+#include <tests/common/teststorageapp.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
-#include <tests/common/teststorageapp.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/socket_spec.h>
@@ -39,6 +40,7 @@ vespalib::string fetch(int port, const vespalib::string &path) {
 namespace storage {
 
 struct StatusTest : Test {
+    std::unique_ptr<StorageConfigSet>    _config;
     std::unique_ptr<TestServiceLayerApp> _node;
 
     void SetUp() override;
@@ -97,7 +99,8 @@ namespace {
 }
 
 void StatusTest::SetUp() {
-    _node = std::make_unique<TestServiceLayerApp>();
+    _config = StorageConfigSet::make_storage_node_config();
+    _node = std::make_unique<TestServiceLayerApp>(_config->config_uri());
 }
 
 namespace {

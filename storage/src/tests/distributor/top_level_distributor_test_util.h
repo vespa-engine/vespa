@@ -3,6 +3,7 @@
 
 #include "distributor_message_sender_stub.h"
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
@@ -140,7 +141,7 @@ public:
     static std::vector<document::BucketSpace> bucket_spaces();
 
 protected:
-    vdstestlib::DirConfig _config;
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestDistributorApp> _node;
     std::unique_ptr<framework::TickingThreadPool> _thread_pool;
     std::unique_ptr<DistributorStripePool> _stripe_pool;

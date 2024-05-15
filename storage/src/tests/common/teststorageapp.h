@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * \class storage::TestServiceLayerApp
- * \ingroup common
- *
- * \brief Helper class for tests involving service layer.
+ * Helper class for tests involving service layer.
  *
  * Some components need some dependencies injected in order to work correctly.
  * This test class simplifies the process of creating these dependencies.
@@ -33,6 +30,8 @@
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <atomic>
+
+namespace config { class ConfigUri; }
 
 namespace storage {
 
@@ -66,8 +65,8 @@ public:
      * from config themselves.
      */
     TestStorageApp(StorageComponentRegisterImpl::UP compReg,
-                   const lib::NodeType&, NodeIndex = NodeIndex(0xffff),
-                   vespalib::stringref configId = "");
+                   const lib::NodeType&, NodeIndex index,
+                   const config::ConfigUri& config_uri);
     ~TestStorageApp() override;
 
     // Set functions, to be able to modify content while running.
@@ -110,8 +109,8 @@ class TestServiceLayerApp : public TestStorageApp
     HostInfo _host_info;
 
 public:
-    explicit TestServiceLayerApp(vespalib::stringref configId);
-    explicit TestServiceLayerApp(NodeIndex = NodeIndex(0xffff), vespalib::stringref configId = "");
+    TestServiceLayerApp(NodeIndex node_index, const config::ConfigUri& config_uri);
+    explicit TestServiceLayerApp(const config::ConfigUri& config_uri);
     ~TestServiceLayerApp() override;
 
     void setupDummyPersistence();
@@ -140,11 +139,11 @@ class TestDistributorApp : public TestStorageApp,
     uint64_t _lastUniqueTimestampRequested;
     uint32_t _uniqueTimestampCounter;
 
-    void configure(vespalib::stringref configId);
+    void configure(const config::ConfigUri& config_uri);
 
 public:
-    explicit TestDistributorApp(vespalib::stringref configId = "");
-    explicit TestDistributorApp(NodeIndex index, vespalib::stringref configId = "");
+    TestDistributorApp(NodeIndex index, const config::ConfigUri& config_uri);
+    explicit TestDistributorApp(const config::ConfigUri& config_uri);
     ~TestDistributorApp() override;
 
     DistributorComponentRegisterImpl& getComponentRegister() override {

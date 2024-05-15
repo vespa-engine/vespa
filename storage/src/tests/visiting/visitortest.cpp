@@ -1,5 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -14,9 +18,6 @@
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -59,6 +60,8 @@ struct TestParams {
 
 struct VisitorTest : Test {
     static uint32_t docCount;
+
+    std::unique_ptr<StorageConfigSet> _config;
     std::vector<Document::SP> _documents;
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
     std::unique_ptr<TestServiceLayerApp> _node;
@@ -146,24 +149,20 @@ VisitorTest::~VisitorTest() = default;
 void
 VisitorTest::initializeTest(const TestParams& params)
 {
-    vdstestlib::DirConfig config(getStandardConfig(true, "visitortest"));
-    config.getConfig("stor-visitor").set("visitorthreads", "1");
-    config.getConfig("stor-visitor").set(
-            "defaultparalleliterators",
-            std::to_string(params._parallelBuckets));
-    config.getConfig("stor-visitor").set(
-            "visitor_memory_usage_limit",
-            std::to_string(params._maxVisitorMemoryUsage));
+    _config = StorageConfigSet::make_storage_node_config();
+    _config->visitor_config().visitorthreads = 1;
+    _config->visitor_config().defaultparalleliterators = params._parallelBuckets;
+    _config->visitor_config().visitorMemoryUsageLimit = params._maxVisitorMemoryUsage;
 
     _messageSessionFactory = std::make_unique<TestVisitorMessageSessionFactory>();
     if (params._autoReplyError.getCode() != mbus::ErrorCode::NONE) {
         _messageSessionFactory->_autoReplyError = params._autoReplyError;
         _messageSessionFactory->_createAutoReplyVisitorSessions = true;
     }
-    _node = std::make_unique<TestServiceLayerApp>(config.getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(_config->config_uri());
     _top = std::make_unique<DummyStorageLink>();
     using vespa::config::content::core::StorVisitorConfig;
-    auto bootstrap_cfg = config_from<StorVisitorConfig>(config::ConfigUri(config.getConfigId()));
+    auto bootstrap_cfg = config_from<StorVisitorConfig>(_config->config_uri());
     _top->push_back(std::unique_ptr<StorageLink>(_manager
             = new VisitorManager(*bootstrap_cfg, _node->getComponentRegister(), *_messageSessionFactory)));
     _bottom = new DummyStorageLink();

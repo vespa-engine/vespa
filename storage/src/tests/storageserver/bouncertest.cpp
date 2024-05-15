@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
@@ -26,6 +27,7 @@ using namespace ::testing;
 namespace storage {
 
 struct BouncerTest : public Test {
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestStorageApp> _node;
     std::unique_ptr<DummyStorageLink> _upper;
     Bouncer* _manager;
@@ -57,15 +59,15 @@ BouncerTest::BouncerTest()
 }
 
 void BouncerTest::setUpAsNode(const lib::NodeType& type) {
-    vdstestlib::DirConfig config(getStandardConfig(type == lib::NodeType::STORAGE));
+    _config = StorageConfigSet::make_node_config(type == lib::NodeType::STORAGE);
     if (type == lib::NodeType::STORAGE) {
-        _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2), config.getConfigId());
+        _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2), _config->config_uri());
     } else {
-        _node = std::make_unique<TestDistributorApp>(NodeIndex(2), config.getConfigId());
+        _node = std::make_unique<TestDistributorApp>(NodeIndex(2), _config->config_uri());
     }
     _upper = std::make_unique<DummyStorageLink>();
     using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
-    auto cfg_uri = config::ConfigUri(config.getConfigId());
+    auto& cfg_uri = _config->config_uri();
     auto cfg = config::ConfigGetter<StorBouncerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
     _manager = new Bouncer(_node->getComponentRegister(), *cfg);
     _lower = new DummyStorageLink();

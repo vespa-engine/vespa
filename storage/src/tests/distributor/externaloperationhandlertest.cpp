@@ -94,7 +94,7 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
 TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
     {
         createLinks();
-        getDirConfig().getConfig("stor-distributormanager").set("minsplitcount", "16");
+        backing_config().minsplitcount = 16;
 
         EXPECT_EQ(document::BucketId(16, 0xffff),
                 operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(
@@ -115,7 +115,7 @@ TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
         close();
     }
     {
-        getDirConfig().getConfig("stor-distributormanager").set("minsplitcount", "20");
+        backing_config().minsplitcount = 20;
         createLinks();
         EXPECT_EQ(document::BucketId(20, 0x11111),
                 operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(

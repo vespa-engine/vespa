@@ -3,6 +3,7 @@ vespa_add_library(storage_testcommon TEST
     SOURCES
     dummystoragelink.cpp
     message_sender_stub.cpp
+    storage_config_set.cpp
     testhelper.cpp
     testnodestateupdater.cpp
     teststorageapp.cpp

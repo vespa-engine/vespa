@@ -74,10 +74,10 @@ TEST_F(IdealStateManagerTest, sibling) {
 
 TEST_F(IdealStateManagerTest, status_page) {
     close();
-    getDirConfig().getConfig("stor-distributormanager").set("splitsize", "100");
-    getDirConfig().getConfig("stor-distributormanager").set("splitcount", "1000000");
-    getDirConfig().getConfig("stor-distributormanager").set("joinsize", "0");
-    getDirConfig().getConfig("stor-distributormanager").set("joincount", "0");
+    backing_config().splitsize = 100;
+    backing_config().splitcount = 1000000;
+    backing_config().joinsize = 0;
+    backing_config().joincount = 0;
     createLinks();
     setup_stripe(1, 1, "distributor:1 storage:1");
 

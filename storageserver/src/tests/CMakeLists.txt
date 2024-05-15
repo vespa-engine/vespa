@@ -7,6 +7,7 @@ vespa_add_executable(storageserver_gtest_runner_app TEST
     gtest_runner.cpp
     DEPENDS
     storageserver_storageapp
+    storage_testcommon
     vdstestlib
     GTest::GTest
 )

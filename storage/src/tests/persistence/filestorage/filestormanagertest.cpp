@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
@@ -41,7 +42,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".filestormanagertest");
 
-using std::unique_ptr;
 using document::Document;
 using document::BucketId;
 using namespace storage::api;
@@ -91,8 +91,8 @@ make_bucket_for_doc(const document::DocumentId& docid)
 
 struct FileStorTestBase : Test {
     enum {LONG_WAITTIME=60};
-    unique_ptr<TestServiceLayerApp> _node;
-    std::unique_ptr<vdstestlib::DirConfig> config;
+    std::unique_ptr<StorageConfigSet> _config;
+    std::unique_ptr<TestServiceLayerApp> _node;
     const int32_t _waitTime;
     const document::DocumentType* _testdoctype1;
 
@@ -163,9 +163,9 @@ struct FileStorTestBase : Test {
 
     void setupDisks() {
         std::string rootOfRoot = "filestormanagertest";
-        config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, rootOfRoot));
+        _config = StorageConfigSet::make_storage_node_config();
 
-        _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), config->getConfigId());
+        _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->config_uri());
         _node->setupDummyPersistence();
         _testdoctype1 = _node->getTypeRepo()->getDocumentType("testdoctype1");
     }
@@ -209,8 +209,7 @@ struct TestFileStorComponents {
     explicit TestFileStorComponents(FileStorTestBase& test)
         : manager(nullptr)
     {
-        auto config_uri = config::ConfigUri(test.config->getConfigId());
-        auto config = config_from<StorFilestorConfig>(config_uri);
+        auto config = config_from<StorFilestorConfig>(test._config->config_uri());
         auto fsm = std::make_unique<FileStorManager>(*config, test._node->getPersistenceProvider(),
                                                      test._node->getComponentRegister(), *test._node, test._node->get_host_info());
         manager = fsm.get();
@@ -1388,8 +1387,7 @@ TEST_F(FileStorManagerTest, remove_location) {
 TEST_F(FileStorManagerTest, delete_bucket) {
     TestFileStorComponents c(*this);
 
-    auto config_uri = config::ConfigUri(config->getConfigId());
-    StorFilestorConfigBuilder my_config(*config_from<StorFilestorConfig>(config_uri));
+    auto my_config = *config_from<StorFilestorConfig>(_config->config_uri());
     c.manager->on_configure(my_config);
 
     auto& top = c.top;

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
@@ -34,20 +35,20 @@ struct ModifiedBucketCheckerTest : Test {
     ModifiedBucketChecker* _handler;
     DummyStorageLink* _bottom;
 
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestServiceLayerApp> _node;
-    std::unique_ptr<vdstestlib::DirConfig> _config;
 };
 
 void
 ModifiedBucketCheckerTest::SetUp()
 {
-    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
-    _node.reset(new TestServiceLayerApp(NodeIndex(0), _config->getConfigId()));
+    _config = StorageConfigSet::make_storage_node_config();
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->config_uri());
     _node->setupDummyPersistence();
 
-    _top.reset(new DummyStorageLink);
+    _top = std::make_unique<DummyStorageLink>();
     using vespa::config::content::core::StorServerConfig;
-    auto bootstrap_cfg = config_from<StorServerConfig>(config::ConfigUri(_config->getConfigId()));
+    auto bootstrap_cfg = config_from<StorServerConfig>(_config->config_uri());
     _handler = new ModifiedBucketChecker(_node->getComponentRegister(),
                                          _node->getPersistenceProvider(),
                                          *bootstrap_cfg);

@@ -3,6 +3,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
+#include <tests/common/storage_config_set.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -23,7 +24,6 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/config-stor-filestor.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -59,6 +59,7 @@ struct TestParams;
 
 struct BucketManagerTest : public Test {
 public:
+    std::unique_ptr<StorageConfigSet> _config;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
     BucketManager *_manager;
@@ -124,26 +125,18 @@ BucketManagerTest::~BucketManagerTest() = default;
         FAIL() << ost.str(); \
     }
 
-std::string getMkDirDisk(const std::string & rootFolder, int disk) {
-    std::ostringstream os;
-    os << "mkdir -p " << rootFolder << "/disks/d" << disk;
-    return os.str();
-}
-
 void BucketManagerTest::setupTestEnvironment()
 {
-    vdstestlib::DirConfig config(getStandardConfig(true, "bucketmanagertest"));
-
+    _config = StorageConfigSet::make_storage_node_config();
     auto repo = std::make_shared<const DocumentTypeRepo>(
                 *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes", FileSpec("../config-doctypes.cfg")));
     _top = std::make_unique<DummyStorageLink>();
-    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), config.getConfigId());
+    _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->config_uri());
     _node->setTypeRepo(repo);
     _node->setupDummyPersistence();
     // Set up the 3 links
-    auto config_uri = config::ConfigUri(config.getConfigId());
     using vespa::config::content::core::StorServerConfig;
-    auto manager = std::make_unique<BucketManager>(*config_from<StorServerConfig>(config_uri), _node->getComponentRegister());
+    auto manager = std::make_unique<BucketManager>(*config_from<StorServerConfig>(_config->config_uri()), _node->getComponentRegister());
     _manager = manager.get();
     _top->push_back(std::move(manager));
     auto bottom = std::make_unique<DummyStorageLink>();
