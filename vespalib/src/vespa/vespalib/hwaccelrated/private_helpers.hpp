@@ -101,14 +101,24 @@ double squaredEuclideanDistanceT(const int8_t * a, const int8_t * b, size_t sz)
 
 inline double
 squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) {
-    constexpr size_t LOOP_COUNT = 0x10000;
+    constexpr size_t LOOP_COUNT = 0x200;
     double sum(0);
     size_t i=0;
     for (; i + LOOP_COUNT <= sz; i += LOOP_COUNT) {
         sum += squaredEuclideanDistanceT<int32_t>(a + i, b + i, LOOP_COUNT);
     }
-    sum += squaredEuclideanDistanceT<int32_t>(a + i, b + i, sz - i);
+    if (sz > i) [[unlikely]] {
+        sum += squaredEuclideanDistanceT<int32_t>(a + i, b + i, sz - i);
+    }
     return sum;
+}
+
+inline void
+convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) noexcept {
+    uint32_t * asu32 = reinterpret_cast<uint32_t *>(dest);
+    for (size_t i(0); i < sz; i++) {
+        asu32[i] = src[i] << 16;
+    }
 }
 
 }

@@ -152,6 +152,11 @@ GenericAccelrator::notBit(void * aOrg, size_t bytes) const noexcept
     }
 }
 
+void
+GenericAccelrator::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
+    helper::convert_bfloat16_to_float(src, dest, sz);
+}
+
 size_t
 GenericAccelrator::populationCount(const uint64_t *a, size_t sz) const noexcept {
     return helper::populationCount(a, sz);

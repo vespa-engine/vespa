@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "temporary_vector_store.h"
+#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 using vespalib::ConstArrayRef;
 using vespalib::ArrayRef;
 using vespalib::eval::CellType;
 using vespalib::eval::TypedCells;
+using vespalib::hwaccelrated::IAccelrated;
 
 namespace search::tensor {
 
@@ -13,15 +15,26 @@ namespace {
 
 template<typename FromType, typename ToType>
 ConstArrayRef<ToType>
+convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept __attribute_noinline__;
+
+template<typename FromType, typename ToType>
+ConstArrayRef<ToType>
 convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept
 {
-    assert(cells.size == space.size());
-    auto old_cells = cells.typify<FromType>();
+    auto old_cells = cells.unsafe_typify<FromType>();
     ToType *p = space.data();
     for (FromType value : old_cells) {
-        ToType conv(value);
-        *p++ = conv;
+        *p++ = static_cast<ToType>(value);
     }
+    return space;
+}
+
+template<>
+ConstArrayRef<float>
+convert_cells<vespalib::BFloat16, float>(ArrayRef<float> space, TypedCells cells) noexcept
+{
+    static const IAccelrated & accelerator = IAccelrated::getAccelerator();
+    accelerator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(cells.data), space.data(), space.size());
     return space;
 }
 

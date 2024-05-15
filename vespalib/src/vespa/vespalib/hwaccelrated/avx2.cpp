@@ -35,4 +35,9 @@ Avx2Accelrator::or128(size_t offset, const std::vector<std::pair<const void *, b
     helper::orChunks<32u, 4u>(offset, src, dest);
 }
 
+void
+Avx2Accelrator::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
+    helper::convert_bfloat16_to_float(src, dest, sz);
+}
+
 }

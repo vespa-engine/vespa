@@ -28,6 +28,7 @@ public:
     virtual void andNotBit(void * a, const void * b, size_t bytes) const noexcept = 0;
     virtual void notBit(void * a, size_t bytes) const noexcept = 0;
     virtual size_t populationCount(const uint64_t *a, size_t sz) const noexcept = 0;
+    virtual void convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept = 0;
     virtual double squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept = 0;
     virtual double squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept = 0;
     virtual double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept = 0;
