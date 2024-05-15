@@ -153,7 +153,7 @@ public class SignificanceSearcherTest {
 
         assertEquals(helloSignificanceValue, w0.getSignificance());
         assertEquals(testSignificanceValue, w1.getSignificance());
-        assertEquals(SignificanceSearcher.calculateIDF(10, 2), w3.getSignificance());
+        assertEquals(SignificanceSearcher.calculateIDF(16, 2), w3.getSignificance());
 
     }
 
