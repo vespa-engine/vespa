@@ -132,7 +132,7 @@ AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_t docid_limit) const
     using MyAdapter = attribute::HitEstimateFlowStatsAdapter;
     size_t num_indirections = queryeval::flow::get_num_indirections(_attr.getBasicType(), _attr.getCollectionType());
     double est = OrFlow::estimate_of(MyAdapter(docid_limit, num_indirections), _estimates);
-    return {est, OrFlow::cost_of(MyAdapter(docid_limit, num_indirections), _estimates, false),
+    return {est, queryeval::flow::reverse_hash_lookup(),
             OrFlow::cost_of(MyAdapter(docid_limit, num_indirections), _estimates, true) + queryeval::flow::heap_cost(est, _estimates.size())};
 }
 
