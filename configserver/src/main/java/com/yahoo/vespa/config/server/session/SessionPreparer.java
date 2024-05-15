@@ -457,7 +457,7 @@ public class SessionPreparer {
         }
 
         /**
-         * Collects the config change actions from all model factory creations and returns the aggregated union of these actions.
+         * Collects the config change actions from all model factory creations and returns the union of these actions.
          * A system in the process of upgrading Vespa will have hosts running both version X and Y, and this will change
          * during the upgrade process. Trying to be smart about which actions to perform on which hosts depending
          * on the version running will be a nightmare to maintain. A pragmatic approach is therefore to just use the

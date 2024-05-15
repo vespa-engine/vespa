@@ -2,7 +2,6 @@
 
 package com.yahoo.config.model.api;
 
-import java.util.List;
 import java.util.Optional;
 
 public abstract class EndpointCertificateSecretStore {

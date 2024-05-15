@@ -1,6 +1,5 @@
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 
 import java.util.List;
