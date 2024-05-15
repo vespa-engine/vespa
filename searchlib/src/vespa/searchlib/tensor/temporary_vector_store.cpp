@@ -24,7 +24,7 @@ convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept
     auto old_cells = cells.unsafe_typify<FromType>();
     ToType *p = space.data();
     for (FromType value : old_cells) {
-        *p++ = value;
+        *p++ = static_cast<ToType>(value);
     }
     return space;
 }
@@ -33,8 +33,8 @@ template<>
 ConstArrayRef<float>
 convert_cells<vespalib::BFloat16, float>(ArrayRef<float> space, TypedCells cells) noexcept
 {
-    static const IAccelrated & accelrator = IAccelrated::getAccelerator();
-    accelrator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(cells.data), space.data(), space.size());
+    static const IAccelrated & accelerator = IAccelrated::getAccelerator();
+    accelerator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(cells.data), space.data(), space.size());
     return space;
 }
 

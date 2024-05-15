@@ -32,7 +32,7 @@ public:
     constexpr float to_float() const noexcept { return _bits; }
     constexpr void assign(float value) noexcept { _bits = value; }
 
-    constexpr int8_t get_bits() const { return _bits; }
+    constexpr int8_t get_bits() const noexcept { return _bits; }
     constexpr void assign_bits(int8_t value) noexcept { _bits = value; }
 };
 
