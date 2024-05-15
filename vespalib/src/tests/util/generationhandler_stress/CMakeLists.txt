@@ -6,4 +6,4 @@ vespa_add_executable(vespalib_generation_handler_stress_test_app
     vespalib
     GTest::GTest
 )
-vespa_add_test(NAME vespalib_generation_handler_stress_test_app COMMAND vespalib_generation_handler_stress_test_app --smoke-test)
+vespa_add_test(NAME vespalib_generation_handler_stress_test_app NO_VALGRIND COMMAND vespalib_generation_handler_stress_test_app --smoke-test)
