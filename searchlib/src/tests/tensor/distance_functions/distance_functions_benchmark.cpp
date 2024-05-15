@@ -58,12 +58,12 @@ void benchmark(size_t iterations, size_t elems) __attribute_noinline__;
 template<typename T>
 void benchmark(size_t iterations, size_t elems, const DistanceFunctionFactory & df) {
     std::vector<T> av, bv;
-    srand(7);
+    srandom(7);
     av.reserve(elems);
     bv.reserve(elems);
     for (size_t i(0); i < elems; i++) {
-        av.push_back(rand());
-        bv.push_back(rand());
+        av.push_back(random()%128);
+        bv.push_back(random()%128);
     }
     TypedCells a_cells(av), b_cells(bv);
 
