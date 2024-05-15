@@ -335,7 +335,7 @@ public abstract class AbstractParser implements CustomParser {
     /**
      * Segments a token
      *
-     * @param indexName the index name which preceeded this token, or null if none
+     * @param indexName the index name which preceded this token, or null if none
      * @param token the token to segment
      * @param quoted whether this segment is within quoted text
      * @return the resulting item
