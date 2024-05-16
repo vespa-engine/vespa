@@ -17,7 +17,7 @@ import java.util.List;
  * @author bratseth
  */
 public class Autoscaler {
-
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Autoscaler.class.getName());
     /** What cost difference is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
     /** What resource difference is worth a reallocation? */
@@ -44,7 +44,7 @@ public class Autoscaler {
         var model = model(application, cluster, clusterNodes);
         if (model.isEmpty() || ! model.isStable(nodeRepository)) return List.of();
 
-        var targets = allocationOptimizer.findBestAllocations(model.loadAdjustment(), model, Limits.empty());
+        var targets = allocationOptimizer.findBestAllocations(model.loadAdjustment(), model, Limits.empty(), false);
         return targets.stream()
                 .map(target -> toAutoscaling(target, model))
                 .toList();
@@ -54,9 +54,10 @@ public class Autoscaler {
      * Autoscale a cluster by load. This returns a better allocation (if found) inside the min and max limits.
      *
      * @param clusterNodes the list of all the active nodes in a cluster
+     * @param enableDetailedLogging Whether to log autoscaling decision data
      * @return scaling advice for this cluster
      */
-    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
+    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, boolean enableDetailedLogging) {
         var limits = Limits.of(cluster);
         var model = model(application, cluster, clusterNodes);
         if (model.isEmpty()) return Autoscaling.empty();
@@ -68,9 +69,12 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
         var loadAdjustment = model.loadAdjustment();
+        if (enableDetailedLogging) {
+            log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " + loadAdjustment.toString());
+        }
 
         // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
-        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits);
+        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, enableDetailedLogging);
 
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);

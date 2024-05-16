@@ -165,7 +165,7 @@ public class DynamicProvisioningTester {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.autoscale(application, application.clusters().get(cluster.id()),
-                                    nodeRepository().nodes().list(Node.State.active).owner(applicationId));
+                                    nodeRepository().nodes().list(Node.State.active).owner(applicationId), false);
     }
 
     public List<Autoscaling> suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
