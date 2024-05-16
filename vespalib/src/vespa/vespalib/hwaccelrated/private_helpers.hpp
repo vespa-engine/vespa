@@ -130,7 +130,7 @@ ACCUM
 multiplyAddT(const int8_t *a, const int8_t *b, size_t sz) noexcept {
     ACCUM sum = 0;
     for (size_t i(0); i < sz; i++) {
-        sum += uint16_t(a[i]) * uint16_t(b[i]);
+        sum += int16_t(a[i]) * int16_t(b[i]);
     }
     return sum;
 }
