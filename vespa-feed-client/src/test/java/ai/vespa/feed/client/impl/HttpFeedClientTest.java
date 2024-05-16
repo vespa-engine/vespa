@@ -43,7 +43,7 @@ class HttpFeedClientTest {
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { return dispatch.get().apply(documentId, request); }
         }
         FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setDryrun(true),
-                                               new DryrunCluster(),
+                                               () -> new DryrunCluster(),
                                                new MockRequestStrategy());
 
         // Update is a PUT, and 200 OK is a success.
@@ -238,19 +238,19 @@ class HttpFeedClientTest {
         assertEquals("server does not support speed test; upgrade to a newer version",
                      assertThrows(FeedException.class,
                                   () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setSpeedTest(true),
-                                                           cluster,
+                                                           () -> cluster,
                                                            null))
                              .getMessage());
 
         // Old server.
         new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
-                           cluster,
+                           () -> cluster,
                            null);
 
         // New server.
         response.set(okResponse);
         new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
-                           cluster,
+                           () -> cluster,
                            null);
     }
 

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -56,18 +57,20 @@ class HttpFeedClient implements FeedClient {
     private final boolean speedTest;
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
-        this(builder, builder.dryrun ? new DryrunCluster() : new JettyCluster(builder));
+        this(builder,
+             builder.dryrun ? () -> new DryrunCluster()
+                            : () -> { try { return new JettyCluster(builder); } catch (IOException e) { throw new UncheckedIOException(e); } });
     }
 
-    HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster) {
-        this(builder, cluster, new HttpRequestStrategy(builder, cluster));
+    HttpFeedClient(FeedClientBuilderImpl builder, Supplier<Cluster> clusters) {
+        this(builder, clusters, new HttpRequestStrategy(builder, clusters));
     }
 
-    HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster, RequestStrategy requestStrategy) {
+    HttpFeedClient(FeedClientBuilderImpl builder, Supplier<Cluster> clusters, RequestStrategy requestStrategy) {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
-        verifyConnection(builder, cluster);
+        verifyConnection(builder, clusters);
     }
 
     @Override
@@ -131,9 +134,9 @@ class HttpFeedClient implements FeedClient {
         return promise;
     }
 
-    private void verifyConnection(FeedClientBuilderImpl builder, Cluster cluster) {
+    private void verifyConnection(FeedClientBuilderImpl builder, Supplier<Cluster> clusters) {
         Instant start = Instant.now();
-        try {
+        try (Cluster cluster = clusters.get()) {
             HttpRequest request = new HttpRequest("POST",
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
                                                   requestHeaders,
