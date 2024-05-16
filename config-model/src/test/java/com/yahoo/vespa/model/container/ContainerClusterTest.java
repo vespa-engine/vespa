@@ -221,24 +221,6 @@ public class ContainerClusterTest {
     }
 
     @Test
-    void requireThatJvmOmitStackTraceInFastThrowOptionWorks() {
-        // Empty option if option not set in property
-        MockRoot root = createRoot(new DeployState.Builder().build());
-        ApplicationContainerCluster cluster = newClusterWithSearch(root);
-        addContainer(root, cluster, "c1", "host-c1");
-        ApplicationContainer container = cluster.getContainers().get(0);
-        assertEquals("", container.getJvmOptions());
-
-        String jvmOption = "-XX:-foo";
-        DeployState deployState = new DeployState.Builder().properties(new TestProperties().setJvmOmitStackTraceInFastThrowOption(jvmOption)).build();
-        root = createRoot(deployState);
-        cluster = newClusterWithSearch(root);
-        addContainer(root, cluster, "c1", "host-c1");
-        container = cluster.getContainers().get(0);
-        assertEquals(jvmOption, container.getJvmOptions());
-    }
-
-    @Test
     void requireThatWeCanHandleNullJvmOptions() {
         MockRoot root = createRoot(false);
         ApplicationContainerCluster cluster = newClusterWithSearch(root);

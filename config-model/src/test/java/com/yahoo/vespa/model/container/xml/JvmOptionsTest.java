@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -203,6 +204,29 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         model.getConfig(qrStartBuilder, "container/container.0");
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals("-XX:+UseParNewGC", qrStartConfig.jvm().gcopts());
+    }
+
+    @Test
+    void verify_jvm_option_and_value_from_feature_flag_are_both_included() throws IOException, SAXException {
+        String servicesXml = """
+                <container version='1.0'>
+                  <search/>
+                  <nodes>
+                    <jvm options="-Xms1024m -Xmx2048m" />
+                    <node hostalias="node1" />
+                  </nodes>
+                </container>
+                """;
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        // Need to create VespaModel to make deploy properties have effect
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .properties(new TestProperties().setJvmOmitStackTraceInFastThrowOption("-XX:-OmitStackTraceInFastThrow"))
+                .build());
+        SentinelConfig.Builder builder = new SentinelConfig.Builder();
+        model.getConfig(builder, "hosts/localhost");
+        SentinelConfig config = builder.build();
+        assertEquals("PRELOAD=/opt/vespa/lib64/vespa/malloc/libvespamalloc.so exec ${VESPA_HOME}/libexec/vespa/vespa-wrapper vespa-start-container-daemon -Xms1024m -Xmx2048m -XX:-OmitStackTraceInFastThrow ", config.service().get(0).command());
     }
 
     private void verifyLoggingOfJvmGcOptions(boolean isHosted, String override, String... invalidOptions) throws IOException, SAXException  {
