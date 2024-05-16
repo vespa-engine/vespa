@@ -112,7 +112,7 @@ class HttpRequestStrategyTest {
         ExecutionException expected = assertThrows(ExecutionException.class,
                                                    () -> strategy.enqueue(id1, request).get());
         assertInstanceOf(FeedException.class, expected.getCause());
-        assertEquals("java.lang.RuntimeException: boom", expected.getCause().getMessage());
+        assertEquals("(id:ns:type::1) java.lang.RuntimeException: boom", expected.getCause().getMessage());
         assertEquals(1, strategy.stats().requests());
 
         // IOException is retried.
@@ -266,7 +266,7 @@ class HttpRequestStrategyTest {
         CompletableFuture<HttpResponse> delayed = strategy.enqueue(id5, request);
         phaser.arriveAndAwaitAdvance(); // retried is allowed to dispatch, and will be retried async.
         // failed immediately fails, and lets us assert the above retry is indeed enqueued.
-        assertEquals("ai.vespa.feed.client.FeedException: java.lang.RuntimeException: fatal",
+        assertEquals("ai.vespa.feed.client.FeedException: (id:ns:type::3) java.lang.RuntimeException: fatal",
                      assertThrows(ExecutionException.class, failed::get).getMessage());
         phaser.arriveAndAwaitAdvance(); // blocked starts dispatch, and hangs, blocking dispatch thread.
 
@@ -293,7 +293,7 @@ class HttpRequestStrategyTest {
                      assertThrows(ExecutionException.class, blocked::get).getMessage());
         assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
                      assertThrows(ExecutionException.class, delayed::get).getMessage());
-        assertEquals("ai.vespa.feed.client.FeedException: java.io.IOException: failed",
+        assertEquals("ai.vespa.feed.client.FeedException: (id:ns:type::2) java.io.IOException: failed",
                      assertThrows(ExecutionException.class, retried::get).getMessage());
         assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
                      assertThrows(ExecutionException.class, strategy.enqueue(id1, request)::get).getMessage());

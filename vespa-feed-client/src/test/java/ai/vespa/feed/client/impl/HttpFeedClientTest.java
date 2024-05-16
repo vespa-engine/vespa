@@ -174,7 +174,7 @@ class HttpFeedClientTest {
                                                                                         .timeout(Duration.ofSeconds(5)))
                                                                 .get());
         assertTrue(expected.getCause() instanceof ResultException);
-        assertEquals("Ooops! ... I did it again.", expected.getCause().getMessage());
+        assertEquals("(id:ns:type::0) Ooops! ... I did it again.", expected.getCause().getMessage());
         assertEquals("[ { \"message\": \"I played with your heart. Got lost in the game.\" } ]", ((ResultException) expected.getCause()).getTrace().get());
 
 
@@ -207,7 +207,7 @@ class HttpFeedClientTest {
                                                  "json",
                                                  OperationParameters.empty())
                                             .get());
-        assertEquals("Status 500 executing 'POST /document/v1/ns/type/docid/0': Alla ska i jorden.", expected.getCause().getMessage());
+        assertEquals("(id:ns:type::0) Status 500 executing 'POST /document/v1/ns/type/docid/0': Alla ska i jorden.", expected.getCause().getMessage());
     }
 
     @Test
