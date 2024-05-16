@@ -38,9 +38,23 @@ public class ApplicationReindexing implements Reindexing {
 
     /** Returns a copy of this with reindexing for the given document type in the given cluster ready at the given instant. */
     public ApplicationReindexing withReady(String cluster, String documentType, Instant readyAt, double speed, String cause) {
+        if (speed <= 0)
+            throw new IllegalArgumentException("Initial reindexing speed must be in (0, 10], but was " + speed);
+
         Cluster current = clusters.getOrDefault(cluster, Cluster.empty());
         Cluster modified = new Cluster(current.pending,
                                        with(documentType, new Status(readyAt, speed, cause), current.ready));
+        return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
+    }
+
+    /** Returns a copy of this with updated speed for the given document type in the given cluster. */
+    public ApplicationReindexing withSpeed(String cluster, String documentType, double speed) {
+        Cluster current = clusters.get(cluster);
+        if (current == null) throw new IllegalArgumentException("no existing reindexing for cluster '" + cluster + "'");
+        Status status = current.ready.get(documentType);
+        if (status == null) throw new IllegalArgumentException("no existing reindexing for document type '" + documentType + "' in cluster '" + cluster + "'");
+        Cluster modified = new Cluster(current.pending,
+                                       with(documentType, new Status(status.ready(), speed, status.cause()), current.ready));
         return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
     }
 
@@ -185,8 +199,8 @@ public class ApplicationReindexing implements Reindexing {
         private final String cause;
 
         Status(Instant ready, double speed, String cause) {
-            if (speed <= 0 || 10 < speed)
-                throw new IllegalArgumentException("Reindexing speed must be in (0, 10], but was " + speed);
+            if (speed < 0 || 10 < speed)
+                throw new IllegalArgumentException("Reindexing speed must be in [0, 10], but was " + speed);
 
             this.ready = ready.truncatedTo(ChronoUnit.MILLIS);
             this.speed = speed;

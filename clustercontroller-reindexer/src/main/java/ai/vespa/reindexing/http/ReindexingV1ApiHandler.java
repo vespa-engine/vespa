@@ -99,13 +99,12 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler implement
     }
 
     private static String toString(Reindexing.State state) {
-        switch (state) {
-            case READY: return "pending";
-            case RUNNING: return "running";
-            case SUCCESSFUL: return "successful";
-            case FAILED: return "failed";
-            default: throw new IllegalArgumentException("Unexpected state '" + state + "'");
-        }
+        return switch (state) {
+            case READY -> "pending";
+            case RUNNING -> "running";
+            case SUCCESSFUL -> "successful";
+            case FAILED -> "failed";
+        };
     }
 
 }
