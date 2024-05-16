@@ -48,6 +48,7 @@
 #include "rankingexpressionfeature.h"
 #include "raw_score_feature.h"
 #include "reverseproximityfeature.h"
+#include "second_phase_feature.h"
 #include "subqueries_feature.h"
 #include "tensor_from_labels_feature.h"
 #include "tensor_from_weighted_set_feature.h"
@@ -109,6 +110,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<RandomNormalBlueprint>());
     registry.addPrototype(std::make_shared<RandomNormalStableBlueprint>());
     registry.addPrototype(std::make_shared<RawScoreBlueprint>());
+    registry.addPrototype(std::make_shared<SecondPhaseBlueprint>());
     registry.addPrototype(std::make_shared<SubqueriesBlueprint>());
     registry.addPrototype(std::make_shared<TensorFromLabelsBlueprint>());
     registry.addPrototype(std::make_shared<TensorFromWeightedSetBlueprint>());

@@ -26,6 +26,7 @@
 #include <vespa/searchlib/fef/test/rankresult.h>
 
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
+#include <vespa/searchlib/features/second_phase_feature.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/test/plugin/chain.h>
@@ -787,6 +788,19 @@ RankSetupTest::testFeatureDump()
         exp.addScore("test_cfgvalue(foo)", 1.0);
         EXPECT_EQUAL(exp, dumper.dump());
     }
+    { // Dump secondPhase feature
+        IndexEnvironment indexEnv;
+        indexEnv.getProperties().add(indexproperties::rank::FirstPhase::NAME, "value(2)");
+        indexEnv.getProperties().add(indexproperties::rank::SecondPhase::NAME, "value(4)");
+        RankEnvironment rankEnv(_factory, indexEnv, _queryEnv);
+        FeatureDumper dumper(rankEnv);
+        dumper.configure();
+        dumper.addDumpFeature("secondPhase");
+        EXPECT_TRUE(dumper.setup());
+        RankResult exp;
+        exp.addScore("secondPhase", 4.0);
+        EXPECT_EQUAL(exp, dumper.dump());
+    }
 }
 
 void
@@ -939,6 +953,7 @@ RankSetupTest::RankSetupTest() :
     setup_fef_test_plugin(_factory);
     _factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
     _factory.addPrototype(Blueprint::SP(new RankingExpressionBlueprint()));
+    _factory.addPrototype(std::make_shared<SecondPhaseBlueprint>());
 
     // setup an original attribute manager with two attributes
     search::attribute::Config cfg(search::attribute::BasicType::INT32,

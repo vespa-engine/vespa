@@ -57,6 +57,7 @@ vespa_add_library(searchlib_features OBJECT
     rankingexpressionfeature.cpp
     raw_score_feature.cpp
     reverseproximityfeature.cpp
+    second_phase_feature.cpp
     setup.cpp
     subqueries_feature.cpp
     tensor_attribute_executor.cpp

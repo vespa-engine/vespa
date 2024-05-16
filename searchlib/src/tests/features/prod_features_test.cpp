@@ -33,6 +33,7 @@
 #include <vespa/searchlib/features/random_normal_stable_feature.h>
 #include <vespa/searchlib/features/randomfeature.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
+#include <vespa/searchlib/features/second_phase_feature.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termfeature.h>
 #include <vespa/searchlib/features/utils.h>
@@ -611,6 +612,32 @@ TEST_F(ProdFeaturesTest, test_first_phase)
         ft.getIndexEnv().getProperties().add(indexproperties::rank::FirstPhase::NAME, "value(10)");
         ASSERT_TRUE(ft.setup());
         ASSERT_TRUE(ft.execute(10.0f));
+    }
+}
+
+TEST_F(ProdFeaturesTest, test_second_phase)
+{
+    { // Test blueprint.
+        SecondPhaseBlueprint pt;
+
+        EXPECT_TRUE(assertCreateInstance(pt, "secondPhase"));
+
+        FtIndexEnvironment ie;
+        ie.getProperties().add(indexproperties::rank::SecondPhase::NAME, "random");
+
+        StringList params, in, out;
+        FT_SETUP_OK(pt, ie, params, in.add("random"), out.add("score"));
+        FT_SETUP_FAIL(pt, params.add("foo"));
+        params.clear();
+
+        FT_DUMP_EMPTY(_factory, "secondPhase", ie);
+    }
+
+    { // Test executor.
+        FtFeatureTest ft(_factory, "secondPhase");
+        ft.getIndexEnv().getProperties().add(indexproperties::rank::SecondPhase::NAME, "value(11)");
+        ASSERT_TRUE(ft.setup());
+        ASSERT_TRUE(ft.execute(11.0f));
     }
 }
 
