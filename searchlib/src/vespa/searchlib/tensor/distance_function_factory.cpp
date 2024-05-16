@@ -6,6 +6,7 @@
 
 using search::attribute::DistanceMetric;
 using vespalib::eval::CellType;
+using vespalib::eval::Int8Float;
 
 namespace search::tensor {
 
@@ -16,25 +17,27 @@ make_distance_function_factory(DistanceMetric variant, CellType cell_type)
         case DistanceMetric::Angular:
             switch (cell_type) {
                 case CellType::DOUBLE: return std::make_unique<AngularDistanceFunctionFactory<double>>();
+                case CellType::INT8:   return std::make_unique<AngularDistanceFunctionFactory<Int8Float>>();
                 default:               return std::make_unique<AngularDistanceFunctionFactory<float>>();
             }
         case DistanceMetric::Euclidean:
             switch (cell_type) {
-                case CellType::DOUBLE: return std::make_unique<EuclideanDistanceFunctionFactory<double>>();
-                case CellType::INT8:   return std::make_unique<EuclideanDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+                case CellType::DOUBLE:   return std::make_unique<EuclideanDistanceFunctionFactory<double>>();
+                case CellType::INT8:     return std::make_unique<EuclideanDistanceFunctionFactory<Int8Float>>();
                 case CellType::BFLOAT16: return std::make_unique<EuclideanDistanceFunctionFactory<vespalib::BFloat16>>();
-                default:               return std::make_unique<EuclideanDistanceFunctionFactory<float>>();
+                default:                 return std::make_unique<EuclideanDistanceFunctionFactory<float>>();
             }
         case DistanceMetric::InnerProduct:
         case DistanceMetric::PrenormalizedAngular:
             switch (cell_type) {
                 case CellType::DOUBLE: return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<double>>();
+                case CellType::INT8:   return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<Int8Float>>();
                 default:               return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<float>>();
             }
         case DistanceMetric::Dotproduct:
             switch (cell_type) {
                 case CellType::DOUBLE: return std::make_unique<MipsDistanceFunctionFactory<double>>();
-                case CellType::INT8:   return std::make_unique<MipsDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+                case CellType::INT8:   return std::make_unique<MipsDistanceFunctionFactory<Int8Float>>();
                 default:               return std::make_unique<MipsDistanceFunctionFactory<float>>();
             }
         case DistanceMetric::GeoDegrees:
@@ -42,7 +45,7 @@ make_distance_function_factory(DistanceMetric variant, CellType cell_type)
         case DistanceMetric::Hamming:
             switch (cell_type) {
                 case CellType::DOUBLE: return std::make_unique<HammingDistanceFunctionFactory<double>>();
-                case CellType::INT8:   return std::make_unique<HammingDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+                case CellType::INT8:   return std::make_unique<HammingDistanceFunctionFactory<Int8Float>>();
                 default:               return std::make_unique<HammingDistanceFunctionFactory<float>>();
             }
     }

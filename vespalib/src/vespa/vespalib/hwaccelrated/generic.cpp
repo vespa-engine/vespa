@@ -101,7 +101,7 @@ GenericAccelrator::dotProduct(const double * a, const double * b, size_t sz) con
 int64_t
 GenericAccelrator::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept
 {
-    return multiplyAdd<int64_t, int8_t, 8>(a, b, sz);
+    return helper::multiplyAdd(a, b, sz);
 }
 
 int64_t
