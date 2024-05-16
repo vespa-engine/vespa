@@ -10,6 +10,8 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
@@ -17,7 +19,7 @@ import java.util.List;
  * @author bratseth
  */
 public class Autoscaler {
-
+    private static final Logger log = Logger.getLogger(Autoscaler.class.getName());
     /** What cost difference is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
     /** What resource difference is worth a reallocation? */
@@ -68,6 +70,10 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
         var loadAdjustment = model.loadAdjustment();
+        // TODO: Remove temporary logging
+        if (application.id().toFullString().equals("gemini-native.csp.taboola95")) {
+            log.log(Level.INFO, "Application: " + application.id().toShortString() + ", loadAdjustment: " + loadAdjustment.toString());
+        }
 
         // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
         var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits);

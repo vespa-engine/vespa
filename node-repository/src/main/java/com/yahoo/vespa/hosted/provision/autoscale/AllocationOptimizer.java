@@ -10,6 +10,8 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
 
@@ -20,6 +22,7 @@ import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequ
  */
 public class AllocationOptimizer {
 
+    private static final Logger log = Logger.getLogger(AllocationOptimizer.class.getName());
     // The min and max nodes to consider when not using application supplied limits
     private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
     private static final int maximumNodes = 150;
@@ -77,8 +80,16 @@ public class AllocationOptimizer {
                                                                      model,
                                                                      nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
+                // TODO: Remove temporary logging
+                if (model.application().id().toFullString().equals("gemini-native.csp.taboola95")) {
+                    log.log(Level.INFO, "Adding allocatableResources to list for " + model.application().id() + " in " + model.current().clusterSpec().id() + ", with " + nodes + " nodes and total cost " + resources.cost());
+                }
                 bestAllocations.add(allocatableResources.get());
             }
+        }
+        // TODO: Remove temporary logging
+        if (model.application().id().toFullString().equals("gemini-native.csp.taboola95")) {
+            log.log(Level.INFO, "Found " + bestAllocations.size() + " legal allocations for " + model.application().id() + " in " + model.current().clusterSpec().id() + " with loadAdjustment: " + loadAdjustment.toString());
         }
         return bestAllocations.stream()
                 .sorted((one, other) -> {

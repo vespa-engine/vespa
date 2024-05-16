@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * Maintainer making automatic scaling decisions
@@ -108,6 +109,14 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             if (autoscaling != null && autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
                 redeploy = true;
                 logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
+                // TODO: Remove temporary logging
+                if (applicationId.toFullString().equals("gemini-native.csp.taboola95")) {
+                    log.log(Level.INFO, "autoscaling data for " + applicationId.toFullString() + ": "
+                            + "\n\tmetrics().cpuCostPerQuery(): " + autoscaling.metrics().cpuCostPerQuery()
+                            + "\n\tmetrics().queryRate(): " + autoscaling.metrics().queryRate()
+                            + "\n\tmetrics().growthRateHeadroom(): " + autoscaling.metrics().growthRateHeadroom()
+                            + "\n\tautoscaling.peak(): " + autoscaling.peak().toString());
+                }
             }
         }
         catch (ApplicationLockException e) {
