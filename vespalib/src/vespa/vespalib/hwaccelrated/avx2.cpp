@@ -40,4 +40,10 @@ Avx2Accelrator::convert_bfloat16_to_float(const uint16_t * src, float * dest, si
     helper::convert_bfloat16_to_float(src, dest, sz);
 }
 
+int64_t
+Avx2Accelrator::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept
+{
+    return helper::multiplyAdd(a, b, sz);
+}
+
 }
