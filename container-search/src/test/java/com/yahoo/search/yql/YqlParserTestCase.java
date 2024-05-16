@@ -567,7 +567,6 @@ public class YqlParserTestCase {
         assertEquals(first.getConnectedItem(), third);
         assertEquals(first.getConnectivity(), 7.0d, 1E-6);
         assertNull(second.getConnectedItem());
-        System.out.println(new TextualQueryRepresentation(root));
 
         assertParseFail("select foo from bar where " +
                 "title contains ({id: 1, connectivity: {id: 4, weight: 7.0}}\"madonna\") " +
