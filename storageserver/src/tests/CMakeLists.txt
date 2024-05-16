@@ -3,12 +3,10 @@
 vespa_add_executable(storageserver_gtest_runner_app TEST
     SOURCES
     storageservertest.cpp
-    testhelper.cpp
     gtest_runner.cpp
     DEPENDS
     storageserver_storageapp
     storage_testcommon
-    vdstestlib
     GTest::GTest
 )
 

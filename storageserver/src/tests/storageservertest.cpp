@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/testhelper.h>
 #include <tests/common/storage_config_set.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/messagebus/message.h>
 #include <vespa/storage/storageserver/distributornode.h>
 #include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
-#include <vespa/messagebus/message.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
