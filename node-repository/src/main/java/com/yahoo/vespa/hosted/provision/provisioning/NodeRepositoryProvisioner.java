@@ -209,7 +209,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             return model.current().advertisedResources();
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
-        return allocationOptimizer.findBestAllocation(Load.one(), model, limits)
+        return allocationOptimizer.findBestAllocation(Load.one(), model, limits, false)
                                   .orElseThrow(() -> newNoAllocationPossible(model.current().clusterSpec(), limits))
                                   .advertisedResources();
     }

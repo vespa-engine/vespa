@@ -39,6 +39,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     private final Deployer deployer;
     private final Metric metric;
     private final BooleanFlag enabledFlag;
+    private final BooleanFlag enableDetailedLoggingFlag;
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
                                  Deployer deployer,
@@ -49,6 +50,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         this.deployer = deployer;
         this.metric = metric;
         this.enabledFlag = PermanentFlags.AUTOSCALING.bindTo(nodeRepository.flagSource());
+        this.enableDetailedLoggingFlag = PermanentFlags.AUTOSCALING_DETAILED_LOGGING.bindTo(nodeRepository.flagSource());
     }
 
     @Override
@@ -80,6 +82,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
      */
     private boolean autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId) {
         boolean redeploy = false;
+        boolean enableDetailedLogging = enableDetailedLoggingFlag.with(Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
         try (var lock = nodeRepository().applications().lock(applicationId)) {
             Optional<Application> application = nodeRepository().applications().get(applicationId);
             if (application.isEmpty()) return true;
@@ -95,7 +98,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             // Autoscale unless an autoscaling is already in progress
             Autoscaling autoscaling = null;
             if (cluster.target().resources().isEmpty() && !cluster.scalingInProgress()) {
-                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes);
+                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes, enableDetailedLogging);
                 if (autoscaling.isPresent() || cluster.target().isEmpty()) // Ignore empty from recently started servers
                     cluster = cluster.withTarget(autoscaling);
             }
@@ -108,6 +111,14 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             if (autoscaling != null && autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
                 redeploy = true;
                 logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
+                if (enableDetailedLogging) {
+                    log.info("autoscaling data for " + applicationId.toFullString() + ": "
+                            + "\n\tmetrics().cpuCostPerQuery(): " + autoscaling.metrics().cpuCostPerQuery()
+                            + "\n\tmetrics().queryRate(): " + autoscaling.metrics().queryRate()
+                            + "\n\tmetrics().growthRateHeadroom(): " + autoscaling.metrics().growthRateHeadroom()
+                            + "\n\tpeak(): " + autoscaling.peak().toString()
+                            + "\n\tideal(): " + autoscaling.ideal().toString());
+                }
             }
         }
         catch (ApplicationLockException e) {
