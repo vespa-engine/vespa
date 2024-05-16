@@ -12,7 +12,6 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,11 +58,8 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     Compression compression = auto;
     URI proxy;
     Duration connectionTtl = Duration.ZERO;
-    LongSupplier clock = Clock.systemUTC()::millis;
 
-
-    public FeedClientBuilderImpl() {
-    }
+    public FeedClientBuilderImpl() { }
 
     FeedClientBuilderImpl(List<URI> endpoints) {
         this();
@@ -252,11 +248,6 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl setCompression(Compression compression) {
         this.compression = requireNonNull(compression);
-        return this;
-    }
-
-    FeedClientBuilderImpl setClock(LongSupplier clock) {
-        this.clock = clock;
         return this;
     }
 

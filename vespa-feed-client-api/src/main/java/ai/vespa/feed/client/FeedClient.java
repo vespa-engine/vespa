@@ -76,10 +76,7 @@ public interface FeedClient extends Closeable {
         default boolean retry(OperationType type) { return true; }
 
         /** Maximum number of retries per operation for assumed transient, non-backpressure problems. */
-        default int retries() { return 10; }
-
-        /** Grace period within which an operation may be retried past its retry count (see {@link #retries}). */
-        default Duration gracePeriod() { return Duration.ofSeconds(10); }
+        default int retries() { return Integer.MAX_VALUE; }
 
     }
 

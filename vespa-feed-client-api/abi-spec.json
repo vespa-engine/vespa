@@ -85,8 +85,7 @@
     ],
     "methods" : [
       "public boolean retry(ai.vespa.feed.client.FeedClient$OperationType)",
-      "public int retries()",
-      "public java.time.Duration gracePeriod()"
+      "public int retries()"
     ],
     "fields" : [ ]
   },
@@ -187,7 +186,8 @@
       "public void <init>(java.lang.Throwable)",
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)",
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String, java.lang.Throwable)",
-      "public java.util.Optional documentId()"
+      "public java.util.Optional documentId()",
+      "public java.lang.String getMessage()"
     ],
     "fields" : [ ]
   },

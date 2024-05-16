@@ -214,7 +214,7 @@ class HttpFeedClientTest {
     void testHandshake() {
         // dummy:123 does not exist, and results in a host-not-found exception.
         FeedException exception = assertThrows(FeedException.class,
-                                                   () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))));
+                                               () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))));
         String message = exception.getMessage();
         assertTrue(message.startsWith("failed handshake with server after "), message);
         assertTrue(message.contains("java.net.UnknownHostException"), message);

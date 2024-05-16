@@ -45,7 +45,7 @@ class HttpRequestStrategyTest {
     @Test
     void testConcurrency() {
         int documents = 1 << 16;
-        HttpRequest request = new HttpRequest("PUT", "/", null, null, null);
+        HttpRequest request = new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), () -> 0);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         Cluster cluster = (__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS);
@@ -94,18 +94,16 @@ class HttpRequestStrategyTest {
                                                                        .setRetryStrategy(new FeedClient.RetryStrategy() {
                                                                            @Override public boolean retry(FeedClient.OperationType type) { return type == FeedClient.OperationType.PUT; }
                                                                            @Override public int retries() { return 1; }
-                                                                           @Override public Duration gracePeriod() { return Duration.ofMillis(100); }
                                                                        })
                                                                        .setCircuitBreaker(breaker)
                                                                        .setConnectionsPerEndpoint(1)
-                                                                       .setMaxStreamPerConnection(minStreams)
-                                                                       .setClock(now::get),
+                                                                       .setMaxStreamPerConnection(minStreams),
                                                                cluster);
         OperationStats initial = strategy.stats();
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");
-        HttpRequest request = new HttpRequest("POST", "/", null, null, null);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(180), now::get);
 
         // Runtime exception is not retried.
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
@@ -149,8 +147,8 @@ class HttpRequestStrategyTest {
             else vessel.complete(success);
         });
         CompletableFuture<HttpResponse> delayed = strategy.enqueue(id1, request);
-        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, null));
-        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null, null)).get());
+        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), now::get));
+        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null, Duration.ofSeconds(1), now::get)).get());
         latch.await();
         assertEquals(8, strategy.stats().requests()); // 3 attempts at throttled and one at id2.
         now.set(4000);
@@ -171,7 +169,7 @@ class HttpRequestStrategyTest {
 
         // Error responses are not retried when not of appropriate type.
         cluster.expect((__, vessel) -> vessel.complete(serverError));
-        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, null)).get());
+        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), now::get)).get());
         assertEquals(12, strategy.stats().requests());
 
         // Some error responses are not retried.
@@ -181,15 +179,15 @@ class HttpRequestStrategyTest {
         assertEquals(13, strategy.stats().requests());
 
 
-        // IOException is retried past retry limit within grace period.
+        // IOException is not retried past timeout.
         cluster.expect((__, vessel) -> {
-            now.addAndGet(10); // Exceed grace period after 10 attempts.
+            now.addAndGet(50); // Exceed grace period after 2 attempts.
             vessel.completeExceptionally(new IOException("retry me"));
         });
         expected = assertThrows(ExecutionException.class,
-                                () -> strategy.enqueue(id1, request).get());
+                                () -> strategy.enqueue(id1, new HttpRequest("POST", "/", null, null, Duration.ofMillis(100), now::get)).get());
         assertEquals("retry me", expected.getCause().getCause().getMessage());
-        assertEquals(24, strategy.stats().requests());
+        assertEquals(15, strategy.stats().requests());
 
 
         // Circuit breaker opens some time after starting to fail.
@@ -206,7 +204,7 @@ class HttpRequestStrategyTest {
         codes.put(429, 2L);
         codes.put(503, 3L);
         assertEquals(codes, stats.responsesByCode());
-        assertEquals(14, stats.exceptions());
+        assertEquals(5, stats.exceptions());
 
         assertEquals(stats, stats.since(initial));
         assertEquals(0, stats.since(stats).averageLatencyMillis());
@@ -232,10 +230,10 @@ class HttpRequestStrategyTest {
         DocumentId id3 = DocumentId.of("ns", "type", "3");
         DocumentId id4 = DocumentId.of("ns", "type", "4");
         DocumentId id5 = DocumentId.of("ns", "type", "5");
-        HttpRequest failing = new HttpRequest("POST", "/", null, null, null);
-        HttpRequest partial = new HttpRequest("POST", "/", null, null, null);
-        HttpRequest request = new HttpRequest("POST", "/", null, null, null);
-        HttpRequest blocking = new HttpRequest("POST", "/", null, null, null);
+        HttpRequest failing = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
+        HttpRequest partial = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
+        HttpRequest blocking = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
 
         // Enqueue some operations to the same id, which are serialised, and then shut down while operations are in flight.
         Phaser phaser = new Phaser(2);
