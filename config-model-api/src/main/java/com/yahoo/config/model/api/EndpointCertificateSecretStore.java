@@ -4,9 +4,12 @@ package com.yahoo.config.model.api;
 
 import java.util.Optional;
 
-public abstract class EndpointCertificateSecretStore {
+/**
+ * @author tokle
+ */
+public interface EndpointCertificateSecretStore {
 
-    public final EndpointCertificateSecrets getSecret(EndpointCertificateMetadata metadata) {
+    default EndpointCertificateSecrets getSecret(EndpointCertificateMetadata metadata) {
         Optional<String> certificate = getCertificate(metadata);
         Optional<String> key = getPrivateKey(metadata);
         if (certificate.isPresent() && key.isPresent()) {
@@ -16,9 +19,9 @@ public abstract class EndpointCertificateSecretStore {
         }
     }
 
-    public abstract Optional<String> getPrivateKey(EndpointCertificateMetadata metadata);
-    public abstract Optional<String> getCertificate(EndpointCertificateMetadata metadata);
+    Optional<String> getPrivateKey(EndpointCertificateMetadata metadata);
+    Optional<String> getCertificate(EndpointCertificateMetadata metadata);
 
-    public abstract boolean supports(EndpointCertificateMetadata.Provider provider);
+    boolean supports(EndpointCertificateMetadata.Provider provider);
 
 }

@@ -77,7 +77,7 @@ public class EndpointCertificateRetrieverTest {
         }
     }
 
-    private static class TestEndpointCertificateSecretStore extends EndpointCertificateSecretStore {
+    private static class TestEndpointCertificateSecretStore implements EndpointCertificateSecretStore {
 
         private final String certificate;
         private final String privatekey;
