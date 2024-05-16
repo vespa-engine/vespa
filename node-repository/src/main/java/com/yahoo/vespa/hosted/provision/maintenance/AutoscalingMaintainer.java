@@ -115,7 +115,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                             + "\n\tmetrics().cpuCostPerQuery(): " + autoscaling.metrics().cpuCostPerQuery()
                             + "\n\tmetrics().queryRate(): " + autoscaling.metrics().queryRate()
                             + "\n\tmetrics().growthRateHeadroom(): " + autoscaling.metrics().growthRateHeadroom()
-                            + "\n\tautoscaling.peak(): " + autoscaling.peak().toString());
+                            + "\n\tpeak(): " + autoscaling.peak().toString()
+                            + "\n\tideal(): " + autoscaling.ideal().toString());
                 }
             }
         }
