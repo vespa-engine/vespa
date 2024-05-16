@@ -405,7 +405,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag AUTOSCALING_DETAILED_LOGGING = defineFeatureFlag(
-            "autoscaling-detailed-logging", true,
+            "autoscaling-detailed-logging", false,
             "Whether to log autoscaling decision data",
             "Takes effect immediately",
             INSTANCE_ID);
