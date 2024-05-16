@@ -11,6 +11,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -65,6 +66,26 @@ public class ApplicationReindexingTest {
         assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(3), 2, "test reindexing"),
                             "b", new Status(Instant.ofEpochMilli(2), 3, "test reindexing")),
                      reindexing.clusters().get("two").ready());
+
+        assertEquals(Map.of("a", new Status(Instant.ofEpochMilli(3), 2, "test reindexing"),
+                            "b", new Status(Instant.ofEpochMilli(2), 0, "test reindexing")),
+                     reindexing.withSpeed("two", "b", 0).clusters().get("two").ready());
+
+        assertEquals("no existing reindexing for cluster 'three'",
+                     assertThrows(IllegalArgumentException.class, () -> reindexing.withSpeed("three", "a", 4))
+                             .getMessage());
+
+        assertEquals("no existing reindexing for document type 'c' in cluster 'two'",
+                     assertThrows(IllegalArgumentException.class, () -> reindexing.withSpeed("two", "c", 4))
+                             .getMessage());
+
+        assertEquals("Initial reindexing speed must be in (0, 10], but was 0.0",
+                     assertThrows(IllegalArgumentException.class, () -> reindexing.withReady("two", "b", Instant.EPOCH, 0, "no"))
+                             .getMessage());
+
+        assertEquals("Reindexing speed must be in [0, 10], but was -1.0",
+                     assertThrows(IllegalArgumentException.class, () -> reindexing.withSpeed("two", "b", -1))
+                             .getMessage());
 
         assertEquals(Map.of("b", 20L),
                      reindexing.clusters().get("two").pending());

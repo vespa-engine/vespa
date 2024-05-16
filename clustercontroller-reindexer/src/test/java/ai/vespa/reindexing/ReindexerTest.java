@@ -169,8 +169,13 @@ class ReindexerTest {
         assertEquals(reindexing, database.readReindexing("cluster"));
 
         // When failure grace period is over, reindexing resumes as usual.
+        // However, with speed set to 0, nothing happens.
         clock.advance(Duration.ofMillis(1));
         shutDown.set(false);
+        new Reindexer(cluster, List.of(new Trigger(music, Instant.ofEpochMilli(30), 0)), database, ReindexerTest::failIfCalled, metric, clock).reindex();
+        assertEquals(reindexing, database.readReindexing("cluster"));
+
+        // With speed set to a positive value again, reindexing resumes, and eventually completes successfully.
         new Reindexer(cluster, triggers(30), database, parameters -> {
             executor.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "OK"));
             return () -> shutDown.set(true);

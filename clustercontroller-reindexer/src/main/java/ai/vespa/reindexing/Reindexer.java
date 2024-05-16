@@ -40,7 +40,7 @@ import static java.util.logging.Level.WARNING;
  *
  * @author jonmv
  */
-public class Reindexer {
+class Reindexer {
 
     private static final Logger log = Logger.getLogger(Reindexer.class.getName());
 
@@ -55,8 +55,8 @@ public class Reindexer {
     private final Clock clock;
     private final Phaser phaser = new Phaser(2); // Reindexer and visitor.
 
-    public Reindexer(Cluster cluster, List<Trigger> ready, ReindexingCurator database,
-                     DocumentAccess access, Metric metric, Clock clock) {
+    Reindexer(Cluster cluster, List<Trigger> ready, ReindexingCurator database,
+              DocumentAccess access, Metric metric, Clock clock) {
         this(cluster,
              ready,
              database,
@@ -91,12 +91,12 @@ public class Reindexer {
     }
 
     /** Lets the reindexer abort any ongoing visit session, wait for it to complete normally, then exit. */
-    public void shutdown() {
+    void shutdown() {
         phaser.forceTermination(); // All parties waiting on this phaser are immediately allowed to proceed.
     }
 
     /** Starts and tracks reprocessing of ready document types until done, or interrupted. */
-    public void reindex() throws ReindexingLockException {
+    void reindex() throws ReindexingLockException {
         if (phaser.isTerminated())
             throw new IllegalStateException("Already shut down");
 
@@ -114,7 +114,7 @@ public class Reindexer {
                 if (trigger.readyAt().isAfter(clock.instant()))
                     log.log(INFO, "Received config for reindexing which is ready in the future — will process later " +
                                   "(" + trigger.readyAt() + " is after " + clock.instant() + ")");
-                else
+                else if (trigger.speed() > 0)
                     progress(trigger.type(), trigger.speed(), reindexing, new AtomicReference<>(reindexing.get().status().get(trigger.type())));
 
                 if (phaser.isTerminated())

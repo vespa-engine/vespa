@@ -79,6 +79,7 @@ import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
 import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
+import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
@@ -311,6 +312,11 @@ public class ApplicationHandlerTest {
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
+        clock.advance(Duration.ofSeconds(1));
+        reindex(applicationId, PUT, "?documentType=bar&speed=0", "{\"message\":\"Set reindexing speed to '0' for document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
+        expected = expected.withSpeed("boo", "bar", 0)
+                           .withSpeed("foo", "bar", 0);
+
         reindexing(applicationId, DELETE, "{\"message\":\"Reindexing disabled\"}");
         expected = expected.enabled(false);
         assertEquals(expected,
@@ -333,8 +339,8 @@ public class ApplicationHandlerTest {
                                        "      }," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
-                                       "          \"readyMillis\": " + (now - 1000) + ", " +
-                                       "          \"speed\": 1.0," +
+                                       "          \"readyMillis\": " + (now - 2000) + ", " +
+                                       "          \"speed\": 0.0," +
                                        "          \"cause\": \"reindexing\"," +
                                        "          \"state\": \"pending\"" +
                                        "        }" +
@@ -344,19 +350,19 @@ public class ApplicationHandlerTest {
                                        "      \"pending\": {}," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
-                                       "          \"readyMillis\": " + now + ", " +
-                                       "          \"speed\": 0.1," +
+                                       "          \"readyMillis\": " + (now - 1000) + ", " +
+                                       "          \"speed\": 0.0," +
                                        "          \"cause\": \"reindexing\"," +
                                        "          \"state\": \"pending\"" +
                                        "        }," +
                                        "        \"bax\": {" +
-                                       "          \"readyMillis\": " + (now - 1000) + ", " +
+                                       "          \"readyMillis\": " + (now - 2000) + ", " +
                                        "          \"speed\": 1.0," +
                                        "          \"cause\": \"reindexing\"," +
                                        "          \"state\": \"pending\"" +
                                        "        }," +
                                        "        \"baz\": {" +
-                                       "          \"readyMillis\": " + now + ", " +
+                                       "          \"readyMillis\": " + (now - 1000) + ", " +
                                        "          \"speed\": 0.1," +
                                        "          \"cause\": \"reindexing\"," +
                                        "          \"state\": \"pending\"" +
@@ -424,11 +430,6 @@ public class ApplicationHandlerTest {
 
         response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/fake-service/" + host + "/status/something?foo=bar", GET));
         assertHttpStatusCodeAndMessage(response, 404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No status page for service: fake-service\"}");
-    }
-
-    @Test
-    public void testPutIsIllegal() throws IOException {
-        assertNotAllowed(Method.PUT);
     }
 
     @Test
@@ -874,8 +875,12 @@ public class ApplicationHandlerTest {
     }
 
     private void reindex(ApplicationId application, String query, String message) throws IOException {
+        reindex(application, POST, query, message);
+    }
+
+    private void reindex(ApplicationId application, Method method, String query, String message) throws IOException {
         String reindexUrl = toUrlPath(application, Zone.defaultZone(), true) + "/reindex" + query;
-        assertHttpStatusCodeAndMessage(createApplicationHandler().handle(createTestRequest(reindexUrl, POST)), 200, message);
+        assertHttpStatusCodeAndMessage(createApplicationHandler().handle(createTestRequest(reindexUrl, method)), 200, message);
     }
 
     private void restart(ApplicationId application, Zone zone) throws IOException {
