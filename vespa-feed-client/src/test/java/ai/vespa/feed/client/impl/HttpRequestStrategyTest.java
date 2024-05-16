@@ -183,7 +183,7 @@ class HttpRequestStrategyTest {
 
         // IOException is retried past retry limit within grace period.
         cluster.expect((__, vessel) -> {
-            now.addAndGet(10); // Exceed grace period.
+            now.addAndGet(10); // Exceed grace period after 10 attempts.
             vessel.completeExceptionally(new IOException("retry me"));
         });
         expected = assertThrows(ExecutionException.class,
