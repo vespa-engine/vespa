@@ -13,9 +13,6 @@ vespa_define_module(
     src/vespa/vdslib/distribution
     src/vespa/vdslib/state
 
-    TEST_DEPENDS
-    vdstestlib
-
     TESTS
     src/tests
     src/tests/container
