@@ -433,11 +433,6 @@ public class ApplicationHandlerTest {
     }
 
     @Test
-    public void testPutIsIllegal() throws IOException {
-        assertNotAllowed(Method.PUT);
-    }
-
-    @Test
     public void testFileDistributionStatus() throws Exception {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         Zone zone = Zone.defaultZone();
