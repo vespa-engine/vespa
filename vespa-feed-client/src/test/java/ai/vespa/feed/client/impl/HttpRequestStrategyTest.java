@@ -11,7 +11,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +50,9 @@ class HttpRequestStrategyTest {
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         Cluster cluster = (__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS);
 
-        HttpRequestStrategy strategy = new HttpRequestStrategy( new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
-                                                                                .setConnectionsPerEndpoint(1 << 10)
-                                                                                .setMaxStreamPerConnection(1 << 12),
+        HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
+                                                                       .setConnectionsPerEndpoint(1 << 10)
+                                                                       .setMaxStreamPerConnection(1 << 12),
                                                                cluster);
         CountDownLatch latch = new CountDownLatch(1);
         new Thread(() -> {
@@ -81,20 +84,22 @@ class HttpRequestStrategyTest {
         assertEquals(2 * documents, stats.bytesReceived());
     }
 
-    @Test
+    @Test()
     void testRetries() throws ExecutionException, InterruptedException {
-        int minStreams = 16; // Hard limit for minimum number of streams per connection.
+        int minStreams = 2; // Hard limit for minimum number of streams per connection.
         MockCluster cluster = new MockCluster();
         AtomicLong now = new AtomicLong(0);
         CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
         HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
-                                                                                .setRetryStrategy(new FeedClient.RetryStrategy() {
-                                                                                    @Override public boolean retry(FeedClient.OperationType type) { return type == FeedClient.OperationType.PUT; }
-                                                                                    @Override public int retries() { return 1; }
-                                                                                })
-                                                                                .setCircuitBreaker(breaker)
-                                                                                .setConnectionsPerEndpoint(1)
-                                                                                .setMaxStreamPerConnection(minStreams),
+                                                                       .setRetryStrategy(new FeedClient.RetryStrategy() {
+                                                                           @Override public boolean retry(FeedClient.OperationType type) { return type == FeedClient.OperationType.PUT; }
+                                                                           @Override public int retries() { return 1; }
+                                                                           @Override public Duration gracePeriod() { return Duration.ofMillis(100); }
+                                                                       })
+                                                                       .setCircuitBreaker(breaker)
+                                                                       .setConnectionsPerEndpoint(1)
+                                                                       .setMaxStreamPerConnection(minStreams)
+                                                                       .setClock(now::get),
                                                                cluster);
         OperationStats initial = strategy.stats();
 
@@ -111,7 +116,10 @@ class HttpRequestStrategyTest {
         assertEquals(1, strategy.stats().requests());
 
         // IOException is retried.
-        cluster.expect((__, vessel) -> vessel.completeExceptionally(new IOException("retry me")));
+        cluster.expect((__, vessel) -> {
+            now.addAndGet(200); // Exceed grace period.
+            vessel.completeExceptionally(new IOException("retry me"));
+        });
         expected = assertThrows(ExecutionException.class,
                                 () -> strategy.enqueue(id1, request).get());
         assertEquals("retry me", expected.getCause().getCause().getMessage());
@@ -153,7 +161,10 @@ class HttpRequestStrategyTest {
 
         // Some error responses are retried.
         HttpResponse serverError = HttpResponse.of(503, null);
-        cluster.expect((__, vessel) -> vessel.complete(serverError));
+        cluster.expect((__, vessel) -> {
+            now.addAndGet(200); // Exceed grace period.
+            vessel.complete(serverError);
+        });
         assertEquals(serverError, strategy.enqueue(id1, request).get());
         assertEquals(11, strategy.stats().requests());
         assertEquals(CLOSED, breaker.state()); // Circuit not broken due to throttled requests.
@@ -169,6 +180,18 @@ class HttpRequestStrategyTest {
         assertEquals(badRequest, strategy.enqueue(id1, request).get());
         assertEquals(13, strategy.stats().requests());
 
+
+        // IOException is retried past retry limit within grace period.
+        cluster.expect((__, vessel) -> {
+            now.addAndGet(10); // Exceed grace period.
+            vessel.completeExceptionally(new IOException("retry me"));
+        });
+        expected = assertThrows(ExecutionException.class,
+                                () -> strategy.enqueue(id1, request).get());
+        assertEquals("retry me", expected.getCause().getCause().getMessage());
+        assertEquals(24, strategy.stats().requests());
+
+
         // Circuit breaker opens some time after starting to fail.
         now.set(6000);
         assertEquals(HALF_OPEN, breaker.state()); // Circuit broken due to failed requests.
@@ -183,7 +206,7 @@ class HttpRequestStrategyTest {
         codes.put(429, 2L);
         codes.put(503, 3L);
         assertEquals(codes, stats.responsesByCode());
-        assertEquals(3, stats.exceptions());
+        assertEquals(14, stats.exceptions());
 
         assertEquals(stats, stats.since(initial));
         assertEquals(0, stats.since(stats).averageLatencyMillis());

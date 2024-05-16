@@ -10,6 +10,8 @@ import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -21,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +34,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -52,6 +56,7 @@ class HttpRequestStrategy implements RequestStrategy {
     private static final Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
 
     private final Cluster cluster;
+    private final LongSupplier clock;
     private final Map<DocumentId, RetriableFuture<HttpResponse>> inflightById = new ConcurrentHashMap<>();
     private final RetryStrategy strategy;
     private final CircuitBreaker breaker;
@@ -71,6 +76,7 @@ class HttpRequestStrategy implements RequestStrategy {
         this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster, throttler) : cluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
+        this.clock = builder.clock;
 
         Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
         dispatcher.setDaemon(true);
@@ -96,7 +102,7 @@ class HttpRequestStrategy implements RequestStrategy {
             }
         }
         catch (Throwable t) {
-            log.log(WARNING, "Dispatch thread threw; shutting down", t);
+            log.log(SEVERE, "Dispatch thread threw; shutting down", t);
         }
         destroy();
     }
@@ -118,8 +124,8 @@ class HttpRequestStrategy implements RequestStrategy {
         return inflight.get() - delayedCount.get() > throttler.targetInflight();
     }
 
-    private boolean retry(HttpRequest request, int attempt) {
-        if (attempt > strategy.retries())
+    private boolean retry(HttpRequest request, int attempt, Instant start) {
+        if (attempt > strategy.retries() && Instant.ofEpochMilli(clock.getAsLong()).isAfter(start.plus(strategy.gracePeriod())))
             return false;
 
         switch (request.method().toUpperCase()) {
@@ -134,15 +140,14 @@ class HttpRequestStrategy implements RequestStrategy {
      * Retries all IOExceptions, unless error rate has converged to a value higher than the threshold,
      * or the user has turned off retries for this type of operation.
      */
-    private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
+    private boolean retry(HttpRequest request, Throwable thrown, int attempt, Instant start) {
         breaker.failure(thrown);
         if (   (thrown instanceof IOException)               // General IO problems.
-
             //  Thrown by HTTP2Session.StreamsState.reserveSlot, likely on GOAWAY from server
             || (thrown instanceof IllegalStateException && thrown.getMessage().equals("session closed"))
         ) {
             log.log(FINER, thrown, () -> "Failed attempt " + attempt + " at " + request);
-            return retry(request, attempt);
+            return retry(request, attempt, start);
         }
 
         log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
@@ -150,7 +155,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Retries throttled requests (429), adjusting the target inflight count, and server errors (500, 502, 503, 504). */
-    private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
+    private boolean retry(HttpRequest request, HttpResponse response, int attempt, Instant start) {
         if (response.code() / 100 == 2 || response.code() == 404 || response.code() == 412) {
             logResponse(FINEST, response, request, attempt);
             breaker.success();
@@ -167,7 +172,7 @@ class HttpRequestStrategy implements RequestStrategy {
         logResponse(FINE, response, request, attempt);
         if (response.code() == 503) { // Hopefully temporary errors.
             breaker.failure(response);
-            return retry(request, attempt);
+            return retry(request, attempt, start);
         }
 
         return false;
@@ -257,7 +262,7 @@ class HttpRequestStrategy implements RequestStrategy {
             previous.whenComplete((__, ___) -> offer(request, vessel));
         }
 
-        handleAttempt(vessel, request, result, 1);
+        handleAttempt(vessel, request, result, 1, Instant.ofEpochMilli(clock.getAsLong()));
 
         return result.handle((response, error) -> {
             if (inflightById.compute(documentId, (__, current) -> current == result ? null : current) == null)
@@ -272,15 +277,16 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Handles the result of one attempt at the given operation, retrying if necessary. */
-    private void handleAttempt(CompletableFuture<HttpResponse> vessel, HttpRequest request, RetriableFuture<HttpResponse> result, int attempt) {
+    private void handleAttempt(CompletableFuture<HttpResponse> vessel, HttpRequest request,
+                               RetriableFuture<HttpResponse> result, int attempt, Instant start) {
         vessel.whenCompleteAsync((response, thrown) -> {
                                      result.set(response, thrown);
                                      // Retry the operation if it failed with a transient error ...
-                                     if (thrown != null ? retry(request, thrown, attempt)
-                                                        : retry(request, response, attempt)) {
+                                     if (thrown != null ? retry(request, thrown, attempt, start)
+                                                        : retry(request, response, attempt, start)) {
                                          CompletableFuture<HttpResponse> retry = new CompletableFuture<>();
                                          offer(request, retry);
-                                         handleAttempt(retry, request, result, attempt + (breaker.state() == HALF_OPEN ? 0 : 1));
+                                         handleAttempt(retry, request, result, attempt + (breaker.state() == HALF_OPEN ? 0 : 1), start);
                                      }
                                      // ... or accept the outcome and mark the operation as complete.
                                      else result.complete();

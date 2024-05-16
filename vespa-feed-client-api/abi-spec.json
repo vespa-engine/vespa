@@ -85,7 +85,8 @@
     ],
     "methods" : [
       "public boolean retry(ai.vespa.feed.client.FeedClient$OperationType)",
-      "public int retries()"
+      "public int retries()",
+      "public java.time.Duration gracePeriod()"
     ],
     "fields" : [ ]
   },

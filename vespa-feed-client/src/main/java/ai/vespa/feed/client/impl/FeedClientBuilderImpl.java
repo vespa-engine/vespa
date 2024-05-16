@@ -12,12 +12,14 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
@@ -57,6 +59,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     Compression compression = auto;
     URI proxy;
     Duration connectionTtl = Duration.ZERO;
+    LongSupplier clock = Clock.systemUTC()::millis;
 
 
     public FeedClientBuilderImpl() {
@@ -249,6 +252,11 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl setCompression(Compression compression) {
         this.compression = requireNonNull(compression);
+        return this;
+    }
+
+    FeedClientBuilderImpl setClock(LongSupplier clock) {
+        this.clock = clock;
         return this;
     }
 
