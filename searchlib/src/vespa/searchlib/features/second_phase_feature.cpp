@@ -20,7 +20,6 @@ SecondPhaseExecutor::execute(uint32_t)
 SecondPhaseBlueprint::SecondPhaseBlueprint()
     : Blueprint("secondPhase")
 {
-    // empty
 }
 
 void
