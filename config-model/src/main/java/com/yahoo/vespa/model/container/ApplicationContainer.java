@@ -82,11 +82,6 @@ public final class ApplicationContainer extends Container implements
         builder.myid(index());
     }
 
-    @Override
-    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
-        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
-    }
-
     @Override public Optional<String> getPreShutdownCommand() { return Optional.of(prepareStopCommand(Duration.ofMinutes(6))); }
 
     private Optional<NodeResources> realResources() {

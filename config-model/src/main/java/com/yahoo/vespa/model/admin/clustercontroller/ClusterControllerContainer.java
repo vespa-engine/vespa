@@ -98,7 +98,7 @@ public class ClusterControllerContainer extends Container implements
     }
 
     @Override
-    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+    public String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
         return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
     }
 

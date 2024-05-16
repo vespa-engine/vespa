@@ -986,6 +986,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 AbstractService.distributeCpuSocketAffinity(nodes);
             cluster.addContainers(nodes);
         }
+        // Must be done after setting Jvm options from services.xml (#extractJvmOptions()), otherwise those options will not be set
+        cluster.getContainers().forEach(container -> container.appendJvmOptions(container.jvmOmitStackTraceInFastThrowOption(context.featureFlags())));
     }
 
     private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {

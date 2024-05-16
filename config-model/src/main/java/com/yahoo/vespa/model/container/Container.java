@@ -105,12 +105,10 @@ public abstract class Container extends AbstractService implements
         addBuiltinHandlers();
 
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
-
-        appendJvmOptions(jvmOmitStackTraceInFastThrowOption(deployState.featureFlags()));
         addEnvironmentVariable("VESPA_MALLOC_MMAP_THRESHOLD","0x1000000"); // 16M
     }
 
-    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+    public String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
         return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
     }
 

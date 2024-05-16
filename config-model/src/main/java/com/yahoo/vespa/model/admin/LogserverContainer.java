@@ -31,7 +31,7 @@ public class LogserverContainer extends Container {
     }
 
     @Override
-    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+    public String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
         return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
     }
 
