@@ -17,6 +17,7 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NumericInItem;
+import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
@@ -30,6 +31,7 @@ import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
@@ -557,8 +559,7 @@ public class YqlParserTestCase {
                 "title contains ({id: 1, connectivity: {\"id\": 3, weight: 7.0}}\"madonna\") " +
                 "and title contains ({id: 2}\"saint\") " +
                 "and title contains ({id: 3}\"angel\")");
-        assertEquals("AND title:madonna title:saint title:angel",
-                parsed.toString());
+        assertEquals("AND title:madonna title:saint title:angel", parsed.toString());
         AndItem root = (AndItem) parsed.getRoot();
         WordItem first = (WordItem) root.getItem(0);
         WordItem second = (WordItem) root.getItem(1);

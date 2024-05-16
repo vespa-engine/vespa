@@ -109,14 +109,17 @@ public class StemmingSearcher extends Searcher {
 
     private Item replaceTerms(Query q, IndexFacts.Session indexFacts) {
         Language language = q.getModel().getParsingLanguage();
-        if (language == Language.UNKNOWN) return q.getModel().getQueryTree().getRoot();
+        if (language == Language.UNKNOWN) {
+            q.trace("Language is unknown, not stemming", 3);
+            return q.getModel().getQueryTree().getRoot();
+        }
 
         StemContext context = new StemContext();
         context.isCJK = language.isCjk();
         context.language = language;
         context.indexFacts = indexFacts;
         context.reverseConnectivity = createReverseConnectivities(q.getModel().getQueryTree().getRoot());
-        q.trace("Stemming with language="+language, 3);
+        q.trace("Stemming with language " + language, 3);
         return scan(q.getModel().getQueryTree().getRoot(), context);
     }
 

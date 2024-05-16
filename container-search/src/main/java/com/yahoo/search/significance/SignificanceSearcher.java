@@ -30,9 +30,8 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 /**
  * Sets significance values on word items in the query tree.
  *
- * @author MariusArhaug
+ * @author Marius Arhaug
  */
-
 @Provides(SignificanceSearcher.SIGNIFICANCE)
 @Before(STEMMING)
 public class SignificanceSearcher extends Searcher {
@@ -112,6 +111,7 @@ public class SignificanceSearcher extends Searcher {
     public static double calculateIDF(long N, long nq_i) {
         return Math.log(1 + (N - nq_i + 0.5) / (nq_i + 0.5));
     }
+
 }
 
 

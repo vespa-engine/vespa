@@ -22,11 +22,6 @@ public class DispatchTuning {
     private final Integer maxHitsPerPartition;
     private final DispatchPolicy dispatchPolicy;
     private final Double minActiveDocsCoverage;
-
-    public Double getTopkProbability() {
-        return topkProbability;
-    }
-
     private final Double topkProbability;
 
     private DispatchTuning(Builder builder) {
@@ -44,6 +39,8 @@ public class DispatchTuning {
 
     /** Returns the percentage of documents which must be available in a group for that group to receive queries */
     public Double getMinActiveDocsCoverage() { return minActiveDocsCoverage; }
+
+    public Double getTopkProbability() { return topkProbability; }
 
     public static class Builder {
 
@@ -71,14 +68,14 @@ public class DispatchTuning {
         }
 
         public static DispatchPolicy toDispatchPolicy(String policy) {
-            switch (policy.toLowerCase()) {
-                case "adaptive": case "random": return DispatchPolicy.ADAPTIVE; // TODO: Deprecate 'random' on Vespa 9
-                case "round-robin": return DispatchPolicy.ROUNDROBIN;
-                case "latency-amortized-over-requests" : return DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
-                case "latency-amortized-over-time" : return DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME;
-                case "best-of-random-2" : return DispatchPolicy.BEST_OF_RANDOM_2;
-                default: throw new IllegalArgumentException("Unknown dispatch policy '" + policy + "'");
-            }
+            return switch (policy.toLowerCase()) {
+                case "adaptive", "random" -> DispatchPolicy.ADAPTIVE; // TODO: Deprecate 'random' on Vespa 9
+                case "round-robin" -> DispatchPolicy.ROUNDROBIN;
+                case "latency-amortized-over-requests" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
+                case "latency-amortized-over-time" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME;
+                case "best-of-random-2" -> DispatchPolicy.BEST_OF_RANDOM_2;
+                default -> throw new IllegalArgumentException("Unknown dispatch policy '" + policy + "'");
+            };
         }
 
         public Builder setMinActiveDocsCoverage(Double minCoverage) {
