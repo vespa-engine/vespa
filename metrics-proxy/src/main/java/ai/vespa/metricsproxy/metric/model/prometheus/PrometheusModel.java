@@ -27,8 +27,8 @@ public class PrometheusModel implements Enumeration<MetricFamilySamples> {
     private final Iterator<MetricId> metricIterator;
     private final Iterator<MetricFamilySamples> statusMetrics;
 
-    PrometheusModel(Set<MetricId> metricNames, Map<ServiceId,
-                    List<MetricsPacket>> packetsByServiceId,
+    PrometheusModel(Set<MetricId> metricNames,
+                    Map<ServiceId, List<MetricsPacket>> packetsByServiceId,
                     List<MetricFamilySamples> statusMetrics)
     {
         metricIterator = metricNames.iterator();

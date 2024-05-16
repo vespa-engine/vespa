@@ -119,7 +119,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         try {
             Future<?> future = executor.submit(() -> {
                 hasStarted.set(true);
-                for (LlamaModel.Output output : model.generate(inferParams)) {
+                for (var output : model.generate(inferParams)) {
                     consumer.accept(Completion.from(output.text, Completion.FinishReason.none));
                 }
                 completionFuture.complete(Completion.FinishReason.stop);
