@@ -1178,11 +1178,11 @@
     "interfaces" : [ ],
     "attributes" : [
       "public",
+      "interface",
       "abstract"
     ],
     "methods" : [
-      "public void <init>()",
-      "public final com.yahoo.config.model.api.EndpointCertificateSecrets getSecret(com.yahoo.config.model.api.EndpointCertificateMetadata)",
+      "public com.yahoo.config.model.api.EndpointCertificateSecrets getSecret(com.yahoo.config.model.api.EndpointCertificateMetadata)",
       "public abstract java.util.Optional getPrivateKey(com.yahoo.config.model.api.EndpointCertificateMetadata)",
       "public abstract java.util.Optional getCertificate(com.yahoo.config.model.api.EndpointCertificateMetadata)",
       "public abstract boolean supports(com.yahoo.config.model.api.EndpointCertificateMetadata$Provider)"

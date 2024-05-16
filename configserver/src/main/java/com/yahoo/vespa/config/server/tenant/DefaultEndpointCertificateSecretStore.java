@@ -10,7 +10,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import javax.inject.Inject;
 import java.util.Optional;
 
-public class DefaultEndpointCertificateSecretStore extends EndpointCertificateSecretStore {
+public class DefaultEndpointCertificateSecretStore implements EndpointCertificateSecretStore {
 
     private final SecretStore secretStore;
 
