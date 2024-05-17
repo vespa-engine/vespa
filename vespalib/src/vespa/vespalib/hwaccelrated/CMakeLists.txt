@@ -14,4 +14,4 @@ vespa_add_library(vespalib_vespalib_hwaccelrated OBJECT
     DEPENDS
 )
 set_source_files_properties(avx2.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=haswell")
-set_source_files_properties(avx512.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=skylake-avx512")
+set_source_files_properties(avx512.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=skylake-avx512 -mprefer-vector-width=512")
