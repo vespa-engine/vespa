@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.document.Field;
+import com.yahoo.vespa.objects.FieldBase;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -14,7 +14,7 @@ import java.util.Map;
 public class FieldView implements Serializable {
 
     private final String name;
-    private final Map<String, Field> fields = new LinkedHashMap<>();
+    private final Map<String, FieldBase> fields = new LinkedHashMap<>();
 
     /**
      * Creates a view with a name
@@ -24,8 +24,8 @@ public class FieldView implements Serializable {
         this.name = name;
     }
     public String getName()              { return name; }
-    public Collection<Field> getFields() { return fields.values(); }
-    public Field get(String name)        { return fields.get(name); }
+    public Collection<FieldBase> getFields() { return fields.values(); }
+    public FieldBase get(String name)        { return fields.get(name); }
     public void remove(String name)      { fields.remove(name); }
 
     /**
@@ -34,7 +34,7 @@ public class FieldView implements Serializable {
      * @param field the field to add.
      * @return itself for chaining purposes.
      */
-    public FieldView add(Field field) {
+    public FieldView add(FieldBase field) {
         if (fields.containsKey(field.getName())) {
             if ( ! fields.get(field.getName()).equals(field)) {
                 throw new IllegalArgumentException(
@@ -54,7 +54,7 @@ public class FieldView implements Serializable {
      * @return Itself for chaining.
      */
     public FieldView add(FieldView view) {
-        for(Field field : view.getFields()) {
+        for(var field : view.getFields()) {
             add(field);
         }
         return this;
