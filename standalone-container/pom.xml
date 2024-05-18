@@ -105,6 +105,7 @@
             config-bundle-jar-with-dependencies.jar,
             config-model-api-jar-with-dependencies.jar,
             config-model-jar-with-dependencies.jar,
+            flags-jar-with-dependencies.jar,
 
             container-disc-jar-with-dependencies.jar,
 
