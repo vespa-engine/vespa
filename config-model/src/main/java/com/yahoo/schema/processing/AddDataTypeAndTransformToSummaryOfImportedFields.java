@@ -32,7 +32,7 @@ public class AddDataTypeAndTransformToSummaryOfImportedFields extends Processor 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         schema.allImportedFields()
-              .forEach(field -> setTransform(field));
+              .forEach(this::setTransform);
     }
 
     private Stream<SummaryField> getSummaryFieldsForImportedField(ImmutableSDField importedField) {
