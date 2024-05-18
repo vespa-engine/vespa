@@ -3,6 +3,7 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
+import com.yahoo.vespa.objects.FieldBase;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -18,7 +19,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author bratseth
  */
-public class SummaryField extends Field implements Cloneable {
+public class SummaryField extends FieldBase implements Cloneable {
 
     /** A source (field name). */
     public static class Source implements Serializable {
@@ -55,6 +56,7 @@ public class SummaryField extends Field implements Cloneable {
 
     /** The command used per field in vsmsummary */
     private VsmCommand vsmCommand = VsmCommand.NONE;
+    private DataType dataType;
 
     /**
      * The data sources for this output summary field, in prioritized order
@@ -86,8 +88,9 @@ public class SummaryField extends Field implements Cloneable {
     }
 
     public SummaryField(String name, DataType type, SummaryTransform transform) {
-        super(name, type);
+        super(name);
         this.transform=transform;
+        this.dataType = type;
     }
 
     public static SummaryField createWithUnresolvedType(String name) {
@@ -107,6 +110,10 @@ public class SummaryField extends Field implements Cloneable {
     public boolean isImplicit() { return implicit; }
 
     public boolean hasUnresolvedType() { return unresolvedType; }
+
+    public DataType getDataType() {
+        return dataType;
+    }
 
     public void setTransform(SummaryTransform transform) {
         this.transform = transform;
@@ -196,7 +203,7 @@ public class SummaryField extends Field implements Cloneable {
         if (merge.getTransform() != getTransform())
             throw new IllegalArgumentException(merge + " conflicts with " + this + ": different transforms");
 
-        if (!merge.getDataType().equals(getDataType()))
+        if (!merge.dataType.equals(dataType))
             throw new IllegalArgumentException(merge + " conflicts with " + this + ": different types");
 
         setImplicit(false);
@@ -252,7 +259,7 @@ public class SummaryField extends Field implements Cloneable {
 
     /** Returns a string which aids locating this field in the source search definition */
     public String toLocateString() {
-        return "summary " + getName() + " type " + toLowerCase(getDataType().getName()) + " in " + getDestinationString();
+        return "summary " + getName() + " type " + toLowerCase(dataType.getName()) + " in " + getDestinationString();
     }
 
     @Override
@@ -292,9 +299,6 @@ public class SummaryField extends Field implements Cloneable {
 
     public void setResolvedDataType(DataType type) {
         this.dataType = type;
-        if (!hasForcedId()) {
-            this.fieldId = calculateIdV7(null);
-        }
         unresolvedType = false;
     }
 

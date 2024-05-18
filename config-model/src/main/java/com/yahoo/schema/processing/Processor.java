@@ -13,6 +13,7 @@ import com.yahoo.schema.document.RankType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.vespa.objects.FieldBase;
 
 import java.util.Iterator;
 import java.util.List;
@@ -110,8 +111,8 @@ public abstract class Processor {
         List<RankProfile.RankSetting> someRankSettings = new java.util.ArrayList<>();
 
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
-            for (Iterator j = profile.declaredRankSettingIterator(); j.hasNext(); ) {
-                RankProfile.RankSetting setting = (RankProfile.RankSetting)j.next();
+            for (Iterator<RankProfile.RankSetting> j = profile.declaredRankSettingIterator(); j.hasNext(); ) {
+                RankProfile.RankSetting setting = j.next();
                 if (setting.getType().equals(type)) {
                     someRankSettings.add(setting);
                 }
@@ -128,7 +129,7 @@ public abstract class Processor {
         return new IllegalArgumentException(formatError(schemaName, fieldName, msg));
     }
 
-    protected RuntimeException newProcessException(Schema schema, Field field, String msg) {
+    protected RuntimeException newProcessException(Schema schema, FieldBase field, String msg) {
         return newProcessException(schema.getName(), field.getName(), msg);
     }
 

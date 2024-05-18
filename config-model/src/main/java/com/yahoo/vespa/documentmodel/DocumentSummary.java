@@ -2,18 +2,13 @@
 package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.Schema;
-import com.yahoo.searchlib.rankingexpression.Reference;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -25,7 +20,7 @@ public class DocumentSummary extends FieldView {
 
     private boolean fromDisk = false;
     private boolean omitSummaryFeatures = false;
-    private List<String> inherited = new ArrayList<>();
+    private final List<String> inherited = new ArrayList<>();
 
     private final Schema owner;
 
@@ -115,7 +110,7 @@ public class DocumentSummary extends FieldView {
 
     /** Returns the parent of this, if any */
     public List<DocumentSummary> inherited() {
-        return inherited.stream().map(name -> owner.getSummary(name)).toList();
+        return inherited.stream().map(owner::getSummary).toList();
     }
 
     @Override
