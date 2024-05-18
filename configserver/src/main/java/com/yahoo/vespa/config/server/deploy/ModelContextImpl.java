@@ -25,6 +25,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
@@ -34,6 +35,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.UnboundFlag;
+import com.yahoo.vespa.flags.custom.SharedHost;
 
 import java.io.File;
 import java.net.URI;
@@ -208,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
         private final int searchHandlerThreadpool;
         private final int persistenceThreadMaxFeedOpBatchSize;
         private final boolean logserverOtelCol;
+        private final SharedHosts sharedHosts;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -252,6 +255,11 @@ public class ModelContextImpl implements ModelContext {
             this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
             this.persistenceThreadMaxFeedOpBatchSize = flagValue(source, appId, version, Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE);
             this.logserverOtelCol = flagValue(source, appId, version, Flags.LOGSERVER_OTELCOL_AGENT);
+            SharedHost sharedHost = flagValue(source, appId, version, PermanentFlags.SHARED_HOST);
+            this.sharedHosts = new SharedHosts() {
+                @Override public boolean supportsClusterType(ClusterSpec.Type clusterType) { return sharedHost.supportsClusterType(clusterType.name()); }
+                @Override public boolean hasClusterType(ClusterSpec.Type clusterType) { return sharedHost.hasClusterType(clusterType.name()); }
+            };
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -304,6 +312,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
         @Override public int persistenceThreadMaxFeedOpBatchSize() { return persistenceThreadMaxFeedOpBatchSize; }
         @Override public boolean logserverOtelCol() { return logserverOtelCol; }
+        @Override public SharedHosts sharedHosts() { return sharedHosts; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

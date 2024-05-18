@@ -14,6 +14,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
@@ -260,18 +261,17 @@ public class SpareCapacityMaintainerTest {
             NodeFlavors flavors = new NodeFlavors(new FlavorConfigBuilder().build());
             ManualClock clock = new ManualClock();
             var zone = new Zone(Environment.prod, RegionName.from("us-east-3"));
-            var flagSource = new InMemoryFlagSource();
             nodeRepository = new NodeRepository(flavors,
                                                 new EmptyProvisionServiceProvider(),
                                                 new MockCurator(),
                                                 clock,
                                                 zone,
-                                                new Exclusivity(zone, flagSource),
+                                                new Exclusivity(zone, SharedHosts.empty()),
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 Optional.empty(),
                                                 Optional.empty(),
-                                                flagSource,
+                                                new InMemoryFlagSource(),
                                                 new MemoryMetricsDb(clock),
                                                 new OrchestratorMock(),
                                                 true,

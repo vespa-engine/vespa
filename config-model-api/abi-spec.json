@@ -1326,7 +1326,9 @@
       "public boolean alwaysMarkPhraseExpensive()",
       "public boolean sortBlueprintsByCost()",
       "public int persistenceThreadMaxFeedOpBatchSize()",
-      "public boolean logserverOtelCol()"
+      "public boolean logserverOtelCol()",
+      "public com.yahoo.config.provision.SharedHosts sharedHosts()",
+      "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()"
     ],
     "fields" : [ ]
   },

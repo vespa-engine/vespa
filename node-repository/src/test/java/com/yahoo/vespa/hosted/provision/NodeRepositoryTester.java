@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
@@ -47,7 +48,7 @@ public class NodeRepositoryTester {
                                             curator,
                                             clock,
                                             zone,
-                                            new Exclusivity(zone, flagSource),
+                                            new Exclusivity(zone, SharedHosts.empty()),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),

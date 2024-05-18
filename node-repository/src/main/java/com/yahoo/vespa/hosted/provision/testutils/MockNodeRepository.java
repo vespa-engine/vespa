@@ -20,6 +20,7 @@ import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.WireguardKeyWithTimestamp;
@@ -91,7 +92,7 @@ public class MockNodeRepository extends NodeRepository {
               curator,
               Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
               zone,
-              new Exclusivity(zone, new InMemoryFlagSource()),
+              new Exclusivity(zone, SharedHosts.empty()),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               Optional.empty(),

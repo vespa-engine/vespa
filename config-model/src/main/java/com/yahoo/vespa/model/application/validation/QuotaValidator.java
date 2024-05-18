@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.ClusterResources;
@@ -10,7 +9,6 @@ import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 
@@ -35,8 +33,9 @@ public class QuotaValidator implements Validator {
     @Override
     public void validate(Context context) {
         var zone = context.deployState().zone();
-        var flagSource = context.deployState().flagSource();
-        var capacityPolicies = new CapacityPolicies(zone, new Exclusivity(zone, flagSource), flagSource);
+        var exclusivity = new Exclusivity(zone, context.deployState().featureFlags().sharedHosts());
+        var capacityPolicies = new CapacityPolicies(zone, exclusivity, context.model().applicationPackage().getApplicationId(),
+                                                    context.deployState().featureFlags().adminClusterArchitecture());
         var quota = context.deployState().getProperties().quota();
         quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, context.model()));
         quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, context, capacityPolicies));
@@ -52,7 +51,7 @@ public class QuotaValidator implements Validator {
             if (adminClusterIds(context.model()).contains(id)) continue;
             var cluster = context.model().provisioned().clusters().get(id);
             var capacity = context.model().provisioned().capacities().getOrDefault(id, zeroCapacity);
-            maxSpend += capacityPolicies.applyOn(capacity, application, cluster.isExclusive()).maxResources().cost();
+            maxSpend += capacityPolicies.applyOn(capacity, cluster.isExclusive()).maxResources().cost();
         }
 
         var actualSpend = context.model().allocatedHosts().getHosts().stream()

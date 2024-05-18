@@ -4,16 +4,20 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.JobControl;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.EndpointsChecker.HealthChecker;
 import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
 import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager;
@@ -40,6 +44,8 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 
 /**
  * The top level singleton in the node repo, providing access to all its state as child objects.
@@ -208,6 +214,14 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
     public int spareCount() { return spareCount; }
 
     public Exclusivity exclusivity() { return exclusivity; }
+
+    public CapacityPolicies capacityPoliciesFor(ApplicationId applicationId) {
+        String adminClusterNodeArchitecture = PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE
+                .bindTo(flagSource)
+                .with(INSTANCE_ID, applicationId.serializedForm())
+                .value();
+        return new CapacityPolicies(zone, exclusivity, applicationId, Architecture.valueOf(adminClusterNodeArchitecture));
+    }
 
     /**
      * Returns ACLs for the children of the given host.

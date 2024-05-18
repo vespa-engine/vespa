@@ -28,8 +28,6 @@ import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
 import org.xml.sax.SAXException;
@@ -54,7 +52,6 @@ public class VespaModelFactory implements ModelFactory {
     private final ConfigModelRegistry configModelRegistry;
     private final Collection<MlModelImporter> modelImporters;
     private final Zone zone;
-    private final FlagSource flagSource;
     private final Clock clock;
     private final Version version;
     private final List<Validator> additionalValidators;
@@ -63,7 +60,7 @@ public class VespaModelFactory implements ModelFactory {
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<Validator> additionalValidators,
-                             Zone zone, FlagSource flagSource) {
+                             Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
@@ -79,7 +76,6 @@ public class VespaModelFactory implements ModelFactory {
                 new XGBoostImporter(),
                 new LightGBMImporter());
         this.zone = zone;
-        this.flagSource = flagSource;
         this.additionalValidators = List.copyOf(additionalValidators.allComponents());
 
         this.clock = Clock.systemUTC();
@@ -88,7 +84,7 @@ public class VespaModelFactory implements ModelFactory {
     // For testing only
     protected VespaModelFactory(ConfigModelRegistry configModelRegistry) {
         this(new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry,
-             Clock.systemUTC(), Zone.defaultZone());
+                Clock.systemUTC(), Zone.defaultZone());
     }
 
     private VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
@@ -102,7 +98,6 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = List.of();
         this.additionalValidators = List.of();
         this.zone = zone;
-        this.flagSource = new InMemoryFlagSource();
         this.clock = clock;
     }
 
@@ -197,7 +192,6 @@ public class VespaModelFactory implements ModelFactory {
             .endpoints(modelContext.properties().endpoints())
             .modelImporters(modelImporters)
             .zone(zone)
-            .flagSource(flagSource)
             .now(clock.instant())
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())

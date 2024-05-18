@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Exclusivity;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -64,18 +65,17 @@ public class CapacityCheckerTester {
     CapacityCheckerTester() {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
-        var flagSource = new InMemoryFlagSource();
         nodeRepository = new NodeRepository(f,
                                             new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             zone,
-                                            new Exclusivity(zone, flagSource),
+                                            new Exclusivity(zone, SharedHosts.empty()),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),
                                             Optional.empty(),
-                                            flagSource,
+                                            new InMemoryFlagSource(),
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,

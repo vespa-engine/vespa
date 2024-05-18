@@ -57,12 +57,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>flags</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>zkfacade</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -105,7 +99,6 @@
             config-bundle-jar-with-dependencies.jar,
             config-model-api-jar-with-dependencies.jar,
             config-model-jar-with-dependencies.jar,
-            flags-jar-with-dependencies.jar,
 
             container-disc-jar-with-dependencies.jar,
 
