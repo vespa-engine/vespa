@@ -28,8 +28,7 @@ public class DocsumDefinition {
         this.fields = documentSummary.fields().values()
                                      .stream()
                                      .map(field -> DocsumField.create(field.name(), field.type().asString()))
-                                     .collect(Collectors.toUnmodifiableMap(field -> field.getName(),
-                                                                           field -> field));
+                                     .collect(Collectors.toUnmodifiableMap(DocsumField::getName, field -> field));
     }
 
     public String name() { return name; }
