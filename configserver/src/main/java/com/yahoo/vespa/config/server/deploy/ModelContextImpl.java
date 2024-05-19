@@ -35,7 +35,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.UnboundFlag;
-import com.yahoo.vespa.flags.custom.SharedHost;
 
 import java.io.File;
 import java.net.URI;
@@ -255,11 +254,7 @@ public class ModelContextImpl implements ModelContext {
             this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
             this.persistenceThreadMaxFeedOpBatchSize = flagValue(source, appId, version, Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE);
             this.logserverOtelCol = flagValue(source, appId, version, Flags.LOGSERVER_OTELCOL_AGENT);
-            SharedHost sharedHost = flagValue(source, appId, version, PermanentFlags.SHARED_HOST);
-            this.sharedHosts = new SharedHosts() {
-                @Override public boolean supportsClusterType(ClusterSpec.Type clusterType) { return sharedHost.supportsClusterType(clusterType.name()); }
-                @Override public boolean hasClusterType(ClusterSpec.Type clusterType) { return sharedHost.hasClusterType(clusterType.name()); }
-            };
+            this.sharedHosts = flagValue(source, appId, version, PermanentFlags.SHARED_HOST);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }

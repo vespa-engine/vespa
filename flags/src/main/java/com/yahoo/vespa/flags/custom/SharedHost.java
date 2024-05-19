@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.vespa.flags.PermanentFlags;
 
 import java.util.List;
@@ -19,7 +21,7 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
-public class SharedHost {
+public class SharedHost implements SharedHosts {
 
     private final List<HostResources> resources;
 
@@ -43,14 +45,16 @@ public class SharedHost {
 
     /** Whether there are any shared hosts specifically for the given cluster type, or without a cluster type restriction. */
     @JsonIgnore
-    public boolean supportsClusterType(String clusterType) {
-        return resources.stream().anyMatch(resource -> resource.clusterType().map(clusterType::equalsIgnoreCase).orElse(true));
+    @Override
+    public boolean supportsClusterType(ClusterSpec.Type clusterType) {
+        return resources.stream().anyMatch(resource -> resource.clusterType().map(type -> clusterType.name().equalsIgnoreCase(type)).orElse(true));
     }
 
     /** Whether there are any shared hosts specifically for the given cluster type. */
     @JsonIgnore
-    public boolean hasClusterType(String clusterType) {
-        return resources.stream().anyMatch(resource -> resource.clusterType().map(clusterType::equalsIgnoreCase).orElse(false));
+    @Override
+    public boolean hasClusterType(ClusterSpec.Type clusterType) {
+        return resources.stream().anyMatch(resource -> resource.clusterType().map(type -> clusterType.name().equalsIgnoreCase(type)).orElse(false));
     }
 
     @JsonIgnore
