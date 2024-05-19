@@ -158,7 +158,7 @@ std::unique_ptr<Value>
 TensorModifyUpdate::apply_to(const Value &old_tensor,
                              const ValueBuilderFactory &factory) const
 {
-    if (auto cellsTensor = _tensor->getAsTensorPtr()) {
+    if (const auto* cellsTensor = _tensor->getAsTensorPtr()) {
         auto op = getJoinFunction(_operation);
         if (_default_cell_value.has_value()) {
             return TensorPartialUpdate::modify_with_defaults(old_tensor, op, *cellsTensor, _default_cell_value.value(), factory);
@@ -186,7 +186,7 @@ TensorModifyUpdate::applyTo(FieldValue& value) const
 {
     if (value.isA(FieldValue::Type::TENSOR)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
-        auto old_tensor = tensorFieldValue.getAsTensorPtr();
+        const auto* old_tensor = tensorFieldValue.getAsTensorPtr();
         std::unique_ptr<Value> new_tensor;
         if (old_tensor) {
             new_tensor = applyTo(*old_tensor);

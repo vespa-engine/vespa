@@ -808,7 +808,7 @@ makeTensorFieldValue(const TensorSpec &spec, const TensorDataType &dataType)
 
 const vespalib::eval::Value &asTensor(const FieldValue &fieldValue) {
     auto &tensorFieldValue = dynamic_cast<const TensorFieldValue &>(fieldValue);
-    auto tensor = tensorFieldValue.getAsTensorPtr();
+    const auto* tensor = tensorFieldValue.getAsTensorPtr();
     assert(tensor);
     return *tensor;
 }

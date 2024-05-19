@@ -71,7 +71,7 @@ std::unique_ptr<vespalib::eval::Value>
 TensorAddUpdate::apply_to(const Value &old_tensor,
                           const ValueBuilderFactory &factory) const
 {
-    if (auto addTensor = _tensor->getAsTensorPtr()) {
+    if (const auto* addTensor = _tensor->getAsTensorPtr()) {
         return TensorPartialUpdate::add(old_tensor, *addTensor, factory);
     }
     return {};
@@ -83,7 +83,7 @@ TensorAddUpdate::applyTo(FieldValue& value) const
     if (value.isA(FieldValue::Type::TENSOR)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
         tensorFieldValue.make_empty_if_not_existing();
-        auto oldTensor = tensorFieldValue.getAsTensorPtr();
+        const auto* oldTensor = tensorFieldValue.getAsTensorPtr();
         assert(oldTensor);
         auto newTensor = applyTo(*oldTensor);
         if (newTensor) {
