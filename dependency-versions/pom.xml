@@ -159,8 +159,8 @@
         <!-- CAUTION: upgrading junit for tenants poms may break testing frameworks -->
         <!-- CAUTION 2: this version must match the exported packages from the tenant-cd-api module -->
         <!-- CAUTION 3: this is probably not a good idea to change too ofter; consider a major version next time -->
-        <junit.vespa.tenant.version>5.10.1</junit.vespa.tenant.version>
-        <junit.platform.vespa.tenant.version>1.10.1</junit.platform.vespa.tenant.version>
+        <junit.vespa.tenant.version>5.10.2</junit.vespa.tenant.version>
+        <junit.platform.vespa.tenant.version>1.10.2</junit.platform.vespa.tenant.version>
         <surefire.vespa.tenant.version>${surefire.vespa.version}</surefire.vespa.tenant.version>
 
         <!-- Maven plugins -->
