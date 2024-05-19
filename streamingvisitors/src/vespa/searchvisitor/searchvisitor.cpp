@@ -607,7 +607,7 @@ SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
     } else if (_attribute.isTensorType()) {
         auto tfvalue = dynamic_cast<const document::TensorFieldValue*>(&value);
         if (tfvalue != nullptr) {
-            auto tensor = tfvalue->getAsTensorPtr();
+            const auto* tensor = tfvalue->getAsTensorPtr();
             if (tensor != nullptr) {
                 attr.add(*tensor, c.getWeight());
             }

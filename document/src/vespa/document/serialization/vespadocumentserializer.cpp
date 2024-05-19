@@ -320,7 +320,7 @@ VespaDocumentSerializer::write(const WeightedSetFieldValue &value) {
 void
 VespaDocumentSerializer::write(const TensorFieldValue &value) {
     vespalib::nbostream tmpStream;
-    auto tensor = value.getAsTensorPtr();
+    const auto* tensor = value.getAsTensorPtr();
     if (tensor) {
         encode_value(*tensor, tmpStream);
         assert( ! tmpStream.empty());

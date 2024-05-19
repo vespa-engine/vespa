@@ -503,7 +503,7 @@ void
 AttributeUpdater::updateValue(TensorAttribute &vec, uint32_t lid, const FieldValue &val)
 {
     validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
-    const auto &tensor = static_cast<const TensorFieldValue &>(val).getAsTensorPtr();
+    const auto* tensor = static_cast<const TensorFieldValue &>(val).getAsTensorPtr();
     if (tensor) {
         vec.setTensor(lid, *tensor);
     } else {
@@ -558,7 +558,7 @@ std::unique_ptr<PrepareResult>
 prepare_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val)
 {
     validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
-    const auto& tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
+    const auto* tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
     if (tensor) {
         return attr.prepare_set_tensor(docid, *tensor);
     }
@@ -569,7 +569,7 @@ void
 complete_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue& val, std::unique_ptr<PrepareResult> prepare_result)
 {
     validate_field_value_type(FieldValue::Type::TENSOR, val, "TensorAttribute", "TensorFieldValue");
-    const auto& tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
+    const auto* tensor = static_cast<const TensorFieldValue&>(val).getAsTensorPtr();
     if (tensor) {
         attr.complete_set_tensor(docid, *tensor, std::move(prepare_result));
     } else {
