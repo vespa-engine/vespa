@@ -260,13 +260,11 @@ public class SpareCapacityMaintainerTest {
         private SpareCapacityMaintainerTester(int maxIterations) {
             NodeFlavors flavors = new NodeFlavors(new FlavorConfigBuilder().build());
             ManualClock clock = new ManualClock();
-            var zone = new Zone(Environment.prod, RegionName.from("us-east-3"));
             nodeRepository = new NodeRepository(flavors,
                                                 new EmptyProvisionServiceProvider(),
                                                 new MockCurator(),
                                                 clock,
-                                                zone,
-                                                new Exclusivity(zone, SharedHosts.empty()),
+                                                new Zone(Environment.prod, RegionName.from("us-east-3")),
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 Optional.empty(),

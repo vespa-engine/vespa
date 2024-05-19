@@ -57,7 +57,6 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
     private final CuratorDb db;
     private final Clock clock;
     private final Zone zone;
-    private final Exclusivity exclusivity;
     private final Nodes nodes;
     private final NodeFlavors flavors;
     private final HostResourcesCalculator resourcesCalculator;
@@ -87,7 +86,6 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                           ProvisionServiceProvider provisionServiceProvider,
                           Curator curator,
                           Zone zone,
-                          Exclusivity exclusivity,
                           FlagSource flagSource,
                           MetricsDb metricsDb,
                           Orchestrator orchestrator) {
@@ -96,7 +94,6 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
              curator,
              Clock.systemUTC(),
              zone,
-             exclusivity,
              new DnsNameResolver(),
              DockerImage.fromString(config.containerImage()),
              optionalImage(config.tenantContainerImage()),
@@ -117,7 +114,6 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                           Curator curator,
                           Clock clock,
                           Zone zone,
-                          Exclusivity exclusivity,
                           NameResolver nameResolver,
                           DockerImage containerImage,
                           Optional<DockerImage> tenantContainerImage,
@@ -136,7 +132,6 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
         this.db = new CuratorDb(flavors, curator, clock, useCuratorClientCache);
         this.clock = clock;
         this.zone = zone;
-        this.exclusivity = exclusivity;
         this.applications = new Applications(db);
         this.nodes = new Nodes(db, zone, clock, orchestrator, applications);
         this.flavors = flavors;
@@ -213,14 +208,14 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
     public int spareCount() { return spareCount; }
 
-    public Exclusivity exclusivity() { return exclusivity; }
+    public Exclusivity exclusivity() { return new Exclusivity(zone, PermanentFlags.SHARED_HOST.bindTo(flagSource).value()); }
 
     public CapacityPolicies capacityPoliciesFor(ApplicationId applicationId) {
         String adminClusterNodeArchitecture = PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE
                 .bindTo(flagSource)
                 .with(INSTANCE_ID, applicationId.serializedForm())
                 .value();
-        return new CapacityPolicies(zone, exclusivity, applicationId, Architecture.valueOf(adminClusterNodeArchitecture));
+        return new CapacityPolicies(zone, exclusivity(), applicationId, Architecture.valueOf(adminClusterNodeArchitecture));
     }
 
     /**

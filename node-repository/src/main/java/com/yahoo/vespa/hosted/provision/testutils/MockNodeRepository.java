@@ -92,7 +92,6 @@ public class MockNodeRepository extends NodeRepository {
               curator,
               Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")),
               zone,
-              new Exclusivity(zone, SharedHosts.empty()),
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               Optional.empty(),

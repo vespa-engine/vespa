@@ -54,14 +54,14 @@ public class DynamicProvisioningTester {
     private final Autoscaler autoscaler;
     private final HostResourcesCalculator hostResourcesCalculator;
 
-    public DynamicProvisioningTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, SharedHosts sharedHosts, int hostCount) {
-        this(zone, hostFlavors, resourcesCalculator, flagSource, sharedHosts);
+    public DynamicProvisioningTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, int hostCount) {
+        this(zone, hostFlavors, resourcesCalculator, flagSource);
         for (Flavor flavor : hostFlavors)
             provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
-    private DynamicProvisioningTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource, SharedHosts sharedHosts) {
+    private DynamicProvisioningTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource) {
         MockHostProvisioner hostProvisioner = null;
         if (zone.cloud().dynamicProvisioning()) {
             hostProvisioner = new MockHostProvisioner(flavors);
@@ -74,7 +74,6 @@ public class DynamicProvisioningTester {
                                                              .resourcesCalculator(resourcesCalculator)
                                                              .flagSource(flagSource)
                                                              .hostProvisioner(hostProvisioner)
-                                                             .sharedHosts(sharedHosts)
                                                              .build();
 
         hostResourcesCalculator = resourcesCalculator;

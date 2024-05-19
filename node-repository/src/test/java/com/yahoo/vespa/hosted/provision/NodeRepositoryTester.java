@@ -42,18 +42,16 @@ public class NodeRepositoryTester {
         clock = new ManualClock();
         curator = new MockCurator();
         curator.setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
-        var flagSource = new InMemoryFlagSource();
         nodeRepository = new NodeRepository(nodeFlavors,
                                             new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             zone,
-                                            new Exclusivity(zone, SharedHosts.empty()),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),
                                             Optional.empty(),
-                                            flagSource,
+                                            new InMemoryFlagSource(),
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,

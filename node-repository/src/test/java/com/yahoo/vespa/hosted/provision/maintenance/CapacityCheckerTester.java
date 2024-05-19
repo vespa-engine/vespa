@@ -70,7 +70,6 @@ public class CapacityCheckerTester {
                                             curator,
                                             clock,
                                             zone,
-                                            new Exclusivity(zone, SharedHosts.empty()),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),

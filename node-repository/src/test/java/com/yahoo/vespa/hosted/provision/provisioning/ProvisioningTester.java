@@ -112,8 +112,7 @@ public class ProvisioningTester {
                                LoadBalancerServiceMock loadBalancerService,
                                FlagSource flagSource,
                                int spareCount,
-                               ManualClock clock,
-                               SharedHosts sharedHosts) {
+                               ManualClock clock) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = clock;
@@ -124,7 +123,6 @@ public class ProvisioningTester {
                                                  curator,
                                                  clock,
                                                  zone,
-                                                 new Exclusivity(zone, sharedHosts),
                                                  nameResolver,
                                                  containerImage,
                                                  Optional.empty(),
@@ -663,7 +661,6 @@ public class ProvisioningTester {
         private int spareCount = 0;
         private ManualClock clock = new ManualClock();
         private DockerImage defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
-        private SharedHosts sharedHosts = SharedHosts.empty();
 
         public Builder curator(Curator curator) {
             this.curator = curator;
@@ -745,11 +742,6 @@ public class ProvisioningTester {
             return this;
         }
 
-        public Builder sharedHosts(SharedHosts sharedHosts) {
-            this.sharedHosts = sharedHosts;
-            return this;
-        }
-
         private FlagSource defaultFlagSource() {
             return new InMemoryFlagSource();
         }
@@ -766,8 +758,7 @@ public class ProvisioningTester {
                                           new LoadBalancerServiceMock(),
                                           Optional.ofNullable(flagSource).orElse(defaultFlagSource()),
                                           spareCount,
-                                          clock,
-                                          sharedHosts);
+                                          clock);
         }
 
         private static FlavorsConfig asConfig(List<Flavor> flavors) {

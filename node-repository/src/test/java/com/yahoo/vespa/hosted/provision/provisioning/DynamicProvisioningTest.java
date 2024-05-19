@@ -208,8 +208,9 @@ public class DynamicProvisioningTest {
     private void assertHostSharing(Environment environment, ClusterSpec.Type clusterType, boolean expectShared) {
         Zone zone = new Zone(Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(), SystemName.Public, environment, RegionName.defaultName());
         MockHostProvisioner hostProvisioner = new MockHostProvisioner(new NodeFlavors(ProvisioningTester.createConfig()).getFlavors(), nameResolver, 0);
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).hostProvisioner(hostProvisioner).nameResolver(nameResolver).sharedHosts(SharedHosts.ofConstant(true, false)).build();
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
         tester.makeReadyHosts(2, new NodeResources(12, 12, 200, 12));
+        tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(4.0, 16.0, 50.0, 0.3, "fast", "local", null, 10, "x86_64"))), SharedHost.class);
 
         ApplicationId application = applicationId();
         ClusterSpec cluster = ClusterSpec.request(clusterType, ClusterSpec.Id.from("default")).vespaVersion("6.42").build();
