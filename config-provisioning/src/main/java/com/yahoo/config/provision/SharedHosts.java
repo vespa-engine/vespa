@@ -11,12 +11,10 @@ public interface SharedHosts {
     /** Whether there are any shared hosts specifically for the given cluster type. */
     boolean hasClusterType(ClusterSpec.Type clusterType);
 
-    static SharedHosts empty() { return ofConstant(false, false); }
-
-    static SharedHosts ofConstant(boolean supportsClusterType, boolean hasClusterType) {
+    static SharedHosts empty() {
         return new SharedHosts() {
-            @Override public boolean supportsClusterType(ClusterSpec.Type clusterType) { return supportsClusterType; }
-            @Override public boolean hasClusterType(ClusterSpec.Type clusterType) { return hasClusterType; }
+            @Override public boolean supportsClusterType(ClusterSpec.Type clusterType) { return false; }
+            @Override public boolean hasClusterType(ClusterSpec.Type clusterType) { return false; }
         };
     }
 
