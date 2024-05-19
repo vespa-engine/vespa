@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -53,7 +54,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
-    private final CapacityPolicies capacityPolicies;
     private final Zone zone;
     private final Preparer preparer;
     private final Activator activator;
@@ -66,7 +66,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                      Metric metric) {
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
-        this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService()
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
@@ -88,23 +87,24 @@ public class NodeRepositoryProvisioner implements Provisioner {
                             " for application " + application + ", cluster " + cluster);
         validate(application, cluster, requested, logger);
 
+        var capacityPolicies = nodeRepository.capacityPoliciesFor(application);
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
             cluster = capacityPolicies.decideExclusivity(requested, cluster);
-            Capacity actual = capacityPolicies.applyOn(requested, application, cluster.isExclusive());
-            ClusterResources target = decideTargetResources(application, cluster, actual);
+            Capacity actual = capacityPolicies.applyOn(requested, cluster.isExclusive());
+            ClusterResources target = decideTargetResources(application, cluster, actual, capacityPolicies);
             validate(actual, target, cluster, application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 
-            resources = getNodeResources(cluster, target.nodeResources(), application);
+            resources = getNodeResources(cluster, target.nodeResources(), application, capacityPolicies);
             nodeSpec = NodeSpec.from(target.nodes(), target.groups(), resources, cluster.isExclusive(), actual.canFail(),
                                      requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()),
                                      requested.clusterInfo().hostTTL());
         }
         else {
             cluster = cluster.withExclusivity(true);
-            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application);
+            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application, capacityPolicies);
             nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec),
@@ -133,8 +133,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
     }
 
-    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
-        return capacityPolicies.specifyFully(nodeResources, cluster, applicationId);
+    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId, CapacityPolicies capacityPolicies) {
+        return capacityPolicies.specifyFully(nodeResources, cluster);
     }
 
     @Override
@@ -166,13 +166,14 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * Returns the target cluster resources, a value between the min and max in the requested capacity,
      * and updates the application store with the received min and max.
      */
-    private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
+    private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested,
+                                                   CapacityPolicies capacityPolicies) {
         try (Mutex lock = nodeRepository.applications().lock(applicationId)) {
             var application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId))
                               .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested);
             nodeRepository.applications().put(application, lock);
             var cluster = application.cluster(clusterSpec.id()).get();
-            return cluster.target().resources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));
+            return cluster.target().resources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested, capacityPolicies));
         }
     }
 
@@ -180,7 +181,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources currentResources(Application application,
                                               ClusterSpec clusterSpec,
                                               Cluster cluster,
-                                              Capacity requested) {
+                                              Capacity requested,
+                                              CapacityPolicies capacityPolicies) {
         NodeList nodes = nodeRepository.nodes().list(Node.State.active).owner(application.id())
                                        .cluster(clusterSpec.id())
                                        .not().retired()
@@ -188,15 +190,15 @@ public class NodeRepositoryProvisioner implements Provisioner {
         boolean firstDeployment = nodes.isEmpty();
         var current =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec,
+                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id(), capacityPolicies), clusterSpec,
                                            nodeRepository, requested.cloudAccount().orElse(CloudAccount.empty))
                 : new AllocatableResources(nodes, nodeRepository);
         var model = new ClusterModel(nodeRepository, application, clusterSpec, cluster, nodes, current, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), model, firstDeployment);
     }
 
-    private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return capacityPolicies.specifyFully(requested.minResources(), clusterSpec, applicationId);
+    private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId, CapacityPolicies capacityPolicies) {
+        return capacityPolicies.specifyFully(requested.minResources(), clusterSpec);
     }
 
 
@@ -278,7 +280,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
         StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
 
-        if (nodeRepository.exclusiveAllocation(spec) && findNearestNodeResources(limits).isPresent())
+        if (nodeRepository.exclusivity().allocation(spec) && findNearestNodeResources(limits).isPresent())
             message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits).get());
 
         return new IllegalArgumentException(message.toString());

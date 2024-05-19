@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
@@ -40,16 +42,18 @@ public class NodeRepositoryTester {
         clock = new ManualClock();
         curator = new MockCurator();
         curator.setZooKeeperEnsembleConnectionSpec("server1:1234,server2:5678");
+        var flagSource = new InMemoryFlagSource();
         nodeRepository = new NodeRepository(nodeFlavors,
                                             new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
                                             zone,
+                                            new Exclusivity(zone, SharedHosts.empty()),
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),
                                             Optional.empty(),
-                                            new InMemoryFlagSource(),
+                                            flagSource,
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,

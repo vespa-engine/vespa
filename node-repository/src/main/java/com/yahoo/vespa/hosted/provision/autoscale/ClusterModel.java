@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
+import com.yahoo.config.provision.CapacityPolicies;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -48,6 +48,7 @@ public class ClusterModel {
     private static final double fixedCpuCostFraction = 0.1;
 
     private final NodeRepository nodeRepository;
+    private final CapacityPolicies capacityPolicies;
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
@@ -84,6 +85,7 @@ public class ClusterModel {
                         MetricsDb metricsDb,
                         Clock clock) {
         this.nodeRepository = nodeRepository;
+        this.capacityPolicies = nodeRepository.capacityPoliciesFor(application.id());
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -108,6 +110,7 @@ public class ClusterModel {
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
         this.nodeRepository = nodeRepository;
+        this.capacityPolicies = nodeRepository.capacityPoliciesFor(application.id());
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -171,7 +174,7 @@ public class ClusterModel {
     }
 
     public boolean isExclusive() {
-        return nodeRepository.exclusiveAllocation(clusterSpec);
+        return nodeRepository.exclusivity().allocation(clusterSpec);
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
@@ -436,12 +439,10 @@ public class ClusterModel {
 
         double averageReal() {
             if (nodes.isEmpty()) { // we're estimating
-                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(cluster.minResources().nodeResources(),
-                                                                                         clusterSpec,
-                                                                                         application.id());
+                var initialResources = capacityPolicies.specifyFully(cluster.minResources().nodeResources(), clusterSpec);
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
                                                                           cloudAccount(),
-                                                                          nodeRepository.exclusiveAllocation(clusterSpec),
+                                                                          nodeRepository.exclusivity().allocation(clusterSpec),
                                                                           false).memoryGb();
             }
             else {

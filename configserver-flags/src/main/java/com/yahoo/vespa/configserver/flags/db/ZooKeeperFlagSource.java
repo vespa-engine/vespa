@@ -13,6 +13,7 @@ import java.util.Optional;
  * @author hakonhall
  */
 public class ZooKeeperFlagSource implements FlagSource {
+
     private final FlagsDb flagsDb;
 
     public ZooKeeperFlagSource(FlagsDb flagsDb) {
@@ -23,4 +24,5 @@ public class ZooKeeperFlagSource implements FlagSource {
     public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
         return flagsDb.getValue(id).flatMap(data -> data.resolve(vector));
     }
+
 }

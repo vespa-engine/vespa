@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -10,6 +11,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
@@ -51,16 +53,15 @@ public class DynamicProvisioningTester {
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
     private final HostResourcesCalculator hostResourcesCalculator;
-    private final CapacityPolicies capacityPolicies;
 
-    public DynamicProvisioningTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, int hostCount) {
-        this(zone, hostFlavors, resourcesCalculator, flagSource);
+    public DynamicProvisioningTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, SharedHosts sharedHosts, int hostCount) {
+        this(zone, hostFlavors, resourcesCalculator, flagSource, sharedHosts);
         for (Flavor flavor : hostFlavors)
             provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
-    private DynamicProvisioningTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource) {
+    private DynamicProvisioningTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource, SharedHosts sharedHosts) {
         MockHostProvisioner hostProvisioner = null;
         if (zone.cloud().dynamicProvisioning()) {
             hostProvisioner = new MockHostProvisioner(flavors);
@@ -73,11 +74,11 @@ public class DynamicProvisioningTester {
                                                              .resourcesCalculator(resourcesCalculator)
                                                              .flagSource(flagSource)
                                                              .hostProvisioner(hostProvisioner)
+                                                             .sharedHosts(sharedHosts)
                                                              .build();
 
         hostResourcesCalculator = resourcesCalculator;
         autoscaler = new Autoscaler(nodeRepository());
-        capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
     }
 
     public InMemoryProvisionLogger provisionLogger() { return provisioningTester.provisionLogger(); }
@@ -158,7 +159,8 @@ public class DynamicProvisioningTester {
     }
 
     public Autoscaling autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster).isExclusive());
+        var capacityPolicies = provisioningTester.nodeRepository().capacityPoliciesFor(applicationId);
+        capacity = capacityPolicies.applyOn(capacity, capacityPolicies.decideExclusivity(capacity, cluster).isExclusive());
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(cluster.id(), false, capacity);
         try (Mutex lock = nodeRepository().applications().lock(applicationId)) {

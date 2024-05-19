@@ -25,6 +25,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.Architecture;
+import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
@@ -208,6 +211,8 @@ public class ModelContextImpl implements ModelContext {
         private final int searchHandlerThreadpool;
         private final int persistenceThreadMaxFeedOpBatchSize;
         private final boolean logserverOtelCol;
+        private final SharedHosts sharedHosts;
+        private final Architecture adminClusterArchitecture;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -252,6 +257,8 @@ public class ModelContextImpl implements ModelContext {
             this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
             this.persistenceThreadMaxFeedOpBatchSize = flagValue(source, appId, version, Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE);
             this.logserverOtelCol = flagValue(source, appId, version, Flags.LOGSERVER_OTELCOL_AGENT);
+            this.sharedHosts = flagValue(source, appId, version, PermanentFlags.SHARED_HOST);
+            this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -304,6 +311,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean sortBlueprintsByCost() { return sortBlueprintsByCost; }
         @Override public int persistenceThreadMaxFeedOpBatchSize() { return persistenceThreadMaxFeedOpBatchSize; }
         @Override public boolean logserverOtelCol() { return logserverOtelCol; }
+        @Override public SharedHosts sharedHosts() { return sharedHosts; }
+        @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

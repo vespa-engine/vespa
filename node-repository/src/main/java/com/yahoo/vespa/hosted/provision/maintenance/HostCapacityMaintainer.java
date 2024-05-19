@@ -223,7 +223,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             }
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
-            HostSharing sharingMode = nodeRepository().exclusiveAllocation(asSpec(clusterType, 0)) ? HostSharing.exclusive : HostSharing.shared;
+            HostSharing sharingMode = nodeRepository().exclusivity().allocation(asSpec(clusterType, 0)) ? HostSharing.exclusive : HostSharing.shared;
             HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources,
                                                                     ApplicationId.defaultId(), osVersion,
                                                                     sharingMode, clusterType.map(ClusterSpec.Type::valueOf), Optional.empty(),
@@ -290,13 +290,13 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes, application, cluster, nodeSpec,
                                                           true, false, allocationContext, nodeRepository().nodes(),
                                                           nodeRepository().resourcesCalculator(), nodeRepository().spareCount(),
-                                                          nodeRepository().exclusiveAllocation(cluster));
+                                                          nodeRepository().exclusivity().allocation(cluster));
         List<NodeCandidate> nodeCandidates = prioritizer.collect()
                                                         .stream()
                                                         .filter(node -> node.violatesExclusivity(cluster,
                                                                                                  application,
-                                                                                                 nodeRepository().exclusiveClusterType(cluster),
-                                                                                                 nodeRepository().exclusiveAllocation(cluster),
+                                                                                                 nodeRepository().exclusivity().clusterType(cluster),
+                                                                                                 nodeRepository().exclusivity().allocation(cluster),
                                                                                                  false,
                                                                                                  nodeRepository().zone().cloud().allowHostSharing(),
                                                                                                  allNodes)

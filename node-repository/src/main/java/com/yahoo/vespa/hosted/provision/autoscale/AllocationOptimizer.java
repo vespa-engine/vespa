@@ -103,7 +103,7 @@ public class AllocationOptimizer {
 
     /** Returns the max resources of a host one node may allocate. */
     private NodeResources maxResourcesOf(NodeResources hostResources, ClusterModel model) {
-        if (nodeRepository.exclusiveAllocation(model.clusterSpec())) return hostResources;
+        if (nodeRepository.exclusivity().allocation(model.clusterSpec())) return hostResources;
         // static, shared hosts: Allocate at most half of the host cpu to simplify management
         return hostResources.withVcpu(hostResources.vcpu() / 2);
     }

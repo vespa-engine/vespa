@@ -44,7 +44,7 @@ public class ProvisionerAdapter implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
-        provisioned.add(cluster.id(), capacity);
+        provisioned.add(cluster, capacity);
         return provisioner.prepare(applicationId, cluster, capacity, logger);
     }
 

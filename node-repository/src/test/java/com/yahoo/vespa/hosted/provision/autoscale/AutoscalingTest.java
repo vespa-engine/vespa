@@ -13,7 +13,6 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import org.junit.Test;
 
@@ -162,7 +161,7 @@ public class AutoscalingTest {
                                                .awsProdSetup(false)
                                                .capacity(Capacity.from(min, max))
                                                .initialResources(Optional.empty())
-                                               .hostSharingFlag()
+                                               .hostSharing()
                                                .build();
         fixture.tester().assertResources("Initial resources at min, since flag turns on host sharing",
                                          7, 1, 2.0, 10.0, 384.0,
@@ -178,7 +177,7 @@ public class AutoscalingTest {
                                                .clusterType(ClusterSpec.Type.container)
                                                .capacity(Capacity.from(min, max))
                                                .initialResources(Optional.empty())
-                                               .hostSharingFlag()
+                                               .hostSharing()
                                                .build();
         fixture.tester().assertResources("Initial resources at min, since flag turns on host sharing",
                                          1, 1, 0.5, 4.0, 10.0,
@@ -389,7 +388,8 @@ public class AutoscalingTest {
                                                .build();
 
         NodeResources defaultResources =
-                new CapacityPolicies(fixture.tester().nodeRepository()).specifyFully(NodeResources.unspecified(), fixture.clusterSpec, fixture.applicationId);
+                fixture.tester().nodeRepository().capacityPoliciesFor(fixture.applicationId)
+                       .specifyFully(NodeResources.unspecified(), fixture.clusterSpec);
 
         fixture.tester().assertResources("Min number of nodes and default resources",
                                          2, 1, defaultResources,

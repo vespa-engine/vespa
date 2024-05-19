@@ -1326,7 +1326,9 @@
       "public boolean alwaysMarkPhraseExpensive()",
       "public boolean sortBlueprintsByCost()",
       "public int persistenceThreadMaxFeedOpBatchSize()",
-      "public boolean logserverOtelCol()"
+      "public boolean logserverOtelCol()",
+      "public com.yahoo.config.provision.SharedHosts sharedHosts()",
+      "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()"
     ],
     "fields" : [ ]
   },
@@ -1624,6 +1626,9 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public void add(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity)",
+      "public java.util.Map clusters()",
+      "public java.util.Map capacities()",
       "public void add(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.Capacity)",
       "public java.util.Map all()"
     ],

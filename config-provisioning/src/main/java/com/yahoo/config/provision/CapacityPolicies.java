@@ -1,55 +1,44 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.provisioning;
+package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.flags.StringFlag;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Map;
 import java.util.TreeMap;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
-import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines the policies for assigning cluster capacity in various environments
+ * Defines the policies for assigning cluster capacity in various environments.
  *
  * @author bratseth
- * @see NodeResourceLimits
  */
 public class CapacityPolicies {
 
-    private final NodeRepository nodeRepository;
     private final Zone zone;
-    private final StringFlag adminClusterNodeArchitecture;
+    private final Exclusivity exclusivity;
+    private final ApplicationId applicationId;
+    private final Architecture adminClusterArchitecture;
 
-    public CapacityPolicies(NodeRepository nodeRepository) {
-        this.nodeRepository = nodeRepository;
-        this.zone = nodeRepository.zone();
-        this.adminClusterNodeArchitecture = PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(nodeRepository.flagSource());
+    public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Architecture adminClusterArchitecture) {
+        this.zone = zone;
+        this.exclusivity = exclusivity;
+        this.applicationId = applicationId;
+        this.adminClusterArchitecture = adminClusterArchitecture;
     }
 
-    public Capacity applyOn(Capacity capacity, ApplicationId application, boolean exclusive) {
-        var min = applyOn(capacity.minResources(), capacity, application, exclusive);
-        var max = applyOn(capacity.maxResources(), capacity, application, exclusive);
+    public Capacity applyOn(Capacity capacity, boolean exclusive) {
+        var min = applyOn(capacity.minResources(), capacity, exclusive);
+        var max = applyOn(capacity.maxResources(), capacity, exclusive);
         var groupSize = capacity.groupSize().fromAtMost(max.nodes() / min.groups())
                                             .toAtLeast(min.nodes() / max.groups());
         return capacity.withLimits(min, max, groupSize);
     }
 
-    private ClusterResources applyOn(ClusterResources resources, Capacity capacity, ApplicationId application, boolean exclusive) {
-        int nodes = decideCount(resources.nodes(), capacity.isRequired(), application.instance().isTester());
+    private ClusterResources applyOn(ClusterResources resources, Capacity capacity, boolean exclusive) {
+        int nodes = decideCount(resources.nodes(), capacity.isRequired(), applicationId.instance().isTester());
         int groups = decideGroups(resources.nodes(), resources.groups(), nodes);
         var nodeResources = decideNodeResources(resources.nodeResources(), capacity.isRequired(), exclusive);
         return new ClusterResources(nodes, groups, nodeResources);
@@ -94,31 +83,29 @@ public class CapacityPolicies {
         return target;
     }
 
-    public ClusterResources specifyFully(ClusterResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return resources.with(specifyFully(resources.nodeResources(), clusterSpec, applicationId));
+    public ClusterResources specifyFully(ClusterResources resources, ClusterSpec clusterSpec) {
+        return resources.with(specifyFully(resources.nodeResources(), clusterSpec));
     }
 
-    public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        return resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec, applicationId).with(DiskSpeed.any));
+    public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec) {
+        return resources.withUnspecifiedFieldsFrom(defaultResources(clusterSpec).with(DiskSpeed.any));
     }
 
-    private NodeResources defaultResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
+    private NodeResources defaultResources(ClusterSpec clusterSpec) {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
-            Architecture architecture = adminClusterArchitecture(applicationId);
-
-            if (nodeRepository.exclusiveAllocation(clusterSpec)) {
-                return smallestExclusiveResources().with(architecture);
+            if (exclusivity.allocation(clusterSpec)) {
+                return smallestExclusiveResources().with(adminClusterArchitecture);
             }
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
-                return clusterControllerResources(clusterSpec, architecture).with(architecture);
+                return clusterControllerResources(clusterSpec, adminClusterArchitecture).with(adminClusterArchitecture);
             }
 
             if (clusterSpec.id().value().equals("logserver")) {
-                return logserverResources(architecture).with(architecture);
+                return logserverResources(adminClusterArchitecture).with(adminClusterArchitecture);
             }
 
-            return versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())).with(architecture);
+            return versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())).with(adminClusterArchitecture);
         }
 
         if (clusterSpec.type() == ClusterSpec.Type.content) {
@@ -157,19 +144,6 @@ public class CapacityPolicies {
                 : new NodeResources(0.5, 2, 50, 0.3);
     }
 
-    private Architecture adminClusterArchitecture(ApplicationId instance) {
-        return Architecture.valueOf(adminClusterNodeArchitecture.with(INSTANCE_ID, instance.serializedForm()).value());
-    }
-
-    /**
-     * Returns the resources for the newest version not newer than that requested in the cluster spec.
-     */
-    static NodeResources versioned(ClusterSpec spec, Map<Version, NodeResources> resources) {
-        return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
-                              "no default resources applicable for " + spec + " among: " + resources)
-                .getValue();
-    }
-
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
         return zone.cloud().name() == CloudName.AZURE || zone.cloud().name() == CloudName.GCP
@@ -189,6 +163,15 @@ public class CapacityPolicies {
         if (capacity.cloudAccount().isPresent()) return requestedCluster.withExclusivity(true); // Implicit exclusive
         boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
         return requestedCluster.withExclusivity(exclusive);
+    }
+
+    /**
+     * Returns the resources for the newest version not newer than that requested in the cluster spec.
+     */
+    private static NodeResources versioned(ClusterSpec spec, Map<Version, NodeResources> resources) {
+        return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
+                              "no default resources applicable for " + spec + " among: " + resources)
+                       .getValue();
     }
 
 }
