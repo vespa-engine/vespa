@@ -16,8 +16,8 @@ using search::attribute::DistanceMetric;
 
 size_t npos = std::string::npos;
 
-double run_calc(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute_noinline__;
-double run_calc_with_limit(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute_noinline__;
+double run_calc(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute__((noinline));
+double run_calc_with_limit(size_t iterations, TypedCells b, const BoundDistanceFunction & df) __attribute__((noinline));
 
 double
 run_calc(size_t iterations, TypedCells b, const BoundDistanceFunction & df) {
@@ -53,7 +53,7 @@ run_calc_with_limit(size_t iterations, TypedCells b, const BoundDistanceFunction
 }
 
 template<typename T>
-void benchmark(size_t iterations, size_t elems) __attribute_noinline__;
+void benchmark(size_t iterations, size_t elems) __attribute__((noinline));
 
 template<typename T>
 void benchmark(size_t iterations, size_t elems, const DistanceFunctionFactory & df) {
