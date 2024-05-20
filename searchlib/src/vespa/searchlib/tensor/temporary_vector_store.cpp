@@ -15,7 +15,7 @@ namespace {
 
 template<typename FromType, typename ToType>
 ConstArrayRef<ToType>
-convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept __attribute_noinline__;
+convert_cells(ArrayRef<ToType> space, TypedCells cells) noexcept __attribute__((noinline));
 
 template<typename FromType, typename ToType>
 ConstArrayRef<ToType>

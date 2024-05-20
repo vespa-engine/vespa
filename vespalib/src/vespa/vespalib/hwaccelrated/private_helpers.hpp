@@ -123,7 +123,7 @@ convert_bfloat16_to_float(const uint16_t *src, float *dest, size_t sz) noexcept 
 
 template<typename ACCUM = uint32_t>
 ACCUM
-multiplyAddT(const int8_t *a, const int8_t *b, size_t sz) noexcept __attribute_noinline__;
+multiplyAddT(const int8_t *a, const int8_t *b, size_t sz) noexcept __attribute__((noinline));
 
 template<typename ACCUM>
 ACCUM
