@@ -215,50 +215,50 @@ public class ModelContextImpl implements ModelContext {
         private final Architecture adminClusterArchitecture;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
-            this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
-            this.feedSequencer = flagValue(source, appId, version, Flags.FEED_SEQUENCER_TYPE);
-            this.responseSequencer = flagValue(source, appId, version, Flags.RESPONSE_SEQUENCER_TYPE);
-            this.numResponseThreads = flagValue(source, appId, version, Flags.RESPONSE_NUM_THREADS);
-            this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, version, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
-            this.feedConcurrency = flagValue(source, appId, version, Flags.FEED_CONCURRENCY);
-            this.feedNiceness = flagValue(source, appId, version, Flags.FEED_NICENESS);
-            this.mbus_network_threads = flagValue(source, appId, version, Flags.MBUS_NUM_NETWORK_THREADS);
-            this.allowedAthenzProxyIdentities = flagValue(source, appId, version, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
-            this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, version, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
-            this.jvmOmitStackTraceInFastThrow = type -> flagValue(source, appId, version, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
-            this.resourceLimitDisk = flagValue(source, appId, version, PermanentFlags.RESOURCE_LIMIT_DISK);
-            this.resourceLimitMemory = flagValue(source, appId, version, PermanentFlags.RESOURCE_LIMIT_MEMORY);
-            this.minNodeRatioPerGroup = flagValue(source, appId, version, Flags.MIN_NODE_RATIO_PER_GROUP);
-            this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
-            this.loadCodeAsHugePages = flagValue(source, appId, version, Flags.LOAD_CODE_AS_HUGEPAGES);
-            this.containerShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_SHUTDOWN_TIMEOUT);
-            this.maxUnCommittedMemory = flagValue(source, appId, version, Flags.MAX_UNCOMMITTED_MEMORY);
-            this.forwardIssuesAsErrors = flagValue(source, appId, version, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
-            this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
-            this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
-            this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
-            this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
-            this.sharedStringRepoNoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_NO_RECLAIM);
-            this.logFileCompressionAlgorithm = flagValue(source, appId, version, Flags.LOG_FILE_COMPRESSION_ALGORITHM);
-            this.mbus_java_num_targets = flagValue(source, appId, version, Flags.MBUS_JAVA_NUM_TARGETS);
-            this.mbus_java_events_before_wakeup = flagValue(source, appId, version, Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP);
-            this.mbus_cpp_num_targets = flagValue(source, appId, version, Flags.MBUS_CPP_NUM_TARGETS);
-            this.mbus_cpp_events_before_wakeup = flagValue(source, appId, version, Flags.MBUS_CPP_EVENTS_BEFORE_WAKEUP);
-            this.rpc_num_targets = flagValue(source, appId, version, Flags.RPC_NUM_TARGETS);
-            this.rpc_events_before_wakeup = flagValue(source, appId, version, Flags.RPC_EVENTS_BEFORE_WAKEUP);
-            this.queryDispatchPolicy = flagValue(source, appId, version, Flags.QUERY_DISPATCH_POLICY);
-            this.queryDispatchWarmup = flagValue(source, appId, version, PermanentFlags.QUERY_DISPATCH_WARMUP);
-            this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
-            this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
-            this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
-            this.unknownConfigDefinition = flagValue(source, appId, version, Flags.UNKNOWN_CONFIG_DEFINITION);
-            this.searchHandlerThreadpool = flagValue(source, appId, version, Flags.SEARCH_HANDLER_THREADPOOL);
-            this.alwaysMarkPhraseExpensive =  flagValue(source, appId, version, Flags.ALWAYS_MARK_PHRASE_EXPENSIVE);
-            this.sortBlueprintsByCost = flagValue(source, appId, version, Flags.SORT_BLUEPRINTS_BY_COST);
-            this.persistenceThreadMaxFeedOpBatchSize = flagValue(source, appId, version, Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE);
-            this.logserverOtelCol = flagValue(source, appId, version, Flags.LOGSERVER_OTELCOL_AGENT);
-            this.sharedHosts = flagValue(source, appId, version, PermanentFlags.SHARED_HOST);
-            this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
+            this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
+            this.feedSequencer = Flags.FEED_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
+            this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
+            this.numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(source).with(appId).with(version).value();
+            this.useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(source).with(appId).with(version).value();
+            this.feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
+            this.feedNiceness = Flags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
+            this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
+            this.allowedAthenzProxyIdentities = Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
+            this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
+            this.jvmOmitStackTraceInFastThrow = type -> PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW.bindTo(source).with(appId).with(version).with(type).value();
+            this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
+            this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.minNodeRatioPerGroup = Flags.MIN_NODE_RATIO_PER_GROUP.bindTo(source).with(appId).with(version).value();
+            this.containerDumpHeapOnShutdownTimeout = Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
+            this.loadCodeAsHugePages = Flags.LOAD_CODE_AS_HUGEPAGES.bindTo(source).with(appId).with(version).value();
+            this.containerShutdownTimeout = Flags.CONTAINER_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
+            this.maxUnCommittedMemory = Flags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.forwardIssuesAsErrors = PermanentFlags.FORWARD_ISSUES_AS_ERRORS.bindTo(source).with(appId).with(version).value();
+            this.useV8GeoPositions = Flags.USE_V8_GEO_POSITIONS.bindTo(source).with(appId).with(version).value();
+            this.maxCompactBuffers = Flags.MAX_COMPACT_BUFFERS.bindTo(source).with(appId).with(version).value();
+            this.ignoredHttpUserAgents = PermanentFlags.IGNORED_HTTP_USER_AGENTS.bindTo(source).with(appId).with(version).value();
+            this.enableProxyProtocolMixedMode = Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE.bindTo(source).with(appId).with(version).value();
+            this.sharedStringRepoNoReclaim = Flags.SHARED_STRING_REPO_NO_RECLAIM.bindTo(source).with(appId).with(version).value();
+            this.logFileCompressionAlgorithm = Flags.LOG_FILE_COMPRESSION_ALGORITHM.bindTo(source).with(appId).with(version).value();
+            this.mbus_java_num_targets = Flags.MBUS_JAVA_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
+            this.mbus_java_events_before_wakeup = Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
+            this.mbus_cpp_num_targets = Flags.MBUS_CPP_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
+            this.mbus_cpp_events_before_wakeup = Flags.MBUS_CPP_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
+            this.rpc_num_targets = Flags.RPC_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
+            this.rpc_events_before_wakeup = Flags.RPC_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
+            this.queryDispatchPolicy = Flags.QUERY_DISPATCH_POLICY.bindTo(source).with(appId).with(version).value();
+            this.queryDispatchWarmup = PermanentFlags.QUERY_DISPATCH_WARMUP.bindTo(source).with(appId).with(version).value();
+            this.heapPercentage = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version).value();
+            this.summaryDecodePolicy = Flags.SUMMARY_DECODE_POLICY.bindTo(source).with(appId).with(version).value();
+            this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
+            this.unknownConfigDefinition = Flags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
+            this.searchHandlerThreadpool = Flags.SEARCH_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
+            this.alwaysMarkPhraseExpensive = Flags.ALWAYS_MARK_PHRASE_EXPENSIVE.bindTo(source).with(appId).with(version).value();
+            this.sortBlueprintsByCost = Flags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
+            this.persistenceThreadMaxFeedOpBatchSize = Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE.bindTo(source).with(appId).with(version).value();
+            this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
+            this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with( appId).with(version).value();
+            this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -313,41 +313,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean logserverOtelCol() { return logserverOtelCol; }
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
-
-        private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
-            return flag.bindTo(source)
-                    .with(Dimension.INSTANCE_ID, appId.serializedForm())
-                    .with(Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
-                    .with(Dimension.VESPA_VERSION, vespaVersion.toFullString())
-                    .with(Dimension.TENANT_ID, appId.tenant().value())
-                    .boxedValue();
-        }
-
-        private static <V> V flagValue(FlagSource source,
-                                       ApplicationId appId,
-                                       Version vespaVersion,
-                                       ClusterSpec.Type clusterType,
-                                       UnboundFlag<? extends V, ?, ?> flag) {
-            return flag.bindTo(source)
-                       .with(Dimension.INSTANCE_ID, appId.serializedForm())
-                       .with(Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
-                       .with(Dimension.CLUSTER_TYPE, clusterType.name())
-                       .with(Dimension.VESPA_VERSION, vespaVersion.toFullString())
-                       .boxedValue();
-        }
-
-        private static <V> V flagValue(FlagSource source,
-                                       ApplicationId appId,
-                                       Version vespaVersion,
-                                       ClusterSpec.Id clusterId,
-                                       UnboundFlag<? extends V, ?, ?> flag) {
-            return flag.bindTo(source)
-                       .with(Dimension.INSTANCE_ID, appId.serializedForm())
-                       .with(Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
-                       .with(Dimension.CLUSTER_ID, clusterId.value())
-                       .with(Dimension.VESPA_VERSION, vespaVersion.toFullString())
-                       .boxedValue();
-        }
 
         private String translateJvmOmitStackTraceInFastThrowToString(Predicate<ClusterSpec.Type> function,
                                                                      ClusterSpec.Type clusterType) {
@@ -422,14 +387,14 @@ public class ModelContextImpl implements ModelContext {
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
                     .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());
-            this.allowDisableMtls = flagValue(flagSource, applicationId, PermanentFlags.ALLOW_DISABLE_MTLS);
+            this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource).with(applicationId).value();
             this.operatorCertificates = operatorCertificates;
-            this.tlsCiphersOverride = flagValue(flagSource, applicationId, PermanentFlags.TLS_CIPHERS_OVERRIDE);
+            this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource).with(applicationId).value();
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
-            this.environmentVariables = flagValue(flagSource, applicationId, PermanentFlags.ENVIRONMENT_VARIABLES);
+            this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource).with(applicationId).value();
             this.cloudAccount = cloudAccount;
-            this.allowUserFilters = flagValue(flagSource, applicationId, PermanentFlags.ALLOW_USER_FILTERS);
-            this.endpointConnectionTtl = Duration.ofSeconds(flagValue(flagSource, applicationId, PermanentFlags.ENDPOINT_CONNECTION_TTL));
+            this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource).with(applicationId).value();
+            this.endpointConnectionTtl = Duration.ofSeconds(PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource).with(applicationId).value());
             this.dataplaneTokens = dataplaneTokens;
         }
 
@@ -528,12 +493,5 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean allowUserFilters() { return allowUserFilters; }
 
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
-    }
-
-    private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
-        return flag.bindTo(source)
-                .with(Dimension.INSTANCE_ID, appId.serializedForm())
-                .with(Dimension.APPLICATION, appId.toSerializedFormWithoutInstance())
-                .boxedValue();
     }
 }
