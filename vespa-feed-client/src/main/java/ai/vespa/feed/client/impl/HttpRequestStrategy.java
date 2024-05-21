@@ -8,10 +8,14 @@ import ai.vespa.feed.client.FeedClient.RetryStrategy;
 import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
+import ai.vespa.feed.client.impl.HttpFeedClient.ClusterFactory;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -21,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,10 +71,14 @@ class HttpRequestStrategy implements RequestStrategy {
         thread.setDaemon(true);
         return thread;
     });
+    // TODO jonmv: remove if this has no effect
+    private final ResettableCluster resettableCluster;
+    private final AtomicBoolean reset = new AtomicBoolean(false);
 
-    HttpRequestStrategy(FeedClientBuilderImpl builder, Cluster cluster) {
+    HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
         this.throttler = new DynamicThrottler(builder);
-        this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster, throttler) : cluster;
+        this.resettableCluster = new ResettableCluster(clusterFactory);
+        this.cluster = builder.benchmark ? new BenchmarkingCluster(resettableCluster, throttler) : resettableCluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
 
@@ -92,6 +101,12 @@ class HttpRequestStrategy implements RequestStrategy {
         try {
             while (breaker.state() != OPEN && ! destroyed.get()) {
                 while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
+
+                if (breaker.state() == HALF_OPEN && reset.compareAndSet(false, true))
+                    resettableCluster.reset();
+                else if (breaker.state() == CLOSED)
+                    reset.set(false);
+
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
                 Thread.sleep(breaker.state() == HALF_OPEN ? 100 : 1);
             }
@@ -168,6 +183,10 @@ class HttpRequestStrategy implements RequestStrategy {
         if (response.code() == 503) { // Hopefully temporary errors.
             breaker.failure(response);
             return retry(request, attempt);
+        }
+
+        if (response.code() >= 500) { // Server errors may indicate something wrong with the server.
+            breaker.failure(response);
         }
 
         return false;
@@ -304,6 +323,60 @@ class HttpRequestStrategy implements RequestStrategy {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Oof, this is an attempt to see if there's a terminal bug in the Jetty client library that sometimes
+     * renders a client instance permanently unusable. If this is the case, replacing the client altogether
+     * should allow the feeder to start working again, when it wouldn't otherwise be able to.
+     */
+    private static class ResettableCluster implements Cluster {
+
+        private final Object monitor = new Object();
+        private final ClusterFactory clusterFactory;
+        private AtomicLong inflight = new AtomicLong(0);
+        private Cluster delegate;
+
+        ResettableCluster(ClusterFactory clusterFactory) throws IOException {
+            this.clusterFactory = clusterFactory;
+            this.delegate = clusterFactory.create();
+        }
+
+        @Override
+        public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
+            synchronized (monitor) {
+                AtomicLong usedCounter = inflight;
+                Cluster usedCluster = delegate;
+                usedCounter.incrementAndGet();
+                delegate.dispatch(request, vessel);
+                vessel.whenComplete((__, ___) -> {
+                    synchronized (monitor) {
+                        if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate)
+                            usedCluster.close();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void close() {
+            synchronized (monitor) {
+                delegate.close();
+            }
+        }
+
+        @Override
+        public OperationStats stats() {
+            return delegate.stats();
+        }
+
+        void reset() throws IOException {
+            synchronized (monitor) {
+                delegate = clusterFactory.create();
+                inflight = new AtomicLong(0);
+            }
+        }
+
     }
 
 }

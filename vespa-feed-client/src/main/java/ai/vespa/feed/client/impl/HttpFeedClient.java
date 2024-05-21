@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -56,18 +57,19 @@ class HttpFeedClient implements FeedClient {
     private final boolean speedTest;
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
-        this(builder, builder.dryrun ? new DryrunCluster() : new JettyCluster(builder));
+        this(builder,
+             builder.dryrun ? () -> new DryrunCluster() : () -> new JettyCluster(builder));
     }
 
-    HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster) {
-        this(builder, cluster, new HttpRequestStrategy(builder, cluster));
+    HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
+        this(builder, clusterFactory, new HttpRequestStrategy(builder, clusterFactory));
     }
 
-    HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster, RequestStrategy requestStrategy) {
+    HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, RequestStrategy requestStrategy) throws IOException {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
-        verifyConnection(builder, cluster);
+        verifyConnection(builder, clusterFactory);
     }
 
     @Override
@@ -131,9 +133,9 @@ class HttpFeedClient implements FeedClient {
         return promise;
     }
 
-    private void verifyConnection(FeedClientBuilderImpl builder, Cluster cluster) {
+    private void verifyConnection(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
         Instant start = Instant.now();
-        try {
+        try (Cluster cluster = clusterFactory.create()) {
             HttpRequest request = new HttpRequest("POST",
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
                                                   requestHeaders,
@@ -315,6 +317,13 @@ class HttpFeedClient implements FeedClient {
         params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
         if (speedTest) query.add("dryRun=true");
         return query.toString();
+    }
+
+    /** Factory for creating a new {@link Cluster} to dispatch operations to. Used for resetting the active cluster. */
+    interface ClusterFactory {
+
+        Cluster create() throws IOException;
+
     }
 
 }
