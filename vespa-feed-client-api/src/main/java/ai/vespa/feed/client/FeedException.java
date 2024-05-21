@@ -44,4 +44,9 @@ public class FeedException extends RuntimeException {
 
     public Optional<DocumentId> documentId() { return Optional.ofNullable(documentId); }
 
+    @Override
+    public String getMessage() {
+        return documentId != null ? "(" + documentId + ") " + super.getMessage() : super.getMessage();
+    }
+
 }

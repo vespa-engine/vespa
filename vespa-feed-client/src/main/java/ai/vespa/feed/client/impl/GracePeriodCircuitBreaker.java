@@ -12,7 +12,6 @@ import java.util.function.LongSupplier;
 import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
@@ -24,22 +23,22 @@ import static java.util.logging.Level.WARNING;
 public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
 
     private static final Logger log = Logger.getLogger(GracePeriodCircuitBreaker.class.getName());
-    private static final long NEVER = 1L << 60;
 
-    private final AtomicLong failingSinceMillis = new AtomicLong(NEVER);
     private final AtomicBoolean halfOpen = new AtomicBoolean(false);
     private final AtomicBoolean open = new AtomicBoolean(false);
-    private final LongSupplier clock;
+    private final LongSupplier nanoClock;
+    private final long never;
+    private final AtomicLong failingSinceNanos;
     private final AtomicReference<String> detail = new AtomicReference<>();
-    private final long graceMillis;
-    private final long doomMillis;
+    private final long graceNanos;
+    private final long doomNanos;
 
     /**
      * Creates a new circuit breaker with the given grace periods.
      * @param grace the period of consecutive failures before state changes to half-open.
      */
     public GracePeriodCircuitBreaker(Duration grace) {
-        this(System::currentTimeMillis, grace, null);
+        this(System::nanoTime, grace, null);
     }
 
     /**
@@ -48,23 +47,25 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
      * @param doom the period of consecutive failures before shutting down.
      */
     public GracePeriodCircuitBreaker(Duration grace, Duration doom) {
-        this(System::currentTimeMillis, grace, doom);
+        this(System::nanoTime, grace, doom);
         if (doom.isNegative())
             throw new IllegalArgumentException("Doom delay must be non-negative");
     }
 
-    GracePeriodCircuitBreaker(LongSupplier clock, Duration grace, Duration doom) {
+    GracePeriodCircuitBreaker(LongSupplier nanoClock, Duration grace, Duration doom) {
         if (grace.isNegative())
             throw new IllegalArgumentException("Grace delay must be non-negative");
 
-        this.clock = requireNonNull(clock);
-        this.graceMillis = grace.toMillis();
-        this.doomMillis = doom == null ? -1 : doom.toMillis();
+        this.nanoClock = requireNonNull(nanoClock);
+        this.never = nanoClock.getAsLong() + (1L << 60);
+        this.graceNanos = grace.toNanos();
+        this.doomNanos = doom == null ? -1 : doom.toNanos();
+        this.failingSinceNanos = new AtomicLong(never);
     }
 
     @Override
     public void success() {
-        failingSinceMillis.set(NEVER);
+        failingSinceNanos.set(never);
         if ( ! open.get() && halfOpen.compareAndSet(true, false))
             log.log(INFO, "Circuit breaker is now closed, after a request was successful");
     }
@@ -80,21 +81,21 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     }
 
     private void failure(String detail) {
-        if (failingSinceMillis.compareAndSet(NEVER, clock.getAsLong()))
+        if (failingSinceNanos.compareAndSet(never, nanoClock.getAsLong()))
             this.detail.set(detail);
     }
 
     @Override
     public State state() {
-        long failingMillis = clock.getAsLong() - failingSinceMillis.get();
-        if (failingMillis > graceMillis && halfOpen.compareAndSet(false, true))
+        long failingNanos = nanoClock.getAsLong() - failingSinceNanos.get();
+        if (failingNanos > graceNanos && halfOpen.compareAndSet(false, true))
             log.log(INFO, "Circuit breaker is now half-open, as no requests have succeeded for the " +
-                          "last " + failingMillis + "ms. The server will be pinged to see if it recovers" +
-                          (doomMillis >= 0 ? ", but this client will give up if no successes are observed within " + doomMillis + "ms" : "") +
+                          "last " + failingNanos / 1_000_000 + "ms. The server will be pinged to see if it recovers" +
+                          (doomNanos >= 0 ? ", but this client will give up if no successes are observed within " + doomNanos / 1_000_000 + "ms" : "") +
                           ". First failure was '" + detail.get() + "'.");
 
-        if (doomMillis >= 0 && failingMillis > doomMillis && open.compareAndSet(false, true))
-            log.log(WARNING, "Circuit breaker is now open, after " + doomMillis + "ms of failing request, " +
+        if (doomNanos >= 0 && failingNanos > doomNanos && open.compareAndSet(false, true))
+            log.log(WARNING, "Circuit breaker is now open, after " + doomNanos / 1_000_000 + "ms of failing request, " +
                              "and this client will give up and abort its remaining feed operations.");
 
         return open.get() ? State.OPEN : halfOpen.get() ? State.HALF_OPEN : State.CLOSED;
