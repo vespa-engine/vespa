@@ -31,6 +31,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -96,7 +97,7 @@ class HttpRequestStrategy implements RequestStrategy {
             }
         }
         catch (Throwable t) {
-            log.log(WARNING, "Dispatch thread threw; shutting down", t);
+            log.log(SEVERE, "Dispatch thread threw; shutting down", t);
         }
         destroy();
     }
@@ -119,7 +120,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     private boolean retry(HttpRequest request, int attempt) {
-        if (attempt > strategy.retries())
+        if (attempt > strategy.retries() || request.timeLeft().toMillis() <= 0)
             return false;
 
         switch (request.method().toUpperCase()) {
@@ -137,7 +138,6 @@ class HttpRequestStrategy implements RequestStrategy {
     private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure(thrown);
         if (   (thrown instanceof IOException)               // General IO problems.
-
             //  Thrown by HTTP2Session.StreamsState.reserveSlot, likely on GOAWAY from server
             || (thrown instanceof IllegalStateException && thrown.getMessage().equals("session closed"))
         ) {
@@ -149,7 +149,7 @@ class HttpRequestStrategy implements RequestStrategy {
         return false;
     }
 
-    /** Retries throttled requests (429), adjusting the target inflight count, and server errors (500, 502, 503, 504). */
+    /** Retries throttled requests (429), adjusting the target inflight count, and server unavailable (503). */
     private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
         if (response.code() / 100 == 2 || response.code() == 404 || response.code() == 412) {
             logResponse(FINEST, response, request, attempt);
@@ -272,7 +272,8 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Handles the result of one attempt at the given operation, retrying if necessary. */
-    private void handleAttempt(CompletableFuture<HttpResponse> vessel, HttpRequest request, RetriableFuture<HttpResponse> result, int attempt) {
+    private void handleAttempt(CompletableFuture<HttpResponse> vessel, HttpRequest request,
+                               RetriableFuture<HttpResponse> result, int attempt) {
         vessel.whenCompleteAsync((response, thrown) -> {
                                      result.set(response, thrown);
                                      // Retry the operation if it failed with a transient error ...

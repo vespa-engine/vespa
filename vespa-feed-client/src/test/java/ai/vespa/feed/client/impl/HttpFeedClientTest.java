@@ -174,7 +174,7 @@ class HttpFeedClientTest {
                                                                                         .timeout(Duration.ofSeconds(5)))
                                                                 .get());
         assertTrue(expected.getCause() instanceof ResultException);
-        assertEquals("Ooops! ... I did it again.", expected.getCause().getMessage());
+        assertEquals("(id:ns:type::0) Ooops! ... I did it again.", expected.getCause().getMessage());
         assertEquals("[ { \"message\": \"I played with your heart. Got lost in the game.\" } ]", ((ResultException) expected.getCause()).getTrace().get());
 
 
@@ -207,14 +207,14 @@ class HttpFeedClientTest {
                                                  "json",
                                                  OperationParameters.empty())
                                             .get());
-        assertEquals("Status 500 executing 'POST /document/v1/ns/type/docid/0': Alla ska i jorden.", expected.getCause().getMessage());
+        assertEquals("(id:ns:type::0) Status 500 executing 'POST /document/v1/ns/type/docid/0': Alla ska i jorden.", expected.getCause().getMessage());
     }
 
     @Test
     void testHandshake() {
         // dummy:123 does not exist, and results in a host-not-found exception.
         FeedException exception = assertThrows(FeedException.class,
-                                                   () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))));
+                                               () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))));
         String message = exception.getMessage();
         assertTrue(message.startsWith("failed handshake with server after "), message);
         assertTrue(message.contains("java.net.UnknownHostException"), message);

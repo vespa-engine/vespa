@@ -186,7 +186,8 @@
       "public void <init>(java.lang.Throwable)",
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)",
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String, java.lang.Throwable)",
-      "public java.util.Optional documentId()"
+      "public java.util.Optional documentId()",
+      "public java.lang.String getMessage()"
     ],
     "fields" : [ ]
   },
