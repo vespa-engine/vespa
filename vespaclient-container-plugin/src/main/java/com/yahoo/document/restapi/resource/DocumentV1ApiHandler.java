@@ -1621,8 +1621,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     static String resolveBucket(StorageCluster cluster, Optional<String> documentType,
                                 List<String> bucketSpaces, Optional<String> bucketSpace) {
         return documentType.map(type -> cluster.bucketOf(type)
-                                               .orElseThrow(() -> new IllegalArgumentException("Document type '" + type + "' in cluster '" + cluster.name() +
-                                                                                               "' is not mapped to a known bucket space")))
+                                               .orElseThrow(() -> new IllegalArgumentException("There is no document type '" + type + "' in cluster '" + cluster.name() +
+                                                                                               "', only '" + String.join("', '", cluster.documentBuckets.keySet()) + "'")))
                            .or(() -> bucketSpace.map(space -> {
                                if ( ! bucketSpaces.contains(space))
                                    throw new IllegalArgumentException("Bucket space '" + space + "' is not a known bucket space; expected one of " +
