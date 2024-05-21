@@ -26,6 +26,7 @@
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/server/configstore.h>
+#include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/document/util/feed_reject_helper.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/server/feedhandler.h>
@@ -36,6 +37,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -78,6 +80,12 @@ using namespace search::index;
 using CountDownLatchUP = std::unique_ptr<vespalib::CountDownLatch>;
 
 namespace {
+
+constexpr int tls_port = proton::test::port_numbers::feedhandler_tls_port;
+
+vespalib::string tls_port_spec() {
+    return vespalib::SocketSpec::from_host_port("localhost", tls_port).spec();
+}
 
 struct Rendezvous {
     vespalib::Gate enter;
@@ -428,8 +436,8 @@ struct FeedHandlerFixture
     FeedHandlerFixture()
         : _fileHeaderContext(),
           _service(1),
-          tls(_service.transport(), "mytls", 9016, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
-          tlsSpec("tcp/localhost:9016"),
+          tls(_service.transport(), "mytls", tls_port, "mytlsdir", _fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000)),
+          tlsSpec(tls_port_spec()),
           schema(),
           owner(),
           _state(),

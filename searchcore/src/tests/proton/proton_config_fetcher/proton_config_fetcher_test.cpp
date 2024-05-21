@@ -48,6 +48,8 @@ using search::GrowStrategy;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::HwInfo;
 
+constexpr int proton_rpc_port = 9010; // Not used for listening in this test
+
 struct DoctypeFixture {
     using UP = std::unique_ptr<DoctypeFixture>;
     AttributesConfigBuilder attributesBuilder;
@@ -242,7 +244,7 @@ TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixtu
                                                                  ConfigRetriever(f2.createConfigKeySet(), f1.context)) {
     f2.update(f3.getBootstrapConfigs());
     ASSERT_TRUE(f1.configEqual(*f2.getConfig()));
-    f1.protonBuilder.rpcport = 9010;
+    f1.protonBuilder.rpcport = proton_rpc_port;
     ASSERT_FALSE(f1.configEqual(*f2.getConfig()));
     f1.reload();
     f2.update(f3.getBootstrapConfigs());
@@ -316,7 +318,7 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(*f2.getBootstrapConfig()));
     f2._configured = false;
-    f1.protonBuilder.rpcport = 9010;
+    f1.protonBuilder.rpcport = proton_rpc_port;
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(120s));
     ASSERT_TRUE(f1.configEqual(*f2.getBootstrapConfig()));
