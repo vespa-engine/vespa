@@ -8,6 +8,7 @@
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.rtchooks");
@@ -249,7 +250,7 @@ RPCHooksBase::rpc_die(FRT_RPCRequest * req)
         LOG(debug, "Nap for 10ms and then quickly exit.");
         req->Return();
         std::this_thread::sleep_for(10ms);
-        std::quick_exit(0);
+        std::_Exit(0);
     }));
 }
 
