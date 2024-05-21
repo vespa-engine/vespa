@@ -11,7 +11,6 @@ import ai.vespa.feed.client.Result;
 import ai.vespa.feed.client.ResultException;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -33,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HttpFeedClientTest {
 
     @Test
-    void testFeeding() throws ExecutionException, InterruptedException, IOException {
+    void testFeeding() throws ExecutionException, InterruptedException {
         DocumentId id = DocumentId.of("ns", "type", "0");
         AtomicReference<BiFunction<DocumentId, HttpRequest, CompletableFuture<HttpResponse>>> dispatch = new AtomicReference<>();
         class MockRequestStrategy implements RequestStrategy {
@@ -44,7 +43,7 @@ class HttpFeedClientTest {
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { return dispatch.get().apply(documentId, request); }
         }
         FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setDryrun(true),
-                                               () -> new DryrunCluster(),
+                                               new DryrunCluster(),
                                                new MockRequestStrategy());
 
         // Update is a PUT, and 200 OK is a success.
@@ -212,7 +211,7 @@ class HttpFeedClientTest {
     }
 
     @Test
-    void testHandshake() throws IOException {
+    void testHandshake() {
         // dummy:123 does not exist, and results in a host-not-found exception.
         FeedException exception = assertThrows(FeedException.class,
                                                () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))));
@@ -239,19 +238,19 @@ class HttpFeedClientTest {
         assertEquals("server does not support speed test; upgrade to a newer version",
                      assertThrows(FeedException.class,
                                   () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setSpeedTest(true),
-                                                           () -> cluster,
+                                                           cluster,
                                                            null))
                              .getMessage());
 
         // Old server.
         new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
-                           () -> cluster,
+                           cluster,
                            null);
 
         // New server.
         response.set(okResponse);
         new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
-                           () -> cluster,
+                           cluster,
                            null);
     }
 
