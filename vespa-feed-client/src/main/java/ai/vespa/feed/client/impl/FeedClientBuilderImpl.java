@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
@@ -58,9 +59,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     URI proxy;
     Duration connectionTtl = Duration.ZERO;
 
-
-    public FeedClientBuilderImpl() {
-    }
+    public FeedClientBuilderImpl() { }
 
     FeedClientBuilderImpl(List<URI> endpoints) {
         this();
