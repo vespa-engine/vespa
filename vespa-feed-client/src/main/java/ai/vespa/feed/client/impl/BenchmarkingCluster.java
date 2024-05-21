@@ -48,9 +48,7 @@ public class BenchmarkingCluster implements Cluster {
     public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         requests.incrementAndGet();
         long startNanos = System.nanoTime();
-        if (timeOfFirstDispatch.get() == 0) {
-            timeOfFirstDispatch.set(startNanos);
-        }
+        timeOfFirstDispatch.compareAndSet(0, startNanos);
         delegate.dispatch(request, vessel);
         vessel.whenCompleteAsync((response, thrown) -> {
                                      results++;
@@ -94,8 +92,8 @@ public class BenchmarkingCluster implements Cluster {
             if (responsesByCode[code] > 0)
                 responses.put(code, responsesByCode[code]);
 
-        double duration = (System.nanoTime() - timeOfFirstDispatch.get())*1e-9;
-        return new  OperationStats(duration, requests, responses, exceptions,
+        double duration = (System.nanoTime() - timeOfFirstDispatch.get()) * 1e-9;
+        return new OperationStats(duration, requests, responses, exceptions,
                                   requests - results, throttler.targetInflight(),
                                   this.responses == 0 ? -1 : totalLatencyMillis / this.responses,
                                   this.responses == 0 ? -1 : minLatencyMillis,
