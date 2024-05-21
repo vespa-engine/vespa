@@ -17,6 +17,7 @@
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
+#include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
@@ -65,6 +66,12 @@ using PersistenceFactory = ConformanceTest::PersistenceFactory;
 using DocumenttypesConfigSP = DocumentDBConfig::DocumenttypesConfigSP;
 using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
 using DocTypeVector = std::vector<DocTypeName>;
+
+namespace {
+
+constexpr int tls_port = proton::test::port_numbers::persistenceconformance_tls_port;
+
+}
 
 void
 storeDocType(DocTypeVector *types, const DocumentType &type)
@@ -381,7 +388,7 @@ public:
 std::unique_ptr<PersistenceFactory>
 makeMyPersistenceFactory(const std::string &docType)
 {
-    return std::make_unique<MyPersistenceFactory>("testdb", 9017, SchemaConfigFactory::get(), docType);
+    return std::make_unique<MyPersistenceFactory>("testdb", tls_port, SchemaConfigFactory::get(), docType);
 }
 
 int

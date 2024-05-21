@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/server/proton_disk_layout.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
@@ -19,7 +20,7 @@ using proton::DocTypeName;
 using proton::ProtonDiskLayout;
 using proton::Transport;
 
-static constexpr unsigned int tlsPort = 9018;
+static constexpr unsigned int tlsPort = proton::test::port_numbers::proton_disk_layout_tls_port;
 
 static const vespalib::string baseDir("testdb");
 static const vespalib::string documentsDir(baseDir + "/documents");

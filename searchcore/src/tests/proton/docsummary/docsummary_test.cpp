@@ -18,6 +18,7 @@
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
+#include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -63,6 +64,7 @@
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -102,6 +104,16 @@ using vespalib::HwInfo;
 using vespalib::Slime;
 using vespalib::geo::ZCurve;
 using namespace vespalib::slime;
+
+namespace {
+
+constexpr int tls_port = proton::test::port_numbers::docsummary_tls_port;
+
+vespalib::string tls_port_spec() {
+    return vespalib::SocketSpec::from_host_port("localhost", tls_port).spec();
+}
+
+}
 
 namespace proton {
 
@@ -248,7 +260,7 @@ public:
           _fileHeaderContext(),
           _summaryExecutor(8),
           _shared_service(_summaryExecutor),
-          _tls(_shared_service.transport(), "tmp", 9013, ".", _fileHeaderContext),
+          _tls(_shared_service.transport(), "tmp", tls_port, ".", _fileHeaderContext),
           _made_dir(std::filesystem::create_directory(std::filesystem::path("tmpdb"))),
           _queryLimiter(),
           _dummy(),
@@ -271,7 +283,7 @@ public:
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(_shared_service.transport(), 0ms);
         std::filesystem::create_directory(std::filesystem::path(std::string("tmpdb/") + docTypeName));
-        _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter,
+        _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), tls_port_spec(), _queryLimiter,
                                   DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
                                   _shared_service, _tls, _dummy, _fileHeaderContext,
                                   std::make_shared<search::attribute::Interlock>(),

@@ -20,6 +20,7 @@
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
+#include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config/subscription/sourcespec.h>
@@ -33,6 +34,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -60,6 +62,12 @@ using vespalib::HwInfo;
 using vespalib::Slime;
 
 namespace {
+
+constexpr int tls_port = proton::test::port_numbers::documentdb_tls_port;
+
+vespalib::string tls_port_spec() {
+    return vespalib::SocketSpec::from_host_port("localhost", tls_port).spec();
+}
 
 void
 cleanup_dirs(bool file_config)
@@ -133,7 +141,7 @@ Fixture::Fixture(bool file_config)
       _hwInfo(),
       _db(),
       _fileHeaderContext(),
-      _tls(_shared_service.transport(), "tmp", 9014, ".", _fileHeaderContext),
+      _tls(_shared_service.transport(), "tmp", tls_port, ".", _fileHeaderContext),
       _queryLimiter()
 {
     auto documenttypesConfig = std::make_shared<DocumenttypesConfig>();
@@ -149,7 +157,7 @@ Fixture::Fixture(bool file_config)
                               tuneFileDocumentDB, HwInfo());
     mgr.forwardConfig(b);
     mgr.nextGeneration(_shared_service.transport(), 0ms);
-    _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, DocTypeName("typea"),
+    _db = DocumentDB::create(".", mgr.getConfig(), tls_port_spec(), _queryLimiter, DocTypeName("typea"),
                              makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _shared_service, _tls, _dummy,
                              _fileHeaderContext,
