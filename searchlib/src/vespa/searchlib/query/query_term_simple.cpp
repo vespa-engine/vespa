@@ -49,7 +49,7 @@ template <typename T>
 struct FloatDecoder {
     static T fromstr(const char * q, const char * qend, const char ** end) noexcept {
         T v(0);
-#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 180000
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 190000
         vespalib::string tmp(q, qend - q);
         char* tmp_end = nullptr;
         const char *tmp_cstring = tmp.c_str();

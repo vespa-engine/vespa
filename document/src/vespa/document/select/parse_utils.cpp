@@ -22,9 +22,10 @@ parse_i64(const char* str, size_t len, int64_t& out) {
     auto res = std::from_chars(str, str+len, out, 10);
     return (res.ec == std::errc()) && (res.ptr == str+len);
 }
+
 bool
 parse_double(const char* str, size_t len, double& out) {
-#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 180000
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 190000
     // Temporary workaround that also handles underflow (cf. issue 3081)
     // until libc++ supports std::from_chars for double
     char *str_end = const_cast<char*>(str) + len;
