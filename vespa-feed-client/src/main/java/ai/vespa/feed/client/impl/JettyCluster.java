@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -82,11 +81,8 @@ class JettyCluster implements Cluster {
             Endpoint endpoint = findLeastBusyEndpoint(endpoints);
             try {
                 endpoint.inflight.incrementAndGet();
-                long reqTimeoutMillis = req.timeLeft().toMillis();
-                if (reqTimeoutMillis <= 0) {
-                    vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
-                    return;
-                }
+                long reqTimeoutMillis = req.timeout() != null
+                        ? req.timeout().toMillis() * 11 / 10 + 1000 : IDLE_TIMEOUT.toMillis();
                 Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))

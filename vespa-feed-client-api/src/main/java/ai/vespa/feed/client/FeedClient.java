@@ -2,7 +2,6 @@
 package ai.vespa.feed.client;
 
 import java.io.Closeable;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -75,8 +74,8 @@ public interface FeedClient extends Closeable {
         /** Whether to retry operations of the given type. */
         default boolean retry(OperationType type) { return true; }
 
-        /** Maximum number of retries per operation for assumed transient, non-backpressure problems. */
-        default int retries() { return Integer.MAX_VALUE; }
+        /** Number of retries per operation for assumed transient, non-backpressure problems. */
+        default int retries() { return 10; }
 
     }
 
