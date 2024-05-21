@@ -113,7 +113,7 @@ class HttpFeedClient implements FeedClient {
                                               requestHeaders,
                                               operationJson == null ? null : operationJson.getBytes(UTF_8), // TODO: make it bytes all the way?
                                               params.timeout().orElse(maxTimeout),
-                                              System::currentTimeMillis);
+                                              System::nanoTime);
 
         CompletableFuture<Result> promise = new CompletableFuture<>();
         requestStrategy.enqueue(documentId, request)
@@ -139,7 +139,7 @@ class HttpFeedClient implements FeedClient {
                                                   requestHeaders,
                                                   null,
                                                   Duration.ofSeconds(15),
-                                                  System::currentTimeMillis);
+                                                  System::nanoTime);
             CompletableFuture<HttpResponse> future = new CompletableFuture<>();
             cluster.dispatch(request, future);
             HttpResponse response = future.get(20, TimeUnit.SECONDS);

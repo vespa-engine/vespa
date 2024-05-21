@@ -84,7 +84,7 @@ class JettyCluster implements Cluster {
                 endpoint.inflight.incrementAndGet();
                 long reqTimeoutMillis = req.timeLeft().toMillis();
                 if (reqTimeoutMillis <= 0) {
-                    vessel.completeExceptionally(new TimeoutException("Operation timed out"));
+                    vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
                     return;
                 }
                 Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))

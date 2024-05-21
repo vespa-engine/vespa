@@ -11,10 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,8 +85,8 @@ class HttpRequestStrategyTest {
     void testRetries() throws ExecutionException, InterruptedException {
         int minStreams = 2; // Hard limit for minimum number of streams per connection.
         MockCluster cluster = new MockCluster();
-        AtomicLong now = new AtomicLong(0);
-        CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
+        AtomicLong nowNanos = new AtomicLong(0);
+        CircuitBreaker breaker = new GracePeriodCircuitBreaker(nowNanos::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
         HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
                                                                        .setRetryStrategy(new FeedClient.RetryStrategy() {
                                                                            @Override public boolean retry(FeedClient.OperationType type) { return type == FeedClient.OperationType.PUT; }
@@ -103,7 +100,7 @@ class HttpRequestStrategyTest {
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");
-        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(180), now::get);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(180), nowNanos::get);
 
         // Runtime exception is not retried.
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
@@ -115,7 +112,7 @@ class HttpRequestStrategyTest {
 
         // IOException is retried.
         cluster.expect((__, vessel) -> {
-            now.addAndGet(200); // Exceed grace period.
+            nowNanos.addAndGet(200_000_000L); // Exceed grace period.
             vessel.completeExceptionally(new IOException("retry me"));
         });
         expected = assertThrows(ExecutionException.class,
@@ -130,7 +127,7 @@ class HttpRequestStrategyTest {
         assertEquals(4, strategy.stats().requests());
 
         // Throttled requests are retried. Concurrent operations to same ID (only) are serialised.
-        now.set(2000);
+        nowNanos.set(2_000_000_000L);
         HttpResponse throttled = HttpResponse.of(429, null);
         AtomicInteger count = new AtomicInteger(3);
         CountDownLatch latch = new CountDownLatch(1);
@@ -147,11 +144,11 @@ class HttpRequestStrategyTest {
             else vessel.complete(success);
         });
         CompletableFuture<HttpResponse> delayed = strategy.enqueue(id1, request);
-        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), now::get));
-        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null, Duration.ofSeconds(1), now::get)).get());
+        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), nowNanos::get));
+        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null, Duration.ofSeconds(1), nowNanos::get)).get());
         latch.await();
         assertEquals(8, strategy.stats().requests()); // 3 attempts at throttled and one at id2.
-        now.set(4000);
+        nowNanos.set(4_000_000_000L);
         assertEquals(CLOSED, breaker.state()); // Circuit not broken due to throttled requests.
         completion.get().complete(success);
         assertEquals(success, delayed.get());
@@ -160,7 +157,7 @@ class HttpRequestStrategyTest {
         // Some error responses are retried.
         HttpResponse serverError = HttpResponse.of(503, null);
         cluster.expect((__, vessel) -> {
-            now.addAndGet(200); // Exceed grace period.
+            nowNanos.addAndGet(200_000_000L); // Exceed grace period.
             vessel.complete(serverError);
         });
         assertEquals(serverError, strategy.enqueue(id1, request).get());
@@ -169,7 +166,7 @@ class HttpRequestStrategyTest {
 
         // Error responses are not retried when not of appropriate type.
         cluster.expect((__, vessel) -> vessel.complete(serverError));
-        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), now::get)).get());
+        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), nowNanos::get)).get());
         assertEquals(12, strategy.stats().requests());
 
         // Some error responses are not retried.
@@ -181,19 +178,19 @@ class HttpRequestStrategyTest {
 
         // IOException is not retried past timeout.
         cluster.expect((__, vessel) -> {
-            now.addAndGet(50); // Exceed grace period after 2 attempts.
+            nowNanos.addAndGet(50_000_000L); // Exceed grace period after 2 attempts.
             vessel.completeExceptionally(new IOException("retry me"));
         });
         expected = assertThrows(ExecutionException.class,
-                                () -> strategy.enqueue(id1, new HttpRequest("POST", "/", null, null, Duration.ofMillis(100), now::get)).get());
+                                () -> strategy.enqueue(id1, new HttpRequest("POST", "/", null, null, Duration.ofMillis(100), nowNanos::get)).get());
         assertEquals("retry me", expected.getCause().getCause().getMessage());
         assertEquals(15, strategy.stats().requests());
 
 
         // Circuit breaker opens some time after starting to fail.
-        now.set(6000);
+        nowNanos.set(6_000_000_000L);
         assertEquals(HALF_OPEN, breaker.state()); // Circuit broken due to failed requests.
-        now.set(605000);
+        nowNanos.set(605_000_000_000L);
         assertEquals(OPEN, breaker.state()); // Circuit broken due to failed requests.
 
         strategy.destroy();
@@ -215,8 +212,8 @@ class HttpRequestStrategyTest {
     @Test
     void testShutdown() {
         MockCluster cluster = new MockCluster();
-        AtomicLong now = new AtomicLong(0);
-        CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
+        AtomicLong nowNanos = new AtomicLong(0);
+        CircuitBreaker breaker = new GracePeriodCircuitBreaker(nowNanos::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
         HttpRequestStrategy strategy = new HttpRequestStrategy(new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
                                                                                 .setRetryStrategy(new FeedClient.RetryStrategy() {
                                                                                     @Override public int retries() { return 1; }
@@ -230,10 +227,10 @@ class HttpRequestStrategyTest {
         DocumentId id3 = DocumentId.of("ns", "type", "3");
         DocumentId id4 = DocumentId.of("ns", "type", "4");
         DocumentId id5 = DocumentId.of("ns", "type", "5");
-        HttpRequest failing = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
-        HttpRequest partial = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
-        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
-        HttpRequest blocking = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get);
+        HttpRequest failing = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
+        HttpRequest partial = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
+        HttpRequest blocking = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
 
         // Enqueue some operations to the same id, which are serialised, and then shut down while operations are in flight.
         Phaser phaser = new Phaser(2);

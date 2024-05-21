@@ -12,16 +12,18 @@ class HttpRequest {
     private final String path;
     private final Map<String, Supplier<String>> headers;
     private final byte[] body;
-    private final long deadlineMillis;
-    private final LongSupplier clock;
+    private final Duration timeout;
+    private final long deadlineNanos;
+    private final LongSupplier nanoClock;
 
-    public HttpRequest(String method, String path, Map<String, Supplier<String>> headers, byte[] body, Duration timeout, LongSupplier clock) {
+    public HttpRequest(String method, String path, Map<String, Supplier<String>> headers, byte[] body, Duration timeout, LongSupplier nanoClock) {
         this.method = method;
         this.path = path;
         this.headers = headers;
         this.body = body;
-        this.deadlineMillis = clock.getAsLong() + timeout.toMillis();
-        this.clock = clock;
+        this.deadlineNanos = nanoClock.getAsLong() + timeout.toNanos();
+        this.timeout = timeout;
+        this.nanoClock = nanoClock;
     }
 
     public String method() {
@@ -41,7 +43,11 @@ class HttpRequest {
     }
 
     public Duration timeLeft() {
-        return Duration.ofMillis(deadlineMillis - clock.getAsLong());
+        return Duration.ofNanos(deadlineNanos - nanoClock.getAsLong());
+    }
+
+    public Duration timeout() {
+        return timeout;
     }
 
     @Override
