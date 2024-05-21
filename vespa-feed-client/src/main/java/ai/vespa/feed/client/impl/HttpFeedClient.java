@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -30,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import static ai.vespa.feed.client.OperationParameters.empty;
@@ -45,7 +45,6 @@ import static java.util.Objects.requireNonNull;
  */
 class HttpFeedClient implements FeedClient {
 
-    private static final Duration maxTimeout = Duration.ofMinutes(15);
     private static final JsonFactory jsonParserFactory = new JsonFactoryBuilder()
             .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
             .build();
@@ -112,8 +111,7 @@ class HttpFeedClient implements FeedClient {
                                               getPath(documentId) + getQuery(params, speedTest),
                                               requestHeaders,
                                               operationJson == null ? null : operationJson.getBytes(UTF_8), // TODO: make it bytes all the way?
-                                              params.timeout().orElse(maxTimeout),
-                                              System::nanoTime);
+                                              params.timeout().orElse(null));
 
         CompletableFuture<Result> promise = new CompletableFuture<>();
         requestStrategy.enqueue(documentId, request)
@@ -138,8 +136,7 @@ class HttpFeedClient implements FeedClient {
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
                                                   requestHeaders,
                                                   null,
-                                                  Duration.ofSeconds(15),
-                                                  System::nanoTime);
+                                                  Duration.ofSeconds(15));
             CompletableFuture<HttpResponse> future = new CompletableFuture<>();
             cluster.dispatch(request, future);
             HttpResponse response = future.get(20, TimeUnit.SECONDS);
