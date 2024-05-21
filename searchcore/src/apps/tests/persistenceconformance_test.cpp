@@ -34,6 +34,8 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/hw_info.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <cstdlib>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -69,7 +71,20 @@ using DocTypeVector = std::vector<DocTypeName>;
 
 namespace {
 
-constexpr int tls_port = proton::test::port_numbers::persistenceconformance_tls_port;
+constexpr int tls_port_base = proton::test::port_numbers::persistenceconformance_tls_port_base;
+constexpr int tls_port_max_bias = proton::test::port_numbers::persistenceconformance_tls_port_max_bias;
+
+int shard_index = 0;
+
+void
+calc_shard_index()
+{
+    const auto* shard = std::getenv("GTEST_SHARD_INDEX");
+    if (shard != nullptr) {
+        shard_index = std::atoi(shard);
+        assert(shard_index >= 0 && shard_index <= tls_port_max_bias);
+    }
+}
 
 }
 
@@ -388,12 +403,14 @@ public:
 std::unique_ptr<PersistenceFactory>
 makeMyPersistenceFactory(const std::string &docType)
 {
-    return std::make_unique<MyPersistenceFactory>("testdb", tls_port, SchemaConfigFactory::get(), docType);
+    auto base_dir = vespalib::make_string("testdb%03d", shard_index);
+    return std::make_unique<MyPersistenceFactory>(base_dir, tls_port_base + shard_index, SchemaConfigFactory::get(), docType);
 }
 
 int
 main(int argc, char* argv[])
 {
+    calc_shard_index();
     ::testing::InitGoogleTest(&argc, argv);
     DummyFileHeaderContext::setCreator("persistenceconformance_test");
     ConformanceTest::_factoryFactory = &makeMyPersistenceFactory;
