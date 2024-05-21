@@ -185,8 +185,18 @@ public class DocumentV1ApiTest {
         StorageCluster cluster = DocumentV1ApiHandler.resolveCluster(Optional.of("content"), clusters);
         assertEquals(FixedBucketSpaces.defaultSpace(),
                      DocumentV1ApiHandler.resolveBucket(cluster, Optional.of("music"), List.of(), Optional.empty()));
+        assertEquals(FixedBucketSpaces.defaultSpace(),
+                     DocumentV1ApiHandler.resolveBucket(cluster, Optional.empty(), List.of(), Optional.empty()));
         assertEquals(FixedBucketSpaces.globalSpace(),
                      DocumentV1ApiHandler.resolveBucket(cluster, Optional.empty(), List.of(FixedBucketSpaces.globalSpace()), Optional.of("global")));
+        try {
+            DocumentV1ApiHandler.resolveBucket(cluster, Optional.of("musicc"), List.of(), Optional.empty());
+            fail("should fail with unknown document type");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("There is no document type 'musicc' in cluster 'content', only 'music'",
+                         e.getMessage());
+        }
     }
 
     @Test
