@@ -12,7 +12,11 @@ namespace proton::test::port_numbers {
 constexpr int docsummary_tls_port = 9013;
 constexpr int documentdb_tls_port = 9014;
 constexpr int feedhandler_tls_port = 9016;
-constexpr int persistenceconformance_tls_port = 9017;
+
+// Use ports 9020..9029 for persistenceconformance test
+constexpr int persistenceconformance_tls_port_base = 9020;
+constexpr int persistenceconformance_tls_port_max_bias = 9;
+
 constexpr int proton_disk_layout_tls_port = 9018;
 
 }
