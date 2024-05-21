@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HttpRequestStrategyTest {
 
     @Test
-    void testConcurrency() {
+    void testConcurrency() throws IOException {
         int documents = 1 << 16;
         HttpRequest request = new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), () -> 0);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
@@ -84,7 +84,7 @@ class HttpRequestStrategyTest {
     }
 
     @Test()
-    void testRetries() throws ExecutionException, InterruptedException {
+    void testRetries() throws ExecutionException, InterruptedException, IOException {
         int minStreams = 2; // Hard limit for minimum number of streams per connection.
         MockCluster cluster = new MockCluster();
         AtomicLong now = new AtomicLong(0);
@@ -212,7 +212,7 @@ class HttpRequestStrategyTest {
     }
 
     @Test
-    void testResettingCluster() throws ExecutionException, InterruptedException {
+    void testResettingCluster() throws ExecutionException, InterruptedException, IOException {
         List<MockCluster> clusters = List.of(new MockCluster(), new MockCluster());
         AtomicLong now = new AtomicLong(0);
         CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), null);
@@ -259,7 +259,7 @@ class HttpRequestStrategyTest {
     }
 
     @Test
-    void testShutdown() {
+    void testShutdown() throws IOException {
         MockCluster cluster = new MockCluster();
         AtomicLong now = new AtomicLong(0);
         CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(10));

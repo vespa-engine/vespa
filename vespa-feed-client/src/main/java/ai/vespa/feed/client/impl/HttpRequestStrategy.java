@@ -8,12 +8,14 @@ import ai.vespa.feed.client.FeedClient.RetryStrategy;
 import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
+import ai.vespa.feed.client.impl.HttpFeedClient.ClusterFactory;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -73,9 +75,9 @@ class HttpRequestStrategy implements RequestStrategy {
     private final ResettableCluster resettableCluster;
     private final AtomicBoolean reset = new AtomicBoolean(false);
 
-    HttpRequestStrategy(FeedClientBuilderImpl builder, Supplier<Cluster> clusters) {
+    HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
         this.throttler = new DynamicThrottler(builder);
-        this.resettableCluster = new ResettableCluster(clusters);
+        this.resettableCluster = new ResettableCluster(clusterFactory);
         this.cluster = builder.benchmark ? new BenchmarkingCluster(resettableCluster, throttler) : resettableCluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
@@ -331,19 +333,29 @@ class HttpRequestStrategy implements RequestStrategy {
     private static class ResettableCluster implements Cluster {
 
         private final Object monitor = new Object();
-        private final Deque<CompletableFuture<?>> inflight = new ArrayDeque<>();
-        private final Supplier<Cluster> delegates;
+        private final ClusterFactory clusterFactory;
+        private AtomicLong inflight = new AtomicLong(0);
         private Cluster delegate;
 
-        ResettableCluster(Supplier<Cluster> delegates) {
-            this.delegates = delegates;
-            this.delegate = delegates.get();
+        ResettableCluster(ClusterFactory clusterFactory) throws IOException {
+            this.clusterFactory = clusterFactory;
+            this.delegate = clusterFactory.create();
         }
 
         @Override
         public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
-            inflight.add(vessel);
-            delegate.dispatch(request, vessel);
+            synchronized (monitor) {
+                AtomicLong usedCounter = inflight;
+                Cluster usedCluster = delegate;
+                usedCounter.incrementAndGet();
+                delegate.dispatch(request, vessel);
+                vessel.whenComplete((__, ___) -> {
+                    synchronized (monitor) {
+                        if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate)
+                            usedCluster.close();
+                    }
+                });
+            }
         }
 
         @Override
@@ -358,13 +370,10 @@ class HttpRequestStrategy implements RequestStrategy {
             return delegate.stats();
         }
 
-        void reset() {
+        void reset() throws IOException {
             synchronized (monitor) {
-                Cluster obsolete = delegate;
-                CompletableFuture.allOf(inflight.toArray(CompletableFuture[]::new))
-                                 .whenComplete((__, ___) -> obsolete.close());
-                inflight.clear();
-                delegate = delegates.get();
+                delegate = clusterFactory.create();
+                inflight = new AtomicLong(0);
             }
         }
 

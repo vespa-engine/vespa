@@ -58,19 +58,18 @@ class HttpFeedClient implements FeedClient {
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
         this(builder,
-             builder.dryrun ? () -> new DryrunCluster()
-                            : () -> { try { return new JettyCluster(builder); } catch (IOException e) { throw new UncheckedIOException(e); } });
+             builder.dryrun ? () -> new DryrunCluster() : () -> new JettyCluster(builder));
     }
 
-    HttpFeedClient(FeedClientBuilderImpl builder, Supplier<Cluster> clusters) {
-        this(builder, clusters, new HttpRequestStrategy(builder, clusters));
+    HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
+        this(builder, clusterFactory, new HttpRequestStrategy(builder, clusterFactory));
     }
 
-    HttpFeedClient(FeedClientBuilderImpl builder, Supplier<Cluster> clusters, RequestStrategy requestStrategy) {
+    HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, RequestStrategy requestStrategy) throws IOException {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
-        verifyConnection(builder, clusters);
+        verifyConnection(builder, clusterFactory);
     }
 
     @Override
@@ -134,9 +133,9 @@ class HttpFeedClient implements FeedClient {
         return promise;
     }
 
-    private void verifyConnection(FeedClientBuilderImpl builder, Supplier<Cluster> clusters) {
+    private void verifyConnection(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
         Instant start = Instant.now();
-        try (Cluster cluster = clusters.get()) {
+        try (Cluster cluster = clusterFactory.create()) {
             HttpRequest request = new HttpRequest("POST",
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
                                                   requestHeaders,
@@ -318,6 +317,13 @@ class HttpFeedClient implements FeedClient {
         params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
         if (speedTest) query.add("dryRun=true");
         return query.toString();
+    }
+
+    /** Factory for creating a new {@link Cluster} to dispatch operations to. Used for resetting the active cluster. */
+    interface ClusterFactory {
+
+        Cluster create() throws IOException;
+
     }
 
 }

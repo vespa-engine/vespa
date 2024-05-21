@@ -11,6 +11,7 @@ import ai.vespa.feed.client.Result;
 import ai.vespa.feed.client.ResultException;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -32,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HttpFeedClientTest {
 
     @Test
-    void testFeeding() throws ExecutionException, InterruptedException {
+    void testFeeding() throws ExecutionException, InterruptedException, IOException {
         DocumentId id = DocumentId.of("ns", "type", "0");
         AtomicReference<BiFunction<DocumentId, HttpRequest, CompletableFuture<HttpResponse>>> dispatch = new AtomicReference<>();
         class MockRequestStrategy implements RequestStrategy {
@@ -211,7 +212,7 @@ class HttpFeedClientTest {
     }
 
     @Test
-    void testHandshake() {
+    void testHandshake() throws IOException {
         // dummy:123 does not exist, and results in a host-not-found exception.
         FeedException exception = assertThrows(FeedException.class,
                                                () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))));
