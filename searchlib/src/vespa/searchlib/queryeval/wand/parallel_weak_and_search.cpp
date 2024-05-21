@@ -199,17 +199,17 @@ namespace {
 template <typename VectorizedTerms, typename FutureHeap, typename PastHeap>
 SearchIterator::UP create_helper(search::fef::TermFieldMatchData &tfmd, VectorizedTerms &&terms, const MatchParams &params, bool strict) {
     if (strict) {
-        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, true>>(tfmd, std::move(terms), params);
+        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, true>>(tfmd, std::forward<VectorizedTerms>(terms), params);
     } else {
-        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, false>>(tfmd, std::move(terms), params);
+        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, false>>(tfmd, std::forward<VectorizedTerms>(terms), params);
     }
 }
 
 template <typename VectorizedTerms>
 SearchIterator::UP create_helper(search::fef::TermFieldMatchData &tfmd, VectorizedTerms &&terms, const MatchParams &params, bool strict, bool use_array) {
     return (use_array)
-        ? create_helper<VectorizedTerms, vespalib::LeftArrayHeap, vespalib::RightArrayHeap>(tfmd, std::move(terms), params, strict)
-        : create_helper<VectorizedTerms, vespalib::LeftHeap, vespalib::RightHeap>(tfmd, std::move(terms), params, strict);
+        ? create_helper<VectorizedTerms, vespalib::LeftArrayHeap, vespalib::RightArrayHeap>(tfmd, std::forward<VectorizedTerms>(terms), params, strict)
+        : create_helper<VectorizedTerms, vespalib::LeftHeap, vespalib::RightHeap>(tfmd, std::forward<VectorizedTerms>(terms), params, strict);
 }
 
 } // namespace search::queryeval::<unnamed>
