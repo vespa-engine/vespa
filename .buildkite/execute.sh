@@ -19,7 +19,7 @@ trap report EXIT
 
 echo "Executing $STEP"
 START=$(date '+%s')
-/usr/bin/time -p "$MYDIR/$STEP.sh" &> "$LOG_DIR/$STEP.log" || (cp -a "$LOG_DIR/$STEP.log" "$LOG_DIR/error-$STEP.log" && cat "$LOG_DIR/$STEP.log" && false)
+/usr/bin/time -v -p "$MYDIR/$STEP.sh" &> "$LOG_DIR/$STEP.log" || (cp -a "$LOG_DIR/$STEP.log" "$LOG_DIR/error-$STEP.log" && cat "$LOG_DIR/$STEP.log" && false)
 
 if [[ -n $VERBOSE ]]; then
     cat "$LOG_DIR/$STEP.log"
