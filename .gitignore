@@ -54,3 +54,4 @@ install_manifest.txt
 /vespaConfigVersion.cmake
 *.cbp
 !/.copr/Makefile
+!/.buildkite/Makefile
