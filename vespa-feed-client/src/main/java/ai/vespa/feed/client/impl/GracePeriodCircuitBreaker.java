@@ -90,12 +90,12 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
         long failingNanos = nanoClock.getAsLong() - failingSinceNanos.get();
         if (failingNanos > graceNanos && halfOpen.compareAndSet(false, true))
             log.log(INFO, "Circuit breaker is now half-open, as no requests have succeeded for the " +
-                          "last " + failingNanos / 1000 + "ms. The server will be pinged to see if it recovers" +
-                          (doomNanos >= 0 ? ", but this client will give up if no successes are observed within " + doomNanos / 1000 + "ms" : "") +
+                          "last " + failingNanos / 1_000_000 + "ms. The server will be pinged to see if it recovers" +
+                          (doomNanos >= 0 ? ", but this client will give up if no successes are observed within " + doomNanos / 1_000_000 + "ms" : "") +
                           ". First failure was '" + detail.get() + "'.");
 
         if (doomNanos >= 0 && failingNanos > doomNanos && open.compareAndSet(false, true))
-            log.log(WARNING, "Circuit breaker is now open, after " + doomNanos / 1000 + "ms of failing request, " +
+            log.log(WARNING, "Circuit breaker is now open, after " + doomNanos / 1_000_000 + "ms of failing request, " +
                              "and this client will give up and abort its remaining feed operations.");
 
         return open.get() ? State.OPEN : halfOpen.get() ? State.HALF_OPEN : State.CLOSED;
