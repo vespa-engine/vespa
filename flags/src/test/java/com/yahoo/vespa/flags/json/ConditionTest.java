@@ -48,6 +48,9 @@ public class ConditionTest {
         var params = new Condition.CreateParams(Dimension.VESPA_VERSION).withPredicate(">=7.1.2");
         Condition condition = RelationalCondition.create(params);
         assertFalse(condition.test(new FetchVector()));
+
+        assertFalse(vespaVersionCondition("8.344.678", ">= 8.345"));
+        assertTrue(vespaVersionCondition("8.345.0", ">= 8.345"));
     }
 
     private void verifyVespaVersionFor(String operator, boolean whenLess, boolean whenEqual, boolean whenGreater) {
