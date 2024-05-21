@@ -235,7 +235,7 @@ class HttpRequestStrategyTest {
 
         // Time advances, and the circuit breaker half-opens.
         assertEquals(CLOSED, breaker.state());
-        now.addAndGet(2_000_000);
+        now.addAndGet(2_000_000_000);
         assertEquals(HALF_OPEN, breaker.state());
 
         // It's indeterminate which cluster gets the next request, but the second should get the next one after that.
