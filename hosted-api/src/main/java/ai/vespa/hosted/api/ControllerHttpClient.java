@@ -117,7 +117,7 @@ public abstract class ControllerHttpClient {
     /** Sends the given submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
     public SubmitResult submit(Submission submission, TenantName tenant, ApplicationName application) {
         return toSubmitResult(send(request(HttpRequest.newBuilder(applicationPath(tenant, application).resolve("submit"))
-                                                      .timeout(Duration.ofMinutes(30)),
+                                                      .timeout(Duration.ofMinutes(40)),
                                            POST,
                                            new MultiPartStreamer().addJson("submitOptions", metaToJson(submission))
                                                                   .addFile("applicationZip", submission.applicationZip())
