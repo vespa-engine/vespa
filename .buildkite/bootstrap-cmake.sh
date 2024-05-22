@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+source /etc/profile.d/enable-gcc-toolset.sh
+
 VESPA_CMAKE_SANITIZERS_OPTION=""
 if [[ $VESPA_USE_SANITIZER != null ]]; then
     VESPA_CMAKE_SANITIZERS_OPTION="-DVESPA_USE_SANITIZER=$VESPA_USE_SANITIZER"
