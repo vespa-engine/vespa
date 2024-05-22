@@ -54,6 +54,7 @@ public class HttpErrorResponse extends HttpResponse {
         CONFIG_NOT_CONVERGED,
         REINDEXING_STATUS_UNAVAILABLE,
         PRECONDITION_FAILED,
+        TESTER_SUSPENDED,
         QUOTA_EXCEEDED
     }
 
@@ -119,6 +120,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpResponse preconditionFailed(String msg) {
         return new HttpErrorResponse(PRECONDITION_FAILED, ErrorCode.PRECONDITION_FAILED.name(), msg);
+    }
+
+    public static HttpResponse testerSuspended(String msg) {
+        return new HttpErrorResponse(CONFLICT, ErrorCode.TESTER_SUSPENDED.name(), msg);
     }
 
     public static HttpResponse quotaExceeded(String msg) {
