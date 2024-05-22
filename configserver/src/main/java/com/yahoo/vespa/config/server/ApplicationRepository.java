@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
+import ai.vespa.http.HttpURL.Scheme;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
@@ -810,8 +811,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Logs ----------------------------------------------------------------
 
-    public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, String apiParams) {
-        String logServerURI = getLogServerURI(applicationId, hostname) + apiParams;
+    public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, Query apiParams) {
+        HttpURL logServerURI = getLogServerURI(applicationId, hostname).withQuery(apiParams);
         return logRetriever.getLogs(logServerURI, activationTime(applicationId));
     }
 
@@ -1184,14 +1185,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private String getLogServerURI(ApplicationId applicationId, Optional<DomainName> hostname) {
+    private HttpURL getLogServerURI(ApplicationId applicationId, Optional<DomainName> hostname) {
         // Allow to get logs from a given hostname if the application is under the hosted-vespa tenant.
         // We make no validation that the hostname is actually allocated to the given application since
-        // most applications under hosted-vespa are not known to the model and it's OK for a user to get
+        // most applications under hosted-vespa are not known to the model, and it's OK for a user to get
         // logs for any host if they are authorized for the hosted-vespa tenant.
         if (hostname.isPresent() && HOSTED_VESPA_TENANT.equals(applicationId.tenant())) {
             int port = List.of(InfrastructureApplication.CONFIG_SERVER.id(), InfrastructureApplication.CONTROLLER.id()).contains(applicationId) ? 19071 : 8080;
-            return "http://" + hostname.get().value() + ":" + port + "/logs";
+            return HttpURL.create(Scheme.http, hostname.get(), port).withPath(HttpURL.Path.empty().append("logs"));
         }
 
         Application application = getApplication(applicationId);
@@ -1210,7 +1211,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                              .findFirst())
                                                   .orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
         int port = servicePort(logService);
-        return "http://" + logServerHostInfo.getHostname() + ":" + port + "/logs";
+        return HttpURL.create(Scheme.http, DomainName.of(logServerHostInfo.getHostname()), port, HttpURL.Path.empty().append("logs"));
     }
 
     private int servicePort(ServiceInfo serviceInfo) {

@@ -215,9 +215,9 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse logs(ApplicationId applicationId, HttpRequest request) {
-        Optional<DomainName> hostname = Optional.ofNullable(request.getProperty("hostname")).map(DomainName::of);
-        String apiParams = Optional.ofNullable(request.getUri().getQuery()).map(q -> "?" + q).orElse("");
-        return applicationRepository.getLogs(applicationId, hostname, apiParams);
+        HttpURL requestURL = HttpURL.from(request.getUri());
+        Optional<DomainName> hostname = Optional.ofNullable(requestURL.query().lastEntries().get("hostname")).map(DomainName::of);
+        return applicationRepository.getLogs(applicationId, hostname, requestURL.query().remove("hostname"));
     }
 
     private HttpResponse searchNodeMetrics(ApplicationId applicationId) {
