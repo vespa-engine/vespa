@@ -57,6 +57,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             int peerPort = request.getRemotePort();
             long startTime = request.getTimeStamp();
             long endTime = System.currentTimeMillis();
+            Integer statusCodeOverride = (Integer) request.getAttribute(HttpRequestDispatch.ACCESS_LOG_STATUS_CODE_OVERRIDE);
             builder.peerAddress(peerAddress)
                     .peerPort(peerPort)
                     .localPort(getLocalPort(request))
@@ -64,7 +65,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                     .duration(Duration.ofMillis(Math.max(0, endTime - startTime)))
                     .responseSize(response.getHttpChannel().getBytesWritten())
                     .requestSize(request.getHttpInput().getContentReceived())
-                    .statusCode(response.getCommittedMetaData().getStatus());
+                    .statusCode(statusCodeOverride != null ? statusCodeOverride : response.getCommittedMetaData().getStatus());
 
             addNonNullValue(builder, request.getMethod(), RequestLogEntry.Builder::httpMethod);
             addNonNullValue(builder, request.getRequestURI(), RequestLogEntry.Builder::rawPath);

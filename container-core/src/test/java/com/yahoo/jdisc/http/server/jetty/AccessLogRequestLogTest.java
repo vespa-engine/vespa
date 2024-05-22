@@ -15,6 +15,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author bjorncs
  */
 public class AccessLogRequestLogTest {
+
     @Test
     void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
         Request jettyRequest = createRequestBuilder()
@@ -35,6 +37,22 @@ public class AccessLogRequestLogTest {
 
         assertThat(entry.rawPath().get(), is(not(nullValue())));
         assertTrue(entry.rawQuery().isPresent());
+    }
+
+
+    @Test
+    void requireThatStatusCodeCanBeOverridden() {
+        Request jettyRequest = createRequestBuilder()
+                .uri("http", "localhost", 12345, "/api/", null)
+                .build();
+
+        InMemoryRequestLog requestLog = new InMemoryRequestLog();
+        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
+        assertEquals(200, requestLog.entries().remove(0).statusCode().getAsInt());
+
+        jettyRequest.setAttribute(HttpRequestDispatch.ACCESS_LOG_STATUS_CODE_OVERRIDE, 404);
+        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
+        assertEquals(404, requestLog.entries().remove(0).statusCode().getAsInt());
     }
 
     @Test
@@ -129,4 +147,5 @@ public class AccessLogRequestLogTest {
     private Response createResponseMock() {
         return JettyMockResponseBuilder.newBuilder().build();
     }
+
 }
