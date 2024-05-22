@@ -15,14 +15,23 @@ import static org.mockito.Mockito.when;
  */
 public class JettyMockResponseBuilder {
 
+    private int statusCode = 200;
+
     private JettyMockResponseBuilder() {}
 
     public static JettyMockResponseBuilder newBuilder() { return new JettyMockResponseBuilder(); }
 
+    public JettyMockResponseBuilder withStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+        return this;
+    }
+
     public Response build() {
+        MetaData.Response metaData = mock(MetaData.Response.class);
+        when(metaData.getStatus()).thenReturn(statusCode);
         Response response = mock(Response.class);
         when(response.getHttpChannel()).thenReturn(mock(HttpChannel.class));
-        when(response.getCommittedMetaData()).thenReturn(mock(MetaData.Response.class));
+        when(response.getCommittedMetaData()).thenReturn(metaData);
         return response;
     }
 

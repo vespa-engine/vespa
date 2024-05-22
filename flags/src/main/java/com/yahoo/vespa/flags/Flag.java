@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -50,6 +51,16 @@ public interface Flag<T, F extends Flag<T, F>> {
 
     /** architecture MUST NOT be 'any'. */
     default F with(Architecture architecture) { return with(Dimension.ARCHITECTURE, architecture.name()); }
+    /**
+     * Sets the cloud-account dimension ONLY IF it is an enclave account.<br/>
+     * Sets the clave dimension to "enclave" if it is an enclave account, otherwise "noclave".
+     */
+    default F with(CloudAccount cloudAccount, Zone zone) {
+        return cloudAccount.isEnclave(zone)
+               ? with(Dimension.CLOUD_ACCOUNT, Optional.of(cloudAccount).map(CloudAccount::value))
+                .with(Dimension.CLAVE, "enclave")
+               : with(Dimension.CLAVE, "noclave");
+    }
     default F with(CloudName cloud) { return with(Dimension.CLOUD, cloud.value()); }
     default F with(ClusterSpec.Id clusterId) { return with(Dimension.CLUSTER_ID, clusterId.value()); }
     default F with(ClusterSpec.Type clusterType) { return with(Dimension.CLUSTER_TYPE, clusterType.name()); }
@@ -66,6 +77,7 @@ public interface Flag<T, F extends Flag<T, F>> {
     default F withApplicationId(Optional<ApplicationId> applicationId) { return applicationId.map(this::with).orElse(self()); }
     /** architecture MUST NOT be 'any'. */
     default F withArchitecture(Optional<Architecture> architecture) { return architecture.map(this::with).orElse(self()); }
+    default F withCloudAccount(Optional<CloudAccount> cloudAccount, Zone zone) { return cloudAccount.map(account -> with(account, zone)).orElse(self()); }
     default F withCloudName(Optional<CloudName> cloud) { return cloud.map(this::with).orElse(self()); }
     default F withClusterId(Optional<ClusterSpec.Id> clusterId) { return clusterId.map(this::with).orElse(self()); }
     default F withClusterType(Optional<ClusterSpec.Type> clusterType) { return clusterType.map(this::with).orElse(self()); }
