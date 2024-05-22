@@ -417,7 +417,7 @@ func Submit(opts DeploymentOptions, submission Submission) (int64, error) {
 		Header: make(http.Header),
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
-	response, err := deployServiceDo(request, time.Minute*10, opts)
+	response, err := deployServiceDo(request, time.Minute*40, opts)
 	if err != nil {
 		return 0, err
 	}
@@ -505,7 +505,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	response, err := service.Do(request, time.Minute*10)
+	response, err := service.Do(request, time.Minute*40)
 	if err != nil {
 		return PrepareResult{}, err
 	}
