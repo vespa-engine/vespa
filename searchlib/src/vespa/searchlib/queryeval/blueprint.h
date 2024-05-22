@@ -61,11 +61,13 @@ public:
         bool _sort_by_cost;
         bool _allow_force_strict;
         bool _keep_order;
+        float _and_correlation;
     public:
         constexpr Options() noexcept
-          : _sort_by_cost(false),
-            _allow_force_strict(false),
-            _keep_order(false) {}
+        : _sort_by_cost(false),
+          _allow_force_strict(false),
+          _keep_order(false),
+          _and_correlation(0.0) {}
         constexpr bool sort_by_cost() const noexcept { return _sort_by_cost; }
         constexpr Options &sort_by_cost(bool value) noexcept {
             _sort_by_cost = value;
@@ -79,6 +81,11 @@ public:
         constexpr bool keep_order() const noexcept { return _keep_order; }
         constexpr Options &keep_order(bool value) noexcept {
             _keep_order = value;
+            return *this;
+        }
+        constexpr float and_correlation() const noexcept { return _and_correlation; }
+        constexpr Options &and_correlation(float value) noexcept {
+            _and_correlation = value;
             return *this;
         }
     };
@@ -113,6 +120,7 @@ public:
     static bool opt_sort_by_cost() noexcept { return thread_opts().sort_by_cost(); }
     static bool opt_allow_force_strict() noexcept { return thread_opts().allow_force_strict(); }
     static bool opt_keep_order() noexcept { return thread_opts().keep_order(); }
+    static double opt_and_correlation() noexcept { return thread_opts().and_correlation(); }
 
     struct HitEstimate {
         uint32_t estHits;

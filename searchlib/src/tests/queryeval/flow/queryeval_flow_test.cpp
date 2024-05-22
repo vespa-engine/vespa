@@ -7,7 +7,7 @@
 #include <random>
 
 constexpr size_t loop_cnt = 64;
-constexpr size_t max_work = 1; // 500'000'000;
+constexpr size_t max_work = 500'000'000;
 constexpr bool dump_unexpected = false;
 constexpr bool verbose = false;
 
@@ -30,6 +30,11 @@ double strict_gain(const FlowStats &stats, InFlow in_flow) {
 template <typename FLOW>
 double ordered_cost_of(const std::vector<FlowStats> &data, InFlow in_flow, bool allow_force_strict) {
     return flow::ordered_cost_of(flow::DirectAdapter(), data, FLOW(in_flow), allow_force_strict);
+}
+
+template <typename FLOW>
+double ordered_correlated_cost_of(const std::vector<FlowStats> &data, InFlow in_flow, double correlation, bool allow_force_strict) {
+    return flow::ordered_correlated_cost_of(flow::DirectAdapter(), data, FLOW(in_flow), correlation, allow_force_strict);
 }
 
 template <typename FLOW>
@@ -172,6 +177,16 @@ std::vector<FlowStats> make_flow_stats(const std::vector<double> &est_list, size
     return result;
 }
 
+template <typename T>
+double uncorrelated_estimate_of(const T &, const std::vector<FlowStats> &stats) {
+    return T::estimate_of(stats);
+}
+
+template <>
+double uncorrelated_estimate_of<AndFlow>(const AndFlow &, const std::vector<FlowStats> &stats) {
+    return AndFlow::estimate_of(stats, 0.0);
+}
+
 void verify_flow(auto flow, const std::vector<double> &est_list, const std::vector<ExpectFlow> &expect) {
     AnyFlow any_flow = AnyFlow::create<decltype(flow)>(InFlow(flow.strict(), flow.flow()));
     ASSERT_EQ(est_list.size() + 1, expect.size());
@@ -180,7 +195,7 @@ void verify_flow(auto flow, const std::vector<double> &est_list, const std::vect
         EXPECT_EQ(any_flow.strict(), flow.strict());
         EXPECT_DOUBLE_EQ(flow.flow(), expect[i].flow);
         EXPECT_EQ(flow.strict(), expect[i].strict);
-        EXPECT_DOUBLE_EQ(flow.estimate_of(make_flow_stats(est_list, i)), expect[i].est);
+        EXPECT_DOUBLE_EQ(uncorrelated_estimate_of(flow, make_flow_stats(est_list, i)), expect[i].est);
         any_flow.add(est_list[i]);
         flow.add(est_list[i]);
     }
@@ -188,7 +203,7 @@ void verify_flow(auto flow, const std::vector<double> &est_list, const std::vect
     EXPECT_EQ(any_flow.strict(), flow.strict());
     EXPECT_DOUBLE_EQ(flow.flow(), expect.back().flow);
     EXPECT_EQ(flow.strict(), expect.back().strict);
-    EXPECT_DOUBLE_EQ(flow.estimate_of(make_flow_stats(est_list, est_list.size())), expect.back().est);
+    EXPECT_DOUBLE_EQ(uncorrelated_estimate_of(flow, make_flow_stats(est_list, est_list.size())), expect.back().est);
 }
 
 TEST(FlowTest, full_and_flow) {
@@ -379,11 +394,30 @@ TEST(FlowTest, non_strict_btree_cost) {
     }
 }
 
+TEST(FlowTest, correlated_AND_estimate_is_independent_of_order) {
+    for (size_t i = 0; i < loop_cnt; ++i) {
+        auto data = gen_data(7);
+        double est_000 = AndFlow::estimate_of(data, 0.00);
+        double est_025 = AndFlow::estimate_of(data, 0.25);
+        double est_050 = AndFlow::estimate_of(data, 0.50);
+        double est_075 = AndFlow::estimate_of(data, 0.75);
+        double est_100 = AndFlow::estimate_of(data, 1.00);
+        auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
+                         EXPECT_NEAR(est_000, AndFlow::estimate_of(my_data, 0.00), 1e-9);
+                         EXPECT_NEAR(est_025, AndFlow::estimate_of(my_data, 0.25), 1e-9);
+                         EXPECT_NEAR(est_050, AndFlow::estimate_of(my_data, 0.50), 1e-9);
+                         EXPECT_NEAR(est_075, AndFlow::estimate_of(my_data, 0.75), 1e-9);
+                         EXPECT_NEAR(est_100, AndFlow::estimate_of(my_data, 1.00), 1e-9);
+                     };
+        each_perm(data, check);
+    }
+}
+
 TEST(FlowTest, optimal_and_flow) {
     for (size_t i = 0; i < loop_cnt; ++i) {
         for (bool strict: {false, true}) {
             auto data = gen_data(7);
-            double ref_est = AndFlow::estimate_of(data);
+            double ref_est = AndFlow::estimate_of(data, 0.0);
             double min_cost = AndFlow::cost_of(data, strict);
             double max_cost = 0.0;
             AndFlow::sort(data, strict);
@@ -398,7 +432,7 @@ TEST(FlowTest, optimal_and_flow) {
                 fprintf(stderr, "  AND cost(%zu,%s): min: %g, max: %g, factor: %g\n",
                         i, strict ? "strict" : "non-strict", min_cost, max_cost, max_cost / min_cost);
             }
-            EXPECT_NEAR(ref_est, AndFlow::estimate_of(data), 1e-9);
+            EXPECT_NEAR(ref_est, AndFlow::estimate_of(data, 0.0), 1e-9);
         }
     }
 }
@@ -451,7 +485,7 @@ TEST(FlowTest, optimal_and_not_flow) {
     }
 }
 
-void test_AND_sort_strategy(auto my_sort) {
+void test_AND_sort_strategy(auto my_sort, double correlation = 0.0) {
     const char *tags = "ABCDEFGHI";
     for (InFlow in_flow: {InFlow(true), InFlow(0.5)}) {
         re_seed();
@@ -475,17 +509,17 @@ void test_AND_sort_strategy(auto my_sort) {
                                  double total_cost = 0.0;
                                  auto flow = AndFlow(in_flow);
                                  for (const auto &item: list) {
-                                     auto child_flow = InFlow(flow.strict(), flow.flow());
-                                     bool strict = flow.strict() || flow::should_force_strict(item, flow.flow());
+                                     auto child_flow = InFlow(flow.strict(), flow.flow(correlation));
+                                     bool strict = flow.strict() || flow::should_force_strict(item, flow.flow(correlation));
                                      double child_cost = flow::min_child_cost(child_flow, item, true);
                                      fprintf(stderr, "    %6f %s -> %c (estimate: %10f, cost: %10f, strict_cost: %10f, cross: %10f, gain: %10f, gain@est: %10f) cost: %10f%s\n",
-                                             flow.flow(), flow.strict() ? "S" : " ", get_tag(item, ref), item.estimate, item.cost, item.strict_cost, strict_crossover(item),
+                                             flow.flow(correlation), flow.strict() ? "S" : " ", get_tag(item, ref), item.estimate, item.cost, item.strict_cost, strict_crossover(item),
                                              strict_gain(item, child_flow), strict_gain(item, item.estimate),
                                              child_cost, strict ? " STRICT" : "");
                                      flow.add(item.estimate);
                                      total_cost += child_cost;
                                  }
-                                 EXPECT_DOUBLE_EQ(total_cost, ordered_cost_of<AndFlow>(list, in_flow, true));
+                                 EXPECT_DOUBLE_EQ(total_cost, ordered_correlated_cost_of<AndFlow>(list, in_flow, correlation, true));
                                  fprintf(stderr, "    total cost: %10f\n", total_cost);
                              };
             auto verify_order = [&](const std::vector<FlowStats> &list){
@@ -500,7 +534,7 @@ void test_AND_sort_strategy(auto my_sort) {
                                     FlowStats prev_strict(0.0, 0.0, 0.0);
                                     FlowStats prev_non_strict(0.0, 0.0, 0.0);
                                     for (const auto &item: list) {
-                                        bool strict = flow.strict() || flow::should_force_strict(item, flow.flow());
+                                        bool strict = flow.strict() || flow::should_force_strict(item, flow.flow(correlation));
                                         if (strict) {
                                             if (num_non_strict > 0) {
                                                 return false; // (1)
@@ -532,15 +566,15 @@ void test_AND_sort_strategy(auto my_sort) {
                      };
             for (size_t i = 0; i < cnt; ++i) {
                 auto data = gen_data(child_cnt);
-                double ref_est = AndFlow::estimate_of(data);
+                double ref_est = AndFlow::estimate_of(data, correlation);
                 my_sort(data, in_flow);
                 auto my_order = data;
                 auto best_order = my_order;
-                double est_cost = ordered_cost_of<AndFlow>(data, in_flow, true);
+                double est_cost = ordered_correlated_cost_of<AndFlow>(data, in_flow, correlation, true);
                 double min_cost = est_cost;
                 double max_cost = est_cost;
                 auto check = [&](const std::vector<FlowStats> &my_data) noexcept {
-                                 double my_cost = ordered_cost_of<AndFlow>(my_data, in_flow, true);
+                                 double my_cost = ordered_correlated_cost_of<AndFlow>(my_data, in_flow, correlation, true);
                                  if (my_cost < min_cost) {
                                      min_cost = my_cost;
                                      best_order = my_data;
@@ -563,7 +597,7 @@ void test_AND_sort_strategy(auto my_sort) {
                     fprintf(stderr, "  UNEXPECTED case, my_order:\n");
                     dump_flow(my_order, best_order);
                 }
-                EXPECT_NEAR(ref_est, AndFlow::estimate_of(data), 1e-9);
+                EXPECT_NEAR(ref_est, AndFlow::estimate_of(data, correlation), 1e-9);
             }
             std::sort(errs.begin(), errs.end());
             if (verbose && !my_worst_order.empty()) {
@@ -589,6 +623,14 @@ TEST(FlowTest, and_with_allow_force_strict_incremental_strict_selection_destruct
                        AndFlow::reorder_for_extra_strictness(data, in_flow, 3);
                    };
     test_AND_sort_strategy(my_sort);
+}
+
+TEST(FlowTest, and_with_allow_force_strict_incremental_strict_selection_destructive_order_max_3_extra_strict_half_correlation) {
+    auto my_sort = [](auto &data, InFlow in_flow) {
+                       AndFlow::sort(data, in_flow.strict());
+                       AndFlow::reorder_for_extra_strictness(data, in_flow, 3);
+                   };
+    test_AND_sort_strategy(my_sort, 0.5);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

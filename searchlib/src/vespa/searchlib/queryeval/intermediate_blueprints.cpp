@@ -212,7 +212,7 @@ AndNotBlueprint::my_flow(InFlow in_flow) const
 
 FlowStats
 AndBlueprint::calculate_flow_stats(uint32_t) const {
-    return {AndFlow::estimate_of(get_children()),
+    return {AndFlow::estimate_of(get_children(), opt_and_correlation()),
             AndFlow::cost_of(get_children(), false),
             AndFlow::cost_of(get_children(), true)};
 }
@@ -535,7 +535,7 @@ NearBlueprint::my_flow(InFlow in_flow) const
 
 FlowStats
 NearBlueprint::calculate_flow_stats(uint32_t) const {
-    double est = AndFlow::estimate_of(get_children());
+    double est = AndFlow::estimate_of(get_children(), opt_and_correlation()); 
     return {est,
             AndFlow::cost_of(get_children(), false) + childCnt() * est,
             AndFlow::cost_of(get_children(), true) + childCnt() * est};
@@ -600,7 +600,7 @@ ONearBlueprint::my_flow(InFlow in_flow) const
 
 FlowStats
 ONearBlueprint::calculate_flow_stats(uint32_t) const {
-    double est = AndFlow::estimate_of(get_children());
+    double est = AndFlow::estimate_of(get_children(), opt_and_correlation());
     return {est,
             AndFlow::cost_of(get_children(), false) + childCnt() * est,
             AndFlow::cost_of(get_children(), true) + childCnt() * est};

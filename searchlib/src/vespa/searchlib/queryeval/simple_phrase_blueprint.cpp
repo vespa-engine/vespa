@@ -60,7 +60,7 @@ SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) const
     for (auto &term: _terms) {
         term->update_flow_stats(docid_limit);
     }
-    double est = AndFlow::estimate_of(_terms);
+    double est = AndFlow::estimate_of(_terms, opt_and_correlation());
     return {est,
             AndFlow::cost_of(_terms, false) + est * _terms.size(),
             AndFlow::cost_of(_terms, true) + est * _terms.size()};

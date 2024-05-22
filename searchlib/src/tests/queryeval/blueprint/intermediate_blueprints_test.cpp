@@ -1411,14 +1411,14 @@ TEST("cost for SB") {
 
 TEST("cost for NEAR") {
     verify_cost(make::NEAR(1),
-                AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
-                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
+                AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats, 0) * 3,
+                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats, 0) * 3);
 }
 
 TEST("cost for ONEAR") {
     verify_cost(make::ONEAR(1),
-                AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats) * 3,
-                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats) * 3);
+                AndFlow::cost_of(child_stats, false) + AndFlow::estimate_of(child_stats, 0) * 3,
+                AndFlow::cost_of(child_stats, true) + AndFlow::estimate_of(child_stats, 0) * 3);
 }
 
 TEST("cost for WEAKAND") {

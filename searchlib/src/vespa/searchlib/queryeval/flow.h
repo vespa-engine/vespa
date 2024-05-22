@@ -154,12 +154,15 @@ inline double min_child_cost(InFlow in_flow, const FlowStats &stats, bool allow_
 }
 
 template <typename ADAPTER, typename T>
-double estimate_of_and(ADAPTER adapter, const T &children) {
+double estimate_of_and(ADAPTER adapter, const T &children, double correlation) {
     double flow = children.empty() ? 0.0 : adapter.estimate(children[0]);
+    double min = flow;
     for (size_t i = 1; i < children.size(); ++i) {
-        flow *= adapter.estimate(children[i]);
+        double child_est = adapter.estimate(children[i]);
+        min = std::min(min, child_est);
+        flow = flow * child_est;
     }
-    return flow;
+    return correlation * min + (1.0 - correlation) * flow;
 }
 
 template <typename ADAPTER, typename T>
@@ -198,6 +201,18 @@ double ordered_cost_of(ADAPTER adapter, const T &children, F flow, bool allow_fo
     for (const auto &child: children) {
         auto stats = FlowStats::from(adapter, child);
         double child_cost = min_child_cost(InFlow(flow.strict(), flow.flow()), stats, allow_force_strict);
+        flow.update_cost(total_cost, child_cost);
+        flow.add(stats.estimate);
+    }
+    return total_cost;
+}
+
+template <typename ADAPTER, typename T, typename F>
+double ordered_correlated_cost_of(ADAPTER adapter, const T &children, F flow, double correlation, bool allow_force_strict) {
+    double total_cost = 0.0;
+    for (const auto &child: children) {
+        auto stats = FlowStats::from(adapter, child);
+        double child_cost = min_child_cost(InFlow(flow.strict(), flow.flow(correlation)), stats, allow_force_strict);
         flow.update_cost(total_cost, child_cost);
         flow.add(stats.estimate);
     }
@@ -250,6 +265,11 @@ auto select_strict_and_child(auto adapter, const auto &children, size_t first, d
     return std::make_tuple(best_idx, best_target, best_diff);
 }
 
+template <typename T>
+concept has_correlated_flow = requires(T t, double correlation) {
+    { t.flow(correlation) } -> std::same_as<double>;
+};
+
 } // flow
 
 template <typename FLOW>
@@ -268,23 +288,27 @@ struct FlowMixin {
 class AndFlow : public FlowMixin<AndFlow> {
 private:
     double _flow;
+    double _min;
     bool _strict;
 public:
-    AndFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()) {}
+    AndFlow(InFlow flow) noexcept : _flow(flow.rate()), _min(flow.rate()), _strict(flow.strict()) {}
     void add(double est) noexcept {
         _flow *= est;
         _strict = false;
     }
     double flow() const noexcept { return _flow; }
+    double flow(double correlation) const noexcept {
+        return correlation * _min + (1.0 - correlation) * _flow;
+    }
     bool strict() const noexcept { return _strict; }
     void update_cost(double &total_cost, double child_cost) noexcept {
         total_cost += child_cost;
     }
-    static double estimate_of(auto adapter, const auto &children) {
-        return flow::estimate_of_and(adapter, children);
+    static double estimate_of(auto adapter, const auto &children, double correlation) {
+        return flow::estimate_of_and(adapter, children, correlation);
     }
-    static double estimate_of(const auto &children) {
-        return estimate_of(flow::make_adapter(children), children);
+    static double estimate_of(const auto &children, double correlation) {
+        return estimate_of(flow::make_adapter(children), children, correlation);
     }
     // assume children are already ordered by calling sort (with same strictness as in_flow)
     static void reorder_for_extra_strictness(auto adapter, auto &children, InFlow in_flow, size_t max_extra) {
@@ -439,6 +463,7 @@ private:
     struct API {
         virtual void add(double est) noexcept = 0;
         virtual double flow() const noexcept = 0;
+        virtual double flow(double correlation) const noexcept = 0;
         virtual bool strict() const noexcept = 0;
         virtual void update_cost(double &total_cost, double child_cost) noexcept = 0;
         virtual ~API() = default;
@@ -448,13 +473,19 @@ private:
         Wrapper(InFlow in_flow) noexcept : _flow(in_flow) {}
         void add(double est) noexcept override { _flow.add(est); }
         double flow() const noexcept override { return _flow.flow(); }
+        double flow([[maybe_unused]] double correlation) const noexcept override {
+            if constexpr (flow::has_correlated_flow<FLOW>) {
+                return _flow.flow(correlation);
+            }
+            return _flow.flow();
+        }
         bool strict() const noexcept override { return _flow.strict(); }
         void update_cost(double &total_cost, double child_cost) noexcept override {
             _flow.update_cost(total_cost, child_cost);
         }
         ~Wrapper() = default;
     };
-    alignas(8) char _space[24];
+    alignas(8) char _space[32];
     API &api() noexcept { return *reinterpret_cast<API*>(_space); }
     const API &api() const noexcept { return *reinterpret_cast<const API*>(_space); }
     template <typename FLOW> struct type_tag{};
@@ -477,6 +508,7 @@ public:
     }
     void add(double est) noexcept { api().add(est); }
     double flow() const noexcept { return api().flow(); }
+    double flow(double correlation) const noexcept { return api().flow(correlation); }
     bool strict() const noexcept { return api().strict(); }
     void update_cost(double &total_cost, double child_cost) noexcept {
         api().update_cost(total_cost, child_cost);
