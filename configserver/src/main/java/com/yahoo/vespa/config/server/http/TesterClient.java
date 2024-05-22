@@ -72,7 +72,7 @@ public class TesterClient {
     }
 
     private HttpURL testerUrl(String testerHostname, int port, String... path) {
-        return HttpURL.create(Scheme.https, DomainName.of(testerHostname), port, Path.empty().append(List.of(path)));
+        return HttpURL.create(Scheme.https, DomainName.of(testerHostname), port, Path.empty().append(List.of(path)).withoutTrailingSlash());
     }
 
 }

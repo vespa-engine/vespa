@@ -1192,7 +1192,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         // logs for any host if they are authorized for the hosted-vespa tenant.
         if (hostname.isPresent() && HOSTED_VESPA_TENANT.equals(applicationId.tenant())) {
             int port = List.of(InfrastructureApplication.CONFIG_SERVER.id(), InfrastructureApplication.CONTROLLER.id()).contains(applicationId) ? 19071 : 8080;
-            return HttpURL.create(Scheme.http, hostname.get(), port).withPath(HttpURL.Path.empty().append("logs"));
+            return HttpURL.create(Scheme.http, hostname.get(), port).withPath(HttpURL.Path.parse("logs"));
         }
 
         Application application = getApplication(applicationId);
@@ -1211,7 +1211,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                              .findFirst())
                                                   .orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
         int port = servicePort(logService);
-        return HttpURL.create(Scheme.http, DomainName.of(logServerHostInfo.getHostname()), port, HttpURL.Path.empty().append("logs"));
+        return HttpURL.create(Scheme.http, DomainName.of(logServerHostInfo.getHostname()), port, HttpURL.Path.parse("logs"));
     }
 
     private int servicePort(ServiceInfo serviceInfo) {
