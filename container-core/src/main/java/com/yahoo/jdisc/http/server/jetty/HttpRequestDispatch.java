@@ -130,7 +130,7 @@ class HttpRequestDispatch {
                         error,
                         () -> "Network connection was unexpectedly terminated: " + jettyRequest.getRequestURI());
                 metricReporter.prematurelyClosed();
-                asyncCtx.getRequest().setAttribute(STATUS_CODE_OVERRIDE, 400);
+                asyncCtx.getRequest().setAttribute(STATUS_CODE_OVERRIDE, 499);
             } else if (isErrorOfType(error, TimeoutException.class)) {
                 log.log(Level.FINE,
                         error,
