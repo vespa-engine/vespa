@@ -419,6 +419,13 @@ WeakAndBlueprint::my_flow(InFlow in_flow) const
     return AnyFlow::create<OrFlow>(in_flow);
 }
 
+WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range)
+    : _scores(n),
+      _n(n),
+      _idf_range(idf_range),
+      _weights()
+{}
+
 WeakAndBlueprint::~WeakAndBlueprint() = default;
 
 FlowStats
@@ -478,13 +485,12 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     assert(_weights.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
         // TODO: pass ownership with unique_ptr
-        terms.emplace_back(sub_searches[i].release(),
-                           _weights[i],
+        terms.emplace_back(sub_searches[i].release(), _weights[i],
                            getChild(i).getState().estimate().estHits);
     }
     return (_idf_range == 0.0)
-        ? WeakAndSearch::create(terms, wand::TermFrequencyScorer(), _n, strict())
-        : WeakAndSearch::create(terms, wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict());
+        ? WeakAndSearch::create(terms, wand::MatchParams(_scores), wand::TermFrequencyScorer(), _n, strict())
+        : WeakAndSearch::create(terms, wand::MatchParams(_scores), wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict());
 }
 
 SearchIterator::UP
@@ -549,7 +555,7 @@ NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
             tfmda.add(cs.field(j).resolve(md));
         }
     }
-    return SearchIterator::UP(new NearSearch(std::move(sub_searches), tfmda, _window, strict()));
+    return std::make_unique<NearSearch>(std::move(sub_searches), tfmda, _window, strict());
 }
 
 SearchIterator::UP
@@ -612,7 +618,7 @@ ONearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     }
     // could sort sub_searches here
     // but then strictness inheritance would also need to be fixed
-    return SearchIterator::UP(new ONearSearch(std::move(sub_searches), tfmda, _window, strict()));
+    return std::make_unique<ONearSearch>(std::move(sub_searches), tfmda, _window, strict());
 }
 
 SearchIterator::UP

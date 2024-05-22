@@ -13,6 +13,7 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+#include <vespa/searchlib/queryeval/wand/weak_and_heap.h>
 #include <vespa/vespalib/util/box.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -135,7 +136,7 @@ constexpr vespalib::duration max_time = 1000s;
 //-----------------------------------------------------------------------------
 
 struct ChildFactory {
-    ChildFactory() {}
+    ChildFactory() = default;
     virtual std::string name() const = 0;
     virtual SearchIterator::UP createChild(uint32_t idx, uint32_t limit) const = 0;
     virtual ~ChildFactory() = default;
@@ -190,8 +191,9 @@ struct ModSearchFactory : ChildFactory {
 //-----------------------------------------------------------------------------
 
 struct VespaWandFactory : SparseVectorFactory {
+    mutable SharedWeakAndPriorityQueue _scores;
     uint32_t n;
-    explicit VespaWandFactory(uint32_t n_in) noexcept : n(n_in) {}
+    explicit VespaWandFactory(uint32_t n_in) : _scores(n_in), n(n_in) {}
     std::string name() const override {
         return vespalib::make_string("VespaWand(%u)", n);
     }
@@ -200,7 +202,7 @@ struct VespaWandFactory : SparseVectorFactory {
         for (size_t i = 0; i < childCnt; ++i) {
             terms.emplace_back(childFactory.createChild(i, limit), default_weight, limit / (i + 1));
         }
-        return WeakAndSearch::create(terms, n, true);
+        return WeakAndSearch::create(terms, wand::MatchParams(_scores), n, true);
     }
 };
 

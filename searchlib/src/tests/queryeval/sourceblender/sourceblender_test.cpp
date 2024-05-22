@@ -7,15 +7,14 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
-#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::queryeval;
-using namespace search::fef;
 using namespace search;
 using std::make_unique;
+using search::fef::MatchData;
 
 /**
  * Proxy search used to verify unpack pattern
@@ -27,24 +26,24 @@ private:
     SimpleResult   _unpacked;
 
 protected:
-    virtual void doSeek(uint32_t docid) override {
+    void doSeek(uint32_t docid) override {
         _search->seek(docid);
         setDocId(_search->getDocId());
     }
-    virtual void doUnpack(uint32_t docid) override {
+    void doUnpack(uint32_t docid) override {
         _unpacked.addHit(docid);
         _search->unpack(docid);
     }
 
 public:
-    UnpackChecker(SearchIterator *search) : _search(search), _unpacked() {}
+    explicit UnpackChecker(SearchIterator *search) : _search(search), _unpacked() {}
     const SimpleResult &getUnpacked() const { return _unpacked; }
 };
 
 class MySelector : public search::FixedSourceSelector
 {
 public:
-    MySelector(int defaultSource) : search::FixedSourceSelector(defaultSource, "fs") { }
+    explicit MySelector(int defaultSource) : search::FixedSourceSelector(defaultSource, "fs") { }
     MySelector & set(Source s, uint32_t docId) {
         setSource(s, docId);
         return *this;
@@ -65,12 +64,12 @@ TEST(SourceBlenderTest, test_strictness)
         a.addHit(2).addHit(5).addHit(6).addHit(8);
         b.addHit(3).addHit(5).addHit(6).addHit(7);
 
-        MySelector *sel = new MySelector(5);
+        auto *sel = new MySelector(5);
         sel->set(2, 1).set(3, 2).set(5, 2).set(7, 1);
 
-        SourceBlenderBlueprint *blend_b = new SourceBlenderBlueprint(*sel);
-        Blueprint::UP a_b(new SimpleBlueprint(a));
-        Blueprint::UP b_b(new SimpleBlueprint(b));
+        auto *blend_b = new SourceBlenderBlueprint(*sel);
+        auto a_b = std::make_unique<SimpleBlueprint>(a);
+        auto b_b = std::make_unique<SimpleBlueprint>(b);
         a_b->setSourceId(1);
         b_b->setSourceId(2);
         blend_b->addChild(std::move(a_b));
@@ -111,16 +110,16 @@ TEST(SourceBlenderTest, test_full_sourceblender_search)
     c.addHit(4).addHit(11).addHit(21).addHit(32);
 
     // these are all handed over to the blender
-    UnpackChecker *ua = new UnpackChecker(new SimpleSearch(a));
-    UnpackChecker *ub = new UnpackChecker(new SimpleSearch(b));
-    UnpackChecker *uc = new UnpackChecker(new SimpleSearch(c));
+    auto *ua = new UnpackChecker(new SimpleSearch(a));
+    auto *ub = new UnpackChecker(new SimpleSearch(b));
+    auto *uc = new UnpackChecker(new SimpleSearch(c));
     auto sel = make_unique<MySelector>(5);
 
     sel->set(2, 1).set(3, 2).set(11, 2).set(21, 3).set(34, 1);
     SourceBlenderSearch::Children abc;
-    abc.push_back(SourceBlenderSearch::Child(ua, 1));
-    abc.push_back(SourceBlenderSearch::Child(ub, 2));
-    abc.push_back(SourceBlenderSearch::Child(uc, 3));
+    abc.emplace_back(ua, 1);
+    abc.emplace_back(ub, 2);
+    abc.emplace_back(uc, 3);
 
     SearchIterator::UP blend(SourceBlenderSearch::create(sel->createIterator(), abc, true));
     SimpleResult result;
@@ -149,7 +148,7 @@ using search::test::SearchIteratorVerifier;
 class Verifier : public SearchIteratorVerifier {
 public:
     Verifier();
-    ~Verifier();
+    ~Verifier() override;
     SearchIterator::UP create(bool strict) const override {
         return SearchIterator::UP(SourceBlenderSearch::create(_selector.createIterator(),
                                                               createChildren(strict),
@@ -178,7 +177,7 @@ Verifier::Verifier() :
         _indexes[indexId].push_back(docId);
     }
 }
-Verifier::~Verifier() {}
+Verifier::~Verifier() = default;
 
 TEST(SourceBlenderTest, test_that_source_blender_iterator_adheres_to_search_terator_requirements)
 {

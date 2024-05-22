@@ -8,11 +8,8 @@ namespace search::test {
 
 class WeightedChildrenVerifier : public SearchIteratorVerifier {
 public:
-    WeightedChildrenVerifier()
-        : _weights(_num_children, 1)
-    { }
-    ~WeightedChildrenVerifier() override {}
-
+    WeightedChildrenVerifier();
+    ~WeightedChildrenVerifier() override;
 protected:
     static constexpr size_t _num_children = 7;
     mutable fef::TermFieldMatchData _tfmd;
@@ -21,58 +18,21 @@ protected:
 
 class IteratorChildrenVerifier : public WeightedChildrenVerifier {
 public:
-    IteratorChildrenVerifier()
-        : WeightedChildrenVerifier(),
-          _split_lists(_num_children)
-    {
-        auto full_list = getExpectedDocIds();
-        for (size_t i = 0; i < full_list.size(); ++i) {
-            _split_lists[i % _num_children].push_back(full_list[i]);
-        }
-    }
-    ~IteratorChildrenVerifier() override { }
-    SearchIterator::UP create(bool strict) const override {
-        (void) strict;
-        std::vector<SearchIterator*> children;
-        for (size_t i = 0; i < _num_children; ++i) {
-            children.push_back(createIterator(_split_lists[i], true).release());
-        }
-        return create(children);
-    }
+    IteratorChildrenVerifier();
+    ~IteratorChildrenVerifier() override;
+    SearchIterator::UP create(bool strict) const override;
 protected:
-    virtual SearchIterator::UP create(const std::vector<SearchIterator*> &children) const {
-        (void) children;
-        return SearchIterator::UP();
-    }
+    virtual SearchIterator::UP create(const std::vector<SearchIterator*> &children) const;
     std::vector<DocIds> _split_lists;
 };
 
 class DwwIteratorChildrenVerifier : public WeightedChildrenVerifier {
 public:
-    DwwIteratorChildrenVerifier() :
-        WeightedChildrenVerifier(),
-        _helper()
-    {
-        _helper.add_docs(getDocIdLimit());
-        auto full_list = getExpectedDocIds();
-        for (size_t i = 0; i < full_list.size(); ++i) {
-            _helper.set_doc(full_list[i], i % _num_children, 1);
-        }
-    }
-    ~DwwIteratorChildrenVerifier() override {}
-    SearchIterator::UP create(bool strict) const override {
-        (void) strict;
-        std::vector<DocidWithWeightIterator> children;
-        for (size_t i = 0; i < _num_children; ++i) {
-            auto dict_entry = _helper.dww().lookup(vespalib::make_string("%zu", i).c_str(), _helper.dww().get_dictionary_snapshot());
-            _helper.dww().create(dict_entry.posting_idx, children);
-        }
-        return create(std::move(children));
-    }
+    DwwIteratorChildrenVerifier();
+    ~DwwIteratorChildrenVerifier() override;
+    SearchIterator::UP create(bool strict) const override;
 protected:
-    virtual SearchIterator::UP create(std::vector<DocidWithWeightIterator> &&) const  {
-        return {};
-    }
+    virtual SearchIterator::UP create(std::vector<DocidWithWeightIterator> &&) const;
     DocumentWeightAttributeHelper _helper;
 };
 

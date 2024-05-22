@@ -9,6 +9,7 @@ namespace search::queryeval {
 
 struct WeakAndSearch : SearchIterator {
     using Terms = wand::Terms;
+    using MatchParams = wand::MatchParams;
     virtual size_t get_num_terms() const = 0;
     virtual int32_t get_term_weight(size_t idx) const = 0;
     virtual wand::score_t get_max_score(size_t idx) const = 0;
@@ -16,12 +17,16 @@ struct WeakAndSearch : SearchIterator {
     virtual uint32_t getN() const = 0;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     template<typename Scorer>
-    static SearchIterator::UP createArrayWand(const Terms &terms, const Scorer & scorer, uint32_t n, bool strict);
+    static SearchIterator::UP createArrayWand(const Terms &terms, const MatchParams & matchParams,
+                                              const Scorer & scorer, uint32_t n, bool strict);
     template<typename Scorer>
-    static SearchIterator::UP createHeapWand(const Terms &terms, const Scorer & scorer, uint32_t n, bool strict);
+    static SearchIterator::UP createHeapWand(const Terms &terms, const MatchParams & matchParams,
+                                             const Scorer & scorer, uint32_t n, bool strict);
     template<typename Scorer>
-    static SearchIterator::UP create(const Terms &terms, const Scorer & scorer, uint32_t n, bool strict);
-    static SearchIterator::UP create(const Terms &terms, uint32_t n, bool strict);
+    static SearchIterator::UP create(const Terms &terms, const MatchParams & matchParams,
+                                     const Scorer & scorer, uint32_t n, bool strict);
+    static SearchIterator::UP create(const Terms &terms, const MatchParams & matchParams,
+                                     uint32_t n, bool strict);
 };
 
 }

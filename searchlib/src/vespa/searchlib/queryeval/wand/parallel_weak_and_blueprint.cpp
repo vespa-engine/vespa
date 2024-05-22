@@ -18,23 +18,7 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field,
       _scores(scoresToTrack),
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
-      _scoresAdjustFrequency(DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
-      _layout(),
-      _weights(),
-      _terms()
-{
-}
-
-ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field,
-                                                   uint32_t scoresToTrack,
-                                                   score_t scoreThreshold,
-                                                   double thresholdBoostFactor,
-                                                   uint32_t scoresAdjustFrequency)
-    : ComplexLeafBlueprint(field),
-      _scores(scoresToTrack),
-      _scoreThreshold(scoreThreshold),
-      _thresholdBoostFactor(thresholdBoostFactor),
-      _scoresAdjustFrequency(scoresAdjustFrequency),
+      _scoresAdjustFrequency(wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
       _layout(),
       _weights(),
       _terms()

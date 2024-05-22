@@ -13,13 +13,13 @@
 #include <vector>
 
 using namespace search::attribute;
-using namespace search::fef;
 using namespace search::queryeval::test;
 using namespace search::queryeval;
 using namespace search;
 using namespace vespalib;
 
 using search::index::Schema;
+using search::fef::MatchData;
 
 using vespalib::make_string_short::fmt;
 
