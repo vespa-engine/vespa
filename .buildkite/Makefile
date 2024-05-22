@@ -33,7 +33,7 @@ main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts
 pr: build-rpms cpp-test basic-search-test
 
 check:
-	@shellcheck $(TOP)/*.sh
+	@shellcheck -x $(TOP)/*.sh
 
 prepare: check
 	@$(TOP)/execute.sh $@
