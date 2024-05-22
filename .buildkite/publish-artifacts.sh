@@ -17,4 +17,4 @@ for FILE in *.tar; do
     cosign sign-blob -y --oidc-provider=buildkite-agent --output-signature "$FILE.sig" --output-certificate "$FILE.pem" "$FILE"
 done
 
-buildkite-agent artifact upload "*.tar;*.tar.sig;*.tar.pem" "$BUILDKITE_ARTIFACT_DESTINATION/$VESPA_VERSION"
+buildkite-agent artifact upload "*.tar;*.tar.sig;*.tar.pem" "$BUILDKITE_ARTIFACT_DESTINATION/$VESPA_VERSION/artifacts/$ARCH"

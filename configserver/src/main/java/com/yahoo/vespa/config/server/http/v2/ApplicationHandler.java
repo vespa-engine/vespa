@@ -31,11 +31,13 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.ApplicationRepository.TesterSuspendedException;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
+import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
@@ -213,9 +215,9 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse logs(ApplicationId applicationId, HttpRequest request) {
-        Optional<DomainName> hostname = Optional.ofNullable(request.getProperty("hostname")).map(DomainName::of);
-        String apiParams = Optional.ofNullable(request.getUri().getQuery()).map(q -> "?" + q).orElse("");
-        return applicationRepository.getLogs(applicationId, hostname, apiParams);
+        HttpURL requestURL = HttpURL.from(request.getUri());
+        Optional<DomainName> hostname = Optional.ofNullable(requestURL.query().lastEntries().get("hostname")).map(DomainName::of);
+        return applicationRepository.getLogs(applicationId, hostname, requestURL.query().remove("hostname"));
     }
 
     private HttpResponse searchNodeMetrics(ApplicationId applicationId) {
@@ -231,13 +233,18 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse testerRequest(ApplicationId applicationId, String command, HttpRequest request) {
-        return switch (command) {
-            case "status" -> applicationRepository.getTesterStatus(applicationId);
-            case "log"    -> applicationRepository.getTesterLog(applicationId, Long.valueOf(request.getProperty("after")));
-            case "ready"  -> applicationRepository.isTesterReady(applicationId);
-            case "report" -> applicationRepository.getTestReport(applicationId);
-            default       -> throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
-        };
+        try {
+            return switch (command) {
+                case "status" -> applicationRepository.getTesterStatus(applicationId);
+                case "log" ->    applicationRepository.getTesterLog(applicationId, Long.valueOf(request.getProperty("after")));
+                case "ready" ->  applicationRepository.isTesterReady(applicationId);
+                case "report" -> applicationRepository.getTestReport(applicationId);
+                default -> throw new IllegalArgumentException("Unknown tester command in request " + request.getUri().toString());
+            };
+        }
+        catch (TesterSuspendedException e) {
+            return HttpErrorResponse.testerSuspended(e.getMessage());
+        }
     }
 
     private HttpResponse quotaUsage(ApplicationId applicationId) {
