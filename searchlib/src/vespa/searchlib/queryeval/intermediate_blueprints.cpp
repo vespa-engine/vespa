@@ -26,7 +26,7 @@ size_t lookup_create_source(std::vector<std::unique_ptr<CombineType> > &sources,
             return i;
         }
     }
-    sources.push_back(std::unique_ptr<CombineType>(new CombineType()));
+    sources.push_back(std::make_unique<CombineType>());
     sources.back()->setSourceId(child_source);
     sources.back()->setDocIdLimit(docid_limit);
     return (sources.size() - 1);

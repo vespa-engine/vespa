@@ -254,8 +254,8 @@ create_op_filter(const Blueprint::Children &children, bool strict, Blueprint::Fi
     MultiSearch::Children list;
     std::unique_ptr<SearchIterator> spare;
     list.reserve(children.size());
-    for (size_t i = 0; i < children.size(); ++i) {
-        auto filter = children[i]->createFilterSearch(constraint);
+    for (const auto & child : children) {
+        auto filter = child->createFilterSearch(constraint);
         auto matches_any = filter->matches_any();
         if (should_short_circuit<Op>(matches_any)) {
             return filter;
@@ -623,9 +623,9 @@ IntermediateBlueprint::sort(InFlow in_flow)
         sort(_children, in_flow);
     }
     auto flow = my_flow(in_flow);
-    for (size_t i = 0; i < _children.size(); ++i) {
-        _children[i]->sort(InFlow(flow.strict(), flow.flow()));
-        flow.add(_children[i]->estimate());
+    for (const auto & child : _children) {
+        child->sort(InFlow(flow.strict(), flow.flow()));
+        flow.add(child->estimate());
     }
 }
 
@@ -644,8 +644,8 @@ IntermediateBlueprint::createSearch(fef::MatchData &md) const
 {
     MultiSearch::Children subSearches;
     subSearches.reserve(_children.size());
-    for (size_t i = 0; i < _children.size(); ++i) {
-        subSearches.push_back(_children[i]->createSearch(md));
+    for (const auto & child : _children) {
+        subSearches.push_back(child->createSearch(md));
     }
     return createIntermediateSearch(std::move(subSearches), md);
 }
@@ -693,18 +693,17 @@ void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     auto flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
-    for (size_t i = 0; i < _children.size(); ++i) {
+    for (const auto & child : _children) {
         double nextHitRate = flow.flow();
-        Blueprint & child = *_children[i];
-        child.fetchPostings(ExecuteInfo::create(nextHitRate, execInfo));
-        flow.add(child.estimate());
+        child->fetchPostings(ExecuteInfo::create(nextHitRate, execInfo));
+        flow.add(child->estimate());
     }
 }
 
 void
 IntermediateBlueprint::freeze()
 {
-    for (Blueprint::UP &child: _children) {
+    for (auto &child: _children) {
         child->freeze();
     }
     freeze_self();

@@ -14,6 +14,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
 
+namespace search::queryeval { class WeakAndHeap; }
 namespace search::queryeval::wand {
 
 //-----------------------------------------------------------------------------
@@ -23,6 +24,21 @@ using docid_t = uint32_t;
 using ref_t = uint16_t;
 
 //-----------------------------------------------------------------------------
+
+/**
+ * Params used to tweak the behavior of the WAND algorithm.
+ */
+struct MatchParams
+{
+    WeakAndHeap   &scores;
+    score_t        scoreThreshold;
+    const uint32_t scoresAdjustFrequency;
+    MatchParams(WeakAndHeap &scores_in, score_t scoreThreshold_in, uint32_t scoresAdjustFrequency_in) noexcept
+        : scores(scores_in),
+          scoreThreshold(scoreThreshold_in),
+          scoresAdjustFrequency(scoresAdjustFrequency_in)
+    {}
+};
 
 /**
  * Wrapper used to specify underlying terms during setup
