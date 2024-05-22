@@ -42,7 +42,7 @@ import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
  */
 class HttpRequestDispatch {
 
-    public static final String STATUS_CODE_OVERRIDE = "com.yahoo.jdisc.http.server.jetty.STATUS_CODE_OVERRIDE";
+    public static final String ACCESS_LOG_STATUS_CODE_OVERRIDE = "com.yahoo.jdisc.http.server.jetty.ACCESS_LOG_STATUS_CODE_OVERRIDE";
 
     private static final Logger log = Logger.getLogger(HttpRequestDispatch.class.getName());
     private static final String CHARSET_ANNOTATION = ";charset=";
@@ -130,12 +130,12 @@ class HttpRequestDispatch {
                         error,
                         () -> "Network connection was unexpectedly terminated: " + jettyRequest.getRequestURI());
                 metricReporter.prematurelyClosed();
-                asyncCtx.getRequest().setAttribute(STATUS_CODE_OVERRIDE, 499);
+                asyncCtx.getRequest().setAttribute(ACCESS_LOG_STATUS_CODE_OVERRIDE, 499);
             } else if (isErrorOfType(error, TimeoutException.class)) {
                 log.log(Level.FINE,
                         error,
                         () -> "Request/stream was timed out by Jetty: " + jettyRequest.getRequestURI());
-                asyncCtx.getRequest().setAttribute(STATUS_CODE_OVERRIDE, 408);
+                asyncCtx.getRequest().setAttribute(ACCESS_LOG_STATUS_CODE_OVERRIDE, 408);
             } else if (!isErrorOfType(error, OverloadException.class, BindingNotFoundException.class, RequestException.class)) {
                 log.log(Level.WARNING, "Request failed: " + jettyRequest.getRequestURI(), error);
             }

@@ -50,7 +50,7 @@ public class AccessLogRequestLogTest {
         new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
         assertEquals(200, requestLog.entries().remove(0).statusCode().getAsInt());
 
-        jettyRequest.setAttribute(HttpRequestDispatch.STATUS_CODE_OVERRIDE, 404);
+        jettyRequest.setAttribute(HttpRequestDispatch.ACCESS_LOG_STATUS_CODE_OVERRIDE, 404);
         new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
         assertEquals(404, requestLog.entries().remove(0).statusCode().getAsInt());
     }
