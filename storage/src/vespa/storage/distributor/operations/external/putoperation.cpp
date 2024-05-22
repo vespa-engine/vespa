@@ -180,6 +180,8 @@ void PutOperation::start_direct_put_dispatch(DistributorStripeMessageSender& sen
                                                    _op_ctx.distributor_config().getMinimalBucketSplit(),
                                                    _bucket_space.getDistribution().getRedundancy(),
                                                    _msg->getBucket().getBucketSpace());
+        targetResolver.use_symmetric_replica_selection(
+                _op_ctx.distributor_config().symmetric_put_and_activate_replica_selection());
         OperationTargetList targets(targetResolver.getTargets(OperationTargetResolver::PUT, _doc_id_bucket_id));
 
         for (const auto& target : targets) {

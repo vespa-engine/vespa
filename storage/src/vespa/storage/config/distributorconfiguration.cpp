@@ -46,6 +46,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _use_weak_internal_read_consistency_for_client_gets(false),
       _enable_metadata_only_fetch_phase_for_inconsistent_updates(true),
       _enable_operation_cancellation(false),
+      _symmetric_put_and_activate_replica_selection(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
 }
@@ -150,6 +151,7 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
     _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _enable_operation_cancellation = config.enableOperationCancellation;
     _minimumReplicaCountingMode = deriveReplicaCountingMode(config.minimumReplicaCountingMode);
+    _symmetric_put_and_activate_replica_selection = config.symmetricPutAndActivateReplicaSelection;
 
     if (config.maxClusterClockSkewSec >= 0) {
         _maxClusterClockSkew = std::chrono::seconds(config.maxClusterClockSkewSec);

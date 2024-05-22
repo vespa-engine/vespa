@@ -15,15 +15,17 @@ struct BucketInstance : public vespalib::AsciiPrintable {
     document::BucketId _bucket;
     api::BucketInfo    _info;
     lib::Node          _node;
-    uint16_t           _idealLocationPriority;
-    bool               _trusted;
-    bool               _exist;
+    uint16_t           _ideal_location_priority;
+    uint16_t           _db_entry_order;
+    bool               _trusted; // TODO remove
+    bool               _exists;
 
     BucketInstance() noexcept
-        : _idealLocationPriority(0xffff), _trusted(false), _exist(false) {}
+        : _ideal_location_priority(0xffff), _db_entry_order(0xffff), _trusted(false), _exists(false)
+    {}
     BucketInstance(const document::BucketId& id, const api::BucketInfo& info,
-                   lib::Node node, uint16_t idealLocationPriority, bool trusted,
-                   bool exist) noexcept;
+                   lib::Node node, uint16_t ideal_location_priority,
+                   uint16_t db_entry_order, bool trusted, bool exist) noexcept;
 
     void print(vespalib::asciistream& out, const PrintProperties&) const override;
 };
@@ -83,6 +85,7 @@ class OperationTargetResolverImpl : public OperationTargetResolver {
     uint32_t              _minUsedBucketBits;
     uint16_t              _redundancy;
     document::BucketSpace _bucketSpace;
+    bool                  _symmetric_replica_selection;
 
 public:
     OperationTargetResolverImpl(const DistributorBucketSpace& distributor_bucket_space,
@@ -94,8 +97,13 @@ public:
           _bucketDatabase(bucketDatabase),
           _minUsedBucketBits(minUsedBucketBits),
           _redundancy(redundancy),
-          _bucketSpace(bucketSpace)
+          _bucketSpace(bucketSpace),
+          _symmetric_replica_selection(true)
     {}
+
+    void use_symmetric_replica_selection(bool symmetry) noexcept {
+        _symmetric_replica_selection = symmetry;
+    }
 
     BucketInstanceList getAllInstances(OperationType type, const document::BucketId& id);
     BucketInstanceList getInstances(OperationType type, const document::BucketId& id) {
