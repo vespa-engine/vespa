@@ -105,10 +105,8 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
                            childState.field(0).resolve(*childrenMatchData));
     }
     return ParallelWeakAndSearch::create(terms,
-                                         ParallelWeakAndSearch::MatchParams(_scores,
-                                                                            _scoreThreshold,
-                                                                            _thresholdBoostFactor,
-                                                                            _scoresAdjustFrequency).setDocIdLimit(get_docid_limit()),
+                                         ParallelWeakAndSearch::MatchParams(_scores, _scoreThreshold, _thresholdBoostFactor,
+                                                                            _scoresAdjustFrequency, get_docid_limit()),
                                          ParallelWeakAndSearch::RankParams(*tfmda[0],std::move(childrenMatchData)),
                                          strict());
 }

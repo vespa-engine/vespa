@@ -11,7 +11,6 @@
 #include "in_term_search.h"
 #include "multi_term_or_filter_search.h"
 #include "predicate_attribute.h"
-#include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/hit_estimate_flow_stats_adapter.h>
 #include <vespa/searchlib/common/location.h>
@@ -508,9 +507,8 @@ public:
             return std::make_unique<queryeval::EmptySearch>();
         }
         return queryeval::ParallelWeakAndSearch::create(*tfmda[0],
-                queryeval::ParallelWeakAndSearch::MatchParams(_scores, _scoreThreshold,
-                                                              _thresholdBoostFactor, _scoresAdjustFrequency)
-                                                        .setDocIdLimit(get_docid_limit()),
+                queryeval::ParallelWeakAndSearch::MatchParams(_scores, _scoreThreshold, _thresholdBoostFactor,
+                                                              _scoresAdjustFrequency, get_docid_limit()),
                                                         _weights, _terms, _attr, strict());
     }
     std::unique_ptr<SearchIterator> createFilterSearch(FilterConstraint constraint) const override;

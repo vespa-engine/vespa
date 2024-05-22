@@ -22,20 +22,23 @@ struct ParallelWeakAndSearch : public SearchIterator
      */
     struct MatchParams : wand::MatchParams
     {
-        double       thresholdBoostFactor;
-        docid_t      docIdLimit;
+        const double  thresholdBoostFactor;
+        const docid_t docIdLimit;
+        MatchParams(WeakAndHeap &scores_in,
+                    score_t scoreThreshold_in,
+                    double thresholdBoostFactor_in,
+                    uint32_t scoresAdjustFrequency_in,
+                    uint32_t docIdLimit_in) noexcept
+            : wand::MatchParams(scores_in, scoreThreshold_in, scoresAdjustFrequency_in),
+              thresholdBoostFactor(thresholdBoostFactor_in),
+              docIdLimit(docIdLimit_in)
+        {}
         MatchParams(WeakAndHeap &scores_in,
                     score_t scoreThreshold_in,
                     double thresholdBoostFactor_in,
                     uint32_t scoresAdjustFrequency_in) noexcept
-            : wand::MatchParams(scores_in, scoreThreshold_in, scoresAdjustFrequency_in),
-              thresholdBoostFactor(thresholdBoostFactor_in),
-              docIdLimit(0)
+            : MatchParams(scores_in, scoreThreshold_in, thresholdBoostFactor_in, scoresAdjustFrequency_in, 0)
         {}
-        MatchParams &setDocIdLimit(docid_t value) {
-            docIdLimit = value;
-            return *this;
-        }
     };
 
     /**
@@ -63,12 +66,10 @@ struct ParallelWeakAndSearch : public SearchIterator
     static SearchIterator::UP createHeapWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
     static SearchIterator::UP create(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
 
-    static SearchIterator::UP create(fef::TermFieldMatchData &tmd,
-                                     const MatchParams &matchParams,
+    static SearchIterator::UP create(fef::TermFieldMatchData &tmd, const MatchParams &matchParams,
                                      const std::vector<int32_t> &weights,
                                      const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
-                                     const IDocidWithWeightPostingStore &attr,
-                                     bool strict);
+                                     const IDocidWithWeightPostingStore &attr, bool strict);
 };
 
 }
