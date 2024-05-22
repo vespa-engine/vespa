@@ -42,6 +42,7 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints;
 import com.yahoo.vespa.config.server.application.ActiveTokenFingerprints.Token;
@@ -837,7 +838,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private String getTesterHostname(ApplicationId applicationId) {
-        return getTesterServiceInfo(applicationId).getHostName();
+        String hostname = getTesterServiceInfo(applicationId).getHostName();
+        if (orchestrator.getNodeStatus(new HostName(hostname)).isSuspended())
+            throw new TesterSuspendedException("tester container is suspended");
+
+        return hostname;
     }
 
     private int getTesterPort(ApplicationId applicationId) {
@@ -853,6 +858,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(service -> CONTAINER.serviceName.equals(service.getServiceType()))
                 .findFirst()
                 .orElseThrow(() -> new InternalServerException("Could not find any tester container for tester app " + applicationId.toFullString()));
+    }
+
+    public static class TesterSuspendedException extends RuntimeException {
+        public TesterSuspendedException(String message) {
+            super(message);
+        }
     }
 
     // ---------------- Session operations ----------------------------------------------------------------
