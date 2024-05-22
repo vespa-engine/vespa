@@ -77,6 +77,7 @@ public:
           _matchParams(matchParams),
           _localScores()
     {
+        _localScores.reserve(_matchParams.scoresAdjustFrequency);
     }
     size_t get_num_terms() const override { return _terms.size(); }
     int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
