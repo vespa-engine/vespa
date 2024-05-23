@@ -1074,9 +1074,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return List.of(node);
     }
 
+    private static void requireFixedSizeSingularNodeIfTester(ConfigModelContext context, NodesSpecification nodes) {
+        if ( ! context.properties().hostedVespa() || ! context.properties().applicationId().instance().isTester())
+            return;
+
+        if ( ! nodes.maxResources().equals(nodes.minResources()))
+            throw new IllegalArgumentException("tester resources must be absolute, but min and max resources differ: " + nodes);
+
+        if (nodes.maxResources().nodes() > 1)
+            throw new IllegalArgumentException("tester cannot run on more than 1 node, but " + nodes.maxResources().nodes() + " nodes were specified");
+    }
+
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         try {
             var nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+            requireFixedSizeSingularNodeIfTester(context, nodesSpecification);
             var clusterId = ClusterSpec.Id.from(cluster.name());
             Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                       ClusterSpec.Type.container,

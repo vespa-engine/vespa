@@ -17,6 +17,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -49,6 +50,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -738,6 +740,29 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         verifyAvailableprocessors(true, null, 0);
         verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()), 9);
         verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(1).build()), 2);
+    }
+
+    @Test
+    void testerContainer() {
+        createModelWithTesterNodes("<nodes count='1' docker-image='foo/bar/baz'><resources vcpu='0.1' memory='1Gb' disk='1Gb'/></nodes>");
+
+        assertEquals("In container cluster 'default': tester cannot run on more than 1 node, but 2 nodes were specified",
+                     Exceptions.toMessageString(assertThrows(IllegalArgumentException.class,
+                                                             () -> createModelWithTesterNodes("<nodes count='2'/>"))));
+
+        assertEquals("In container cluster 'default': tester resources must be absolute, but min and max resources differ: specification of dedicated " +
+                     "min 1 nodes with [vcpu: 0.0, memory: 1.0 Gb, disk: 0.0 Gb, bandwidth: 0.3 Gbps, architecture: any] " +
+                     "max 1 nodes with [vcpu: 0.0, memory: 2.0 Gb, disk: 0.0 Gb, bandwidth: 0.3 Gbps, architecture: any]",
+                     Exceptions.toMessageString(assertThrows(IllegalArgumentException.class,
+                                                             () -> createModelWithTesterNodes("<nodes><resources memory='[1Gb, 2Gb]'/></nodes>"))));
+    }
+
+    void createModelWithTesterNodes(String testerNodesXml) {
+        String containerXml = "<container id='default' version='1.0'>%s</container>".formatted(testerNodesXml);
+        VespaModelTester tester = new VespaModelTester();
+        tester.setApplicationId("t", "a", "i-t");
+        tester.addHosts(3);
+        tester.createModel(containerXml, true);
     }
 
     @Test

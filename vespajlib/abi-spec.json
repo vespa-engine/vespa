@@ -3456,7 +3456,8 @@
       "public static java.util.Optional getChildValue(org.w3c.dom.Element, java.lang.String)",
       "public static java.lang.String getNodePath(org.w3c.dom.Node, java.lang.String)",
       "public static boolean isName(java.lang.CharSequence)",
-      "public static javax.xml.transform.TransformerFactory createTransformerFactory()"
+      "public static javax.xml.transform.TransformerFactory createTransformerFactory()",
+      "public static java.lang.String toString(org.w3c.dom.Node)"
     ],
     "fields" : [ ]
   },

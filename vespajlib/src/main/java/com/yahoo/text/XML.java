@@ -13,7 +13,13 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -21,6 +27,8 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Static XML utility methods
@@ -457,6 +465,21 @@ public class XML {
         transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
         transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
         return transformerFactory;
+    }
+
+    /** Returns the UTF-8 string representation of an XML root, tag or text node. */
+    public static String toString(Node node) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            Transformer transformer = createTransformerFactory().newTransformer();
+            transformer.setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.transform(new DOMSource(node), new StreamResult(out));
+        }
+        catch (TransformerException e) {
+            throw new IllegalArgumentException("invalid XML element", e);
+        }
+        return out.toString(UTF_8);
     }
 
 

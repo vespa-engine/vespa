@@ -2,6 +2,7 @@
 package com.yahoo.text;
 
 import org.junit.Test;
+import org.w3c.dom.Document;
 
 import java.io.StringReader;
 
@@ -11,10 +12,9 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Bjorn Borud
+ * @author Steinar Knutsen
  */
 public class XMLTestCase  {
 
@@ -30,13 +30,10 @@ public class XMLTestCase  {
         assertEquals("this is a &amp; test", XML.xmlEscape(s2, true));
 
         // quotes are only escaped in attributes
-        //
         assertEquals("this is a &quot; test", XML.xmlEscape(s3, true));
         assertEquals("this is a \" test", XML.xmlEscape(s3, false));
 
-        // quotes are only escaped in attributes.  prevent bug
-        // no. 187006 from happening again!
-        //
+        // quotes are only escaped in attributes
         assertEquals("this is a &lt;&quot; test", XML.xmlEscape(s4, true));
         assertEquals("this is a &lt;\" test", XML.xmlEscape(s4, false));
 
@@ -112,4 +109,20 @@ public class XMLTestCase  {
             assertTrue(e.getMessage().contains("error at line 2, column 5"));
         }
     }
+
+    @Test
+    public void testParseAndWrite() {
+        String xml = """
+                     <foo>
+                       <bar baz="quux"/>
+                       <moo baah="boo">mux</moo>
+                       <!-- zoink -->
+                     </foo>""";
+        Document document = XML.getDocument(xml);
+        assertEquals(xml, XML.toString(document));
+        assertEquals(xml, XML.toString(document.getDocumentElement()));
+        assertEquals("<bar baz=\"quux\"/>", XML.toString(XML.getChild(document.getDocumentElement(), "bar")));
+        assertEquals("mux", XML.toString(XML.getChild(document.getDocumentElement(), "moo").getFirstChild()));
+    }
+
 }

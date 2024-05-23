@@ -435,15 +435,16 @@ public class DeploymentSpec {
         private final Optional<RegionName> region;
         private final Optional<AthenzService> athenzService;
         private final Optional<String> testerFlavor;
+        private final Optional<String> testerNodes;
         private final Map<CloudName, CloudAccount> cloudAccounts;
         private final Optional<Duration> hostTTL;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
+            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
         }
 
-        public DeclaredZone(Environment environment, Optional<RegionName> region,
-                            Optional<AthenzService> athenzService, Optional<String> testerFlavor,
+        public DeclaredZone(Environment environment, Optional<RegionName> region, Optional<AthenzService> athenzService,
+                            Optional<String> testerFlavor, Optional<String> testerNodes,
                             Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL) {
             if (environment != Environment.prod && region.isPresent())
                 illegal("Non-prod environments cannot specify a region");
@@ -454,6 +455,7 @@ public class DeploymentSpec {
             this.region = Objects.requireNonNull(region);
             this.athenzService = Objects.requireNonNull(athenzService);
             this.testerFlavor = Objects.requireNonNull(testerFlavor);
+            this.testerNodes = Objects.requireNonNull(testerNodes);
             this.cloudAccounts = Map.copyOf(cloudAccounts);
             this.hostTTL = Objects.requireNonNull(hostTTL);
         }
@@ -463,10 +465,11 @@ public class DeploymentSpec {
         /** The region name, or empty if not declared */
         public Optional<RegionName> region() { return region; }
 
-        // TODO(mpolden): Remove after Vespa < 8.203 is no longer in use
-        public boolean active() { return true; }
-
+        // TODO jonmv: remove after 8.350.
         public Optional<String> testerFlavor() { return testerFlavor; }
+
+        /** The XML &lt;nodes&gt; tag of the tester application for this zone, if specified. */
+        public Optional<String> testerNodes() { return testerNodes; }
 
         Optional<AthenzService> athenzService() { return athenzService; }
 

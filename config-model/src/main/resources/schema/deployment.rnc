@@ -2,6 +2,8 @@
 # RELAX NG Compact Syntax
 # Vespa Deployment file
 
+include "common.rnc"
+
 start = element deployment {
    attribute version { "1.0" } &
    attribute major-version { text }? &
@@ -100,7 +102,7 @@ Test = element test {
    attribute tester-flavor { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
-   text
+   Tester?
 }
 
 Staging = element staging {
@@ -108,7 +110,7 @@ Staging = element staging {
    attribute tester-flavor { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
-   text
+   Tester?
 }
 
 Dev = element dev {
@@ -129,7 +131,8 @@ Prod = element prod {
    Region* &
    Delay* &
    ProdTest* &
-   ParallelSteps*
+   ParallelSteps* &
+   Tester?
 }
 
 ProdTest = element test {
@@ -196,4 +199,8 @@ Group = element group {
 MemberRegion = element region {
     attribute fraction { xsd:double }? &
     text
+}
+
+Tester = element tester {
+    Nodes?
 }
