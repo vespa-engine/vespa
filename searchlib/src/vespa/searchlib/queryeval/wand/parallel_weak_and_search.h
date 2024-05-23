@@ -20,27 +20,25 @@ struct ParallelWeakAndSearch : public SearchIterator
     /**
      * Params used to tweak the behavior of the WAND algorithm.
      */
-    struct MatchParams
+    struct MatchParams : wand::MatchParams
     {
-        WeakAndHeap &scores;
-        score_t      scoreThreshold;
-        double       thresholdBoostFactor;
-        uint32_t     scoresAdjustFrequency;
-        docid_t      docIdLimit;
-        MatchParams(WeakAndHeap &scores_,
-                    score_t scoreThreshold_,
-                    double thresholdBoostFactor_,
-                    uint32_t scoresAdjustFrequency_)
-            : scores(scores_),
-              scoreThreshold(scoreThreshold_),
-              thresholdBoostFactor(thresholdBoostFactor_),
-              scoresAdjustFrequency(scoresAdjustFrequency_),
-              docIdLimit(0)
+        const double  thresholdBoostFactor;
+        const docid_t docIdLimit;
+        MatchParams(WeakAndHeap &scores_in,
+                    score_t scoreThreshold_in,
+                    double thresholdBoostFactor_in,
+                    uint32_t scoresAdjustFrequency_in,
+                    uint32_t docIdLimit_in) noexcept
+            : wand::MatchParams(scores_in, scoreThreshold_in, scoresAdjustFrequency_in),
+              thresholdBoostFactor(thresholdBoostFactor_in),
+              docIdLimit(docIdLimit_in)
         {}
-        MatchParams &setDocIdLimit(docid_t value) {
-            docIdLimit = value;
-            return *this;
-        }
+        MatchParams(WeakAndHeap &scores_in,
+                    score_t scoreThreshold_in,
+                    double thresholdBoostFactor_in,
+                    uint32_t scoresAdjustFrequency_in) noexcept
+            : MatchParams(scores_in, scoreThreshold_in, thresholdBoostFactor_in, scoresAdjustFrequency_in, 0)
+        {}
     };
 
     /**
@@ -51,7 +49,7 @@ struct ParallelWeakAndSearch : public SearchIterator
         fef::TermFieldMatchData &rootMatchData;
         fef::MatchData::UP       childrenMatchData;
         RankParams(fef::TermFieldMatchData &rootMatchData_,
-                   fef::MatchData::UP &&childrenMatchData_)
+                   fef::MatchData::UP &&childrenMatchData_) noexcept
             : rootMatchData(rootMatchData_),
               childrenMatchData(std::move(childrenMatchData_))
         {}
@@ -68,12 +66,10 @@ struct ParallelWeakAndSearch : public SearchIterator
     static SearchIterator::UP createHeapWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
     static SearchIterator::UP create(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
 
-    static SearchIterator::UP create(fef::TermFieldMatchData &tmd,
-                                     const MatchParams &matchParams,
+    static SearchIterator::UP create(fef::TermFieldMatchData &tmd, const MatchParams &matchParams,
                                      const std::vector<int32_t> &weights,
                                      const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
-                                     const IDocidWithWeightPostingStore &attr,
-                                     bool strict);
+                                     const IDocidWithWeightPostingStore &attr, bool strict);
 };
 
 }

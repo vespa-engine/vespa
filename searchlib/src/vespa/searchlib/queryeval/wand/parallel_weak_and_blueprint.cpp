@@ -1,12 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "parallel_weak_and_blueprint.h"
-#include "wand_parts.h"
 #include "parallel_weak_and_search.h"
 #include <vespa/searchlib/queryeval/field_spec.hpp>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 
@@ -106,14 +104,11 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
                            childState.estimate().estHits,
                            childState.field(0).resolve(*childrenMatchData));
     }
-    return SearchIterator::UP
-        (ParallelWeakAndSearch::create(terms,
-                                       ParallelWeakAndSearch::MatchParams(_scores,
-                                               _scoreThreshold,
-                                               _thresholdBoostFactor,
-                                               _scoresAdjustFrequency).setDocIdLimit(get_docid_limit()),
-                                       ParallelWeakAndSearch::RankParams(*tfmda[0],
-                                               std::move(childrenMatchData)), strict()));
+    return ParallelWeakAndSearch::create(terms,
+                                         ParallelWeakAndSearch::MatchParams(_scores, _scoreThreshold, _thresholdBoostFactor,
+                                                                            _scoresAdjustFrequency, get_docid_limit()),
+                                         ParallelWeakAndSearch::RankParams(*tfmda[0],std::move(childrenMatchData)),
+                                         strict());
 }
 
 std::unique_ptr<SearchIterator>
