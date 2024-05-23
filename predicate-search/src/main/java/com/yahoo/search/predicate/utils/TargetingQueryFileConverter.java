@@ -263,14 +263,11 @@ public class TargetingQueryFileConverter {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Feature)) return false;
-
-            Feature feature = (Feature) o;
+            if (!(o instanceof Feature feature)) return false;
 
             if (longValue != feature.longValue) return false;
             if (!key.equals(feature.key)) return false;
             return !(strValue != null ? !strValue.equals(feature.strValue) : feature.strValue != null);
-
         }
 
         @Override
