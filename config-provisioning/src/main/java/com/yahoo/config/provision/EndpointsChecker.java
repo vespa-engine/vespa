@@ -4,16 +4,20 @@ package com.yahoo.config.provision;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author jonmv
@@ -35,9 +39,7 @@ public interface EndpointsChecker {
         public static final Availability ready = new Availability(Status.available, "Endpoints are ready.");
     }
 
-    interface HostNameResolver { Optional<InetAddress> resolve(DomainName hostName); }
-
-    interface CNameResolver { Optional<DomainName> resolve(DomainName hostName); }
+    interface NameResolver { List<String> resolve(NameType nameType, DomainName name); }
 
     interface HealthChecker { Availability healthy(Endpoint endpoint); }
 
@@ -46,55 +48,54 @@ public interface EndpointsChecker {
     }
 
     static EndpointsChecker of(HealthChecker healthChecker) {
-        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, EndpointsChecker::resolveHostName, EndpointsChecker::resolveCname, healthChecker);
+        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, EndpointsChecker::resolveAll, healthChecker);
     }
 
-    static EndpointsChecker mock(HostNameResolver hostNameResolver, CNameResolver cNameResolver, HealthChecker healthChecker) {
-        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, hostNameResolver, cNameResolver, healthChecker);
+    static EndpointsChecker mock(NameResolver resolver, HealthChecker healthChecker) {
+        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, resolver, healthChecker);
     }
 
     Availability endpointsAvailable(List<Endpoint> zoneEndpoints);
 
     private static Availability endpointsAvailable(List<Endpoint> zoneEndpoints,
-                                                   HostNameResolver hostNameResolver,
-                                                   CNameResolver cNameResolver,
+                                                   NameResolver nameResolver,
                                                    HealthChecker healthChecker) {
         if (zoneEndpoints.isEmpty())
             return new Availability(Status.endpointsUnavailable, "Endpoints not yet ready.");
 
         for (Endpoint endpoint : zoneEndpoints) {
-            Optional<InetAddress> resolvedIpAddress = hostNameResolver.resolve(endpoint.url().domain());
-            if (resolvedIpAddress.isEmpty())
+            Set<String> resolvedIpAddresses = resolveIpAddresses(endpoint.url().domain(), nameResolver);
+            if (resolvedIpAddresses.isEmpty())
                 return new Availability(Status.endpointsUnavailable, "DNS lookup yielded no IP address for '" + endpoint.url().domain() + "'.");
 
-            if (resolvedIpAddress.equals(endpoint.ipAddress())) // We expect a certain IP address, and that's what we got, so we're good.
-                continue;
-
-            if (endpoint.ipAddress().isPresent()) // We expect a certain IP address, but that's not what we got.
+            if (endpoint.ipAddress().isPresent()) {
+                if (resolvedIpAddresses.contains(endpoint.ipAddress().get().getHostAddress())) {
+                    continue; // Resolved addresses contain the expected endpoint IP address
+                }
                 return new Availability(Status.endpointsUnavailable,
-                                        "IP address of '" + endpoint.url().domain() + "' (" +
-                                        resolvedIpAddress.get().getHostAddress() + ") and load balancer " +
-                                        "' (" + endpoint.ipAddress().get().getHostAddress() + ") are not equal");
+                                        "IP address(es) of '" + endpoint.url().domain() + "' (" +
+                                        resolvedIpAddresses + ") do not include load balancer IP " +
+                                        "' (" + endpoint.ipAddress().get().getHostAddress() + ")");
+            }
 
             if (endpoint.canonicalName().isEmpty()) // We have no expected IP address, and no canonical name, so there's nothing more to check.
                 continue;
 
-            Optional<DomainName> cNameValue = cNameResolver.resolve(endpoint.url().domain());
-            if (cNameValue.filter(endpoint.canonicalName().get()::equals).isEmpty()) {
+            List<String> cnameAnswers = nameResolver.resolve(NameType.CNAME, endpoint.url().domain());
+            if (!cnameAnswers.contains(endpoint.canonicalName().get().value())) {
                 return new Availability(Status.endpointsUnavailable,
                                         "CNAME '" + endpoint.url().domain() + "' points at " +
-                                        cNameValue.map(name -> "'" + name + "'").orElse("nothing") +
+                                        cnameAnswers +
                                         " but should point at load balancer " +
                                         endpoint.canonicalName().map(name -> "'" + name + "'").orElse("nothing"));
             }
 
-            Optional<InetAddress> loadBalancerAddress = hostNameResolver.resolve(endpoint.canonicalName().get());
-            if ( ! loadBalancerAddress.equals(resolvedIpAddress)) {
+            Set<String> loadBalancerAddresses = resolveIpAddresses(endpoint.canonicalName().get(), nameResolver);
+            if ( ! loadBalancerAddresses.equals(resolvedIpAddresses)) {
                 return new Availability(Status.endpointsUnavailable,
-                                        "IP address of CNAME '" + endpoint.url().domain() + "' (" +
-                                        resolvedIpAddress.get().getHostAddress() + ") and load balancer '" +
-                                        endpoint.canonicalName().get() + "' (" +
-                                        loadBalancerAddress.map(InetAddress::getHostAddress).orElse("empty") + ") are not equal");
+                                        "IP address(es) of CNAME '" + endpoint.url().domain() + "' (" +
+                                        resolvedIpAddresses + ") and load balancer '" +
+                                        endpoint.canonicalName().get() + "' (" + loadBalancerAddresses + ") are not equal");
             }
         }
 
@@ -107,38 +108,43 @@ public interface EndpointsChecker {
         return availability;
     }
 
-    /** Returns the IP address of the given host name, if any. */
-    private static Optional<InetAddress> resolveHostName(DomainName hostname) {
-        try {
-            return Optional.of(InetAddress.getByName(hostname.value()));
-        }
-        catch (UnknownHostException ignored) {
-            return Optional.empty();
-        }
+    private static Set<String> resolveIpAddresses(DomainName name, NameResolver nameResolver) {
+        Set<String> answers = new HashSet<>();
+        answers.addAll(nameResolver.resolve(NameType.A, name));
+        answers.addAll(nameResolver.resolve(NameType.AAAA, name));
+        return answers;
     }
 
-    /** Returns the host name of the given CNAME, if any. */
-    private static Optional<DomainName> resolveCname(DomainName endpoint) {
+    enum NameType {
+        A, AAAA, CNAME
+    }
+
+    /** Returns all answers for given type and name. An empty list is returned if name does not exist (NXDOMAIN) */
+    private static List<String> resolveAll(NameType type, DomainName name) {
         try {
-            InitialDirContext ctx = new InitialDirContext();
+            DirContext ctx = new InitialDirContext();
             try {
-                Attributes attrs = ctx.getAttributes("dns:/" + endpoint.value(), new String[]{ "CNAME" });
-                for (Attribute attribute : Collections.list(attrs.getAll())) {
-                    Enumeration<?> vals = attribute.getAll();
-                    if (vals.hasMoreElements()) {
-                        String hostname = vals.nextElement().toString();
-                        return Optional.of(hostname.substring(0, hostname.length() - 1)).map(DomainName::of);
-                    }
+                String entryType = type.name();
+                Attributes attributes = ctx.getAttributes("dns:/" + name, new String[]{entryType});
+                Attribute attribute = attributes.get(entryType);
+                if (attribute == null) {
+                    return List.of();
                 }
-            }
-            finally {
+                List<String> results = new ArrayList<>();
+                attribute.getAll().asIterator().forEachRemaining(value -> {
+                    String answer = Objects.toString(value);
+                    answer = answer.endsWith(".") ? answer.substring(0, answer.length() - 1) : answer; // Trim trailing dot
+                    results.add(answer);
+                });
+                return Collections.unmodifiableList(results);
+            } finally {
                 ctx.close();
             }
-        }
-        catch (NamingException e) {
+        } catch (NameNotFoundException ignored) {
+            return List.of();
+        } catch (NamingException e) {
             throw new RuntimeException(e);
         }
-        return Optional.empty();
     }
 
 }
