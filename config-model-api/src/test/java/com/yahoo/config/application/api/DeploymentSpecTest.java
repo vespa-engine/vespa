@@ -1128,7 +1128,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void customTesterFlavor() {
+    public void customLegacyTesterFlavor() {
         DeploymentSpec spec = DeploymentSpec.fromXml("""
                                                      <deployment>
                                                         <instance id='default'>
@@ -1142,6 +1142,42 @@ public class DeploymentSpecTest {
         assertEquals(Optional.of("d-1-4-20"), spec.requireInstance("default").steps().get(0).zones().get(0).testerFlavor());
         assertEquals(Optional.empty(), spec.requireInstance("default").steps().get(1).zones().get(0).testerFlavor());
         assertEquals(Optional.of("d-2-8-50"), spec.requireInstance("default").steps().get(2).zones().get(0).testerFlavor());
+    }
+
+    @Test
+    public void customTesterFlavor() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("""
+                                                     <deployment>
+                                                        <instance id='default'>
+                                                           <test>
+                                                             <tester>
+                                                               <nodes docker-image="foo">
+                                                                 <resources vcpu="1" memory="3.5Gb" disk="30Gb" architecture="arm64" />
+                                                               </nodes>
+                                                             </tester>
+                                                           </test>
+                                                           <staging />
+                                                           <prod>
+                                                              <tester>
+                                                                <nodes>
+                                                                  <resources vcpu="2" memory="7Gb" disk="30Gb" />
+                                                                </nodes>
+                                                              </tester>
+                                                              <region>us-north-7</region>
+                                                           </prod>
+                                                        </instance>
+                                                     </deployment>""");
+        assertEquals(Optional.of("""
+                                 <nodes docker-image="foo">
+                                             <resources architecture="arm64" disk="30Gb" memory="3.5Gb" vcpu="1"/>
+                                           </nodes>"""),
+                     spec.requireInstance("default").steps().get(0).zones().get(0).testerNodes());
+        assertEquals(Optional.empty(), spec.requireInstance("default").steps().get(1).zones().get(0).testerNodes());
+        assertEquals(Optional.of("""
+                                 <nodes>
+                                              <resources disk="30Gb" memory="7Gb" vcpu="2"/>
+                                            </nodes>"""),
+                     spec.requireInstance("default").steps().get(2).zones().get(0).testerNodes());
     }
 
     @Test

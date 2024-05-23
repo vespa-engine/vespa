@@ -137,7 +137,7 @@ public class NodesSpecification {
         int defaultMinGroups =                           nodes.from().orElse(1) / groupSize.to().orElse(nodes.from().orElse(1));
         int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1) / groupSize.from().orElse(1);
 
-        var min = new ClusterResources(nodes.from().orElse(1),  groups.from().orElse(defaultMinGroups),  nodeResources(nodesElement).getFirst());
+        var min = new ClusterResources(nodes.from().orElse(1), groups.from().orElse(defaultMinGroups), nodeResources(nodesElement).getFirst());
         var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(defaultMaxGroups), nodeResources(nodesElement).getSecond());
         return new ResourceConstraints(min, max, groupSize);
     }

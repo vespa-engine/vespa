@@ -92,6 +92,8 @@ public class DeploymentSpecXmlReader {
     private static final String athenzServiceAttribute = "athenz-service";
     private static final String athenzDomainAttribute = "athenz-domain";
     private static final String testerFlavorAttribute = "tester-flavor";
+    private static final String testerTag = "tester";
+    private static final String nodesTag = "nodes";
     private static final String majorVersionAttribute = "major-version";
     private static final String cloudAccountAttribute = "cloud-account";
     private static final String hostTTLAttribute = "empty-host-ttl";
@@ -265,6 +267,7 @@ public class DeploymentSpecXmlReader {
     private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag, Bcp defaultBcp) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
+        Optional<String> testerNodes = mostSpecificSibling(stepTag, testerTag).map(tester -> XML.getChild(tester, nodesTag)).map(XML::toString);
 
         switch (stepTag.getTagName()) {
             case testTag:
@@ -273,7 +276,7 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerFlavor, readCloudAccounts(stepTag), readHostTTL(stepTag)));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerFlavor, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -291,7 +294,7 @@ public class DeploymentSpecXmlReader {
                                             .flatMap(child -> readSteps(child, prodAttributes, parentTag, defaultBcp).stream())
                                             .toList()));
             case regionTag:
-                return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));
+                return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, testerNodes, stepTag));
             default:
                 return List.of();
         }
@@ -680,9 +683,9 @@ public class DeploymentSpecXmlReader {
     }
 
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
-                                          Optional<String> testerFlavor, Element regionTag) {
+                                          Optional<String> testerFlavor, Optional<String> testerNodes, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                athenzService, testerFlavor,
+                                athenzService, testerFlavor, testerNodes,
                                 readCloudAccounts(regionTag), readHostTTL(regionTag));
     }
 
@@ -806,6 +809,16 @@ public class DeploymentSpecXmlReader {
     /** Returns the given attribute from the given tag or its closest ancestor with the attribute. */
     private static Optional<String> mostSpecificAttribute(Element tag, String attributeName) {
         return mostSpecificAttribute(tag, attributeName, true);
+    }
+
+    /** Returns the first encountered sibling with the given name, or sibling of parent, or sibling of grandparent, etc.. */
+    private static Optional<Element> mostSpecificSibling(Element tag, String siblingName) {
+        return Stream.iterate(tag, Objects::nonNull, Node::getParentNode)
+                     .filter(Element.class::isInstance)
+                     .map(Element.class::cast)
+                     .map(element -> XML.getChild(element, siblingName))
+                     .filter(Objects::nonNull)
+                     .findFirst();
     }
 
     /**
