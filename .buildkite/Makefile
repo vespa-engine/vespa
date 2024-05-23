@@ -50,7 +50,7 @@ bootstrap-cmake: bootstrap
 java: bootstrap
 	@$(TOP)/execute.sh $@
 
-cpp: bootstrap-cmake
+cpp: bootstrap-cmake java
 	@$(TOP)/execute.sh $@
 
 cpp-test: cpp
