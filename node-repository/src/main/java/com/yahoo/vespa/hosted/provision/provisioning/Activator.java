@@ -172,10 +172,10 @@ class Activator {
                                              .hostnames();
 
         Set<String> applicationParentHostnames = new HashSet<>(parentHostnames);
-        applicationParentHostnames.removeIf(host -> allNodes.childrenOf(host).type(Type.combined, Type.container, Type.content).isEmpty());
+        applicationParentHostnames.removeIf(host -> potentialChildren.childrenOf(host).type(Type.combined, Type.container, Type.content).isEmpty());
 
         Set<String> nonActiveApplicationHosts = new HashSet<>(nonActiveHosts);
-        nonActiveApplicationHosts.removeIf(host -> allNodes.childrenOf(host).type(Type.combined, Type.container, Type.content).isEmpty());
+        nonActiveApplicationHosts.removeIf(host -> potentialChildren.childrenOf(host).type(Type.combined, Type.container, Type.content).isEmpty());
 
         if (nonActiveHosts.size() > 0) {
             int numActiveApplication = applicationParentHostnames.size() - nonActiveApplicationHosts.size();
