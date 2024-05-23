@@ -234,8 +234,11 @@ public:
     [[nodiscard]] bool enable_operation_cancellation() const noexcept {
         return _enable_operation_cancellation;
     }
+    [[nodiscard]] bool symmetric_put_and_activate_replica_selection() const noexcept {
+        return _symmetric_put_and_activate_replica_selection;
+    }
 
-    bool containsTimeStatement(const std::string& documentSelection) const;
+    [[nodiscard]] bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
     StorageComponent& _component;
@@ -276,6 +279,7 @@ private:
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates; //TODO Rewrite tests and GC
     bool _enable_operation_cancellation;
+    bool _symmetric_put_and_activate_replica_selection;
 
     ReplicaCountingMode _minimumReplicaCountingMode;
 };

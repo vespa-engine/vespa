@@ -159,6 +159,13 @@ num_distributor_stripes int default=0 restart
 ## requests partially or fully "invalidated" by such a change.
 enable_operation_cancellation bool default=false
 
+## Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets
+## for Put operations and the replica selection logic for bucket activation. In particular,
+## the most preferred replica for feed will be the most preferred bucket for activation.
+## This helps ensure that new versions of documents are routed to replicas that are most
+## likely to reflect these changes as part of visible search results.
+symmetric_put_and_activate_replica_selection bool default=false
+
 ## TODO GC very soon, it has no effect.
 priority_merge_out_of_sync_copies int default=120
 

@@ -108,6 +108,7 @@ buildNodeList(const BucketDatabase::Entry& e,vespalib::ConstArrayRef<uint16_t> n
 
 struct ActiveStateOrder {
     bool operator()(const ActiveCopy & e1, const ActiveCopy & e2) noexcept {
+        // Replica selection order should be kept in sync with OperationTargetResolverImpl's InstanceOrder.
         if (e1._ready != e2._ready) {
             return e1._ready;
         }
@@ -120,7 +121,9 @@ struct ActiveStateOrder {
         if (e1._active != e2._active) {
             return e1._active;
         }
-        return e1.nodeIndex() < e2.nodeIndex();
+        // Use _entry_ order instead of node index, as it is in ideal state order (even for retired
+        // nodes), which avoids unintentional affinities towards lower node indexes.
+        return e1.entryIndex() < e2.entryIndex();
     }
 };
 

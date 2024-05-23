@@ -10,9 +10,12 @@
 namespace storage::distributor {
 
 BucketInstance::BucketInstance(const document::BucketId& id, const api::BucketInfo& info, lib::Node node,
-                               uint16_t idealLocationPriority, bool trusted, bool exist) noexcept
+                               uint16_t ideal_location_priority, uint16_t db_entry_order,
+                               bool trusted, bool exist) noexcept
     : _bucket(id), _info(info), _node(node),
-      _idealLocationPriority(idealLocationPriority), _trusted(trusted), _exist(exist)
+      _ideal_location_priority(ideal_location_priority),
+      _db_entry_order(db_entry_order),
+      _trusted(trusted), _exists(exist)
 {
 }
 
@@ -24,8 +27,8 @@ BucketInstance::print(vespalib::asciistream& out, const PrintProperties&) const
 
     std::ostringstream ost;
     ost << std::hex << _bucket.getId();
-    out << "(" << ost.str() << ", " << infoString << ", node " << _node.getIndex() << ", ideal " << _idealLocationPriority
-        << (_trusted ? ", trusted" : "") << (_exist ? "" : ", new copy") << ")";
+    out << "(" << ost.str() << ", " << infoString << ", node " << _node.getIndex() << ", ideal " << _ideal_location_priority
+        << (_trusted ? ", trusted" : "") << (_exists ? "" : ", new copy") << ")";
 }
 
 bool
@@ -42,7 +45,7 @@ BucketInstanceList::add(const BucketDatabase::Entry& e, const IdealServiceLayerN
     for (uint32_t i = 0; i < e.getBucketInfo().getNodeCount(); ++i) {
         const BucketCopy& copy(e.getBucketInfo().getNodeRef(i));
         lib::Node node(lib::NodeType::STORAGE, copy.getNode());
-        _instances.emplace_back(e.getBucketId(), copy.getBucketInfo(), node, idealState.lookup(copy.getNode()), copy.trusted(), true);
+        _instances.emplace_back(e.getBucketId(), copy.getBucketInfo(), node, idealState.lookup(copy.getNode()), i, copy.trusted(), true);
     }
 }
 
@@ -106,7 +109,8 @@ BucketInstanceList::extendToEnoughCopies(const DistributorBucketSpace& distribut
     for (uint32_t i=0; i<idealNodes.size(); ++i) {
         lib::Node node(lib::NodeType::STORAGE, idealNodes[i]);
         if (!contains(node)) {
-            _instances.emplace_back(newTarget, api::BucketInfo(), node, i, false, false);
+            // We don't sort `_instances` after extending, so just reuse `i` as dummy DB entry order.
+            _instances.emplace_back(newTarget, api::BucketInfo(), node, i, i, false, false);
         }
     }
 }
@@ -116,7 +120,7 @@ BucketInstanceList::createTargets(document::BucketSpace bucketSpace)
 {
     OperationTargetList result;
     for (const auto& bi : _instances) {
-        result.emplace_back(document::Bucket(bucketSpace, bi._bucket), bi._node, !bi._exist);
+        result.emplace_back(document::Bucket(bucketSpace, bi._bucket), bi._node, !bi._exists);
     }
     return result;
 }
@@ -129,6 +133,49 @@ BucketInstanceList::print(vespalib::asciistream& out, const PrintProperties& p) 
 namespace {
 
 /**
+ * To maintain a symmetry between which replicas receive Puts and which versions are
+ * preferred for activation, use an identical ordering predicate for both (for the case
+ * where replicas are for the same concrete bucket).
+ *
+ * Must only be used with BucketInstances that have a distinct _db_entry_order set per instance.
+ */
+struct ActiveReplicaSymmetricInstanceOrder {
+    bool operator()(const BucketInstance& a, const BucketInstance& b) noexcept {
+        if (a._bucket == b._bucket) {
+            if (a._info.isReady() != b._info.isReady()) {
+                return a._info.isReady();
+            }
+            if (a._info.getDocumentCount() != b._info.getDocumentCount()) {
+                return a._info.getDocumentCount() > b._info.getDocumentCount();
+            }
+            if (a._ideal_location_priority != b._ideal_location_priority) {
+                return a._ideal_location_priority < b._ideal_location_priority;
+            }
+            if (a._info.isActive() != b._info.isActive()) {
+                return a._info.isActive();
+            }
+            // If all else is equal, this implies both A and B are on retired nodes, which is unlikely
+            // but possible. Fall back to the existing DB _entry order_, which is equal to an ideal
+            // state order where retired nodes are considered part of the ideal state (which is not the
+            // case for most ideal state operations). Since the DB entry order is in ideal state order,
+            // using this instead of node _index_ avoids affinities to lower indexes in such edge cases.
+            return a._db_entry_order < b._db_entry_order;
+        } else {
+            // TODO this inconsistent split case is equal to the legacy logic (aside from the tie-breaking),
+            //  but is considered to be extremely unlikely in practice, so not worth optimizing for.
+            if ((a._info.getMetaCount() == 0) ^ (b._info.getMetaCount() == 0)) {
+                return (a._info.getMetaCount() == 0);
+            }
+            if (a._bucket.getUsedBits() != b._bucket.getUsedBits()) {
+                return (a._bucket.getUsedBits() > b._bucket.getUsedBits());
+            }
+            return a._db_entry_order < b._db_entry_order;
+        }
+        return false;
+    }
+};
+
+/**
  * - Trusted copies should be preferred over non-trusted copies for the same bucket.
  * - Buckets in ideal locations should be preferred over non-ideal locations for the
  *   same bucket across several nodes.
@@ -137,14 +184,14 @@ namespace {
  * - Right after split/join, bucket is often not in ideal location, but should be
  *   preferred instead of source anyhow.
  */
-struct InstanceOrder {
-    bool operator()(const BucketInstance& a, const BucketInstance& b) {
+struct LegacyInstanceOrder {
+    bool operator()(const BucketInstance& a, const BucketInstance& b) noexcept {
         if (a._bucket == b._bucket) {
-                // Trusted only makes sense within same bucket
-                // Prefer trusted buckets over non-trusted ones.
+            // Trusted only makes sense within same bucket
+            // Prefer trusted buckets over non-trusted ones.
             if (a._trusted != b._trusted) return a._trusted;
-            if (a._idealLocationPriority != b._idealLocationPriority) {
-                return a._idealLocationPriority < b._idealLocationPriority;
+            if (a._ideal_location_priority != b._ideal_location_priority) {
+                return a._ideal_location_priority < b._ideal_location_priority;
             }
         } else {
             if ((a._info.getMetaCount() == 0) ^ (b._info.getMetaCount() == 0)) {
@@ -164,7 +211,11 @@ OperationTargetResolverImpl::getAllInstances(OperationType type, const document:
     BucketInstanceList instances;
     if (type == PUT) {
         instances.populate(id, _distributor_bucket_space, _bucketDatabase);
-        instances.sort(InstanceOrder());
+        if (_symmetric_replica_selection) {
+            instances.sort(ActiveReplicaSymmetricInstanceOrder());
+        } else {
+            instances.sort(LegacyInstanceOrder());
+        }
         instances.removeNodeDuplicates();
         instances.extendToEnoughCopies(_distributor_bucket_space, _bucketDatabase,
                                        _bucketDatabase.getAppropriateBucket(_minUsedBucketBits, id), id);
