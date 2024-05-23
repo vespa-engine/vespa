@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.ClusterSpec.Type;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -159,7 +161,7 @@ class Activator {
                     .collect(Collectors.toUnmodifiableSet());
     }
 
-    private static void validateParentHosts(ApplicationId application, NodeList allNodes, NodeList potentialChildren) {
+    static void validateParentHosts(ApplicationId application, NodeList allNodes, NodeList potentialChildren) {
         Set<String> parentHostnames = potentialChildren.stream()
                 .map(Node::parentHostname)
                 .flatMap(Optional::stream)
@@ -169,13 +171,24 @@ class Activator {
                                              .matching(node -> parentHostnames.contains(node.hostname()))
                                              .hostnames();
 
+        Set<String> applicationParentHostnames = new HashSet<>(parentHostnames);
+        applicationParentHostnames.removeIf(host -> potentialChildren.childrenOf(host).type(Type.combined, Type.container, Type.content).isEmpty());
+
+        Set<String> nonActiveApplicationHosts = new HashSet<>(nonActiveHosts);
+        nonActiveApplicationHosts.removeIf(host -> potentialChildren.childrenOf(host).type(Type.combined, Type.container, Type.content).isEmpty());
+
         if (nonActiveHosts.size() > 0) {
-            long numActive = parentHostnames.size() - nonActiveHosts.size();
+            int numActiveApplication = applicationParentHostnames.size() - nonActiveApplicationHosts.size();
+            int numActiveAdmin = parentHostnames.size() - nonActiveHosts.size() - numActiveApplication;
             var messageBuilder = new StringBuilder()
-                    .append(numActive).append("/").append(parentHostnames.size())
-                    .append(" hosts for ")
-                    .append(application)
-                    .append(" have completed provisioning and bootstrapping, still waiting for ");
+                    .append(numActiveApplication).append("/").append(applicationParentHostnames.size())
+                    .append(" application hosts");
+            if (parentHostnames.size() > applicationParentHostnames.size())
+                messageBuilder.append(" and ")
+                              .append(numActiveAdmin).append("/").append(parentHostnames.size() - applicationParentHostnames.size())
+                              .append(" admin hosts");
+            messageBuilder.append(" for ").append(application)
+                          .append(" have completed provisioning and bootstrapping, still waiting for ");
 
             if (nonActiveHosts.size() <= 5) {
                 messageBuilder.append(nonActiveHosts.stream()
