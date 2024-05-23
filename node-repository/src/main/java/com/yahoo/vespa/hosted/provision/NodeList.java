@@ -102,9 +102,9 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return except(Set.of(node));
     }
 
-    /** Returns the subset of nodes assigned to the given cluster type */
-    public NodeList type(ClusterSpec.Type type) {
-        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));
+    /** Returns the subset of nodes assigned to the given cluster types */
+    public NodeList type(ClusterSpec.Type... types) {
+        return matching(node -> node.allocation().isPresent() && Set.of(types).contains(node.allocation().get().membership().cluster().type()));
     }
 
     /** Returns the subset of nodes that run containers */
