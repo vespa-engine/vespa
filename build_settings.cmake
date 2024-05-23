@@ -21,6 +21,9 @@ set(EXCLUDE_TESTS_FROM_ALL FALSE CACHE BOOL "If TRUE, do not build tests as part
 # Whether to run unit tests via valgrind
 set(VALGRIND_UNIT_TESTS FALSE CACHE BOOL "If TRUE, run unit tests via valgrind")
 
+# Whether to use ccache when building
+set(VESPA_USE_CCACHE TRUE CACHE BOOL "If TRUE, use ccache (if available) when building")
+
 # Whether to run tests marked as benchmark as part of the test runs
 set(RUN_BENCHMARKS FALSE CACHE BOOL "If TRUE, benchmarks are run together with the other tests")
 
@@ -185,11 +188,14 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     endif()
 endif()
 
-# Find ccache and use it if it is found
-find_program(CCACHE_EXECUTABLE ccache)
-if(CCACHE_EXECUTABLE)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE_EXECUTABLE})
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE_EXECUTABLE})
+# Find ccache and use it if it is found unless disabled
+if (VESPA_USE_CCACHE)
+    find_program(CCACHE_EXECUTABLE ccache)
+    if(CCACHE_EXECUTABLE)
+        message("-- Using ccache ${CCACHE_EXECUTABLE}")
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE_EXECUTABLE})
+        set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE_EXECUTABLE})
+    endif()
 endif()
 
 # Check for valgrind and set flags
