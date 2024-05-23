@@ -1328,7 +1328,8 @@
       "public int persistenceThreadMaxFeedOpBatchSize()",
       "public boolean logserverOtelCol()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
-      "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()"
+      "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
+      "public boolean symmetricPutAndActivateReplicaSelection()"
     ],
     "fields" : [ ]
   },
