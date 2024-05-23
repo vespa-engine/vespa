@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -1471,13 +1472,18 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(expectedGroupsAllowedDown, config.max_number_of_groups_allowed_to_be_down());
     }
 
-    private boolean resolveDistributorOperationCancellationConfig(Integer featureLevel) throws Exception {
+    private StorDistributormanagerConfig resolveDistributorConfig(Consumer<TestProperties> propertyMutator) throws Exception {
         var properties = new TestProperties();
-        if (featureLevel != null) {
-            properties.setContentLayerMetadataFeatureLevel(featureLevel);
-        }
-        var cfg = resolveStorDistributormanagerConfig(properties);
-        return cfg.enable_operation_cancellation();
+        propertyMutator.accept(properties);
+        return resolveStorDistributormanagerConfig(properties);
+    }
+
+    private boolean resolveDistributorOperationCancellationConfig(Integer featureLevel) throws Exception {
+        return resolveDistributorConfig((props) -> {
+            if (featureLevel != null) {
+                props.setContentLayerMetadataFeatureLevel(featureLevel);
+            }
+        }).enable_operation_cancellation();
     }
 
     @Test
@@ -1486,6 +1492,21 @@ public class ContentClusterTest extends ContentBaseTest {
         assertFalse(resolveDistributorOperationCancellationConfig(0));
         assertTrue(resolveDistributorOperationCancellationConfig(1));
         assertTrue(resolveDistributorOperationCancellationConfig(2));
+    }
+
+    private boolean resolveDistributorSymmetricReplicaSelectionConfig(Boolean flagValue) throws Exception {
+        return resolveDistributorConfig((props) -> {
+            if (flagValue != null) {
+                props.setSymmetricPutAndActivateReplicaSelection(flagValue);
+            }
+        }).symmetric_put_and_activate_replica_selection();
+    }
+
+    @Test
+    void distributor_symmetric_replica_selection_config_controlled_by_properties() throws Exception {
+        assertFalse(resolveDistributorSymmetricReplicaSelectionConfig(null)); // defaults to false
+        assertFalse(resolveDistributorSymmetricReplicaSelectionConfig(false));
+        assertTrue(resolveDistributorSymmetricReplicaSelectionConfig(true));
     }
 
     @Test

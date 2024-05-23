@@ -213,6 +213,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean logserverOtelCol;
         private final SharedHosts sharedHosts;
         private final Architecture adminClusterArchitecture;
+        private final boolean symmetricPutAndActivateReplicaSelection;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -259,6 +260,7 @@ public class ModelContextImpl implements ModelContext {
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
             this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with( appId).with(version).value();
             this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
+            this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -313,6 +315,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean logserverOtelCol() { return logserverOtelCol; }
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
+        @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
 
         private String translateJvmOmitStackTraceInFastThrowToString(Predicate<ClusterSpec.Type> function,
                                                                      ClusterSpec.Type clusterType) {

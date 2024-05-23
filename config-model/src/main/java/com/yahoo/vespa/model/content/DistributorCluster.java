@@ -35,6 +35,8 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
     private final int contentLayerMetadataFeatureLevel;
+    private final boolean symmetricPutAndActivateReplicaSelection;
+
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<DistributorCluster> {
 
         ContentCluster parent;
@@ -97,19 +99,22 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             var featureFlags = deployState.getProperties().featureFlags();
             int maxInhibitedGroups = featureFlags.maxActivationInhibitedOutOfSyncGroups();
             int contentLayerMetadataFeatureLevel = featureFlags.contentLayerMetadataFeatureLevel();
+            boolean symmetricPutAndActivateReplicaSelection = featureFlags.symmetricPutAndActivateReplicaSelection();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType,
                     maxInhibitedGroups,
-                    contentLayerMetadataFeatureLevel);
+                    contentLayerMetadataFeatureLevel,
+                    symmetricPutAndActivateReplicaSelection);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
                                int maxActivationInhibitedOutOfSyncGroups,
-                               int contentLayerMetadataFeatureLevel)
+                               int contentLayerMetadataFeatureLevel,
+                               boolean symmetricPutAndActivateReplicaSelection)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -118,6 +123,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
         this.contentLayerMetadataFeatureLevel = contentLayerMetadataFeatureLevel;
+        this.symmetricPutAndActivateReplicaSelection = symmetricPutAndActivateReplicaSelection;
     }
 
     @Override
@@ -132,6 +138,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         if (contentLayerMetadataFeatureLevel > 0) {
             builder.enable_operation_cancellation(true);
         }
+        builder.symmetric_put_and_activate_replica_selection(symmetricPutAndActivateReplicaSelection);
         bucketSplitting.getConfig(builder);
     }
 

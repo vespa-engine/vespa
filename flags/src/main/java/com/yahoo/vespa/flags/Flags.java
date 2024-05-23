@@ -463,6 +463,15 @@ public class Flags {
             "Whether EndpointDnsMaintainer should remove orphaned records instead of logging them",
             "Takes effect on next maintenance run");
 
+    public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
+            "symmetric-put-and-activate-replica-selection", false,
+            List.of("vekterli"), "2024-05-23", "2024-08-01",
+            "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
+            "for Put operations and the replica selection logic for bucket activation. If false, " +
+            "legacy feed behavior is used.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

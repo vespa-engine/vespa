@@ -84,6 +84,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int contentLayerMetadataFeatureLevel = 0;
     private int persistenceThreadMaxFeedOpBatchSize = 1;
     private boolean logserverOtelCol = false;
+    private boolean symmetricPutAndActivateReplicaSelection = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -142,6 +143,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public int persistenceThreadMaxFeedOpBatchSize() { return persistenceThreadMaxFeedOpBatchSize; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
+    @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -379,6 +381,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setLogserverOtelCol(boolean logserverOtelCol) {
         this.logserverOtelCol = logserverOtelCol;
+        return this;
+    }
+
+    public TestProperties setSymmetricPutAndActivateReplicaSelection(boolean symmetricReplicaSelection) {
+        this.symmetricPutAndActivateReplicaSelection = symmetricReplicaSelection;
         return this;
     }
 
