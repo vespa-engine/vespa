@@ -8,6 +8,8 @@ import com.yahoo.language.significance.SignificanceModel;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -15,7 +17,7 @@ import java.util.HashMap;
  */
 public class DefaultSignificanceModel implements SignificanceModel {
     private final long corpusSize;
-    private final HashMap<String, Long> frequencies;
+    private final Map<String, Long> frequencies;
 
     private String id;
 
