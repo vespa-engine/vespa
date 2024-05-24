@@ -18,6 +18,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/storageframework/generic/clock/time.h>
 
@@ -42,6 +43,8 @@ private:
     using MessageTrackerUP = std::unique_ptr<MessageTracker>;
     using Timestamp = framework::MicroSecTime;
 public:
+    using NewestDocumentVersionMapping = vespalib::hash_map<vespalib::stringref, api::Timestamp>;
+
     enum StateFlag {
         IN_USE                     = 0x01,
         DELETED                    = 0x02,
@@ -72,6 +75,17 @@ public:
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&, MessageTrackerUP) const;
     void drain_async_writes();
 
+    /**
+     * Returns a mapping that, for each document ID, contains the newest version of that document that
+     * is present in the diff.
+     *
+     * The returned hash_map keys point directly into the `ApplyBucketDiffCommand::Entry::_docName` memory
+     * owned by `diff`, so this memory must remain unchanged and stable for the duration of the returned
+     * mapping's lifetime.
+     */
+    static NewestDocumentVersionMapping enumerate_newest_document_versions(
+            const std::vector<api::ApplyBucketDiffCommand::Entry>& diff);
+
 private:
     using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
     const framework::Clock   &_clock;
@@ -90,9 +104,13 @@ private:
     /**
      * Invoke either put, remove or unrevertable remove on the SPI
      * depending on the flags in the diff entry.
+     *
+     * If `newest_doc_version` indicates that the entry is not the newest version present in the
+     * diff, the entry is silently ignored and is _not_ invoked on the SPI.
      */
     void applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results, const spi::Bucket&,
-                        const api::ApplyBucketDiffCommand::Entry&, const document::DocumentTypeRepo& repo) const;
+                        const api::ApplyBucketDiffCommand::Entry&, const document::DocumentTypeRepo& repo,
+                        const NewestDocumentVersionMapping& newest_per_doc) const;
 
     /**
      * Fill entries-vector with metadata for bucket up to maxTimestamp,

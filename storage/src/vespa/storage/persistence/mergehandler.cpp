@@ -4,13 +4,14 @@
 #include "persistenceutil.h"
 #include "apply_bucket_diff_entry_complete.h"
 #include "apply_bucket_diff_state.h"
-#include <vespa/storage/persistence/filestorage/mergestatus.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/persistence/spi/docentry.h>
-#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/persistence/spi/docentry.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/storage/persistence/filestorage/mergestatus.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <algorithm>
@@ -506,8 +507,18 @@ void
 MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results,
                              const spi::Bucket& bucket,
                              const api::ApplyBucketDiffCommand::Entry& e,
-                             const document::DocumentTypeRepo& repo) const
+                             const document::DocumentTypeRepo& repo,
+                             const NewestDocumentVersionMapping& newest_per_doc) const
 {
+    if (!e._docName.empty()) {
+        auto version_iter = newest_per_doc.find(e._docName);
+        assert(version_iter != newest_per_doc.end());
+        if (e._entry._timestamp != version_iter->second) {
+            LOG(spam, "ApplyBucketDiff(%s): skipping diff entry %s since it is subsumed by a newer timestamp %" PRIu64,
+                bucket.toString().c_str(), e.toString().c_str(), version_iter->second);
+            return;
+        }
+    }
     auto throttle_token = _env._fileStorHandler.operation_throttler().blocking_acquire_one();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
@@ -548,6 +559,7 @@ MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::Apply
     DocEntryList entries;
     populateMetaData(bucket, Timestamp::max(), entries, context);
 
+    const auto newest_versions = enumerate_newest_document_versions(diff);
     const document::DocumentTypeRepo & repo = _env.getDocumentTypeRepo();
 
     uint32_t existingCount = entries.size();
@@ -580,7 +592,7 @@ MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::Apply
             ++i;
             LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
                 bucket.toString().c_str(), e.toString().c_str());
-            applyDiffEntry(async_results, bucket, e, repo);
+            applyDiffEntry(async_results, bucket, e, repo, newest_versions);
         } else {
             assert(spi::Timestamp(e._entry._timestamp) == existing.getTimestamp());
             // Diffing for existing timestamp; should either both be put
@@ -591,7 +603,7 @@ MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::Apply
             if ((e._entry._flags & DELETED) && !existing.isRemove()) {
                 LOG(debug, "Slot in diff is remove for existing timestamp in %s. Diff slot: %s. Existing slot: %s",
                     bucket.toString().c_str(), e.toString().c_str(), existing.toString().c_str());
-                applyDiffEntry(async_results, bucket, e, repo);
+                applyDiffEntry(async_results, bucket, e, repo, newest_versions);
             } else {
                 // Duplicate put, just ignore it.
                 LOG(debug, "During diff apply, attempting to add slot whose timestamp already exists in %s, "
@@ -619,7 +631,7 @@ MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::Apply
         LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
             bucket.toString().c_str(), e.toString().c_str());
 
-        applyDiffEntry(async_results, bucket, e, repo);
+        applyDiffEntry(async_results, bucket, e, repo, newest_versions);
         byteCount += e._headerBlob.size() + e._bodyBlob.size();
     }
     if (byteCount + notNeededByteCount != 0) {
@@ -629,6 +641,27 @@ MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::Apply
     _env._metrics.merge_handler_metrics.bytesMerged.inc(byteCount);
     LOG(debug, "Merge(%s): Applied %u entries locally from ApplyBucketDiff.",
         bucket.toString().c_str(), addedCount);
+}
+
+MergeHandler::NewestDocumentVersionMapping
+MergeHandler::enumerate_newest_document_versions(const std::vector<api::ApplyBucketDiffCommand::Entry>& diff)
+{
+    NewestDocumentVersionMapping newest_per_doc;
+    for (const auto& e : diff) {
+        // We expect the doc name to always be filled out, both for remove operations and for puts.
+        // But since the latter is technically redundant (ID is also found within the document), we
+        // guard on this to be forwards compatible in case this changes (e.g. to populate and use
+        // the GID field instead). Fallback to the legacy behavior if so.
+        if (e._docName.empty()) {
+            continue;
+        }
+        auto [existing_iter, inserted] = newest_per_doc.insert(std::make_pair(vespalib::stringref(e._docName), e._entry._timestamp));
+        if (!inserted) {
+            assert(existing_iter != newest_per_doc.end());
+            existing_iter->second = std::max(existing_iter->second, e._entry._timestamp);
+        }
+    }
+    return newest_per_doc;
 }
 
 void
