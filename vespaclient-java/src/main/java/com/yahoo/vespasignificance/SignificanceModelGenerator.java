@@ -38,7 +38,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -49,7 +51,8 @@ public class SignificanceModelGenerator {
 
     private final ClientParameters clientParameters;
     private final Tokenizer tokenizer;
-    private final HashMap<String, Long> documentFrequency = new HashMap<>();
+    private final TreeMap<String, Long> documentFrequency = new TreeMap<>();
+
     private final Language language;
     private final ObjectMapper objectMapper;
     private final static JsonFactory parserFactory = new JsonFactory();
@@ -110,10 +113,9 @@ public class SignificanceModelGenerator {
                 put(clientParameters.language, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
             }};
 
-            modelFile = new SignificanceModelFile(VERSION, ID, SIGNIFICANCE_DESCRIPTION, languages);
+            modelFile = new SignificanceModelFile(VERSION, ID, SIGNIFICANCE_DESCRIPTION + clientParameters.inputFile, languages);
         }
         try {
-            //objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
             ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
             writer.writeValue(new File(clientParameters.outputFile), modelFile);
         } catch (IOException e) {
@@ -139,9 +141,14 @@ public class SignificanceModelGenerator {
         }
     }
 
-    public HashMap<String, Long> getFinalDocumentFrequency() {
+    public Map<String, Long> getFinalDocumentFrequency() {
         return documentFrequency.entrySet().stream()
                 .filter(k -> k.getValue() > 1)
-                .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        TreeMap::new
+                ));
     }
 }

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -19,13 +21,13 @@ public class DocumentFrequencyFile {
 
     private final long documentCount;
 
-    private final HashMap<String, Long> frequencies;
+    private final Map<String, Long> frequencies;
 
     @JsonCreator
     public DocumentFrequencyFile(
             @JsonProperty("description") String description,
             @JsonProperty("document-count") long documentCount,
-            @JsonProperty("document-frequencies") HashMap<String, Long> frequencies) {
+            @JsonProperty("document-frequencies") Map<String, Long> frequencies) {
         this.description = description;
         this.documentCount = documentCount;
         this.frequencies = frequencies;
@@ -38,5 +40,5 @@ public class DocumentFrequencyFile {
     public long documentCount() { return documentCount; }
 
     @JsonProperty("document-frequencies")
-    public HashMap<String, Long> frequencies() { return frequencies; }
+    public Map<String, Long> frequencies() { return frequencies; }
 }
