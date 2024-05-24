@@ -130,7 +130,10 @@ public class AllocatableResources {
         double vcpuFulfilment     = Math.min(1, realResources.totalResources().vcpu()     / idealResources.totalResources().vcpu());
         double memoryGbFulfilment = Math.min(1, realResources.totalResources().memoryGb() / idealResources.totalResources().memoryGb());
         double diskGbFulfilment   = Math.min(1, realResources.totalResources().diskGb()   / idealResources.totalResources().diskGb());
-        return (vcpuFulfilment + memoryGbFulfilment + diskGbFulfilment) / 3;
+        double fulfilment = (vcpuFulfilment + memoryGbFulfilment + diskGbFulfilment) / 3;
+        if (equal(fulfilment, 0)) return 0;
+        if (equal(fulfilment, 1)) return 1;
+        return fulfilment;
     }
 
     public boolean preferableTo(AllocatableResources other, ClusterModel model) {
@@ -290,6 +293,10 @@ public class AllocatableResources {
         if ( ! min.isUnspecified() && ! r.justNumbers().satisfies(min.justNumbers())) return false;
         if ( ! max.isUnspecified() && ! max.justNumbers().satisfies(r.justNumbers())) return false;
         return true;
+    }
+
+    private static boolean equal(double a, double b) {
+        return Math.abs(a - b) < 1e-9;
     }
 
 }
