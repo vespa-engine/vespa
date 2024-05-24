@@ -45,7 +45,6 @@ public:
     int usage(const char *self)
     {
         fprintf(stderr, "usage: %s <port|spec|--local|--id=name> <cmd> [args]\n", self);
-        fprintf(stderr, "die\n");
         fprintf(stderr, "getProtonStatus\n");
         fprintf(stderr, "getState\n");
         fprintf(stderr, "triggerFlush\n");
@@ -331,8 +330,6 @@ public:
             if (! _req->IsError()) {
                 printf("OK: prepareRestart enabled\n");
             }
-        } else if (strcmp(argv[2], "die") == 0) {
-            _req->SetMethodName("pandora.rtc.die");
         } else {
             finiRPC();
             return usage(argv[0]);

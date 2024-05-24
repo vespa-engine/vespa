@@ -90,11 +90,6 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("message", "Array of status messages");
     rb.RequestAccessFilter(make_proton_admin_api_capability_filter());
     //-------------------------------------------------------------------------
-    rb.DefineMethod("pandora.rtc.die", "", "",
-                    FRT_METHOD(RPCHooksBase::rpc_die), this);
-    rb.MethodDesc("Exit the rtc application without cleanup");
-    rb.RequestAccessFilter(make_proton_admin_api_capability_filter());
-    //-------------------------------------------------------------------------
     rb.DefineMethod("proton.triggerFlush", "", "b",
                     FRT_METHOD(RPCHooksBase::rpc_triggerFlush), this);
     rb.MethodDesc("Tell the node to trigger flush ASAP");
@@ -239,19 +234,6 @@ RPCHooksBase::getProtonStatus(FRT_RPCRequest *req)
                      report.getComponent().c_str(), k[i]._str, internalStates[i]._str, report.getMessage().c_str());
     }
     req->Return();
-}
-
-void
-RPCHooksBase::rpc_die(FRT_RPCRequest * req)
-{
-    LOG(debug, "RPCHooksBase::rpc_die");
-    req->Detach();
-    letProtonDo(makeLambdaTask([req]() {
-        LOG(debug, "Nap for 10ms and then quickly exit.");
-        req->Return();
-        std::this_thread::sleep_for(10ms);
-        std::_Exit(0);
-    }));
 }
 
 void
