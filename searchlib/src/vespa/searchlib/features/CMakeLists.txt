@@ -26,6 +26,8 @@ vespa_add_library(searchlib_features OBJECT
     fieldmatchfeature.cpp
     fieldtermmatchfeature.cpp
     firstphasefeature.cpp
+    first_phase_rank_feature.cpp
+    first_phase_rank_lookup.cpp
     flow_completeness_feature.cpp
     foreachfeature.cpp
     freshnessfeature.cpp

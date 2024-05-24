@@ -22,6 +22,7 @@
 #include "fieldmatchfeature.h"
 #include "fieldtermmatchfeature.h"
 #include "firstphasefeature.h"
+#include "first_phase_rank_feature.h"
 #include "flow_completeness_feature.h"
 #include "foreachfeature.h"
 #include "freshnessfeature.h"
@@ -91,6 +92,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<FieldMatchBlueprint>());
     registry.addPrototype(std::make_shared<FieldTermMatchBlueprint>());
     registry.addPrototype(std::make_shared<FirstPhaseBlueprint>());
+    registry.addPrototype(std::make_shared<FirstPhaseRankBlueprint>());
     registry.addPrototype(std::make_shared<FlowCompletenessBlueprint>());
     registry.addPrototype(std::make_shared<ForeachBlueprint>());
     registry.addPrototype(std::make_shared<FreshnessBlueprint>());
