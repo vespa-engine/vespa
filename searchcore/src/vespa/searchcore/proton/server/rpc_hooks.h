@@ -55,7 +55,6 @@ public:
 
     void rpc_GetState(FRT_RPCRequest *req);
     void rpc_GetProtonStatus(FRT_RPCRequest *req);
-    void rpc_die(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
 protected:
