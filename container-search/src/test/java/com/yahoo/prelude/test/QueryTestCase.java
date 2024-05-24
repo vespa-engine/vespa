@@ -220,7 +220,7 @@ public class QueryTestCase {
     void testNegativeHitValue() {
         assertQueryError(
                 "?query=test&hits=-1",
-                "Could not set 'hits' to '-1': Must be a positive number");
+                "Could not set 'hits' to '-1': 'hits' must be a positive number, not -1");
     }
 
     @Test
@@ -241,7 +241,7 @@ public class QueryTestCase {
     void testNegativeOffsetValue() {
         assertQueryError(
                 "?query=test&offset=-1",
-                "Could not set 'offset' to '-1': Must be a positive number");
+                "Could not set 'offset' to '-1': 'offset' must be a positive number, not -1");
     }
 
     @Test
