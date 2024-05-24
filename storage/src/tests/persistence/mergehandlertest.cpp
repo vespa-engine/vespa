@@ -1439,4 +1439,52 @@ TEST_F(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
     LOG(debug, "got mergebucket reply");
 }
 
+TEST_F(MergeHandlerTest, multiple_versions_in_apply_diff_only_writes_newest_version) {
+    setUpChain(BACK);
+
+    document::TestDocMan doc_mgr;
+    document::Document::SP doc(doc_mgr.createRandomDocumentAtLocation(_location, 1));
+    spi::Timestamp ts_old(10'000);
+    spi::Timestamp ts_new(20'000);
+
+    PersistenceProviderWrapper provider_wrapper(getPersistenceProvider());
+    MergeHandler handler = createHandler(provider_wrapper);
+    std::vector<api::ApplyBucketDiffCommand::Entry> apply_diff;
+    // Diff contains two entries for the same document; one old Remove and one newer Put that
+    // subsumes the Remove operation. We should only schedule the Put to the SPI.
+    {
+        api::ApplyBucketDiffCommand::Entry e;
+        e._entry._timestamp = ts_old;
+        e._entry._hasMask = 0x1;
+        e._docName = doc->getId().toString();
+        e._entry._flags = MergeHandler::IN_USE | MergeHandler::DELETED;
+        apply_diff.push_back(e);
+    }
+    {
+        api::ApplyBucketDiffCommand::Entry e;
+        e._entry._timestamp = ts_new;
+        e._entry._hasMask = 0x1;
+        e._entry._flags = MergeHandler::IN_USE;
+        fill_entry(e, *doc, doc_mgr.getTypeRepo());
+        apply_diff.push_back(e);
+    }
+
+    auto apply_bucket_diff_cmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes);
+    apply_bucket_diff_cmd->getDiff() = std::move(apply_diff);
+
+    provider_wrapper.clearOperationLog();
+    auto tracker = handler.handleApplyBucketDiff(*apply_bucket_diff_cmd, createTracker(apply_bucket_diff_cmd, _bucket));
+    ASSERT_FALSE(tracker);
+    handler.drain_async_writes();
+
+    // There should be no remove at time=ts_old, only a put at time=ts_new.
+    // TODO ideally we shouldn't have to know about the other operations...
+    EXPECT_EQ(provider_wrapper.toString(),
+              "createIterator(Bucket(0x40000000000004d2), ALL_VERSIONS)\n"
+              "iterate(1, 18446744073709551615)\n"
+              "destroyIterator(1)\n"
+              "put(Bucket(0x40000000000004d2), 20000, id:mail:testdoctype1:n=1234:9380.html)\n"
+              "getBucketInfo(Bucket(0x40000000000004d2))\n");
+}
+
 } // storage
