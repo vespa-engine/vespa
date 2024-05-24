@@ -127,7 +127,8 @@ private:
             terms.emplace_back(createIterator(_split_lists[i], strict).release(),
                                100, _split_lists[i].size());
         }
-        _scores.push_back(std::make_unique<SharedWeakAndPriorityQueue>(1));
+        static constexpr size_t LARGE_ENOUGH_HEAP_FOR_ALL = 10000;
+        _scores.push_back(std::make_unique<SharedWeakAndPriorityQueue>(LARGE_ENOUGH_HEAP_FOR_ALL));
         return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), 1, 1), -1, strict);
     }
 };

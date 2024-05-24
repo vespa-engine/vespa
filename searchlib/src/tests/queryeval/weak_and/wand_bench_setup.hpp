@@ -125,7 +125,7 @@ struct VespaArrayWandFactory : WandFactory {
     ~VespaArrayWandFactory() override;
     std::string name() const override { return make_string("VESPA ARRAY WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createArrayWand(terms, wand::MatchParams(_scores), wand::TermFrequencyScorer(), n, true);
+        return WeakAndSearch::createArrayWand(terms, wand::MatchParams(_scores, 1, 1), wand::TermFrequencyScorer(), n, true);
     }
 };
 
@@ -141,7 +141,7 @@ struct VespaHeapWandFactory : WandFactory {
     ~VespaHeapWandFactory() override;
     std::string name() const override { return make_string("VESPA HEAP WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createHeapWand(terms, wand::MatchParams(_scores), wand::TermFrequencyScorer(), n, true);
+        return WeakAndSearch::createHeapWand(terms, wand::MatchParams(_scores, 1, 1), wand::TermFrequencyScorer(), n, true);
     }
 };
 
