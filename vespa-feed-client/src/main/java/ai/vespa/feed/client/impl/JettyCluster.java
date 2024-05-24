@@ -48,6 +48,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
@@ -62,6 +64,7 @@ import static org.eclipse.jetty.http.MimeTypes.Type.APPLICATION_JSON;
  * @author bjorncs
  */
 class JettyCluster implements Cluster {
+    private static final Logger log = Logger.getLogger(JettyCluster.class.getName());
 
     // Socket timeout must be longer than the longest feasible response timeout
     private static final Duration IDLE_TIMEOUT = Duration.ofMinutes(15);
@@ -117,6 +120,7 @@ class JettyCluster implements Cluster {
                     }
                 });
             } catch (Exception e) {
+                log.log(Level.FINE, e, () -> "Failed to dispatch request: " + e.getMessage());
                 endpoint.inflight.decrementAndGet();
                 vessel.completeExceptionally(e);
             }
