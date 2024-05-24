@@ -35,4 +35,11 @@ ObjectStore::get(const vespalib::string & key) const
     return (found != _objectMap.end()) ? found->second : NULL;
 }
 
+Anything *
+ObjectStore::get_mutable(const vespalib::string& key)
+{
+    auto found = _objectMap.find(key);
+    return (found != _objectMap.end()) ? found->second : nullptr;
+}
+
 }
