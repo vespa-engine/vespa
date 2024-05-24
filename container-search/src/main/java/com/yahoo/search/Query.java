@@ -605,7 +605,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
     public void setHits(int hits) {
         if (hits < 0)
-            throw new IllegalArgumentException("Must be a positive number");
+            throw new IllegalArgumentException("'hits' must be a positive number, not " + hits);
         this.hits = hits;
     }
 
@@ -614,12 +614,12 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
     public void setOffset(int offset) {
         if (offset < 0)
-            throw new IllegalArgumentException("Must be a positive number");
+            throw new IllegalArgumentException("'offset' must be a positive number, not " + offset);
         this.offset = offset;
     }
 
     /** Convenience method to set both the offset and the number of hits to return */
-    public void setWindow(int offset,int hits) {
+    public void setWindow(int offset, int hits) {
         setOffset(offset);
         setHits(hits);
     }
