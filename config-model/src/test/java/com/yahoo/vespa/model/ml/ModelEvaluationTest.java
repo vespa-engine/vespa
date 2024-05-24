@@ -55,6 +55,7 @@ public class ModelEvaluationTest {
             RankProfilesConfig config = new RankProfilesConfig(b);
 
             assertEquals(0, config.rankprofile().size());
+            assertEquals(0, tester.calculator.aggregatedModelCostInBytes());
         }
         finally {
             IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
@@ -69,6 +70,7 @@ public class ModelEvaluationTest {
         try {
             ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
             assertHasMlModels(tester.createVespaModel(), appDir);
+            assertEquals(3, tester.calculator.aggregatedModelCostInBytes());
 
             // At this point the expression is stored - copy application to another location which do not have a models dir
             storedAppDir.toFile().mkdirs();

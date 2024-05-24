@@ -3,7 +3,13 @@
 <services version="1.0">
 
   <container version="1.0">
-    <model-evaluation/>
+    <model-evaluation>
+      <onnx>
+        <models>
+          <model name="sqrt" /> <!-- list one of the models -->
+        </models>
+      </onnx>
+    </model-evaluation>
     <nodes>
       <node hostalias="node1" />
     </nodes>
