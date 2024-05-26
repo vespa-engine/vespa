@@ -22,13 +22,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class HitsVerificationBenchmarkTest {
 
     @Test
-    void test() throws IOException {
+    void testTargeting() throws IOException {
+        HitsVerificationBenchmark.BenchmarkArguments args = new HitsVerificationBenchmark.BenchmarkArguments();
+        args.feedFile = "src/test/resources/targeting.json";
+        Config config = new Config.Builder().build();
+        Map<String, Object> output = new HashMap<>();
+        HitsVerificationBenchmark.getIndex(args, config, output);
+        assertEquals(46, output.get("Interval index entries"));
+    }
+
+    @Test
+    void testFeed() throws IOException {
         HitsVerificationBenchmark.BenchmarkArguments args = new HitsVerificationBenchmark.BenchmarkArguments();
         args.feedFile = "src/test/resources/vespa-feed.json";
         Config config = new Config.Builder().build();
         Map<String, Object> output = new HashMap<>();
         HitsVerificationBenchmark.getIndex(args, config, output);
-        assertEquals(46, output.get("Interval index entries"));
+        assertEquals(206, output.get("Interval index entries"));
     }
 
 }
