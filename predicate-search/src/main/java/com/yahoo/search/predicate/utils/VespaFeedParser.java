@@ -26,9 +26,14 @@ public class VespaFeedParser {
                 while (!line.contains("\"boolean\":")) {
                     line = reader.readLine();
                 }
-                Predicate predicate = Predicate.fromString(extractBooleanExpression(line));
-                consumer.accept(predicate);
-                ++documentCount;
+                String booleanExpression = extractBooleanExpression(line);
+                try {
+                    var predicate = Predicate.fromString(booleanExpression);
+                    consumer.accept(predicate);
+                    ++documentCount;
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Failed to parse predicate: " + booleanExpression, e);
+                }
                 line = reader.readLine();
             }
         }
