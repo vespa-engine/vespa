@@ -154,7 +154,7 @@ class HttpRequestStrategy implements RequestStrategy {
         breaker.failure(thrown);
         if (   (thrown instanceof IOException)               // General IO problems.
             //  Thrown by HTTP2Session.StreamsState.reserveSlot, likely on GOAWAY from server
-            || (thrown instanceof IllegalStateException && thrown.getMessage().equals("session closed"))
+            || (thrown instanceof IllegalStateException && "session closed".equals(thrown.getMessage()))
         ) {
             log.log(FINER, thrown, () -> "Failed attempt " + attempt + " at " + request);
             return retry(request, attempt);
