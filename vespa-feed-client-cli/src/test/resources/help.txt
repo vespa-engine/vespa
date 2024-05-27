@@ -23,6 +23,12 @@ Vespa feed client
     --header <arg>                        HTTP header on the form 'Name:
                                           value'
     --help
+    --log-config <arg>                    Specify a path to a Java Util
+                                          Logging properties file.
+                                          Overrides the default
+                                          configuration from
+                                          VESPA_HOME/conf/vespa-feed-clien
+                                          t/logging.properties
     --max-failure-seconds <arg>           Exit if specified number of
                                           seconds ever pass without any
                                           successful operations. Disabled
