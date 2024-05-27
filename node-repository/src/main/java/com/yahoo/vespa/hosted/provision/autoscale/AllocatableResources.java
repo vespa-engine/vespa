@@ -19,7 +19,7 @@ import java.util.Optional;
  * @author bratseth
  */
 public class AllocatableResources {
-
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(AllocatableResources.class.getName());
     /** The node count in the cluster */
     private final int nodes;
 
@@ -176,7 +176,7 @@ public class AllocatableResources {
                                                       Limits applicationLimits,
                                                       List<NodeResources> availableRealHostResources,
                                                       ClusterModel model,
-                                                      NodeRepository nodeRepository) {
+                                                      NodeRepository nodeRepository, boolean enableDetailedLogging) {
         var systemLimits = nodeRepository.nodeResourceLimits();
         boolean exclusive = nodeRepository.exclusivity().allocation(clusterSpec);
         if (! exclusive) {
@@ -238,6 +238,12 @@ public class AllocatableResources {
                                                          advertisedResources,
                                                          wantedResources,
                                                          clusterSpec);
+                if (enableDetailedLogging) {
+                    log.fine("AllocatableResources with: " +
+                            "\n\t Real Resources: " + wantedResources.with(realResources).toString() +
+                             "\n\t Advertised Resources: " + advertisedResources +
+                             "\n\t Wanted Resources: " + wantedResources);
+                }
 
                 if ( ! systemLimits.isWithinAdvertisedDiskLimits(advertisedResources, clusterSpec)) { // TODO: Remove when disk limit is enforced
                     if (bestDisregardingDiskLimit.isEmpty() || candidate.preferableTo(bestDisregardingDiskLimit.get(), model)) {

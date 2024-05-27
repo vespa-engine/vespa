@@ -76,11 +76,11 @@ public class AllocationOptimizer {
                                                                      limits,
                                                                      availableRealHostResources,
                                                                      model,
-                                                                     nodeRepository);
+                                                                     nodeRepository, enableDetailedLogging);
                 if (allocatableResources.isEmpty()) continue;
                 bestAllocations.add(allocatableResources.get());
                 if (enableDetailedLogging) {
-                    log.info("Adding allocatableResources to list for " + model.application().id() + " in " + model.current().clusterSpec().id() + ": "
+                    log.fine("Adding allocatableResources to list for " + model.application().id() + " in " + model.current().clusterSpec().id() + ": "
                             + "\n\t" + allocatableResources.get().toString());
                 }
             }
