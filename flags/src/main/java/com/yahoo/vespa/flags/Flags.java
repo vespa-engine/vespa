@@ -447,7 +447,7 @@ public class Flags {
 
     public static UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
             "encrypt-disk", true,
-            List.of("hmusum"), "2024-04-29", "2024-06-01",
+            List.of("hmusum"), "2024-04-29", "2024-07-01",
             "Whether to encrypt disk when provisioning new hosts",
             "Will be read only on boot.");
 
