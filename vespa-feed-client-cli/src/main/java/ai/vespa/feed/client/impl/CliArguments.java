@@ -61,6 +61,7 @@ class CliArguments {
     private static final String DOOM_OPTION = "max-failure-seconds";
     private static final String PROXY_OPTION = "proxy";
     private static final String COMPRESSION = "compression";
+    private static final String LOG_CONFIG_OPTION = "log-config";
 
     private final CommandLine arguments;
 
@@ -204,6 +205,8 @@ class CliArguments {
             throw new CliArgumentsException("Invalid proxy: " + e.getMessage(), e);
         }
     }
+
+    Optional<Path> logConfigFile() throws CliArgumentsException { return fileValue(LOG_CONFIG_OPTION); }
 
     private OptionalInt intValue(String option) throws CliArgumentsException {
         try {
@@ -373,6 +376,14 @@ class CliArguments {
                               "Valid arguments are: 'auto' (default), 'none', 'gzip'")
                         .hasArg()
                         .type(Compression.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(LOG_CONFIG_OPTION)
+                        .desc("Specify a path to a Java Util Logging properties file. " +
+                                      "Overrides the default configuration from " +
+                                      "VESPA_HOME/conf/vespa-feed-client/logging.properties")
+                        .hasArg()
+                        .type(File.class)
                         .build());
     }
 

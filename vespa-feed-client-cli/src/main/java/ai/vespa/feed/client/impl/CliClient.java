@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.joining;
@@ -44,6 +47,7 @@ import static java.util.stream.Collectors.joining;
  */
 public class CliClient {
 
+    private static final Logger log = Logger.getLogger(CliClient.class.getName());
     private static final JsonFactory factory = new JsonFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
     private final PrintStream systemOut;
@@ -67,7 +71,16 @@ public class CliClient {
         boolean verbose = false;
         try {
             CliArguments cliArgs = CliArguments.fromRawArgs(rawArgs);
+            var logConfigFile = cliArgs.logConfigFile().orElse(null);
             verbose = cliArgs.verboseSpecified();
+            if (logConfigFile != null) {
+                try (InputStream in = new BufferedInputStream(Files.newInputStream(logConfigFile))) {
+                    LogManager.getLogManager().readConfiguration(in);
+                    log.fine(() -> "Log configuration overridden by " + logConfigFile);
+                } catch (IOException e) {
+                    return handleException(verbose, "Failed to read log configuration from " + logConfigFile, e);
+                }
+            }
             if (cliArgs.helpSpecified()) {
                 cliArgs.printHelp(systemOut);
                 return 0;
