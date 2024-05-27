@@ -6,12 +6,15 @@
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/rendezvous.h>
 
+namespace search::features { class FirstPhaseRankLookup; }
+
 namespace proton::matching {
 
 class MatchLoopCommunicator final : public IMatchLoopCommunicator
 {
 private:
     using IDiversifier = search::queryeval::IDiversifier;
+    using FirstPhaseRankLookup = search::features::FirstPhaseRankLookup;
     struct BestDropped {
         bool valid = false;
         search::feature_t score = 0.0;
@@ -25,11 +28,14 @@ private:
         Range &best_scores;
         BestDropped &best_dropped;
         std::unique_ptr<IDiversifier> _diversifier;
-        GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier>);
+        FirstPhaseRankLookup* _first_phase_rank_lookup;
+        GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup);
         ~GetSecondPhaseWork() override;
         void mingle() override;
-        template<typename Q, typename F>
-        void mingle(Q &queue, F &&accept);
+        template<typename Q, typename R>
+        void mingle(Q &queue, R register_first_phase_rank);
+        template<typename Q, typename F, typename R>
+        void mingle(Q &queue, F &&accept, R register_first_phase_rank);
         bool cmp(uint32_t a, uint32_t b) {
             return (in(a).get().second > in(b).get().second);
         }
@@ -59,7 +65,7 @@ private:
 
 public:
     MatchLoopCommunicator(size_t threads, size_t topN);
-    MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>);
+    MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>, FirstPhaseRankLookup* first_phase_rank_lookup);
     ~MatchLoopCommunicator();
 
     double estimate_match_frequency(const Matches &matches) override {
