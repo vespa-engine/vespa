@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/matching/match_loop_communicator.h>
+#include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <algorithm>
 
 using namespace proton::matching;
@@ -12,6 +14,7 @@ using Hit = MatchLoopCommunicator::Hit;
 using Hits = MatchLoopCommunicator::Hits;
 using TaggedHit = MatchLoopCommunicator::TaggedHit;
 using TaggedHits = MatchLoopCommunicator::TaggedHits;
+using search::features::FirstPhaseRankLookup;
 using search::queryeval::SortedHitSequence;
 
 std::vector<Hit> hit_vec(std::vector<Hit> list) { return list; }
@@ -96,7 +99,7 @@ TEST_F("require that selectBest gives appropriate results for single thread", Ma
 }
 
 TEST_F("require that selectBest gives appropriate results for single thread with filter",
-       MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>()))
+       MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>(), nullptr))
 {
     TEST_DO(equal(1u, hit_vec({{1, 5}}), selectBest(f1, hit_vec({{1, 5}, {2, 4}}), thread_id)));
     TEST_DO(equal(2u, hit_vec({{1, 5}, {3, 3}}), selectBest(f1, hit_vec({{1, 5}, {2, 4}, {3, 3}}), thread_id)));
@@ -154,8 +157,8 @@ TEST_MT_F("require that rangeCover works with no hits", 10, MatchLoopCommunicato
 
 TEST_FFF("require that hits dropped due to lack of diversity affects range cover result",
          MatchLoopCommunicator(num_threads, 3),
-         MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>()),
-         MatchLoopCommunicator(num_threads, 3, std::make_unique<None>()))
+         MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>(), nullptr),
+         MatchLoopCommunicator(num_threads, 3, std::make_unique<None>(), nullptr))
 {
     auto hits_in = hit_vec({{1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}});
     auto [my_work1, hits1, ranges1] = second_phase(f1, hits_in, thread_id, 10);
@@ -205,6 +208,35 @@ TEST_MT_F("require that second phase work is evenly distributed among search thr
     } else {
         EXPECT_TRUE(best_hits.empty());
     }
+}
+
+namespace {
+
+std::vector<double> extract_ranks(const FirstPhaseRankLookup& l) {
+    std::vector<double> result;
+    for (uint32_t docid = 21; docid < 26; ++docid) {
+        result.emplace_back(l.lookup(docid));
+    }
+    return result;
+}
+
+search::feature_t unranked = std::numeric_limits<search::feature_t>::max();
+
+using FeatureVec = std::vector<search::feature_t>;
+
+}
+
+TEST("require that first phase rank lookup is populated")
+{
+    FirstPhaseRankLookup l1;
+    FirstPhaseRankLookup l2;
+    MatchLoopCommunicator f1(num_threads, 3, {}, &l1);
+    MatchLoopCommunicator f2(num_threads, 3, std::make_unique<EveryOdd>(), &l2);
+    auto hits_in = hit_vec({{21, 5}, {22, 4}, {23, 3}, {24, 2}, {25, 1}});
+    auto res1 = second_phase(f1, hits_in, thread_id, 10);
+    auto res2 = second_phase(f2, hits_in, thread_id, 10);
+    EXPECT_EQUAL(FeatureVec({1, 2, 3, unranked, unranked}), extract_ranks(l1));
+    EXPECT_EQUAL(FeatureVec({1, unranked, 3, unranked, 5}), extract_ranks(l2));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

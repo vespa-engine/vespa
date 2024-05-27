@@ -21,6 +21,7 @@ namespace vespalib { class ExecutionProfiler; }
 namespace vespalib { struct ThreadBundle; }
 
 namespace search::engine { class Trace; }
+namespace search::features { class FirstPhaseRankLookup; }
 
 namespace search::fef {
     class RankProgram;
@@ -119,6 +120,7 @@ private:
     using RankSetup = search::fef::RankSetup;
     using IIndexEnvironment = search::fef::IIndexEnvironment;
     using IDiversifier = search::queryeval::IDiversifier;
+    using FirstPhaseRankLookup = search::features::FirstPhaseRankLookup;
     QueryLimiter                     & _queryLimiter;
     AttributeBlueprintParams           _attribute_blueprint_params;
     Query                              _query;
@@ -131,6 +133,7 @@ private:
     const Properties                 & _featureOverrides;
     DiversityParams                    _diversityParams;
     bool                               _valid;
+    FirstPhaseRankLookup*              _first_phase_rank_lookup;
 
     std::unique_ptr<AttributeOperationTask>
     createTask(vespalib::stringref attribute, vespalib::stringref operation) const;
@@ -186,6 +189,7 @@ public:
     static AttributeBlueprintParams
     extract_attribute_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
                                        uint32_t active_docids, uint32_t docid_limit);
+    FirstPhaseRankLookup* get_first_phase_rank_lookup() const noexcept { return _first_phase_rank_lookup; }
 };
 
 }

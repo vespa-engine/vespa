@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/engine/trace.h>
+#include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/vespalib/util/issue.h>
@@ -190,7 +191,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
       _diversityParams(),
-      _valid(false)
+      _valid(false),
+      _first_phase_rank_lookup(nullptr)
 {
     if (doom.soft_doom()) return;
     auto trace = root_trace.make_trace();
@@ -219,6 +221,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
+        _first_phase_rank_lookup = FirstPhaseRankLookup::get_mutable_shared_state(_queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         vespalib::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, attribute, rankProperties);

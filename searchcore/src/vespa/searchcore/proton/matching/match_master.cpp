@@ -85,7 +85,11 @@ MatchMaster::match(search::engine::Trace & trace,
 {
     vespalib::Timer query_latency_time;
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.heapSize));
+    /*
+     * We need a non-const first phase rank lookup since it will be populated
+     * later on when selecting documents for second phase ranking.
+     */
+    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.heapSize), mtf.get_first_phase_rank_lookup());
     TimedMatchLoopCommunicator timedCommunicator(communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 

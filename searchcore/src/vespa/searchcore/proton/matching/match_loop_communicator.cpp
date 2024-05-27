@@ -1,18 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "match_loop_communicator.h"
+#include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <vespa/vespalib/util/priority_queue.h>
+
+using search::features::FirstPhaseRankLookup;
 
 namespace proton:: matching {
 
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
-    : MatchLoopCommunicator(threads, topN, std::unique_ptr<IDiversifier>())
+    : MatchLoopCommunicator(threads, topN, {}, nullptr)
 {}
-MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier)
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup)
     : _best_scores(),
       _best_dropped(),
       _estimate_match_frequency(threads),
-      _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier)),
+      _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier), first_phase_rank_lookup),
       _complete_second_phase(threads, topN, _best_scores, _best_dropped)
 {}
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
@@ -34,18 +37,43 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
     }
 }
 
-MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier)
+namespace {
+
+class NoRegisterFirstPhaseRank {
+public:
+    static void pick(uint32_t) noexcept { };
+    static void drop() noexcept { }
+};
+
+class RegisterFirstPhaseRank {
+    FirstPhaseRankLookup& _first_phase_rank_lookup;
+    uint32_t _rank;
+public:
+    RegisterFirstPhaseRank(FirstPhaseRankLookup& first_phase_rank_lookup)
+        : _first_phase_rank_lookup(first_phase_rank_lookup),
+          _rank(0)
+    {
+    }
+    void pick(uint32_t docid) noexcept { _first_phase_rank_lookup.add(docid, ++_rank); }
+    void drop() noexcept { ++_rank; }
+};
+
+}
+
+MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup)
     : vespalib::Rendezvous<SortedHitSequence, TaggedHits, true>(n),
       topN(topN_in),
       best_scores(best_scores_in),
       best_dropped(best_dropped_in),
-      _diversifier(std::move(diversifier))
+      _diversifier(std::move(diversifier)),
+      _first_phase_rank_lookup(first_phase_rank_lookup)
 {}
+
 MatchLoopCommunicator::GetSecondPhaseWork::~GetSecondPhaseWork() = default;
 
-template<typename Q, typename F>
+template<typename Q, typename F, typename R>
 void
-MatchLoopCommunicator::GetSecondPhaseWork::mingle(Q &queue, F &&accept)
+MatchLoopCommunicator::GetSecondPhaseWork::mingle(Q &queue, F &&accept, R register_first_phase_rank)
 {
     size_t picked = 0;
     search::feature_t last_score = 0.0;
@@ -53,14 +81,18 @@ MatchLoopCommunicator::GetSecondPhaseWork::mingle(Q &queue, F &&accept)
         uint32_t i = queue.front();
         const Hit & hit = in(i).get();
         if (accept(hit.first)) {
+            register_first_phase_rank.pick(hit.first);
             out(picked % size()).emplace_back(hit, i);
             last_score = hit.second;
             if (++picked == 1) {
                 best_scores.high = hit.second;
             }
-        } else if (!best_dropped.valid) {
-            best_dropped.valid = true;
-            best_dropped.score = hit.second;
+        } else {
+            if (!best_dropped.valid) {
+                best_dropped.valid = true;
+                best_dropped.score = hit.second;
+            }
+            register_first_phase_rank.drop();
         }
         in(i).next();
         if (in(i).valid()) {
@@ -71,6 +103,17 @@ MatchLoopCommunicator::GetSecondPhaseWork::mingle(Q &queue, F &&accept)
     }
     if (picked > 0) {
         best_scores.low = last_score;
+    }
+}
+
+template<typename Q, typename R>
+void
+MatchLoopCommunicator::GetSecondPhaseWork::mingle(Q &queue, R register_first_phase_rank)
+{
+    if (_diversifier) {
+        mingle(queue, [diversifier=_diversifier.get()](uint32_t docId) { return diversifier->accepted(docId);}, register_first_phase_rank);
+    } else {
+        mingle(queue, [](uint32_t) { return true;}, register_first_phase_rank);
     }
 }
 
@@ -87,10 +130,10 @@ MatchLoopCommunicator::GetSecondPhaseWork::mingle()
             queue.push(i);
         }
     }
-    if (_diversifier) {
-        mingle(queue, [diversifier=_diversifier.get()](uint32_t docId) { return diversifier->accepted(docId);});
+    if (_first_phase_rank_lookup != nullptr) {
+        mingle(queue, RegisterFirstPhaseRank(*_first_phase_rank_lookup));
     } else {
-        mingle(queue, [](uint32_t) { return true;});
+        mingle(queue, NoRegisterFirstPhaseRank());
     }
 }
 
