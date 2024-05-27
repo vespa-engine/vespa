@@ -308,9 +308,7 @@ public class VdsClusterHtmlRenderer {
             int nodeEvents = eventLog.getNodeEventsSince(nodeInfo.getNode(),
                     currentTime - eventLog.getRecentTimePeriod());
             row.addCell(new HtmlTable.Cell("" + nodeEvents));
-            if (nodeEvents > 20) {
-                row.getLastCell().addProperties(ERROR_PROPERTY);
-            } else if (nodeEvents > 3) {
+            if (nodeEvents > 3) {
                 row.getLastCell().addProperties(WARNING_PROPERTY);
             }
         }
