@@ -472,6 +472,12 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
+            "hubspot-sync-contacts", false,
+            List.of("bjorncs"), "2024-05-27", "2025-01-01",
+            "Whether to sync contacts to HubSpot",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
