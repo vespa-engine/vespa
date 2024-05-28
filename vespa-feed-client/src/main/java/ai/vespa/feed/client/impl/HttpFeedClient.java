@@ -55,6 +55,7 @@ class HttpFeedClient implements FeedClient {
     private final RequestStrategy requestStrategy;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final boolean speedTest;
+    private final LongSupplier nanoClock;
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
         this(builder,
@@ -69,6 +70,7 @@ class HttpFeedClient implements FeedClient {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
         this.speedTest = builder.speedTest;
+        this.nanoClock = builder.nanoClock;
         verifyConnection(builder, clusterFactory);
     }
 
@@ -111,11 +113,12 @@ class HttpFeedClient implements FeedClient {
             throw new IllegalStateException("Client is closed");
 
         HttpRequest request = new HttpRequest(method,
-                                              getPath(documentId) + getQuery(params, speedTest),
+                                              getPath(documentId),
+                                              getQuery(params, speedTest),
                                               requestHeaders,
                                               operationJson == null ? null : operationJson.getBytes(UTF_8), // TODO: make it bytes all the way?
                                               params.timeout().orElse(maxTimeout),
-                                              System::nanoTime);
+                                              nanoClock);
 
         CompletableFuture<Result> promise = new CompletableFuture<>();
         requestStrategy.enqueue(documentId, request)
@@ -137,11 +140,12 @@ class HttpFeedClient implements FeedClient {
         Instant start = Instant.now();
         try (Cluster cluster = clusterFactory.create()) {
             HttpRequest request = new HttpRequest("POST",
-                                                  getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
+                                                  getPath(DocumentId.of("feeder", "handshake", "dummy")),
+                                                  getQuery(empty(), true),
                                                   requestHeaders,
                                                   null,
                                                   Duration.ofSeconds(15),
-                                                  System::nanoTime);
+                                                  nanoClock);
             CompletableFuture<HttpResponse> future = new CompletableFuture<>();
             cluster.dispatch(request, future);
             HttpResponse response = future.get(20, TimeUnit.SECONDS);
@@ -312,7 +316,6 @@ class HttpFeedClient implements FeedClient {
         StringJoiner query = new StringJoiner("&", "?", "").setEmptyValue("");
         if (params.createIfNonExistent()) query.add("create=true");
         params.testAndSetCondition().ifPresent(condition -> query.add("condition=" + encode(condition)));
-        params.timeout().ifPresent(timeout -> query.add("timeout=" + timeout.toMillis() + "ms"));
         params.route().ifPresent(route -> query.add("route=" + encode(route)));
         params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
         if (speedTest) query.add("dryRun=true");
