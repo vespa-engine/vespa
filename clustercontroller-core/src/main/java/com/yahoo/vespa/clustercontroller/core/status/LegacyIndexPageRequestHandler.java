@@ -10,6 +10,7 @@ import com.yahoo.vespa.clustercontroller.core.ClusterStateHistoryEntry;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.EventLog;
 import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
+import com.yahoo.vespa.clustercontroller.core.GlobalBucketSyncStatsCalculator;
 import com.yahoo.vespa.clustercontroller.core.LeafGroups;
 import com.yahoo.vespa.clustercontroller.core.MasterElectionHandler;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
@@ -174,11 +175,8 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         VdsClusterHtmlRenderer.Table table = renderer.createNewClusterHtmlTable(cluster.getName(), cluster.getSlobrokGenerationCount());
 
         ClusterStateBundle state = stateVersionTracker.getVersionedClusterStateBundle();
-        if (state.clusterFeedIsBlocked()) { // Implies FeedBlock != null
-            table.appendRaw("<h3 style=\"color: red\">Cluster feeding is blocked!</h3>\n");
-            table.appendRaw(String.format("<p>Summary: <strong>%s</strong></p>\n",
-                                          HtmlTable.escape(state.getFeedBlockOrNull().getDescription())));
-        }
+        renderClusterFeedBlockIfPresent(state, table);
+        renderClusterOutOfSyncRatio(state, stateVersionTracker, table);
 
         List<Group> groups = LeafGroups.enumerateFrom(cluster.getDistribution().getRootGroup());
         for (Group group : groups) {
@@ -204,6 +202,53 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                               localName);
         }
         table.addTable(sb, options.stableStateTimePeriod());
+    }
+
+    private static void renderClusterFeedBlockIfPresent(ClusterStateBundle state, VdsClusterHtmlRenderer.Table table) {
+        if (state.clusterFeedIsBlocked()) { // Implies FeedBlock != null
+            table.appendRaw("<h3 style=\"color: red\">Cluster feeding is blocked!</h3>\n");
+            table.appendRaw(String.format("<p>Summary: <strong>%s</strong></p>\n",
+                                          HtmlTable.escape(state.getFeedBlockOrNull().getDescription())));
+        }
+    }
+
+    private static void renderClusterOutOfSyncRatio(ClusterStateBundle state, StateVersionTracker stateVersionTracker,
+                                                    VdsClusterHtmlRenderer.Table table) {
+        var stats = stateVersionTracker.getAggregatedClusterStats().getAggregatedStats();
+        if (!stats.hasUpdatesFromAllDistributors()) {
+            table.appendRaw("<p>Current cluster out of sync ratio cannot be computed, as not all " +
+                            "distributors have reported in statistics for the most recent cluster state.</p>\n");
+            return;
+        }
+        var outOfSync = GlobalBucketSyncStatsCalculator.clusterBucketsOutOfSyncRatio(stats.getGlobalStats());
+        if (outOfSync.isEmpty()) {
+            table.appendRaw("<p>Current cluster out of sync ratio cannot be computed, as not all " +
+                            "distributors have reported valid statistics.</p>\n");
+            return;
+        }
+        boolean hasMaintenance = stateHasAtLeastOneMaintenanceNode(state);
+        if (!hasMaintenance && outOfSync.get() == 0.0) {
+            table.appendRaw("<p>Cluster is currently in sync.</p>\n");
+        } else {
+            table.appendRaw("<p>Cluster is currently <strong>%.2f%% out of sync</strong>.</p>\n".formatted(outOfSync.get() * 100.0));
+            if (hasMaintenance) {
+                // It is intentional that a cluster with no pending buckets but with nodes in maintenance mode rather
+                // emits "0% out of sync" with a caveat rather than "in sync", as we don't know the latter for sure.
+                table.appendRaw("<p><strong>Note:</strong> since one or more nodes are currently in " +
+                                "Maintenance mode, the true out of sync ratio may be higher.</p>\n");
+            }
+        }
+    }
+
+    private static boolean stateHasAtLeastOneMaintenanceNode(ClusterStateBundle state) {
+        var baseline = state.getBaselineClusterState();
+        int nodes = baseline.getNodeCount(NodeType.STORAGE);
+        for (int i = 0; i < nodes; ++i) {
+            if (baseline.getNodeState(Node.ofStorage(i)).getState().oneOf("m")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void storeNodeInfo(ContentCluster cluster, int nodeIndex, NodeType nodeType, Map<Integer, NodeInfo> nodeInfoByIndex) {
