@@ -42,7 +42,7 @@ struct Stats {
     void unpack() noexcept {
         ++unpackCnt;
     }
-    void print() {
+    void print() const {
         fprintf(stderr, "Stats: hits=%zu, seeks=%zu, unpacks=%zu, skippedDocs=%zu, skippedHits=%zu\n",
                 hitCnt, seekCnt, unpackCnt, skippedDocs, skippedHits);
     }
@@ -100,36 +100,48 @@ struct WandFactory {
 };
 
 struct VespaWandFactory : WandFactory {
+    mutable SharedWeakAndPriorityQueue  _scores;
     uint32_t n;
-    explicit VespaWandFactory(uint32_t n_in) noexcept : n(n_in) {}
+    explicit VespaWandFactory(uint32_t n_in) noexcept
+        : _scores(n_in),
+          n(n_in)
+    {}
     ~VespaWandFactory() override;
     std::string name() const override { return make_string("VESPA WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::create(terms, n, true);
+        return WeakAndSearch::create(terms, wand::MatchParams(_scores, 1, 1), n, true);
     }
 };
 
 VespaWandFactory::~VespaWandFactory() = default;
 
 struct VespaArrayWandFactory : WandFactory {
+    mutable SharedWeakAndPriorityQueue  _scores;
     uint32_t n;
-    explicit VespaArrayWandFactory(uint32_t n_in) noexcept : n(n_in) {}
+    explicit VespaArrayWandFactory(uint32_t n_in)
+        : _scores(n_in),
+          n(n_in)
+    {}
     ~VespaArrayWandFactory() override;
     std::string name() const override { return make_string("VESPA ARRAY WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createArrayWand(terms, wand::TermFrequencyScorer(), n, true);
+        return WeakAndSearch::createArrayWand(terms, wand::MatchParams(_scores, 1, 1), wand::TermFrequencyScorer(), n, true);
     }
 };
 
 VespaArrayWandFactory::~VespaArrayWandFactory() = default;
 
 struct VespaHeapWandFactory : WandFactory {
+    mutable SharedWeakAndPriorityQueue  _scores;
     uint32_t n;
-    explicit VespaHeapWandFactory(uint32_t n_in) noexcept : n(n_in) {}
+    explicit VespaHeapWandFactory(uint32_t n_in)
+        : _scores(n_in),
+          n(n_in)
+    {}
     ~VespaHeapWandFactory() override;
     std::string name() const override { return make_string("VESPA HEAP WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createHeapWand(terms, wand::TermFrequencyScorer(), n, true);
+        return WeakAndSearch::createHeapWand(terms, wand::MatchParams(_scores, 1, 1), wand::TermFrequencyScorer(), n, true);
     }
 };
 
@@ -151,7 +163,7 @@ struct VespaParallelWandFactory : public WandFactory {
 VespaParallelWandFactory::~VespaParallelWandFactory() = default;
 
 struct VespaParallelArrayWandFactory : public VespaParallelWandFactory {
-    VespaParallelArrayWandFactory(uint32_t n) noexcept : VespaParallelWandFactory(n) {}
+    explicit VespaParallelArrayWandFactory(uint32_t n) noexcept : VespaParallelWandFactory(n) {}
     ~VespaParallelArrayWandFactory() override;
     std::string name() const override { return make_string("VESPA ARRAY PWAND (n=%u)", scores.getScoresToTrack()); }
     SearchIterator::UP create(const wand::Terms &terms) override {

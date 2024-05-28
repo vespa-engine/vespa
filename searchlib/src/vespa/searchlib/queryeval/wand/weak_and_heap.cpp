@@ -8,9 +8,7 @@ SharedWeakAndPriorityQueue::SharedWeakAndPriorityQueue(uint32_t scoresToTrack) :
     WeakAndHeap(scoresToTrack),
     _bestScores(),
     _lock()
-{
-    _bestScores.reserve(scoresToTrack);
-}
+{ }
 
 SharedWeakAndPriorityQueue::~SharedWeakAndPriorityQueue() = default;
 

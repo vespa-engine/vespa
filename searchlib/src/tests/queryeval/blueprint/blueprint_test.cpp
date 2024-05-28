@@ -13,7 +13,7 @@
 LOG_SETUP("blueprint_test");
 
 using namespace search::queryeval;
-using namespace search::fef;
+using MatchData = search::fef::MatchData;
 
 namespace {
 
@@ -44,9 +44,7 @@ public:
     }
 
     SearchIterator::UP
-    createIntermediateSearch(MultiSearch::Children subSearches,
-                             MatchData &md) const override
-    {
+    createIntermediateSearch(MultiSearch::Children subSearches, MatchData &md) const override {
         return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict());
     }
     SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
@@ -63,9 +61,7 @@ class OtherOr : public OrBlueprint
 private:
 public:
     SearchIterator::UP
-    createIntermediateSearch(MultiSearch::Children subSearches,
-                             MatchData &md) const override
-    {
+    createIntermediateSearch(MultiSearch::Children subSearches, MatchData &md) const override {
         return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict());
     }
 
@@ -89,9 +85,7 @@ public:
     }
 
     SearchIterator::UP
-    createIntermediateSearch(MultiSearch::Children subSearches,
-                             MatchData &md) const override
-    {
+    createIntermediateSearch(MultiSearch::Children subSearches, MatchData &md) const override {
         return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict());
     }
 
@@ -106,9 +100,7 @@ class OtherAnd : public AndBlueprint
 private:
 public:
     SearchIterator::UP
-    createIntermediateSearch(MultiSearch::Children subSearches,
-                             MatchData &md) const override
-    {
+    createIntermediateSearch(MultiSearch::Children subSearches, MatchData &md) const override {
         return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict());
     }
 
@@ -121,9 +113,7 @@ class OtherAndNot : public AndNotBlueprint
 {
 public:
     SearchIterator::UP
-    createIntermediateSearch(MultiSearch::Children subSearches,
-                             MatchData &md) const override
-    {
+    createIntermediateSearch(MultiSearch::Children subSearches, MatchData &md) const override {
         return std::make_unique<MySearch>("andnot", std::move(subSearches), &md, strict());
     }
 

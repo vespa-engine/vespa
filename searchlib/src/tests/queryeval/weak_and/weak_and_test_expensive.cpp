@@ -16,15 +16,16 @@ void checkWandHits(WandFactory &vespa, WandFactory &rise, uint32_t step, uint32_
     s1->initFullRange();
     SearchIterator::UP s2 = riseSetup.create();
     s2->initFullRange();
-    ASSERT_TRUE(dynamic_cast<WeakAndType*>(s1.get()) != 0);
-    ASSERT_TRUE(dynamic_cast<WeakAndType*>(s2.get()) == 0);
-    ASSERT_TRUE(dynamic_cast<RiseType*>(s2.get()) != 0);
-    ASSERT_TRUE(dynamic_cast<RiseType*>(s1.get()) == 0);
+    ASSERT_TRUE(dynamic_cast<WeakAndType*>(s1.get()) != nullptr);
+    ASSERT_TRUE(dynamic_cast<WeakAndType*>(s2.get()) == nullptr);
+    ASSERT_TRUE(dynamic_cast<RiseType*>(s2.get()) != nullptr);
+    ASSERT_TRUE(dynamic_cast<RiseType*>(s1.get()) == nullptr);
     s1->seek(1);
     s2->seek(1);
     while (!s1->isAtEnd() &&
            !s2->isAtEnd())
     {
+        if (s1->getDocId() != s2->getDocId()) assert(true);
         ASSERT_EQUAL(s1->getDocId(), s2->getDocId());
         if ((filter == 0) || ((s1->getDocId() % filter) != 0)) {
             s1->unpack(s1->getDocId());

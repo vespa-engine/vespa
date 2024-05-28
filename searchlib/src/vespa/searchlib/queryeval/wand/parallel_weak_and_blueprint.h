@@ -11,8 +11,6 @@
 
 namespace search::queryeval {
 
-const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
-
 /**
  * Blueprint for the parallel weak and search operator.
  */
@@ -36,17 +34,10 @@ public:
                              uint32_t scoresToTrack,
                              score_t scoreThreshold,
                              double thresholdBoostFactor);
-    ParallelWeakAndBlueprint(FieldSpecBase field,
-                             uint32_t scoresToTrack,
-                             score_t scoreThreshold,
-                             double thresholdBoostFactor,
-                             uint32_t scoresAdjustFrequency);
     ~ParallelWeakAndBlueprint() override;
 
     const WeakAndHeap &getScores() const { return _scores; }
-
     score_t getScoreThreshold() const { return _scoreThreshold; }
-
     double getThresholdBoostFactor() const { return _thresholdBoostFactor; }
 
     // Used by create visitor

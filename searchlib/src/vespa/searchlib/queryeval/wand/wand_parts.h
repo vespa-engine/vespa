@@ -23,6 +23,8 @@ using score_t = int64_t;
 using docid_t = uint32_t;
 using ref_t = uint16_t;
 
+const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
+
 //-----------------------------------------------------------------------------
 
 /**
@@ -33,6 +35,9 @@ struct MatchParams
     WeakAndHeap   &scores;
     score_t        scoreThreshold;
     const uint32_t scoresAdjustFrequency;
+    MatchParams(WeakAndHeap &scores_in) noexcept
+        : MatchParams(scores_in, 1, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY)
+    {}
     MatchParams(WeakAndHeap &scores_in, score_t scoreThreshold_in, uint32_t scoresAdjustFrequency_in) noexcept
         : scores(scores_in),
           scoreThreshold(scoreThreshold_in),

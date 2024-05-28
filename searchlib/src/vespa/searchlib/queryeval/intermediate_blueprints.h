@@ -4,6 +4,7 @@
 
 #include "blueprint.h"
 #include "multisearch.h"
+#include <vespa/searchlib/queryeval/wand/weak_and_heap.h>
 
 namespace search::queryeval {
 
@@ -88,6 +89,7 @@ private:
 class WeakAndBlueprint : public IntermediateBlueprint
 {
 private:
+    mutable SharedWeakAndPriorityQueue  _scores;
     uint32_t              _n;
     float                 _idf_range;
     std::vector<uint32_t> _weights;
@@ -106,15 +108,15 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
-    explicit WeakAndBlueprint(uint32_t n) noexcept : WeakAndBlueprint(n, 0.0) {}
-    WeakAndBlueprint(uint32_t n, float idf_range) noexcept : _n(n), _idf_range(idf_range), _weights() {}
+    explicit WeakAndBlueprint(uint32_t n) : WeakAndBlueprint(n, 0.0) {}
+    WeakAndBlueprint(uint32_t n, float idf_range);
     ~WeakAndBlueprint() override;
     void addTerm(Blueprint::UP bp, uint32_t weight) {
         addChild(std::move(bp));
         _weights.push_back(weight);
     }
-    uint32_t getN() const { return _n; }
-    const std::vector<uint32_t> &getWeights() const { return _weights; }
+    uint32_t getN() const noexcept { return _n; }
+    const std::vector<uint32_t> &getWeights() const noexcept { return _weights; }
 };
 
 //-----------------------------------------------------------------------------

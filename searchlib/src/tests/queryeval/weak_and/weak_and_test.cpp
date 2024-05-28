@@ -1,8 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
+#include <vespa/searchlib/queryeval/wand/weak_and_heap.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
-#include <vespa/searchlib/queryeval/simplesearch.h>
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
@@ -20,11 +19,13 @@ namespace {
 
 struct MyWandSpec : public WandSpec
 {
+    SharedWeakAndPriorityQueue scores;
     uint32_t n;
 
-    MyWandSpec(uint32_t n_) : WandSpec(), n(n_) {}
+    explicit MyWandSpec(uint32_t n_in) : WandSpec(), scores(n_in), n(n_in) {}
     SearchIterator *create() {
-        return new TrackedSearch("WAND", getHistory(), WeakAndSearch::create(getTerms(), n, true));
+        return new TrackedSearch("WAND", getHistory(),
+                                 WeakAndSearch::create(getTerms(), wand::MatchParams(scores, 1, 1), n, true));
     }
 };
 
@@ -104,7 +105,8 @@ TEST(WeakAndTest, require_that_initial_docid_for_subsearches_are_taken_into_acco
     wand::Terms terms;
     terms.push_back(wand::Term(new TrackedSearch("foo", history, new EagerChild(search::endDocId)), 100, 1));
     terms.push_back(wand::Term(new TrackedSearch("bar", history, new EagerChild(10)), 100, 2));
-    SearchIterator::UP search(new TrackedSearch("WAND", history, WeakAndSearch::create(terms, 2, true)));
+    SharedWeakAndPriorityQueue scores(2);
+    auto search = std::make_unique<TrackedSearch>("WAND", history, WeakAndSearch::create(terms, wand::MatchParams(scores), 2, true));
     SimpleResult hits;
     hits.search(*search);
     EXPECT_EQ(SimpleResult().addHit(10), hits);
@@ -114,16 +116,25 @@ TEST(WeakAndTest, require_that_initial_docid_for_subsearches_are_taken_into_acco
 }
 
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
+public:
+    IteratorChildrenVerifier();
+    ~IteratorChildrenVerifier() override;
 private:
+    mutable std::vector<std::unique_ptr<SharedWeakAndPriorityQueue>> _scores;
     SearchIterator::UP create(bool strict) const override {
         wand::Terms terms;
         for (size_t i = 0; i < _num_children; ++i) {
             terms.emplace_back(createIterator(_split_lists[i], strict).release(),
                                100, _split_lists[i].size());
         }
-        return SearchIterator::UP(WeakAndSearch::create(terms, -1, strict));
+        static constexpr size_t LARGE_ENOUGH_HEAP_FOR_ALL = 10000;
+        _scores.push_back(std::make_unique<SharedWeakAndPriorityQueue>(LARGE_ENOUGH_HEAP_FOR_ALL));
+        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), 1, 1), -1, strict);
     }
 };
+
+IteratorChildrenVerifier::IteratorChildrenVerifier() : _scores() {}
+IteratorChildrenVerifier::~IteratorChildrenVerifier() = default;
 
 TEST(WeakAndTest, verify_search_iterator_conformance)
 {

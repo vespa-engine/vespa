@@ -458,7 +458,7 @@ public:
           _scores(scoresToTrack),
           _scoreThreshold(scoreThreshold),
           _thresholdBoostFactor(thresholdBoostFactor),
-          _scoresAdjustFrequency(queryeval::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
+          _scoresAdjustFrequency(queryeval::wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
           _weights(),
           _terms(),
           _attr(attr),
