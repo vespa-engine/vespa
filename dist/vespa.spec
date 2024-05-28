@@ -202,7 +202,7 @@ Requires: vespa-protobuf = %{_vespa_protobuf_version}
 Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.18.0
-Requires: vespa-jllama >= 3.0.1
+Requires: vespa-jllama = 3.2.1
 
 %description libs
 
