@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "weak_and_search.h"
-#include "wand_parts.h"
+#include "weak_and_heap.h"
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/priority_queue.h>
@@ -20,8 +20,8 @@ private:
     DualHeap<FutureHeap, PastHeap> _heaps;
     Algorithm                      _algo;
     score_t                        _threshold; // current score threshold
-    Scores                         _scores;    // best n scores
     MatchParams                    _matchParams;
+    std::vector<score_t>           _localScores;
     const uint32_t                 _n;
 
     void seek_strict(uint32_t docid) {
@@ -41,6 +41,11 @@ private:
             }
         }
     }
+    void updateThreshold(score_t newThreshold) {
+        if (newThreshold > _threshold) {
+            _threshold = newThreshold;
+        }
+    }
 
 public:
     template<typename Scorer>
@@ -49,10 +54,11 @@ public:
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
           _algo(),
           _threshold(matchParams.scoreThreshold),
-          _scores(),
           _matchParams(matchParams),
+          _localScores(),
           _n(n)
     {
+        _localScores.reserve(_matchParams.scoresAdjustFrequency);
     }
     size_t get_num_terms() const override { return _terms.size(); }
     int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
@@ -60,6 +66,7 @@ public:
     const Terms &getTerms() const override { return _terms.input_terms(); }
     uint32_t getN() const override { return _n; }
     void doSeek(uint32_t docid) override {
+        updateThreshold(_matchParams.scores.getMinScore());
         if (IS_STRICT) {
             seek_strict(docid);
         } else {
@@ -68,12 +75,11 @@ public:
     }
     void doUnpack(uint32_t docid) override {
         _algo.find_matching_terms(_terms, _heaps);
-        _scores.push(_algo.get_upper_bound());
-        if (_scores.size() > _n) {
-            _scores.pop_front();
-        }
-        if (_scores.size() == _n) {
-            _threshold = _scores.front();
+        score_t score = _algo.get_upper_bound();
+        _localScores.push_back(score);
+        if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
+            _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
+            _localScores.clear();
         }
         ref_t *end = _heaps.present_end();
         for (ref_t *ref = _heaps.present_begin(); ref != end; ++ref) {
