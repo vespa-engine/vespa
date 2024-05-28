@@ -431,7 +431,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
-            "persistence-thread-max-feed-op-batch-size", 1,
+            "persistence-thread-max-feed-op-batch-size", 64,
             List.of("vekterli"), "2024-04-12", "2025-01-01",
             "Maximum number of enqueued feed operations (put/update/remove) bound "+
             "towards the same bucket that can be async dispatched as part of the " +
