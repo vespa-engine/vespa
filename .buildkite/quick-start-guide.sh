@@ -8,4 +8,3 @@ if [[ $VESPA_USE_SANITIZER != null ]]; then
 fi
 
 "$SOURCE_DIR/screwdriver/test-quick-start-guide.sh"
-
