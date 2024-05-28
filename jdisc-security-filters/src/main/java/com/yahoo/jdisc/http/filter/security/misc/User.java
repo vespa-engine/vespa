@@ -31,7 +31,7 @@ public record User(String email, String name, String nickname, String picture, b
 
     private User(Builder builder) {
         this(builder.email, builder.name, builder.nickname, builder.picture, builder.isVerified, builder.loginCount,
-             builder.lastLogin, builder.extraAttributes);
+             Objects.requireNonNullElse(builder.lastLogin, NO_DATE), builder.extraAttributes);
     }
 
     public static Builder builder() { return new Builder(); }
