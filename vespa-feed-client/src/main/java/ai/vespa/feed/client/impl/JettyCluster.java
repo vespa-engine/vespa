@@ -111,9 +111,16 @@ class JettyCluster implements Cluster {
                     }
                     jettyReq.body(new BytesRequestContent(APPLICATION_JSON.asString(), bytes));
                 }
+                log.log(Level.FINER, () ->
+                        String.format("Dispatching request %s (%s)", req, System.identityHashCode(vessel)));
                 jettyReq.send(new BufferingResponseListener() {
                     @Override
                     public void onComplete(Result result) {
+                        log.log(Level.FINER, () ->
+                                String.format("Completed request %s (%s): %s",
+                                        req, System.identityHashCode(vessel),
+                                        result.isFailed()
+                                                ? result.getFailure().toString() : result.getResponse().getStatus()));
                         endpoint.inflight.decrementAndGet();
                         if (result.isFailed()) vessel.completeExceptionally(result.getFailure());
                         else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
