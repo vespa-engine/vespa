@@ -67,7 +67,8 @@ private:
     void buildIntermediate(IntermediateBlueprint *b, NodeType &n) __attribute__((noinline));
 
     void buildWeakAnd(ProtonWeakAnd &n) {
-        auto *wand = new WeakAndBlueprint(n.getTargetNumHits(), _requestContext.get_attribute_blueprint_params().weakand_range);
+        auto *wand = new WeakAndBlueprint(n.getTargetNumHits(), _requestContext.get_attribute_blueprint_params().weakand_range,
+                                          _requestContext.thread_bundle().size() > 1);
         Blueprint::UP result(wand);
         for (auto node : n.getChildren()) {
             uint32_t weight = getWeightFromNode(*node).percent();

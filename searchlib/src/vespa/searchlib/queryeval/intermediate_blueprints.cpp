@@ -419,8 +419,8 @@ WeakAndBlueprint::my_flow(InFlow in_flow) const
     return AnyFlow::create<OrFlow>(in_flow);
 }
 
-WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range)
-    : _scores(n),
+WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range, bool thread_safe)
+    : _scores(WeakAndPriorityQueue::createHeap(n, thread_safe)),
       _n(n),
       _idf_range(idf_range),
       _weights()
@@ -489,8 +489,8 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                            getChild(i).getState().estimate().estHits);
     }
     return (_idf_range == 0.0)
-        ? WeakAndSearch::create(terms, wand::MatchParams(_scores), wand::TermFrequencyScorer(), _n, strict())
-        : WeakAndSearch::create(terms, wand::MatchParams(_scores), wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict());
+        ? WeakAndSearch::create(terms, wand::MatchParams(*_scores), wand::TermFrequencyScorer(), _n, strict())
+        : WeakAndSearch::create(terms, wand::MatchParams(*_scores), wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict());
 }
 
 SearchIterator::UP

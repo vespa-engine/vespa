@@ -356,7 +356,7 @@ DotProductAdapter::~DotProductAdapter() = default;
 struct ParallelWeakAndAdapter {
     FieldSpec field;
     ParallelWeakAndBlueprint blueprint;
-    ParallelWeakAndAdapter() : field("foo", 3, 7), blueprint(field, 100, 0.0, 1.0) {}
+    ParallelWeakAndAdapter() : field("foo", 3, 7), blueprint(field, 100, 0.0, 1.0, true) {}
     void addChild(std::unique_ptr<Blueprint> child) {
         auto child_field = blueprint.getNextChildField(field);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
