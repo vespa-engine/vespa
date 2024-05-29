@@ -54,7 +54,7 @@ class HttpFeedClientTest {
             try {
                 assertEquals(id, documentId);
                 assertEquals("/document/v1/ns/type/docid/0?timeout=900000ms",
-                             request.path());
+                             request.pathAndQuery());
                 assertEquals("PUT", request.method());
                 assertEquals("json", new String(request.body(), UTF_8));
 
@@ -86,7 +86,7 @@ class HttpFeedClientTest {
             try {
                 assertEquals(id, documentId);
                 assertEquals("/document/v1/ns/type/docid/0?tracelevel=1&timeout=900000ms",
-                             request.path());
+                             request.pathAndQuery());
                 assertEquals("DELETE", request.method());
                 assertNull(request.body());
 
@@ -148,7 +148,7 @@ class HttpFeedClientTest {
             try {
                 assertEquals(id, documentId);
                 assertEquals("/document/v1/ns/type/docid/0?create=true&condition=false&route=route&timeout=5000ms",
-                             request.path());
+                             request.pathAndQuery());
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(502,
@@ -186,7 +186,7 @@ class HttpFeedClientTest {
             try {
                 assertEquals(id, documentId);
                 assertEquals("/document/v1/ns/type/docid/0?timeout=900000ms",
-                             request.path());
+                             request.pathAndQuery());
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(500,
@@ -229,7 +229,7 @@ class HttpFeedClientTest {
             try {
                 assertNull(request.body());
                 assertEquals("POST", request.method());
-                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true&timeout=15000ms", request.path());
+                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true&timeout=15000ms", request.pathAndQuery());
                 vessel.complete(response.get());
             }
             catch (Throwable t) {
