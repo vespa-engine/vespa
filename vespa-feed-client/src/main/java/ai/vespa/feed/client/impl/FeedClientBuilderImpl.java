@@ -58,7 +58,6 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     Compression compression = auto;
     URI proxy;
     Duration connectionTtl = Duration.ZERO;
-    LongSupplier nanoClock = System::nanoTime;
 
     public FeedClientBuilderImpl() { }
 
@@ -249,11 +248,6 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl setCompression(Compression compression) {
         this.compression = requireNonNull(compression);
-        return this;
-    }
-
-    FeedClientBuilderImpl setNanoClock(LongSupplier nanoClock) {
-        this.nanoClock = requireNonNull(nanoClock);
         return this;
     }
 

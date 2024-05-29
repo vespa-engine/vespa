@@ -194,7 +194,7 @@ public class TenantRepository {
         this.configserverConfig = configserverConfig;
         this.curator = curator;
         this.metrics = metrics;
-        this.metricUpdater = metrics.getOrCreateMetricUpdater(Map.of());
+        metricUpdater = metrics.getOrCreateMetricUpdater(Map.of());
         this.zkCacheExecutor = zkCacheExecutor;
         this.zkApplicationWatcherExecutor = zkApplicationWatcherExecutor;
         this.zkSessionWatcherExecutor = zkSessionWatcherExecutor;

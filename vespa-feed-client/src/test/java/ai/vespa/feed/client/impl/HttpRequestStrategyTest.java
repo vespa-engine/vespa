@@ -44,7 +44,7 @@ class HttpRequestStrategyTest {
     @Test
     void testConcurrency() throws IOException {
         int documents = 1 << 16;
-        HttpRequest request = new HttpRequest("PUT", "/", "", null, null, Duration.ofSeconds(1), () -> 0);
+        HttpRequest request = new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), () -> 0);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         Cluster cluster = (__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS);
@@ -102,7 +102,7 @@ class HttpRequestStrategyTest {
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");
-        HttpRequest request = new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(180), nowNanos::get);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(180), nowNanos::get);
 
         // Runtime exception is not retried.
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
@@ -146,8 +146,8 @@ class HttpRequestStrategyTest {
             else vessel.complete(success);
         });
         CompletableFuture<HttpResponse> delayed = strategy.enqueue(id1, request);
-        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", "", null, null, Duration.ofSeconds(1), nowNanos::get));
-        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", "", null, null, Duration.ofSeconds(1), nowNanos::get)).get());
+        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), nowNanos::get));
+        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null, Duration.ofSeconds(1), nowNanos::get)).get());
         latch.await();
         assertEquals(8, strategy.stats().requests()); // 3 attempts at throttled and one at id2.
         nowNanos.set(4_000_000_000L);
@@ -168,7 +168,7 @@ class HttpRequestStrategyTest {
 
         // Error responses are not retried when not of appropriate type.
         cluster.expect((__, vessel) -> vessel.complete(serverError));
-        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", "", null, null, Duration.ofSeconds(1), nowNanos::get)).get());
+        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, Duration.ofSeconds(1), nowNanos::get)).get());
         assertEquals(12, strategy.stats().requests());
 
         // Some error responses are not retried.
@@ -184,7 +184,7 @@ class HttpRequestStrategyTest {
             vessel.completeExceptionally(new IOException("retry me"));
         });
         expected = assertThrows(ExecutionException.class,
-                                () -> strategy.enqueue(id1, new HttpRequest("POST", "/", "", null, null, Duration.ofMillis(100), nowNanos::get)).get());
+                                () -> strategy.enqueue(id1, new HttpRequest("POST", "/", null, null, Duration.ofMillis(100), nowNanos::get)).get());
         assertEquals("retry me", expected.getCause().getCause().getMessage());
         assertEquals(15, strategy.stats().requests());
 
@@ -223,15 +223,15 @@ class HttpRequestStrategyTest {
         
         // First operation fails, second remains in flight, and third fails.
         clusters.get(0).expect((__, vessel) -> vessel.complete(HttpResponse.of(200, null)));
-        strategy.enqueue(DocumentId.of("ns", "type", "1"), new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), now::get)).get();
+        strategy.enqueue(DocumentId.of("ns", "type", "1"), new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get)).get();
         Exchanger<CompletableFuture<HttpResponse>> exchanger = new Exchanger<>();
         clusters.get(0).expect((__, vessel) -> {
             try { exchanger.exchange(vessel); } catch (InterruptedException e) { throw new RuntimeException(e); }
         });
-        CompletableFuture<HttpResponse> secondResponse = strategy.enqueue(DocumentId.of("ns", "type", "2"), new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), now::get));
+        CompletableFuture<HttpResponse> secondResponse = strategy.enqueue(DocumentId.of("ns", "type", "2"), new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get));
         CompletableFuture<HttpResponse> secondVessel = exchanger.exchange(null);
         clusters.get(0).expect((__, vessel) -> vessel.complete(HttpResponse.of(500, null)));
-        strategy.enqueue(DocumentId.of("ns", "type", "3"), new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), now::get)).get();
+        strategy.enqueue(DocumentId.of("ns", "type", "3"), new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get)).get();
 
         // Time advances, and the circuit breaker half-opens.
         assertEquals(CLOSED, breaker.state());
@@ -241,11 +241,11 @@ class HttpRequestStrategyTest {
         // It's indeterminate which cluster gets the next request, but the second should get the next one after that.
         clusters.get(0).expect((__, vessel) -> vessel.complete(HttpResponse.of(500, null)));
         clusters.get(1).expect((__, vessel) -> vessel.complete(HttpResponse.of(500, null)));
-        assertEquals(500, strategy.enqueue(DocumentId.of("ns", "type", "4"), new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), now::get)).get().code());
+        assertEquals(500, strategy.enqueue(DocumentId.of("ns", "type", "4"), new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get)).get().code());
 
         clusters.get(0).expect((__, vessel) -> vessel.completeExceptionally(new AssertionError("should not be called")));
         clusters.get(1).expect((__, vessel) -> vessel.complete(HttpResponse.of(200, null)));
-        assertEquals(200, strategy.enqueue(DocumentId.of("ns", "type", "5"), new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), now::get)).get().code());
+        assertEquals(200, strategy.enqueue(DocumentId.of("ns", "type", "5"), new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), now::get)).get().code());
 
         assertFalse(clusters.get(0).closed.get());
         assertFalse(clusters.get(1).closed.get());
@@ -276,10 +276,10 @@ class HttpRequestStrategyTest {
         DocumentId id3 = DocumentId.of("ns", "type", "3");
         DocumentId id4 = DocumentId.of("ns", "type", "4");
         DocumentId id5 = DocumentId.of("ns", "type", "5");
-        HttpRequest failing = new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), nowNanos::get);
-        HttpRequest partial = new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), nowNanos::get);
-        HttpRequest request = new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), nowNanos::get);
-        HttpRequest blocking = new HttpRequest("POST", "/", "", null, null, Duration.ofSeconds(1), nowNanos::get);
+        HttpRequest failing = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
+        HttpRequest partial = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
+        HttpRequest blocking = new HttpRequest("POST", "/", null, null, Duration.ofSeconds(1), nowNanos::get);
 
         // Enqueue some operations to the same id, which are serialised, and then shut down while operations are in flight.
         Phaser phaser = new Phaser(2);
