@@ -19,6 +19,7 @@ protected:
 
 public:
     uint32_t getId() const noexcept { return _id; }
+    bool operator==(const Type &rhs) const noexcept { return _id == rhs._id; }
 };
 
 /**
