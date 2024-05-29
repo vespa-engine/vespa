@@ -189,7 +189,7 @@ namespace {
 
 struct NoRescorer
 {
-    static double rescore(double score) noexcept { return score; }
+    static double rescore(uint32_t, double score) noexcept { return score; }
 };
 
 template <typename Rescorer>
@@ -197,7 +197,7 @@ void
 add_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, Rescorer rescorer)
 {
     for (auto& hit : hits) {
-        rs.push_back({hit.first, rescorer.rescore(hit.second)});
+        rs.push_back({hit.first, rescorer.rescore(hit.first, hit.second)});
     }
 }
 
@@ -209,7 +209,7 @@ mixin_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, c
     auto hits_end = hits.end();
     for (auto docid : docids) {
         if (hits_cur != hits_end && docid == hits_cur->first) {
-            rs.push_back({docid, rescorer.rescore(hits_cur->second)});
+            rs.push_back({docid, rescorer.rescore(docid, hits_cur->second)});
             ++hits_cur;
         } else {
             rs.push_back({docid, default_value});
