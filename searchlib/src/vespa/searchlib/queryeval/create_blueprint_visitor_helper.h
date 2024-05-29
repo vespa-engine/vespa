@@ -29,6 +29,7 @@ protected:
     const IRequestContext & getRequestContext() const { return _requestContext; }
     attribute::SearchContextParams createContextParams() const;
     attribute::SearchContextParams createContextParams(bool isFilter) const;
+    bool is_search_multi_threaded() const noexcept;
 public:
     CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext);
     ~CreateBlueprintVisitorHelper() override;

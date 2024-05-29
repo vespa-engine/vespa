@@ -89,7 +89,7 @@ private:
 class WeakAndBlueprint : public IntermediateBlueprint
 {
 private:
-    mutable SharedWeakAndPriorityQueue  _scores;
+    std::unique_ptr<WeakAndPriorityQueue>  _scores;
     uint32_t              _n;
     float                 _idf_range;
     std::vector<uint32_t> _weights;
@@ -108,8 +108,8 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
 
-    explicit WeakAndBlueprint(uint32_t n) : WeakAndBlueprint(n, 0.0) {}
-    WeakAndBlueprint(uint32_t n, float idf_range);
+    explicit WeakAndBlueprint(uint32_t n) : WeakAndBlueprint(n, 0.0, true) {}
+    WeakAndBlueprint(uint32_t n, float idf_range, bool thread_safe);
     ~WeakAndBlueprint() override;
     void addTerm(Blueprint::UP bp, uint32_t weight) {
         addChild(std::move(bp));

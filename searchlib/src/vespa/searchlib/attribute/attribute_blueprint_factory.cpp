@@ -442,7 +442,8 @@ private:
 class DirectWandBlueprint : public queryeval::ComplexLeafBlueprint
 {
 private:
-    mutable queryeval::SharedWeakAndPriorityQueue  _scores;
+    using WeakAndPriorityQueue = queryeval::WeakAndPriorityQueue;
+    std::unique_ptr<WeakAndPriorityQueue>          _scores;
     const queryeval::wand::score_t                 _scoreThreshold;
     double                                         _thresholdBoostFactor;
     const uint32_t                                 _scoresAdjustFrequency;
@@ -451,11 +452,13 @@ private:
     const IDocidWithWeightPostingStore            &_attr;
     vespalib::datastore::EntryRef                  _dictionary_snapshot;
 
+
 public:
     DirectWandBlueprint(const FieldSpec &field, const IDocidWithWeightPostingStore &attr, uint32_t scoresToTrack,
-                        queryeval::wand::score_t scoreThreshold, double thresholdBoostFactor, size_t size_hint)
+                        queryeval::wand::score_t scoreThreshold, double thresholdBoostFactor, size_t size_hint,
+                        bool thread_safe)
         : ComplexLeafBlueprint(field),
-          _scores(scoresToTrack),
+          _scores(WeakAndPriorityQueue::createHeap(scoresToTrack, thread_safe)),
           _scoreThreshold(scoreThreshold),
           _thresholdBoostFactor(thresholdBoostFactor),
           _scoresAdjustFrequency(queryeval::wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
@@ -495,7 +498,7 @@ public:
         using OrFlow = search::queryeval::OrFlow;
         using MyAdapter = attribute::DirectPostingStoreFlowStatsAdapter;
         double child_est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
-        double my_est = abs_to_rel_est(_scores.getScoresToTrack(), docid_limit);
+        double my_est = abs_to_rel_est(_scores->getScoresToTrack(), docid_limit);
         double est = (child_est + my_est) / 2.0;
         return {est, OrFlow::cost_of(MyAdapter(docid_limit), _terms, false),
                 OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
@@ -507,7 +510,7 @@ public:
             return std::make_unique<queryeval::EmptySearch>();
         }
         return queryeval::ParallelWeakAndSearch::create(*tfmda[0],
-                queryeval::ParallelWeakAndSearch::MatchParams(_scores, _scoreThreshold, _thresholdBoostFactor,
+                queryeval::ParallelWeakAndSearch::MatchParams(*_scores, _scoreThreshold, _thresholdBoostFactor,
                                                               _scoresAdjustFrequency, get_docid_limit()),
                                                         _weights, _terms, _attr, strict());
     }
@@ -710,15 +713,12 @@ public:
 
     void visit(query::WandTerm &n) override {
         if (has_always_btree_iterators_with_docid_and_weight()) {
-            auto *bp = new DirectWandBlueprint(_field, *_dwwps,
-                                               n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),
-                                               n.getNumTerms());
+            auto *bp = new DirectWandBlueprint(_field, *_dwwps, n.getTargetNumHits(), n.getScoreThreshold(),
+                                               n.getThresholdBoostFactor(), n.getNumTerms(), is_search_multi_threaded());
             createDirectMultiTerm(bp, n);
         } else {
-            auto *bp = new ParallelWeakAndBlueprint(_field,
-                    n.getTargetNumHits(),
-                    n.getScoreThreshold(),
-                    n.getThresholdBoostFactor());
+            auto *bp = new ParallelWeakAndBlueprint(_field, n.getTargetNumHits(), n.getScoreThreshold(),
+                                                    n.getThresholdBoostFactor(), is_search_multi_threaded());
             createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
         }
     }

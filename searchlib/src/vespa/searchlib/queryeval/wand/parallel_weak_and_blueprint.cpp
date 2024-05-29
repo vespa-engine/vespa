@@ -10,12 +10,11 @@
 
 namespace search::queryeval {
 
-ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field,
-                                                   uint32_t scoresToTrack,
-                                                   score_t scoreThreshold,
-                                                   double thresholdBoostFactor)
+ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field, uint32_t scoresToTrack,
+                                                   score_t scoreThreshold, double thresholdBoostFactor,
+                                                   bool thread_safe)
     : ComplexLeafBlueprint(field),
-      _scores(scoresToTrack),
+      _scores(WeakAndPriorityQueue::createHeap(scoresToTrack, thread_safe)),
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
       _scoresAdjustFrequency(wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
@@ -66,7 +65,7 @@ ParallelWeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const
         term->update_flow_stats(docid_limit);
     }
     double child_est = OrFlow::estimate_of(_terms);
-    double my_est = abs_to_rel_est(_scores.getScoresToTrack(), docid_limit);
+    double my_est = abs_to_rel_est(_scores->getScoresToTrack(), docid_limit);
     double est = (child_est + my_est) / 2.0;
     return {est, OrFlow::cost_of(_terms, false),
             OrFlow::cost_of(_terms, true) + flow::heap_cost(est, _terms.size())};
@@ -89,7 +88,7 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
                            childState.field(0).resolve(*childrenMatchData));
     }
     return ParallelWeakAndSearch::create(terms,
-                                         ParallelWeakAndSearch::MatchParams(_scores, _scoreThreshold, _thresholdBoostFactor,
+                                         ParallelWeakAndSearch::MatchParams(*_scores, _scoreThreshold, _thresholdBoostFactor,
                                                                             _scoresAdjustFrequency, get_docid_limit()),
                                          ParallelWeakAndSearch::RankParams(*tfmda[0],std::move(childrenMatchData)),
                                          strict());

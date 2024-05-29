@@ -22,6 +22,11 @@ CreateBlueprintVisitorHelper::CreateBlueprintVisitorHelper(Searchable &searchabl
 
 CreateBlueprintVisitorHelper::~CreateBlueprintVisitorHelper() = default;
 
+bool
+CreateBlueprintVisitorHelper::is_search_multi_threaded() const noexcept {
+    return getRequestContext().thread_bundle().size() > 1;
+}
+
 attribute::SearchContextParams
 CreateBlueprintVisitorHelper::createContextParams() const {
     return attribute::SearchContextParams().metaStoreReadGuard(_requestContext.getMetaStoreReadGuard());
@@ -104,7 +109,8 @@ void
 CreateBlueprintVisitorHelper::visitWandTerm(query::WandTerm &n)
 {
     createWeightedSet(std::make_unique<ParallelWeakAndBlueprint>(_field, n.getTargetNumHits(),
-                                                                 n.getScoreThreshold(), n.getThresholdBoostFactor()),
+                                                                 n.getScoreThreshold(), n.getThresholdBoostFactor(),
+                                                                 is_search_multi_threaded()),
                       n);
 }
 

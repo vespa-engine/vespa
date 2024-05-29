@@ -19,24 +19,23 @@ class ParallelWeakAndBlueprint : public ComplexLeafBlueprint
 private:
     using score_t = wand::score_t;
 
-    mutable SharedWeakAndPriorityQueue _scores;
-    const wand::score_t                _scoreThreshold;
-    double                             _thresholdBoostFactor;
-    const uint32_t                     _scoresAdjustFrequency;
-    fef::MatchDataLayout               _layout;
-    std::vector<int32_t>               _weights;
-    std::vector<Blueprint::UP>         _terms;
+    std::unique_ptr<WeakAndPriorityQueue> _scores;
+    const wand::score_t                   _scoreThreshold;
+    double                                _thresholdBoostFactor;
+    const uint32_t                        _scoresAdjustFrequency;
+    fef::MatchDataLayout                  _layout;
+    std::vector<int32_t>                  _weights;
+    std::vector<Blueprint::UP>            _terms;
 
 public:
     ParallelWeakAndBlueprint(const ParallelWeakAndBlueprint &) = delete;
     ParallelWeakAndBlueprint &operator=(const ParallelWeakAndBlueprint &) = delete;
-    ParallelWeakAndBlueprint(FieldSpecBase field,
-                             uint32_t scoresToTrack,
-                             score_t scoreThreshold,
-                             double thresholdBoostFactor);
+    ParallelWeakAndBlueprint(FieldSpecBase field, uint32_t scoresToTrack,
+                             score_t scoreThreshold, double thresholdBoostFactor,
+                             bool thread_safe);
     ~ParallelWeakAndBlueprint() override;
 
-    const WeakAndHeap &getScores() const { return _scores; }
+    const WeakAndHeap &getScores() const { return *_scores; }
     score_t getScoreThreshold() const { return _scoreThreshold; }
     double getThresholdBoostFactor() const { return _thresholdBoostFactor; }
 
