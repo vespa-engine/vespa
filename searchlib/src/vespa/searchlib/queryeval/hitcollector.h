@@ -35,8 +35,6 @@ private:
     std::vector<Hit>            _reRankedHits;
 
     std::pair<Scores, Scores> _ranges;
-    feature_t _scale;
-    feature_t _adjust;
 
     struct ScoreComparator {
         bool operator() (const Hit & lhs, const Hit & rhs) const noexcept {
@@ -120,9 +118,6 @@ private:
         void collect(uint32_t docId, feature_t score) override;
     };
 
-    HitRank getReScore(feature_t score) const {
-        return ((score * _scale) - _adjust);
-    }
     VESPA_DLL_LOCAL void sortHitsByScore(size_t topn);
     VESPA_DLL_LOCAL void sortHitsByDocId();
 
