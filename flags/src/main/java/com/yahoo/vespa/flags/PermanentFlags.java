@@ -196,8 +196,8 @@ public class PermanentFlags {
     );
 
     public static final UnboundBooleanFlag JVM_OMIT_STACK_TRACE_IN_FAST_THROW = defineFeatureFlag(
-            "jvm-omit-stack-trace-in-fast-throw", true,
-            "Controls JVM option OmitStackTraceInFastThrow (default feature flag value is true, which is the default JVM option value as well)",
+            "jvm-omit-stack-trace-in-fast-throw", false,
+            "Controls JVM option OmitStackTraceInFastThrow (the default JVM option corresponds to feature flag being false )",
             "takes effect on JVM restart",
             CLUSTER_TYPE, INSTANCE_ID);
 
