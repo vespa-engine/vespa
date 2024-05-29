@@ -90,7 +90,7 @@ class JettyCluster implements Cluster {
                     vessel.completeExceptionally(new TimeoutException("operation timed out after '" + req.timeout() + "'"));
                     return;
                 }
-                Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
+                Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.pathAndQuery()))
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
                         .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
