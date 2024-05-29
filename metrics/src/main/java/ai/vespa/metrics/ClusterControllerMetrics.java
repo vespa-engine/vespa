@@ -13,6 +13,7 @@ public enum ClusterControllerMetrics implements VespaMetrics {
     STOPPING_COUNT("cluster-controller.stopping.count", Unit.NODE, "Number of content nodes currently stopping"),
     UP_COUNT("cluster-controller.up.count", Unit.NODE, "Number of content nodes up"),
     CLUSTER_STATE_CHANGE_COUNT("cluster-controller.cluster-state-change.count", Unit.NODE, "Number of nodes changing state"),
+    CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO("cluster-buckets-out-of-sync-ratio", Unit.FRACTION, "Ratio of buckets in the cluster currently in need of syncing"),
     BUSY_TICK_TIME_MS("cluster-controller.busy-tick-time-ms", Unit.MILLISECOND, "Time busy"),
     IDLE_TICK_TIME_MS("cluster-controller.idle-tick-time-ms", Unit.MILLISECOND, "Time idle"),
     WORK_MS("cluster-controller.work-ms", Unit.MILLISECOND, "Time used for actual work"),
