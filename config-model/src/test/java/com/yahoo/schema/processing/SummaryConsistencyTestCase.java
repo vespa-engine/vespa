@@ -5,11 +5,11 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SummaryConsistencyTestCase {
 
@@ -45,8 +45,7 @@ public class SummaryConsistencyTestCase {
     }
 
     @Test
-    @Disabled
-    void testDocumentTypesWithInheritanceOfNonExistingField() throws ParseException {
+    void testDocumentSummaryWithInheritanceOfNonExistingSummary() {
         String schemaString = """
                 schema foo {
                   document foo {
@@ -61,8 +60,7 @@ public class SummaryConsistencyTestCase {
                   }
                 }
                 """;
-        var schema = ApplicationBuilder.createFromString(schemaString).getSchema();
-        schema.getSummaryField("foo_summary");
+        assertThrows(IllegalArgumentException.class, () -> ApplicationBuilder.createFromString(schemaString).getSchema());
     }
 
 }

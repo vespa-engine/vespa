@@ -721,14 +721,14 @@ public class Schema implements ImmutableSchema {
                                                    "', but this schema does not exist");
 
             // Require schema and document type inheritance to be consistent to keep things simple
-            // And require it to be explicit so we have the option to support other possibilities later
+            // and require it to be explicit, so we have the option to support other possibilities later
             var parentDocument = owner.schemas().get(inherited.get()).getDocument();
             if ( ! getDocument().inheritedTypes().containsKey(new DataTypeName(parentDocument.getName())))
                 throw new IllegalArgumentException(this + " inherits '" + inherited.get() +
                                                    "', but its document type does not inherit the parent's document type");
         }
         for (var summary : summaries.values())
-            summary.validate(logger);
+            summary.validate();
     }
 
     /** Returns true if the given field name is a reserved name */
