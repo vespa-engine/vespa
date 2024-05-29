@@ -32,7 +32,7 @@ class HttpRequest {
         return method;
     }
 
-    public String pathAndQuery() {
+    public String path() {
         return path + (query.isEmpty() ? "?" : query + "&") + "timeout=" + Math.max(1, timeLeft().toMillis()) + "ms";
     }
 
