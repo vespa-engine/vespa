@@ -38,9 +38,6 @@ check:
 prepare: check
 	@$(TOP)/execute.sh $@
 
-go: prepare
-	@$(TOP)/execute.sh $@
-
 bootstrap: prepare
 	@$(TOP)/execute.sh $@
 
@@ -59,7 +56,7 @@ cpp-test: cpp
 install: cpp java
 	@$(TOP)/execute.sh $@
 
-build-rpms: install go
+build-rpms: install
 	@$(TOP)/execute.sh $@
 
 basic-search-test: build-rpms
@@ -81,7 +78,6 @@ publish-artifacts: java build-rpms
 	main \
 	pr \
 	prepare \
-	go \
 	bootstrap \
 	bootstrap-cmake \
 	java \
