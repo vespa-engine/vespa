@@ -261,6 +261,8 @@ public class TensorParserTestCase {
                       "tensor(x[3]):[1, 2]");
         assertIllegal("At value position 8: Expected a ']' but got ','",
                       "tensor(x[3]):[1, 2, 3, 4]");
+        assertIllegal("No suitable dimension in tensor(x[3]) for parsing a tensor on the mixed form: Should have one mapped dimension",
+                      "tensor(x[3]):{1:[1,2,3], 2:[2,3,4], 3:[3,4,5]}");
     }
 
     private void assertIllegal(String message, String tensor) {

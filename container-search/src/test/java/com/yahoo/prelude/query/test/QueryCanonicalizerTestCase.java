@@ -22,6 +22,15 @@ public class QueryCanonicalizerTestCase {
     }
 
     @Test
+    void testNoCanonicalizationWithWhereTrue() {
+        CompositeItem root = new AndItem();
+
+        root.addItem(new TrueItem());
+        root.addItem(new WordItem("word"));
+        assertCanonicalized("AND TRUE word", null, root);
+    }
+
+    @Test
     void testSingleLevelSingleItemNonReducibleComposite() {
         CompositeItem root = new WeakAndItem();
 
