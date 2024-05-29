@@ -35,7 +35,7 @@ public record OnnxMemoryStats(long vmSize, long vmRss, long mallocPeak, long mal
     }
 
     public static Path memoryStatsFilePath(Path modelPath) {
-        var fileName = modelPath.getRelative().replaceAll("[^\\w\\d\\$@_]", "_") + ".memory_stats";
+        var fileName = modelPath.getRelative().replaceAll("[^\\w$@_]", "_") + ".memory_stats";
         return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(fileName);
     }
 

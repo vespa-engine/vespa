@@ -43,7 +43,9 @@ class HttpFeedClientTest {
             @Override public void await() { throw new UnsupportedOperationException(); }
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { return dispatch.get().apply(documentId, request); }
         }
-        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setDryrun(true),
+        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))
+                                                       .setDryrun(true)
+                                                       .setNanoClock(() -> 0),
                                                () -> new DryrunCluster(),
                                                new MockRequestStrategy());
 
@@ -51,8 +53,8 @@ class HttpFeedClientTest {
         dispatch.set((documentId, request) -> {
             try {
                 assertEquals(id, documentId);
-                assertEquals("/document/v1/ns/type/docid/0",
-                             request.path());
+                assertEquals("/document/v1/ns/type/docid/0?timeout=900000ms",
+                             request.pathAndQuery());
                 assertEquals("PUT", request.method());
                 assertEquals("json", new String(request.body(), UTF_8));
 
@@ -83,8 +85,8 @@ class HttpFeedClientTest {
         dispatch.set((documentId, request) -> {
             try {
                 assertEquals(id, documentId);
-                assertEquals("/document/v1/ns/type/docid/0?tracelevel=1",
-                             request.path());
+                assertEquals("/document/v1/ns/type/docid/0?tracelevel=1&timeout=900000ms",
+                             request.pathAndQuery());
                 assertEquals("DELETE", request.method());
                 assertNull(request.body());
 
@@ -145,8 +147,8 @@ class HttpFeedClientTest {
         dispatch.set((documentId, request) -> {
             try {
                 assertEquals(id, documentId);
-                assertEquals("/document/v1/ns/type/docid/0?create=true&condition=false&timeout=5000ms&route=route",
-                             request.path());
+                assertEquals("/document/v1/ns/type/docid/0?create=true&condition=false&route=route&timeout=5000ms",
+                             request.pathAndQuery());
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(502,
@@ -183,8 +185,8 @@ class HttpFeedClientTest {
         dispatch.set((documentId, request) -> {
             try {
                 assertEquals(id, documentId);
-                assertEquals("/document/v1/ns/type/docid/0",
-                             request.path());
+                assertEquals("/document/v1/ns/type/docid/0?timeout=900000ms",
+                             request.pathAndQuery());
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(500,
@@ -227,7 +229,7 @@ class HttpFeedClientTest {
             try {
                 assertNull(request.body());
                 assertEquals("POST", request.method());
-                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true", request.path());
+                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true&timeout=15000ms", request.pathAndQuery());
                 vessel.complete(response.get());
             }
             catch (Throwable t) {
@@ -238,19 +240,23 @@ class HttpFeedClientTest {
         // Old server, and speed-test.
         assertEquals("server does not support speed test; upgrade to a newer version",
                      assertThrows(FeedException.class,
-                                  () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))).setSpeedTest(true),
+                                  () -> new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))
+                                                                   .setNanoClock(() -> 0)
+                                                                   .setSpeedTest(true),
                                                            () -> cluster,
                                                            null))
                              .getMessage());
 
         // Old server.
-        new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
+        new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))
+                                   .setNanoClock(() -> 0),
                            () -> cluster,
                            null);
 
         // New server.
         response.set(okResponse);
-        new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
+        new HttpFeedClient(new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")))
+                                   .setNanoClock(() -> 0),
                            () -> cluster,
                            null);
     }

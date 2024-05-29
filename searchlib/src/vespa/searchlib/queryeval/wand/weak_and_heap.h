@@ -49,19 +49,28 @@ private:
  * An implementation using an underlying priority queue to keep track of the N
  * best hits that can be shared among multiple search iterators.
  */
-class SharedWeakAndPriorityQueue final : public WeakAndHeap
+class WeakAndPriorityQueue : public WeakAndHeap
 {
 private:
     using Scores = vespalib::PriorityQueue<score_t>;
     Scores         _bestScores;
-    std::mutex     _lock;
 
     bool is_full() const noexcept { return (_bestScores.size() >= getScoresToTrack()); }
+public:
+    explicit WeakAndPriorityQueue(uint32_t scoresToTrack);
+    ~WeakAndPriorityQueue() override;
+    Scores &getScores() noexcept { return _bestScores; }
+    void adjust(score_t *begin, score_t *end) override;
+    static std::unique_ptr<WeakAndPriorityQueue> createHeap(uint32_t scoresToTrack, bool thread_safe);
+};
 
+class SharedWeakAndPriorityQueue final : public WeakAndPriorityQueue
+{
+private:
+    std::mutex     _lock;
 public:
     explicit SharedWeakAndPriorityQueue(uint32_t scoresToTrack);
     ~SharedWeakAndPriorityQueue() override;
-    Scores &getScores() noexcept { return _bestScores; }
     void adjust(score_t *begin, score_t *end) override;
 };
 

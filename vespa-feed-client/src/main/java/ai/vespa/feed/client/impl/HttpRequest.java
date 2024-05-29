@@ -10,15 +10,17 @@ class HttpRequest {
 
     private final String method;
     private final String path;
+    private final String query;
     private final Map<String, Supplier<String>> headers;
     private final byte[] body;
     private final Duration timeout;
     private final long deadlineNanos;
     private final LongSupplier nanoClock;
 
-    public HttpRequest(String method, String path, Map<String, Supplier<String>> headers, byte[] body, Duration timeout, LongSupplier nanoClock) {
+    public HttpRequest(String method, String path, String query, Map<String, Supplier<String>> headers, byte[] body, Duration timeout, LongSupplier nanoClock) {
         this.method = method;
         this.path = path;
+        this.query = query;
         this.headers = headers;
         this.body = body;
         this.deadlineNanos = nanoClock.getAsLong() + timeout.toNanos();
@@ -30,8 +32,8 @@ class HttpRequest {
         return method;
     }
 
-    public String path() {
-        return path;
+    public String pathAndQuery() {
+        return path + (query.isEmpty() ? "?" : query + "&") + "timeout=" + Math.max(1, timeLeft().toMillis()) + "ms";
     }
 
     public Map<String, Supplier<String>> headers() {

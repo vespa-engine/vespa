@@ -36,6 +36,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
@@ -346,13 +347,15 @@ class HttpRequestStrategy implements RequestStrategy {
         public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
             synchronized (monitor) {
                 AtomicLong usedCounter = inflight;
-                Cluster usedCluster = delegate;
                 usedCounter.incrementAndGet();
-                delegate.dispatch(request, vessel);
+                Cluster usedCluster = delegate;
+                usedCluster.dispatch(request, vessel);
                 vessel.whenComplete((__, ___) -> {
                     synchronized (monitor) {
-                        if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate)
+                        if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate) {
+                            log.log(INFO, "Closing old HTTP client");
                             usedCluster.close();
+                        }
                     }
                 });
             }
@@ -372,6 +375,7 @@ class HttpRequestStrategy implements RequestStrategy {
 
         void reset() throws IOException {
             synchronized (monitor) {
+                log.log(INFO, "Replacing underlying HTTP client to attempt recovery");
                 delegate = clusterFactory.create();
                 inflight = new AtomicLong(0);
             }

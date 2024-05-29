@@ -65,10 +65,10 @@
         <apache.httpcore5.vespa.version>5.2.4</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
         <asm.vespa.version>9.7</asm.vespa.version>
-        <assertj.vespa.version>3.25.3</assertj.vespa.version>
+        <assertj.vespa.version>3.26.0</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <aws-sdk.vespa.version>1.12.729</aws-sdk.vespa.version>
+        <aws-sdk.vespa.version>1.12.731</aws-sdk.vespa.version>
         <athenz.vespa.version>1.11.59</athenz.vespa.version>
         <!-- Athenz END -->
 
@@ -122,7 +122,7 @@
         <lucene.vespa.version>9.10.0</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.2</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
-        <maven-xml-impl.vespa.version>4.0.0-alpha-13</maven-xml-impl.vespa.version>
+        <maven-xml-impl.vespa.version>4.0.0-beta-3</maven-xml-impl.vespa.version>
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.12.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>

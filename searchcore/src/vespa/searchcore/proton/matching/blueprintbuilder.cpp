@@ -62,12 +62,17 @@ private:
     Blueprint::UP   _result;
 
     void buildChildren(IntermediateBlueprint &parent, const std::vector<Node *> &children);
+    bool is_search_multi_threaded() const noexcept {
+        return _requestContext.thread_bundle().size() > 1;
+    }
 
     template <typename NodeType>
     void buildIntermediate(IntermediateBlueprint *b, NodeType &n) __attribute__((noinline));
 
     void buildWeakAnd(ProtonWeakAnd &n) {
-        auto *wand = new WeakAndBlueprint(n.getTargetNumHits(), _requestContext.get_attribute_blueprint_params().weakand_range);
+        auto *wand = new WeakAndBlueprint(n.getTargetNumHits(),
+                                          _requestContext.get_attribute_blueprint_params().weakand_range,
+                                          is_search_multi_threaded());
         Blueprint::UP result(wand);
         for (auto node : n.getChildren()) {
             uint32_t weight = getWeightFromNode(*node).percent();
