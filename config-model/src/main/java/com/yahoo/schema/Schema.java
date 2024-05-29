@@ -728,7 +728,7 @@ public class Schema implements ImmutableSchema {
                                                    "', but its document type does not inherit the parent's document type");
         }
         for (var summary : summaries.values())
-            summary.validate();
+            summary.validate(logger);
     }
 
     /** Returns true if the given field name is a reserved name */

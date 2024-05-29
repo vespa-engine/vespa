@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.Schema;
 
 import java.util.ArrayList;
@@ -8,6 +9,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.logging.Level.WARNING;
 
 /**
  * A document summary definition - a list of summary fields.
@@ -116,10 +119,12 @@ public class DocumentSummary extends FieldView {
         return "document-summary '" + getName() + "'";
     }
 
-    public void validate() {
+    public void validate(DeployLogger logger) {
         for (var inheritedName : inherited) {
             var inheritedSummary = owner.getSummary(inheritedName);
-            if (inheritedSummary == null && ! inheritedName.equals("default"))
+            if (inheritedName.equals("default"))
+                logger.logApplicationPackage(WARNING, this + " inherits '" + inheritedName + "', which makes no sense. Remove this inheritance");
+            else if (inheritedSummary == null )
                 throw new IllegalArgumentException(this + " inherits '" + inheritedName + "', but this is not present in " + owner);
         }
     }
