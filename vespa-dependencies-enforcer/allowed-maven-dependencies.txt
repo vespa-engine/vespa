@@ -130,7 +130,7 @@ org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}
 org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}
 org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
-org.codehaus.plexus:plexus-classworlds:2.7.0
+org.codehaus.plexus:plexus-classworlds:${plexus-classworlds.vespa.version}
 org.codehaus.plexus:plexus-component-annotations:2.1.0
 org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
