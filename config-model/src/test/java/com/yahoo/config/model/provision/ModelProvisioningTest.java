@@ -151,7 +151,7 @@ public class ModelProvisioningTest {
         assertEquals("-Xlog:gc", mydisc2.getContainers().get(1).getJvmOptions());
         assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(0).getPreLoad());
         assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(1).getPreLoad());
-        assertEquals(45, mydisc2.getMemoryPercentage().get().percentage());
+        assertEquals(45, mydisc2.getMemoryPercentage().get().ofContainerAvailable());
         assertEquals(Optional.of("-XX:+UseParNewGC"), mydisc2.getJvmGCOptions());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         mydisc2.getConfig(qrStartBuilder);
@@ -234,8 +234,8 @@ public class ModelProvisioningTest {
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(1, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
         assertEquals(2, model.getContentClusters().get("content").getRootGroup().getNodes().size(), "Nodes in cluster without ID");
-        assertEquals(65, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size for container1");
-        assertEquals(84, physicalMemoryPercentage(model.getContainerClusters().get("container2")), "Heap size for container2");
+        assertEquals(85, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size for container1");
+        assertEquals(85, physicalMemoryPercentage(model.getContainerClusters().get("container2")), "Heap size for container2");
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.content, model);
         assertProvisioned(1, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content"), ClusterSpec.Type.content, model);
@@ -287,8 +287,8 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(xmlWithNodes, true, deployStateWithClusterEndpoints("container1").deployLogger(logger));
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(2, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
-        assertEquals(18, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is lowered with combined clusters");
-        assertEquals(2025077080L, protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is lowered to account for the jvm heap");
+        assertEquals(24, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is lowered with combined clusters");
+        assertEquals(1876900708, protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is lowered to account for the jvm heap");
         assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
         var msgs = logger.msgs().stream().filter(m -> m.level().equals(Level.WARNING)).toList();
@@ -356,7 +356,7 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(xmlWithNodes, true, deployStateWithClusterEndpoints("container1"));
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(2, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
-        assertEquals(65, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is normal");
+        assertEquals(85, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is normal");
         assertEquals((long) ((3 - memoryOverheadGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is normal");
     }
 
