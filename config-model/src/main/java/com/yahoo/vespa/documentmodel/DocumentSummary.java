@@ -124,10 +124,9 @@ public class DocumentSummary extends FieldView {
             if (inheritedSummary == null) {
                 // TODO Vespa 9: Throw IllegalArgumentException instead
                 logger.logApplicationPackage(Level.WARNING,
-                                             this + " inherits '" + inheritedName + "' but this" + " is not present in " + owner);
+                                             this + " inherits '" + inheritedName + "' but this is not present in " + owner);
             }
         }
-
     }
 
 }

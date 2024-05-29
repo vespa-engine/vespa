@@ -5,6 +5,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -42,4 +43,26 @@ public class SummaryConsistencyTestCase {
         Schema schema = ApplicationBuilder.createFromString(sd).getSchema();
         assertEquals(SummaryTransform.ATTRIBUTECOMBINER, schema.getSummaryField("elem_array_unfiltered").getTransform());
     }
+
+    @Test
+    @Disabled
+    void testDocumentTypesWithInheritanceOfNonExistingField() throws ParseException {
+        String schemaString = """
+                schema foo {
+                  document foo {
+                    field foo type string {
+                        indexing: summary
+                    }
+                  }
+                  document-summary foo_summary inherits non-existent {
+                    summary foo {
+                        source: foo
+                    }
+                  }
+                }
+                """;
+        var schema = ApplicationBuilder.createFromString(schemaString).getSchema();
+        schema.getSummaryField("foo_summary");
+    }
+
 }
