@@ -31,7 +31,7 @@
     "eslint-plugin-react": "^7",
     "eslint-plugin-react-hooks": "^4",
     "eslint-plugin-react-perf": "^3",
-    "eslint-plugin-unused-imports": "^3",
+    "eslint-plugin-unused-imports": "^4.0.0",
     "husky": "^9.0.0",
     "jest": "^29",
     "lodash": "^4",
