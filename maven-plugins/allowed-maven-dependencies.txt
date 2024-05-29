@@ -33,7 +33,7 @@ org.apache.maven.resolver:maven-resolver-named-locks:${maven-resolver.vespa.vers
 org.apache.maven.resolver:maven-resolver-spi:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-util:${maven-resolver.vespa.version}
 org.apache.maven.shared:maven-dependency-tree:3.2.1
-org.apache.maven.shared:maven-shared-utils:3.3.4
+org.apache.maven.shared:maven-shared-utils:${maven-shared-utils.vespa.version}
 org.apache.maven:maven-api-meta:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-api-xml:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-archiver:${maven-archiver.vespa.version}
@@ -51,7 +51,7 @@ org.apache.maven:maven-xml-impl:${maven-xml-impl.vespa.version}
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
 org.codehaus.plexus:plexus-cipher:2.0
-org.codehaus.plexus:plexus-classworlds:2.7.0
+org.codehaus.plexus:plexus-classworlds:${plexus-classworlds.vespa.version}
 org.codehaus.plexus:plexus-component-annotations:2.1.0
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}
