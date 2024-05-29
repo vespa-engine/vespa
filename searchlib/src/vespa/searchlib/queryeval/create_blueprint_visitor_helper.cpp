@@ -24,7 +24,7 @@ CreateBlueprintVisitorHelper::~CreateBlueprintVisitorHelper() = default;
 
 bool
 CreateBlueprintVisitorHelper::is_search_multi_threaded() const noexcept {
-    return getRequestContext().thread_bundle().size() > 0;
+    return getRequestContext().thread_bundle().size() > 1;
 }
 
 attribute::SearchContextParams
