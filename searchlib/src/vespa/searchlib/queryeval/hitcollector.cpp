@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hitcollector.h"
+#include "first_phase_rescorer.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sort.h>
 #include <cassert>
@@ -43,9 +44,7 @@ HitCollector::HitCollector(uint32_t numDocs, uint32_t maxHitsSize)
       _unordered(false),
       _docIdVector(),
       _bitVector(),
-      _reRankedHits(),
-      _scale(1.0),
-      _adjust(0)
+      _reRankedHits()
 {
     if (_maxHitsSize > 0) {
         _collector = std::make_unique<RankedHitCollector>(*this);
@@ -71,7 +70,7 @@ HitCollector::RankedHitCollector::collect(uint32_t docId, feature_t score)
         }
         hc._hits.emplace_back(docId, score);
     } else {
-        collectAndChangeCollector(docId, score);
+        collectAndChangeCollector(docId, score); // note - self-destruct.
     }
 }
 
@@ -101,11 +100,10 @@ HitCollector::RankedHitCollector::collectAndChangeCollector(uint32_t docId, feat
     if (hc._maxDocIdVectorSize > hc._maxHitsSize) {
         // start using docid vector
         hc._docIdVector.reserve(hc._maxDocIdVectorSize);
-        uint32_t iSize = hc._hits.size();
-        for (uint32_t i = 0; i < iSize; ++i) {
-            hc._docIdVector.push_back(hc._hits[i].first);
+        for (const auto& hit : hc._hits) {
+            hc._docIdVector.push_back(hit.first);
         }
-        if ((iSize > 0) && (docId < hc._docIdVector.back())) {
+        if (!hc._docIdVector.empty() && (docId < hc._docIdVector.back())) {
             hc._unordered = true;
         }
         hc._docIdVector.push_back(docId);
@@ -114,9 +112,8 @@ HitCollector::RankedHitCollector::collectAndChangeCollector(uint32_t docId, feat
         // start using bit vector
         hc._bitVector = BitVector::create(hc._numDocs);
         hc._bitVector->invalidateCachedCount();
-        uint32_t iSize = hc._hits.size();
-        for (uint32_t i = 0; i < iSize; ++i) {
-            hc._bitVector->setBit(hc._hits[i].first);
+        for (const auto& hit : _hc._hits) {
+            hc._bitVector->setBit(hit.first);
         }
         hc._bitVector->setBit(docId);
         newCollector = std::make_unique<BitVectorCollector<true>>(hc);
@@ -125,7 +122,7 @@ HitCollector::RankedHitCollector::collectAndChangeCollector(uint32_t docId, feat
     std::make_heap(hc._hits.begin(), hc._hits.end(), ScoreComparator());
     hc._hitsSortOrder = SortOrder::HEAP;
     this->considerForHitVector(docId, score);
-    hc._collector = std::move(newCollector);
+    hc._collector = std::move(newCollector); // note - self-destruct.
 }
 
 template<bool CollectRankedHit>
@@ -145,7 +142,7 @@ HitCollector::DocIdCollector<CollectRankedHit>::collect(uint32_t docId, feature_
         }
         hc._docIdVector.push_back(docId);
     } else {
-        collectAndChangeCollector(docId);
+        collectAndChangeCollector(docId); // note - self-destruct.
     }
 }
 
@@ -157,9 +154,8 @@ HitCollector::DocIdCollector<CollectRankedHit>::collectAndChangeCollector(uint32
     // start using bit vector instead of docid array.
     hc._bitVector = BitVector::create(hc._numDocs);
     hc._bitVector->invalidateCachedCount();
-    uint32_t iSize = static_cast<uint32_t>(hc._docIdVector.size());
-    for (uint32_t i = 0; i < iSize; ++i) {
-        hc._bitVector->setBit(hc._docIdVector[i]);
+    for (auto docid : hc._docIdVector) {
+        hc._bitVector->setBit(docid);
     }
     std::vector<uint32_t> emptyVector;
     emptyVector.swap(hc._docIdVector);
@@ -191,6 +187,36 @@ HitCollector::setRanges(const std::pair<Scores, Scores> &ranges)
 
 namespace {
 
+struct NoRescorer
+{
+    static double rescore(uint32_t, double score) noexcept { return score; }
+};
+
+template <typename Rescorer>
+void
+add_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, Rescorer rescorer)
+{
+    for (auto& hit : hits) {
+        rs.push_back({hit.first, rescorer.rescore(hit.first, hit.second)});
+    }
+}
+
+template <typename Rescorer>
+void
+mixin_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, const std::vector<uint32_t>& docids, double default_value, Rescorer rescorer)
+{
+    auto hits_cur = hits.begin();
+    auto hits_end = hits.end();
+    for (auto docid : docids) {
+        if (hits_cur != hits_end && docid == hits_cur->first) {
+            rs.push_back({docid, rescorer.rescore(docid, hits_cur->second)});
+            ++hits_cur;
+        } else {
+            rs.push_back({docid, default_value});
+        }
+    }
+}
+
 void
 mergeHitsIntoResultSet(const std::vector<HitCollector::Hit> &hits, ResultSet &result)
 {
@@ -211,66 +237,29 @@ mergeHitsIntoResultSet(const std::vector<HitCollector::Hit> &hits, ResultSet &re
 std::unique_ptr<ResultSet>
 HitCollector::getResultSet(HitRank default_value)
 {
-    bool needReScore = false;
-    Scores &initHeapScores = _ranges.first;
-    Scores &finalHeapScores = _ranges.second;
-    if (initHeapScores.low > finalHeapScores.low) {
-        // scale and adjust the score according to the range
-        // of the initial and final heap score values to avoid that
-        // a score from the first phase is larger than finalHeapScores.low
-        feature_t initRange = initHeapScores.high - initHeapScores.low;
-        if (initRange < 1.0) initRange = 1.0f;
-        feature_t finalRange = finalHeapScores.high - finalHeapScores.low;
-        if (finalRange < 1.0) finalRange = 1.0f;
-        _scale = finalRange / initRange;
-        _adjust = initHeapScores.low * _scale - finalHeapScores.low;
-        needReScore = true;
-    }
+    bool needReScore = FirstPhaseRescorer::need_rescore(_ranges);
+    FirstPhaseRescorer rescorer(_ranges);
 
     // destroys the heap property or score sort order
     sortHitsByDocId();
 
     auto rs = std::make_unique<ResultSet>();
     if ( ! _collector->isDocIdCollector() ) {
-        unsigned int iSize = _hits.size();
-        rs->allocArray(iSize);
+        rs->allocArray(_hits.size());
         if (needReScore) {
-            for (uint32_t i = 0; i < iSize; ++i) {
-                rs->push_back(RankedHit(_hits[i].first, getReScore(_hits[i].second)));
-            }
+            add_rescored_hits(*rs, _hits, rescorer);
         } else {
-            for (uint32_t i = 0; i < iSize; ++i) {
-                rs->push_back(RankedHit(_hits[i].first, _hits[i].second));
-            }
+            add_rescored_hits(*rs, _hits, NoRescorer());
         }
     } else {
         if (_unordered) {
             std::sort(_docIdVector.begin(), _docIdVector.end());
         }
-        unsigned int iSize = _hits.size();
-        unsigned int jSize = _docIdVector.size();
-        rs->allocArray(jSize);
-        uint32_t i = 0;
+        rs->allocArray(_docIdVector.size());
         if (needReScore) {
-            for (uint32_t j = 0; j < jSize; ++j) {
-                uint32_t docId = _docIdVector[j];
-                if (i < iSize && docId == _hits[i].first) {
-                    rs->push_back(RankedHit(docId, getReScore(_hits[i].second)));
-                    ++i;
-                } else {
-                    rs->push_back(RankedHit(docId, default_value));
-                }
-            }
+            mixin_rescored_hits(*rs, _hits, _docIdVector, default_value, rescorer);
         } else {
-            for (uint32_t j = 0; j < jSize; ++j) {
-                uint32_t docId = _docIdVector[j];
-                if (i < iSize && docId == _hits[i].first) {
-                    rs->push_back(RankedHit(docId, _hits[i].second));
-                    ++i;
-                } else {
-                    rs->push_back(RankedHit(docId, default_value));
-                }
-            }
+            mixin_rescored_hits(*rs, _hits, _docIdVector, default_value, NoRescorer());
         }
     }
 
