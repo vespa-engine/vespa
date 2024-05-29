@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
@@ -49,6 +50,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -942,8 +944,19 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     private static ContentCluster createOneNodeCluster(String clusterXml, TestProperties props, Optional<Flavor> flavor) throws Exception {
+        return createOneNodeCluster(clusterXml, props, flavor, new StringBuffer());
+    }
+
+    private static ContentCluster createOneNodeCluster(String clusterXml, TestProperties props,
+                                                       Optional<Flavor> flavor, StringBuffer deployWarningsBuffer) throws Exception {
+        DeployLogger logger = (level, message) -> {
+            if (level == Level.WARNING) { // only care about warnings
+                deployWarningsBuffer.append("%s\n".formatted(message));
+            }
+        };
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
-                .properties(props);
+                .properties(props)
+                .deployLogger(logger);
         MockRoot root = flavor.isPresent() ?
                 ContentClusterUtils.createMockRoot(new SingleNodeProvisioner(flavor.get()),
                         List.of(), deployStateBuilder) :
@@ -1525,6 +1538,42 @@ public class ContentClusterTest extends ContentBaseTest {
                             </content>""".formatted(distKey)
                         ));
         }
+    }
+
+    private String createClusterAndGetDeploymentWarnings(String xml) {
+        var warningBuf = new StringBuffer();
+        try {
+            createOneNodeCluster(xml, new TestProperties(), Optional.empty(), warningBuf);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return warningBuf.toString();
+    };
+
+    private static String clusterXmlWithNodeDistributionKey(int key) {
+        return "<content version=\"1.0\" id=\"mockcluster\">" +
+               "  <redundancy>1</redundancy>" +
+               "  <documents/>" +
+               "  <group>" +
+               "    <node distribution-key=\"%d\" hostalias=\"mockhost\"/>".formatted(key) +
+               "  </group>" +
+               "</content>";
+    }
+
+    @Test
+    void distribution_key_much_higher_than_node_count_logs_deployment_warning() {
+        // "much higher" is somewhat arbitrary, but needs to be kept in track with threshold in `ContentCluster`.
+        String warnings = createClusterAndGetDeploymentWarnings(clusterXmlWithNodeDistributionKey(101));
+        assertEquals(warnings, "Content cluster 'mockcluster' has 1 node(s), but the highest distribution " +
+                               "key is 101. Having much higher distribution keys than the number of nodes " +
+                               "is not recommended, as it may negatively affect performance. " +
+                               "See https://docs.vespa.ai/en/reference/services-content.html#node\n");
+    }
+
+    @Test
+    void distribution_key_not_much_higher_than_node_count_does_not_log_deployment_warning() {
+        String warnings = createClusterAndGetDeploymentWarnings(clusterXmlWithNodeDistributionKey(100));
+        assertEquals(warnings, "");
     }
 
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {

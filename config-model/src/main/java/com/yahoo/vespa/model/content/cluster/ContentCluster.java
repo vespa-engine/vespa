@@ -46,6 +46,7 @@ import com.yahoo.vespa.model.content.IndexedHierarchicDistributionValidator;
 import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.ReservedDocumentTypeNameValidator;
 import com.yahoo.vespa.model.content.StorageGroup;
+import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
@@ -137,6 +138,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, c, c.search.isStreaming());
             c.clusterControllerConfig = createClusterControllerConfig(contentElement, deployState, c, resourceLimits);
             validateThatGroupSiblingsAreUnique(c.clusterId, c.rootGroup);
+            warnIfDistributionKeyRangeIsSuboptimal(c.clusterId, c.rootGroup, deployState);
             c.search.handleRedundancy(c.redundancy);
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
@@ -272,6 +274,38 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             validateGroupSiblings(cluster, group);
             for (StorageGroup g : group.getSubgroups()) {
                 validateThatGroupSiblingsAreUnique(cluster, g);
+            }
+        }
+
+        private static class HighestDistributionKeyAggregator {
+            public int nodeCount = 0;
+            public int highestNodeDistributionKey = 0;
+
+            void aggregateNodeStats(StorageGroup group) {
+                for (StorageNode n : group.getNodes()) {
+                    nodeCount++;
+                    highestNodeDistributionKey = Math.max(highestNodeDistributionKey, n.getDistributionKey());
+                }
+                for (StorageGroup g : group.getSubgroups()) {
+                    aggregateNodeStats(g);
+                }
+            }
+        }
+
+        private void warnIfDistributionKeyRangeIsSuboptimal(String clusterId, StorageGroup rootGroup, DeployState deployState) {
+            if (rootGroup == null) {
+                return; // Unit testing case
+            }
+            var aggr = new HighestDistributionKeyAggregator();
+            aggr.aggregateNodeStats(rootGroup);
+            int warnThreshold = 100; // ... Not scientifically chosen
+            if ((aggr.highestNodeDistributionKey - aggr.nodeCount) >= warnThreshold) {
+                deployState.getDeployLogger().logApplicationPackage(WARNING,
+                        ("Content cluster '%s' has %d node(s), but the highest distribution key is %d. " +
+                         "Having much higher distribution keys than the number of nodes is not recommended, " +
+                         "as it may negatively affect performance. " +
+                         "See https://docs.vespa.ai/en/reference/services-content.html#node")
+                        .formatted(clusterId, aggr.nodeCount, aggr.highestNodeDistributionKey));
             }
         }
 
