@@ -6,16 +6,13 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.yolean.Exceptions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -233,16 +230,12 @@ public class SummaryTestCase {
                             "  document-summary test_summary inherits nonesuch {" +
                             "  }" +
                             "}");
-            DeployLoggerStub logger = new DeployLoggerStub();
-            ApplicationBuilder.createFromStrings(logger, schema);
-            assertEquals("document-summary 'test_summary' inherits 'nonesuch' but this is not present in schema 'test'",
-                         logger.entries.get(0).message);
-            // fail("Expected failure");
+            ApplicationBuilder.createFromString(schema);
+            fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
-            fail();
-            // assertEquals("document-summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
-            //             e.getMessage());
+            assertEquals("document-summary 'test_summary' inherits 'nonesuch', but this is not present in schema 'test'",
+            e.getMessage());
         }
     }
 

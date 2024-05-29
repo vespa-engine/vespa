@@ -9,7 +9,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
+
+import static java.util.logging.Level.WARNING;
 
 /**
  * A document summary definition - a list of summary fields.
@@ -121,11 +122,11 @@ public class DocumentSummary extends FieldView {
     public void validate(DeployLogger logger) {
         for (var inheritedName : inherited) {
             var inheritedSummary = owner.getSummary(inheritedName);
-            if (inheritedSummary == null) {
-                // TODO Vespa 9: Throw IllegalArgumentException instead
-                logger.logApplicationPackage(Level.WARNING,
-                                             this + " inherits '" + inheritedName + "' but this is not present in " + owner);
-            }
+            // TODO: Throw when no one is doing this anymore
+            if (inheritedName.equals("default"))
+                logger.logApplicationPackage(WARNING, this + " inherits '" + inheritedName + "', which makes no sense. Remove this inheritance");
+            else if (inheritedSummary == null )
+                throw new IllegalArgumentException(this + " inherits '" + inheritedName + "', but this is not present in " + owner);
         }
     }
 
