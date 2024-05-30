@@ -55,7 +55,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedNiceness = 0.0;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = List.of();
-    private String jvmOmitStackTraceInFastThrowOption;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
@@ -112,7 +111,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double feedNiceness() { return feedNiceness; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
-    @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
@@ -275,11 +273,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setTenantSecretStores(List<TenantSecretStore> secretStores) {
         this.tenantSecretStores = List.copyOf(secretStores);
-        return this;
-    }
-
-    public TestProperties setJvmOmitStackTraceInFastThrowOption(String value) {
-        this.jvmOmitStackTraceInFastThrowOption = value;
         return this;
     }
 

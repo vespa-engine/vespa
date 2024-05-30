@@ -108,10 +108,6 @@ public abstract class Container extends AbstractService implements
         addEnvironmentVariable("VESPA_MALLOC_MMAP_THRESHOLD","0x1000000"); // 16M
     }
 
-    public String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
-        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
-    }
-
     void setOwner(ContainerCluster<?> owner) { this.owner = owner; }
 
     /** True if this container is retired (slated for removal) */
