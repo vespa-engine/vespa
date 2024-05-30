@@ -45,10 +45,10 @@ class JvmHeapSizeValidatorTest {
 
     @Test
     void fails_on_too_low_heap_size() throws IOException, SAXException {
-        var deployState = createDeployState(2.2, 1024L * 1024 * 1024);
+        var deployState = createDeployState(2.3, 1024L * 1024 * 1024);
         var model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationTester.expect(new JvmHeapSizeValidator(), model, deployState,
-                                "Allocated memory to JVM in cluster 'container' is too low (0.50GB < 0.60GB). Estimated cost of ONNX models is 1.00GB.");
+                                "Allocated memory to JVM in cluster 'container' is too low (0.51GB < 0.60GB). Estimated cost of ONNX models is 1.00GB.");
     }
 
     @Test

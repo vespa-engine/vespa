@@ -16,7 +16,7 @@ import java.util.Objects;
 public final class Host extends TreeConfigProducer<AnyConfigProducer> implements SentinelConfig.Producer, Comparable<Host> {
 
     // Memory needed for auxiliary processes always running on the node (config-proxy, metrics-proxy).
-    // Keep in sync with node-repository/ClusterModel.
+    // Keep in sync with node-repository/ClusterModel and startup scripts (go and bash).
     public static final double memoryOverheadGb = 0.7;
 
     private ConfigSentinel configSentinel = null;

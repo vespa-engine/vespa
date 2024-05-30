@@ -115,7 +115,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         double memoryUsedByModels = currentModelCostInGb + nextModelCostInGb;
         double availableMemory = Math.max(0, totalMemory - Host.memoryOverheadGb - memoryUsedByModels);
 
-        var availableMemoryPercentage = cluster.availableMemoryPercentage();
+        var availableMemoryPercentage = cluster.heapSizePercentageOfAvailable();
         int memoryPercentage = (int) (availableMemory / totalMemory * availableMemoryPercentage);
 
         var prefix = "Validating Onnx models memory usage for %s".formatted(cluster);

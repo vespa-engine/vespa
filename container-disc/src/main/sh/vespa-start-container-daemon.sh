@@ -151,8 +151,8 @@ configure_memory() {
             available_cgroup=$((available_cgroup_bytes >> 20))
             available=$((available > available_cgroup ? available_cgroup : available))
         fi
-        #Subtract 1G as fixed overhead for an application container.
-        reserved_mem=1024
+        # Subtract 700MB as fixed overhead for an application container -- keep in sync with com.yahoo.vespa.model.Host.memoryOverheadGb
+        reserved_mem=700
         available=$((available > reserved_mem ? available - reserved_mem : available))
 
         jvm_heapsize=$((available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100))

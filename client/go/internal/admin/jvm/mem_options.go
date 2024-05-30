@@ -55,8 +55,8 @@ func (opts *Options) MaybeAddHugepages(heapSize AmountOfMemory) {
 }
 
 func adjustAvailableMemory(measured AmountOfMemory) AmountOfMemory {
-	reserved := 1024 // MB
-	need_min := 64   // MB
+	reserved := 700 // MB -- keep in sync with com.yahoo.vespa.model.Host.memoryOverheadGb
+	need_min := 64  // MB
 	available := measured.ToMB()
 	if available > need_min+2*reserved {
 		return MegaBytesOfMemory(available - reserved)

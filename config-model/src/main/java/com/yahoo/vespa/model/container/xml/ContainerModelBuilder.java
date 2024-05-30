@@ -1040,7 +1040,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
-                                               " must be an integer percentage ending by the '%' sign", e);
+                                               " must be given as an integer followe by '%'", e);
         }
     }
 
