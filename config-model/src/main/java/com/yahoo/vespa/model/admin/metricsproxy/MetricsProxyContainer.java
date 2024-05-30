@@ -10,7 +10,6 @@ import ai.vespa.metricsproxy.rpc.RpcConnector;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServices;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
@@ -75,11 +74,6 @@ public class MetricsProxyContainer extends Container implements
     @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
-    }
-
-    @Override
-    public String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
-        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
     }
 
     @Override

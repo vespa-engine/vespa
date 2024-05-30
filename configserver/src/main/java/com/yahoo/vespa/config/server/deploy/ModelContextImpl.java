@@ -180,7 +180,6 @@ public class ModelContextImpl implements ModelContext {
         private final double feedNiceness;
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
-        private final Predicate<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
         private final double minNodeRatioPerGroup;
@@ -226,7 +225,6 @@ public class ModelContextImpl implements ModelContext {
             this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
             this.allowedAthenzProxyIdentities = Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
-            this.jvmOmitStackTraceInFastThrow = type -> PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW.bindTo(source).with(appId).with(version).with(type).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
             this.minNodeRatioPerGroup = Flags.MIN_NODE_RATIO_PER_GROUP.bindTo(source).with(appId).with(version).value();
@@ -277,9 +275,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int mbusNetworkThreads() { return mbus_network_threads; }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
-        @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
-            return translateJvmOmitStackTraceInFastThrowToString(jvmOmitStackTraceInFastThrow, type);
-        }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
@@ -316,12 +311,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
-
-        private String translateJvmOmitStackTraceInFastThrowToString(Predicate<ClusterSpec.Type> function,
-                                                                     ClusterSpec.Type clusterType) {
-            return function.test(clusterType) ? "" : "-XX:-OmitStackTraceInFastThrow";
-        }
-
     }
 
     public static class Properties implements ModelContext.Properties {

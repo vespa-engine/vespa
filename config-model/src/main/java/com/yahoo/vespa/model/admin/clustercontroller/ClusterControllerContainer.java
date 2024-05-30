@@ -97,11 +97,6 @@ public class ClusterControllerContainer extends Container implements
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
-    @Override
-    public String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
-        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
-    }
-
     private void configureZooKeeperServer(boolean runStandaloneZooKeeper) {
         if (runStandaloneZooKeeper)
             ContainerModelBuilder.addReconfigurableZooKeeperServerComponents(this);
