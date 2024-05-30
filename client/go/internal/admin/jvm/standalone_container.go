@@ -37,7 +37,6 @@ func (a *StandaloneContainer) configureOptions() {
 	opts := a.jvmOpts
 	opts.ConfigureCpuCount(0)
 	opts.AddCommonXX()
-	opts.AddOption("-XX:-OmitStackTraceInFastThrow")
 	opts.AddCommonOpens()
 	opts.AddCommonJdkProperties()
 	a.addJdiscProperties()
