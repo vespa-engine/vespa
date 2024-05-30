@@ -48,8 +48,11 @@ public class AllocatableResources {
     }
 
     public AllocatableResources(NodeList nodes, NodeRepository nodeRepository) {
+        if (nodes.isEmpty()) {
+            throw new IllegalArgumentException("Expected a non-empty node list");
+        }
         this.nodes = nodes.size();
-        this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        this.groups = (int) nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         this.realResources = averageRealResourcesOf(nodes.asList(), nodeRepository); // Average since we average metrics over nodes
         this.advertisedResources = nodes.requestedResources();
         this.clusterSpec = nodes.clusterSpec();
@@ -80,19 +83,6 @@ public class AllocatableResources {
         this.advertisedResources = advertisedResources;
         this.clusterSpec = clusterSpec;
         this.fulfilment = fulfilment;
-    }
-
-    /** Returns this with the redundant node or group removed from counts. */
-    public AllocatableResources withoutRedundancy() {
-        int groupSize = nodes / groups;
-        int nodesAdjustedForRedundancy   = nodes > 1 ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
-        int groupsAdjustedForRedundancy  = nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
-        return new AllocatableResources(nodesAdjustedForRedundancy,
-                                        groupsAdjustedForRedundancy,
-                                        realResources,
-                                        advertisedResources,
-                                        clusterSpec,
-                                        fulfilment);
     }
 
     /**
