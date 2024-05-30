@@ -275,11 +275,13 @@ MatchToolsFactory::createTask(vespalib::stringref attribute, vespalib::stringref
            ? std::make_unique<AttributeOperationTask>(_requestContext, attribute, operation)
            : std::unique_ptr<AttributeOperationTask>();
 }
+
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnMatchTask() const {
     const auto & op = _rankSetup.getMutateOnMatch();
     return createTask(op._attribute, op._operation);
 }
+
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnFirstPhaseTask() const {
     const auto & op = _rankSetup.getMutateOnFirstPhase();
@@ -292,6 +294,7 @@ MatchToolsFactory::createOnFirstPhaseTask() const {
         return createTask(op._attribute, op._operation);
     }
 }
+
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSecondPhaseTask() const {
     const auto & op = _rankSetup.getMutateOnSecondPhase();
@@ -302,6 +305,7 @@ MatchToolsFactory::createOnSecondPhaseTask() const {
         return createTask(op._attribute, op._operation);
     }
 }
+
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSummaryTask() const {
     const auto & op = _rankSetup.getMutateOnSummary();
