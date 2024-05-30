@@ -33,7 +33,7 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
 
     // Must be so large that changing model set or options requires restart (due to using more memory than available),
     // but not so large that deployment will not work at all with one model
-    private static final long defaultCost = 723456789;
+    private static final long defaultCost = 635241309;
     private static final long defaultHash = 0;
 
 
@@ -47,8 +47,8 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
 
     @Test
     void validate_changed_estimated_cost() {
-        VespaModel current = createModel(onnxModelCost(70000000, defaultHash));
-        VespaModel next = createModel(onnxModelCost(723456789, defaultHash));
+        VespaModel current = createModel(onnxModelCost(defaultCost, defaultHash));
+        VespaModel next = createModel(onnxModelCost(19 * defaultCost / 20, defaultHash));
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertTrue(result.get(0).validationId().isEmpty());
@@ -58,8 +58,8 @@ public class RestartOnDeployForOnnxModelChangesValidatorTest {
     @Test
     void validate_changed_estimated_cost_non_hosted() {
         boolean hosted = false;
-        VespaModel current = createModel(onnxModelCost(70000000, defaultHash), hosted);
-        VespaModel next = createModel(onnxModelCost(723456789, defaultHash), hosted);
+        VespaModel current = createModel(onnxModelCost(defaultCost, defaultHash), hosted);
+        VespaModel next = createModel(onnxModelCost(19 * defaultCost / 20, defaultHash), hosted);
         List<ConfigChangeAction> result = validateModel(current, next, hosted);
         assertEquals(0, result.size());
     }
