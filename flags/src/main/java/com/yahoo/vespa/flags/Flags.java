@@ -48,14 +48,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag ATHENZ_SERVICE_ACCOUNTS = defineFeatureFlag(
-            "athenz-service-accounts", false,
-            List.of("hakonhall"), "2024-05-06", "2024-07-06",
-            "Whether to provision new GCP VM instances with a service account that are independent " +
-            "of the zone, and aligned with the Athenz service names (configserver and tenant-host).",
-            "Takes effect when provisioning new VM instances",
-            APPLICATION, INSTANCE_ID);
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -238,13 +230,6 @@ public class Flags {
             "and raise memory.high after raising memory.max.",
             "Takes effect on next tick.",
             NODE_TYPE);
-
-    public static final UnboundStringFlag DIST_HOST = defineStringFlag(
-            "dist-host", "",
-            List.of("freva"), "2024-04-15", "2024-05-31",
-            "Sets dist_host YUM variable, empty means old behavior. Only effective in Public.",
-            "Provisioning of instance or next host-admin tick",
-            HOSTNAME, NODE_TYPE, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
