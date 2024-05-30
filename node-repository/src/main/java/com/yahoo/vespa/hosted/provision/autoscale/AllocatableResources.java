@@ -48,8 +48,11 @@ public class AllocatableResources {
     }
 
     public AllocatableResources(NodeList nodes, NodeRepository nodeRepository) {
+        if (nodes.isEmpty()) {
+            throw new IllegalArgumentException("Expected a non-empty node list");
+        }
         this.nodes = nodes.size();
-        this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
+        this.groups = (int) nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
         this.realResources = averageRealResourcesOf(nodes.asList(), nodeRepository); // Average since we average metrics over nodes
         this.advertisedResources = nodes.requestedResources();
         this.clusterSpec = nodes.clusterSpec();
