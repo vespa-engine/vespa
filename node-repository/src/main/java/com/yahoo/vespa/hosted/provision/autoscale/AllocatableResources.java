@@ -82,19 +82,6 @@ public class AllocatableResources {
         this.fulfilment = fulfilment;
     }
 
-    /** Returns this with the redundant node or group removed from counts. */
-    public AllocatableResources withoutRedundancy() {
-        int groupSize = nodes / groups;
-        int nodesAdjustedForRedundancy   = nodes > 1 ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
-        int groupsAdjustedForRedundancy  = nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
-        return new AllocatableResources(nodesAdjustedForRedundancy,
-                                        groupsAdjustedForRedundancy,
-                                        realResources,
-                                        advertisedResources,
-                                        clusterSpec,
-                                        fulfilment);
-    }
-
     /**
      * Returns the resources which will actually be available per node in this cluster with this allocation.
      * These should be used for reasoning about allocation to meet measured demand.
