@@ -915,7 +915,7 @@
             <dependency>
                 <groupId>org.apache.maven.shared</groupId>
                 <artifactId>maven-dependency-tree</artifactId>
-                <version>3.2.1</version>
+                <version>${maven-dependency-tree.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.shared</groupId>

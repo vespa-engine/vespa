@@ -32,7 +32,7 @@ org.apache.maven.resolver:maven-resolver-impl:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-named-locks:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-spi:${maven-resolver.vespa.version}
 org.apache.maven.resolver:maven-resolver-util:${maven-resolver.vespa.version}
-org.apache.maven.shared:maven-dependency-tree:3.2.1
+org.apache.maven.shared:maven-dependency-tree:${maven-dependency-tree.vespa.version}
 org.apache.maven.shared:maven-shared-utils:${maven-shared-utils.vespa.version}
 org.apache.maven:maven-api-meta:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-api-xml:${maven-xml-impl.vespa.version}
