@@ -23,6 +23,7 @@ import static com.yahoo.search.querytransform.WeakAndReplacementSearcher.WAND_HI
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WeakAndReplacementSearcherTestCase {
@@ -57,7 +58,7 @@ public class WeakAndReplacementSearcherTestCase {
         Result result = buildExec().search(query);
         Item root = TestUtils.getQueryTreeRoot(result);
         assertFalse(orItemsExist(root));
-        assertTrue(root instanceof WeakAndItem);
+        assertInstanceOf(WeakAndItem.class, root);
         assertEquals(N, ((WeakAndItem) root).getN());
     }
 
@@ -103,24 +104,22 @@ public class WeakAndReplacementSearcherTestCase {
         if (item1 != item2) {
             return false;
         }
-        if (!(item1 instanceof CompositeItem)) {
+        if (!(item1 instanceof CompositeItem compositeItem1)) {
             return true;
         }
 
-        CompositeItem compositeItem1 = (CompositeItem) item1;
         CompositeItem compositeItem2 = (CompositeItem) item2;
         return IntStream.range(0, compositeItem1.getItemCount())
                 .allMatch(i -> deepEquals(compositeItem1.getItem(i), compositeItem2.getItem(i)));
     }
 
     private boolean orItemsExist(Item item) {
-        if (!(item instanceof CompositeItem)) {
+        if (!(item instanceof CompositeItem compositeItem)) {
             return false;
         }
         if (item instanceof OrItem) {
             return true;
         }
-        CompositeItem compositeItem = (CompositeItem) item;
         return compositeItem.items().stream().anyMatch(this::orItemsExist);
     }
 

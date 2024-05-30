@@ -142,7 +142,7 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
         assertTrue(chain.phases().isEmpty());
         assertEquals(1, chain.inherits().size());
         assertEquals("native", chain.inherits(0));
-        assertEquals(10, chain.components().size());
+        assertEquals(11, chain.components().size());
         assertEquals("com.yahoo.prelude.querytransform.PhrasingSearcher@vespa", chain.components(0));
         assertEquals("com.yahoo.prelude.searcher.FieldCollapsingSearcher@vespa", chain.components(1));
         assertEquals("com.yahoo.search.yql.MinimalQueryInserter@vespa", chain.components(2));
@@ -153,13 +153,14 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
         assertEquals("com.yahoo.prelude.semantics.SemanticSearcher@vespa", chain.components(7));
         assertEquals("com.yahoo.search.grouping.GroupingQueryParser@vespa", chain.components(8));
         assertEquals("com.yahoo.search.querytransform.WeakAndReplacementSearcher@vespa", chain.components(9));
+        assertEquals("com.yahoo.search.searchers.OpportunisticWeakAndSearcher@vespa", chain.components(10));
         assertTrue(chain.excludes().isEmpty());
         assertEquals(ChainsConfig.Chains.Type.SEARCH, chain.type());
     }
 
     @Test
     public void require_all_default_chains_are_correct() {
-        assertEquals(63, chainsConfig.components().size());
+        assertEquals(64, chainsConfig.components().size());
         assertEquals(10, chainsConfig.chains().size());
         validateVespaPhasesChain(findChain("vespaPhases"));
         validateNativeChain(findChain("native"));
