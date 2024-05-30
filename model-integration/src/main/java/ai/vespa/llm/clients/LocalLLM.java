@@ -114,6 +114,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         options.ifPresent("repeatpenalty", (v) -> inferParams.setRepeatPenalty(Float.parseFloat(v)));
         // Todo: more options?
 
+        inferParams.setUseChatTemplate(true);
+
         var completionFuture = new CompletableFuture<Completion.FinishReason>();
         var hasStarted = new AtomicBoolean(false);
         try {
