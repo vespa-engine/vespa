@@ -3,6 +3,7 @@
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
+import ai.vespa.metricsproxy.http.MetricsJsonResponse;
 import ai.vespa.metricsproxy.http.PrometheusResponse;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
@@ -62,12 +63,12 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
         return Optional.empty();
     }
 
-    private JsonResponse applicationMetricsResponse(String requestedConsumer) {
+    private HttpResponse applicationMetricsResponse(String requestedConsumer) {
         try {
             ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
             var metricsByNode =  metricsRetriever.getMetrics(consumer);
 
-            return new JsonResponse(OK, toGenericApplicationModel(metricsByNode).serialize());
+            return new MetricsJsonResponse(OK, toGenericApplicationModel(metricsByNode)::serialize);
 
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when retrieving metrics:", e);

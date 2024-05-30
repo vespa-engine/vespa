@@ -6,10 +6,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author gjoranv
@@ -32,8 +35,14 @@ public class GenericJsonModel {
     public List<GenericService> services;
 
     public String serialize() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        serialize(out);
+        return out.toString(UTF_8);
+    }
+
+    public void serialize(OutputStream out) {
         try {
-            return JacksonUtil.objectMapper().writeValueAsString(this);
+            JacksonUtil.objectMapper().writeValue(out, this);
         } catch (IOException e) {
             throw new JsonRenderingException("Could not render metrics. Check the log for details.", e);
         }
