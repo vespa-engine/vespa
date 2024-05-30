@@ -5,8 +5,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <ostream>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(GetNodeStateCommand, GetNodeStateReply)
 IMPLEMENT_REPLY(GetNodeStateReply)
@@ -45,7 +44,7 @@ GetNodeStateReply::GetNodeStateReply(const GetNodeStateCommand& cmd)
 GetNodeStateReply::GetNodeStateReply(const GetNodeStateCommand& cmd,
                                      const lib::NodeState& state)
     : StorageReply(cmd),
-      _state(new lib::NodeState(state))
+      _state(std::make_unique<lib::NodeState>(state))
 {
 }
 
@@ -64,23 +63,31 @@ GetNodeStateReply::print(std::ostream& out, bool verbose,
     }
 }
 
+SetSystemStateCommand::SetSystemStateCommand(std::shared_ptr<const lib::ClusterStateBundle> state)
+    : StorageCommand(MessageType::SETSYSTEMSTATE),
+      _state(std::move(state))
+{
+}
+
 SetSystemStateCommand::SetSystemStateCommand(const lib::ClusterStateBundle& state)
     : StorageCommand(MessageType::SETSYSTEMSTATE),
-      _state(state)
+      _state(std::make_shared<const lib::ClusterStateBundle>(state))
 {
 }
 
 SetSystemStateCommand::SetSystemStateCommand(const lib::ClusterState& state)
     : StorageCommand(MessageType::SETSYSTEMSTATE),
-      _state(state)
+      _state(std::make_shared<const lib::ClusterStateBundle>(state))
 {
 }
+
+SetSystemStateCommand::~SetSystemStateCommand() = default;
 
 void
 SetSystemStateCommand::print(std::ostream& out, bool verbose,
                              const std::string& indent) const
 {
-    out << "SetSystemStateCommand(" << *_state.getBaselineClusterState() << ")";
+    out << "SetSystemStateCommand(" << *_state->getBaselineClusterState() << ")";
     if (verbose) {
         out << " : ";
         StorageCommand::print(out, verbose, indent);
@@ -89,7 +96,7 @@ SetSystemStateCommand::print(std::ostream& out, bool verbose,
 
 SetSystemStateReply::SetSystemStateReply(const SetSystemStateCommand& cmd)
     : StorageReply(cmd),
-      _state(cmd.getClusterStateBundle())
+      _state(cmd.cluster_state_bundle_ptr())
 {
 }
 
@@ -138,5 +145,4 @@ void ActivateClusterStateVersionReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
+} // storage::api
