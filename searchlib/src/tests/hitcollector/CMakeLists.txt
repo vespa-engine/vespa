@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_hitcollector_test_app TEST
     hitcollector_test.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_hitcollector_test_app COMMAND searchlib_hitcollector_test_app)
 vespa_add_executable(searchlib_sorted_hit_sequence_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(searchlib_sorted_hit_sequence_test_app TEST
     sorted_hit_sequence_test.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_sorted_hit_sequence_test_app COMMAND searchlib_sorted_hit_sequence_test_app)
