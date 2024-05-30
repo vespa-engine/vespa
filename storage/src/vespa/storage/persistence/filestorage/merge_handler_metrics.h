@@ -21,8 +21,8 @@ struct MergeHandlerMetrics {
     metrics::DoubleAverageMetric mergeAverageDataReceivedNeeded;
     // Individual operation metrics. These capture both count and latency sum, so
     // no need for explicit count metric on the side.
-    metrics::DoubleAverageMetric put_latency;
-    metrics::DoubleAverageMetric remove_latency;
+    metrics::DoubleAverageMetric merge_put_latency;
+    metrics::DoubleAverageMetric merge_remove_latency;
     // Iteration over metadata and document payload data is already covered by
     // the merge[Meta]Data(Read|Write)Latency metrics, so not repeated here. Can be
     // explicitly added if deemed required.

@@ -20,8 +20,8 @@ MergeHandlerMetrics::MergeHandlerMetrics(metrics::MetricSet* owner)
                             "current node.", owner),
       mergeAverageDataReceivedNeeded("mergeavgdatareceivedneeded", {}, "Amount of data transferred from previous node "
                                                                        "in chain that we needed to apply locally.", owner),
-      put_latency("put_latency", {}, "Latency of individual puts that are part of merge operations", owner),
-      remove_latency("remove_latency", {}, "Latency of individual removes that are part of merge operations", owner)
+      merge_put_latency("merge_put_latency", {}, "Latency of individual puts that are part of merge operations", owner),
+      merge_remove_latency("merge_remove_latency", {}, "Latency of individual removes that are part of merge operations", owner)
 {}
 
 MergeHandlerMetrics::~MergeHandlerMetrics() = default;
