@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.http.metrics;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.http.MetricsJsonResponse;
 import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.http.application.ClusterIdDimensionProcessor;
 import ai.vespa.metricsproxy.http.application.Node;
@@ -62,7 +63,7 @@ public class MetricsV2Handler  extends HttpHandlerBase {
         return Optional.empty();
     }
 
-    private JsonResponse valuesResponse(String consumer) {
+    private HttpResponse valuesResponse(String consumer) {
         try {
             List<MetricsPacket> metrics = processAndBuild(valuesFetcher.fetchMetricsAsBuilders(consumer),
                                                           new ServiceIdDimensionProcessor(),
@@ -71,7 +72,7 @@ public class MetricsV2Handler  extends HttpHandlerBase {
 
             Node localNode = new Node(nodeInfoConfig.role(), nodeInfoConfig.hostname(), 0, "");
             Map<Node, List<MetricsPacket>> metricsByNode = Map.of(localNode, metrics);
-            return new JsonResponse(OK, toGenericApplicationModel(metricsByNode).serialize());
+            return new MetricsJsonResponse(OK, toGenericApplicationModel(metricsByNode)::serialize);
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when rendering metrics:", e);
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());

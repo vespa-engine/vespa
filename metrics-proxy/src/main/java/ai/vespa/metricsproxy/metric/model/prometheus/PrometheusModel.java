@@ -11,6 +11,7 @@ import io.prometheus.client.Collector.MetricFamilySamples.Sample;
 import io.prometheus.client.exporter.common.TextFormat;
 
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -50,12 +51,16 @@ public class PrometheusModel implements Enumeration<MetricFamilySamples> {
 
     public String serialize() {
         var writer = new StringWriter();
+        serialize(writer);
+        return writer.toString();
+    }
+
+    public void serialize(Writer writer) {
         try {
             TextFormat.write004(writer, this);
         } catch (Exception e) {
             throw new PrometheusRenderingException("Could not render metrics. Check the log for details.", e);
         }
-        return writer.toString();
     }
 
     private MetricFamilySamples createMetricFamily(MetricId metricId) {
@@ -70,6 +75,7 @@ public class PrometheusModel implements Enumeration<MetricFamilySamples> {
         }));
         return new MetricFamilySamples(metricId.getIdForPrometheus(), Collector.Type.UNKNOWN, "", sampleList);
     }
+
     private static Sample createSample(ServiceId serviceId, MetricId metricId, Number metric,
                                        Long timeStamp, Map<DimensionId, String> dimensions)
     {
