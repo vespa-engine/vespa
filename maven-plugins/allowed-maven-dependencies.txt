@@ -59,8 +59,6 @@ org.codehaus.plexus:plexus-sec-dispatcher:2.0
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
 org.codehaus.plexus:plexus-xml:${plexus-xml.vespa.version}
 org.codehaus.woodstox:stax2-api:${stax2-api.vespa.version}
-org.eclipse.aether:aether-api:1.0.0.v20140518
-org.eclipse.aether:aether-util:1.0.0.v20140518
 org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
 org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
