@@ -8917,6 +8917,18 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.searchers.OpportunisticWeakAndSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.searchers.QueryValidator" : {
     "superClass" : "com.yahoo.search.Searcher",
     "interfaces" : [ ],
