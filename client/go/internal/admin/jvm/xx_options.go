@@ -19,5 +19,5 @@ func (opts *Options) AddCommonXX() {
 	// not common after all:
 	opts.AddOption("-XX:MaxJavaStackTraceDepth=1000000")
 	// Aid debugging for slight cost in performance
-	opts.AddOption("-XX:+OmitStackTraceInFastThrow")
+	opts.AddOption("-XX:-OmitStackTraceInFastThrow")
 }
