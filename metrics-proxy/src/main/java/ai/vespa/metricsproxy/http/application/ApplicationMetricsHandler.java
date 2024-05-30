@@ -3,7 +3,7 @@
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
-import ai.vespa.metricsproxy.http.TextResponse;
+import ai.vespa.metricsproxy.http.PrometheusResponse;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -75,7 +75,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
         }
     }
 
-    private TextResponse applicationPrometheusResponse(String requestedConsumer) {
+    private HttpResponse applicationPrometheusResponse(String requestedConsumer) {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
         var metricsByNode = metricsRetriever.getMetrics(consumer);
 
@@ -87,7 +87,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
                         .map(builder -> builder.putDimension(DimensionId.toDimensionId("hostname"), element.hostname))
                         .map(MetricsPacket.Builder::build))
                 .toList();
-        return new TextResponse(200, toPrometheusModel(metricsForAllNodes).serialize());
+        return new PrometheusResponse(200, toPrometheusModel(metricsForAllNodes));
     }
 
 }

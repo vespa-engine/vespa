@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.http.prometheus;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.http.PrometheusResponse;
 import ai.vespa.metricsproxy.http.TextResponse;
 import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
@@ -56,11 +57,11 @@ public class PrometheusHandler extends HttpHandlerBase {
         return Optional.empty();
     }
 
-    private TextResponse valuesResponse(String consumer) {
+    private HttpResponse valuesResponse(String consumer) {
         try {
             List<MetricsPacket> metrics =  new ArrayList<>(valuesFetcher.fetch(consumer));
             metrics.addAll(nodeMetricGatherer.gatherMetrics());
-            return new TextResponse(OK, toPrometheusModel(metrics).serialize());
+            return new PrometheusResponse(OK, toPrometheusModel(metrics));
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when rendering metrics:", e);
             return new TextResponse(INTERNAL_SERVER_ERROR, e.getMessage());
