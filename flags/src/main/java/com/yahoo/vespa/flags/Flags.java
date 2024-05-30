@@ -445,12 +445,6 @@ public class Flags {
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
 
-    public static UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
-            "encrypt-disk", true,
-            List.of("hmusum"), "2024-04-29", "2024-07-01",
-            "Whether to encrypt disk when provisioning new hosts",
-            "Will be read only on boot.");
-
     public static UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
             "hubspot-sync-tenants", false,
             List.of("bjorncs"), "2024-05-07", "2025-01-01",
