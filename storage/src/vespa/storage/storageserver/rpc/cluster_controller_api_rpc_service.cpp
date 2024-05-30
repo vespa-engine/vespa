@@ -124,7 +124,8 @@ void ClusterControllerApiRpcService::RPC_setSystemState2(FRT_RPCRequest* req) {
                                     req->GetParams()->GetValue(0)._string._len);
     lib::ClusterState systemState(systemStateStr);
 
-    auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterStateBundle(systemState));
+    auto bundle = std::make_shared<const lib::ClusterStateBundle>(systemState);
+    auto cmd = std::make_shared<api::SetSystemStateCommand>(std::move(bundle));
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 
     detach_and_forward_to_enqueuer(std::move(cmd), req);
@@ -167,8 +168,7 @@ void ClusterControllerApiRpcService::RPC_setDistributionStates(FRT_RPCRequest* r
     }
     LOG(debug, "Got state bundle %s", state_bundle->toString().c_str());
 
-    // TODO add constructor taking in shared_ptr directly instead?
-    auto cmd = std::make_shared<api::SetSystemStateCommand>(*state_bundle);
+    auto cmd = std::make_shared<api::SetSystemStateCommand>(std::move(state_bundle));
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 
     detach_and_forward_to_enqueuer(std::move(cmd), req);
