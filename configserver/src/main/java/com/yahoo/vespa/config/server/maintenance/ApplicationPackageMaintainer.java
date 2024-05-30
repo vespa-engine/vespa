@@ -95,7 +95,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                 }
                             }
                             catch (Exception e) {
-                                log.info("Exception when downloading application package (" + appFileReference + ")" +
+                                log.warning("Exception when downloading application package (" + appFileReference + ")" +
                                                  " for " + applicationId + " (session " + sessionId + "): " + e.getMessage());
                             }
                             failures[0]++;
