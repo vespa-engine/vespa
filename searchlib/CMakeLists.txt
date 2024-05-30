@@ -60,6 +60,7 @@ vespa_define_module(
     src/apps/vespa-attribute-inspect
     src/apps/vespa-fileheader-inspect
     src/apps/vespa-index-inspect
+    src/apps/vespa-query-analyzer
     src/apps/vespa-ranking-expression-analyzer
 
     TESTS
