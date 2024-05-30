@@ -27,4 +27,9 @@ public class PrometheusResponse extends HttpResponse {
         writer.flush();
     }
 
+    @Override
+    public long maxPendingBytes() {
+        return 1 << 20;
+    }
+
 }
