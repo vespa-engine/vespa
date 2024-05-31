@@ -317,14 +317,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_COST = defineFeatureFlag(
             "sort-blueprints-by-cost", false,
-            List.of("baldersheim"), "2023-12-19", "2024-05-31",
+            List.of("baldersheim"), "2023-12-19", "2024-10-31",
             "If true blueprints are sorted based on cost estimate, rather that absolute estimated hits",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
-            List.of("baldersheim"), "2023-11-20", "2024-05-31",
+            List.of("baldersheim"), "2023-11-20", "2024-10-31",
             "If true all phrases will be marked expensive, independent of parents",
             "Takes effect at redeployment",
             INSTANCE_ID);
