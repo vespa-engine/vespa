@@ -121,6 +121,8 @@ private:
     VESPA_DLL_LOCAL void sortHitsByScore(size_t topn);
     VESPA_DLL_LOCAL void sortHitsByDocId();
 
+    bool save_rank_scores() const noexcept { return _maxHitsSize != 0; }
+
 public:
     HitCollector(const HitCollector &) = delete;
     HitCollector &operator=(const HitCollector &) = delete;
@@ -169,10 +171,9 @@ public:
      * Invoking this method will destroy the heap property of the
      * ranked hits and the match data heap.
      *
-     * @param auto pointer to the result set
-     * @param default_value rank value to be used for results without rank value
+     * @return unique pointer to the result set
      **/
-    std::unique_ptr<ResultSet> getResultSet(HitRank default_value = default_rank_value);
+    std::unique_ptr<ResultSet> getResultSet();
 };
 
 }

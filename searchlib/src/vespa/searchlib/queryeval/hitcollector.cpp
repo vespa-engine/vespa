@@ -269,8 +269,14 @@ mixin_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, c
 }
 
 std::unique_ptr<ResultSet>
-HitCollector::getResultSet(HitRank default_value)
+HitCollector::getResultSet()
 {
+    /*
+     * Use default_rank_value (i.e. -HUGE_VAL) when hit collector saves
+     * rank scores, otherwise use zero_rank_value (i.e. 0.0).
+     */
+    auto default_value = save_rank_scores() ? search::default_rank_value : search::zero_rank_value;
+
     bool needReScore = FirstPhaseRescorer::need_rescore(_ranges);
     FirstPhaseRescorer rescorer(_ranges);
 
