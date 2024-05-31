@@ -603,7 +603,11 @@ struct RankDropFixture {
     }
 
     void setup() {
+        // Initial 7 hits from first phase
         add({{5, 1100},{10, 1200},{11, 1300},{12, 1400},{14, 500},{15, 900},{16,1000}});
+        // Rerank two best hits, calculate old and new ranges for reranked
+        // hits that will cause hits not reranked to later be rescored by
+        // dividing by 100.
         rerank({{11,14},{12,13}}, 2);
     }
     void check_result(std::optional<double> rank_drop_limit, RankedHitVector exp_array,
@@ -617,30 +621,34 @@ struct RankDropFixture {
 
 TEST(HitCollectorTest, require_that_second_phase_rank_drop_limit_is_enforced)
 {
+    // Track rank score for all 7 hits from first phase
     RankDropFixture f(10000, 10);
     f.setup();
     f.check_result(9.0, {{5,11},{10,12},{11,14},{12,13},{16,10}},
                    {}, {14, 15});
 }
 
-TEST(HitCollectorTest, require_that_docid_vector_is_used)
+TEST(HitCollectorTest, require_that_second_phase_rank_drop_limit_is_enforced_when_docid_vector_is_used)
 {
+    // Track rank score for 4 best hits from first phase, overflow to docid vector
     RankDropFixture f(10000, 4);
     f.setup();
     f.check_result(13.0, {{11,14}},
                    {}, {5,10,12,14,15,16});
 }
 
-TEST(HitCollectorTest, require_that_bitvector_is_not_dropped_without_rank_drop_limit)
+TEST(HitCollectorTest, require_that_bitvector_is_not_dropped_without_second_phase_rank_drop_limit)
 {
+    // Track rank score for 4 best hits from first phase, overflow to bitvector
     RankDropFixture f(20, 4);
     f.setup();
     f.check_result(std::nullopt, {{5,11},{10,12},{11,14},{12,13}},
                    f.make_bv({5,10,11,12,14,15,16}), {});
 }
 
-TEST(HitCollectorTest, require_that_bitvector_is_dropped_with_rank_drop_limit)
+TEST(HitCollectorTest, require_that_bitvector_is_dropped_with_second_phase_rank_drop_limit)
 {
+    // Track rank for 4 best hits from first phase, overflow to bitvector
     RankDropFixture f(20, 4);
     f.setup();
     f.check_result(9.0, {{5,11},{10,12},{11,14},{12,13}},
