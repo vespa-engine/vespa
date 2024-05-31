@@ -104,10 +104,12 @@ class TensorParser {
         if (type.isEmpty())
             throw new IllegalArgumentException("The mixed tensor form requires an explicit tensor type " +
                                                "on the form 'tensor(dimensions):...");
-        if (type.get().dimensions().stream().filter(d -> ! d.isIndexed()).count() > 1)
+        if (type.get().dimensions().stream().filter(d -> d.isMapped()).count() > 1)
             throw new IllegalArgumentException("The mixed tensor form requires a type with a single mapped dimension, " +
                                                "but got " + type.get());
-
+        if (! MixedValueParser.findMappedDimension(type.get()).isPresent())
+            throw new IllegalArgumentException("No suitable dimension in " + type.get() + " for parsing a tensor on " +
+                                               "the mixed form: Should have one mapped dimension");
 
         try {
             valueString = valueString.trim();
@@ -426,7 +428,7 @@ class TensorParser {
         }
 
         private void parse() {
-            TensorType.Dimension mappedDimension = findMappedDimension();
+            TensorType.Dimension mappedDimension = findMappedDimension().get();
             TensorType mappedSubtype = MixedTensor.createPartialType(builder.type().valueType(), List.of(mappedDimension));
             if (dimensionOrder != null)
                 dimensionOrder.remove(mappedDimension.name());
@@ -448,13 +450,16 @@ class TensorParser {
             }
         }
 
-        private TensorType.Dimension findMappedDimension() {
-            Optional<TensorType.Dimension> mappedDimension = builder.type().dimensions().stream().filter(TensorType.Dimension::isMapped).findAny();
-            if (mappedDimension.isPresent()) return mappedDimension.get();
-            if (builder.type().rank() == 1 && builder.type().dimensions().get(0).size().isEmpty())
-                return builder.type().dimensions().get(0);
-            throw new IllegalStateException("No suitable dimension in " + builder.type() +
-                                            " for parsing as a mixed tensor. This is a bug.");
+        private Optional<TensorType.Dimension> findMappedDimension() {
+            return findMappedDimension(builder.type());
+        }
+
+        static Optional<TensorType.Dimension> findMappedDimension(TensorType type) {
+            Optional<TensorType.Dimension> mappedDimension = type.dimensions().stream().filter(TensorType.Dimension::isMapped).findAny();
+            if (mappedDimension.isPresent()) return Optional.of(mappedDimension.get());
+            if (type.rank() == 1 && type.dimensions().get(0).size().isEmpty())
+                return Optional.of(type.dimensions().get(0));
+            return Optional.empty();
         }
 
         private void parseDenseSubspace(TensorAddress mappedAddress, List<String> denseDimensionOrder) {
