@@ -13,6 +13,8 @@ using namespace search::fef;
 using namespace search::queryeval;
 
 using ScoreMap = std::map<uint32_t, feature_t>;
+using DocidVector = std::vector<uint32_t>;
+using RankedHitVector = std::vector<RankedHit>;
 
 using Ranges = std::pair<Scores, Scores>;
 
@@ -572,6 +574,85 @@ TEST(HitCollectorTest, require_that_hits_can_be_added_out_of_order_only_after_pa
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
     checkResult(*rs, expRh);
     checkResult(*rs, nullptr);
+}
+
+struct RankDropFixture {
+    uint32_t              _docid_limit;
+    HitCollector          _hc;
+    std::vector<uint32_t> _dropped;
+    RankDropFixture(uint32_t docid_limit, uint32_t max_hits_size)
+        : _docid_limit(docid_limit),
+          _hc(docid_limit, max_hits_size)
+    {
+    }
+    void add(std::vector<RankedHit> hits) {
+        for (const auto& hit : hits) {
+            _hc.addHit(hit.getDocId(), hit.getRank());
+        }
+    }
+    void rerank(ScoreMap score_map, size_t count) {
+        PredefinedScorer scorer(score_map);
+        EXPECT_EQ(count, do_reRank(scorer, _hc, count));
+    }
+    std::unique_ptr<BitVector> make_bv(DocidVector docids) {
+        auto bv = BitVector::create(_docid_limit);
+        for (auto& docid : docids) {
+            bv->setBit(docid);
+        }
+        return bv;
+    }
+
+    void setup() {
+        add({{5, 1100},{10, 1200},{11, 1300},{12, 1400},{14, 500},{15, 900},{16,1000}});
+        rerank({{11,14},{12,13}}, 2);
+    }
+    void check_result(double default_value, double rank_drop_limit, RankedHitVector exp_array,
+                      std::unique_ptr<BitVector> exp_bv, DocidVector exp_dropped) {
+        auto rs = _hc.getResultSet(default_value, rank_drop_limit, &_dropped);
+        checkResult(*rs, exp_array);
+        checkResult(*rs, exp_bv.get());
+        EXPECT_EQ(exp_dropped, _dropped);
+    }
+};
+
+TEST(HitCollectorTest, require_that_second_phase_rank_drop_limit_is_enforced)
+{
+    RankDropFixture f(10000, 10);
+    f.setup();
+    f.check_result(0, 9.0, {{5,11},{10,12},{11,14},{12,13},{16,10}},
+                   {}, {14, 15});
+}
+
+TEST(HitCollectorTest, require_that_docid_vector_is_used_when_default_value_is_not_dropped)
+{
+    RankDropFixture f(10000, 4);
+    f.setup();
+    f.check_result(20.0, 13.0, {{11,14},{14,20},{15,20},{16,20}},
+                   {}, {5,10,12});
+}
+
+TEST(HitCollectorTest, require_that_docid_vector_is_used_when_default_value_is_dropped)
+{
+    RankDropFixture f(10000, 4);
+    f.setup();
+    f.check_result(0, 13.0, {{11,14}},
+                   {}, {5,10,12,14,15,16});
+}
+
+TEST(HitCollectorTest, require_that_bitvector_is_updated_when_default_value_is_not_dropped)
+{
+    RankDropFixture f(20, 4);
+    f.setup();
+    f.check_result(14.0, 13.0, {{11,14}},
+                   f.make_bv({11,14,15,16}), {5,10,12});
+}
+
+TEST(HitCollectorTest, require_that_bitvector_is_dropped_when_default_value_is_dropped)
+{
+    RankDropFixture f(20, 4);
+    f.setup();
+    f.check_result(4.0, 9.0, {{5,11},{10,12},{11,14},{12,13}},
+                   {}, {14,15,16});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
