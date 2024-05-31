@@ -197,7 +197,7 @@ class OverrideProcessor implements PreProcessor {
             // Tags are set on instances. Having a tag match for a deployment to a non-prod environment
             // disables the usual downscaling of the cluster, which is surprising. We therefore either
             // require the tags match to either also match an environment directive, or the implicit prod.
-            if ( ! (elementEnvironments.isEmpty() ? Set.of(Environment.prod) : elementEnvironments).contains(environment)) return false;
+            if (elementEnvironments.isEmpty() && environment != Environment.prod) return false;
         }
 
         return true;
