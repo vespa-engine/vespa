@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -63,7 +62,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         List<Runnable> futureDownloads = new ArrayList<>();
         for (Session session : preparedAndActivatedSessions()) {
             if (shuttingDown())
-                break;
+                return asSuccessFactorDeviation(attempts, failures[0]);
 
             ApplicationId applicationId = session.getOptionalApplicationId().orElse(null);
             if (applicationId == null) // dry-run sessions have no application id
