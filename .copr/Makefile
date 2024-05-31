@@ -15,7 +15,7 @@ srpm: VESPA_VERSION = $$(git tag --points-at HEAD | grep -oP "\d+\.\d+\.\d+" | s
 srpm: deps
 	$(TOP)/../dist.sh $(VESPA_VERSION)
 	spectool -g -C $(SOURCEDIR) $(SPECDIR)/vespa-$(VESPA_VERSION).spec
-	rpmbuild -bs --define "_topdir $(RPMTOPDIR)" $(SPECDIR)/vespa-$(VESPA_VERSION).spec
+	rpmbuild -bs --define "_topdir $(RPMTOPDIR)" --define "_source_payload w10T4.zstdio" $(SPECDIR)/vespa-$(VESPA_VERSION).spec
 	cp -a $(RPMTOPDIR)/SRPMS/* $(outdir)
 
 rpms: srpm
