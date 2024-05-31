@@ -367,7 +367,7 @@ MatchThread::findMatches(MatchTools &tools)
         tools.give_back_search(ProfiledIterator::profile(*match_profiler, tools.borrow_search()));
         tools.tag_search_as_changed();
     }
-    HitCollector hits(matchParams.numDocs, matchParams.arraySize);
+    HitCollector hits(matchParams.numDocs, match_with_ranking ? matchParams.arraySize : 0);
     trace->addEvent(4, "Start match and first phase rank");
     /**
      * All, or none of the threads in the bundle must execute the match loop.
@@ -380,7 +380,7 @@ MatchThread::findMatches(MatchTools &tools)
         secondPhase(tools, hits);
     }
     trace->addEvent(4, "Create result set");
-    return hits.getResultSet(fallback_rank_value());
+    return hits.getResultSet();
 }
 
 void
