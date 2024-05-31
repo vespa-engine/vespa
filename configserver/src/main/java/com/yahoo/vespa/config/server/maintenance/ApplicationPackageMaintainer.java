@@ -68,20 +68,14 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
             if (applicationId == null) // dry-run sessions have no application id
                 continue;
 
-            log.finest(() -> "Verifying application package for " + applicationId);
-
             Optional<FileReference> appFileReference = session.getApplicationPackageReference();
             if (appFileReference.isPresent()) {
                 long sessionId = session.getSessionId();
-                attempts++;
-                if (! fileReferenceExistsOnDisk(downloadDirectory, appFileReference.get())) {
-                    log.fine(() -> "Downloading application package with file reference " + appFileReference +
-                            " for " + applicationId + " (session " + sessionId + ")");
+                FileReference fileReference = appFileReference.get();
 
-                    FileReferenceDownload download = new FileReferenceDownload(appFileReference.get(),
-                                                                               this.getClass().getSimpleName(),
-                                                                               false);
-                    Future<Optional<File>> futureDownload = fileDownloader.getFutureFileOrTimeout(download);
+                attempts++;
+                if (! fileReferenceExistsOnDisk(downloadDirectory, fileReference)) {
+                    Future<Optional<File>> futureDownload = startDownload(fileReference, sessionId, applicationId);
                     futureDownloads.add(() -> {
                         try {
                             if (futureDownload.get().isPresent()) {
@@ -90,11 +84,11 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                             }
                         }
                         catch (Exception e) {
-                            log.warning("Exception when downloading application package (" + appFileReference + ")" +
+                            log.warning("Exception when downloading application package (" + fileReference + ")" +
                                                 " for " + applicationId + " (session " + sessionId + "): " + e.getMessage());
                         }
                         failures[0]++;
-                        log.info("Downloading application package (" + appFileReference + ")" +
+                        log.info("Downloading application package (" + fileReference + ")" +
                                          " for " + applicationId + " (session " + sessionId + ") unsuccessful. " +
                                          "Can be ignored unless it happens many times over a long period of time, retries is expected");
                     });
@@ -104,10 +98,16 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 }
             }
         }
-
         futureDownloads.forEach(Runnable::run);
-
         return asSuccessFactorDeviation(attempts, failures[0]);
+    }
+
+    private Future<Optional<File>> startDownload(FileReference fileReference, long sessionId, ApplicationId applicationId) {
+        log.fine(() -> "Downloading application package with file reference " + fileReference +
+                " for " + applicationId + " (session " + sessionId + ")");
+        return fileDownloader.getFutureFileOrTimeout(new FileReferenceDownload(fileReference,
+                                                                               this.getClass().getSimpleName(),
+                                                                               false));
     }
 
     private Collection<RemoteSession> preparedAndActivatedSessions() {
