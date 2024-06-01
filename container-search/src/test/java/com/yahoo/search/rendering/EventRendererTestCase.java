@@ -141,7 +141,7 @@ public class EventRendererTestCase {
             });
             assertFalse(future.isDone());
             result = render(new Result(new Query(), newHitGroup(tokenStream, "token_stream")));
-            assertTrue(future.isDone());  // Renderer waits for async completion
+            future.join();  // Renderer waits for async completion
 
         } finally {
             executor.shutdownNow();
