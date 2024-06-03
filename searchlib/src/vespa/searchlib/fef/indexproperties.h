@@ -580,7 +580,9 @@ namespace hitcollector {
      **/
     struct SecondPhaseRankScoreDropLimit {
         static const vespalib::string NAME;
+        static const std::optional<double> DEFAULT_VALUE;
         static std::optional<double> lookup(const Properties &props);
+        static std::optional<double> lookup(const Properties &props, std::optional<double> default_value);
     };
 
 

@@ -633,10 +633,13 @@ TEST(PropertiesTest, second_phase_rank_score_drop_limit)
     EXPECT_EQ(vespalib::string("vespa.hitcollector.second-phase.rankscoredroplimit"), name);
     Properties p;
     EXPECT_EQ(std::optional<double>(), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
+    EXPECT_EQ(std::optional<double>(4.0), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
     p.add(name, "-123456789.12345");
     EXPECT_EQ(std::optional<double>(-123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
+    EXPECT_EQ(std::optional<double>(-123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
     p.clear().add(name, "123456789.12345");
     EXPECT_EQ(std::optional<double>(123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));
+    EXPECT_EQ(std::optional<double>(123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

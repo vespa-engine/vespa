@@ -9,6 +9,7 @@
 #include "rank_program.h"
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
+#include <optional>
 
 namespace search::fef {
 
@@ -60,6 +61,7 @@ private:
     double                   _degradationSamplePercentage;
     double                   _degradationPostFilterMultiplier;
     feature_t                _rankScoreDropLimit;
+    std::optional<double>    _second_phase_rank_score_drop_limit;
     std::vector<vespalib::string> _match_features;
     std::vector<vespalib::string> _summaryFeatures;
     std::vector<vespalib::string> _dumpFeatures;
@@ -344,6 +346,10 @@ public:
      * @return the rank score drop limit
      **/
     feature_t getRankScoreDropLimit() const { return _rankScoreDropLimit; }
+
+    void set_second_phase_rank_score_drop_limit(std::optional<double> value) { _second_phase_rank_score_drop_limit = value; }
+
+    std::optional<double> get_second_phase_rank_score_drop_limit() const noexcept { return _second_phase_rank_score_drop_limit; }
 
     /**
      * This method may be used to indicate that certain features

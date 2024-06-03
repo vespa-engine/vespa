@@ -37,20 +37,19 @@ lookupStringVector(const Properties &props, const vespalib::string &name,
 }
 
 std::optional<double>
-lookup_opt_double(const Properties &props, vespalib::stringref name)
+lookup_opt_double(const Properties &props, vespalib::stringref name, std::optional<double> default_value)
 {
     Property p = props.lookup(name);
     if (p.found()) {
         return vespalib::locale::c::strtod(p.get().c_str(), nullptr);
     }
-    return std::nullopt;
+    return default_value;
 }
 
 double
 lookupDouble(const Properties &props, const vespalib::string &name, double defaultValue)
 {
-    auto result = lookup_opt_double(props, name);
-    return (result.has_value() ? result.value() : defaultValue);
+    return lookup_opt_double(props, name, defaultValue).value();
 }
 
 uint32_t
@@ -706,11 +705,18 @@ RankScoreDropLimit::lookup(const Properties &props, feature_t defaultValue)
 }
 
 const vespalib::string SecondPhaseRankScoreDropLimit::NAME("vespa.hitcollector.second-phase.rankscoredroplimit");
+const std::optional<double> SecondPhaseRankScoreDropLimit::DEFAULT_VALUE(std::nullopt);
 
 std::optional<double>
 SecondPhaseRankScoreDropLimit::lookup(const Properties &props)
 {
-    return lookup_opt_double(props, NAME);
+    return lookup_opt_double(props, NAME, DEFAULT_VALUE);
+}
+
+std::optional<double>
+SecondPhaseRankScoreDropLimit::lookup(const Properties &props, std::optional<double> default_value)
+{
+    return lookup_opt_double(props, NAME, default_value);
 }
 
 } // namspace hitcollector
