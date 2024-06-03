@@ -617,10 +617,10 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         File servicesFile = validateServicesFile();
         IOUtils.copyDirectory(appDir, tempDir, -1,
                               (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
-        var preprocessedDir = applicationFile(appDir, preprocessed);
-        IOUtils.recursiveDeleteDir(preprocessedDir);
         preprocessXML(applicationFile(tempDir, SERVICES), servicesFile, zone);
         preprocessXML(applicationFile(tempDir, HOSTS), getHostsFile(), zone);
+        var preprocessedDir = applicationFile(appDir, preprocessed);
+        IOUtils.recursiveDeleteDir(preprocessedDir);
         Files.move(tempDir.toPath(), preprocessedDir.toPath());
         FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
