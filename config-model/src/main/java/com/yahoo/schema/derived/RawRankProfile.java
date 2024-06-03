@@ -169,6 +169,7 @@ public class RawRankProfile {
         private final OptionalDouble approximateThreshold;
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final double rankScoreDropLimit;
+        private final double secondPhaseRankScoreDropLimit;
         private final boolean sortBlueprintsByCost;
         private final boolean alwaysMarkPhraseExpensive;
 
@@ -219,6 +220,7 @@ public class RawRankProfile {
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
+            secondPhaseRankScoreDropLimit = compiled.getSecondPhaseRankScoreDropLimit();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
@@ -505,6 +507,9 @@ public class RawRankProfile {
             }
             if (rankScoreDropLimit > -Double.MAX_VALUE) {
                 properties.add(new Pair<>("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + ""));
+            }
+            if (secondPhaseRankScoreDropLimit > -Double.MAX_VALUE) {
+                properties.add(new Pair<>("vespa.hitcollector.second-phase.rankscoredroplimit", secondPhaseRankScoreDropLimit + ""));
             }
             if (ignoreDefaultRankFeatures) {
                 properties.add(new Pair<>("vespa.dump.ignoredefaultfeatures", String.valueOf(true)));

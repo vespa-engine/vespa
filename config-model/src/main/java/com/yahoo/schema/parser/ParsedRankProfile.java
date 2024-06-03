@@ -26,6 +26,7 @@ class ParsedRankProfile extends ParsedBlock {
 
     private boolean ignoreDefaultRankFeatures = false;
     private Double rankScoreDropLimit = null;
+    private Double secondPhaseRankScoreDropLimit = null;
     private Double termwiseLimit = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
@@ -64,6 +65,7 @@ class ParsedRankProfile extends ParsedBlock {
 
     boolean getIgnoreDefaultRankFeatures() { return this.ignoreDefaultRankFeatures; }
     Optional<Double> getRankScoreDropLimit() { return Optional.ofNullable(this.rankScoreDropLimit); }
+    Optional<Double> getSecondPhaseRankScoreDropLimit() { return Optional.ofNullable(this.secondPhaseRankScoreDropLimit); }
     Optional<Double> getTermwiseLimit() { return Optional.ofNullable(this.termwiseLimit); }
     Optional<Double> getPostFilterThreshold() { return Optional.ofNullable(this.postFilterThreshold); }
     Optional<Double> getApproximateThreshold() { return Optional.ofNullable(this.approximateThreshold); }
@@ -194,6 +196,11 @@ class ParsedRankProfile extends ParsedBlock {
     void setRankScoreDropLimit(double limit) {
         verifyThat(rankScoreDropLimit == null, "already has rank-score-drop-limit");
         this.rankScoreDropLimit = limit;
+    }
+
+    void setSecondPhaseRankScoreDropLimit(double limit) {
+        verifyThat(secondPhaseRankScoreDropLimit == null, "already has rank-score-drop-limit for second phase");
+        this.secondPhaseRankScoreDropLimit = limit;
     }
 
     void setRerankCount(int count) {

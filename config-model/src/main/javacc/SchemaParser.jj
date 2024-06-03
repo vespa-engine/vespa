@@ -1981,10 +1981,12 @@ void secondPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int rerankCount;
+    double dropLimit;
 }
 {
     ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
+    | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
     )
 }
 
