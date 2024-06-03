@@ -26,7 +26,7 @@ struct MatchParams {
                 uint32_t          offset_in,
                 uint32_t          hits_in,
                 bool              hasFinalRank,
-                bool              needRanking=true);
+                bool              needRanking);
     bool save_rank_scores() const noexcept { return (arraySize != 0); }
     bool has_rank_drop_limit() const;
 };
