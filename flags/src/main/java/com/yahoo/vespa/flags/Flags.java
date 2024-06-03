@@ -451,6 +451,14 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
+            "enforce-strictly-increasing-cluster-state-versions", false,
+            List.of("vekterli"), "2024-06-03", "2024-08-01",
+            "Iff true, received cluster state versions that are lower than the current active " +
+            "state version on the node will be explicitly rejected.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
     public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
             "hubspot-sync-contacts", false,
             List.of("bjorncs"), "2024-05-27", "2025-01-01",

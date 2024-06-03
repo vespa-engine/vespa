@@ -1576,6 +1576,32 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(warnings, "");
     }
 
+    private void checkStrictlyIncreasingClusterStateVersionConfig(Boolean flagValue, boolean expected) throws Exception {
+        var props = new TestProperties();
+        if (flagValue != null) {
+            props.setEnforceStrictlyIncreasingClusterStateVersions(flagValue);
+        }
+        var cc = createOneNodeCluster(props);
+
+        // stor-server config should be the same for both distributors and storage nodes
+        var builder = new StorServerConfig.Builder();
+        cc.getStorageCluster().getConfig(builder);
+        var cfg = builder.build();
+        assertEquals(expected, cfg.require_strictly_increasing_cluster_state_versions());
+
+        builder = new StorServerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+        cfg = builder.build();
+        assertEquals(expected, cfg.require_strictly_increasing_cluster_state_versions());
+    }
+
+    @Test
+    void strictly_increasing_cluster_state_versions_config_controlled_by_feature_flag() throws Exception {
+        checkStrictlyIncreasingClusterStateVersionConfig(null, false); // TODO change default
+        checkStrictlyIncreasingClusterStateVersionConfig(false, false);
+        checkStrictlyIncreasingClusterStateVersionConfig(true, true);
+    }
+
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {
         String services = String.format("<?xml version='1.0' encoding='UTF-8' ?>" +
                 "<services version='1.0'>" +
