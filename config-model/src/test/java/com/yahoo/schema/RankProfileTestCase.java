@@ -530,4 +530,28 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                 "}");
     }
 
+    @Test
+    public void secondPhaseRankScoreDropLimitIsAddedToRankProperties() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
+        String input = """
+            schema test {
+              document test {
+              }
+              rank-profile test inherits default {
+                second-phase {
+                   rank-score-drop-limit: 17.0
+                }
+              }
+            }
+            """;
+        builder.addSchema(input);
+        builder.build(true);
+        Schema schema = builder.getSchema();
+
+        assertEquals(3, registry.all().size());
+        RawRankProfile rawProfile = createRawRankProfile(registry.get(schema, "test"), schema);
+        assertEquals("17.0", findProperty(rawProfile.configProperties(), "vespa.hitcollector.second-phase.rankscoredroplimit").get());
+    }
+
 }
