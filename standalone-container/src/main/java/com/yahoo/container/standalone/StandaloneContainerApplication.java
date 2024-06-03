@@ -27,7 +27,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.jdisc.ConfiguredApplication;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.Application;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -41,9 +40,7 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
 import org.w3c.dom.Element;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -91,8 +88,7 @@ public class StandaloneContainerApplication implements Application {
         this.networkingOption = resolveNetworkingOption();
 
         try {
-            Pair<VespaModel, Container> tpl = withTempDir(preprocessedApplicationDir -> createContainerModel(applicationPath,
-                                                          distributedFiles, preprocessedApplicationDir, networkingOption, configModelRepo));
+            Pair<VespaModel, Container> tpl = createContainerModel(applicationPath, distributedFiles, networkingOption, configModelRepo);
             this.modelRoot = tpl.getFirst();
             this.container = tpl.getSecond();
         } catch (RuntimeException r) {
@@ -176,35 +172,6 @@ public class StandaloneContainerApplication implements Application {
         return container;
     }
 
-    private interface ThrowingFunction<T, U> {
-        U apply(T input) throws Exception;
-    }
-
-    private static <T> T withTempDir(ThrowingFunction<File, T> f) throws Exception {
-        File tmpDir = createTempDir();
-        try {
-            return f.apply(tmpDir);
-        } finally {
-            IOUtils.recursiveDeleteDir(tmpDir);
-        }
-    }
-
-    private static File createTempDir() {
-        Path basePath;
-        if (new File(DEFAULT_TMP_BASE_DIR).exists()) {
-            basePath = Paths.get(DEFAULT_TMP_BASE_DIR);
-        } else {
-            basePath = Paths.get(System.getProperty("java.io.tmpdir"));
-        }
-
-        try {
-            Path tmpDir = Files.createTempDirectory(basePath, TMP_DIR_NAME);
-            return tmpDir.toFile();
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot create temp directory", e);
-        }
-    }
-
     private static void validateApplication(ApplicationPackage applicationPackage) {
         try {
             applicationPackage.validateXML();
@@ -233,10 +200,10 @@ public class StandaloneContainerApplication implements Application {
     }
 
     static Pair<VespaModel, Container> createContainerModel(Path applicationPath, FileRegistry fileRegistry,
-            File preprocessedApplicationDir, Networking networkingOption, ConfigModelRepo configModelRepo) throws Exception {
+            Networking networkingOption, ConfigModelRepo configModelRepo) throws Exception {
         DeployLogger logger = new BaseDeployLogger();
-        FilesApplicationPackage rawApplicationPackage = new FilesApplicationPackage.Builder(applicationPath.toFile())
-                .includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build();
+        FilesApplicationPackage rawApplicationPackage =
+                new FilesApplicationPackage.Builder(applicationPath.toFile()).includeSourceFiles(true).build();
         ApplicationPackage applicationPackage = rawApplicationPackage.preprocess(getZone(), logger);
         validateApplication(applicationPackage);
         DeployState deployState = createDeployState(applicationPackage, fileRegistry, logger);

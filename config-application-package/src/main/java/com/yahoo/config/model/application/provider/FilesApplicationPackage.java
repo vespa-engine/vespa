@@ -99,7 +99,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private static final Map<Path, Set<String>> validFileExtensions;
 
     private final File appDir;
-    private final File preprocessedDir;
     private final File configDefsDir;
     private final AppSubDirs appSubDirs;
     // NOTE: these directories exist in the original user app, but their locations are given in 'services.xml'
@@ -125,8 +124,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * @return an Application package instance
      */
     public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
-        return new Builder(appDir).preprocessedDir(applicationFile(appDir, preprocessed))
-                                  .includeSourceFiles(includeSourceFiles)
+        return new Builder(appDir).includeSourceFiles(includeSourceFiles)
                                   .build();
     }
 
@@ -156,15 +154,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * the default location '$VESPA_HOME/share/vespa/configdefinitions'.
      *
      * @param appDir application package directory
-     * @param preprocessedDir preprocessed application package output directory
      * @param metaData metadata for this application package
      * @param includeSourceFiles include files from source dirs
      */
-    private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData, boolean includeSourceFiles) {
+    private FilesApplicationPackage(File appDir, ApplicationMetaData metaData, boolean includeSourceFiles) {
         verifyAppDir(appDir);
         this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
-        this.preprocessedDir = preprocessedDir;
         appSubDirs = new AppSubDirs(appDir);
         configDefsDir = applicationFile(appDir, CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
@@ -616,11 +612,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         var tmpDirBase = Paths.get(System.getProperty("java.io.tmpdir", Defaults.getDefaults().underVespaHome("tmp")));
-        var tempDir = Files.createTempDirectory(tmpDirBase, "preprocess-tempdir").toFile();
+        var tempDir = Files.createTempDirectory(tmpDirBase, "preprocessed-tempdir").toFile();
 
         File servicesFile = validateServicesFile();
         IOUtils.copyDirectory(appDir, tempDir, -1,
                               (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
+        var preprocessedDir = applicationFile(appDir, preprocessed);
+        IOUtils.recursiveDeleteDir(preprocessedDir);
         preprocessXML(applicationFile(tempDir, SERVICES), servicesFile, zone);
         preprocessXML(applicationFile(tempDir, HOSTS), getHostsFile(), zone);
         Files.move(tempDir.toPath(), preprocessedDir.toPath());
@@ -724,17 +722,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     public static class Builder {
 
         private final File appDir;
-        private Optional<File> preprocessedDir = Optional.empty();
         private Optional<ApplicationMetaData> metaData = Optional.empty();
         private boolean includeSourceFiles = false;
 
         public Builder(File appDir) {
             this.appDir = appDir;
-        }
-
-        public Builder preprocessedDir(File preprocessedDir) {
-            this.preprocessedDir = Optional.ofNullable(preprocessedDir);
-            return this;
         }
 
         public Builder deployData(DeployData deployData) {
@@ -748,8 +740,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
 
         public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(applicationFile(appDir, preprocessed)),
-                                               metaData.orElse(readMetaData(appDir)), includeSourceFiles);
+            return new FilesApplicationPackage(appDir, metaData.orElse(readMetaData(appDir)), includeSourceFiles);
         }
 
     }

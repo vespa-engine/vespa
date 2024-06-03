@@ -31,9 +31,9 @@ public class StandaloneContainer {
 
             LocalFileDb distributedFiles = new LocalFileDb(applicationPath);
             VespaModel root;
-            Pair<VespaModel, com.yahoo.vespa.model.container.Container> rc = StandaloneContainerApplication.createContainerModel(
-                    applicationPath, distributedFiles, applicationPath.resolve("preprocesedApp").toFile(), Networking.enable,
-                    new ConfigModelRepo());
+            Pair<VespaModel, com.yahoo.vespa.model.container.Container> rc =
+                    StandaloneContainerApplication.createContainerModel(applicationPath, distributedFiles,
+                                                                        Networking.enable, new ConfigModelRepo());
             root = rc.getFirst();
             return f.apply(root);
         });
