@@ -200,7 +200,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2024-06-01",
+            List.of("vekterli"), "2021-02-19", "2025-02-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -208,7 +208,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2024-06-01",
+            List.of("geirst", "vekterli"), "2021-07-16", "2025-02-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -299,7 +299,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2024-06-01",
+            List.of("vekterli"), "2022-11-03", "2025-02-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
@@ -364,7 +364,7 @@ public class Flags {
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 0,
-            List.of("vekterli"), "2022-09-12", "2024-06-01",
+            List.of("vekterli"), "2022-09-12", "2024-12-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
