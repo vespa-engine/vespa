@@ -219,71 +219,180 @@ public:
     }
 };
 
-template <typename Rescorer>
+class SimpleHitAdder {
+protected:
+    ResultSet& _rs;
+public:
+    SimpleHitAdder(ResultSet& rs)
+        : _rs(rs)
+    {
+    }
+    void add(uint32_t docid, double rank_value) {
+        _rs.push_back({docid, rank_value});
+    }
+};
+
+class ConditionalHitAdder : public SimpleHitAdder {
+protected:
+    double _second_phase_rank_drop_limit;
+public:
+    ConditionalHitAdder(ResultSet& rs, double second_phase_rank_drop_limit)
+        : SimpleHitAdder(rs),
+          _second_phase_rank_drop_limit(second_phase_rank_drop_limit)
+    {
+    }
+    void add(uint32_t docid, double rank_value) {
+        if (rank_value > _second_phase_rank_drop_limit) {
+            _rs.push_back({docid, rank_value});
+        }
+    }
+};
+
+class TrackingConditionalHitAdder : public ConditionalHitAdder {
+    std::vector<uint32_t>& _dropped;
+public:
+    TrackingConditionalHitAdder(ResultSet& rs, double second_phase_rank_drop_limit, std::vector<uint32_t>& dropped)
+        : ConditionalHitAdder(rs, second_phase_rank_drop_limit),
+          _dropped(dropped)
+    {
+    }
+    void add(uint32_t docid, double rank_value) {
+        if (rank_value > _second_phase_rank_drop_limit) {
+            _rs.push_back({docid, rank_value});
+        } else {
+            _dropped.emplace_back(docid);
+        }
+    }
+};
+
+template <typename HitAdder, typename Rescorer>
 void
-add_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, Rescorer rescorer)
+add_rescored_hits(HitAdder hit_adder, const std::vector<HitCollector::Hit>& hits, Rescorer rescorer)
 {
     for (auto& hit : hits) {
-        rs.push_back({hit.first, rescorer.rescore(hit.first, hit.second)});
+        hit_adder.add(hit.first, rescorer.rescore(hit.first, hit.second));
     }
 }
 
-template <typename Rescorer>
+template <typename HitAdder, typename Rescorer>
 void
-add_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, const std::vector<HitCollector::Hit>& reranked_hits, Rescorer rescorer)
+add_rescored_hits(HitAdder hit_adder, const std::vector<HitCollector::Hit>& hits, const std::vector<HitCollector::Hit>& reranked_hits, Rescorer rescorer)
 {
     if (reranked_hits.empty()) {
-        add_rescored_hits(rs, hits, rescorer);
+        add_rescored_hits(hit_adder, hits, rescorer);
     } else {
-        add_rescored_hits(rs, hits, RerankRescorer(rescorer, reranked_hits));
+        add_rescored_hits(hit_adder, hits, RerankRescorer(rescorer, reranked_hits));
     }
 }
 
 template <typename Rescorer>
 void
-mixin_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, const std::vector<uint32_t>& docids, double default_value, Rescorer rescorer)
+add_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, const std::vector<HitCollector::Hit>& reranked_hits, std::optional<double> second_phase_rank_drop_limit, std::vector<uint32_t>* dropped, Rescorer rescorer)
+{
+    if (second_phase_rank_drop_limit.has_value()) {
+        if (dropped != nullptr) {
+            add_rescored_hits(TrackingConditionalHitAdder(rs, second_phase_rank_drop_limit.value(), *dropped), hits, reranked_hits, rescorer);
+        } else {
+            add_rescored_hits(ConditionalHitAdder(rs, second_phase_rank_drop_limit.value()), hits, reranked_hits, rescorer);
+        }
+    } else {
+        add_rescored_hits(SimpleHitAdder(rs), hits, reranked_hits, rescorer);
+    }
+}
+
+template <typename HitAdder, typename Rescorer>
+void
+mixin_rescored_hits(HitAdder hit_adder, const std::vector<HitCollector::Hit>& hits, const std::vector<uint32_t>& docids, double default_value, Rescorer rescorer)
 {
     auto hits_cur = hits.begin();
     auto hits_end = hits.end();
     for (auto docid : docids) {
         if (hits_cur != hits_end && docid == hits_cur->first) {
-            rs.push_back({docid, rescorer.rescore(docid, hits_cur->second)});
+            hit_adder.add(docid, rescorer.rescore(docid, hits_cur->second));
             ++hits_cur;
         } else {
-            rs.push_back({docid, default_value});
+            hit_adder.add(docid, default_value);
         }
+    }
+}
+
+template <typename HitAdder, typename Rescorer>
+void
+mixin_rescored_hits(HitAdder hit_adder, const std::vector<HitCollector::Hit>& hits, const std::vector<uint32_t>& docids, double default_value, const std::vector<HitCollector::Hit>& reranked_hits, Rescorer rescorer)
+{
+    if (reranked_hits.empty()) {
+        mixin_rescored_hits(hit_adder, hits, docids, default_value, rescorer);
+    } else {
+        mixin_rescored_hits(hit_adder, hits, docids, default_value, RerankRescorer(rescorer, reranked_hits));
     }
 }
 
 template <typename Rescorer>
 void
-mixin_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, const std::vector<uint32_t>& docids, double default_value, const std::vector<HitCollector::Hit>& reranked_hits, Rescorer rescorer)
+mixin_rescored_hits(ResultSet& rs, const std::vector<HitCollector::Hit>& hits, const std::vector<uint32_t>& docids, double default_value, const std::vector<HitCollector::Hit>& reranked_hits, std::optional<double> second_phase_rank_drop_limit, std::vector<uint32_t>* dropped, Rescorer rescorer)
 {
-    if (reranked_hits.empty()) {
-        mixin_rescored_hits(rs, hits, docids, default_value, rescorer);
+    if (second_phase_rank_drop_limit.has_value()) {
+        if (dropped != nullptr) {
+            mixin_rescored_hits(TrackingConditionalHitAdder(rs, second_phase_rank_drop_limit.value(), *dropped), hits, docids, default_value, reranked_hits, rescorer);
+        } else {
+            mixin_rescored_hits(ConditionalHitAdder(rs, second_phase_rank_drop_limit.value()), hits, docids, default_value, reranked_hits, rescorer);
+        }
     } else {
-        mixin_rescored_hits(rs, hits, docids, default_value, RerankRescorer(rescorer, reranked_hits));
+        mixin_rescored_hits(SimpleHitAdder(rs), hits, docids, default_value, reranked_hits, rescorer);
+    }
+}
+
+void
+add_bitvector_to_dropped(std::vector<uint32_t>& dropped, vespalib::ConstArrayRef<RankedHit> hits, const BitVector& bv)
+{
+    auto hits_cur = hits.begin();
+    auto hits_end = hits.end();
+    auto docid = bv.getFirstTrueBit();
+    auto docid_limit = bv.size();
+    while (docid < docid_limit) {
+        if (hits_cur != hits_end && hits_cur->getDocId() == docid) {
+            ++hits_cur;
+        } else {
+            dropped.emplace_back(docid);
+        }
+        docid = bv.getNextTrueBit(docid + 1);
     }
 }
 
 }
 
 std::unique_ptr<ResultSet>
-HitCollector::getResultSet(HitRank default_value)
+HitCollector::get_result_set(std::optional<double> second_phase_rank_drop_limit, std::vector<uint32_t>* dropped)
 {
+    /*
+     * Use default_rank_value (i.e. -HUGE_VAL) when hit collector saves
+     * rank scores, otherwise use zero_rank_value (i.e. 0.0).
+     */
+    auto default_value = save_rank_scores() ? search::default_rank_value : search::zero_rank_value;
+
     bool needReScore = FirstPhaseRescorer::need_rescore(_ranges);
     FirstPhaseRescorer rescorer(_ranges);
+
+    if (dropped != nullptr) {
+        dropped->clear();
+    }
 
     // destroys the heap property or score sort order
     sortHitsByDocId();
 
     auto rs = std::make_unique<ResultSet>();
-    if ( ! _collector->isDocIdCollector() ) {
+    if ( ! _collector->isDocIdCollector() ||
+        (second_phase_rank_drop_limit.has_value() &&
+         (_bitVector || dropped == nullptr))) {
         rs->allocArray(_hits.size());
+        auto* dropped_or_null = dropped;
+        if (second_phase_rank_drop_limit.has_value() && _bitVector) {
+            dropped_or_null = nullptr;
+        }
         if (needReScore) {
-            add_rescored_hits(*rs, _hits, _reRankedHits, rescorer);
+            add_rescored_hits(*rs, _hits, _reRankedHits, second_phase_rank_drop_limit, dropped_or_null, rescorer);
         } else {
-            add_rescored_hits(*rs, _hits, _reRankedHits, NoRescorer());
+            add_rescored_hits(*rs, _hits, _reRankedHits, second_phase_rank_drop_limit, dropped_or_null, NoRescorer());
         }
     } else {
         if (_unordered) {
@@ -291,10 +400,18 @@ HitCollector::getResultSet(HitRank default_value)
         }
         rs->allocArray(_docIdVector.size());
         if (needReScore) {
-            mixin_rescored_hits(*rs, _hits, _docIdVector, default_value, _reRankedHits, rescorer);
+            mixin_rescored_hits(*rs, _hits, _docIdVector, default_value, _reRankedHits, second_phase_rank_drop_limit, dropped, rescorer);
         } else {
-            mixin_rescored_hits(*rs, _hits, _docIdVector, default_value, _reRankedHits, NoRescorer());
+            mixin_rescored_hits(*rs, _hits, _docIdVector, default_value, _reRankedHits, second_phase_rank_drop_limit, dropped, NoRescorer());
         }
+    }
+
+    if (second_phase_rank_drop_limit.has_value() && _bitVector) {
+        if (dropped != nullptr) {
+            assert(dropped->empty());
+            add_bitvector_to_dropped(*dropped, {rs->getArray(), rs->getArrayUsed()}, *_bitVector);
+        }
+        _bitVector.reset();
     }
 
     if (_bitVector) {
@@ -302,6 +419,12 @@ HitCollector::getResultSet(HitRank default_value)
     }
 
     return rs;
+}
+
+std::unique_ptr<ResultSet>
+HitCollector::getResultSet()
+{
+    return get_result_set(std::nullopt, nullptr);
 }
 
 }

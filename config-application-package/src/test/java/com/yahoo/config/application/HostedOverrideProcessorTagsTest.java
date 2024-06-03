@@ -22,7 +22,7 @@ public class HostedOverrideProcessorTagsTest {
                     "<services xmlns:deploy='vespa' xmlns:preprocess='?' version='1.0'>" +
                     "  <container id='foo' version='1.0'>" +
                     "    <nodes count='5' deploy:tags='a' deploy:environment='perf'/>" +
-                    "    <nodes count='10' deploy:tags='a b'/>" +
+                    "    <nodes count='10' deploy:tags='a b' deploy:environment='prod dev'/>" +
                     "    <nodes count='20' deploy:tags='c'/>" +
                     "    <search deploy:tags='b'/>" +
                     "    <document-api deploy:tags='d'/>" +
@@ -62,6 +62,38 @@ public class HostedOverrideProcessorTagsTest {
     }
 
     @Test
+    public void testParsingTagATest() throws TransformerException {
+        String expected =
+                "<?xml version='1.0' encoding='UTF-8' standalone='no'?>" +
+                "<services xmlns:deploy='vespa' xmlns:preprocess='?' version='1.0'>" +
+                "  <container id='foo' version='1.0'>" +
+                "                    " + // (╭ರ_•́)
+                "  </container>" +
+                "</services>";
+        assertOverride(InstanceName.defaultName(),
+                       Environment.test,
+                       RegionName.defaultName(),
+                       Tags.fromString("a"),
+                       expected);
+    }
+
+    @Test
+    public void testParsingTagADev() throws TransformerException {
+        String expected =
+                "<?xml version='1.0' encoding='UTF-8' standalone='no'?>" +
+                "<services xmlns:deploy='vespa' xmlns:preprocess='?' version='1.0'>" +
+                "  <container id='foo' version='1.0'>" +
+                "    <nodes count='10' required='true'/>" +
+                "  </container>" +
+                "</services>";
+        assertOverride(InstanceName.defaultName(),
+                       Environment.dev,
+                       RegionName.defaultName(),
+                       Tags.fromString("a"),
+                       expected);
+    }
+
+    @Test
     public void testParsingTagB() throws TransformerException {
         String expected =
                 "<?xml version='1.0' encoding='UTF-8' standalone='no'?>" +
@@ -79,7 +111,7 @@ public class HostedOverrideProcessorTagsTest {
     }
 
     @Test
-    public void testParsingTagC() throws TransformerException {
+    public void testParsingTagCProd() throws TransformerException {
         String expected =
                 "<?xml version='1.0' encoding='UTF-8' standalone='no'?>" +
                 "<services xmlns:deploy='vespa' xmlns:preprocess='?' version='1.0'>" +
@@ -89,6 +121,22 @@ public class HostedOverrideProcessorTagsTest {
                 "</services>";
         assertOverride(InstanceName.defaultName(),
                        Environment.prod,
+                       RegionName.defaultName(),
+                       Tags.fromString("c"),
+                       expected);
+    }
+
+    @Test
+    public void testParsingTagCDev() throws TransformerException {
+        String expected =
+                "<?xml version='1.0' encoding='UTF-8' standalone='no'?>" +
+                "<services xmlns:deploy='vespa' xmlns:preprocess='?' version='1.0'>" +
+                "  <container id='foo' version='1.0'>" +
+                "                    " + // (╭ರ_•́)
+                "  </container>" +
+                "</services>";
+        assertOverride(InstanceName.defaultName(),
+                       Environment.dev,
                        RegionName.defaultName(),
                        Tags.fromString("c"),
                        expected);

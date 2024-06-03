@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/vespalib/util/sort.h>
 #include <algorithm>
+#include <optional>
 #include <vector>
 
 namespace search::queryeval {
@@ -121,6 +122,8 @@ private:
     VESPA_DLL_LOCAL void sortHitsByScore(size_t topn);
     VESPA_DLL_LOCAL void sortHitsByDocId();
 
+    bool save_rank_scores() const noexcept { return _maxHitsSize != 0; }
+
 public:
     HitCollector(const HitCollector &) = delete;
     HitCollector &operator=(const HitCollector &) = delete;
@@ -164,15 +167,17 @@ public:
     const std::pair<Scores, Scores> &getRanges() const { return _ranges; }
     void setRanges(const std::pair<Scores, Scores> &ranges);
 
+    std::unique_ptr<ResultSet>
+    get_result_set(std::optional<double> second_phase_rank_drop_limit, std::vector<uint32_t>* dropped);
+
     /**
      * Returns a result set based on the content of this collector.
      * Invoking this method will destroy the heap property of the
      * ranked hits and the match data heap.
      *
-     * @param auto pointer to the result set
-     * @param default_value rank value to be used for results without rank value
+     * @return unique pointer to the result set
      **/
-    std::unique_ptr<ResultSet> getResultSet(HitRank default_value = default_rank_value);
+    std::unique_ptr<ResultSet> getResultSet();
 };
 
 }

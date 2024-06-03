@@ -35,6 +35,7 @@ public record User(String email, String name, String nickname, String picture, b
     }
 
     public static Builder builder() { return new Builder(); }
+    public static Builder builder(User u) { return new Builder(u); }
 
     public static class Builder {
         private String email;
@@ -47,6 +48,17 @@ public record User(String email, String name, String nickname, String picture, b
         private final Map<String, Object> extraAttributes = new TreeMap<>();
 
         private Builder() {}
+
+        private Builder(User u) {
+            email = u.email;
+            name = u.name;
+            nickname = u.nickname;
+            picture = u.picture;
+            isVerified = u.isVerified;
+            loginCount = u.loginCount;
+            lastLogin = u.lastLogin;
+            extraAttributes.putAll(u.extraAttributes);
+        }
 
         public Builder email(String email) { this.email = email; return this; }
         public Builder name(String name) { this.name = name; return this; }
