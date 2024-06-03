@@ -19,10 +19,13 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -219,8 +222,8 @@ class HttpRequestStrategy implements RequestStrategy {
 
     public void await() {
         try {
-            while (inflight.get() > 0)
-                Thread.sleep(10);
+            while (inflight.get() > 0) Thread.sleep(10);
+            resettableCluster.sync();
         }
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -376,6 +379,19 @@ class HttpRequestStrategy implements RequestStrategy {
                 catch (InterruptedException e) {
                     log.log(WARNING, "Interrupted waiting for HTTP client to shut down");
                     Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        private void sync() throws InterruptedException {
+            synchronized (monitor) {
+                if ( ! executor.isShutdown()) {
+                    try {
+                        executor.submit(() -> { }).get();
+                    }
+                    catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }

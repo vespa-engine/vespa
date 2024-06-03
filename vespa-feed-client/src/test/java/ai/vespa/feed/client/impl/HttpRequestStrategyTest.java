@@ -252,8 +252,10 @@ class HttpRequestStrategyTest {
         secondVessel.complete(HttpResponse.of(504, null));
         assertEquals(504, secondResponse.get().code());
         strategy.await();
-        strategy.destroy();
         assertTrue(clusters.get(0).closed.get());
+        assertFalse(clusters.get(1).closed.get());
+        strategy.destroy();
+        strategy.await();
         assertTrue(clusters.get(1).closed.get());
     }
 
