@@ -4,5 +4,6 @@ vespa_add_executable(documentapi_routablefactory_test_app TEST
     routablefactory.cpp
     DEPENDS
     documentapi
+    GTest::gtest
 )
 vespa_add_test(NAME documentapi_routablefactory_test_app COMMAND documentapi_routablefactory_test_app)

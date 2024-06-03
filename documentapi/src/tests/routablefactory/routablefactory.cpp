@@ -5,7 +5,7 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::DocumentTypeRepo;
 using namespace documentapi;
@@ -109,16 +109,6 @@ public:
     bool start();
 };
 
-class Test : public vespalib::TestApp {
-protected:
-    void testFactory(TestData &data);
-
-public:
-    int Main() override;
-};
-
-TEST_APPHOOK(Test);
-
 TestData::TestData() :
     _repo(std::make_shared<DocumentTypeRepo>()),
     _slobrok(),
@@ -153,19 +143,6 @@ TestData::start()
     return true;
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("routablefactory_test");
-
-    TestData data;
-    ASSERT_TRUE(data.start());
-
-    testFactory(data); TEST_FLUSH();
-
-    TEST_DONE();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Tests
@@ -174,9 +151,11 @@ Test::Main()
 
 const vespalib::duration TIMEOUT = 600s;
 
-void
-Test::testFactory(TestData &data)
+TEST(RoutableFactoryTest, test_factory)
 {
+    TestData data;
+    ASSERT_TRUE(data.start());
+
     mbus::Route route = mbus::Route::parse("dst/session");
 
     // Source should fail to encode the message.
@@ -185,8 +164,8 @@ Test::testFactory(TestData &data)
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     ASSERT_TRUE(reply->hasErrors());
-    EXPECT_EQUAL((uint32_t)mbus::ErrorCode::ENCODE_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL("", reply->getError(0).getService());
+    EXPECT_EQ((uint32_t)mbus::ErrorCode::ENCODE_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ("", reply->getError(0).getService());
 
     // Destination should fail to decode the message.
     data._srcProtocol->putRoutableFactory(MyMessage::TYPE, IRoutableFactory::SP(new MyMessageFactory()),
@@ -196,8 +175,8 @@ Test::testFactory(TestData &data)
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(reply->hasErrors());
-    EXPECT_EQUAL((uint32_t)mbus::ErrorCode::DECODE_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL("dst/session", reply->getError(0).getService());
+    EXPECT_EQ((uint32_t)mbus::ErrorCode::DECODE_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ("dst/session", reply->getError(0).getService());
 
     // Destination should fail to encode the reply->
     data._dstProtocol->putRoutableFactory(MyMessage::TYPE, IRoutableFactory::SP(new MyMessageFactory()),
@@ -212,8 +191,8 @@ Test::testFactory(TestData &data)
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(reply->hasErrors());
-    EXPECT_EQUAL((uint32_t)mbus::ErrorCode::ENCODE_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL("dst/session", reply->getError(0).getService());
+    EXPECT_EQ((uint32_t)mbus::ErrorCode::ENCODE_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ("dst/session", reply->getError(0).getService());
 
     // Source should fail to decode the reply.
     data._dstProtocol->putRoutableFactory(MyReply::TYPE, IRoutableFactory::SP(new MyReplyFactory()),
@@ -228,8 +207,8 @@ Test::testFactory(TestData &data)
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(reply->hasErrors());
-    EXPECT_EQUAL((uint32_t)mbus::ErrorCode::DECODE_ERROR, reply->getError(0).getCode());
-    EXPECT_EQUAL("", reply->getError(0).getService());
+    EXPECT_EQ((uint32_t)mbus::ErrorCode::DECODE_ERROR, reply->getError(0).getCode());
+    EXPECT_EQ("", reply->getError(0).getService());
 
     // All should succeed.
     data._srcProtocol->putRoutableFactory(MyReply::TYPE, IRoutableFactory::SP(new MyReplyFactory()),
@@ -245,3 +224,5 @@ Test::testFactory(TestData &data)
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
