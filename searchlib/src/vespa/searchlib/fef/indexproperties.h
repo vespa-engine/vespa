@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <optional>
 #include <vector>
 
 namespace search::fef { class Properties; }
@@ -570,6 +571,16 @@ namespace hitcollector {
         static const feature_t DEFAULT_VALUE;
         static feature_t lookup(const Properties &props);
         static feature_t lookup(const Properties &props, feature_t defaultValue);
+    };
+
+    /**
+     * Property for the second phase rank score drop limit used in
+     * parallel query evaluation.  Drop a hit if the score (reranked or
+     * rescored) <= drop limit.
+     **/
+    struct SecondPhaseRankScoreDropLimit {
+        static const vespalib::string NAME;
+        static std::optional<double> lookup(const Properties &props);
     };
 
 
