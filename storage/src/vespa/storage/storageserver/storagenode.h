@@ -135,6 +135,10 @@ private:
     // Depends on metric manager
     std::unique_ptr<StateReporter>             _stateReporter;
     std::unique_ptr<StateManager>              _stateManager;
+    // Node subclasses may take ownership of _stateManager in order to infuse it into
+    // their own storage link chain, but they MUST ensure its lifetime is maintained.
+    // We need to remember the original pointer in order to update its config.
+    StateManager*                              _state_manager_ptr;
 
     // The storage chain can depend on anything.
     std::unique_ptr<StorageLink>               _chain;

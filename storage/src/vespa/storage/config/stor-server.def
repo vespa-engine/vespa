@@ -118,3 +118,11 @@ content_node_bucket_db_stripe_bits int default=4 restart
 ## Iff set, a special `pidfile` file is written under the node's root directory upon
 ## startup containing the PID of the running process.
 write_pid_file_on_startup bool default=true
+
+## Iff true, received cluster state versions that are lower than the current active
+## (or pending to be active) version on the node will be explicitly rejected. This
+## prevents race conditions caused by multiple cluster controllers believing they
+## are the leader during overlapping time intervals, as only the most recent leader
+## is able to increment the current state version in ZooKeeper, but the old controller
+## may still attempt to publish its old state.
+require_strictly_increasing_cluster_state_versions bool default=false

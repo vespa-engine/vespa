@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::StateManager
- * @ingroup storageserver
- *
- * @brief Keeps and updates node and system states.
+ * Keeps and updates node and system states.
  *
  * This component implements the NodeStateUpdater interface to handle states
  * for all components. See that interface for documentation.
@@ -22,11 +19,13 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
-#include <deque>
-#include <map>
-#include <unordered_set>
-#include <list>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <atomic>
+#include <deque>
+#include <list>
+#include <map>
+#include <optional>
+#include <unordered_set>
 
 namespace metrics {
     class MetricManager;
@@ -69,6 +68,8 @@ class StateManager : public NodeStateUpdater,
     std::optional<vespalib::steady_time>      _health_ping_time;
     vespalib::duration                        _health_ping_warn_interval;
     vespalib::steady_time                     _health_ping_warn_time;
+    vespalib::steady_time                     _last_accepted_cluster_state_time;
+    vespalib::hash_map<uint16_t, uint32_t>    _last_observed_version_from_cc;
     std::unique_ptr<HostInfo>                 _hostInfo;
     std::unique_ptr<framework::Thread>        _thread;
     // Controllers that have observed a GetNodeState response sent _after_
@@ -76,6 +77,7 @@ class StateManager : public NodeStateUpdater,
     std::unordered_set<uint16_t>              _controllers_observed_explicit_node_state;
     bool                                      _noThreadTestMode;
     bool                                      _grabbedExternalLock;
+    bool                                      _require_strictly_increasing_cluster_state_versions;
     std::atomic<bool>                         _notifyingListeners;
     std::atomic<bool>                         _requested_almost_immediate_node_state_replies;
 
@@ -90,6 +92,9 @@ public:
     void tick();
     void warn_on_missing_health_ping();
 
+    // Precondition: internal state mutex must not be held
+    void set_require_strictly_increasing_cluster_state_versions(bool req) noexcept;
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
@@ -102,7 +107,11 @@ public:
 
     Lock::SP grabStateChangeLock() override;
     void setReportedNodeState(const lib::NodeState& state) override;
-    void setClusterStateBundle(const ClusterStateBundle& c);
+    // Iff state was accepted, returns std::nullopt
+    // Otherwise (i.e. state was rejected due to a higher version already having been accepted)
+    // returns an optional containing the current, higher cluster state version.
+    [[nodiscard]] std::optional<uint32_t> try_set_cluster_state_bundle(std::shared_ptr<const ClusterStateBundle> c,
+                                                                       uint16_t origin_controller_index);
     HostInfo& getHostInfo() { return *_hostInfo; }
 
     void immediately_send_get_node_state_replies() override;

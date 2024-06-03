@@ -622,7 +622,14 @@ CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
         request.addReturnString(ns.str().c_str());
         LOGBP(debug, "Sending getnodestate2 reply with no host info.");
     } else if (requestName == "setsystemstate2" || requestName == "setdistributionstates") {
-        // No data to return
+        // No data to return, but the request must be failed iff we rejected the state version
+        // due to a higher version having been previously received.
+        auto& state_reply = dynamic_cast<api::SetSystemStateReply&>(*reply);
+        if (state_reply.getResult().getResult() == api::ReturnCode::REJECTED) {
+            vespalib::string err_msg = state_reply.getResult().getMessage(); // ReturnCode message is stringref
+            request.returnError(FRTE_RPC_METHOD_FAILED, err_msg.c_str());
+            return;
+        }
     } else if (requestName == "activate_cluster_state_version") {
         auto& activate_reply(dynamic_cast<api::ActivateClusterStateVersionReply&>(*reply));
         request.addReturnInt(activate_reply.actualVersion());

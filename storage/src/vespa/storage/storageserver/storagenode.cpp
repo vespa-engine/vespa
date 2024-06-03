@@ -92,6 +92,7 @@ StorageNode::StorageNode(
       _statusMetrics(),
       _stateReporter(),
       _stateManager(),
+      _state_manager_ptr(nullptr),
       _chain(),
       _configLock(),
       _initial_config_mutex(),
@@ -146,6 +147,8 @@ StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
             std::move(_hostInfo),
             nodeStateReporter,
             _singleThreadedDebugMode);
+    _stateManager->set_require_strictly_increasing_cluster_state_versions(server_config().requireStrictlyIncreasingClusterStateVersions);
+    _state_manager_ptr = _stateManager.get();
     _context.getComponentRegister().setNodeStateUpdater(*_stateManager);
 
     // Create storage root folder, in case it doesn't already exist.
@@ -245,12 +248,21 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         DIFFERWARN(clusterName, "Cannot alter cluster name of node live");
         DIFFERWARN(nodeIndex, "Cannot alter node index of node live");
         DIFFERWARN(isDistributor, "Cannot alter role of node live");
-        _server_config.active = std::make_unique<StorServerConfig>(oldC); // TODO this overwrites from ServiceLayerNode
+        [[maybe_unused]] bool updated = false; // magically touched by ASSIGN() macro. TODO rewrite this fun stuff.
+        if (DIFFER(requireStrictlyIncreasingClusterStateVersions)) {
+            LOG(info, "Live config update: require strictly increasing cluster state versions: %s -> %s",
+                (oldC.requireStrictlyIncreasingClusterStateVersions ? "true" : "false"),
+                (newC.requireStrictlyIncreasingClusterStateVersions ? "true" : "false"));
+            ASSIGN(requireStrictlyIncreasingClusterStateVersions);
+        }
+        _server_config.active = std::make_unique<StorServerConfig>(oldC);
         _server_config.staging.reset();
         _deadLockDetector->enableWarning(server_config().enableDeadLockDetectorWarnings);
         _deadLockDetector->enableShutdown(server_config().enableDeadLockDetector);
         _deadLockDetector->setProcessSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
         _deadLockDetector->setWaitSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
+        assert(_state_manager_ptr);
+        _state_manager_ptr->set_require_strictly_increasing_cluster_state_versions(server_config().requireStrictlyIncreasingClusterStateVersions);
     }
     if (_distribution_config.staging) {
         StorDistributionConfigBuilder oldC(*_distribution_config.active);

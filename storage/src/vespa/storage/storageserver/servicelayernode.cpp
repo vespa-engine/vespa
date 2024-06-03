@@ -125,24 +125,28 @@ ServiceLayerNode::initializeNodeSpecific()
 void
 ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 {
-    if (_server_config.staging) {
-        bool updated = false;
-        vespa::config::content::core::StorServerConfigBuilder oldC(*_server_config.active);
-        StorServerConfig& newC(*_server_config.staging);
-        {
-            updated = false;
-            NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
-            lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
-            if (DIFFER(nodeCapacity)) {
-                LOG(info, "Live config update: Updating node capacity from %f to %f.",
-                    oldC.nodeCapacity, newC.nodeCapacity);
-                ASSIGN(nodeCapacity);
-                ns.setCapacity(newC.nodeCapacity);
-            }
-            if (updated) {
-                // FIXME this always gets overwritten by StorageNode::handleLiveConfigUpdate...! Intentional?
-                _server_config.active = std::make_unique<vespa::config::content::core::StorServerConfig>(oldC);
-                _component->getStateUpdater().setReportedNodeState(ns);
+    {
+        std::lock_guard config_lock(_configLock);
+        // Live server config patching happens both here and in StorageNode::handleLiveConfigUpdate,
+        // which we have to delegate to afterward (_without_ holding _configLock at the time).
+        if (_server_config.staging) {
+            bool updated = false;
+            vespa::config::content::core::StorServerConfigBuilder oldC(*_server_config.active);
+            StorServerConfig& newC(*_server_config.staging);
+            {
+                NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
+                lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
+                if (DIFFER(nodeCapacity)) {
+                    LOG(info, "Live config update: Updating node capacity from %f to %f.",
+                        oldC.nodeCapacity, newC.nodeCapacity);
+                    ASSIGN(nodeCapacity);
+                    ns.setCapacity(newC.nodeCapacity);
+                }
+                if (updated) {
+                    // FIXME the patching of old config vs new config is confusing and error-prone. Redesign!
+                    _server_config.active = std::make_unique<vespa::config::content::core::StorServerConfig>(oldC);
+                    _component->getStateUpdater().setReportedNodeState(ns);
+                }
             }
         }
     }
