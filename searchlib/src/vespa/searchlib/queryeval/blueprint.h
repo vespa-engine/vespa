@@ -240,6 +240,7 @@ private:
     FlowStats  _flow_stats;
     uint32_t   _sourceId;
     uint32_t   _docid_limit;
+    uint32_t   _id;
     bool       _strict;
     bool       _frozen;
 
@@ -287,6 +288,10 @@ public:
 
     virtual void setDocIdLimit(uint32_t limit) noexcept { _docid_limit = limit; }
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
+
+    void set_id(uint32_t value) noexcept { _id = value; }
+    uint32_t id() const noexcept { return _id; }
+    virtual uint32_t enumerate(uint32_t next_id) noexcept;
 
     bool strict() const noexcept { return _strict; }
 
@@ -480,6 +485,7 @@ public:
     ~IntermediateBlueprint() override;
 
     void setDocIdLimit(uint32_t limit) noexcept final;
+    uint32_t enumerate(uint32_t next_id) noexcept override;
     void each_node_post_order(const std::function<void(Blueprint&)> &f) override;
 
     void optimize(Blueprint* &self, OptimizePass pass) final;

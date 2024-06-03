@@ -122,6 +122,7 @@ Blueprint::Blueprint() noexcept
       _flow_stats(0.0, 0.0, 0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
+      _id(0),
       _strict(false),
       _frozen(false)
 {
@@ -139,6 +140,13 @@ Blueprint::resolve_strict(InFlow &in_flow) noexcept
         }
     }
     _strict = in_flow.strict();
+}
+
+uint32_t
+Blueprint::enumerate(uint32_t next_id) noexcept
+{
+    set_id(next_id++);
+    return next_id;
 }
 
 void
@@ -411,6 +419,7 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.visitFloat("strict_cost", strict_cost());
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
+    visitor.visitInt("id", _id);
     visitor.visitBool("strict", _strict);
 }
 
@@ -450,11 +459,21 @@ IntermediateBlueprint::setDocIdLimit(uint32_t limit) noexcept
     }
 }
 
+uint32_t
+IntermediateBlueprint::enumerate(uint32_t next_id) noexcept
+{
+    set_id(next_id++);
+    for (Blueprint::UP &child: _children) {
+        next_id = child->enumerate(next_id);
+    }
+    return next_id;
+}
+
 void
 IntermediateBlueprint::each_node_post_order(const std::function<void(Blueprint&)> &f)
 {
-    for (Blueprint::UP &child : _children) {
-        f(*child);
+    for (Blueprint::UP &child: _children) {
+        child->each_node_post_order(f);
     }
     f(*this);
 }
