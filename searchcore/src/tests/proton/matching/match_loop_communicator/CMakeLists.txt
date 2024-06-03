@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_match_loop_communicator_test_app TEST
     match_loop_communicator_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_match_loop_communicator_test_app COMMAND searchcore_match_loop_communicator_test_app)

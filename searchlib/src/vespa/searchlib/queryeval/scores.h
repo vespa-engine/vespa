@@ -24,6 +24,9 @@ struct Scores {
             high = score;
         }
     }
+    bool operator==(const Scores& rhs) const {
+        return low == rhs.low && high == rhs.high;
+    }
 };
 
 }
