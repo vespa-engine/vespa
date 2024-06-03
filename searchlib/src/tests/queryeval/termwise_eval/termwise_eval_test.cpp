@@ -465,7 +465,7 @@ TEST(TermwiseEvalTest, require_that_termwise_evaluation_can_be_multi_level_but_n
     child->addChild(UP(new MyBlueprint({3}, true, 3)));
     my_or.addChild(std::move(child));
     for (bool strict: {true, false}) {
-        my_or.basic_plan(strict, 100);
+        my_or.null_plan(strict, 100);
         EXPECT_EQ(my_or.createSearch(*md)->asString(),
                   make_termwise(OR({ TERM({1}, strict),
                                      ORz({ TERM({2}, strict), TERM({3}, strict) }, strict) },
