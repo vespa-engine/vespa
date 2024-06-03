@@ -15,8 +15,6 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.querytransform.WeakAndReplacementSearcher;
 import com.yahoo.search.searchchain.Execution;
 
-import static com.yahoo.search.querytransform.WeakAndReplacementSearcher.WAND_HITS;
-
 /**
  * Will opportunistically replace the WeakAND with an AND as it is faster.
  * If enough hits are returned all is good and we return. If not we fall back to the original query.
@@ -38,12 +36,13 @@ public class OpportunisticWeakAndSearcher extends Searcher {
         int targetHits = targetHits(originalRoot);
         if (targetHits >= 0) {
             query.getModel().getQueryTree().setRoot(weakAnd2AndRecurse(originalRoot.clone()));
-            query.trace("WeakAND => AND", true, 2);
+            query.trace("WeakAND(" + targetHits+ ") => AND", true, 2);
             Result result = execution.search(query);
-            if (result.getHitCount() >= query.properties().getInteger(WAND_HITS)) {
+            if (result.getConcreteHitCount() >= targetHits) {
                 return result;
             }
             query.getModel().getQueryTree().setRoot(originalRoot);
+            query.trace("Fallback to WeakAND(" + targetHits+ ") as AND => " + result, true, 2);
             return execution.search(query);
         }
         return execution.search(query);
