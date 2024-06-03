@@ -21,7 +21,7 @@
 #include <fstream>
 #include <ranges>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".state.manager");
 
 using vespalib::make_string_short::fmt;
@@ -74,10 +74,13 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _health_ping_time(),
       _health_ping_warn_interval(5min),
       _health_ping_warn_time(_start_time + _health_ping_warn_interval),
+      _last_accepted_cluster_state_time(),
+      _last_observed_version_from_cc(),
       _hostInfo(std::move(hostInfo)),
       _controllers_observed_explicit_node_state(),
       _noThreadTestMode(testMode),
       _grabbedExternalLock(false),
+      _require_strictly_increasing_cluster_state_versions(false),
       _notifyingListeners(false),
       _requested_almost_immediate_node_state_replies(false)
 {
@@ -436,21 +439,67 @@ StateManager::mark_controller_as_having_observed_explicit_node_state(const std::
     _controllers_observed_explicit_node_state.emplace(controller_index);
 }
 
-void
-StateManager::setClusterStateBundle(const ClusterStateBundle& c)
+std::optional<uint32_t>
+StateManager::try_set_cluster_state_bundle(std::shared_ptr<const ClusterStateBundle> c,
+                                           uint16_t origin_controller_index)
 {
     {
         std::lock_guard lock(_stateLock);
-        _nextSystemState = std::make_shared<const ClusterStateBundle>(c);
+        uint32_t effective_active_version = (_nextSystemState ? _nextSystemState->getVersion()
+                                                              : _systemState->getVersion());
+        const auto now = _component.getClock().getMonotonicTime();
+        const uint32_t last_ver_from_cc = _last_observed_version_from_cc[origin_controller_index];
+        _last_observed_version_from_cc[origin_controller_index] = c->getVersion();
+
+        if (_require_strictly_increasing_cluster_state_versions && (c->getVersion() < effective_active_version)) {
+            if (c->getVersion() >= last_ver_from_cc) {
+                constexpr auto reject_warn_threshold = 30s;
+                if (now - _last_accepted_cluster_state_time <= reject_warn_threshold) {
+                    LOG(debug, "Rejecting cluster state with version %u from cluster controller %u, as "
+                               "we've already accepted version %u. Recently accepted another cluster state, "
+                               "so assuming transient CC leadership period overlap.",
+                        c->getVersion(), origin_controller_index, effective_active_version);
+                } else {
+                    // Rejections have happened for some time. Make a bit of noise.
+                    LOGBP(warning, "Rejecting cluster state with version %u from cluster controller %u, as "
+                                   "we've already accepted version %u.",
+                          c->getVersion(), origin_controller_index, effective_active_version);
+                }
+                return {effective_active_version};
+            } else {
+                // SetSystemState RPCs are FIFO-ordered and a particular CC should enforce strictly increasing
+                // cluster state versions through its ZooKeeper quorum (but commands may be resent for a given
+                // version). This means that commands should contain _monotonically increasing_ versions from
+                // a given CC origin index.
+                // If this is _not_ the case, it indicates ZooKeeper state on the CCs has been lost or wiped,
+                // at which point we have no other realistic choice than to accept the version, or the system
+                // will stall until an operator manually intervenes by restarting the content cluster.
+                LOG(error, "Received cluster state version %u from cluster controller %u, which is lower than "
+                           "the current state version (%u) and the last received version (%u) from the same controller. "
+                           "This indicates loss of cluster controller ZooKeeper state; accepting lower version to "
+                           "prevent content cluster operations from stalling for an indeterminate amount of time.",
+                    c->getVersion(), origin_controller_index, effective_active_version, last_ver_from_cc);
+                // Fall through to state acceptance.
+            }
+        }
+        _last_accepted_cluster_state_time = now;
+        _nextSystemState = std::move(c);
     }
     notifyStateListeners();
+    return std::nullopt;
 }
 
 bool
 StateManager::onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd)
 {
-    setClusterStateBundle(cmd->getClusterStateBundle());
-    sendUp(std::make_shared<api::SetSystemStateReply>(*cmd));
+    auto reply = std::make_shared<api::SetSystemStateReply>(*cmd);
+    const auto maybe_rejected_by_ver = try_set_cluster_state_bundle(cmd->cluster_state_bundle_ptr(), cmd->getSourceIndex());
+    if (maybe_rejected_by_ver) {
+        reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED,
+                                         fmt("Cluster state version %u rejected; node already has a higher cluster state version (%u)",
+                                             cmd->getClusterStateBundle().getVersion(), *maybe_rejected_by_ver)));
+    }
+    sendUp(reply);
     return true;
 }
 
@@ -518,6 +567,13 @@ StateManager::tick() {
         sendGetNodeStateReplies(_component.getClock().getMonotonicTime());
     }
     warn_on_missing_health_ping();
+}
+
+void
+StateManager::set_require_strictly_increasing_cluster_state_versions(bool req) noexcept
+{
+    std::lock_guard guard(_stateLock);
+    _require_strictly_increasing_cluster_state_versions = req;
 }
 
 bool
