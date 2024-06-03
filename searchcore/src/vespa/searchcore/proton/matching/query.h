@@ -97,6 +97,8 @@ public:
                         ISearchContext &context,
                         search::fef::MatchDataLayout &mdl);
 
+    void enumerate_blueprint_nodes() noexcept;
+
     /**
      * Optimize the query to be executed. This function should be
      * called after the reserveHandles function and before the
