@@ -32,6 +32,7 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.vespa.defaults.Defaults;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -53,6 +54,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -613,12 +615,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        IOUtils.recursiveDeleteDir(preprocessedDir);
-        IOUtils.copyDirectory(appDir, preprocessedDir, -1,
-                              (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
+        var tmpDirBase = Paths.get(System.getProperty("java.io.tmpdir", Defaults.getDefaults().underVespaHome("tmp")));
+        var tempDir = Files.createTempDirectory(tmpDirBase, "preprocess-tempdir").toFile();
+
         File servicesFile = validateServicesFile();
-        preprocessXML(applicationFile(preprocessedDir, SERVICES), servicesFile, zone);
-        preprocessXML(applicationFile(preprocessedDir, HOSTS), getHostsFile(), zone);
+        IOUtils.copyDirectory(appDir, tempDir, -1,
+                              (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
+        preprocessXML(applicationFile(tempDir, SERVICES), servicesFile, zone);
+        preprocessXML(applicationFile(tempDir, HOSTS), getHostsFile(), zone);
+        IOUtils.recursiveDeleteDir(preprocessedDir); // Make sure dir does not exist, needed for move to work
+        Files.move(tempDir.toPath(), preprocessedDir.toPath());
         FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
