@@ -1,18 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/phrase_splitter_query_env.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/vespalib/util/time.h>
 #include <iomanip>
 #include <iostream>
 
-#include <vespa/log/log.h>
-LOG_SETUP("phrasesplitter_test");
-
 namespace search::fef {
 
-class Benchmark : public vespalib::TestApp
+class Benchmark
 {
 private:
     vespalib::Timer _timer;
@@ -20,12 +18,16 @@ private:
 
     void start() { _timer = vespalib::Timer(); }
     void sample() { _sample = _timer.elapsed(); }
-    void run(size_t numRuns, size_t numPositions);
 
 public:
-    Benchmark() : _timer(), _sample(0) {}
-    ~Benchmark() override;
-    int Main() override;
+    Benchmark()
+        : _timer(),
+          _sample(0)
+    {
+    }
+    ~Benchmark();
+    void run(size_t numRuns, size_t numPositions);
+    vespalib::duration get_sample() const noexcept { return _sample; }
 };
 
 Benchmark::~Benchmark() = default;
@@ -61,28 +63,24 @@ Benchmark::run(size_t numRuns, size_t numPositions)
     sample();
 }
 
+}
+
 int
-Benchmark::Main()
+main(int argc, char* argv[])
 {
-
-    TEST_INIT("benchmark");
-
-    if (_argc != 3) {
+    if (argc != 3) {
         std::cout << "Must specify <numRuns> and <numPositions>" << std::endl;
         return 0;
     }
 
-    size_t numRuns = strtoull(_argv[1], nullptr, 10);
-    size_t numPositions = strtoull(_argv[2], nullptr, 10);
+    size_t numRuns = strtoull(argv[1], nullptr, 10);
+    size_t numPositions = strtoull(argv[2], nullptr, 10);
 
-    run(numRuns, numPositions);
+    auto app = std::make_unique<search::fef::Benchmark>();
+    app->run(numRuns, numPositions);
+    auto sample = app->get_sample();
 
-    std::cout << "TET:  " << vespalib::count_ms(_sample) << " (ms)" << std::endl;
-    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << (vespalib::count_ns(_sample) / (numRuns * 1000000.0)) << " (ms)" << std::endl;
+    std::cout << "TET:  " << vespalib::count_ms(sample) << " (ms)" << std::endl;
+    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << (vespalib::count_ns(sample) / (numRuns * 1000000.0)) << " (ms)" << std::endl;
 
-    TEST_DONE();
 }
-
-}
-
-TEST_APPHOOK(search::fef::Benchmark);
