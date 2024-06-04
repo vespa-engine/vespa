@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_biglog_test_app
     biglogtest.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_biglog_test_app COMMAND searchlib_biglog_test_app BENCHMARK)
 vespa_add_executable(searchlib_memoryindexstress_test_app
