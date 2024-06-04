@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_properties_test_app TEST
     properties_test.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_properties_test_app COMMAND searchlib_properties_test_app)
