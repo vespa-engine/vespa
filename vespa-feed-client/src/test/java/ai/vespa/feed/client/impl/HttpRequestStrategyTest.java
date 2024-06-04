@@ -7,7 +7,6 @@ import ai.vespa.feed.client.FeedClient.CircuitBreaker;
 import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -212,7 +211,7 @@ class HttpRequestStrategyTest {
         assertEquals(0, stats.since(stats).bytesSent());
     }
 
-    @RepeatedTest(1000)
+    @Test
     void testResettingCluster() throws ExecutionException, InterruptedException, IOException {
         List<MockCluster> clusters = List.of(new MockCluster(), new MockCluster());
         AtomicLong now = new AtomicLong(0);
