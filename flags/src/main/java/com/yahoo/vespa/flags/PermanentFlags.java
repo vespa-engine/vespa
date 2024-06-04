@@ -195,12 +195,6 @@ public class PermanentFlags {
             "Takes effect on next api request"
     );
 
-    public static final UnboundBooleanFlag JVM_OMIT_STACK_TRACE_IN_FAST_THROW = defineFeatureFlag(
-            "jvm-omit-stack-trace-in-fast-throw", false,
-            "Controls JVM option OmitStackTraceInFastThrow (the default JVM option corresponds to feature flag being false )",
-            "takes effect on JVM restart",
-            CLUSTER_TYPE, INSTANCE_ID);
-
     public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
             "max-trial-tenants", -1,
             "The maximum nr. of tenants with trial plan, -1 is unlimited",
