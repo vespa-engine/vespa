@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.util.ConfigUtils;
-import com.yahoo.vespa.defaults.Defaults;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -54,7 +53,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -615,8 +613,8 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        var tmpDirBase = Paths.get(System.getProperty("java.io.tmpdir", Defaults.getDefaults().underVespaHome("tmp")));
-        var tempDir = Files.createTempDirectory(tmpDirBase, "preprocess-tempdir").toFile();
+        // Note: Needs to be a directory on same file system as appDir for move to work
+        var tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir").toFile();
 
         File servicesFile = validateServicesFile();
         IOUtils.copyDirectory(appDir, tempDir, -1,
