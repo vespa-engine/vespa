@@ -15,6 +15,7 @@
 #include <vespa/searchlib/queryeval/profiled_iterator.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <limits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
@@ -99,11 +100,11 @@ fillPartialResult(ResultProcessor::Context & context, size_t totalHits, size_t n
 
 //-----------------------------------------------------------------------------
 
-MatchThread::Context::Context(double rankDropLimit, MatchTools &tools, HitCollector &hits, uint32_t num_threads)
+MatchThread::Context::Context(std::optional<double> first_phase_rank_score_drop_limit, MatchTools &tools, HitCollector &hits, uint32_t num_threads)
     : matches(0),
       _matches_limit(tools.match_limiter().sample_hits_per_thread(num_threads)),
       _score_feature(get_score_feature(tools.rank_program())),
-      _rankDropLimit(rankDropLimit),
+      _first_phase_rank_score_drop_limit(first_phase_rank_score_drop_limit.value_or(0.0 /* ignored */)),
       _hits(hits),
       _doom(tools.getDoom()),
       dropped()
@@ -119,7 +120,7 @@ MatchThread::Context::rankHit(uint32_t docId) {
         score = -HUGE_VAL;
     }
     if (use_rank_drop_limit != RankDropLimitE::no) {
-        if (__builtin_expect(score > _rankDropLimit, true)) {
+        if (__builtin_expect(score > _first_phase_rank_score_drop_limit, true)) {
             _hits.addHit(docId, score);
         } else if (use_rank_drop_limit == RankDropLimitE::track) {
             dropped.template emplace_back(docId);
@@ -217,7 +218,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
     bool softDoomed = false;
     uint32_t docsCovered = 0;
     vespalib::duration overtime(vespalib::duration::zero());
-    Context context(matchParams.rankDropLimit, tools, hits, num_threads);
+    Context context(matchParams.first_phase_rank_score_drop_limit, tools, hits, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
          !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
@@ -270,7 +271,7 @@ template <bool do_rank, bool do_limit, bool do_share>
 void
 MatchThread::match_loop_helper_rank_limit_share(MatchTools &tools, HitCollector &hits)
 {
-    if (matchParams.has_rank_drop_limit()) {
+    if (matchParams.first_phase_rank_score_drop_limit.has_value()) {
         if (matchToolsFactory.hasOnMatchTask()) {
             match_loop_helper_rank_limit_share_drop<do_rank, do_limit, do_share, RankDropLimitE::track>(tools, hits);
         } else {

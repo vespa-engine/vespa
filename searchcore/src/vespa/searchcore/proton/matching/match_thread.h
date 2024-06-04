@@ -73,7 +73,7 @@ private:
 
     class Context {
     public:
-        Context(double rankDropLimit, MatchTools &tools, HitCollector &hits,
+        Context(std::optional<double> first_phase_rank_score_drop_limit, MatchTools &tools, HitCollector &hits,
                 uint32_t num_threads) __attribute__((noinline));
         template <RankDropLimitE use_rank_drop_limit>
         void rankHit(uint32_t docId);
@@ -86,7 +86,7 @@ private:
     private:
         uint32_t        _matches_limit;
         LazyValue       _score_feature;
-        double          _rankDropLimit;
+        double          _first_phase_rank_score_drop_limit;
         HitCollector   &_hits;
         const Doom      _doom;
     public:
