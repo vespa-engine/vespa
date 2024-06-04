@@ -30,6 +30,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <optional>
 
 using namespace search::aggregation;
 
@@ -127,7 +128,7 @@ private:
     private:
         vespalib::string               _rankProfile;
         std::shared_ptr<const RankManager::Snapshot>  _rankManagerSnapshot;
-        search::feature_t              _rank_score_drop_limit;
+        std::optional<search::feature_t> _rank_score_drop_limit;
         bool                           _hasRanking;
         bool                           _hasSummaryFeatures;
         bool                           _dumpFeatures;
@@ -157,7 +158,7 @@ private:
         RankProcessor * getRankProcessor() { return _rankProcessor.get(); }
         void setDumpFeatures(bool dumpFeatures) { _dumpFeatures = dumpFeatures; }
         bool getDumpFeatures() const { return _dumpFeatures; }
-        search::feature_t rank_score_drop_limit() const noexcept { return _rank_score_drop_limit; }
+        std::optional<search::feature_t> rank_score_drop_limit() const noexcept { return _rank_score_drop_limit; }
 
         /**
          * Setup rank processors used for ranking and dumping.

@@ -409,16 +409,18 @@ TEST(PropertiesTest, test_stuff)
             EXPECT_EQ(hitcollector::EstimateLimit::lookup(p), 50u);
         }
         { // vespa.hitcollector.rankscoredroplimit
-            EXPECT_EQ(hitcollector::RankScoreDropLimit::NAME, vespalib::string("vespa.hitcollector.rankscoredroplimit"));
-            search::feature_t got1 = hitcollector::RankScoreDropLimit::DEFAULT_VALUE;
-            EXPECT_TRUE(got1 != got1);
+            EXPECT_EQ(vespalib::string("vespa.hitcollector.rankscoredroplimit"), hitcollector::FirstPhaseRankScoreDropLimit::NAME);
             Properties p;
-            search::feature_t got2= hitcollector::RankScoreDropLimit::lookup(p);
-            EXPECT_TRUE(got2 != got2);
+            auto got2 = hitcollector::FirstPhaseRankScoreDropLimit::lookup(p);
+            EXPECT_EQ(std::optional<search::feature_t>(), got2);
+            got2 = hitcollector::FirstPhaseRankScoreDropLimit::lookup(p, std::nullopt);
+            EXPECT_EQ(std::optional<search::feature_t>(), got2);
+            got2 = hitcollector::FirstPhaseRankScoreDropLimit::lookup(p, 4.5);
+            EXPECT_EQ(std::optional<search::feature_t>(4.5), got2);
             p.add("vespa.hitcollector.rankscoredroplimit", "-123456789.12345");
-            EXPECT_EQ(hitcollector::RankScoreDropLimit::lookup(p), -123456789.12345);
+            EXPECT_EQ(std::optional<search::feature_t>(-123456789.12345), hitcollector::FirstPhaseRankScoreDropLimit::lookup(p));
             p.clear().add("vespa.hitcollector.rankscoredroplimit", "123456789.12345");
-            EXPECT_EQ(hitcollector::RankScoreDropLimit::lookup(p), 123456789.12345);
+            EXPECT_EQ(std::optional<search::feature_t>(123456789.12345), hitcollector::FirstPhaseRankScoreDropLimit::lookup(p));
         }
         { // vespa.fieldweight.
             EXPECT_EQ(FieldWeight::BASE_NAME, vespalib::string("vespa.fieldweight."));

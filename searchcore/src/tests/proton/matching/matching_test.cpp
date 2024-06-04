@@ -962,22 +962,20 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(2u, p.heapSize);
     ASSERT_EQ(4u, p.arraySize);
-    ASSERT_EQ(0.7, p.rankDropLimit);
+    ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
     ASSERT_EQ(0u, p.offset);
     ASSERT_EQ(1u, p.hits);
-    ASSERT_TRUE(p.has_rank_drop_limit());
 }
 
 TEST(MatchingTest, require_that_match_params_can_turn_off_rank_drop_limit)
 {
-    MatchParams p(10, 2, 4, -std::numeric_limits<feature_t>::quiet_NaN(), 0, 1, true, true);
+    MatchParams p(10, 2, 4, std::nullopt, 0, 1, true, true);
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(2u, p.heapSize);
     ASSERT_EQ(4u, p.arraySize);
-    ASSERT_TRUE(std::isnan(p.rankDropLimit));
+    ASSERT_FALSE(p.first_phase_rank_score_drop_limit.has_value());
     ASSERT_EQ(0u, p.offset);
     ASSERT_EQ(1u, p.hits);
-    ASSERT_FALSE(p.has_rank_drop_limit());
 }
 
 
@@ -987,7 +985,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(6u, p.heapSize);
     ASSERT_EQ(6u, p.arraySize);
-    ASSERT_EQ(0.7, p.rankDropLimit);
+    ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
     ASSERT_EQ(1u, p.offset);
     ASSERT_EQ(1u, p.hits);
 }
@@ -998,7 +996,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(6u, p.heapSize);
     ASSERT_EQ(8u, p.arraySize);
-    ASSERT_EQ(0.7, p.rankDropLimit);
+    ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
     ASSERT_EQ(4u, p.offset);
     ASSERT_EQ(4u, p.hits);
 }
@@ -1009,7 +1007,7 @@ TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs)
     ASSERT_EQ(1u, p.numDocs);
     ASSERT_EQ(1u, p.heapSize);
     ASSERT_EQ(1u, p.arraySize);
-    ASSERT_EQ(0.7, p.rankDropLimit);
+    ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
     ASSERT_EQ(1u, p.offset);
     ASSERT_EQ(0u, p.hits);
 }
@@ -1020,7 +1018,7 @@ TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs_and_hits_adju
     ASSERT_EQ(5u, p.numDocs);
     ASSERT_EQ(5u, p.heapSize);
     ASSERT_EQ(5u, p.arraySize);
-    ASSERT_EQ(0.7, p.rankDropLimit);
+    ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
     ASSERT_EQ(4u, p.offset);
     ASSERT_EQ(1u, p.hits);
 }
@@ -1031,7 +1029,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_of
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(0u, p.heapSize);
     ASSERT_EQ(0u, p.arraySize);
-    ASSERT_EQ(0.7, p.rankDropLimit);
+    ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
     ASSERT_EQ(4u, p.offset);
     ASSERT_EQ(4u, p.hits);
 }

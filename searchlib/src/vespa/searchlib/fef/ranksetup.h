@@ -9,6 +9,7 @@
 #include "rank_program.h"
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
+#include <optional>
 
 namespace search::fef {
 
@@ -59,7 +60,7 @@ private:
     double                   _degradationMaxFilterCoverage;
     double                   _degradationSamplePercentage;
     double                   _degradationPostFilterMultiplier;
-    feature_t                _rankScoreDropLimit;
+    std::optional<feature_t> _first_phase_rank_score_drop_limit;
     std::vector<vespalib::string> _match_features;
     std::vector<vespalib::string> _summaryFeatures;
     std::vector<vespalib::string> _dumpFeatures;
@@ -332,18 +333,18 @@ public:
     uint32_t getEstimateLimit() const { return _estimateLimit; }
 
     /**
-     * Sets the rank score drop limit to be used in parallel query evaluation.
+     * Sets the first phase rank score drop limit to be used in parallel query evaluation.
      *
-     * @param rankScoreDropLimit the rank score drop limit
+     * @param value the first phase rank score drop limit
      **/
-    void setRankScoreDropLimit(feature_t rankScoreDropLimit) { _rankScoreDropLimit = rankScoreDropLimit; }
+    void set_first_phase_rank_score_drop_limit(std::optional<feature_t> value) { _first_phase_rank_score_drop_limit = value; }
 
     /**
      * Returns the rank score drop limit to be used in parallel query evaluation.
      *
      * @return the rank score drop limit
      **/
-    feature_t getRankScoreDropLimit() const { return _rankScoreDropLimit; }
+    std::optional<feature_t> get_first_phase_rank_score_drop_limit() const noexcept { return _first_phase_rank_score_drop_limit; }
 
     /**
      * This method may be used to indicate that certain features

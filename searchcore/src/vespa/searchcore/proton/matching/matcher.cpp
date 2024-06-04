@@ -38,7 +38,7 @@ using search::fef::MatchData;
 using search::fef::RankSetup;
 using search::fef::indexproperties::hitcollector::HeapSize;
 using search::fef::indexproperties::hitcollector::ArraySize;
-using search::fef::indexproperties::hitcollector::RankScoreDropLimit;
+using search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
@@ -94,12 +94,12 @@ private:
 
 bool
 willNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext,
-                search::feature_t rank_score_drop_limit)
+                std::optional<search::feature_t> first_phase_rank_score_drop_limit)
 {
     return (groupingContext.needRanking() || (request.maxhits != 0))
            && (request.sortSpec.empty() ||
                (request.sortSpec.find("[rank]") != vespalib::string::npos) ||
-               !std::isnan(rank_score_drop_limit));
+               first_phase_rank_score_drop_limit.has_value());
 }
 
 SearchReply::UP
@@ -289,11 +289,11 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         const Properties & rankProperties = request.propertiesMap.rankProperties();
         uint32_t heapSize = HeapSize::lookup(rankProperties, _rankSetup->getHeapSize());
         uint32_t arraySize = ArraySize::lookup(rankProperties, _rankSetup->getArraySize());
-        search::feature_t rank_score_drop_limit = RankScoreDropLimit::lookup(rankProperties, _rankSetup->getRankScoreDropLimit());
+        auto first_phase_rank_score_drop_limit = FirstPhaseRankScoreDropLimit::lookup(rankProperties, _rankSetup->get_first_phase_rank_score_drop_limit());
 
-        MatchParams params(searchContext.getDocIdLimit(), heapSize, arraySize, rank_score_drop_limit,
+        MatchParams params(searchContext.getDocIdLimit(), heapSize, arraySize, first_phase_rank_score_drop_limit,
                            request.offset, request.maxhits, !_rankSetup->getSecondPhaseRank().empty(),
-                           willNeedRanking(request, groupingContext, rank_score_drop_limit));
+                           willNeedRanking(request, groupingContext, first_phase_rank_score_drop_limit));
 
         ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId,
                            request.sortSpec, params.offset, params.hits);

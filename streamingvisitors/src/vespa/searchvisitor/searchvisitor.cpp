@@ -684,7 +684,7 @@ SearchVisitor::RankController::processAccessedAttributes(const QueryEnvironment 
 SearchVisitor::RankController::RankController()
     : _rankProfile("default"),
       _rankManagerSnapshot(nullptr),
-      _rank_score_drop_limit(std::numeric_limits<search::feature_t>::min()),
+      _rank_score_drop_limit(),
       _hasRanking(false),
       _hasSummaryFeatures(false),
       _dumpFeatures(false),
@@ -703,9 +703,9 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
                                                    const search::IAttributeManager & attrMan,
                                                    std::vector<AttrInfo> & attributeFields)
 {
-    using RankScoreDropLimit = search::fef::indexproperties::hitcollector::RankScoreDropLimit;
+    using FirstPhaseRankScoreDropLimit = search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
     const search::fef::RankSetup & rankSetup = _rankManagerSnapshot->getRankSetup(_rankProfile);
-    _rank_score_drop_limit = RankScoreDropLimit::lookup(_queryProperties, rankSetup.getRankScoreDropLimit());
+    _rank_score_drop_limit = FirstPhaseRankScoreDropLimit::lookup(_queryProperties, rankSetup.get_first_phase_rank_score_drop_limit());
     _rankProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, _featureOverrides, &attrMan);
     _rankProcessor->initForRanking(wantedHitCount, use_sort_blob);
     // register attribute vectors needed for ranking
@@ -751,8 +751,11 @@ SearchVisitor::RankController::rankMatchedDocument(uint32_t docId)
 bool
 SearchVisitor::RankController::keepMatchedDocument()
 {
+    if (!_rank_score_drop_limit.has_value()) {
+        return true;
+    }
     // also make sure that NaN scores are added
-    return (!(_rankProcessor->getRankScore() <= _rank_score_drop_limit));
+    return (!(_rankProcessor->getRankScore() <= _rank_score_drop_limit.value()));
 }
 
 void
@@ -1139,7 +1142,7 @@ SearchVisitor::handleDocument(StorageDocument::SP documentSP)
         } else {
             _hitsRejectedCount++;
             LOG(debug, "Do not keep document with id '%s' because rank score (%f) <= rank score drop limit (%f)",
-                documentId.c_str(), rp.getRankScore(), _rankController.rank_score_drop_limit());
+                documentId.c_str(), rp.getRankScore(), _rankController.rank_score_drop_limit().value());
         }
     } else {
         LOG(debug, "Did not match document with id '%s'", document.docDoc().getId().getScheme().toString().c_str());
