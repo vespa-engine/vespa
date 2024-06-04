@@ -496,7 +496,7 @@ jobs:
           fi
 
   verify-opensource-rpm-installable:
-    image: quay.io/centos/centos:stream8
+    image: almalinux:8
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
