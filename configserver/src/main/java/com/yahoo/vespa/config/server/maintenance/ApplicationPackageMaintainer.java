@@ -3,12 +3,12 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -21,6 +21,7 @@ import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
@@ -28,6 +29,8 @@ import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
+import static com.yahoo.vespa.config.server.session.Session.Status.ACTIVATE;
+import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 
 /**
  * Verifies that all active sessions has an application package on local disk.
@@ -57,63 +60,64 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         int[] failures = new int[1];
 
         List<Runnable> futureDownloads = new ArrayList<>();
-        for (TenantName tenantName : applicationRepository.tenantRepository().getAllTenantNames()) {
-            for (Session session : applicationRepository.tenantRepository().getTenant(tenantName).getSessionRepository().getRemoteSessions()) {
-                if (shuttingDown())
-                    break;
+        for (Session session : preparedAndActivatedSessions()) {
+            if (shuttingDown())
+                return asSuccessFactorDeviation(attempts, failures[0]);
 
-                switch (session.getStatus()) {
-                    case PREPARE, ACTIVATE:
-                        break;
-                    default:
-                        continue;
+            ApplicationId applicationId = session.getOptionalApplicationId().orElse(null);
+            if (applicationId == null) // dry-run sessions have no application id
+                continue;
+
+            Optional<FileReference> appFileReference = session.getApplicationPackageReference();
+            if (appFileReference.isPresent()) {
+                long sessionId = session.getSessionId();
+                FileReference fileReference = appFileReference.get();
+
+                attempts++;
+                if (! fileReferenceExistsOnDisk(downloadDirectory, fileReference)) {
+                    Future<Optional<File>> futureDownload = startDownload(fileReference, sessionId, applicationId);
+                    futureDownloads.add(() -> {
+                        try {
+                            if (futureDownload.get().isPresent()) {
+                                createLocalSessionIfMissing(applicationId, sessionId);
+                                return;
+                            }
+                        }
+                        catch (Exception e) {
+                            log.warning("Exception when downloading application package (" + fileReference + ")" +
+                                                " for " + applicationId + " (session " + sessionId + "): " + e.getMessage());
+                        }
+                        failures[0]++;
+                        log.info("Downloading application package (" + fileReference + ")" +
+                                         " for " + applicationId + " (session " + sessionId + ") unsuccessful. " +
+                                         "Can be ignored unless it happens many times over a long period of time, retries is expected");
+                    });
                 }
-
-                ApplicationId applicationId = session.getOptionalApplicationId().orElse(null);
-                if (applicationId == null) // dry-run sessions have no application id
-                    continue;
-                
-                log.finest(() -> "Verifying application package for " + applicationId);
-
-                Optional<FileReference> appFileReference = session.getApplicationPackageReference();
-                if (appFileReference.isPresent()) {
-                    long sessionId = session.getSessionId();
-                    attempts++;
-                    if (!fileReferenceExistsOnDisk(downloadDirectory, appFileReference.get())) {
-                        log.fine(() -> "Downloading application package with file reference " + appFileReference +
-                                       " for " + applicationId + " (session " + sessionId + ")");
-
-                        FileReferenceDownload download = new FileReferenceDownload(appFileReference.get(),
-                                                                                   this.getClass().getSimpleName(),
-                                                                                   false);
-                        Future<Optional<File>> futureDownload = fileDownloader.getFutureFileOrTimeout(download);
-                        futureDownloads.add(() -> {
-                            try {
-                                if (futureDownload.get().isPresent()) {
-                                    createLocalSessionIfMissing(applicationId, sessionId);
-                                    return;
-                                }
-                            }
-                            catch (Exception e) {
-                                log.warning("Exception when downloading application package (" + appFileReference + ")" +
-                                                 " for " + applicationId + " (session " + sessionId + "): " + e.getMessage());
-                            }
-                            failures[0]++;
-                            log.info("Downloading application package (" + appFileReference + ")" +
-                                     " for " + applicationId + " (session " + sessionId + ") unsuccessful. " +
-                                     "Can be ignored unless it happens many times over a long period of time, retries is expected");
-                        });
-                    }
-                    else {
-                        createLocalSessionIfMissing(applicationId, sessionId);
-                    }
+                else {
+                    createLocalSessionIfMissing(applicationId, sessionId);
                 }
             }
         }
-
         futureDownloads.forEach(Runnable::run);
-
         return asSuccessFactorDeviation(attempts, failures[0]);
+    }
+
+    private Future<Optional<File>> startDownload(FileReference fileReference, long sessionId, ApplicationId applicationId) {
+        log.fine(() -> "Downloading application package with file reference " + fileReference +
+                " for " + applicationId + " (session " + sessionId + ")");
+        return fileDownloader.getFutureFileOrTimeout(new FileReferenceDownload(fileReference,
+                                                                               this.getClass().getSimpleName(),
+                                                                               false));
+    }
+
+    private Collection<RemoteSession> preparedAndActivatedSessions() {
+        var tenantRepository = applicationRepository.tenantRepository();
+        return tenantRepository.getAllTenantNames().stream()
+                .map(tenantRepository::getTenant)
+                .map(t -> t.getSessionRepository().getRemoteSessions())
+                .flatMap(Collection::stream)
+                .filter(s -> s.getStatus() == PREPARE || s.getStatus() == ACTIVATE)
+                .toList();
     }
 
     private static FileDownloader createFileDownloader(ApplicationRepository applicationRepository,
