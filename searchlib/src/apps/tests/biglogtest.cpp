@@ -36,7 +36,7 @@ protected:
 
 public:
     BigLogTest();
-    ~BigLogTest();
+    ~BigLogTest() override;
     static void SetUpTestSuite();
     static void TearDownTestSuite();
 };
