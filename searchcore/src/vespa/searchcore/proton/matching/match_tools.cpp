@@ -206,6 +206,9 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.extractLocations(_queryEnv.locations());
         trace.addEvent(5, "Build query execution plan");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
+        if (trace.getLevel() >= 6) { // will dump blueprint later
+            _query.enumerate_blueprint_nodes();
+        }
         trace.addEvent(5, "Optimize query execution plan");
         bool sort_by_cost = SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));

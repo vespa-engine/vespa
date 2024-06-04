@@ -198,6 +198,12 @@ Query::reserveHandles(const IRequestContext & requestContext, ISearchContext &co
 }
 
 void
+Query::enumerate_blueprint_nodes() noexcept
+{
+    _blueprint->enumerate(1);
+}
+
+void
 Query::optimize(InFlow in_flow, bool sort_by_cost)
 {
     _in_flow = in_flow;

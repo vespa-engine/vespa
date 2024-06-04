@@ -648,6 +648,7 @@ getExpectedBlueprint()
            "    strict_cost: 0\n"
            "    sourceId: 4294967295\n"
            "    docid_limit: 0\n"
+           "    id: 0\n"
            "    strict: false\n"
            "    children: std::vector {\n"
            "        [0]: (anonymous namespace)::MyTerm {\n"
@@ -671,6 +672,7 @@ getExpectedBlueprint()
            "            strict_cost: 0\n"
            "            sourceId: 4294967295\n"
            "            docid_limit: 0\n"
+           "            id: 0\n"
            "            strict: false\n"
            "        }\n"
            "    }\n"
@@ -704,6 +706,7 @@ getExpectedSlimeBlueprint() {
            "    strict_cost: 0.0,"
            "    sourceId: 4294967295,"
            "    docid_limit: 0,"
+           "    id: 0,"
            "    strict: false,"
            "    children: {"
            "        '[type]': 'std::vector',"
@@ -732,6 +735,7 @@ getExpectedSlimeBlueprint() {
            "            strict_cost: 0.0,"
            "            sourceId: 4294967295,"
            "            docid_limit: 0,"
+           "            id: 0,"
            "            strict: false"
            "        }"
            "    }"
@@ -840,6 +844,30 @@ TEST("self strict resolving during sort") {
         leaf->sort(0.20);
         EXPECT_EQUAL(leaf->strict(), false);
     }
+}
+
+void check_ids(Blueprint &bp, const std::vector<uint32_t> &expect) {
+    std::vector<uint32_t> actual;
+    bp.each_node_post_order([&](auto &node){ actual.push_back(node.id()); });
+    ASSERT_EQUAL(actual.size(), expect.size());
+    for (size_t i = 0; i < actual.size(); ++i) {
+        EXPECT_EQUAL(actual[i], expect[i]);
+    }
+}
+
+TEST("blueprint node enumeration") {
+    auto a = std::make_unique<AndBlueprint>();
+    a->addChild(std::make_unique<MyLeaf>());
+    a->addChild(std::make_unique<MyLeaf>());
+    auto b = std::make_unique<AndBlueprint>();
+    b->addChild(std::make_unique<MyLeaf>());
+    b->addChild(std::make_unique<MyLeaf>());
+    auto root = std::make_unique<OrBlueprint>();
+    root->addChild(std::move(a));
+    root->addChild(std::move(b));
+    TEST_DO(check_ids(*root, {0,0,0,0,0,0,0}));
+    root->enumerate(1);
+    TEST_DO(check_ids(*root, {3,4,2,6,7,5,1}));
 }
 
 TEST_MAIN() {
