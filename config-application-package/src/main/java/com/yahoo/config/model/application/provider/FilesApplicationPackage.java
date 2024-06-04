@@ -614,7 +614,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         // Note: Needs to be a directory on same file system as appDir for move to work
-        var tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir").toFile();
+        var tempDir = Files.createTempDirectory(appDir.toPath(), "preprocess-tempdir").toFile();
 
         File servicesFile = validateServicesFile();
         IOUtils.copyDirectory(appDir, tempDir, -1,
