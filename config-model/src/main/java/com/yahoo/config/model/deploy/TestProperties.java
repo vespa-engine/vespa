@@ -84,6 +84,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int persistenceThreadMaxFeedOpBatchSize = 1;
     private boolean logserverOtelCol = false;
     private boolean symmetricPutAndActivateReplicaSelection = false;
+    private boolean enforceStrictlyIncreasingClusterStateVersions = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -142,6 +143,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int persistenceThreadMaxFeedOpBatchSize() { return persistenceThreadMaxFeedOpBatchSize; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
+    @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -379,6 +381,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setSymmetricPutAndActivateReplicaSelection(boolean symmetricReplicaSelection) {
         this.symmetricPutAndActivateReplicaSelection = symmetricReplicaSelection;
+        return this;
+    }
+
+    public TestProperties setEnforceStrictlyIncreasingClusterStateVersions(boolean enforce) {
+        this.enforceStrictlyIncreasingClusterStateVersions = enforce;
         return this;
     }
 

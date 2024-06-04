@@ -213,6 +213,7 @@ public class ModelContextImpl implements ModelContext {
         private final SharedHosts sharedHosts;
         private final Architecture adminClusterArchitecture;
         private final boolean symmetricPutAndActivateReplicaSelection;
+        private final boolean enforceStrictlyIncreasingClusterStateVersions;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -259,6 +260,7 @@ public class ModelContextImpl implements ModelContext {
             this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with( appId).with(version).value();
             this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
+            this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -311,6 +313,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
+        @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
     }
 
     public static class Properties implements ModelContext.Properties {

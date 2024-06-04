@@ -1329,7 +1329,8 @@
       "public boolean logserverOtelCol()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
-      "public boolean symmetricPutAndActivateReplicaSelection()"
+      "public boolean symmetricPutAndActivateReplicaSelection()",
+      "public boolean enforceStrictlyIncreasingClusterStateVersions()"
     ],
     "fields" : [ ]
   },
