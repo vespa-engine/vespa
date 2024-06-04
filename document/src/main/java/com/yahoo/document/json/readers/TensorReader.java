@@ -199,7 +199,7 @@ public class TensorReader {
             readTensorCells(buffer, builder);
         else if ( ! hasMapped)
             readTensorValues(buffer, builder);
-        else if (hasMapped && hasIndexed)
+        else if (hasIndexed)
             readTensorBlocks(buffer, builder);
         else
             readTensorCells(buffer, builder);
