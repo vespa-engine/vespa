@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -384,15 +385,16 @@ class HttpRequestStrategy implements RequestStrategy {
         }
 
         private void sync() throws InterruptedException {
+            Future<?> sync;
             synchronized (monitor) {
-                if ( ! executor.isShutdown()) {
-                    try {
-                        executor.submit(() -> { }).get();
-                    }
-                    catch (ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+                if (executor.isShutdown()) return;
+                sync = executor.submit(() -> { });
+            }
+            try {
+                sync.get();
+            }
+            catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
         }
 
