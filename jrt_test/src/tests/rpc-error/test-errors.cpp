@@ -23,12 +23,6 @@ public:
 
     static void SetUpTestSuite();
     static void TearDownTestSuite();
-
-    void testNoError();
-    void testNoSuchMethod();
-    void testWrongParameters();
-    void testWrongReturnValues();
-    void testMethodFailed();
 };
 
 std::unique_ptr<fnet::frt::StandaloneFRT> TestErrors::server;
@@ -58,7 +52,7 @@ TEST_F(TestErrors, no_error)
     req1->GetParams()->AddInt32(42);
     req1->GetParams()->AddInt32(0);
     req1->GetParams()->AddInt8(0);
-    target->InvokeSync(&*req1, 60.0);
+    target->InvokeSync(req1.get(), 60.0);
     EXPECT_TRUE(!req1->IsError());
     ASSERT_EQ(1, req1->GetReturn()->GetNumValues());
     ASSERT_EQ(42, req1->GetReturn()->GetValue(0)._intval32);
@@ -69,7 +63,7 @@ TEST_F(TestErrors, no_such_method)
 {
     auto req1 = alloc_rpc_request();
     req1->SetMethodName("bogus");
-    target->InvokeSync(&*req1, 60.0);
+    target->InvokeSync(req1.get(), 60.0);
     EXPECT_TRUE(req1->IsError());
     EXPECT_TRUE(0 == req1->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_NO_SUCH_METHOD == req1->GetErrorCode());
@@ -83,7 +77,7 @@ TEST_F(TestErrors, wrong_parameters)
     req1->GetParams()->AddInt32(42);
     req1->GetParams()->AddInt32(0);
     req1->GetParams()->AddInt32(0);
-    target->InvokeSync(&*req1, 60.0);
+    target->InvokeSync(req1.get(), 60.0);
     EXPECT_TRUE(req1->IsError());
     EXPECT_EQ(0, req1->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_PARAMS == req1->GetErrorCode());
@@ -93,7 +87,7 @@ TEST_F(TestErrors, wrong_parameters)
     req2->SetMethodName("test");
     req2->GetParams()->AddInt32(42);
     req2->GetParams()->AddInt32(0);
-    target->InvokeSync(&*req2, 60.0);
+    target->InvokeSync(req2.get(), 60.0);
     EXPECT_TRUE(req2->IsError());
     EXPECT_EQ(0, req2->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_PARAMS == req2->GetErrorCode());
@@ -105,7 +99,7 @@ TEST_F(TestErrors, wrong_parameters)
     req3->GetParams()->AddInt32(0);
     req3->GetParams()->AddInt8(0);
     req3->GetParams()->AddInt8(0);
-    target->InvokeSync(&*req3, 60.0);
+    target->InvokeSync(req3.get(), 60.0);
     EXPECT_TRUE(req3->IsError());
     EXPECT_EQ(0, req3->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_PARAMS == req3->GetErrorCode());
@@ -119,7 +113,7 @@ TEST_F(TestErrors, wrong_return_values)
     req1->GetParams()->AddInt32(42);
     req1->GetParams()->AddInt32(0);
     req1->GetParams()->AddInt8(1);
-    target->InvokeSync(&*req1, 60.0);
+    target->InvokeSync(req1.get(), 60.0);
     EXPECT_TRUE(req1->IsError());
     EXPECT_EQ(0, req1->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_RETURN == req1->GetErrorCode());
@@ -133,7 +127,7 @@ TEST_F(TestErrors, method_failed)
     req1->GetParams()->AddInt32(42);
     req1->GetParams()->AddInt32(75000);
     req1->GetParams()->AddInt8(0);
-    target->InvokeSync(&*req1, 60.0);
+    target->InvokeSync(req1.get(), 60.0);
     EXPECT_TRUE(req1->IsError());
     EXPECT_EQ(0, req1->GetReturn()->GetNumValues());
     EXPECT_EQ(75000, req1->GetErrorCode());
@@ -143,7 +137,7 @@ TEST_F(TestErrors, method_failed)
     req2->GetParams()->AddInt32(42);
     req2->GetParams()->AddInt32(75000);
     req2->GetParams()->AddInt8(1);
-    target->InvokeSync(&*req2, 60.0);
+    target->InvokeSync(req2.get(), 60.0);
     EXPECT_TRUE(req2->IsError());
     EXPECT_EQ(0, req2->GetReturn()->GetNumValues());
     EXPECT_EQ(75000, req2->GetErrorCode());
