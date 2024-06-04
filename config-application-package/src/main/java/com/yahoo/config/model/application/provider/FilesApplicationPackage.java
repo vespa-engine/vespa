@@ -616,8 +616,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         // Note: temp dir needs to be a directory on same file system as appDir for 'move' to work,
         // so use parent dir. Standalone container does not have a writable parent dir and may have
         // restricted permissions to write, need to copy directly to preprocessedDir in that case
-        var tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
-        if (Files.isWritable(tempDir)){
+        java.nio.file.Path parentPath = appDir.getParentFile().toPath();
+        if (Files.isWritable(parentPath)) {
+            var tempDir = Files.createTempDirectory(parentPath, "preprocess-tempdir");
             preprocess(appDir, tempDir.toFile(), zone);
             IOUtils.recursiveDeleteDir(preprocessedDir);
             // Move to make sure we do this atomically, important to avoid writing only partial content e.g. when shutting down
