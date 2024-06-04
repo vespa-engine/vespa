@@ -293,7 +293,11 @@ public class ConfigSubscriber implements AutoCloseable {
 
             if (applyOnRestartOnly && ! isInitializing) { // disable any reconfig until restart
                 synchronized (monitor) {
-                    applyOnRestart = applyOnRestartOnly;
+                    if ( ! applyOnRestart) {
+                        log.log(Level.INFO, "Config generation " + generation + " requires restart; " +
+                                            "further config changes will not take effect until restart");
+                        applyOnRestart = true;
+                    }
                 }
             }
 
