@@ -127,7 +127,8 @@ public class AllocatableResources {
     }
 
     public boolean preferableTo(AllocatableResources other, ClusterModel model) {
-        if (other.fulfilment() < 1 || this.fulfilment() < 1) // always fulfil as much as possible
+        // always fulfil as much as possible unless fulfilment is considered to be equal
+        if (!equal(this.fulfilment(), other.fulfilment()) && (other.fulfilment() < 1 || this.fulfilment() < 1))
             return this.fulfilment() > other.fulfilment();
 
         return this.cost() * toHours(model.allocationDuration()) + this.costChangingFrom(model)
