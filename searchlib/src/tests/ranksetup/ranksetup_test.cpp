@@ -548,6 +548,7 @@ TEST_F(RankSetupTest, rank_setup)
     env.getProperties().add(hitcollector::EstimatePoint::NAME, "70");
     env.getProperties().add(hitcollector::EstimateLimit::NAME, "80");
     env.getProperties().add(hitcollector::FirstPhaseRankScoreDropLimit::NAME, "90.5");
+    env.getProperties().add(hitcollector::SecondPhaseRankScoreDropLimit::NAME, "91.5");
     env.getProperties().add(mutate::on_match::Attribute::NAME, "a");
     env.getProperties().add(mutate::on_match::Operation::NAME, "+=3");
     env.getProperties().add(mutate::on_first_phase::Attribute::NAME, "b");
@@ -589,7 +590,8 @@ TEST_F(RankSetupTest, rank_setup)
     EXPECT_EQ(rs.getArraySize(), 60u);
     EXPECT_EQ(rs.getEstimatePoint(), 70u);
     EXPECT_EQ(rs.getEstimateLimit(), 80u);
-    EXPECT_EQ(rs.get_first_phase_rank_score_drop_limit().value(), 90.5);
+    EXPECT_EQ(std::optional<feature_t>(90.5), rs.get_first_phase_rank_score_drop_limit());
+    EXPECT_EQ(std::optional<feature_t>(91.5), rs.get_second_phase_rank_score_drop_limit());
     EXPECT_EQ(rs.getMutateOnMatch()._attribute, "a");
     EXPECT_EQ(rs.getMutateOnMatch()._operation, "+=3");
     EXPECT_EQ(rs.getMutateOnFirstPhase()._attribute, "b");

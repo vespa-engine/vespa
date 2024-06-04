@@ -61,6 +61,7 @@ private:
     double                   _degradationSamplePercentage;
     double                   _degradationPostFilterMultiplier;
     std::optional<feature_t> _first_phase_rank_score_drop_limit;
+    std::optional<feature_t> _second_phase_rank_score_drop_limit;
     std::vector<vespalib::string> _match_features;
     std::vector<vespalib::string> _summaryFeatures;
     std::vector<vespalib::string> _dumpFeatures;
@@ -345,6 +346,10 @@ public:
      * @return the rank score drop limit
      **/
     std::optional<feature_t> get_first_phase_rank_score_drop_limit() const noexcept { return _first_phase_rank_score_drop_limit; }
+
+    void set_second_phase_rank_score_drop_limit(std::optional<feature_t> value) { _second_phase_rank_score_drop_limit = value; }
+
+    std::optional<feature_t> get_second_phase_rank_score_drop_limit() const noexcept { return _second_phase_rank_score_drop_limit; }
 
     /**
      * This method may be used to indicate that certain features
