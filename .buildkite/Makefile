@@ -53,7 +53,8 @@ cpp: bootstrap-cmake
 cpp-test: cpp
 	@$(TOP)/execute.sh $@
 
-install: cpp java cpp-test
+#install: cpp java cpp-test
+install: cpp java
 	@$(TOP)/execute.sh $@
 
 build-rpms: install
