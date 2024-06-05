@@ -117,6 +117,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                 }
                 addNonNullValue(builder, accessLogEntry.getHitCounts(), RequestLogEntry.Builder::hitCounts);
                 addNonNullValue(builder, accessLogEntry.getTrace(), RequestLogEntry.Builder::traceNode);
+                accessLogEntry.getContent().ifPresent(builder::content);
             }
             http2StreamId(request).ifPresent(streamId -> builder.addExtraAttribute("http2-stream-id", Integer.toString(streamId)));
 

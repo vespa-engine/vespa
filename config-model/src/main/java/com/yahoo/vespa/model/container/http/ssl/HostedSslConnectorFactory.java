@@ -28,6 +28,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final List<String> remoteAddressHeaders;
     private final List<String> remotePortHeaders;
     private final Set<String> knownServerNames;
+    private final Set<String> requestPrefixForLoggingContent;
 
     public static Builder builder(String name, int listenPort) { return new Builder(name, listenPort); }
 
@@ -40,6 +41,12 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
         this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
         this.knownServerNames = Collections.unmodifiableSet(new TreeSet<>(builder.knownServerNames));
+        builder.requestPrefixForLoggingContent.forEach(prefix -> {
+            var regex = "^.*:[0|1](\\.\\d+)?$";
+            if (!prefix.matches(regex))
+                throw new IllegalArgumentException("Invalid prefix '%s, must match regex '%s'".formatted(prefix, regex));
+        });
+        this.requestPrefixForLoggingContent = Collections.unmodifiableSet(new TreeSet<>(builder.requestPrefixForLoggingContent));
     }
 
     private static SslProvider createSslProvider(Builder builder) {
@@ -73,7 +80,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0)
                 .accessLog(new ConnectorConfig.AccessLog.Builder()
                                   .remoteAddressHeaders(remoteAddressHeaders)
-                                  .remotePortHeaders(remotePortHeaders))
+                                  .remotePortHeaders(remotePortHeaders)
+                                  .contentPathPrefixes(requestPrefixForLoggingContent))
                 .serverName.known(knownServerNames);
 
     }
@@ -93,6 +101,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         String tlsCaCertificatesPath;
         boolean tokenEndpoint;
         Set<String> knownServerNames = Set.of();
+        Set<String> requestPrefixForLoggingContent = Set.of();
 
         private Builder(String name, int port) { this.name = name; this.port = port; }
         public Builder clientAuth(SslClientAuth auth) { clientAuth = auth; return this; }
@@ -106,6 +115,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         public Builder remoteAddressHeader(String header) { this.remoteAddressHeaders.add(header); return this; }
         public Builder remotePortHeader(String header) { this.remotePortHeaders.add(header); return this; }
         public Builder knownServerNames(Set<String> knownServerNames) { this.knownServerNames = Set.copyOf(knownServerNames); return this; }
+        public Builder requestPrefixForLoggingContent(Collection<String> v) { this.requestPrefixForLoggingContent = Set.copyOf(v); return this; }
         public HostedSslConnectorFactory build() { return new HostedSslConnectorFactory(this); }
     }
 }

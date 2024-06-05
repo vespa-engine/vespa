@@ -1,15 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
-import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.json.Jackson;
 import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -100,6 +101,15 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
                     timestamp = time;
                 }
                 trace.accept(new TraceRenderer(generator, timestamp));
+            }
+
+            var content = entry.content().orElse(null);
+            if (content != null) {
+                generator.writeObjectFieldStart("content");
+                generator.writeStringField("type", content.type());
+                generator.writeNumberField("length", content.length());
+                generator.writeStringField("body", Base64.getEncoder().encodeToString(content.body()));
+                generator.writeEndObject();
             }
 
             // Only add search sub block of this is a search request

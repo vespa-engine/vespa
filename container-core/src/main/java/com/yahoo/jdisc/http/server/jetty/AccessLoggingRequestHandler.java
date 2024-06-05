@@ -1,18 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
+import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 
 /**
  * A wrapper RequestHandler that enables access logging. By wrapping the request handler, we are able to wrap the
@@ -23,6 +39,7 @@ import java.util.Optional;
  * Does not otherwise interfere with the request processing of the delegate request handler.
  *
  * @author bakksjo
+ * @author bjorncs
  */
 public class AccessLoggingRequestHandler extends AbstractRequestHandler implements DelegatedRequestHandler {
     public static final String CONTEXT_KEY_ACCESS_LOG_ENTRY
@@ -38,27 +55,94 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
                 (AccessLogEntry) requestContextMap.get(CONTEXT_KEY_ACCESS_LOG_ENTRY));
     }
 
-    private final RequestHandler delegate;
+    private final org.eclipse.jetty.server.Request jettyRequest;
+    private final RequestHandler delegateRequestHandler;
     private final AccessLogEntry accessLogEntry;
+    private final List<String> pathPrefixes;
+    private final List<Double> samplingRate;
+    private final Random rng = new Random();
 
     public AccessLoggingRequestHandler(
-            final RequestHandler delegateRequestHandler,
-            final AccessLogEntry accessLogEntry) {
-        this.delegate = delegateRequestHandler;
+            org.eclipse.jetty.server.Request jettyRequest,
+            RequestHandler delegateRequestHandler,
+            AccessLogEntry accessLogEntry) {
+        this.jettyRequest = jettyRequest;
+        this.delegateRequestHandler = delegateRequestHandler;
         this.accessLogEntry = accessLogEntry;
+        var contentPathPrefixes = getConnector(jettyRequest).connectorConfig().accessLog().contentPathPrefixes();
+        this.pathPrefixes = contentPathPrefixes.stream()
+                .map(s -> {
+                    var separatorIndex = s.lastIndexOf(':');
+                    return s.substring(0, separatorIndex == -1 ? s.length() : separatorIndex);
+                })
+                .toList();
+        this.samplingRate = contentPathPrefixes.stream()
+                .map(s -> {
+                    return Double.parseDouble(s.substring(s.lastIndexOf(':') + 1));
+                })
+                .toList();
     }
 
     @Override
     public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-        Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         final HttpRequest httpRequest = (HttpRequest) request;
         httpRequest.context().put(CONTEXT_KEY_ACCESS_LOG_ENTRY, accessLogEntry);
-        return delegate.handleRequest(request, handler);
+        var methodsWithEntity = List.of(HttpRequest.Method.POST, HttpRequest.Method.PUT, HttpRequest.Method.PATCH);
+        var originalContentChannel = delegateRequestHandler.handleRequest(request, handler);
+        var uriPath = request.getUri().getPath();
+        if (methodsWithEntity.contains(httpRequest.getMethod())) {
+            for (int i = 0; i < pathPrefixes.size(); i++) {
+                if (uriPath.startsWith(pathPrefixes.get(i))) {
+                    if (samplingRate.get(i) > rng.nextDouble()) {
+                        return new ContentLoggingContentChannel(originalContentChannel);
+                    }
+                }
+            }
+        }
+        return originalContentChannel;
     }
-
 
     @Override
     public RequestHandler getDelegate() {
-        return delegate;
+        return delegateRequestHandler;
+    }
+
+    private class ContentLoggingContentChannel implements ContentChannel {
+        private static final int CONTENT_LOGGING_MAX_SIZE = 16 * 1024 * 1024;
+
+        final AtomicLong length = new AtomicLong();
+        final ByteArrayOutputStream accumulatedRequestContent;
+        final ContentChannel originalContentChannel;
+
+        public ContentLoggingContentChannel(ContentChannel originalContentChannel) {
+            this.originalContentChannel = originalContentChannel;
+            var contentLength = jettyRequest.getContentLength();
+            this.accumulatedRequestContent = new ByteArrayOutputStream(contentLength == -1 ? 128 : contentLength);
+        }
+
+        @Override
+        public void write(ByteBuffer buf, CompletionHandler handler) {
+            length.addAndGet(buf.remaining());
+            var bytesToLog = Math.min(buf.remaining(), CONTENT_LOGGING_MAX_SIZE - accumulatedRequestContent.size());
+            if (bytesToLog > 0) accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), bytesToLog);
+            if (originalContentChannel != null) originalContentChannel.write(buf, handler);
+        }
+
+        @Override
+        public void close(CompletionHandler handler) {
+            var bytes = accumulatedRequestContent.toByteArray();
+            accessLogEntry.setContent(new AccessLogEntry.Content(
+                    Objects.requireNonNullElse(jettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE), ""),
+                    length.get(),
+                    bytes));
+            accumulatedRequestContent.reset();
+            length.set(0);
+            if (originalContentChannel != null) originalContentChannel.close(handler);
+        }
+
+        @Override
+        public void onError(Throwable error) {
+            if (originalContentChannel != null) originalContentChannel.onError(error);
+        }
     }
 }

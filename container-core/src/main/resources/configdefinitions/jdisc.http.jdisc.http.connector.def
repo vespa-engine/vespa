@@ -154,3 +154,6 @@ accessLog.remoteAddressHeaders[]      string
 
 # HTTP request headers that contain remote port
 accessLog.remotePortHeaders[]         string
+
+# Path prefixes for which content should be logged
+accessLog.contentPathPrefixes[]  string

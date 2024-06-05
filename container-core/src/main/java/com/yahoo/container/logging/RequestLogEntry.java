@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.container.logging.AccessLogEntry.Content;
 import com.yahoo.yolean.trace.TraceNode;
 
 import java.security.Principal;
@@ -50,6 +51,7 @@ public class RequestLogEntry {
     private final Principal sslPrincipal;
     private final HitCounts hitCounts;
     private final TraceNode traceNode;
+    private final Content content;
     private final SortedMap<String, Collection<String>> extraAttributes;
 
     private RequestLogEntry(Builder builder) {
@@ -76,6 +78,7 @@ public class RequestLogEntry {
         this.sslPrincipal = builder.sslPrincipal;
         this.hitCounts = builder.hitCounts;
         this.traceNode = builder.traceNode;
+        this.content = builder.content;
         this.extraAttributes = copyExtraAttributes(builder.extraAttributes);
     }
 
@@ -102,6 +105,7 @@ public class RequestLogEntry {
     public Optional<Principal> sslPrincipal() { return Optional.ofNullable(sslPrincipal); }
     public Optional<HitCounts> hitCounts() { return Optional.ofNullable(hitCounts); }
     public Optional<TraceNode> traceNode() { return Optional.ofNullable(traceNode); }
+    public Optional<Content> content() { return Optional.ofNullable(content); }
     public SortedSet<String> extraAttributeKeys() { return Collections.unmodifiableSortedSet((SortedSet<String>)extraAttributes.keySet()); }
     public Collection<String> extraAttributeValues(String key) { return Collections.unmodifiableCollection(extraAttributes.get(key)); }
 
@@ -145,6 +149,7 @@ public class RequestLogEntry {
         private Principal userPrincipal;
         private HitCounts hitCounts;
         private TraceNode traceNode;
+        private Content content;
         private Principal sslPrincipal;
         private final Map<String, Collection<String>> extraAttributes = new HashMap<>();
 
@@ -171,6 +176,7 @@ public class RequestLogEntry {
         public Builder sslPrincipal(Principal sslPrincipal) { this.sslPrincipal = requireNonNull(sslPrincipal); return this; }
         public Builder hitCounts(HitCounts hitCounts) { this.hitCounts = requireNonNull(hitCounts); return this; }
         public Builder traceNode(TraceNode traceNode) { this.traceNode = requireNonNull(traceNode); return this; }
+        public Builder content(Content content) { this.content = requireNonNull(content); return this; }
         public Builder addExtraAttribute(String key, String value) {
             this.extraAttributes.computeIfAbsent(requireNonNull(key), __ -> new ArrayList<>()).add(requireNonNull(value));
             return this;

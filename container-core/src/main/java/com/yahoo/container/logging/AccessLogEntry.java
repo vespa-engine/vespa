@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -31,11 +32,23 @@ import static java.util.stream.Collectors.toMap;
  */
 public class AccessLogEntry {
 
+    public record Content(String type, long length, byte[] body) {}
+
     private final Object monitor = new Object();
 
     private HitCounts hitCounts;
     private TraceNode traceNode;
     private ListMap<String,String> keyValues=null;
+    private Content content;
+
+    public void setContent(Content entity) {
+        synchronized (monitor) {
+            requireNull(this.content);
+            this.content = entity;
+        }
+    }
+
+    public Optional<Content> getContent() { synchronized (monitor) { return Optional.ofNullable(content); } }
 
     public void setHitCounts(final HitCounts hitCounts) {
         synchronized (monitor) {
