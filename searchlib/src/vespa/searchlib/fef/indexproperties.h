@@ -574,6 +574,18 @@ namespace hitcollector {
         static std::optional<feature_t> lookup(const Properties &props, std::optional<feature_t> default_value);
     };
 
+    /**
+     * Property for the second phase rank score drop limit used in
+     * parallel query evaluation.  Drop a hit if the score (reranked or
+     * rescored) <= drop limit.
+     **/
+    struct SecondPhaseRankScoreDropLimit {
+        static const vespalib::string NAME;
+        static const std::optional<feature_t> DEFAULT_VALUE;
+        static std::optional<feature_t> lookup(const Properties &props);
+        static std::optional<feature_t> lookup(const Properties &props, std::optional<double> default_value);
+    };
+
 } // namespace hitcollector
 
 /**

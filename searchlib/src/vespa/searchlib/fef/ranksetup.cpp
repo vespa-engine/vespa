@@ -51,6 +51,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _degradationSamplePercentage(0.2),
       _degradationPostFilterMultiplier(1.0),
       _first_phase_rank_score_drop_limit(),
+      _second_phase_rank_score_drop_limit(),
       _match_features(),
       _summaryFeatures(),
       _dumpFeatures(),
@@ -121,6 +122,7 @@ RankSetup::configure()
     setEstimatePoint(hitcollector::EstimatePoint::lookup(_indexEnv.getProperties()));
     setEstimateLimit(hitcollector::EstimateLimit::lookup(_indexEnv.getProperties()));
     set_first_phase_rank_score_drop_limit(hitcollector::FirstPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
+    set_second_phase_rank_score_drop_limit(hitcollector::SecondPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
     setSoftTimeoutEnabled(softtimeout::Enabled::lookup(_indexEnv.getProperties()));
     setSoftTimeoutTailCost(softtimeout::TailCost::lookup(_indexEnv.getProperties()));
     set_global_filter_lower_limit(matching::GlobalFilterLowerLimit::lookup(_indexEnv.getProperties()));
