@@ -32,7 +32,7 @@ public class ClusterModel {
     static final double idealQueryCpuLoad = 0.75;
     static final double idealWriteCpuLoad = 0.95;
 
-    static final double idealContainerMemoryLoad = 0.8;
+    static final double idealContainerMemoryLoad = 0.9;
     static final double idealContentMemoryLoad = 0.65;
 
     static final double idealContainerDiskLoad = 0.95;
