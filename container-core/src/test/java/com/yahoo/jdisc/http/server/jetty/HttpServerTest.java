@@ -745,10 +745,10 @@ public class HttpServerTest {
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().accessLog(
                         new ConnectorConfig.AccessLog.Builder()
-                                .contentPathPrefixes("/status:1")
-                                .contentPathPrefixes("/state/v1:0.001")),
+                                .contentPathPrefixes("/search:1:1k")
+                                .contentPathPrefixes("/document/v1:0.001:1M")),
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
-        driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
+        driver.client().newPost("/search/").setContent("abcdef").execute().expectStatusCode(is(OK));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
         assertEquals(200, entry.statusCode().getAsInt());
         assertEquals(6, entry.requestSize().getAsLong());

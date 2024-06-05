@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.utils.BytesQuantity;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -60,6 +61,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
     private final AccessLogEntry accessLogEntry;
     private final List<String> pathPrefixes;
     private final List<Double> samplingRate;
+    private final List<Long> maxSize;
     private final Random rng = new Random();
 
     public AccessLoggingRequestHandler(
@@ -71,15 +73,13 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         this.accessLogEntry = accessLogEntry;
         var contentPathPrefixes = getConnector(jettyRequest).connectorConfig().accessLog().contentPathPrefixes();
         this.pathPrefixes = contentPathPrefixes.stream()
-                .map(s -> {
-                    var separatorIndex = s.lastIndexOf(':');
-                    return s.substring(0, separatorIndex == -1 ? s.length() : separatorIndex);
-                })
+                .map(s -> s.split(":")[0])
                 .toList();
         this.samplingRate = contentPathPrefixes.stream()
-                .map(s -> {
-                    return Double.parseDouble(s.substring(s.lastIndexOf(':') + 1));
-                })
+                .map(s -> Double.parseDouble(s.split(":")[1]))
+                .toList();
+        this.maxSize = contentPathPrefixes.stream()
+                .map(s -> BytesQuantity.fromString(s.split(":")[2]).toBytes())
                 .toList();
     }
 
@@ -94,7 +94,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
             for (int i = 0; i < pathPrefixes.size(); i++) {
                 if (uriPath.startsWith(pathPrefixes.get(i))) {
                     if (samplingRate.get(i) > rng.nextDouble()) {
-                        return new ContentLoggingContentChannel(originalContentChannel);
+                        return new ContentLoggingContentChannel(originalContentChannel, maxSize.get(i));
                     }
                 }
             }
@@ -108,14 +108,14 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
     }
 
     private class ContentLoggingContentChannel implements ContentChannel {
-        private static final int CONTENT_LOGGING_MAX_SIZE = 16 * 1024 * 1024;
-
         final AtomicLong length = new AtomicLong();
         final ByteArrayOutputStream accumulatedRequestContent;
         final ContentChannel originalContentChannel;
+        final long contentLoggingMaxSize;
 
-        public ContentLoggingContentChannel(ContentChannel originalContentChannel) {
+        public ContentLoggingContentChannel(ContentChannel originalContentChannel, long contentLoggingMaxSize) {
             this.originalContentChannel = originalContentChannel;
+            this.contentLoggingMaxSize = contentLoggingMaxSize;
             var contentLength = jettyRequest.getContentLength();
             this.accumulatedRequestContent = new ByteArrayOutputStream(contentLength == -1 ? 128 : contentLength);
         }
@@ -123,8 +123,8 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             length.addAndGet(buf.remaining());
-            var bytesToLog = Math.min(buf.remaining(), CONTENT_LOGGING_MAX_SIZE - accumulatedRequestContent.size());
-            if (bytesToLog > 0) accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), bytesToLog);
+            var bytesToLog = Math.min(buf.remaining(), contentLoggingMaxSize - accumulatedRequestContent.size());
+            if (bytesToLog > 0) accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), (int)bytesToLog);
             if (originalContentChannel != null) originalContentChannel.write(buf, handler);
         }
 
