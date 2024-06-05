@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -177,7 +178,7 @@ $ vespa status deployment -t local [session-id] --wait 600
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
 				var hints []string
-				if waiter.Timeout == 0 {
+				if waiter.Timeout == 0 && !errors.Is(err, vespa.ErrDeployment) {
 					hints = []string{"Consider using the --wait flag to wait for completion"}
 				}
 				return ErrCLI{Status: 1, warn: true, hints: hints, error: err}

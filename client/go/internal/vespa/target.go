@@ -39,6 +39,9 @@ const (
 var errWaitTimeout = errors.New("giving up")
 var errAuth = errors.New("auth failed")
 
+// ErrDeployment is the error returned for terminal deployment failures.
+var ErrDeployment = errors.New("deployment failed")
+
 // Authenticator authenticates the given HTTP request.
 type Authenticator interface {
 	Authenticate(request *http.Request) error

@@ -309,7 +309,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 			return false, nil
 		}
 		if resp.Status != "success" {
-			return false, fmt.Errorf("run %d ended with unsuccessful status: %s", runID, resp.Status)
+			return false, fmt.Errorf("%w: run %d ended with unsuccessful status: %s", ErrDeployment, runID, resp.Status)
 		}
 		success = true
 		return success, nil

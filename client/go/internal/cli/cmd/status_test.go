@@ -164,7 +164,7 @@ func TestStatusCloudDeployment(t *testing.T) {
 		Body:   []byte(`{"active": false, "status": "failure"}`),
 	})
 	assert.NotNil(t, cli.Run("status", "deployment", "42", "-w", "10"))
-	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment run 42 incomplete after waiting up to 10s: aborting wait: run 42 ended with unsuccessful status: failure\n", stderr.String())
+	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment run 42 incomplete after waiting up to 10s: aborting wait: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
 }
 
 func isLocalTarget(args []string) bool {
