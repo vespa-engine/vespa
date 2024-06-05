@@ -53,7 +53,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.AccessDeniedException;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -625,7 +624,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             // if it fails (with DirectoryNotEmptyException (!)) we need to use 'copy' instead
             // (this will always be the case for the application package for a standalone container).
             Files.move(tempDir, preprocessedDir.toPath());
-        } catch (DirectoryNotEmptyException e) {
+        } catch (AccessDeniedException e) {
             preprocess(appDir, preprocessedDir, zone);
         }
         FilesApplicationPackage preprocessedApp = fromFile(preprocessedDir, includeSourceFiles);
