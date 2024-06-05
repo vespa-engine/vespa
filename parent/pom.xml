@@ -64,6 +64,9 @@
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>${maven-bundle-plugin.vespa.version}</version>
+                    <configuration>
+                        <obrRepository>NONE</obrRepository>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
