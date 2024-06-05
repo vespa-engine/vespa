@@ -52,8 +52,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -615,38 +613,24 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        try {
-            java.nio.file.Path tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
-            preprocess(appDir, tempDir.toFile(), zone);
-            IOUtils.recursiveDeleteDir(preprocessedDir);
-            // Use 'move' to make sure we do this atomically, important to avoid writing only partial content e.g.
-            // when shutting down.
-            // Temp directory needs to be on the same file system as appDir for 'move' to work,
-            // if it fails (with DirectoryNotEmptyException (!)) we need to use 'copy' instead
-            // (this will always be the case for the application package for a standalone container).
-            Files.move(tempDir, preprocessedDir.toPath());
-        } catch (DirectoryNotEmptyException e) {
-            preprocess(appDir, preprocessedDir, zone);
-        }
-        FilesApplicationPackage preprocessedApp = fromFile(preprocessedDir, includeSourceFiles);
-        preprocessedApp.copyUserDefsIntoApplication();
-        return preprocessedApp;
-    }
-
-    private void preprocess(File appDir, File dir, Zone zone) throws IOException {
-        validateServicesFile();
-        IOUtils.copyDirectory(appDir, dir, - 1,
+        IOUtils.recursiveDeleteDir(preprocessedDir);
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1,
                               (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
-        preprocessXML(applicationFile(dir, SERVICES), getServicesFile(), zone);
-        preprocessXML(applicationFile(dir, HOSTS), getHostsFile(), zone);
+        File servicesFile = validateServicesFile();
+        preprocessXML(applicationFile(preprocessedDir, SERVICES), servicesFile, zone);
+        preprocessXML(applicationFile(preprocessedDir, HOSTS), getHostsFile(), zone);
+        FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
+        preprocessed.copyUserDefsIntoApplication();
+        return preprocessed;
     }
 
-    private void validateServicesFile() throws IOException {
+    private File validateServicesFile() throws IOException {
         File servicesFile = getServicesFile();
         if ( ! servicesFile.exists())
             throw new IllegalArgumentException(SERVICES + " does not exist in application package");
         if (IOUtils.readFile(servicesFile).isEmpty())
             throw new IllegalArgumentException(SERVICES + " in application package is empty");
+        return servicesFile;
     }
 
     private void copyUserDefsIntoApplication() {
