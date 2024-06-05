@@ -62,6 +62,29 @@ Hint: Pass --add-cert to use the certificate of the current application
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
 }
 
+func TestDeployCloudDefaultWait(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	cli, stdout, _ := newTestCLI(t, "CI=true")
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "success"}`)
+	httpClient.NextResponseString(200, `{"endpoints": [{"url": "http://example.com", "scope": "zone", "cluster": "default"}]}`)
+	cli.httpClient = httpClient
+
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+
+	require.Nil(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+	assert.True(t, httpClient.Consumed())
+}
+
 func TestDeployWait(t *testing.T) {
 	cli, stdout, _ := newTestCLI(t)
 	client := &mock.HTTPClient{}

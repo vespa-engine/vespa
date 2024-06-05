@@ -56,6 +56,8 @@ func (c *HTTPClient) NextResponseError(err error) {
 	c.nextErrors = append(c.nextErrors, err)
 }
 
+func (c *HTTPClient) Consumed() bool { return len(c.nextResponses) == 0 }
+
 func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
 	c.LastRequest = request
 	if len(c.nextErrors) > 0 {

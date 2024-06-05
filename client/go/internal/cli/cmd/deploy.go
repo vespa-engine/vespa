@@ -59,7 +59,6 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if err != nil {
 				return err
 			}
-			timeout := time.Duration(waitSecs) * time.Second
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
@@ -73,6 +72,12 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 					return err
 				}
 			}
+			if opts.Target.IsCloud() && waitSecs == 0 && !cmd.PersistentFlags().Changed("wait") {
+				// If --wait is not explicitly given, we always wait a few seconds in Cloud to catch fast failures, e.g.
+				// invalid application package
+				waitSecs = 2
+			}
+			timeout := time.Duration(waitSecs) * time.Second
 			waiter := cli.waiter(timeout)
 			if _, err := waiter.DeployService(target); err != nil {
 				return err
