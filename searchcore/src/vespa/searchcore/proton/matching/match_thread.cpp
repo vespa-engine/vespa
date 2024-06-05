@@ -381,7 +381,32 @@ MatchThread::findMatches(MatchTools &tools)
         secondPhase(tools, hits);
     }
     trace->addEvent(4, "Create result set");
-    return hits.getResultSet();
+    if (tools.has_second_phase_rank() && matchParams.second_phase_rank_score_drop_limit.has_value()) {
+        return get_matches_after_second_phase_rank_score_drop(hits);
+    } else {
+        return hits.getResultSet();
+    }
+}
+
+std::unique_ptr<search::ResultSet>
+MatchThread::get_matches_after_second_phase_rank_score_drop(HitCollector& hits)
+{
+    std::vector<uint32_t> dropped;
+    auto result = hits.get_result_set(matchParams.second_phase_rank_score_drop_limit, &dropped);
+    if (!dropped.empty()) {
+        /*
+         * Hits dropped due to second phase rank score drop limit are
+         * not present in the result. Schedule extra tasks to update
+         * mutable attributes for earlier match phases.
+         */
+        if (auto task = matchToolsFactory.createOnMatchTask()) {
+            task->run(dropped);
+        }
+        if (auto task = matchToolsFactory.createOnFirstPhaseTask()) {
+            task->run(std::move(dropped));
+        }
+    }
+    return result;
 }
 
 void

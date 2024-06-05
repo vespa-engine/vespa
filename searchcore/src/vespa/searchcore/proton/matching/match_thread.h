@@ -113,6 +113,7 @@ private:
     void match_loop_helper(MatchTools &tools, HitCollector &hits);
 
     search::ResultSet::UP findMatches(MatchTools &tools);
+    std::unique_ptr<search::ResultSet> get_matches_after_second_phase_rank_score_drop(HitCollector& hits);
     void secondPhase(MatchTools & tools, HitCollector & hits);
 
     void processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context);
