@@ -125,6 +125,21 @@ public class ClusterModel {
         this.at = clock.instant();
     }
 
+
+    /**
+     * The central decision made in autoscaling.
+     *
+     * @return the relative load adjustment that should be made to this cluster given available measurements.
+     *         For example, a load adjustment of 2 means we should allocate twice the amount of that resources.
+     */
+    public Load loadAdjustment() {
+        if (nodeTimeseries().measurementsPerNode() < 0.5) return Load.one(); // Don't change based on very little data
+        Load adjustment = peakLoad().divide(idealLoad());
+        if (! safeToScaleDown())
+            adjustment = adjustment.map(v -> v < 1 ? 1 : v);
+        return adjustment;
+    }
+
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
     public CloudAccount cloudAccount() { return cluster.cloudAccount().orElse(CloudAccount.empty); }
@@ -133,11 +148,7 @@ public class ClusterModel {
     private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
 
     /** Returns the instant this model was created. */
-    public Instant at() { return at;}
-
-    public boolean isEmpty() {
-        return nodeTimeseries().isEmpty();
-    }
+    public Instant at() { return at; }
 
     /** Returns the predicted duration of a rescaling of this cluster */
     public Duration scalingDuration() { return scalingDuration; }
@@ -148,9 +159,9 @@ public class ClusterModel {
      */
     public Duration allocationDuration() { return allocationDuration; }
 
-    public boolean isContent() {
-        return clusterSpec.type().isContent();
-    }
+    public boolean isEmpty() { return nodeTimeseries().isEmpty(); }
+
+    public boolean isContent() { return clusterSpec.type().isContent(); }
 
     /** Returns the predicted duration of data redistribution in this cluster. */
     public Duration redistributionDuration() {
@@ -175,15 +186,6 @@ public class ClusterModel {
 
     public boolean isExclusive() {
         return nodeRepository.exclusivity().allocation(clusterSpec);
-    }
-
-    /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
-    public Load loadAdjustment() {
-        if (nodeTimeseries().measurementsPerNode() < 0.5) return Load.one(); // Don't change based on very little data
-        Load adjustment = peakLoad().divide(idealLoad());
-        if (! safeToScaleDown())
-            adjustment = adjustment.map(v -> v < 1 ? 1 : v);
-        return adjustment;
     }
 
     public boolean isStable(NodeRepository nodeRepository) {
@@ -217,7 +219,6 @@ public class ClusterModel {
                .multiply(loadWith(nodes, groups)) // redundancy aware adjustment with these counts
                .divide(redundancyAdjustment());   // correct for double redundancy adjustment
     }
-
 
     /**
      * Returns the relative load adjustment accounting for redundancy given these nodes+groups

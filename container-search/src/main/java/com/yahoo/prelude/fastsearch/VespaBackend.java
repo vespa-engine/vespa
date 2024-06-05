@@ -311,10 +311,10 @@ public abstract class VespaBackend {
         if (query.getTrace().isTraceable(level + 1) && query.getTrace().getQuery()) {
             query.trace("Current state of query tree: "
                             + new TextualQueryRepresentation(query.getModel().getQueryTree().getRoot()),
-                    false, level+1);
+                    false, level + 1);
         }
         if (query.getTrace().isTraceable(level + 2) && query.getTrace().getQuery()) {
-            query.trace("YQL+ representation: " + query.yqlRepresentation(), level+2);
+            query.trace("YQL+ representation: " + query.yqlRepresentation(), level + 2);
         }
     }
 

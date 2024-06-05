@@ -69,11 +69,9 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
         var loadAdjustment = model.loadAdjustment();
-        if (enableDetailedLogging) {
+        if (enableDetailedLogging)
             log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " + loadAdjustment.toString());
-        }
 
-        // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
         var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, enableDetailedLogging);
 
         if (target.isEmpty())
@@ -98,8 +96,8 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.unavailable, "Autoscaling is disabled in single node clusters", model);
 
         if (! worthRescaling(model.current().realResources(), target.realResources())) {
-            if (target.fulfilment() < 0.9999999)
-                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", model);
+            if (target.notFulfiled())
+                return Autoscaling.dontScale(Status.insufficient, "Cluster cannot be scaled to achieve ideal load", model);
             else if ( ! model.safeToScaleDown() && model.idealLoad().any(v -> v < 1.0))
                 return Autoscaling.dontScale(Status.ideal, "Cooling off before considering to scale down", model);
             else
