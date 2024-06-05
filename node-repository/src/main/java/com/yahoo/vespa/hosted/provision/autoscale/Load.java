@@ -114,7 +114,7 @@ public record Load(double cpu, double memory, double disk, double gpu, double gp
 
     @Override
     public String toString() {
-        return "load: " + cpu + " cpu, " + memory + " memory, " + disk + " disk," + gpu + " gpu," + gpuMemory + " gpuMemory";
+        return "load: " + cpu + " cpu, " + memory + " memory, " + disk + " disk, " + gpu + " gpu, " + gpuMemory + " gpuMemory";
     }
 
     public static Load zero() { return new Load(0, 0, 0, 0, 0); }

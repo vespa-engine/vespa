@@ -154,6 +154,23 @@ public class AutoscalingTest {
     }
 
     @Test
+    public void test_containers_wont_scale_up_on_memory() {
+        var min = new ClusterResources(2, 1, new NodeResources(4, 8, 50, 0.1));
+        var now = new ClusterResources(4, 1, new NodeResources(4, 8, 50, 0.1));
+        var max = new ClusterResources(8, 1, new NodeResources(4, 8, 50, 0.1));
+        var fixture = DynamicProvisioningTester.fixture()
+                                               .awsProdSetup(false)
+                                               .clusterType(ClusterSpec.Type.container)
+                                               .initialResources(Optional.of(now))
+                                               .capacity(Capacity.from(min, max))
+                                               .build();
+        fixture.tester().setScalingDuration(fixture.applicationId(), fixture.clusterSpec.id(), Duration.ofMinutes(5));
+
+        fixture.loader().applyLoad(new Load(0.1875, 1.0, 0.95, 0, 0), 50);
+        assertEquals(Autoscaling.Status.insufficient, fixture.autoscale().status());
+    }
+
+    @Test
     public void initial_deployment_with_host_sharing_flag() {
         var min = new ClusterResources(7, 1, new NodeResources(2.0, 10.0, 384.0, 0.1));
         var max = new ClusterResources(7, 1, new NodeResources(2.4, 32.0, 768.0, 0.1));

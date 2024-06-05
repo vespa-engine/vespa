@@ -116,6 +116,10 @@ public class AllocatableResources {
      */
     public double fulfilment() { return fulfilment; }
 
+    public boolean notFulfiled() {
+        return fulfilment < 0.9999999;
+    }
+
     private static double fulfilment(ClusterResources realResources, ClusterResources idealResources) {
         double vcpuFulfilment     = Math.min(1, realResources.totalResources().vcpu()     / idealResources.totalResources().vcpu());
         double memoryGbFulfilment = Math.min(1, realResources.totalResources().memoryGb() / idealResources.totalResources().memoryGb());
@@ -128,7 +132,7 @@ public class AllocatableResources {
 
     public boolean preferableTo(AllocatableResources other, ClusterModel model) {
         // always fulfil as much as possible unless fulfilment is considered to be equal
-        if (!equal(this.fulfilment(), other.fulfilment()) && (other.fulfilment() < 1 || this.fulfilment() < 1))
+        if ((other.fulfilment() < 1 || this.fulfilment() < 1) && ! equal(this.fulfilment(), other.fulfilment()))
             return this.fulfilment() > other.fulfilment();
 
         return this.cost() * toHours(model.allocationDuration()) + this.costChangingFrom(model)
