@@ -428,7 +428,7 @@ public class DynamicAllocationTest {
         ApplicationId application = ProvisioningTester.applicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("1").build();
 
-        List<HostSpec> hosts = tester.prepare(application, cluster, 36, 2, resources);
+        List<HostSpec> hosts = tester.prepare(application, cluster, 66, 2, resources);
         tester.activate(application, hosts);
         assertEquals(3, hosts.size());
         assertEquals(1, hosts.stream().map(host -> host.membership().get().cluster().group().get()).distinct().count());
