@@ -284,7 +284,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(duration.negated());
         fixture.loader().zeroTraffic(20, 1);
         fixture.tester().assertResources("Scaled down",
-                                         2, 1, 2, 16, 100,
+                                         2, 1, 2, 8, 100,
                                          fixture.autoscale());
     }
 

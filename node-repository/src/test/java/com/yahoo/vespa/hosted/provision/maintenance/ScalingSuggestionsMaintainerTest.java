@@ -73,13 +73,13 @@ public class ScalingSuggestionsMaintainerTest {
                                                                                    new TestMetric());
         maintainer.maintain();
 
-        assertEquals("8 nodes with [vcpu: 3.3, memory: 4.5 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
+        assertEquals("8 nodes with [vcpu: 3.3, memory: 4.0 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app1, cluster1, tester).resources().get().toString());
         assertEquals("7 nodes with [vcpu: 4.4, memory: 5.3 Gb, disk: 16.5 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app2, cluster2, tester).resources().get().toString());
 
         // Secondary suggestions
-        assertEquals("9 nodes with [vcpu: 2.9, memory: 4.5 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
+        assertEquals("9 nodes with [vcpu: 2.9, memory: 4.0 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                 suggestionsOf(app1, cluster1, tester).get(1).resources().get().toString());
         assertEquals("8 nodes with [vcpu: 3.8, memory: 4.7 Gb, disk: 14.2 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                 suggestionsOf(app2, cluster2, tester).get(1).resources().get().toString());
@@ -89,7 +89,7 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion stays at the peak value observed",
-                     "8 nodes with [vcpu: 3.3, memory: 4.5 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
+                     "8 nodes with [vcpu: 3.3, memory: 4.0 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app1, cluster1, tester).resources().get().toString());
         // Utilization is still way down and a week has passed
         tester.clock().advance(Duration.ofDays(7));
