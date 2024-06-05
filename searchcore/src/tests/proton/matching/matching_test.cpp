@@ -958,22 +958,24 @@ TEST(MatchingTest, require_that_getSummaryFeatures_prefers_cached_query_setup)
 
 TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on)
 {
-    MatchParams p(10, 2, 4, 0.7, 0, 1, true, true);
+    MatchParams p(10, 2, 4, 0.7, 0.75, 0, 1, true, true);
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(2u, p.heapSize);
     ASSERT_EQ(4u, p.arraySize);
     ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
+    ASSERT_EQ(0.75, p.second_phase_rank_score_drop_limit.value());
     ASSERT_EQ(0u, p.offset);
     ASSERT_EQ(1u, p.hits);
 }
 
-TEST(MatchingTest, require_that_match_params_can_turn_off_rank_drop_limit)
+TEST(MatchingTest, require_that_match_params_can_turn_off_rank_score_drop_limits)
 {
-    MatchParams p(10, 2, 4, std::nullopt, 0, 1, true, true);
+    MatchParams p(10, 2, 4, std::nullopt, std::nullopt, 0, 1, true, true);
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(2u, p.heapSize);
     ASSERT_EQ(4u, p.arraySize);
     ASSERT_FALSE(p.first_phase_rank_score_drop_limit.has_value());
+    ASSERT_FALSE(p.second_phase_rank_score_drop_limit.has_value());
     ASSERT_EQ(0u, p.offset);
     ASSERT_EQ(1u, p.hits);
 }
@@ -981,18 +983,19 @@ TEST(MatchingTest, require_that_match_params_can_turn_off_rank_drop_limit)
 
 TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on_arraySize_is_atleast_the_size_of_heapSize)
 {
-    MatchParams p(10, 6, 4, 0.7, 1, 1, true, true);
+    MatchParams p(10, 6, 4, 0.7, std::nullopt, 1, 1, true, true);
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(6u, p.heapSize);
     ASSERT_EQ(6u, p.arraySize);
     ASSERT_EQ(0.7, p.first_phase_rank_score_drop_limit.value());
+    ASSERT_FALSE(p.second_phase_rank_score_drop_limit.has_value());
     ASSERT_EQ(1u, p.offset);
     ASSERT_EQ(1u, p.hits);
 }
 
 TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on_arraySize_is_atleast_the_size_of_hits_plus_offset)
 {
-    MatchParams p(10, 6, 4, 0.7, 4, 4, true, true);
+    MatchParams p(10, 6, 4, 0.7, std::nullopt, 4, 4, true, true);
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(6u, p.heapSize);
     ASSERT_EQ(8u, p.arraySize);
@@ -1003,7 +1006,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on
 
 TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs)
 {
-    MatchParams p(1, 6, 4, 0.7, 4, 4, true, true);
+    MatchParams p(1, 6, 4, 0.7, std::nullopt, 4, 4, true, true);
     ASSERT_EQ(1u, p.numDocs);
     ASSERT_EQ(1u, p.heapSize);
     ASSERT_EQ(1u, p.arraySize);
@@ -1014,7 +1017,7 @@ TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs)
 
 TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs_and_hits_adjusted_down)
 {
-    MatchParams p(5, 6, 4, 0.7, 4, 4, true, true);
+    MatchParams p(5, 6, 4, 0.7, std::nullopt, 4, 4, true, true);
     ASSERT_EQ(5u, p.numDocs);
     ASSERT_EQ(5u, p.heapSize);
     ASSERT_EQ(5u, p.arraySize);
@@ -1025,7 +1028,7 @@ TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs_and_hits_adju
 
 TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_off_array_and_heap_size_is_0)
 {
-    MatchParams p(10, 6, 4, 0.7, 4, 4, true, false);
+    MatchParams p(10, 6, 4, 0.7, std::nullopt, 4, 4, true, false);
     ASSERT_EQ(10u, p.numDocs);
     ASSERT_EQ(0u, p.heapSize);
     ASSERT_EQ(0u, p.arraySize);

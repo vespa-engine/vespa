@@ -39,6 +39,7 @@ using search::fef::RankSetup;
 using search::fef::indexproperties::hitcollector::HeapSize;
 using search::fef::indexproperties::hitcollector::ArraySize;
 using search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
+using search::fef::indexproperties::hitcollector::SecondPhaseRankScoreDropLimit;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
@@ -290,8 +291,10 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         uint32_t heapSize = HeapSize::lookup(rankProperties, _rankSetup->getHeapSize());
         uint32_t arraySize = ArraySize::lookup(rankProperties, _rankSetup->getArraySize());
         auto first_phase_rank_score_drop_limit = FirstPhaseRankScoreDropLimit::lookup(rankProperties, _rankSetup->get_first_phase_rank_score_drop_limit());
+        auto second_phase_rank_score_drop_limit = SecondPhaseRankScoreDropLimit::lookup(rankProperties, _rankSetup->get_second_phase_rank_score_drop_limit());
 
         MatchParams params(searchContext.getDocIdLimit(), heapSize, arraySize, first_phase_rank_score_drop_limit,
+                           second_phase_rank_score_drop_limit,
                            request.offset, request.maxhits, !_rankSetup->getSecondPhaseRank().empty(),
                            willNeedRanking(request, groupingContext, first_phase_rank_score_drop_limit));
 
