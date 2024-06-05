@@ -745,7 +745,7 @@ public class HttpServerTest {
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().accessLog(
                         new ConnectorConfig.AccessLog.Builder()
-                                .contentPathPrefixes("/status.html")),
+                                .contentPathPrefixes("/status")),
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));

@@ -68,7 +68,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
                 : Pattern.compile(
                         contentPathPrefixes.stream()
                                 .map(Pattern::quote)
-                                .collect(Collectors.joining("|", "^(", ")")))
+                                .collect(Collectors.joining("|", "^(", ").*$")))
                 .asMatchPredicate();
 
     }
