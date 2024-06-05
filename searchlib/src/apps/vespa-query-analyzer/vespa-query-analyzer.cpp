@@ -8,6 +8,8 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/queryeval/flow.h>
+#include <vespa/searchlib/queryeval/flow_tuning.h>
+#include <optional>
 #include <variant>
 #include <vector>
 #include <map>
@@ -20,10 +22,39 @@ using vespalib::slime::OBJECT;
 using vespalib::slime::STRING;
 using vespalib::slime::DOUBLE;
 using vespalib::slime::BOOL;
-using search::queryeval::FlowStats;
-using search::queryeval::InFlow;
+using namespace search::queryeval;
 
 //-----------------------------------------------------------------------------
+
+int rel_diff(double a, double b, double e, double m) {
+    int res = 0;
+    if (a < e && b < e) {
+        return res;
+    }
+    double x = std::abs(b - a) / std::max(std::min(a, b), e);
+    while (x > m && res < 10) {
+        x /= 10.0;
+        ++res;
+    }
+    return res;
+}
+
+void apply_diff(vespalib::string &str, int diff, char small, char big, int len) {
+    if (diff < len) {
+        for (int i = 0; i < diff; ++i) {
+            str.append(small);
+        }
+    } else {
+        diff -= len;
+        for (int i = 0; i < len; ++i) {
+            if (diff > i) {
+                str.append(big);
+            } else {
+                str.append(small);                
+            }
+        }
+    }
+}
 
 using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
 using Paths = std::vector<Path>;
@@ -168,9 +199,17 @@ struct Sample {
                 }
             }
         }
-        self_time_ms = sample["self_time_ms"].asDouble();
-        total_time_ms = sample["total_time_ms"].asDouble();
         count = sample["count"].asLong();
+        total_time_ms = sample["total_time_ms"].asDouble();
+        const Inspector &self = sample["self_time_ms"];
+        if (self.valid()) {
+            self_time_ms = self.asDouble();
+        } else {
+            // Self time is not reported for leaf nodes. Make sure
+            // profile depth is high enough to not clip the tree
+            // before reaching actual leafs.
+            self_time_ms = total_time_ms;
+        }
     }
     static vespalib::string type_to_str(Type type) {
         switch(type) {
@@ -195,18 +234,100 @@ struct Sample {
     }
 };
 
+struct BlueprintMeta {
+    static AnyFlow no_flow(InFlow) { abort(); }
+    static double no_self_cost(double, size_t) { return 0.0; }
+    struct MetaEntry {
+        std::function<AnyFlow(InFlow)> make_flow;
+        std::function<double(double, size_t)> self_cost_strict;
+        std::function<double(double, size_t)> self_cost_non_strict;
+        MetaEntry()
+          : make_flow(no_flow),
+            self_cost_strict(no_self_cost),
+            self_cost_non_strict(no_self_cost) {}
+        MetaEntry(std::function<AnyFlow(InFlow)> make_flow_in)
+          : make_flow(make_flow_in),
+            self_cost_strict(no_self_cost),
+            self_cost_non_strict(no_self_cost) {}
+        MetaEntry(std::function<AnyFlow(InFlow)> make_flow_in,
+                  std::function<double(double, size_t)> self_cost_strict_in)
+          : make_flow(make_flow_in),
+            self_cost_strict(self_cost_strict_in),
+            self_cost_non_strict(no_self_cost) {}
+        MetaEntry(std::function<AnyFlow(InFlow)> make_flow_in,
+                  std::function<double(double, size_t)> self_cost_strict_in,
+                  std::function<double(double, size_t)> self_cost_non_strict_in)
+          : make_flow(make_flow_in),
+            self_cost_strict(self_cost_strict_in),
+            self_cost_non_strict(self_cost_non_strict_in) {}
+        ~MetaEntry();
+    };
+    std::map<vespalib::string,MetaEntry> map;
+    BlueprintMeta() {
+        map["AndNotBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<AndNotFlow>(in_flow); }
+        };
+        map["AndBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<AndFlow>(in_flow); }
+        };
+        map["OrBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<OrFlow>(in_flow); },
+            [](double est, size_t n)noexcept{ return flow::heap_cost(est, n); }
+        };
+        map["WeakAndBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<OrFlow>(in_flow); },
+            [](double est, size_t n)noexcept{ return flow::heap_cost(est, n); }
+        };
+        map["NearBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<AndFlow>(in_flow); },
+            [](double est, size_t n)noexcept{ return est * n; },
+            [](double est, size_t n)noexcept{ return est * n; }
+        };
+        map["ONearBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<AndFlow>(in_flow); },
+            [](double est, size_t n)noexcept{ return est * n; },
+            [](double est, size_t n)noexcept{ return est * n; }
+        };
+        map["RankBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<RankFlow>(in_flow); }
+        };
+        map["SourceBlenderBlueprint"] = MetaEntry{
+            [](InFlow in_flow)noexcept{ return AnyFlow::create<BlenderFlow>(in_flow); },
+            [](double est, size_t)noexcept{ return est; },
+            [](double, size_t)noexcept{ return 1.0; }
+        };
+    }
+    bool is_known(const vespalib::string &type) {
+        return map.find(type) != map.end();
+    }
+    const MetaEntry &lookup(const vespalib::string &type) {
+        return map.find(type)->second;
+    }
+};
+BlueprintMeta::MetaEntry::~MetaEntry() = default;
+BlueprintMeta blueprint_meta;
+
 struct Node {
     vespalib::string  type = "unknown";
+    uint32_t          id = 0;
+    uint32_t          docid_limit = 0;
     bool              strict = false;
     FlowStats         flow_stats = FlowStats(0.0, 0.0, 0.0);
-    InFlow            in_flow = InFlow(0.0);
     size_t            count = 0;
     double            self_time_ms = 0.0;
     double            total_time_ms = 0.0;
+    double            est_seek = 0.0;
+    double            est_cost = 0.0;
+    char              seek_type = '?';
+    double            ms_per_cost = 0.0;
+    double            ms_self_limit = 0.0;
+    double            ms_limit = 0.0;
     std::vector<Node> children;
     Node(const Inspector &obj) {
         extract(type, obj["[type]"]);
         type = strip_name(type);
+        id = obj["id"].asLong();
+        docid_limit = obj["docid_limit"].asLong();
         strict = obj["strict"].asBool();
         flow_stats.estimate = obj["relative_estimate"].asDouble();
         flow_stats.cost = obj["cost"].asDouble();
@@ -222,6 +343,19 @@ struct Node {
         }
     }
     ~Node();
+    vespalib::string name() const {
+        if (id > 0) {
+            return fmt("%s[%u]", type.c_str(), id);
+        } else {
+            return fmt("%s", type.c_str());
+        }
+    }
+    double rel_count() const {
+        return double(count) / docid_limit;
+    }
+    size_t abs_est_seek() const {
+        return double(docid_limit) * est_seek;
+    }
     void add_sample(const Sample &sample) {
         Node *node = this;
         for (size_t child: sample.path) {
@@ -236,23 +370,156 @@ struct Node {
         node->self_time_ms += sample.self_time_ms;
         node->total_time_ms += sample.total_time_ms;
     }
-    void dump_line(size_t indent) const {
-        fprintf(stderr, "|%10zu ", count);
-        fprintf(stderr, "|%11.3f ", total_time_ms);
-        fprintf(stderr, "|%10.3f | ", self_time_ms);
-        for (size_t i = 0; i < indent; ++i) {
-            fprintf(stderr, "  ");
-        }
-        fprintf(stderr, "%s\n", type.c_str());
-        for (const Node &child: children) {
-            child.dump_line(indent + 1);
+    void each_node(auto f) {
+        f(*this);
+        for (auto &child: children) {
+            child.each_node(f);
         }
     }
-    void dump() const {
-        fprintf(stderr, "|     count | total_time | self_time | structure\n");
-        fprintf(stderr, "+-----------+------------+-----------+-------------------------------\n");
-        dump_line(0);
-        fprintf(stderr, "+-----------+------------+-----------+-------------------------------\n");
+    void calc_cost(InFlow in_flow) {
+        if (!children.empty() && !blueprint_meta.is_known(type)) {
+            fprintf(stderr, "... blueprint meta-data not found for intermediate node: %s (treating as leaf)\n", name().c_str());
+        }
+        if (children.empty() || !blueprint_meta.is_known(type)) {
+            if (in_flow.strict()) {
+                if (!strict) {
+                    fprintf(stderr, "... invalid strictness for node: %s\n", name().c_str());
+                }
+                est_seek = flow_stats.estimate;
+                est_cost = flow_stats.strict_cost;
+                seek_type = 'S';
+            } else if (strict) {
+                est_seek = in_flow.rate();
+                est_cost = flow::forced_strict_cost(flow_stats, est_seek);
+                seek_type = 'F';
+            } else {
+                est_seek = in_flow.rate();
+                est_cost = est_seek * flow_stats.cost;
+                seek_type = 'N';
+            }
+        } else {
+            double cost_diff = 0.0;
+            double seek_diff = 0.0;
+            const auto &meta = blueprint_meta.lookup(type);
+            if (in_flow.strict()) {
+                if (!strict) {
+                    fprintf(stderr, "... invalid strictness for node: %s\n", name().c_str());
+                }
+                est_seek = flow_stats.estimate;
+                seek_type = 'S';
+            } else if (strict) {
+                cost_diff = flow::strict_cost_diff(flow_stats.estimate, in_flow.rate());
+                seek_diff = in_flow.rate() - flow_stats.estimate;
+                est_seek = in_flow.rate();
+                in_flow.force_strict();
+                seek_type = 'F';
+            } else {
+                est_seek = in_flow.rate();
+                seek_type = 'N';
+            }
+            double flow_cost = 0.0;
+            auto flow = meta.make_flow(in_flow);
+            for (auto &child: children) {
+                child.calc_cost(InFlow(flow.strict(), flow.flow()));
+                flow.update_cost(flow_cost, child.est_cost);
+                flow.add(child.flow_stats.estimate);
+            }
+            est_cost = flow_cost + cost_diff;
+            if (in_flow.strict()) {
+                est_cost += meta.self_cost_strict(flow_stats.estimate, children.size());
+            } else {
+                est_cost += est_seek * meta.self_cost_non_strict(flow_stats.estimate, children.size());
+            }
+            if (seek_diff < 0.0) {
+                // adjust est_seek for sub-tree
+                each_node([factor = est_seek / (est_seek - seek_diff)](Node &node)noexcept{
+                              node.est_seek *= factor;
+                          });
+            }
+            if (cost_diff < 0.0) {
+                // adjust est_cost for sub-tree
+                each_node([factor = est_cost / (est_cost - cost_diff)](Node &node)noexcept{
+                              node.est_cost *= factor;
+                          });
+            }
+        }
+    }
+    void normalize() {
+        size_t num_nodes = 0;
+        double cost_limit = est_cost * 0.01;
+        double time_limit = total_time_ms * 0.01;
+        std::vector<double> samples;
+        each_node([&](Node &node){
+                      ++num_nodes;
+                      if (node.est_cost >= cost_limit) {
+                          samples.push_back(node.total_time_ms / node.est_cost);
+                      }
+                  });
+        double self_time_limit = total_time_ms * 10.0 / num_nodes;
+        double norm_ms_per_cost = samples[samples.size()/2];
+        each_node([&](Node &node)noexcept{
+                      node.ms_per_cost = norm_ms_per_cost;
+                      node.ms_self_limit = self_time_limit;
+                      node.ms_limit = time_limit;
+                  });
+    }
+    vespalib::string tingle() const {
+        vespalib::string res;
+        if (total_time_ms > ms_limit) {
+            apply_diff(res, rel_diff(est_seek, rel_count(), 1e-6, 0.50), 's', 'S', 3);
+            apply_diff(res, rel_diff(ms_per_cost * est_cost, total_time_ms, 1e-3, 0.50), 't', 'T', 3);
+            if (self_time_ms > ms_self_limit) {
+                apply_diff(res, rel_diff(self_time_ms, ms_self_limit, 1e-3, 0.01), '+', '*', 1);
+            }
+        }
+        return res;
+    }
+    void print_header() const {
+        fprintf(stdout, "|%10s ", "seeks");
+        fprintf(stdout, "|%10s ", "est_seeks");
+        fprintf(stdout, "|%11s ", "time_ms");
+        fprintf(stdout, "|%11s ", "est_time");
+        fprintf(stdout, "|%10s ", "self_ms");
+        fprintf(stdout, "|%8s ",  "tingle");
+        fprintf(stdout, "|%5s ",  "step");
+        fprintf(stdout, "|\n");
+    }
+    void print_separator() const {
+        const char *fill = "-------------------------------------------";
+        fprintf(stdout, "+%.10s-", fill);
+        fprintf(stdout, "+%.10s-", fill);
+        fprintf(stdout, "+%.11s-", fill);
+        fprintf(stdout, "+%.11s-", fill);
+        fprintf(stdout, "+%.10s-", fill);
+        fprintf(stdout, "+%.8s-",  fill);
+        fprintf(stdout, "+%.5s-",  fill);
+        fprintf(stdout, "+\n");
+    }
+    void print_stats() const {
+        fprintf(stdout, "|%10zu ",  count);
+        fprintf(stdout, "|%10zu ",  abs_est_seek());
+        fprintf(stdout, "|%11.3f ", total_time_ms);
+        fprintf(stdout, "|%11.3f ", ms_per_cost * est_cost);
+        fprintf(stdout, "|%10.3f ", self_time_ms);
+        fprintf(stdout, "|%8s ", tingle().c_str());
+        fprintf(stdout, "|%5c ", seek_type);
+        fprintf(stdout, "| ");
+    }
+    static constexpr const char *pads[4] = {" ├─ "," │  "," └─ ","    "};
+    void print_line(const vespalib::string &prefix, const char *pad_self, const char *pad_child) const {
+        print_stats();
+        fprintf(stdout, "%s%s%s\n", prefix.c_str(), pad_self, name().c_str());
+        for (size_t i = 0; i < children.size(); ++i) {
+            auto *my_pads = ((i + 1) < children.size()) ? pads : pads + 2;
+            children[i].print_line(prefix + pad_child, my_pads[0], my_pads[1]);
+        }
+    }
+    void print() const {
+        print_separator();
+        print_header();
+        print_separator();
+        print_line("", "", "");
+        print_separator();
     }
 };
 Node::~Node() = default;
@@ -268,7 +535,7 @@ void each_sample(const Inspector &prof, auto f) {
     each_sample_list(prof["roots"], f);
 }
 
-struct State {
+struct Analyzer {
     void analyze(const Inspector &root) {
         auto bp_list = find_field(root, "optimized");
         for (const Path &path: bp_list) {
@@ -294,8 +561,10 @@ struct State {
                                           });
                     }
                 }
-                data.dump();
-                fprintf(stderr, "distribution key: %d, total_time_ms: %g\n", key, total_ms);
+                data.calc_cost(true);
+                data.normalize();
+                data.print();
+                fprintf(stderr, "distribution key: %d, total_time_ms: %g, estimated ms_per_cost: %g\n", key, total_ms, data.ms_per_cost);
                 for (auto [type, time]: time_map) {
                     fprintf(stderr, "sample type %s used %g ms total\n", Sample::type_to_str(type).c_str(), time);
                 }
@@ -314,6 +583,7 @@ void usage(const char *self) {
 }
 
 struct MyApp {
+    Analyzer analyzer;
     vespalib::string file_name;
     bool parse_params(int argc, char **argv);
     int main();
@@ -341,10 +611,9 @@ MyApp::main()
     if(JsonFormat::decode(file, slime) == 0) {
         fprintf(stderr, "file contains invalid json: '%s'\n",
                 file_name.c_str());
-        return 1;        
+        return 1;
     }
-    State state;
-    state.analyze(slime.get());
+    analyzer.analyze(slime.get());
     return 0;
 }
 
