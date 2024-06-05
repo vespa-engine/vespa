@@ -1047,11 +1047,14 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder remoteAddressHeaders(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder remotePortHeaders(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder remotePortHeaders(java.util.Collection)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder contentPathPrefixes(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder contentPathPrefixes(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog build()"
     ],
     "fields" : [
       "public java.util.List remoteAddressHeaders",
-      "public java.util.List remotePortHeaders"
+      "public java.util.List remotePortHeaders",
+      "public java.util.List contentPathPrefixes"
     ]
   },
   "com.yahoo.jdisc.http.ConnectorConfig$AccessLog" : {
@@ -1066,7 +1069,9 @@
       "public java.util.List remoteAddressHeaders()",
       "public java.lang.String remoteAddressHeaders(int)",
       "public java.util.List remotePortHeaders()",
-      "public java.lang.String remotePortHeaders(int)"
+      "public java.lang.String remotePortHeaders(int)",
+      "public java.util.List contentPathPrefixes()",
+      "public java.lang.String contentPathPrefixes(int)"
     ],
     "fields" : [ ]
   },

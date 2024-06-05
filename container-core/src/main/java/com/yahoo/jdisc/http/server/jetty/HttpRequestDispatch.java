@@ -214,7 +214,8 @@ class HttpRequestDispatch {
                 new FilteringRequestHandler(context.filterResolver(), (Request)servletRequest),
                 servletRequest, context.removeRawPostBodyForWwwUrlEncodedPost());
 
-        return new AccessLoggingRequestHandler(requestHandler, accessLogEntry);
+        return new AccessLoggingRequestHandler(
+                (Request) servletRequest, requestHandler, accessLogEntry);
     }
 
     private static RequestHandler wrapHandlerIfFormPost(RequestHandler requestHandler,
