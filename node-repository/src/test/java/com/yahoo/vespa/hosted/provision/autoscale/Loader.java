@@ -102,8 +102,6 @@ public class Loader {
         NodeList nodes = fixture.nodes();
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         Load load = new Load(idealLoad.cpu(), value, idealLoad.disk(), 0, 0).multiply(oneExtraNodeFactor);
-        System.out.println("         idealLoad: " + idealLoad);
-        System.out.println("adjusted idealLoad: " + load);
         for (int i = 0; i < count; i++) {
             fixture.tester().clock().advance(samplingInterval);
             for (Node node : nodes) {
