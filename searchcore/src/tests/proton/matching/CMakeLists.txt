@@ -13,7 +13,7 @@ vespa_add_executable(searchcore_matching_test_app TEST
     searchcore_grouping
     searchlib_test
 )
-vespa_add_test(NAME searchcore_matching_test_app COMMAND searchcore_matching_test_app)
+vespa_add_test(NAME searchcore_matching_test_app COMMAND searchcore_matching_test_app COST 100)
 vespa_add_executable(searchcore_sessionmanager_test_app TEST
     SOURCES
     sessionmanager_test.cpp

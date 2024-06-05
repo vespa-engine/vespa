@@ -6,4 +6,4 @@ vespa_add_executable(searchlib_element_similarity_feature_test_app TEST
     searchlib
     searchlib_test
 )
-vespa_add_test(NAME searchlib_element_similarity_feature_test_app COMMAND searchlib_element_similarity_feature_test_app)
+vespa_add_test(NAME searchlib_element_similarity_feature_test_app COMMAND searchlib_element_similarity_feature_test_app COST 50)

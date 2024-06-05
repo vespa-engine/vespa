@@ -5,4 +5,4 @@ vespa_add_executable(searchcore_verify_ranksetup_test_app TEST
     DEPENDS
 )
 vespa_add_test(NAME searchcore_verify_ranksetup_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/verify_ranksetup_test.sh
-               DEPENDS searchcore_verify_ranksetup_test_app searchcore_verify_ranksetup_app)
+               DEPENDS searchcore_verify_ranksetup_test_app searchcore_verify_ranksetup_app COST 50)
