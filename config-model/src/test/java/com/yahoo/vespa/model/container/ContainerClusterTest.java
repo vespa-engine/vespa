@@ -49,6 +49,7 @@ import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.zone;
 import static com.yahoo.config.provision.SystemName.main;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -496,6 +497,30 @@ public class ContainerClusterTest {
                 "-Djdk.tls.stapling.cacheSize=256 " +
                 "-Djdk.tls.stapling.cacheLifetime=3600" +
                 (extra.isEmpty() ? "" : " " + extra);
+    }
+
+    @Test
+    void testTruncationTo4Bits() {
+        assertEquals(0, ApplicationContainerCluster.truncateTo4SignificantBits(0));
+        assertEquals(1, ApplicationContainerCluster.truncateTo4SignificantBits(1));
+        assertEquals(15, ApplicationContainerCluster.truncateTo4SignificantBits(15));
+        assertEquals(16, ApplicationContainerCluster.truncateTo4SignificantBits(16));
+        assertEquals(16, ApplicationContainerCluster.truncateTo4SignificantBits(17));
+        assertEquals(18, ApplicationContainerCluster.truncateTo4SignificantBits(18));
+        assertEquals(18, ApplicationContainerCluster.truncateTo4SignificantBits(19));
+        assertEquals(30, ApplicationContainerCluster.truncateTo4SignificantBits(30));
+        assertEquals(30, ApplicationContainerCluster.truncateTo4SignificantBits(31));
+        assertEquals(32, ApplicationContainerCluster.truncateTo4SignificantBits(32));
+        assertEquals(32, ApplicationContainerCluster.truncateTo4SignificantBits(33));
+        assertEquals(32, ApplicationContainerCluster.truncateTo4SignificantBits(34));
+        assertEquals(32, ApplicationContainerCluster.truncateTo4SignificantBits(35));
+        assertEquals(36, ApplicationContainerCluster.truncateTo4SignificantBits(36));
+        assertEquals(0x78000000, ApplicationContainerCluster.truncateTo4SignificantBits(0x78000000));
+        assertEquals(0x78000000, ApplicationContainerCluster.truncateTo4SignificantBits(0x7fffffff));
+        assertEquals(0x80000000, ApplicationContainerCluster.truncateTo4SignificantBits(0x80000000));
+        assertEquals(0b10001000000000000000000000000000, ApplicationContainerCluster.truncateTo4SignificantBits(0b10000000000000000000000000000001));
+        assertEquals(0b11000100000000000000000000000000, ApplicationContainerCluster.truncateTo4SignificantBits(0b11000000000000000000000000000001));
+        assertEquals(0b11111111111111111111111111100010, ApplicationContainerCluster.truncateTo4SignificantBits(0b11111111111111111111111111100001));
     }
 
 }
