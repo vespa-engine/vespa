@@ -18,10 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 
@@ -53,7 +58,9 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
     private final org.eclipse.jetty.server.Request jettyRequest;
     private final RequestHandler delegateRequestHandler;
     private final AccessLogEntry accessLogEntry;
-    private final Predicate<String> contentLoggingEnabledMatcher;
+    private final List<String> pathPrefixes;
+    private final List<Double> samplingRate;
+    private final Random rng = new Random();
 
     public AccessLoggingRequestHandler(
             org.eclipse.jetty.server.Request jettyRequest,
@@ -63,28 +70,38 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         this.delegateRequestHandler = delegateRequestHandler;
         this.accessLogEntry = accessLogEntry;
         var contentPathPrefixes = getConnector(jettyRequest).connectorConfig().accessLog().contentPathPrefixes();
-        this.contentLoggingEnabledMatcher = contentPathPrefixes.isEmpty()
-                ? __ -> false
-                : Pattern.compile(
-                        contentPathPrefixes.stream()
-                                .map(Pattern::quote)
-                                .collect(Collectors.joining("|", "^(", ").*$")))
-                .asMatchPredicate();
-
+        this.pathPrefixes = contentPathPrefixes.stream()
+                .map(s -> {
+                    var separatorIndex = s.lastIndexOf(':');
+                    return s.substring(0, separatorIndex == -1 ? s.length() : separatorIndex);
+                })
+                .toList();
+        this.samplingRate = contentPathPrefixes.stream()
+                .map(s -> {
+                    var separatorIndex = s.lastIndexOf(':');
+                    if (separatorIndex == -1) return 1D;
+                    return Double.parseDouble(s.substring(separatorIndex + 1));
+                })
+                .toList();
     }
 
     @Override
     public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
         final HttpRequest httpRequest = (HttpRequest) request;
         httpRequest.context().put(CONTEXT_KEY_ACCESS_LOG_ENTRY, accessLogEntry);
-        var acceptedMethods = List.of(HttpRequest.Method.POST, HttpRequest.Method.PUT, HttpRequest.Method.PATCH);
+        var methodsWithEntity = List.of(HttpRequest.Method.POST, HttpRequest.Method.PUT, HttpRequest.Method.PATCH);
         var originalContentChannel = delegateRequestHandler.handleRequest(request, handler);
-        if (acceptedMethods.contains(httpRequest.getMethod())
-                && contentLoggingEnabledMatcher.test(request.getUri().getPath())) {
-            return new ContentLoggingContentChannel(originalContentChannel);
-        } else {
-            return originalContentChannel;
+        var uriPath = request.getUri().getPath();
+        if (methodsWithEntity.contains(httpRequest.getMethod())) {
+            for (int i = 0; i < pathPrefixes.size(); i++) {
+                if (uriPath.startsWith(pathPrefixes.get(i))) {
+                    if (samplingRate.get(i) > rng.nextDouble()) {
+                        return new ContentLoggingContentChannel(originalContentChannel);
+                    }
+                }
+            }
         }
+        return originalContentChannel;
     }
 
     @Override
