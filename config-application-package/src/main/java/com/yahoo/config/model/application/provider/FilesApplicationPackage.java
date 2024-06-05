@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -613,18 +614,18 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        // Note: temp dir needs to be a directory on the same file system as appDir for 'move' to work,
-        // so using parent dir to create a temp fir if possible. Standalone container does not have a writable
-        // parent dir, so need to copy directly to preprocessedDir in that case.
-        java.nio.file.Path parentPath = appDir.getParentFile().toPath();
-        if (Files.isWritable(parentPath)) {
-            var tempDir = Files.createTempDirectory(parentPath, "preprocess-tempdir");
-            preprocess(appDir, tempDir.toFile(), zone);
-            IOUtils.recursiveDeleteDir(preprocessedDir);
-            // Move to make sure we do this atomically, important to avoid writing only partial content e.g. when shutting down
+        var tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
+        preprocess(appDir, tempDir.toFile(), zone);
+        IOUtils.recursiveDeleteDir(preprocessedDir);
+        try {
+            // Use 'move' to make sure we do this atomically, important to avoid writing only partial content e.g.
+            // when shutting down.
+            // Temp directory needs to be on the same file system as appDir for 'move' to work,
+            // if it fails (with DirectoryNotEmptyException (!)) we need to use 'copy' instead
+            // (this will always be the case for the application package for a standalone container).
             Files.move(tempDir, preprocessedDir.toPath());
-        } else {
-            preprocess(appDir, preprocessedDir, zone);
+        } catch (DirectoryNotEmptyException e) {
+            Files.copy(tempDir, preprocessedDir.toPath());
         }
         FilesApplicationPackage preprocessedApp = fromFile(preprocessedDir, includeSourceFiles);
         preprocessedApp.copyUserDefsIntoApplication();
