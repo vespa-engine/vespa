@@ -315,14 +315,23 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
         var memoryPct = getMemoryPercentage().orElse(null);
-        int heapsize = memoryPct != null && memoryPct.asAbsoluteGb().isPresent()
-                       ? (int) (memoryPct.asAbsoluteGb().getAsDouble() * 1024) : 1536;
+        int heapsize = truncateTo4SignificantBits(memoryPct != null && memoryPct.asAbsoluteGb().isPresent()
+                                                  ? (int) (memoryPct.asAbsoluteGb().getAsDouble() * 1024) : 1536);
         builder.jvm.verbosegc(true)
                 .availableProcessors(0)
                 .compressedClassSpaceSize(0)
-                .minHeapsize(heapsize)
+                .minHeapsize(heapsize) // These cause restarts when changed, so we try to keep them stable.
                 .heapsize(heapsize);
         if (memoryPct != null) builder.jvm.heapSizeAsPercentageOfPhysicalMemory(memoryPct.ofContainerAvailable());
+    }
+
+    static int truncateTo4SignificantBits(int i) {
+        if (i == Integer.MIN_VALUE) return i;
+        if (i < 0) return -truncateTo4SignificantBits(-i);
+        if (i <= 16) return i;
+        int mask = Integer.highestOneBit(i);
+        mask += mask - (mask >> 3);
+        return i & mask;
     }
 
     @Override
