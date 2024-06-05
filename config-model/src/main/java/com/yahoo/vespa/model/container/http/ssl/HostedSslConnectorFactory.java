@@ -41,6 +41,11 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
         this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
         this.knownServerNames = Collections.unmodifiableSet(new TreeSet<>(builder.knownServerNames));
+        builder.requestPrefixForLoggingContent.forEach(prefix -> {
+            var regex = "^.*:[0|1](\\.\\d+)?$";
+            if (!prefix.matches(regex))
+                throw new IllegalArgumentException("Invalid prefix '%s, must match regex '%s'".formatted(prefix, regex));
+        });
         this.requestPrefixForLoggingContent = Collections.unmodifiableSet(new TreeSet<>(builder.requestPrefixForLoggingContent));
     }
 

@@ -78,9 +78,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
                 .toList();
         this.samplingRate = contentPathPrefixes.stream()
                 .map(s -> {
-                    var separatorIndex = s.lastIndexOf(':');
-                    if (separatorIndex == -1) return 1D;
-                    return Double.parseDouble(s.substring(separatorIndex + 1));
+                    return Double.parseDouble(s.substring(s.lastIndexOf(':') + 1));
                 })
                 .toList();
     }
