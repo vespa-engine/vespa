@@ -607,7 +607,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state))
                 .proxyProtocol(state.zone().cloud().useProxyProtocol())
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
-                .endpointConnectionTtl(state.getProperties().endpointConnectionTtl());
+                .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
+                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent());
         var endpointCert = state.endpointCertificateSecrets().orElse(null);
         if (endpointCert != null) {
             builder.endpointCertificate(endpointCert);
@@ -670,6 +671,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .remotePortHeader("X-Forwarded-Port")
                 .clientAuth(SslClientAuth.NEED)
                 .knownServerNames(tokenEndpoints)
+                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
                 .build();
         server.addConnector(connector);
 

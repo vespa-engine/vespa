@@ -455,6 +455,12 @@ public class PermanentFlags {
             HOSTNAME
     );
 
+    public static final UnboundListFlag<String> LOG_REQUEST_CONTENT = defineListFlag(
+            "log-request-content", List.of(), String.class,
+            "Include request content in access log for paths starting with any of these prefixes",
+            "Takes effect on next redeployment",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
