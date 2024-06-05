@@ -72,6 +72,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
+import static java.util.logging.Level.INFO;
 
 
 /**
@@ -625,7 +626,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             // if it fails (with DirectoryNotEmptyException (!)) we need to use 'copy' instead
             // (this will always be the case for the application package for a standalone container).
             Files.move(tempDir, preprocessedDir.toPath());
-        } catch (DirectoryNotEmptyException e) {
+        } catch (AccessDeniedException | DirectoryNotEmptyException e) {
             preprocess(appDir, preprocessedDir, zone);
         }
         FilesApplicationPackage preprocessedApp = fromFile(preprocessedDir, includeSourceFiles);
