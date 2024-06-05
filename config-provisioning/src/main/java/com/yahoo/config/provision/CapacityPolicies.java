@@ -51,7 +51,7 @@ public class CapacityPolicies {
         return switch (zone.environment()) {
             case dev, test -> 1;
             case perf -> Math.min(requested, 3);
-            case staging -> requested <= 1 ? requested : Math.max(2, requested / 10);
+            case staging -> requested <= 1 ? requested : Math.max(2, (int)(0.05 * requested));
             case prod -> requested;
         };
     }

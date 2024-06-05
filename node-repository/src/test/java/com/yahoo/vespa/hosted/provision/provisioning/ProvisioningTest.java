@@ -638,7 +638,7 @@ public class ProvisioningTest {
         ApplicationId application = ProvisioningTester.applicationId();
         tester.makeReadyHosts(14, defaultResources).activateTenantHosts();
         SystemState state = prepare(application, 1, 1, 1, 64, defaultResources, tester); // becomes 1, 1, 1, 1, 6
-        assertEquals(9, state.allHosts.size());
+        assertEquals(6, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
 
