@@ -52,7 +52,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -614,18 +614,18 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        var tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
-        preprocess(appDir, tempDir.toFile(), zone);
-        IOUtils.recursiveDeleteDir(preprocessedDir);
         try {
+            java.nio.file.Path tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
+            preprocess(appDir, tempDir.toFile(), zone);
+            IOUtils.recursiveDeleteDir(preprocessedDir);
             // Use 'move' to make sure we do this atomically, important to avoid writing only partial content e.g.
             // when shutting down.
             // Temp directory needs to be on the same file system as appDir for 'move' to work,
             // if it fails (with DirectoryNotEmptyException (!)) we need to use 'copy' instead
             // (this will always be the case for the application package for a standalone container).
             Files.move(tempDir, preprocessedDir.toPath());
-        } catch (DirectoryNotEmptyException e) {
-            Files.copy(tempDir, preprocessedDir.toPath());
+        } catch (AccessDeniedException e) {
+            preprocess(appDir, preprocessedDir, zone);
         }
         FilesApplicationPackage preprocessedApp = fromFile(preprocessedDir, includeSourceFiles);
         preprocessedApp.copyUserDefsIntoApplication();
