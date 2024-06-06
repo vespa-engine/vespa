@@ -2,7 +2,6 @@
 package com.yahoo.prelude.query;
 
 import com.yahoo.compress.IntegerCompressor;
-import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
