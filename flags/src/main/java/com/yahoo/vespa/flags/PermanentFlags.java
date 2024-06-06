@@ -459,7 +459,7 @@ public class PermanentFlags {
             "log-request-content", List.of(), String.class,
             "Include request content in access log for paths starting with any of these prefixes",
             "Takes effect on next redeployment",
-            list -> list.stream().allMatch(s -> s.matches("^[a-zA-Z/\\.0-9]+:(0(\\.\\d+)?|1(\\.0+)?):\\d+(B|kB|MB|GB)?$")),
+            list -> list.stream().allMatch(s -> s.matches("^[a-zA-Z/.0-9-]+:(0(\\.\\d+)?|1(\\.0+)?):\\d+(B|kB|MB|GB)?$")),
             INSTANCE_ID);
 
     private PermanentFlags() {}
