@@ -9,13 +9,14 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-/*
+/**
  * Class representing an IN operator with a set of string values.
  *
  * @author toregge
  */
 public class StringInItem extends InItem {
-    private Set<String> tokens;
+
+    private final Set<String> tokens;
 
     public StringInItem(String indexName) {
         super(indexName);

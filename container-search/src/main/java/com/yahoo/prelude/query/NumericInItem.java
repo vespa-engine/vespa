@@ -9,14 +9,15 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-/*
+/**
  * Class representing an IN operator with a set of 64-bit
  * integer values.
  *
  * @author toregge
  */
 public class NumericInItem extends InItem {
-    private Set<Long> tokens;
+
+    private final Set<Long> tokens;
 
     public NumericInItem(String indexName) {
         super(indexName);
