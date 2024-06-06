@@ -10,6 +10,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 
@@ -71,16 +72,10 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         this.jettyRequest = jettyRequest;
         this.delegateRequestHandler = delegateRequestHandler;
         this.accessLogEntry = accessLogEntry;
-        var contentPathPrefixes = getConnector(jettyRequest).connectorConfig().accessLog().contentPathPrefixes();
-        this.pathPrefixes = contentPathPrefixes.stream()
-                .map(s -> s.split(":")[0])
-                .toList();
-        this.samplingRate = contentPathPrefixes.stream()
-                .map(s -> Double.parseDouble(s.split(":")[1]))
-                .toList();
-        this.maxSize = contentPathPrefixes.stream()
-                .map(s -> BytesQuantity.fromString(s.split(":")[2]).toBytes())
-                .toList();
+        var cfg = getConnector(jettyRequest).connectorConfig().accessLog().content();
+        this.pathPrefixes = cfg.stream().map(e -> e.pathPrefix()).toList();
+        this.samplingRate = cfg.stream().map(e -> e.sampleRate()).toList();
+        this.maxSize = cfg.stream().map(e -> e.maxSize()).toList();
     }
 
     @Override

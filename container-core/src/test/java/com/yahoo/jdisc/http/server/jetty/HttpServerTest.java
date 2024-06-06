@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.utils.BytesQuantity;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.yahoo.container.logging.ConnectionLog;
@@ -745,8 +746,16 @@ public class HttpServerTest {
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().accessLog(
                         new ConnectorConfig.AccessLog.Builder()
-                                .contentPathPrefixes("/search:1:1k")
-                                .contentPathPrefixes("/document/v1:0.001:1M")),
+                                .content(List.of(
+                                        new ConnectorConfig.AccessLog.Content.Builder()
+                                                .pathPrefix("/search")
+                                                .maxSize(BytesQuantity.ofKB(1).toBytes())
+                                                .sampleRate(1),
+                                        new ConnectorConfig.AccessLog.Content.Builder()
+                                                .pathPrefix("/document/v1")
+                                                .maxSize(BytesQuantity.ofMB(1).toBytes())
+                                                .sampleRate(0.001)
+                                ))),
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().newPost("/search/").setContent("abcdef").execute().expectStatusCode(is(OK));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
