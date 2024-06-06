@@ -459,6 +459,7 @@ public class PermanentFlags {
             "log-request-content", List.of(), String.class,
             "Include request content in access log for paths starting with any of these prefixes",
             "Takes effect on next redeployment",
+            list -> list.stream().allMatch(s -> s.matches("^[a-zA-Z/.0-9-]+:(0(\\.\\d+)?|1(\\.0+)?):\\d+(B|kB|MB|GB)?$")),
             INSTANCE_ID);
 
     private PermanentFlags() {}
@@ -501,6 +502,11 @@ public class PermanentFlags {
     private static <T> UnboundListFlag<T> defineListFlag(
             String flagId, List<T> defaultValue, Class<T> elementClass, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineListFlag(flagId, defaultValue, elementClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
+    }
+
+    private static <T> UnboundListFlag<T> defineListFlag(
+            String flagId, List<T> defaultValue, Class<T> elementClass, String description, String modificationEffect, Predicate<List<T>> validator, Dimension... dimensions) {
+        return Flags.defineListFlag(flagId, defaultValue, elementClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, validator, dimensions);
     }
 
     private static String toString(Instant instant) { return DateTimeFormatter.ISO_DATE.withZone(ZoneOffset.UTC).format(instant); }

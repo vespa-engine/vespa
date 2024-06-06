@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http.ssl;
 
+import ai.vespa.utils.BytesQuantity;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.security.tls.TlsContext;
@@ -21,6 +22,8 @@ import java.util.TreeSet;
  */
 public class HostedSslConnectorFactory extends ConnectorFactory {
 
+    private record EntityLoggingEntry(String prefix, double sampleRate, BytesQuantity maxEntitySize) {}
+
     private final SslClientAuth clientAuth;
     private final List<String> tlsCiphersOverride;
     private final boolean proxyProtocolEnabled;
@@ -28,7 +31,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final List<String> remoteAddressHeaders;
     private final List<String> remotePortHeaders;
     private final Set<String> knownServerNames;
-    private final Set<String> requestPrefixForLoggingContent;
+    private final List<EntityLoggingEntry> entityLoggingEntries;
 
     public static Builder builder(String name, int listenPort) { return new Builder(name, listenPort); }
 
@@ -41,12 +44,22 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
         this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
         this.knownServerNames = Collections.unmodifiableSet(new TreeSet<>(builder.knownServerNames));
-        builder.requestPrefixForLoggingContent.forEach(prefix -> {
-            var regex = "^.*:[0|1](\\.\\d+)?$";
-            if (!prefix.matches(regex))
-                throw new IllegalArgumentException("Invalid prefix '%s, must match regex '%s'".formatted(prefix, regex));
-        });
-        this.requestPrefixForLoggingContent = Collections.unmodifiableSet(new TreeSet<>(builder.requestPrefixForLoggingContent));
+        this.entityLoggingEntries = builder.requestPrefixForLoggingContent.stream()
+                .map(prefix -> {
+                    var parts = prefix.split(":");
+                    if (parts.length != 3) {
+                        throw new IllegalArgumentException("Expected string of format 'prefix:sample-rate:max-entity-size', got '%s'".formatted(prefix));
+                    }
+                    var pathPrefix = parts[0];
+                    if (pathPrefix.isBlank())
+                        throw new IllegalArgumentException("Path prefix must not be blank");
+                    var sampleRate = Double.parseDouble(parts[1]);
+                    if (sampleRate < 0 || sampleRate > 1)
+                        throw new IllegalArgumentException("Sample rate must be in range [0, 1], got '%s'".formatted(sampleRate));
+                    var maxEntitySize = BytesQuantity.fromString(parts[2]);
+                    return new EntityLoggingEntry(pathPrefix, sampleRate, maxEntitySize);
+                })
+                .toList();
     }
 
     private static SslProvider createSslProvider(Builder builder) {
@@ -79,9 +92,14 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 .idleTimeout(Duration.ofSeconds(30).toSeconds())
                 .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0)
                 .accessLog(new ConnectorConfig.AccessLog.Builder()
-                                  .remoteAddressHeaders(remoteAddressHeaders)
-                                  .remotePortHeaders(remotePortHeaders)
-                                  .contentPathPrefixes(requestPrefixForLoggingContent))
+                                   .remoteAddressHeaders(remoteAddressHeaders)
+                                   .remotePortHeaders(remotePortHeaders)
+                                   .content(entityLoggingEntries.stream()
+                                                    .map(e -> new ConnectorConfig.AccessLog.Content.Builder()
+                                                            .pathPrefix(e.prefix)
+                                                            .sampleRate(e.sampleRate)
+                                                            .maxSize(e.maxEntitySize.toBytes()))
+                                                    .toList()))
                 .serverName.known(knownServerNames);
 
     }

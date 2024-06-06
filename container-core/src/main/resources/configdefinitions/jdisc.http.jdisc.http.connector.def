@@ -156,4 +156,6 @@ accessLog.remoteAddressHeaders[]      string
 accessLog.remotePortHeaders[]         string
 
 # Path prefixes for which content should be logged
-accessLog.contentPathPrefixes[]  string
+accessLog.content[].pathPrefix  string
+accessLog.content[].maxSize     long
+accessLog.content[].sampleRate  double

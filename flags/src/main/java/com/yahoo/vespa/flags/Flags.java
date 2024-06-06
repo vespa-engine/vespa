@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
@@ -525,6 +526,15 @@ public class Flags {
                                                         List<String> owners, String createdAt, String expiresAt,
                                                         String description, String modificationEffect, Dimension... dimensions) {
         return define((fid, dval, fvec) -> new UnboundListFlag<>(fid, dval, elementClass, fvec),
+                flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
+    }
+
+    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, Class<T> elementClass,
+                                                        List<String> owners, String createdAt, String expiresAt,
+                                                        String description, String modificationEffect,
+                                                        Predicate<List<T>> validator, Dimension... dimensions) {
+        return define((fid, dval, fvec) -> new UnboundListFlag<>(fid, dval, elementClass, fvec, validator),
                 flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
