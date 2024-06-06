@@ -218,7 +218,7 @@ public class GroupingExecutor extends Searcher {
         if (lastPass > 0) {
             baseRoot = origRoot.clone();
         }
-        if (query.getTrace().isTraceable(3) && query.getGroupingSessionCache()) {
+        if (query.getTrace().isTraceable(3)) {
             query.trace("Grouping in " + (lastPass + 1) + " passes. SessionId='" + query.getSessionId() + "'.", 3);
         }
         for (int pass = 0; pass <= lastPass; ++pass) {
