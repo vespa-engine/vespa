@@ -2,10 +2,13 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasMetricContext.hasMetricContext;
@@ -25,7 +28,8 @@ public class MetricReporterTest {
 
     private static class Fixture {
         final MetricReporter mockReporter = mock(MetricReporter.class);
-        final MetricUpdater metricUpdater = new MetricUpdater(mockReporter, 0, CLUSTER_NAME);
+        final FakeTimer timer = new FakeTimer();
+        final MetricUpdater metricUpdater = new MetricUpdater(mockReporter, timer, 0, CLUSTER_NAME);
         final ClusterFixture clusterFixture;
 
         Fixture() {
@@ -61,7 +65,7 @@ public class MetricReporterTest {
         Fixture f = new Fixture();
         f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(),
                 ClusterState.stateFromString("distributor:10 .1.s:d storage:9 .1.s:d .2.s:m .4.s:d"),
-                new ResourceUsageStats());
+                new ResourceUsageStats(), Instant.ofEpochMilli(12345));
 
         verify(f.mockReporter).set(eq("cluster-controller.up.count"), eq(9),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
@@ -78,7 +82,7 @@ public class MetricReporterTest {
     private void doTestRatiosInState(String clusterState, double distributorRatio, double storageRatio) {
         Fixture f = new Fixture();
         f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(), ClusterState.stateFromString(clusterState),
-                new ResourceUsageStats());
+                new ResourceUsageStats(), Instant.ofEpochMilli(12345));
 
         verify(f.mockReporter).set(eq("cluster-controller.available-nodes.ratio"),
                 doubleThat(closeTo(distributorRatio, 0.0001)),
@@ -115,7 +119,7 @@ public class MetricReporterTest {
         Fixture f = new Fixture();
         f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(),
                 ClusterState.stateFromString("distributor:10 storage:10"),
-                new ResourceUsageStats(0.5, 0.6, 5, 0.7, 0.8));
+                new ResourceUsageStats(0.5, 0.6, 5, 0.7, 0.8), Instant.ofEpochMilli(12345));
 
         verify(f.mockReporter).set(eq("cluster-controller.resource_usage.max_disk_utilization"),
                 doubleThat(closeTo(0.5, 0.0001)),
@@ -136,6 +140,75 @@ public class MetricReporterTest {
         verify(f.mockReporter).set(eq("cluster-controller.resource_usage.memory_limit"),
                 doubleThat(closeTo(0.8, 0.0001)),
                 argThat(hasMetricContext(withClusterDimension())));
+    }
+
+    private static class ConvergenceFixture extends Fixture {
+
+        String stateString;
+        Instant stateBroadcastTime;
+
+        ConvergenceFixture(String stateString) {
+            super(5);
+            this.stateString = stateString;
+            setUpFixturePendingVersions();
+
+            metricUpdater.setStateVersionConvergenceGracePeriod(Duration.ofSeconds(10));
+            stateBroadcastTime = timer.getCurrentWallClockTime();
+        }
+
+        // Sets pending state versions for 5 distributors and storage nodes:
+        //  - distributor: 2 converged, 3 not converged
+        //  - storage: 3 converged, 2 not converged
+        private void setUpFixturePendingVersions() {
+            var pendingBundle = ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.withoutAnnotations(
+                    ClusterState.stateFromString(stateString)));
+            for (int i = 0; i < 5; ++i) {
+                clusterFixture.cluster().getNodeInfo(Node.ofDistributor(i)).setClusterStateVersionBundleSent(pendingBundle);
+                clusterFixture.cluster().getNodeInfo(Node.ofStorage(i)).setClusterStateVersionBundleSent(pendingBundle);
+            }
+            clusterFixture.cluster().getNodeInfo(Node.ofDistributor(0)).setClusterStateBundleVersionAcknowledged(100, false); // NACK
+            clusterFixture.cluster().getNodeInfo(Node.ofDistributor(1)).setClusterStateBundleVersionAcknowledged(100, true);
+            clusterFixture.cluster().getNodeInfo(Node.ofDistributor(4)).setClusterStateBundleVersionAcknowledged(100, true);
+            // Heard nothing from distributors {2, 3} yet.
+            clusterFixture.cluster().getNodeInfo(Node.ofStorage(0)).setClusterStateBundleVersionAcknowledged(100, true);
+            clusterFixture.cluster().getNodeInfo(Node.ofStorage(1)).setClusterStateBundleVersionAcknowledged(100, true);
+            clusterFixture.cluster().getNodeInfo(Node.ofStorage(2)).setClusterStateBundleVersionAcknowledged(100, true);
+            // Heard nothing from storage {3, 4} yet.
+        }
+
+        void advanceTimeAndVerifyMetrics(Duration delta, int expectedDistr, int expectedStorage) {
+            timer.advanceTime(delta.toMillis());
+            metricUpdater.updateClusterStateMetrics(clusterFixture.cluster(),
+                    ClusterState.stateFromString(stateString),
+                    new ResourceUsageStats(), stateBroadcastTime);
+
+            verify(mockReporter).set(eq("cluster-controller.nodes-not-converged"), eq(expectedDistr),
+                    argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
+            verify(mockReporter).set(eq("cluster-controller.nodes-not-converged"), eq(expectedStorage),
+                    argThat(hasMetricContext(withNodeTypeDimension("storage"))));
+        }
+
+    }
+
+    @Test
+    void nodes_not_converged_metric_not_incremented_when_within_grace_period() {
+        var f = new ConvergenceFixture("version:100 distributor:5 storage:5");
+        // 9 seconds passed since state broadcast; should not tag nodes as not converged
+        f.advanceTimeAndVerifyMetrics(Duration.ofMillis(9000), 0, 0);
+    }
+
+    @Test
+    void nodes_not_converged_metric_incremented_when_outside_grace_period() {
+        var f = new ConvergenceFixture("version:100 distributor:5 storage:5");
+        // 10+ seconds passed since state broadcast; _should_ tag nodes as not converged
+        f.advanceTimeAndVerifyMetrics(Duration.ofMillis(10001), 3, 2);
+    }
+
+    @Test
+    void only_count_nodes_in_available_states_as_non_converging() {
+        var f = new ConvergenceFixture("version:100 distributor:5 .0.s:d .2.s:d .3.s:d storage:5 .3.s:m .4.s:d");
+        // Should not count non-converged nodes, as they are not in an available state
+        f.advanceTimeAndVerifyMetrics(Duration.ofMillis(10001), 0, 0);
     }
 
 }

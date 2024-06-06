@@ -30,8 +30,9 @@ public class ContentClusterHtmlRendererTest {
         ClusterStateBundle stateBundle = ClusterStateBundle.ofBaselineOnly(
                 AnnotatedClusterState.withoutAnnotations(
                         ClusterState.stateFromString("version:34633 bits:24 distributor:211 storage:211")));
-        var metricUpdater = new MetricUpdater(new NoMetricReporter(), 0, clusterName);
-        EventLog eventLog = new EventLog(new FakeTimer(), metricUpdater);
+        var timer = new FakeTimer();
+        var metricUpdater = new MetricUpdater(new NoMetricReporter(), timer, 0, clusterName);
+        EventLog eventLog = new EventLog(timer, metricUpdater);
         VdsClusterHtmlRenderer.Table table = renderer.createNewClusterHtmlTable(clusterName, slobrokGeneration);
         ContentCluster contentCluster = mock(ContentCluster.class);
 

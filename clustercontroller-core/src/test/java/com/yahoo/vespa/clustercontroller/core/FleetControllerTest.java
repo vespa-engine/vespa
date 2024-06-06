@@ -120,7 +120,7 @@ public abstract class FleetControllerTest implements Waiter {
                                           RpcServer rpcServer,
                                           boolean start) {
         waiter = createWaiter(timer);
-        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
+        var metricUpdater = new MetricUpdater(new NoMetricReporter(), timer, options.fleetControllerIndex(), options.clusterName());
         var log = new EventLog(timer, metricUpdater);
         var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
         var stateGatherer = new NodeStateGatherer(timer, timer, log);

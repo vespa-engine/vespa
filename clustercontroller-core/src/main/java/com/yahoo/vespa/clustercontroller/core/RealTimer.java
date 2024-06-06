@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -10,8 +11,9 @@ import java.util.TimeZone;
  */
 public class RealTimer implements Timer {
 
-    public long getCurrentTimeInMillis() {
-        return System.currentTimeMillis();
+    @Override
+    public Instant getCurrentWallClockTime() {
+        return Instant.now();
     }
 
     public static String printDuration(long time) {

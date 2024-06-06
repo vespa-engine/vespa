@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import java.time.Instant;
 import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 
@@ -22,8 +23,9 @@ public class FakeTimer implements Timer {
     // Don't start at zero. Clock users may initialize a 'last run' entry with 0, and we want first time to always look like a timeout
     private long currentTime = (long) 30 * 365 * 24 * 60 * 60 * 1000;
 
-    public synchronized long getCurrentTimeInMillis() {
-        return currentTime;
+    @Override
+    public synchronized Instant getCurrentWallClockTime() {
+        return Instant.ofEpochMilli(currentTime);
     }
 
     public synchronized void advanceTime(long time) {
