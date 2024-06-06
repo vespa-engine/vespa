@@ -8717,7 +8717,6 @@
       "public void <init>(com.yahoo.search.Searcher, com.yahoo.search.searchchain.Execution$Context)",
       "public final com.yahoo.processing.Response process(com.yahoo.processing.Request)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query)",
-      "protected void onInvoking(com.yahoo.processing.Request, com.yahoo.processing.Processor)",
       "protected com.yahoo.processing.Response defaultResponse(com.yahoo.processing.Request)",
       "public void fillAttributes(com.yahoo.search.Result)",
       "public void fill(com.yahoo.search.Result)",
