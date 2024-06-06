@@ -1756,6 +1756,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | fieldRankFilter(profile)
       | firstPhase(profile)
       | matchPhase(profile)
+      | diversity(profile)
       | function(profile)
       | mutate(profile)
       | ignoreRankFeatures(profile)
@@ -1875,14 +1876,14 @@ void matchPhase(ParsedRankProfile profile) :
     MatchPhaseSettings settings = new MatchPhaseSettings();
 }
 {
-    <MATCH_PHASE> lbrace() (matchPhaseItem(settings) (<NL>)*)* <RBRACE>
+    <MATCH_PHASE> lbrace() (matchPhaseItem(profile, settings) (<NL>)*)* <RBRACE>
     {
         settings.checkValid();
-        profile.setMatchPhaseSettings(settings);
+        profile.setMatchPhase(settings);
     }
 }
 
-void matchPhaseItem(MatchPhaseSettings settings) :
+void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
 {
     String str;
     int num;
@@ -1891,7 +1892,7 @@ void matchPhaseItem(MatchPhaseSettings settings) :
 }
 {
     ( <ATTRIBUTE> <COLON> str = identifier() { settings.setAttribute(str); }
-      | diversity(settings)
+      | diversityDeprecated(profile)
       | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
                           | <DESCENDING> { settings.setAscending(false); } )
       | <MAX_HITS> <COLON> num = integer() { settings.setMaxHits(num); }
@@ -1906,7 +1907,7 @@ void matchPhaseItem(MatchPhaseSettings settings) :
  *
  * @param profile The rank profile to modify.
  */
-void diversity(MatchPhaseSettings profile) :
+void diversity(ParsedRankProfile profile) :
 {
     DiversitySettings settings = new DiversitySettings();
 }
@@ -1914,6 +1915,18 @@ void diversity(MatchPhaseSettings profile) :
     <DIVERSITY> lbrace() (diversityItem(settings) (<NL>)*)* <RBRACE>
     {
  	    profile.setDiversity(settings);
+    }
+}
+
+void diversityDeprecated(ParsedRankProfile profile) :
+{
+    DiversitySettings settings = new DiversitySettings();
+}
+{
+    <DIVERSITY> lbrace() (diversityItem(settings) (<NL>)*)* <RBRACE>
+    {
+ 	    profile.setDiversity(settings);
+        deployLogger.logApplicationPackage(Level.WARNING, "'diversity is deprecated inside 'match-phase'. Specify it at 'rank-profile' level.");
     }
 }
 

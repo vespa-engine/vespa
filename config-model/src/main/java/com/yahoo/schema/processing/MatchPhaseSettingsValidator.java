@@ -25,7 +25,7 @@ public class MatchPhaseSettingsValidator extends Processor {
         if (documentsOnly) return;
 
         for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(schema)) {
-            RankProfile.MatchPhaseSettings settings = rankProfile.getMatchPhaseSettings();
+            RankProfile.MatchPhaseSettings settings = rankProfile.getMatchPhase();
             if (settings != null) {
                 validateMatchPhaseSettings(rankProfile, settings);
             }

@@ -4,6 +4,7 @@ package com.yahoo.schema.parser;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfile.MatchPhaseSettings;
+import com.yahoo.schema.RankProfile.DiversitySettings;
 import com.yahoo.schema.RankProfile.MutateOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -39,7 +40,8 @@ class ParsedRankProfile extends ParsedBlock {
     private Integer numSearchPartitions = null;
     private Integer numThreadsPerSearch = null;
     private Integer reRankCount = null;
-    private MatchPhaseSettings matchPhaseSettings = null;
+    private MatchPhaseSettings matchPhase = null;
+    private DiversitySettings diversity = null;
     private String firstPhaseExpression = null;
     private String inheritedSummaryFeatures = null;
     private String inheritedMatchFeatures = null;
@@ -78,7 +80,8 @@ class ParsedRankProfile extends ParsedBlock {
     Optional<Integer> getNumSearchPartitions() { return Optional.ofNullable(this.numSearchPartitions); }
     Optional<Integer> getNumThreadsPerSearch() { return Optional.ofNullable(this.numThreadsPerSearch); }
     Optional<Integer> getReRankCount() { return Optional.ofNullable(this.reRankCount); }
-    Optional<MatchPhaseSettings> getMatchPhaseSettings() { return Optional.ofNullable(this.matchPhaseSettings); }
+    Optional<MatchPhaseSettings> getMatchPhase() { return Optional.ofNullable(this.matchPhase); }
+    Optional<DiversitySettings> getDiversity() { return Optional.ofNullable(this.diversity); }
     Optional<String> getFirstPhaseExpression() { return Optional.ofNullable(this.firstPhaseExpression); }
     Optional<String> getInheritedMatchFeatures() { return Optional.ofNullable(this.inheritedMatchFeatures); }
     List<ParsedRankFunction> getFunctions() { return List.copyOf(functions.values()); }
@@ -173,9 +176,13 @@ class ParsedRankProfile extends ParsedBlock {
         this.keepRankCount = count;
     }
 
-    void setMatchPhaseSettings(MatchPhaseSettings settings) {
-        verifyThat(matchPhaseSettings == null, "already has match-phase");
-        this.matchPhaseSettings = settings;
+    void setMatchPhase(MatchPhaseSettings settings) {
+        verifyThat(matchPhase == null, "already has match-phase");
+        this.matchPhase = settings;
+    }
+    void setDiversity(DiversitySettings settings) {
+        verifyThat(diversity == null, "already has diversity");
+        this.diversity = settings;
     }
 
     void setMinHitsPerThread(int minHits) {
