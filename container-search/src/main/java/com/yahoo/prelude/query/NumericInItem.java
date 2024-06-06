@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query;
 
 import com.yahoo.compress.IntegerCompressor;
+import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -17,11 +18,16 @@ import java.util.Set;
  */
 public class NumericInItem extends InItem {
 
-    private final Set<Long> tokens;
+    private Set<Long> tokens;
 
     public NumericInItem(String indexName) {
         super(indexName);
         tokens = new HashSet<>(1000);
+    }
+
+    public NumericInItem(String indexName, Set<Long> tokens) {
+        super(indexName);
+        this.tokens = new HashSet<>(tokens);
     }
 
     @Override
@@ -74,6 +80,13 @@ public class NumericInItem extends InItem {
     public Collection<Long> getTokens() { return Set.copyOf(tokens); }
 
     @Override
+    public void disclose(Discloser discloser) {
+        super.disclose(discloser);
+        for (Long token : tokens)
+            discloser.addChild(new IntItem(token));
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (o == this) return true;
         if ( ! super.equals(o)) return false;
@@ -85,6 +98,13 @@ public class NumericInItem extends InItem {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), tokens);
+    }
+
+    @Override
+    public NumericInItem clone() {
+        NumericInItem clone = (NumericInItem)super.clone();
+        clone.tokens = new HashSet<>(tokens);
+        return clone;
     }
 
 }

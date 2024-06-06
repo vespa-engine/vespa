@@ -57,6 +57,10 @@ public class IntItem extends TermItem {
         expression = toExpression(from, to, 0);
     }
 
+    public IntItem(Long expression) {
+        this(expression, "");
+    }
+
     public IntItem(String expression) {
         this(expression, "");
     }

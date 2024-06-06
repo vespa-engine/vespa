@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query;
 
 import com.yahoo.compress.IntegerCompressor;
+import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -16,11 +17,16 @@ import java.util.Set;
  */
 public class StringInItem extends InItem {
 
-    private final Set<String> tokens;
+    private Set<String> tokens;
 
     public StringInItem(String indexName) {
         super(indexName);
         tokens = new HashSet<>(1000);
+    }
+
+    public StringInItem(String indexName, Set<String> tokens) {
+        super(indexName);
+        this.tokens = new HashSet<>(tokens);
     }
 
     @Override
@@ -73,20 +79,34 @@ public class StringInItem extends InItem {
         tokens.remove(token);
     }
 
-    public Collection<String> getTokens() { return Set.copyOf(tokens); }
+    public Collection<String> getTokens() {return Set.copyOf(tokens);}
+
+    @Override
+    public void disclose(Discloser discloser) {
+        super.disclose(discloser);
+        for (String token : tokens)
+            discloser.addChild(new WordItem(token));
+    }
 
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! super.equals(o)) return false;
-        var other = (StringInItem)o;
-        if ( ! Objects.equals(this.tokens, other.tokens)) return false;
+        if (!super.equals(o)) return false;
+        var other = (StringInItem) o;
+        if (!Objects.equals(this.tokens, other.tokens)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), tokens);
+    }
+
+    @Override
+    public StringInItem clone() {
+        StringInItem clone = (StringInItem) super.clone();
+        clone.tokens = new HashSet<>(tokens);
+        return clone;
     }
 
 }
