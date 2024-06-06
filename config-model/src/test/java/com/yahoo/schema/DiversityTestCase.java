@@ -3,19 +3,28 @@ package com.yahoo.schema;
 
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author baldersheim
  */
 public class DiversityTestCase {
-    @Test
-    void testDiversity() throws ParseException {
+    private static void verifyDiversity(DeployLoggerStub logger, boolean atRankProfile, boolean atMatchPhase) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(logger, rankProfileRegistry);
+        String diversitySpec = """
+                diversity {
+                    attribute: b
+                    min-groups: 74
+                    cutoff-factor: 17.3
+                    cutoff-strategy: strict
+                }
+                """;
         builder.addSchema(
                 """
                         search test {
@@ -29,17 +38,15 @@ public class DiversityTestCase {
                                 }
                             }
                             rank-profile parent {
-                                match-phase {
+                                match-phase {""" +
+                        (atMatchPhase ? diversitySpec : "") +
+                        """
                                     attribute: a
                                     max-hits: 120
                                     max-filter-coverage: 0.065
-                                }
-                                diversity {
-                                    attribute: b
-                                    min-groups: 74
-                                    cutoff-factor: 17.3
-                                    cutoff-strategy: strict
-                                }
+                                }""" +
+                        (atRankProfile ? diversitySpec : "") +
+                                """
                             }
                         }
                         """);
@@ -55,6 +62,21 @@ public class DiversityTestCase {
         assertEquals(120, matchPhase.getMaxHits());
         assertEquals("a", matchPhase.getAttribute());
         assertEquals(0.065, matchPhase.getMaxFilterCoverage(), 1e-16);
+    }
+    @Test
+    void testDiversity() throws ParseException {
+        DeployLoggerStub logger = new DeployLoggerStub();
+        verifyDiversity(logger, true, false);
+        assertTrue(logger.entries.isEmpty());
+        verifyDiversity(logger, false, true);
+        assertEquals(1, logger.entries.size());
+        assertEquals("'diversity is deprecated inside 'match-phase'. Specify it at 'rank-profile' level.", logger.entries.get(0).message);
+        try {
+            verifyDiversity(logger, true, true);
+            fail("Should throw.");
+        } catch (Exception e) {
+            assertEquals("rank-profile 'parent' error: already has diversity", e.getMessage());
+        }
     }
 
     private static String getMessagePrefix() {
@@ -85,8 +107,7 @@ public class DiversityTestCase {
         }
     }
     private ApplicationBuilder getSearchBuilder(String diversityField) throws ParseException {
-        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(new RankProfileRegistry());
         builder.addSchema("""
                         search test {
                             document test {
@@ -99,12 +120,12 @@ public class DiversityTestCase {
                             }
                             rank-profile parent {
                                 match-phase {
-                                    diversity {
-                                        attribute: b
-                                        min-groups: 74
-                                    }
                                     attribute: a
                                     max-hits: 120
+                                }
+                                diversity {
+                                    attribute: b
+                                    min-groups: 74
                                 }
                             }
                         }""");
