@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author Arne Bergene Fossaa
@@ -84,6 +85,15 @@ public class RankingTestCase {
     void testStructuredRankProperty() {
         Query query = new Query("?query=abc&rankproperty.distanceToPath(gps_position).path=(0,0,10,0,10,5,20,5)");
         assertEquals("(0,0,10,0,10,5,20,5)", query.getRanking().getProperties().get("distanceToPath(gps_position).path").get(0));
+    }
+
+    @Test
+    void testSecondPhaseRankScoreDropLimit() {
+        var query = new Query("?query=test&ranking.secondPhase.rankScoreDropLimit=17.5");
+        var ranking = query.getRanking();
+        assertEquals(17.5, ranking.getSecondPhase().getRankScoreDropLimit());
+        ranking.prepare();
+        assertEquals("17.5", ranking.getProperties().get("vespa.hitcollector.second-phase.rankscoredroplimit").get(0));
     }
 
 }

@@ -14,6 +14,7 @@ import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.RankFeatures;
 import com.yahoo.search.query.ranking.RankProperties;
+import com.yahoo.search.query.ranking.SecondPhase;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
 
@@ -45,6 +46,7 @@ public class Ranking implements Cloneable {
     public static final String KEEPRANKCOUNT = "keepRankCount";
     public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
     public static final String MATCH_PHASE = "matchPhase";
+    public static final String SECOND_PHASE = "secondPhase";
     public static final String GLOBAL_PHASE = "globalPhase";
     public static final String DIVERSITY = "diversity";
     public static final String SOFTTIMEOUT = "softtimeout";
@@ -69,6 +71,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));
         argumentType.addField(new FieldDescription(GLOBAL_PHASE, new QueryProfileFieldType(GlobalPhase.getArgumentType())));
         argumentType.addField(new FieldDescription(MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
+        argumentType.addField(new FieldDescription(SECOND_PHASE, new QueryProfileFieldType(SecondPhase.getArgumentType())));
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(Matching.getArgumentType())));
@@ -106,6 +109,8 @@ public class Ranking implements Cloneable {
     private RankFeatures rankFeatures;
 
     private MatchPhase matchPhase = new MatchPhase();
+
+    private SecondPhase secondPhase = new SecondPhase();
 
     private GlobalPhase globalPhase = new GlobalPhase();
 
@@ -230,6 +235,9 @@ public class Ranking implements Cloneable {
     /** Returns the match phase rank settings of this. This is never null. */
     public MatchPhase getMatchPhase() { return matchPhase; }
 
+    /** Return the second-phase rank settings of this. This is never null. */
+    public SecondPhase getSecondPhase() { return secondPhase; }
+
     /** Returns the global-phase rank settings of this. This is never null. */
     public GlobalPhase getGlobalPhase() { return globalPhase; }
 
@@ -266,6 +274,7 @@ public class Ranking implements Cloneable {
     public void prepare() {
         rankFeatures.prepare(rankProperties);
         matchPhase.prepare(rankProperties);
+        secondPhase.prepare(rankProperties);
         matching.prepare(rankProperties);
         softTimeout.prepare(rankProperties);
         prepareNow(freshness);
