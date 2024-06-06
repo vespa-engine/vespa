@@ -4,20 +4,27 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.databind.JavaType;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * @author freva
  */
 public class JacksonArraySerializer<T> implements FlagSerializer<List<T>> {
     private final JavaType type;
+    private final Predicate<List<T>> validator;
 
-    public JacksonArraySerializer(Class<T> clazz) {
+    public JacksonArraySerializer(Class<T> clazz, Predicate<List<T>> validator) {
         type = JsonNodeRawFlag.constructCollectionType(List.class, clazz);
+        this.validator = validator;
     }
 
     @Override
     public List<T> deserialize(RawFlag rawFlag) {
-        return JsonNodeRawFlag.fromJsonNode(rawFlag.asJsonNode()).toJacksonClass(type);
+        var list = JsonNodeRawFlag.fromJsonNode(rawFlag.asJsonNode()).<List<T>>toJacksonClass(type);
+        if (!validator.test(list)) {
+            throw new IllegalArgumentException("Invalid value: " + list);
+        }
+        return list;
     }
 
     @Override
