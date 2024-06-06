@@ -24,7 +24,8 @@ import com.yahoo.search.searchchain.Execution;
 @Beta
 @After(WeakAndReplacementSearcher.REPLACE_OR_WITH_WEAKAND)
 public class OpportunisticWeakAndSearcher extends Searcher {
-    static final CompoundName OPPORTUNISTIC_AND = CompoundName.from("weakAnd.opportunistic.and");
+    private static final CompoundName OPPORTUNISTIC_AND = CompoundName.from("weakAnd.opportunistic.and");
+    private static final CompoundName OPPORTUNISTIC_FACTOR = CompoundName.from("weakAnd.opportunistic.factor");
 
     @Override
     public Result search(Query query, Execution execution) {
@@ -33,12 +34,12 @@ public class OpportunisticWeakAndSearcher extends Searcher {
         }
 
         Item originalRoot = query.getModel().getQueryTree().getRoot();
-        int targetHits = targetHits(originalRoot);
+        int targetHits = (int)(targetHits(originalRoot) * query.properties().getDouble(OPPORTUNISTIC_FACTOR, 1.0));
         if (targetHits >= 0) {
             query.getModel().getQueryTree().setRoot(weakAnd2AndRecurse(originalRoot.clone()));
             query.trace("WeakAND(" + targetHits+ ") => AND", true, 2);
             Result result = execution.search(query);
-            if (result.getConcreteHitCount() >= targetHits) {
+            if (result.getTotalHitCount() >= targetHits) {
                 return result;
             }
             query.getModel().getQueryTree().setRoot(originalRoot);
