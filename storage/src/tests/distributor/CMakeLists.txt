@@ -61,8 +61,14 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     GTest::gmock_main
 )
 
-vespa_add_test(
-    NAME storage_distributor_gtest_runner_app
-    COMMAND storage_distributor_gtest_runner_app
-    COST 350
-)
+set(TOTAL_SHARDS 5)
+math(EXPR MAX_SHARD_INDEX "${TOTAL_SHARDS} - 1")
+foreach(SHARD_INDEX RANGE ${MAX_SHARD_INDEX})
+    string(REGEX MATCH "...$" FMT_SHARD_INDEX "00" ${SHARD_INDEX})
+    vespa_add_test(
+        NAME storage_distributor_gtest_runner_app_${FMT_SHARD_INDEX}
+        COMMAND storage_distributor_gtest_runner_app
+        ENVIRONMENT "GTEST_SHARD_INDEX=${SHARD_INDEX};GTEST_TOTAL_SHARDS=${TOTAL_SHARDS}"
+        COST 350
+    )
+endforeach()
