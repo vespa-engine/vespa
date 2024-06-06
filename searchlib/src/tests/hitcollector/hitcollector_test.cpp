@@ -585,6 +585,7 @@ struct RankDropFixture {
           _hc(docid_limit, max_hits_size)
     {
     }
+    ~RankDropFixture();
     void add(std::vector<RankedHit> hits) {
         for (const auto& hit : hits) {
             _hc.addHit(hit.getDocId(), hit.getRank());
@@ -618,6 +619,8 @@ struct RankDropFixture {
         EXPECT_EQ(exp_dropped, _dropped);
     }
 };
+
+RankDropFixture::~RankDropFixture() = default;
 
 TEST(HitCollectorTest, require_that_second_phase_rank_drop_limit_is_enforced)
 {
