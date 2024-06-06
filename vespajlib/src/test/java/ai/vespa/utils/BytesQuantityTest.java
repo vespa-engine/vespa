@@ -11,7 +11,9 @@ class BytesQuantityTest {
 
     @Test
     void from_string() {
-        assertEquals(1L, BytesQuantity.fromString("1 bytes").toBytes());
+        assertEquals(0L, BytesQuantity.fromString("0 bytes").toBytes());
+        assertEquals(1L, BytesQuantity.fromString("1 byte").toBytes());
+        assertEquals(10L, BytesQuantity.fromString("10 bytes").toBytes());
         assertEquals(1L, BytesQuantity.fromString("1 B").toBytes());
         assertEquals(1L, BytesQuantity.fromString("1B").toBytes());
         assertEquals(1L, BytesQuantity.fromString("1").toBytes());
@@ -29,7 +31,10 @@ class BytesQuantityTest {
 
     @Test
     void as_pretty_string() {
-        assertEquals("1 bytes", BytesQuantity.ofBytes(1).asPrettyString());
+        assertEquals("0 bytes", BytesQuantity.ofBytes(0).asPrettyString());
+        assertEquals("1 byte", BytesQuantity.ofBytes(1).asPrettyString());
+        assertEquals("10 bytes", BytesQuantity.ofBytes(10).asPrettyString());
+        assertEquals("1 kB", BytesQuantity.ofBytes(1024).asPrettyString());
         assertEquals("2 kB", BytesQuantity.ofKB(2).asPrettyString());
         assertEquals("3 MB", BytesQuantity.ofMB(3).asPrettyString());
         assertEquals("4 GB", BytesQuantity.ofGB(4).asPrettyString());

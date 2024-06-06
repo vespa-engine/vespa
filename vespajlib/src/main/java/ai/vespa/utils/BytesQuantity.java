@@ -36,7 +36,7 @@ public class BytesQuantity {
 
         static Unit fromString(String s) {
             return switch (s) {
-                case "", "b", "B", "bytes" -> BYTES;
+                case "", "B", "bytes", "byte" -> BYTES;
                 case "kB", "k", "K", "KB" -> KB;
                 case "MB", "m", "M" -> MB;
                 case "GB", "g", "G" -> GB;
@@ -70,6 +70,8 @@ public class BytesQuantity {
     }
 
     public String asPrettyString() {
+        if (bytes == 0) return "0 bytes";
+        if (bytes == 1) return "1 byte";
         long remaining = bytes;
         int unit = 0;
         for (; remaining % 1024 == 0 && unit < Unit.values().length - 1; unit++) remaining /= 1024;
