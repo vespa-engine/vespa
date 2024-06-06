@@ -499,16 +499,6 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         return (Result)super.process(query);
     }
 
-    @Override
-    protected void onInvoking(Request request, Processor processor) {
-        super.onInvoking(request,processor);
-        final int traceDependencies = 6;
-        Query query = (Query) request;
-        if (query.getTrace().getLevel() >= traceDependencies) {
-            query.trace(processor.getId() + " " + processor.getDependencies(), traceDependencies);
-        }
-    }
-
     /**
      * The default response returned from this kind of execution when there are not further processors
      * - an empty Result

@@ -5,13 +5,15 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNullElse;
 
-/*
+/**
  * Abstract class representing an IN operator.
  *
  * @author toregge
  */
 public abstract class InItem extends Item {
+
     private String indexName;
+
     public InItem(String indexName) {
         this.indexName = requireNonNullElse(indexName, "");
     }
@@ -20,6 +22,7 @@ public abstract class InItem extends Item {
     public void setIndexName(String index) {
         this.indexName = requireNonNullElse(index, "");
     }
+
     public String getIndexName() {
         return indexName;
     }
@@ -43,4 +46,4 @@ public abstract class InItem extends Item {
         return Objects.hash(super.hashCode(), indexName);
     }
 
-};
+}
