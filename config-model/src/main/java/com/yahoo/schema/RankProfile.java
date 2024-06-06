@@ -73,7 +73,8 @@ public class RankProfile implements Cloneable {
     /** The resolved inherited profiles, or null when not resolved. */
     private List<RankProfile> inherited;
 
-    private MatchPhaseSettings matchPhaseSettings = null;
+    private MatchPhaseSettings matchPhase = null;
+    private DiversitySettings diversity = null;
 
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
 
@@ -225,7 +226,7 @@ public class RankProfile implements Cloneable {
 
     public boolean useSignificanceModel() {
         if (useSignificanceModel != null) return useSignificanceModel;
-        return uniquelyInherited(p -> p.useSignificanceModel(), "use-model")
+        return uniquelyInherited(RankProfile::useSignificanceModel, "use-model")
                 .orElse(false); // Disabled by default
     }
 
@@ -307,15 +308,20 @@ public class RankProfile implements Cloneable {
         return false;
     }
 
-    public void setMatchPhaseSettings(MatchPhaseSettings settings) {
+    public void setMatchPhase(MatchPhaseSettings settings) {
         settings.checkValid();
-        this.matchPhaseSettings = settings;
+        this.matchPhase = settings;
     }
 
-    public MatchPhaseSettings getMatchPhaseSettings() {
-        if (matchPhaseSettings != null) return matchPhaseSettings;
-        return uniquelyInherited(p -> p.getMatchPhaseSettings(), "match phase settings").orElse(null);
+    public MatchPhaseSettings getMatchPhase() {
+        if (matchPhase != null) return matchPhase;
+        return uniquelyInherited(p -> p.getMatchPhase(), "match phase settings").orElse(null);
     }
+    public void setDiversity(DiversitySettings value) {
+        value.checkValid();
+        diversity = value;
+    }
+    public DiversitySettings      getDiversity() { return diversity; }
 
     /** Returns the uniquely determined property, where non-empty is defined as non-null */
     private <T> Optional<T> uniquelyInherited(Function<RankProfile, T> propertyRetriever,
@@ -1019,7 +1025,8 @@ public class RankProfile implements Cloneable {
         try {
             RankProfile clone = (RankProfile)super.clone();
             clone.rankSettings = new LinkedHashSet<>(this.rankSettings);
-            clone.matchPhaseSettings = this.matchPhaseSettings; // hmm?
+            clone.matchPhase = this.matchPhase; // hmm?
+            clone.diversity = this.diversity;
             clone.summaryFeatures = summaryFeatures != null ? new LinkedHashSet<>(this.summaryFeatures) : null;
             clone.matchFeatures = matchFeatures != null ? new LinkedHashSet<>(this.matchFeatures) : null;
             clone.rankFeatures = rankFeatures != null ? new LinkedHashSet<>(this.rankFeatures) : null;
@@ -1517,14 +1524,8 @@ public class RankProfile implements Cloneable {
         private boolean ascending = false;
         private int maxHits = 0; // try to get this many hits before degrading the match phase
         private double maxFilterCoverage = 0.2; // Max coverage of original corpus that will trigger the filter.
-        private DiversitySettings diversity = null;
         private double evaluationPoint = 0.20;
         private double prePostFilterTippingPoint = 1.0;
-
-        public void setDiversity(DiversitySettings value) {
-            value.checkValid();
-            diversity = value;
-        }
 
         public void setAscending(boolean value) { ascending = value; }
         public void setAttribute(String value) { attribute = value; }
@@ -1537,7 +1538,6 @@ public class RankProfile implements Cloneable {
         public String                 getAttribute() { return attribute; }
         public int                      getMaxHits() { return maxHits; }
         public double         getMaxFilterCoverage() { return maxFilterCoverage; }
-        public DiversitySettings      getDiversity() { return diversity; }
         public double           getEvaluationPoint() { return evaluationPoint; }
         public double getPrePostFilterTippingPoint() { return prePostFilterTippingPoint; }
 

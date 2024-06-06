@@ -38,8 +38,8 @@ public class ConvertParsedRanking {
         for (String name : parsed.getInherited())
             profile.inherit(name);
 
-        parsed.isStrict().ifPresent(value -> profile.setStrict(value));
-        parsed.isUseSignificanceModel().ifPresent(value -> profile.setUseSignificanceModel(value));
+        parsed.isStrict().ifPresent(profile::setStrict);
+        parsed.isUseSignificanceModel().ifPresent(profile::setUseSignificanceModel);
 
         for (var constant : parsed.getConstants().values())
             profile.add(constant);
@@ -58,41 +58,26 @@ public class ConvertParsedRanking {
             profile.addFunction(name, parameters, expression, inline);
         }
 
-        parsed.getRankScoreDropLimit().ifPresent
-            (value -> profile.setRankScoreDropLimit(value));
-        parsed.getSecondPhaseRankScoreDropLimit().ifPresent
-                (value -> profile.setSecondPhaseRankScoreDropLimit(value));
-        parsed.getTermwiseLimit().ifPresent
-            (value -> profile.setTermwiseLimit(value));
-        parsed.getPostFilterThreshold().ifPresent
-                (value -> profile.setPostFilterThreshold(value));
-        parsed.getApproximateThreshold().ifPresent
-                (value -> profile.setApproximateThreshold(value));
-        parsed.getTargetHitsMaxAdjustmentFactor().ifPresent
-                (value -> profile.setTargetHitsMaxAdjustmentFactor(value));
-        parsed.getKeepRankCount().ifPresent
-            (value -> profile.setKeepRankCount(value));
-        parsed.getMinHitsPerThread().ifPresent
-            (value -> profile.setMinHitsPerThread(value));
-        parsed.getNumSearchPartitions().ifPresent
-            (value -> profile.setNumSearchPartitions(value));
-        parsed.getNumThreadsPerSearch().ifPresent
-            (value -> profile.setNumThreadsPerSearch(value));
-        parsed.getReRankCount().ifPresent
-            (value -> profile.setRerankCount(value));
+        parsed.getRankScoreDropLimit().ifPresent(profile::setRankScoreDropLimit);
+        parsed.getSecondPhaseRankScoreDropLimit().ifPresent(profile::setSecondPhaseRankScoreDropLimit);
+        parsed.getTermwiseLimit().ifPresent(profile::setTermwiseLimit);
+        parsed.getPostFilterThreshold().ifPresent(profile::setPostFilterThreshold);
+        parsed.getApproximateThreshold().ifPresent(profile::setApproximateThreshold);
+        parsed.getTargetHitsMaxAdjustmentFactor().ifPresent(profile::setTargetHitsMaxAdjustmentFactor);
+        parsed.getKeepRankCount().ifPresent(profile::setKeepRankCount);
+        parsed.getMinHitsPerThread().ifPresent(profile::setMinHitsPerThread);
+        parsed.getNumSearchPartitions().ifPresent(profile::setNumSearchPartitions);
+        parsed.getNumThreadsPerSearch().ifPresent(profile::setNumThreadsPerSearch);
+        parsed.getReRankCount().ifPresent(profile::setRerankCount);
 
-        parsed.getMatchPhaseSettings().ifPresent
-            (value -> profile.setMatchPhaseSettings(value));
+        parsed.getMatchPhase().ifPresent(profile::setMatchPhase);
+        parsed.getDiversity().ifPresent(profile::setDiversity);
 
-        parsed.getFirstPhaseExpression().ifPresent
-            (value -> profile.setFirstPhaseRanking(value));
-        parsed.getSecondPhaseExpression().ifPresent
-            (value -> profile.setSecondPhaseRanking(value));
+        parsed.getFirstPhaseExpression().ifPresent(profile::setFirstPhaseRanking);
+        parsed.getSecondPhaseExpression().ifPresent(profile::setSecondPhaseRanking);
 
-        parsed.getGlobalPhaseExpression().ifPresent
-            (value -> profile.setGlobalPhaseRanking(value));
-        parsed.getGlobalPhaseRerankCount().ifPresent
-            (value -> profile.setGlobalPhaseRerankCount(value));
+        parsed.getGlobalPhaseExpression().ifPresent(profile::setGlobalPhaseRanking);
+        parsed.getGlobalPhaseRerankCount().ifPresent(profile::setGlobalPhaseRerankCount);
 
         for (var value : parsed.getMatchFeatures()) {
             profile.addMatchFeatures(value);
@@ -104,10 +89,8 @@ public class ConvertParsedRanking {
             profile.addSummaryFeatures(value);
         }
 
-        parsed.getInheritedMatchFeatures().ifPresent
-            (value -> profile.setInheritedMatchFeatures(value));
-        parsed.getInheritedSummaryFeatures().ifPresent
-            (value -> profile.setInheritedSummaryFeatures(value));
+        parsed.getInheritedMatchFeatures().ifPresent(profile::setInheritedMatchFeatures);
+        parsed.getInheritedSummaryFeatures().ifPresent(profile::setInheritedSummaryFeatures);
         if (parsed.getIgnoreDefaultRankFeatures()) {
             profile.setIgnoreDefaultRankFeatures(true);
         }
