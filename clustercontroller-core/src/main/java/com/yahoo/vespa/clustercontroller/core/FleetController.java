@@ -139,7 +139,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     public static FleetController create(FleetControllerOptions options, MetricReporter metricReporter) throws Exception {
         var context = new FleetControllerContextImpl(options);
         var timer = new RealTimer();
-        var metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex(), options.clusterName());
+        var metricUpdater = new MetricUpdater(metricReporter, timer, options.fleetControllerIndex(), options.clusterName());
         var log = new EventLog(timer, metricUpdater);
         var cluster = new ContentCluster(options);
         var stateGatherer = new NodeStateGatherer(timer, timer, log);
@@ -348,7 +348,8 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         newStates.add(stateBundle);
         metricUpdater.updateClusterStateMetrics(cluster, baselineState,
-                ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit(), stateBundle.getFeedBlock()));
+                ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit(), stateBundle.getFeedBlock()),
+                systemStateBroadcaster.getLastStateBroadcastTimePoint());
         lastMetricUpdateCycleCount = cycleCount;
         systemStateBroadcaster.handleNewClusterStates(stateBundle);
         // Iff master, always store new version in ZooKeeper _before_ publishing to any
@@ -365,12 +366,20 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
     private boolean maybePublishOldMetrics() {
         verifyInControllerThread();
-        if (isMaster() && cycleCount > 300 + lastMetricUpdateCycleCount) {
-            ClusterStateBundle stateBundle = stateVersionTracker.getVersionedClusterStateBundle();
-            ClusterState baselineState = stateBundle.getBaselineClusterState();
-            metricUpdater.updateClusterStateMetrics(cluster, baselineState,
-                    ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit(), stateBundle.getFeedBlock()));
-            lastMetricUpdateCycleCount = cycleCount;
+        if (cycleCount > 300 + lastMetricUpdateCycleCount) {
+            if (isMaster()) {
+                updateMasterClusterSyncMetrics();
+                ClusterStateBundle stateBundle = stateVersionTracker.getVersionedClusterStateBundle();
+                ClusterState baselineState = stateBundle.getBaselineClusterState();
+                metricUpdater.updateClusterStateMetrics(cluster, baselineState,
+                        ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit(), stateBundle.getFeedBlock()),
+                        systemStateBroadcaster.getLastStateBroadcastTimePoint());
+                lastMetricUpdateCycleCount = cycleCount;
+            } else {
+                // If we're not the master we don't have any authoritative information about
+                // how out of sync the cluster nodes are, so reset the metric.
+                metricUpdater.updateClusterBucketsOutOfSyncRatio(0);
+            }
             return true;
         } else {
             return false;
@@ -542,7 +551,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             didWork |= metricUpdater.forWork("processNextQueuedRemoteTask", this::processNextQueuedRemoteTask);
             didWork |= metricUpdater.forWork("completeSatisfiedVersionDependentTasks", this::completeSatisfiedVersionDependentTasks);
             didWork |= metricUpdater.forWork("maybePublishOldMetrics", this::maybePublishOldMetrics);
-            updateClusterSyncMetrics();
 
             processingCycle = false;
             ++cycleCount;
@@ -564,7 +572,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         }
     }
 
-    private void updateClusterSyncMetrics() {
+    private void updateMasterClusterSyncMetrics() {
         var stats = stateVersionTracker.getAggregatedClusterStats().getAggregatedStats();
         if (stats.hasUpdatesFromAllDistributors()) {
             GlobalBucketSyncStatsCalculator.clusterBucketsOutOfSyncRatio(stats.getGlobalStats())

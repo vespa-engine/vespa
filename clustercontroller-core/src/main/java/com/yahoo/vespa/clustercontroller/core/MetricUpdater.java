@@ -10,6 +10,7 @@ import com.yahoo.vespa.clustercontroller.utils.util.ComponentMetricReporter;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
@@ -19,15 +20,25 @@ import java.util.function.BooleanSupplier;
 public class MetricUpdater {
 
     private final ComponentMetricReporter metricReporter;
+    private final Timer timer;
+    // Publishing and converging on a cluster state version is never instant nor atomic, but
+    // it usually completes within a few seconds. If convergence does not happen for more than
+    // 30 seconds, it's a sign something has stalled.
+    private Duration stateVersionConvergenceGracePeriod = Duration.ofSeconds(30);
 
-    public MetricUpdater(MetricReporter metricReporter, int controllerIndex, String clusterName) {
+    public MetricUpdater(MetricReporter metricReporter, Timer timer, int controllerIndex, String clusterName) {
         this.metricReporter = new ComponentMetricReporter(metricReporter, "cluster-controller.");
         this.metricReporter.addDimension("controller-index", String.valueOf(controllerIndex));
         this.metricReporter.addDimension("clusterid", clusterName);
+        this.timer = timer;
     }
 
     public MetricReporter.Context createContext(Map<String, String> dimensions) {
         return metricReporter.createContext(dimensions);
+    }
+
+    public void setStateVersionConvergenceGracePeriod(Duration gracePeriod) {
+        stateVersionConvergenceGracePeriod = gracePeriod;
     }
 
     private static int nodesInAvailableState(Map<State, Integer> nodeCounts) {
@@ -39,10 +50,13 @@ public class MetricUpdater {
                 + nodeCounts.getOrDefault(State.MAINTENANCE, 0);
     }
 
-    public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state, ResourceUsageStats resourceUsage) {
+    public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state,
+                                          ResourceUsageStats resourceUsage, Instant lastStateBroadcastTimePoint) {
         Map<String, String> dimensions = new HashMap<>();
         dimensions.put("cluster", cluster.getName());
         dimensions.put("clusterid", cluster.getName());
+        Instant now = timer.getCurrentWallClockTime();
+        boolean convergenceDeadlinePassed = lastStateBroadcastTimePoint.plus(stateVersionConvergenceGracePeriod).isBefore(now);
         for (NodeType type : NodeType.getTypes()) {
             dimensions.put("node-type", type.toString().toLowerCase());
             MetricReporter.Context context = createContext(dimensions);
@@ -50,10 +64,18 @@ public class MetricUpdater {
             for (State s : State.values()) {
                 nodeCounts.put(s, 0);
             }
+            int nodesNotConverged = 0;
             for (Integer i : cluster.getConfiguredNodes().keySet()) {
-                NodeState s = state.getNodeState(new Node(type, i));
+                var node = new Node(type, i);
+                NodeState s = state.getNodeState(node);
                 Integer count = nodeCounts.get(s.getState());
                 nodeCounts.put(s.getState(), count + 1);
+                var info = cluster.getNodeInfo(node);
+                if (info != null && convergenceDeadlinePassed && s.getState().oneOf("uir")) {
+                    if (info.getClusterStateVersionBundleAcknowledged() != state.getVersion()) {
+                        nodesNotConverged++;
+                    }
+                }
             }
             for (State s : State.values()) {
                 String name = s.toString().toLowerCase() + ".count";
@@ -63,6 +85,7 @@ public class MetricUpdater {
             final int availableNodes = nodesInAvailableState(nodeCounts);
             final int totalNodes = Math.max(cluster.getConfiguredNodes().size(), 1); // Assumes 1-1 between distributor and storage
             metricReporter.set("available-nodes.ratio", (double)availableNodes / totalNodes, context);
+            metricReporter.set("nodes-not-converged", nodesNotConverged, context);
         }
         dimensions.remove("node-type");
         MetricReporter.Context context = createContext(dimensions);

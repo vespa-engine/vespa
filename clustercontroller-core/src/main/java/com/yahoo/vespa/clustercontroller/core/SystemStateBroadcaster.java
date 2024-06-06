@@ -8,6 +8,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 
+import java.time.Instant;
 import java.util.logging.Level;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +30,7 @@ public class SystemStateBroadcaster {
     private final static long minTimeBetweenNodeErrorLogging = 10 * 60 * 1000;
     private final Map<Node, Long> lastErrorReported = new TreeMap<>();
 
+    private Instant lastStateBroadcastTimePoint = Instant.EPOCH;
     private int lastOfficialStateVersion = -1;
     private int lastStateVersionBundleAcked = 0;
     private int lastClusterStateVersionConverged = 0;
@@ -45,6 +47,7 @@ public class SystemStateBroadcaster {
 
     public void handleNewClusterStates(ClusterStateBundle state) {
         clusterStateBundle = state;
+        lastStateBroadcastTimePoint = Instant.ofEpochMilli(timer.getCurrentTimeInMillis());
     }
 
     public ClusterState getClusterState() {
@@ -65,6 +68,10 @@ public class SystemStateBroadcaster {
 
     public ClusterStateBundle getLastClusterStateBundleConverged() {
         return lastClusterStateBundleConverged;
+    }
+
+    public Instant getLastStateBroadcastTimePoint() {
+        return lastStateBroadcastTimePoint;
     }
 
     private void reportNodeError(boolean nodeOk, NodeInfo info, String message) {
