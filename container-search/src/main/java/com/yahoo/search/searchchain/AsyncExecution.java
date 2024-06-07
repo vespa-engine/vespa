@@ -121,11 +121,7 @@ public class AsyncExecution {
         }, query);
     }
 
-    /**
-     * The future of this functions returns the original Result
-     *
-     * @see com.yahoo.search.searchchain.Execution
-     */
+    /** Fills this result and returns the future where it is filled. */
     public FutureResult fill(Result result, String summaryClass) {
         return getFutureResult(execution.context().executor(), () -> {
             execution.fill(result, summaryClass);

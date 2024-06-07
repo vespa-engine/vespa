@@ -210,7 +210,7 @@ public abstract class CompositeItem extends Item {
     public CompositeItem clone() {
         CompositeItem copy = (CompositeItem) super.clone();
 
-        copy.subitems = new java.util.ArrayList<>(subitems.size());
+        copy.subitems = new ArrayList<>(subitems.size());
         for (Item subItem : subitems) {
             Item subItemCopy = subItem.clone();
             subItemCopy.setParent(copy);
