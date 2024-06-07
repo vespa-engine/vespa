@@ -899,15 +899,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return the active session, or null if there is no active session for the given application id.
      */
     public Optional<Session> getActiveSession(ApplicationId applicationId) {
-        return getActiveRemoteSession(applicationId);
-    }
-
-    /**
-     * Gets the active Session for the given application id.
-     *
-     * @return the active session, or null if there is no active session for the given application id.
-     */
-    public Optional<Session> getActiveRemoteSession(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new IllegalArgumentException("Could not find any tenant for '" + applicationId + "'");
         return getActiveSession(tenant, applicationId);
@@ -915,15 +906,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public long getSessionIdForApplication(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
-        if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
-        return getSessionIdForApplication(tenant, applicationId);
-    }
-
-    private long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        if (! applicationRepo.exists(applicationId))
+        if (tenant == null)
+            throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
+        if (! tenant.getApplicationRepo().exists(applicationId))
             throw new NotFoundException("Unknown application id '" + applicationId + "'");
-        return applicationRepo.requireActiveSessionOf(applicationId);
+
+        return requireActiveSession(tenant, applicationId).getSessionId();
     }
 
     public void validateThatSessionIsNotActive(Tenant tenant, long sessionId) {
@@ -944,7 +932,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                           DeployLogger deployLogger) {
         Tenant tenant = getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
-        Session fromSession = getExistingSession(tenant, applicationId);
+        Session fromSession = requireActiveSession(tenant, applicationId);
         return sessionRepository.createSessionFromExisting(fromSession, internalRedeploy, timeoutBudget, deployLogger).getSessionId();
     }
 
@@ -1130,10 +1118,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    // TODO: Merge this and getActiveSession(), they are almost identical
-    private Session getExistingSession(Tenant tenant, ApplicationId applicationId) {
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return getRemoteSession(tenant, applicationRepo.requireActiveSessionOf(applicationId));
+    private Session requireActiveSession(Tenant tenant, ApplicationId applicationId) {
+        return getActiveSession(tenant, applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Application '" + applicationId + "' has no active session."));
     }
 
     public Optional<Session> getActiveSession(Tenant tenant, ApplicationId applicationId) {
