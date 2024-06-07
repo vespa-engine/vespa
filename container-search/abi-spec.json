@@ -712,6 +712,7 @@
       "public void <init>(int, java.lang.String)",
       "public void <init>(long, java.lang.String)",
       "public void <init>(com.yahoo.prelude.query.Limit, com.yahoo.prelude.query.Limit, java.lang.String)",
+      "public void <init>(java.lang.Long)",
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, boolean)",
       "public void <init>(java.lang.String, java.lang.String)",
@@ -1100,6 +1101,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public int encode(java.nio.ByteBuffer)",
       "protected void encodeThis(java.nio.ByteBuffer)",
@@ -1107,8 +1109,12 @@
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public void addToken(long)",
       "public java.util.Collection getTokens()",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public com.yahoo.prelude.query.NumericInItem clone()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [ ]
   },
@@ -1582,6 +1588,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public int encode(java.nio.ByteBuffer)",
       "protected void encodeThis(java.nio.ByteBuffer)",
@@ -1590,8 +1597,12 @@
       "public void addToken(java.lang.String)",
       "public void removeToken(java.lang.String)",
       "public java.util.Collection getTokens()",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public com.yahoo.prelude.query.StringInItem clone()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [ ]
   },
