@@ -58,7 +58,7 @@ public class Memoized<T, E extends Exception> implements Supplier<T>, AutoClosea
 
     @Override
     public T get() {
-        // Double-checked locking: try the variable, and if not initialized, try to initialize it.
+        // Double-checked locking: try the _volatile_ variable, and if not initialized, try to initialize it.
         if (wrapped == null) synchronized (monitor) {
             // Ensure the factory is called only once, by clearing it once successfully called.
             if (factory != null) wrapped = requireNonNull(factory.get());

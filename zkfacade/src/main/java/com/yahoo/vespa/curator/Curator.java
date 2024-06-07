@@ -238,6 +238,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
     public boolean create(Path path, Duration ttl) {
         return create(path, ttl, null);
     }
+
     private boolean create(Path path, Duration ttl, Stat stat) {
         if (exists(path)) return false;
 
