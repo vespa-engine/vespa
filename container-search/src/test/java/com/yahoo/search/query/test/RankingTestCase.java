@@ -93,7 +93,7 @@ public class RankingTestCase {
         var ranking = query.getRanking();
         assertEquals(17.5, ranking.getSecondPhase().getRankScoreDropLimit());
         ranking.prepare();
-        assertEquals("17.5", ranking.getProperties().get("vespa.hitcollector.second-phase.rankscoredroplimit").get(0));
+        assertEquals("17.5", ranking.getProperties().get("vespa.hitcollector.secondphase.rankscoredroplimit").get(0));
     }
 
 }

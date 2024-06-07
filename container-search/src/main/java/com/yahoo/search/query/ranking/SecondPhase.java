@@ -40,7 +40,7 @@ public class SecondPhase implements Cloneable {
         if (rankScoreDropLimit == null) {
             return;
         }
-        rankProperties.put("vespa.hitcollector.second-phase.rankscoredroplimit", String.valueOf(rankScoreDropLimit));
+        rankProperties.put("vespa.hitcollector.secondphase.rankscoredroplimit", String.valueOf(rankScoreDropLimit));
     }
 
     @Override
