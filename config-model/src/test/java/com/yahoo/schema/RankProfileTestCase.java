@@ -551,7 +551,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
 
         assertEquals(3, registry.all().size());
         RawRankProfile rawProfile = createRawRankProfile(registry.get(schema, "test"), schema);
-        assertEquals("17.0", findProperty(rawProfile.configProperties(), "vespa.hitcollector.second-phase.rankscoredroplimit").get());
+        assertEquals("17.0", findProperty(rawProfile.configProperties(), "vespa.hitcollector.secondphase.rankscoredroplimit").get());
     }
 
 }

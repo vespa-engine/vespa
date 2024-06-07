@@ -704,7 +704,7 @@ FirstPhaseRankScoreDropLimit::lookup(const Properties &props, std::optional<feat
     return lookup_opt_double(props, NAME, default_value);
 }
 
-const vespalib::string SecondPhaseRankScoreDropLimit::NAME("vespa.hitcollector.second-phase.rankscoredroplimit");
+const vespalib::string SecondPhaseRankScoreDropLimit::NAME("vespa.hitcollector.secondphase.rankscoredroplimit");
 const std::optional<feature_t> SecondPhaseRankScoreDropLimit::DEFAULT_VALUE(std::nullopt);
 
 std::optional<feature_t>

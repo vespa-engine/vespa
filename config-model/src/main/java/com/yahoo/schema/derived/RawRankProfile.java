@@ -510,7 +510,7 @@ public class RawRankProfile {
                 properties.add(new Pair<>("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + ""));
             }
             if (secondPhaseRankScoreDropLimit > -Double.MAX_VALUE) {
-                properties.add(new Pair<>("vespa.hitcollector.second-phase.rankscoredroplimit", secondPhaseRankScoreDropLimit + ""));
+                properties.add(new Pair<>("vespa.hitcollector.secondphase.rankscoredroplimit", secondPhaseRankScoreDropLimit + ""));
             }
             if (ignoreDefaultRankFeatures) {
                 properties.add(new Pair<>("vespa.dump.ignoredefaultfeatures", String.valueOf(true)));
