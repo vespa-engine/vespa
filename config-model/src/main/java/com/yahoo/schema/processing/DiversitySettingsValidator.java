@@ -32,6 +32,9 @@ public class DiversitySettingsValidator extends Processor {
         String attributeName = settings.getAttribute();
         new AttributeValidator(schema.getName(), rankProfile.name(),
                                schema.getAttribute(attributeName), attributeName).validate();
+        if ((rankProfile.getMatchPhase() == null) && (rankProfile.getSecondPhaseRanking() == null)) {
+            throw new IllegalArgumentException("In schema '" + schema.getName() + "', rank-profile '" + rankProfile.name() + "': 'diversity' requires either 'match-phase' or 'second-phase' to be specified.");
+        }
     }
 
     private static class AttributeValidator extends  MatchPhaseSettingsValidator.AttributeValidator {
