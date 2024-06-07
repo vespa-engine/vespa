@@ -206,7 +206,6 @@ public class SessionPreparerTest {
         HostRegistry hostValidator = new HostRegistry();
         ApplicationId applicationId = applicationId();
         hostValidator.update(applicationId, List.of("mytesthost"));
-        //createSessionZooKeeperClient().createNewSession(Instant.now());
         preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
                          Optional.empty(), Instant.now(), app.getAppDir(), app,
                          createSessionZooKeeperClient());
