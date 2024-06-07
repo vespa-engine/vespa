@@ -531,10 +531,9 @@
    fun:_ZN6google8protobuf14DescriptorPool23internal_generated_poolEv
    fun:_ZN6google8protobuf14DescriptorPool24InternalAddGeneratedFileEPKvi
    fun:_ZN6google8protobuf8internal14AddDescriptorsEPKNS1_15DescriptorTableE
-   fun:call_init.part.0
+   ...
    fun:call_init
    fun:_dl_init
-   obj:/usr/lib64/ld-2.28.so
 }
 {
    Protobuf 5.26.1 suppression 5
@@ -549,10 +548,9 @@
    fun:_ZN6google8protobuf14DescriptorPool23internal_generated_poolEv
    fun:_ZN6google8protobuf14DescriptorPool24InternalAddGeneratedFileEPKvi
    fun:_ZN6google8protobuf8internal14AddDescriptorsEPKNS1_15DescriptorTableE
-   fun:call_init.part.0
+   ...
    fun:call_init
    fun:_dl_init
-   obj:/usr/lib64/ld-2.28.so
 }
 {
    Protobuf 5.26.1 suppression 6
@@ -563,8 +561,59 @@
    fun:_ZN4absl12lts_2024011618container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPKN6google8protobuf8internal15DescriptorTableEEENS5_12_GLOBAL__N_123GeneratedMessageFactory20DescriptorByNameHashENSC_18DescriptorByNameEqESaIS9_EE6resizeEm
    fun:_ZN4absl12lts_2024011618container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPKN6google8protobuf8internal15DescriptorTableEEENS5_12_GLOBAL__N_123GeneratedMessageFactory20DescriptorByNameHashENSC_18DescriptorByNameEqESaIS9_EE14prepare_insertEm
    fun:_ZN6google8protobuf14MessageFactory29InternalRegisterGeneratedFileEPKNS0_8internal15DescriptorTableE
-   fun:call_init.part.0
+   ...
    fun:call_init
    fun:_dl_init
-   obj:/usr/lib64/ld-2.28.so
+}
+{
+   NPTL keeps a cache of thread stacks, and metadata for thread local storage is not freed for threads in that cache
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:UnknownInlinedFun
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.34
+}
+{
+   Fedora 40 dlopen suppression
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:UnknownInlinedFun
+   fun:_dlfo_mappings_segment_allocate
+   fun:_dl_find_object_update_1
+   fun:_dl_find_object_update
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:do_dlopen
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:dlerror_run
+   fun:__libc_dlopen_mode
+}
+{
+   Fedora 40 onnxruntime 1.18.0 initialization suppression
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:cpuinfo_x86_linux_init
+   ...
+   fun:pthread_once@@GLIBC_2.34
+   ...
+}
+{
+   Apparent memory leak on Fedora 40.
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:__tsearch
+   fun:tsearch
+   fun:__add_to_environ
+   fun:setenv
+   ...
 }
