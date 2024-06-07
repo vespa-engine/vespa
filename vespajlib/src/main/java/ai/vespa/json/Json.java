@@ -16,9 +16,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -161,7 +165,8 @@ public class Json implements Iterable<Json> {
     private void requirePresent() { if (isMissing()) throw createMissingMemberException(); }
 
     private InvalidJsonException createInvalidTypeException(Type... expected) {
-        var expectedTypesString = Arrays.stream(expected).map(this::toString).collect(Collectors.joining("' or '", "'", "'"));
+        var expectedTypesString = Arrays.stream(expected).map(this::toString)
+                .collect(java.util.stream.Collectors.joining("' or '", "'", "'"));
         var pathString = path.isEmpty() ? "JSON" : "JSON member '%s'".formatted(path);
         return new InvalidJsonException(
                 "Expected %s to be a %s but got '%s'"
@@ -222,6 +227,10 @@ public class Json implements Iterable<Json> {
                 SlimeUtils.addValue(json.inspector, cursor); return this;
             }
             public Builder.Array add(Json.Builder builder) { return add(builder.build()); }
+            /** Add all values from {@code array} to this array. */
+            public Builder.Array addAll(Json.Builder.Array array) {
+                SlimeUtils.copyArray(array.cursor, cursor); return this;
+            }
 
             /** Note: does not return {@code this}! */
             public Builder.Array addArray() { return new Array(cursor.addArray()); }
@@ -266,5 +275,19 @@ public class Json implements Iterable<Json> {
 
         public Cursor slimeCursor() { return cursor; }
         public Json build() { return Json.of(cursor); }
+    }
+
+    public static class Collectors {
+        private Collectors() {}
+        /** @param accumululator Specify one of the 'add' overloads from {@link Builder.Array} */
+        public static <T> Collector<T, Json.Builder.Array, Json> toArray(BiConsumer<Builder.Array, T> accumululator) {
+            return new Collector<T, Builder.Array, Json>() {
+                @Override public Supplier<Builder.Array> supplier() { return Json.Builder.Array::newArray; }
+                @Override public BiConsumer<Builder.Array, T> accumulator() { return accumululator; }
+                @Override public BinaryOperator<Builder.Array> combiner() { return Builder.Array::addAll; }
+                @Override public Function<Builder.Array, Json> finisher() { return Builder.Array::build; }
+                @Override public Set<Characteristics> characteristics() { return Set.of(); }
+            };
+        }
     }
 }

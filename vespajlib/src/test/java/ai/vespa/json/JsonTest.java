@@ -2,6 +2,10 @@ package ai.vespa.json;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -129,5 +133,40 @@ class JsonTest {
                 .build()
                 .toJson(true);
         assertEquals(expected, json);
+    }
+
+    @Test
+    void add_all() {
+        var expected =
+                """
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+                """;
+        var json = Json.Builder.newArray()
+                .addAll(Json.Builder.Array.newArray().add(1).add(2).add(3))
+                .add(4)
+                .addAll(Json.Builder.Array.newArray().add(5))
+                .add(6)
+                .build()
+                .toJson(true);
+        assertEquals(expected, json);
+    }
+
+    @Test
+    void collectors() {
+        var expected = Json.Builder.Array.newArray()
+                .add(1).add(2).add(3).add(4).add(5).add(6)
+                .build()
+                .toJson(false);
+        var actual = Stream.of(1, 2, 3, 4, 5, 6)
+                .collect(Json.Collectors.toArray(Json.Builder.Array::add))
+                .toJson(false);
+        assertEquals(expected, actual);
     }
 }
