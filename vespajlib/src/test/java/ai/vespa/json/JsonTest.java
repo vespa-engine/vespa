@@ -130,4 +130,27 @@ class JsonTest {
                 .toJson(true);
         assertEquals(expected, json);
     }
+
+    @Test
+    void add_all() {
+        var expected =
+                """
+                [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+                """;
+        var json = Json.Builder.newArray()
+                .addAll(Json.Builder.Array.newArray().add(1).add(2).add(3))
+                .add(4)
+                .addAll(Json.Builder.Array.newArray().add(5))
+                .add(6)
+                .build()
+                .toJson(true);
+        assertEquals(expected, json);
+    }
 }

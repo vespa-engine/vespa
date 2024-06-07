@@ -222,6 +222,10 @@ public class Json implements Iterable<Json> {
                 SlimeUtils.addValue(json.inspector, cursor); return this;
             }
             public Builder.Array add(Json.Builder builder) { return add(builder.build()); }
+            /** Add all values from {@code array} to this array. */
+            public Builder.Array addAll(Json.Builder.Array array) {
+                SlimeUtils.copyArray(array.cursor, cursor); return this;
+            }
 
             /** Note: does not return {@code this}! */
             public Builder.Array addArray() { return new Array(cursor.addArray()); }
