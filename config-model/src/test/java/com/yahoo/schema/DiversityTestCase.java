@@ -79,6 +79,29 @@ public class DiversityTestCase {
         }
     }
 
+    @Test
+    void requireMatchPhaseOrSecondPhase() throws ParseException {
+        ApplicationBuilder builder = new ApplicationBuilder(new RankProfileRegistry());
+        builder.addSchema("""
+                            search test {
+                              document test {
+                                field b type int { indexing: attribute }
+                              }
+                              rank-profile parent {
+                                diversity {
+                                  attribute: b
+                                  min-groups: 74
+                                }
+                              }
+                            }""");
+        try {
+            builder.build(true);
+            fail("Should throw.");
+        } catch (IllegalArgumentException e) {
+            assertEquals("In schema 'test', rank-profile 'parent': 'diversity' requires either 'match-phase' or 'second-phase' to be specified.", e.getMessage());
+        }
+    }
+
     private static String getMessagePrefix() {
         return "In search definition 'test', rank-profile 'parent': diversity attribute 'b' ";
     }
