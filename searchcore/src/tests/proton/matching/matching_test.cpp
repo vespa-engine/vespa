@@ -561,7 +561,7 @@ TEST(MatchingTest, require_that_no_hits_gives_no_match_feature_names)
     MyWorld::verify_match_features(*reply, "f1");
 }
 
-TEST(MatchingTest, require_that_matching_also_returns_hits_when_only_bitvector_is_used_with_mmulti_threaded_matcher)
+TEST(MatchingTest, require_that_matching_also_returns_hits_when_only_bitvector_is_used_with_multi_threaded_matcher)
  {
     for (size_t threads = 1; threads <= 16; ++threads) {
         MyWorld world;
