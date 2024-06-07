@@ -15,7 +15,6 @@ import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 

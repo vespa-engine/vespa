@@ -109,9 +109,9 @@ public class ZooKeeperDeployer {
             curator.create(sessionPath);
 
             for (String subPath : List.of(DEFCONFIGS_ZK_SUBPATH,
-                                                USER_DEFCONFIGS_ZK_SUBPATH,
-                                                USERAPP_ZK_SUBPATH,
-                                                ZKApplicationPackage.fileRegistryNode)) {
+                                          USER_DEFCONFIGS_ZK_SUBPATH,
+                                          USERAPP_ZK_SUBPATH,
+                                          ZKApplicationPackage.fileRegistryNode)) {
                 // TODO: The replaceFirst below is hackish.
                 curator.create(getZooKeeperAppPath().append(subPath.replaceFirst("/", "")));
             }
