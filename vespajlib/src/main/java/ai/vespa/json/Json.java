@@ -28,6 +28,7 @@ import java.util.stream.StreamSupport;
 
 import static com.yahoo.slime.Type.ARRAY;
 import static com.yahoo.slime.Type.STRING;
+import static java.util.stream.Collectors.joining;
 
 /**
  * A {@link Slime} wrapper that throws {@link InvalidJsonException} on missing members or invalid types.
@@ -165,8 +166,7 @@ public class Json implements Iterable<Json> {
     private void requirePresent() { if (isMissing()) throw createMissingMemberException(); }
 
     private InvalidJsonException createInvalidTypeException(Type... expected) {
-        var expectedTypesString = Arrays.stream(expected).map(this::toString)
-                .collect(java.util.stream.Collectors.joining("' or '", "'", "'"));
+        var expectedTypesString = Arrays.stream(expected).map(this::toString).collect(joining("' or '", "'", "'"));
         var pathString = path.isEmpty() ? "JSON" : "JSON member '%s'".formatted(path);
         return new InvalidJsonException(
                 "Expected %s to be a %s but got '%s'"
