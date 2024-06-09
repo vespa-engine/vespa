@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchNode;
-import com.yahoo.vespa.model.search.TransactionLogServer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,13 +30,8 @@ public class SearchNodeTest {
         assertEquals(expected, cfg.basedir());
     }
 
-    private void prepare(MockRoot root, SearchNode node, Boolean useFsync) {
+    private void prepare(MockRoot root, SearchNode node) {
         Host host = new Host(root, "mockhost");
-        TransactionLogServer tls = new TransactionLogServer(root, "mycluster", useFsync);
-        tls.setHostResource(new HostResource(host));
-        tls.setBasePort(100);
-        tls.initService(root.getDeployState());
-        node.setTls(tls);
         node.setHostResource(new HostResource(host));
         node.setBasePort(200);
         node.initService(root.getDeployState());
@@ -45,13 +39,15 @@ public class SearchNodeTest {
     }
 
     private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey, NodeSpec nodeSpec,
-                                               boolean flushOnShutDown, boolean isHosted, ModelContext.FeatureFlags featureFlags) {
+                                               boolean flushOnShutDown, boolean isHosted,
+                                               ModelContext.FeatureFlags featureFlags,
+                                               Boolean syncTransactionLog) {
         return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                null, null, isHosted, 0.0, featureFlags);
+                null, null, isHosted, 0.0, featureFlags, syncTransactionLog);
     }
 
-    private static SearchNode createSearchNode(MockRoot root) {
-        return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true, new TestProperties());
+    private static SearchNode createSearchNode(MockRoot root, Boolean syncTransactionLog) {
+        return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true, new TestProperties(), syncTransactionLog);
     }
 
     @Test
@@ -64,15 +60,17 @@ public class SearchNodeTest {
     @Test
     void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), new TestProperties());
-        prepare(root, node, true);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false,
+                                           root.getDeployState().isHosted(), new TestProperties(), true);
+        prepare(root, node);
         assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/n3"), node);
     }
 
     @Test
     void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), new TestProperties());
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false,
+                                           root.getDeployState().isHosted(), new TestProperties(), true);
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
         node.initService(root.getDeployState());
         assertFalse(node.getPreShutdownCommand().isPresent());
@@ -81,7 +79,8 @@ public class SearchNodeTest {
     @Test
     void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted(), new TestProperties());
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true,
+                                           root.getDeployState().isHosted(), new TestProperties(), true);
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
         assertTrue(node.getPreShutdownCommand().isPresent());
@@ -90,7 +89,8 @@ public class SearchNodeTest {
 
     private void verifyCodePlacement(boolean hugePages) {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().loadCodeAsHugePages(hugePages));
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false,
+                                           new TestProperties().loadCodeAsHugePages(hugePages), true);
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
         assertEquals(hugePages, node.getEnvVars().get("VESPA_LOAD_CODE_AS_HUGEPAGES") != null);
@@ -104,7 +104,8 @@ public class SearchNodeTest {
 
     private void verifySharedStringRepoReclaim(boolean sharedStringRepoNoReclaim) {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().sharedStringRepoNoReclaim(sharedStringRepoNoReclaim));
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false,
+                                           new TestProperties().sharedStringRepoNoReclaim(sharedStringRepoNoReclaim), true);
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
         assertEquals(sharedStringRepoNoReclaim, node.getEnvVars().get("VESPA_SHARED_STRING_REPO_NO_RECLAIM") != null);
@@ -120,10 +121,10 @@ public class SearchNodeTest {
         return new MockRoot("", new DeployState.Builder().properties(properties).build());
     }
 
-    private TranslogserverConfig getTlsConfig(ModelContext.Properties properties, Boolean useFsync) {
+    private TranslogserverConfig getTlsConfig(ModelContext.Properties properties, Boolean syncTransactionLog) {
         MockRoot root = createRoot(properties);
-        SearchNode node = createSearchNode(root);
-        prepare(root, node, useFsync);
+        SearchNode node = createSearchNode(root, syncTransactionLog);
+        prepare(root, node);
         TranslogserverConfig.Builder tlsBuilder = new TranslogserverConfig.Builder();
         node.getConfig(tlsBuilder);
         return tlsBuilder.build();

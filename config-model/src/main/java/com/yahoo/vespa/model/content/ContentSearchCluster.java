@@ -21,7 +21,6 @@ import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
-import com.yahoo.vespa.model.search.TransactionLogServer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
@@ -237,24 +236,17 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;
-        TransactionLogServer tls;
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
-                                           fractionOfMemoryReserved, deployState.featureFlags());
+                                           fractionOfMemoryReserved, deployState.featureFlags(), syncTransactionLog);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
-
-            tls = new TransactionLogServer(searchNode, clusterName, syncTransactionLog);
-            tls.setHostResource(searchNode.getHostResource());
-            tls.initService(deployState);
         } else {
-            searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, resourceLimits, fractionOfMemoryReserved)
+            searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
+                                                tuning, resourceLimits, fractionOfMemoryReserved, syncTransactionLog)
                     .build(deployState, parent, element.getXml());
-            tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
-        searchNode.setTls(tls);
         if (searchCluster != null) {
             searchCluster.addSearcher(searchNode);
         } else {
