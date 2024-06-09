@@ -28,7 +28,7 @@ MockAttributeContext::getAttributeList(std::vector<const IAttributeVector *> & l
 MockAttributeContext::~MockAttributeContext() = default;
 
 void
-MockAttributeContext::add(std::shared_ptr<IAttributeVector> attr) {
+MockAttributeContext::add(std::shared_ptr<const IAttributeVector> attr) {
     _vectors[attr->getName()] = attr;
 }
 
