@@ -18,6 +18,7 @@
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/limited_thread_bundle_wrapper.h>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -76,22 +77,6 @@ size_t
 numThreads(size_t hits, size_t minHits) {
     return static_cast<size_t>(std::ceil(double(hits) / double(minHits)));
 }
-
-class LimitedThreadBundleWrapper final : public vespalib::ThreadBundle
-{
-public:
-    LimitedThreadBundleWrapper(vespalib::ThreadBundle &threadBundle, uint32_t maxThreads)
-        : _threadBundle(threadBundle),
-          _maxThreads(std::min(maxThreads, static_cast<uint32_t>(threadBundle.size())))
-    { }
-    size_t size() const override { return _maxThreads; }
-    void run(vespalib::Runnable* const* targets, size_t cnt) override {
-        _threadBundle.run(targets, cnt);
-    }
-private:
-    vespalib::ThreadBundle &_threadBundle;
-    const uint32_t          _maxThreads;
-};
 
 bool
 willNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext,
@@ -302,7 +287,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                            request.sortSpec, params.offset, params.hits);
 
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
-        LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
+        vespalib::LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
         uint32_t numParts = NumSearchPartitions::lookup(rankProperties, _rankSetup->getNumSearchPartitions());
         if (limitedThreadBundle.size() > 1) {

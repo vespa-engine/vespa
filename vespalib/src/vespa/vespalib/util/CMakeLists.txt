@@ -49,6 +49,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     jsonwriter.cpp
     latch.cpp
     left_right_heap.cpp
+    limited_thread_bundle_wrapper.cpp
     lz4compressor.cpp
     malloc_mmap_guard.cpp
     md5.c
