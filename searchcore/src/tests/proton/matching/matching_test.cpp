@@ -34,6 +34,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/featureset.h>
+#include <vespa/vespalib/util/limited_thread_bundle_wrapper.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -64,6 +65,97 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::FeatureSet;
 using vespalib::nbostream;
+
+constexpr uint32_t NUM_DOCS = 1000;
+
+class MatchingTestSharedState {
+    std::unique_ptr<vespalib::SimpleThreadBundle> _thread_bundle;
+    std::unique_ptr<MockAttributeContext>         _attribute_context;
+    std::unique_ptr<DocumentMetaStore>            _meta_store;
+public:
+    static constexpr size_t max_threads = 75;
+    MatchingTestSharedState();
+    ~MatchingTestSharedState();
+    vespalib::ThreadBundle& thread_bundle();
+    IAttributeContext& attribute_context();
+    const proton::IDocumentMetaStore& meta_store();
+};
+
+MatchingTestSharedState::MatchingTestSharedState()
+    : _thread_bundle(),
+      _attribute_context(),
+      _meta_store()
+{
+}
+
+MatchingTestSharedState::~MatchingTestSharedState() = default;
+
+vespalib::ThreadBundle&
+MatchingTestSharedState::thread_bundle()
+{
+    if (!_thread_bundle) {
+        _thread_bundle = std::make_unique<vespalib::SimpleThreadBundle>(max_threads);
+    }
+    return *_thread_bundle;
+}
+
+IAttributeContext&
+MatchingTestSharedState::attribute_context()
+{
+    if (!_attribute_context) {
+        _attribute_context = std::make_unique<MockAttributeContext>();
+        // attribute context
+        {
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("a1");
+            AttributeVector::DocId docid(0);
+            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+                attr->addDoc(docid);
+                attr->add(i, docid); // value = docid
+            }
+            assert(docid + 1 == NUM_DOCS);
+            _attribute_context->add(attr);
+        }
+        {
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("a2");
+            AttributeVector::DocId docid(0);
+            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+                attr->addDoc(docid);
+                attr->add(i * 2, docid); // value = docid * 2
+            }
+            assert(docid + 1 == NUM_DOCS);
+            _attribute_context->add(attr);
+        }
+        {
+            auto attr = std::make_shared<SingleInt32ExtAttribute>("a3");
+            AttributeVector::DocId docid(0);
+            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+                attr->addDoc(docid);
+                attr->add(i%10, docid);
+            }
+            assert(docid + 1 == NUM_DOCS);
+            _attribute_context->add(attr);
+        }
+    }
+    return *_attribute_context;
+}
+
+const proton::IDocumentMetaStore&
+MatchingTestSharedState::meta_store()
+{
+    if (!_meta_store) {
+        _meta_store = std::make_unique<DocumentMetaStore>(std::make_shared<bucketdb::BucketDBOwner>());
+        // metaStore
+        for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+            document::DocumentId docId(vespalib::make_string("id:ns:searchdocument::%u", i));
+            const document::GlobalId &gid = docId.getGlobalId();
+            document::BucketId bucketId(BucketFactory::getBucketId(docId));
+            uint32_t docSize = 1;
+            _meta_store->put(gid, bucketId, Timestamp(0u), docSize, i, 0u);
+            _meta_store->setBucketState(bucketId, true);
+        }
+    }
+    return *_meta_store;
+}
 
 vespalib::ThreadBundle &ttb() { return vespalib::ThreadBundle::trivial(); }
 
@@ -106,8 +198,6 @@ vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, c
 
 //-----------------------------------------------------------------------------
 
-const uint32_t NUM_DOCS = 1000;
-
 struct EmptyRankingAssetsRepo : public search::fef::IRankingAssetsRepo {
     vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
         return {};
@@ -125,18 +215,19 @@ struct EmptyRankingAssetsRepo : public search::fef::IRankingAssetsRepo {
 //-----------------------------------------------------------------------------
 
 struct MyWorld {
+    MatchingTestSharedState&         shared_state;
     Schema                           schema;
     Properties                       config;
     FakeSearchContext                searchContext;
-    MockAttributeContext             attributeContext;
+    IAttributeContext&               attributeContext;
     std::shared_ptr<SessionManager>  sessionManager;
-    DocumentMetaStore                metaStore;
+    const proton::IDocumentMetaStore& metaStore;
     MatchingStats                    matchingStats;
     vespalib::TestClock              clock;
     QueryLimiter                     queryLimiter;
     EmptyRankingAssetsRepo           constantValueRepo;
 
-    MyWorld();
+    MyWorld(MatchingTestSharedState& shared_state);
     ~MyWorld();
 
     void basicSetup(size_t heapSize=10, size_t arraySize=100) {
@@ -172,50 +263,9 @@ struct MyWorld {
                                                     // odd  -> 1
         }
 
-        // attribute context
-        {
-            auto attr = std::make_shared<SingleInt32ExtAttribute>("a1");
-            AttributeVector::DocId docid(0);
-            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-                attr->addDoc(docid);
-                attr->add(i, docid); // value = docid
-            }
-            assert(docid + 1 == NUM_DOCS);
-            attributeContext.add(attr);
-        }
-        {
-            auto attr = std::make_shared<SingleInt32ExtAttribute>("a2");
-            AttributeVector::DocId docid(0);
-            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-                attr->addDoc(docid);
-                attr->add(i * 2, docid); // value = docid * 2
-            }
-            assert(docid + 1 == NUM_DOCS);
-            attributeContext.add(attr);
-        }
-        {
-            auto attr = std::make_shared<SingleInt32ExtAttribute>("a3");
-            AttributeVector::DocId docid(0);
-            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-                attr->addDoc(docid);
-                attr->add(i%10, docid);
-            }
-            assert(docid + 1 == NUM_DOCS);
-            attributeContext.add(attr);
-        }
-
         // grouping
         sessionManager = std::make_shared<SessionManager>(100);
 
-        // metaStore
-        for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-            document::DocumentId docId(vespalib::make_string("id:ns:searchdocument::%u", i));
-            const document::GlobalId &gid = docId.getGlobalId();
-            document::BucketId bucketId(BucketFactory::getBucketId(docId));
-            uint32_t docSize = 1;
-            metaStore.put(gid, bucketId, Timestamp(0u), docSize, i, 0u);
-            metaStore.setBucketState(bucketId, true);
-        }
     }
 
     void set_property(const vespalib::string &name, const vespalib::string &value) {
@@ -397,7 +447,8 @@ struct MyWorld {
         SearchSession::OwnershipBundle owned_objects({std::make_unique<MockAttributeContext>(),
                                                       std::make_unique<FakeSearchContext>()},
                                                      std::make_shared<MySearchHandler>(matcher));
-        vespalib::SimpleThreadBundle threadBundle(threads);
+        assert(threads <= MatchingTestSharedState::max_threads);
+        vespalib::LimitedThreadBundleWrapper threadBundle(shared_state.thread_bundle(), threads);
         SearchReply::UP reply = matcher->match(req, threadBundle, searchContext, attributeContext,
                                                *sessionManager, metaStore, metaStore.getBucketDB(),
                                                std::move(owned_objects));
@@ -449,13 +500,14 @@ struct MyWorld {
     }
 };
 
-MyWorld::MyWorld()
-    : schema(),
+MyWorld::MyWorld(MatchingTestSharedState& shared_state_in)
+    : shared_state(shared_state_in),
+      schema(),
       config(),
       searchContext(),
-      attributeContext(),
+      attributeContext(shared_state.attribute_context()),
       sessionManager(),
-      metaStore(std::make_shared<bucketdb::BucketDBOwner>()),
+      metaStore(shared_state.meta_store()),
       matchingStats(),
       clock(),
       queryLimiter()
@@ -486,14 +538,48 @@ void verifyViewResolver(const ViewResolver &resolver) {
     }
 }
 
-TEST(MatchingTest, require_that_view_resolver_can_be_set_up_directly)
+class MatchingTest : public ::testing::Test {
+    static std::unique_ptr<MatchingTestSharedState> _shared_state;
+protected:
+    MatchingTest();
+    ~MatchingTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+    static MatchingTestSharedState& shared_state();
+};
+
+MatchingTest::MatchingTest() = default;
+
+MatchingTest::~MatchingTest() = default;
+
+void
+MatchingTest::SetUpTestSuite()
+{
+    _shared_state = std::make_unique<MatchingTestSharedState>();
+}
+
+void
+MatchingTest::TearDownTestSuite()
+{
+    _shared_state.reset();
+}
+
+MatchingTestSharedState&
+MatchingTest::shared_state()
+{
+    return *_shared_state;
+}
+
+std::unique_ptr<MatchingTestSharedState> MatchingTest::_shared_state;
+
+TEST_F(MatchingTest, require_that_view_resolver_can_be_set_up_directly)
 {
     ViewResolver resolver;
     resolver.add("foo", "x").add("foo", "y").add("bar", "z");
     verifyViewResolver(resolver);
 }
 
-TEST(MatchingTest, require_that_view_resolver_can_be_set_up_from_schema)
+TEST_F(MatchingTest, require_that_view_resolver_can_be_set_up_from_schema)
 {
     Schema schema;
     Schema::FieldSet foo("foo");
@@ -508,10 +594,10 @@ TEST(MatchingTest, require_that_view_resolver_can_be_set_up_from_schema)
 
 //-----------------------------------------------------------------------------
 
-TEST(MatchingTest, require_that_matching_is_performed_with_multi_threaded_matcher)
+TEST_F(MatchingTest, require_that_matching_is_performed_with_multi_threaded_matcher)
 {
     for (size_t threads = 1; threads <= 16; ++threads) {
-        MyWorld world;
+        MyWorld world(shared_state());
         world.basicSetup();
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
@@ -522,10 +608,10 @@ TEST(MatchingTest, require_that_matching_is_performed_with_multi_threaded_matche
     }
 }
 
-TEST(MatchingTest, require_that_match_features_are_calculated_with_multi_threaded_matcher)
+TEST_F(MatchingTest, require_that_match_features_are_calculated_with_multi_threaded_matcher)
 {
     for (size_t threads = 1; threads <= 16; ++threads) {
-        MyWorld world;
+        MyWorld world(shared_state());
         world.basicSetup();
         world.basicResults();
         world.setup_match_features();
@@ -536,9 +622,9 @@ TEST(MatchingTest, require_that_match_features_are_calculated_with_multi_threade
     }
 }
 
-TEST(MatchingTest, require_that_match_features_can_be_renamed)
- {
-    MyWorld world;
+TEST_F(MatchingTest, require_that_match_features_can_be_renamed)
+{
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     world.setup_match_features();
@@ -549,9 +635,9 @@ TEST(MatchingTest, require_that_match_features_can_be_renamed)
     MyWorld::verify_match_feature_renames(*reply, "f1");
 }
 
-TEST(MatchingTest, require_that_no_hits_gives_no_match_feature_names)
+TEST_F(MatchingTest, require_that_no_hits_gives_no_match_feature_names)
  {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     world.setup_match_features();
@@ -561,10 +647,10 @@ TEST(MatchingTest, require_that_no_hits_gives_no_match_feature_names)
     MyWorld::verify_match_features(*reply, "f1");
 }
 
-TEST(MatchingTest, require_that_matching_also_returns_hits_when_only_bitvector_is_used_with_multi_threaded_matcher)
+TEST_F(MatchingTest, require_that_matching_also_returns_hits_when_only_bitvector_is_used_with_multi_threaded_matcher)
  {
     for (size_t threads = 1; threads <= 16; ++threads) {
-        MyWorld world;
+        MyWorld world(shared_state());
         world.basicSetup(0, 0);
         world.verbose_a1_result("all");
         SearchRequest::SP request = MyWorld::createSimpleRequest("a1", "all");
@@ -575,10 +661,10 @@ TEST(MatchingTest, require_that_matching_also_returns_hits_when_only_bitvector_i
     }
 }
 
-TEST(MatchingTest, require_that_ranking_is_performed_with_multi_threaded_matcher)
+TEST_F(MatchingTest, require_that_ranking_is_performed_with_multi_threaded_matcher)
  {
     for (size_t threads = 1; threads <= 16; ++threads) {
-        MyWorld world;
+        MyWorld world(shared_state());
         world.basicSetup();
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
@@ -598,10 +684,10 @@ TEST(MatchingTest, require_that_ranking_is_performed_with_multi_threaded_matcher
     }
 }
 
-TEST(MatchingTest, require_that_reranking_is_performed_with_multi_threaded_matcher)
+TEST_F(MatchingTest, require_that_reranking_is_performed_with_multi_threaded_matcher)
  {
     for (size_t threads = 1; threads <= 16; ++threads) {
-        MyWorld world;
+        MyWorld world(shared_state());
         world.basicSetup();
         world.setupSecondPhaseRanking();
         world.basicResults();
@@ -626,9 +712,9 @@ TEST(MatchingTest, require_that_reranking_is_performed_with_multi_threaded_match
     }
 }
 
-TEST(MatchingTest, require_that_reranking_is_not_diverse_when_not_requested_to_be)
+TEST_F(MatchingTest, require_that_reranking_is_not_diverse_when_not_requested_to_be)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.setupSecondPhaseRanking();
     world.basicResults();
@@ -638,9 +724,9 @@ TEST(MatchingTest, require_that_reranking_is_not_diverse_when_not_requested_to_b
 
 using namespace search::fef::indexproperties::matchphase;
 
-TEST(MatchingTest, require_that_reranking_is_diverse_when_requested_to_be)
- {
-    MyWorld world;
+TEST_F(MatchingTest, require_that_reranking_is_diverse_when_requested_to_be)
+{
+    MyWorld world(shared_state());
     world.basicSetup();
     world.setupSecondPhaseRanking();
     world.basicResults();
@@ -652,9 +738,9 @@ TEST(MatchingTest, require_that_reranking_is_diverse_when_requested_to_be)
     world.verify_diversity_filter(*request, true);
 }
 
-TEST(MatchingTest, require_that_reranking_is_diverse_with_diversity_1_of_1)
- {
-    MyWorld world;
+TEST_F(MatchingTest, require_that_reranking_is_diverse_with_diversity_1_of_1)
+{
+    MyWorld world(shared_state());
     world.basicSetup();
     world.setupSecondPhaseRanking();
     world.basicResults();
@@ -680,9 +766,9 @@ TEST(MatchingTest, require_that_reranking_is_diverse_with_diversity_1_of_1)
     EXPECT_EQ(500.0, reply->hits[4].metric);
 }
 
-TEST(MatchingTest, require_that_reranking_is_diverse_with_diversity_1_of_10)
+TEST_F(MatchingTest, require_that_reranking_is_diverse_with_diversity_1_of_10)
  {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.setupSecondPhaseRanking();
     world.basicResults();
@@ -709,10 +795,10 @@ TEST(MatchingTest, require_that_reranking_is_diverse_with_diversity_1_of_10)
     EXPECT_EQ(500.0, reply->hits[4].metric);
 }
 
-TEST(MatchingTest, require_that_sortspec_can_be_used_with_multi_threaded_matcher)
+TEST_F(MatchingTest, require_that_sortspec_can_be_used_with_multi_threaded_matcher)
 {
     for (size_t threads = 1; threads <= 16; ++threads) {
-        MyWorld world;
+        MyWorld world(shared_state());
         world.basicSetup();
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
@@ -732,10 +818,10 @@ TEST(MatchingTest, require_that_sortspec_can_be_used_with_multi_threaded_matcher
 
 ExpressionNode::UP createAttr() { return std::make_unique<AttributeNode>("a1"); }
 
-TEST(MatchingTest, require_that_grouping_is_performed_with_multi_threaded_matcher)
+TEST_F(MatchingTest, require_that_grouping_is_performed_with_multi_threaded_matcher)
  {
     for (size_t threads = 1; threads <= 16; ++threads) {
-        MyWorld world;
+        MyWorld world(shared_state());
         world.basicSetup();
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
@@ -768,9 +854,9 @@ TEST(MatchingTest, require_that_grouping_is_performed_with_multi_threaded_matche
     }
 }
 
-TEST(MatchingTest, require_that_summary_features_are_filled)
+TEST_F(MatchingTest, require_that_summary_features_are_filled)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     DocsumRequest::SP req = MyWorld::createSimpleDocsumRequest("f1", "foo");
@@ -811,9 +897,9 @@ TEST(MatchingTest, require_that_summary_features_are_filled)
     }
 }
 
-TEST(MatchingTest, require_that_rank_features_are_filled)
+TEST_F(MatchingTest, require_that_rank_features_are_filled)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     DocsumRequest::SP req = MyWorld::createSimpleDocsumRequest("f1", "foo");
@@ -833,9 +919,9 @@ TEST(MatchingTest, require_that_rank_features_are_filled)
     EXPECT_EQ(60, f[0].as_double());
 }
 
-TEST(MatchingTest, require_that_search_session_can_be_cached)
+TEST_F(MatchingTest, require_that_search_session_can_be_cached)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "foo");
@@ -850,9 +936,9 @@ TEST(MatchingTest, require_that_search_session_can_be_cached)
     EXPECT_EQ("a", session->getSessionId());
 }
 
-TEST(MatchingTest, require_that_summary_features_can_be_renamed)
+TEST_F(MatchingTest, require_that_summary_features_can_be_renamed)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.setup_feature_renames();
     world.basicResults();
@@ -871,9 +957,9 @@ TEST(MatchingTest, require_that_summary_features_can_be_renamed)
     EXPECT_TRUE(f[3].is_data());
 }
 
-TEST(MatchingTest, require_that_getSummaryFeatures_can_use_cached_query_setup)
+TEST_F(MatchingTest, require_that_getSummaryFeatures_can_use_cached_query_setup)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "foo");
@@ -925,9 +1011,9 @@ void count_f1_matches(FeatureSet &fs, double& sum) {
     }
 }
 
-TEST(MatchingTest, require_that_getSummaryFeatures_prefers_cached_query_setup)
+TEST_F(MatchingTest, require_that_getSummaryFeatures_prefers_cached_query_setup)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
@@ -956,7 +1042,7 @@ TEST(MatchingTest, require_that_getSummaryFeatures_prefers_cached_query_setup)
     EXPECT_EQ(2.0, sum); // "foo" has two hits
 }
 
-TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on)
+TEST_F(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on)
 {
     MatchParams p(10, 2, 4, 0.7, 0.75, 0, 1, true, true);
     ASSERT_EQ(10u, p.numDocs);
@@ -968,7 +1054,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on
     ASSERT_EQ(1u, p.hits);
 }
 
-TEST(MatchingTest, require_that_match_params_can_turn_off_rank_score_drop_limits)
+TEST_F(MatchingTest, require_that_match_params_can_turn_off_rank_score_drop_limits)
 {
     MatchParams p(10, 2, 4, std::nullopt, std::nullopt, 0, 1, true, true);
     ASSERT_EQ(10u, p.numDocs);
@@ -981,7 +1067,7 @@ TEST(MatchingTest, require_that_match_params_can_turn_off_rank_score_drop_limits
 }
 
 
-TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on_arraySize_is_atleast_the_size_of_heapSize)
+TEST_F(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on_arraySize_is_atleast_the_size_of_heapSize)
 {
     MatchParams p(10, 6, 4, 0.7, std::nullopt, 1, 1, true, true);
     ASSERT_EQ(10u, p.numDocs);
@@ -993,7 +1079,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on
     ASSERT_EQ(1u, p.hits);
 }
 
-TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on_arraySize_is_atleast_the_size_of_hits_plus_offset)
+TEST_F(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on_arraySize_is_atleast_the_size_of_hits_plus_offset)
 {
     MatchParams p(10, 6, 4, 0.7, std::nullopt, 4, 4, true, true);
     ASSERT_EQ(10u, p.numDocs);
@@ -1004,7 +1090,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_on
     ASSERT_EQ(4u, p.hits);
 }
 
-TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs)
+TEST_F(MatchingTest, require_that_match_params_are_capped_by_numDocs)
 {
     MatchParams p(1, 6, 4, 0.7, std::nullopt, 4, 4, true, true);
     ASSERT_EQ(1u, p.numDocs);
@@ -1015,7 +1101,7 @@ TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs)
     ASSERT_EQ(0u, p.hits);
 }
 
-TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs_and_hits_adjusted_down)
+TEST_F(MatchingTest, require_that_match_params_are_capped_by_numDocs_and_hits_adjusted_down)
 {
     MatchParams p(5, 6, 4, 0.7, std::nullopt, 4, 4, true, true);
     ASSERT_EQ(5u, p.numDocs);
@@ -1026,7 +1112,7 @@ TEST(MatchingTest, require_that_match_params_are_capped_by_numDocs_and_hits_adju
     ASSERT_EQ(1u, p.hits);
 }
 
-TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_off_array_and_heap_size_is_0)
+TEST_F(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_off_array_and_heap_size_is_0)
 {
     MatchParams p(10, 6, 4, 0.7, std::nullopt, 4, 4, true, false);
     ASSERT_EQ(10u, p.numDocs);
@@ -1037,7 +1123,7 @@ TEST(MatchingTest, require_that_match_params_are_set_up_straight_with_ranking_of
     ASSERT_EQ(4u, p.hits);
 }
 
-TEST(MatchingTest, require_that_match_phase_limiting_works)
+TEST_F(MatchingTest, require_that_match_phase_limiting_works)
 {
     for (int s = 0; s <= 1; ++s) {
         for (int i = 0; i <= 6; ++i) {
@@ -1047,7 +1133,7 @@ TEST(MatchingTest, require_that_match_phase_limiting_works)
             bool descending = (i == 2) || (i == 4) || (i == 6);
             bool use_sorting = (s == 1);
             size_t want_threads = 75;
-            MyWorld world;
+            MyWorld world(shared_state());
             world.basicSetup();
             world.verbose_a1_result("all");
             if (enable) {
@@ -1097,16 +1183,16 @@ TEST(MatchingTest, require_that_match_phase_limiting_works)
     }
 }
 
-TEST(MatchingTest, require_that_arithmetic_used_for_rank_drop_limit_works)
+TEST_F(MatchingTest, require_that_arithmetic_used_for_rank_drop_limit_works)
 {
     double small = -HUGE_VAL;
     double limit = -std::numeric_limits<feature_t>::quiet_NaN();
     EXPECT_TRUE(!(small <= limit));
 }
 
-TEST(MatchingTest, require_that_termwise_limit_is_set_correctly_for_first_phase_ranking_program)
+TEST_F(MatchingTest, require_that_termwise_limit_is_set_correctly_for_first_phase_ranking_program)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
     EXPECT_EQ(1.0, world.get_first_phase_termwise_limit());
@@ -1114,9 +1200,9 @@ TEST(MatchingTest, require_that_termwise_limit_is_set_correctly_for_first_phase_
     EXPECT_EQ(0.02, world.get_first_phase_termwise_limit());
 }
 
-TEST(MatchingTest, require_that_fields_are_tagged_with_data_type)
+TEST_F(MatchingTest, require_that_fields_are_tagged_with_data_type)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     auto int32_field = world.get_field_info("a1");
     auto string_field = world.get_field_info("f1");
@@ -1132,9 +1218,9 @@ TEST(MatchingTest, require_that_fields_are_tagged_with_data_type)
     EXPECT_EQ(predicate_field->get_data_type(), FieldInfo::DataType::BOOLEANTREE);
 }
 
-TEST(MatchingTest, require_that_same_element_search_works)
+TEST_F(MatchingTest, require_that_same_element_search_works)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.add_same_element_results("foo", "bar");
     SearchRequest::SP request = MyWorld::createSameElementRequest("foo", "bar");
@@ -1143,9 +1229,9 @@ TEST(MatchingTest, require_that_same_element_search_works)
     EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
 }
 
-TEST(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_same_element_blueprint)
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_same_element_blueprint)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.add_same_element_results("foo", "bar");
     auto request = MyWorld::create_docsum_request(make_same_element_stack_dump("foo", "bar"), {20});
@@ -1158,9 +1244,9 @@ TEST(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_fro
     EXPECT_EQ(list[0], 2u);
 }
 
-TEST(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_single_attribute_term)
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_single_attribute_term)
 {
-    MyWorld world;
+    MyWorld world(shared_state());
     world.basicSetup();
     world.add_same_element_results("foo", "bar");
     auto request = MyWorld::create_docsum_request(make_simple_stack_dump("my.a1", "foo"), {20});
@@ -1209,7 +1295,7 @@ struct AttributeBlueprintParamsFixture {
 
 AttributeBlueprintParamsFixture::~AttributeBlueprintParamsFixture() = default;
 
-TEST(MatchingTest, attribute_blueprint_params_are_extracted_from_rank_profile)
+TEST_F(MatchingTest, attribute_blueprint_params_are_extracted_from_rank_profile)
 {
     AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
     auto params = f.extract();
@@ -1219,7 +1305,7 @@ TEST(MatchingTest, attribute_blueprint_params_are_extracted_from_rank_profile)
     EXPECT_EQ(FMA::DfaTable, params.fuzzy_matching_algorithm);
 }
 
-TEST(MatchingTest, attribute_blueprint_params_are_extracted_from_query)
+TEST_F(MatchingTest, attribute_blueprint_params_are_extracted_from_query)
 {
     AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
     f.set_query_properties("0.15", "0.75", "3.0", "dfa_explicit");
@@ -1230,7 +1316,7 @@ TEST(MatchingTest, attribute_blueprint_params_are_extracted_from_query)
     EXPECT_EQ(FMA::DfaExplicit, params.fuzzy_matching_algorithm);
 }
 
-TEST(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
+TEST_F(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
 {
     AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
     auto params = f.extract(5, 10);
