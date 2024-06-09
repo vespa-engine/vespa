@@ -55,17 +55,18 @@ public class SearchNode extends AbstractService implements
     private static final int UNUSED_2 = 2;
     private static final int UNUSED_3 = 3;
     private static final int HEALTH_PORT = 4;
+    private static final int TLS_PORT = 5;
 
     private final boolean isHostedVespa;
     private final boolean flushOnShutdown;
     private final NodeSpec nodeSpec;
     private final int distributionKey;
     private final String clusterName;
-    private TransactionLogServer tls;
     private final AbstractService serviceLayerService;
     private final Tuning tuning;
     private final ResourceLimits resourceLimits;
     private final double fractionOfMemoryReserved;
+    private final Boolean syncTransactionLog;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<SearchNode> {
 
@@ -77,10 +78,11 @@ public class SearchNode extends AbstractService implements
         private final Tuning tuning;
         private final ResourceLimits resourceLimits;
         private final double fractionOfMemoryReserved;
+        private final Boolean syncTransactionLog;
 
         public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node,
                        boolean flushOnShutdown, Tuning tuning, ResourceLimits resourceLimits,
-                       double fractionOfMemoryReserved) {
+                       double fractionOfMemoryReserved, Boolean syncTransactionLog) {
             this.name = name;
             this.nodeSpec = nodeSpec;
             this.clusterName = clusterName;
@@ -89,6 +91,7 @@ public class SearchNode extends AbstractService implements
             this.tuning = tuning;
             this.resourceLimits = resourceLimits;
             this.fractionOfMemoryReserved = fractionOfMemoryReserved;
+            this.syncTransactionLog = syncTransactionLog;
         }
 
         @Override
@@ -96,7 +99,7 @@ public class SearchNode extends AbstractService implements
                                      Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
                                      flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
-                                     fractionOfMemoryReserved, deployState.featureFlags());
+                                     fractionOfMemoryReserved, deployState.featureFlags(), syncTransactionLog);
         }
 
     }
@@ -105,9 +108,9 @@ public class SearchNode extends AbstractService implements
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                                     Tuning tuning, ResourceLimits resourceLimits,
                                     boolean isHostedVespa, double fractionOfMemoryReserved,
-                                    ModelContext.FeatureFlags featureFlags) {
+                                    ModelContext.FeatureFlags featureFlags, Boolean syncTransactionLog) {
         SearchNode node = new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown,
-                              tuning, resourceLimits, isHostedVespa, fractionOfMemoryReserved);
+                              tuning, resourceLimits, isHostedVespa, fractionOfMemoryReserved, syncTransactionLog);
         if (featureFlags.loadCodeAsHugePages()) {
             node.addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", true);
         }
@@ -120,7 +123,7 @@ public class SearchNode extends AbstractService implements
     private SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                        Tuning tuning, ResourceLimits resourceLimits, boolean isHostedVespa,
-                       double fractionOfMemoryReserved) {
+                       double fractionOfMemoryReserved, Boolean syncTransactionLog) {
         super(parent, name);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
@@ -134,9 +137,11 @@ public class SearchNode extends AbstractService implements
         portsMeta.on(UNUSED_2).tag("unused");
         portsMeta.on(UNUSED_3).tag("unused");
         portsMeta.on(HEALTH_PORT).tag("http").tag("json").tag("health").tag("state");
+        portsMeta.on(TLS_PORT).tag("tls");
         // Properties are set in DomSearchBuilder
         this.tuning = tuning;
         this.resourceLimits = resourceLimits;
+        this.syncTransactionLog = syncTransactionLog;
         setPropertiesElastic(clusterName, distributionKey);
         addEnvironmentVariable("OMP_NUM_THREADS", 1);
     }
@@ -172,6 +177,7 @@ public class SearchNode extends AbstractService implements
         from.allocatePort("unused/2");
         from.allocatePort("unused/3");
         from.allocatePort("health");
+        from.allocatePort("tls");
     }
 
     /**
@@ -181,7 +187,7 @@ public class SearchNode extends AbstractService implements
      */
     @Override
     public int getPortCount() {
-        return 5;
+        return 6;
     }
 
     /**
@@ -197,6 +203,8 @@ public class SearchNode extends AbstractService implements
     public int getHealthPort() {
         return getHttpPort();
     }
+
+    int getTlsPort() { return getRelativePort(TLS_PORT); }
 
     @Override
     public String getServiceType() {
@@ -219,20 +227,15 @@ public class SearchNode extends AbstractService implements
                 builder.usefsync(false);
             }
         }
-        tls.getConfig(builder);
+        builder.listenport(getTlsPort())
+                .basedir(getTlsDir());
+        if (syncTransactionLog != null)
+            builder.usefsync(syncTransactionLog);
     }
 
     @Override
     public String toString() {
         return getHostName();
-    }
-
-    private TransactionLogServer getTransactionLogServer() {
-        return tls;
-    }
-
-    public void setTls(TransactionLogServer tls) {
-        this.tls = tls;
     }
 
     public AbstractService getServiceLayerService() {
@@ -260,7 +263,7 @@ public class SearchNode extends AbstractService implements
             httpport(getHttpPort()).
             clustername(getClusterName()).
             basedir(getBaseDir()).
-            tlsspec("tcp/" + getHost().getHostname() + ":" + getTransactionLogServer().getTlsPort()).
+            tlsspec("tcp/" + getHost().getHostname() + ":" + getTlsPort()).
             tlsconfigid(getConfigId()).
             slobrokconfigid(getClusterConfigId()).
             routingconfigid(getClusterConfigId()).
@@ -304,6 +307,8 @@ public class SearchNode extends AbstractService implements
         builder.consumer(
                 new MetricsmanagerConfig.Consumer.Builder().name("log").tags("logdefault"));
     }
+
+    private String getTlsDir() { return "tls";}
 
     @Override
     public Optional<String> getPreShutdownCommand() {
