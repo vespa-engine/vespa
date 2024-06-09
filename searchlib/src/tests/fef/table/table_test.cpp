@@ -1,18 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/fef/filetablefactory.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/tablemanager.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <fstream>
 #include <iostream>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
-class TableTest : public vespalib::TestApp
+class TableTest : public ::testing::Test
 {
-private:
+protected:
+    const std::string _tables1Dir;
+    const std::string _tables2Dir;
+
     bool assertTable(const Table & act, const Table & exp);
     bool assertCreateTable(const ITableFactory & tf, const vespalib::string & name, const Table & exp);
     void testTable();
@@ -20,29 +23,32 @@ private:
     void testFunctionTableFactory();
     void testTableManager();
 
-    const std::string _tables1Dir;
-    const std::string _tables2Dir;
-public:
     TableTest();
-    ~TableTest();
-    int Main() override;
+    ~TableTest() override;
 };
 
-TableTest::TableTest() :
-    vespalib::TestApp(),
-    _tables1Dir(TEST_PATH("tables1")),
-    _tables2Dir(TEST_PATH("tables2"))
+TableTest::TableTest()
+    : ::testing::Test(),
+      _tables1Dir(TEST_PATH("tables1")),
+      _tables2Dir(TEST_PATH("tables2"))
 {
 }
 
-TableTest::~TableTest() {}
+TableTest::~TableTest() = default;
 
 bool
 TableTest::assertTable(const Table & act, const Table & exp)
 {
-    if (!EXPECT_EQUAL(act.size(), exp.size())) return false;
+    bool failed = false;
+    EXPECT_EQ(act.size(), exp.size()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     for (size_t i = 0; i < act.size(); ++i) {
-        if (!EXPECT_APPROX(act[i], exp[i], 0.01)) return false;
+        EXPECT_NEAR(act[i], exp[i], 0.01) << (failed = true, "");
+        if (failed) {
+            return false;
+        }
     }
     return true;
 }
@@ -51,33 +57,35 @@ bool
 TableTest::assertCreateTable(const ITableFactory & tf, const vespalib::string & name, const Table & exp)
 {
     Table::SP t = tf.createTable(name);
-    if (!EXPECT_TRUE(t.get() != NULL)) return false;
+    bool failed = false;
+    EXPECT_TRUE(t.get() != nullptr) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     return assertTable(*t, exp);
 }
 
-void
-TableTest::testTable()
+TEST_F(TableTest, table)
 {
     Table t;
-    EXPECT_EQUAL(t.size(), 0u);
-    EXPECT_EQUAL(t.max(), -std::numeric_limits<double>::max());
+    EXPECT_EQ(t.size(), 0u);
+    EXPECT_EQ(t.max(), -std::numeric_limits<double>::max());
     t.add(1).add(2);
-    EXPECT_EQUAL(t.size(), 2u);
-    EXPECT_EQUAL(t.max(), 2);
-    EXPECT_EQUAL(t[0], 1);
-    EXPECT_EQUAL(t[1], 2);
+    EXPECT_EQ(t.size(), 2u);
+    EXPECT_EQ(t.max(), 2);
+    EXPECT_EQ(t[0], 1);
+    EXPECT_EQ(t[1], 2);
     t.add(10);
-    EXPECT_EQUAL(t.size(), 3u);
-    EXPECT_EQUAL(t.max(), 10);
-    EXPECT_EQUAL(t[2], 10);
+    EXPECT_EQ(t.size(), 3u);
+    EXPECT_EQ(t.max(), 10);
+    EXPECT_EQ(t[2], 10);
     t.add(5);
-    EXPECT_EQUAL(t.size(), 4u);
-    EXPECT_EQUAL(t.max(), 10);
-    EXPECT_EQUAL(t[3], 5);
+    EXPECT_EQ(t.size(), 4u);
+    EXPECT_EQ(t.max(), 10);
+    EXPECT_EQ(t[3], 5);
 }
 
-void
-TableTest::testFileTableFactory()
+TEST_F(TableTest, file_table_factory)
 {
     {
         FileTableFactory ftf(_tables1Dir);
@@ -90,8 +98,7 @@ TableTest::testFileTableFactory()
     }
 }
 
-void
-TableTest::testFunctionTableFactory()
+TEST_F(TableTest, function_table_factory)
 {
     FunctionTableFactory ftf(2);
     EXPECT_TRUE(assertCreateTable(ftf, "expdecay(400,12)",
@@ -117,8 +124,7 @@ TableTest::testFunctionTableFactory()
     EXPECT_TRUE(ftf.createTable("none)(").get() == NULL);
 }
 
-void
-TableTest::testTableManager()
+TEST_F(TableTest, table_manager)
 {
     {
         TableManager tm;
@@ -148,20 +154,6 @@ TableTest::testTableManager()
     }
 }
 
-int
-TableTest::Main()
-{
-    TEST_INIT("table_test");
-
-    testTable();
-    testFileTableFactory();
-    testFunctionTableFactory();
-    testTableManager();
-
-    TEST_DONE();
 }
 
-}
-}
-
-TEST_APPHOOK(search::fef::TableTest);
+GTEST_MAIN_RUN_ALL_TESTS()
