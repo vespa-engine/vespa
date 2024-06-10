@@ -58,7 +58,7 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
 
         @Override
         public void completed(String job, double successFactor, long duration) {
-            var context = metric.createContext(Map.of("job", job));
+            var context = metric.createContext(Map.of("maintainer", job));
             metric.set("maintenance.successFactorDeviation", successFactor, context);
             metric.set("maintenance.duration", duration, context);
         }
