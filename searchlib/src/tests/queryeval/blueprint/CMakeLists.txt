@@ -11,6 +11,7 @@ vespa_add_executable(searchlib_leaf_blueprints_test_app TEST
     leaf_blueprints_test.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_leaf_blueprints_test_app COMMAND searchlib_leaf_blueprints_test_app || diff -u lhs.out rhs.out)
 vespa_add_executable(searchlib_intermediate_blueprints_test_app TEST
