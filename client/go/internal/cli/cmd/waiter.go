@@ -90,7 +90,7 @@ func (w *Waiter) FastWaitOn(target vespa.Target) bool {
 }
 
 // Deployment waits for a deployment to become ready, returning the ID of the converged deployment.
-func (w *Waiter) Deployment(target vespa.Target, id int64) (int64, error) {
+func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) {
 	timeout := w.Timeout
 	fastWait := w.FastWaitOn(target)
 	if timeout > 0 {
@@ -100,9 +100,14 @@ func (w *Waiter) Deployment(target vespa.Target, id int64) (int64, error) {
 		// invalid application package
 		timeout = 2 * time.Second
 	}
-	id, err := target.AwaitDeployment(id, timeout)
-	if fastWait && errors.Is(err, vespa.ErrWaitTimeout) {
-		return id, nil // Do not report fast wait timeout as an error
+	id, err := target.AwaitDeployment(wantedID, timeout)
+	if errors.Is(err, vespa.ErrWaitTimeout) {
+		if fastWait {
+			return id, nil // Do not report fast wait timeout as an error
+		}
+		if target.IsCloud() {
+			w.cli.printInfo("Timed out waiting for deployment to converge. See ", color.CyanString(target.Deployment().System.ConsoleRunURL(target.Deployment(), wantedID)), " for more details")
+		}
 	}
 	return id, err
 }

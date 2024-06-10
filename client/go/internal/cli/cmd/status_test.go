@@ -85,7 +85,7 @@ func TestStatusError(t *testing.T) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("status", "container"))
 	assert.Equal(t,
-		"Container default at http://127.0.0.1:8080 is not ready: unhealthy container default: status 500 at http://127.0.0.1:8080/status.html: giving up\n",
+		"Container default at http://127.0.0.1:8080 is not ready: unhealthy container default: status 500 at http://127.0.0.1:8080/status.html: wait deadline reached\n",
 		stdout.String())
 	assert.Equal(t,
 		"Error: services not ready: default\n",
@@ -122,13 +122,13 @@ func TestStatusLocalDeployment(t *testing.T) {
 	resp.Body = []byte(`{"currentGeneration": 42, "converged": false}`)
 	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment"))
-	assert.Equal(t, "Warning: deployment not converged on latest generation: giving up\nHint: Consider using the --wait flag to wait for completion\n", stderr.String())
+	assert.Equal(t, "Warning: deployment not converged on latest generation: wait deadline reached\nHint: Consider using the --wait flag to wait for completion\n", stderr.String())
 
 	// Explicit generation
 	stderr.Reset()
 	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment", "41"))
-	assert.Equal(t, "Warning: deployment not converged on generation 41: giving up\nHint: Consider using the --wait flag to wait for completion\n", stderr.String())
+	assert.Equal(t, "Warning: deployment not converged on generation 41: wait deadline reached\nHint: Consider using the --wait flag to wait for completion\n", stderr.String())
 }
 
 func TestStatusCloudDeployment(t *testing.T) {
@@ -164,7 +164,7 @@ func TestStatusCloudDeployment(t *testing.T) {
 		Body:   []byte(`{"active": false, "status": "failure"}`),
 	})
 	assert.NotNil(t, cli.Run("status", "deployment", "42", "-w", "10"))
-	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment run 42 incomplete after waiting up to 10s: aborting wait: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
+	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment run 42 not yet complete after waiting up to 10s: aborting wait: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
 }
 
 func isLocalTarget(args []string) bool {
