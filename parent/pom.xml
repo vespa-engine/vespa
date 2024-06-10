@@ -66,6 +66,10 @@
                     <version>${maven-bundle-plugin.vespa.version}</version>
                     <configuration>
                         <obrRepository>NONE</obrRepository>
+                        <!-- Hide warnings for multi-release jars, e.g. bouncycastle  -->
+                        <instructions>
+                            <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages>
+                        </instructions>
                     </configuration>
                 </plugin>
                 <plugin>
