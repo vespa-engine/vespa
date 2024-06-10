@@ -4,5 +4,6 @@ vespa_add_executable(streamingvisitors_querywrapper_test_app TEST
     querywrapper_test.cpp
     DEPENDS
     streamingvisitors
+    GTest::gtest
 )
 vespa_add_test(NAME streamingvisitors_querywrapper_test_app COMMAND streamingvisitors_querywrapper_test_app)
