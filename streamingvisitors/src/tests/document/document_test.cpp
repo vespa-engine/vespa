@@ -1,26 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vsm/common/storagedocument.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 using namespace document;
 
 namespace vsm {
 
-class DocumentTest : public vespalib::TestApp
-{
-private:
-    void testStorageDocument();
-    void testStringFieldIdTMap();
-public:
-    int Main() override;
-};
-
-void
-DocumentTest::testStorageDocument()
+TEST(DocumentTest, storage_document)
 {
     DocumentType dt("testdoc", 0);
 
@@ -46,84 +36,72 @@ DocumentTest::testStorageDocument()
     StorageDocument sdoc(std::move(doc), fpmap, 3);
     ASSERT_TRUE(sdoc.valid());
 
-    EXPECT_EQUAL(std::string("foo"), sdoc.getField(0)->getAsString());
-    EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("foo", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("bar", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
     // test caching
-    EXPECT_EQUAL(std::string("foo"), sdoc.getField(0)->getAsString());
-    EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("foo", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("bar", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
 
     // set new values
     EXPECT_TRUE(sdoc.setField(0, FieldValue::UP(new StringFieldValue("baz"))));
-    EXPECT_EQUAL(std::string("baz"), sdoc.getField(0)->getAsString());
-    EXPECT_EQUAL(std::string("bar"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("baz", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("bar", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
     EXPECT_TRUE(sdoc.setField(1, FieldValue::UP(new StringFieldValue("qux"))));
-    EXPECT_EQUAL(std::string("baz"), sdoc.getField(0)->getAsString());
-    EXPECT_EQUAL(std::string("qux"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("baz", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("qux", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
     EXPECT_TRUE(sdoc.setField(2, FieldValue::UP(new StringFieldValue("quux"))));
-    EXPECT_EQUAL(std::string("baz"), sdoc.getField(0)->getAsString());
-    EXPECT_EQUAL(std::string("qux"), sdoc.getField(1)->getAsString());
-    EXPECT_EQUAL(std::string("quux"), sdoc.getField(2)->getAsString());
+    EXPECT_EQ("baz", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("qux", sdoc.getField(1)->getAsString());
+    EXPECT_EQ("quux", sdoc.getField(2)->getAsString());
 
     EXPECT_TRUE(!sdoc.setField(3, FieldValue::UP(new StringFieldValue("thud"))));
 
     SharedFieldPathMap fim;
     StorageDocument s2(std::make_unique<document::Document>(), fim, 0);
-    EXPECT_EQUAL(IdString().toString(), s2.docDoc().getId().toString());
+    EXPECT_EQ(IdString().toString(), s2.docDoc().getId().toString());
 }
 
-void DocumentTest::testStringFieldIdTMap()
+TEST(DocumentTest, string_field_id_t_map)
 {
     StringFieldIdTMap m;
-    EXPECT_EQUAL(0u, m.highestFieldNo());
+    EXPECT_EQ(0u, m.highestFieldNo());
     EXPECT_TRUE(StringFieldIdTMap::npos == m.fieldNo("unknown"));
     m.add("f1");
-    EXPECT_EQUAL(0u, m.fieldNo("f1"));
-    EXPECT_EQUAL(1u, m.highestFieldNo());
+    EXPECT_EQ(0u, m.fieldNo("f1"));
+    EXPECT_EQ(1u, m.highestFieldNo());
     m.add("f1");
-    EXPECT_EQUAL(0u, m.fieldNo("f1"));
-    EXPECT_EQUAL(1u, m.highestFieldNo());
+    EXPECT_EQ(0u, m.fieldNo("f1"));
+    EXPECT_EQ(1u, m.highestFieldNo());
     m.add("f2");
-    EXPECT_EQUAL(1u, m.fieldNo("f2"));
-    EXPECT_EQUAL(2u, m.highestFieldNo());
+    EXPECT_EQ(1u, m.fieldNo("f2"));
+    EXPECT_EQ(2u, m.highestFieldNo());
     m.add("f3", 7);
-    EXPECT_EQUAL(7u, m.fieldNo("f3"));
-    EXPECT_EQUAL(8u, m.highestFieldNo());
+    EXPECT_EQ(7u, m.fieldNo("f3"));
+    EXPECT_EQ(8u, m.highestFieldNo());
     m.add("f3");
-    EXPECT_EQUAL(7u, m.fieldNo("f3"));
-    EXPECT_EQUAL(8u, m.highestFieldNo());
+    EXPECT_EQ(7u, m.fieldNo("f3"));
+    EXPECT_EQ(8u, m.highestFieldNo());
     m.add("f2", 13);
-    EXPECT_EQUAL(13u, m.fieldNo("f2"));
-    EXPECT_EQUAL(14u, m.highestFieldNo());
+    EXPECT_EQ(13u, m.fieldNo("f2"));
+    EXPECT_EQ(14u, m.highestFieldNo());
     m.add("f4");
-    EXPECT_EQUAL(3u, m.fieldNo("f4"));
-    EXPECT_EQUAL(14u, m.highestFieldNo());
+    EXPECT_EQ(3u, m.fieldNo("f4"));
+    EXPECT_EQ(14u, m.highestFieldNo());
     {
         vespalib::asciistream os;
         StringFieldIdTMap t;
         t.add("b");
         t.add("a");
         os << t;
-        EXPECT_EQUAL(vespalib::string("a = 1\nb = 0\n"), os.str());
+        EXPECT_EQ(vespalib::string("a = 1\nb = 0\n"), os.str());
     }
     
 }
 
-int
-DocumentTest::Main()
-{
-    TEST_INIT("document_test");
-
-    testStorageDocument();
-    testStringFieldIdTMap();
-
-    TEST_DONE();
 }
 
-}
-
-TEST_APPHOOK(vsm::DocumentTest);
-
+GTEST_MAIN_RUN_ALL_TESTS()
