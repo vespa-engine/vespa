@@ -40,18 +40,11 @@ int rel_diff(double a, double b, double e, double m) {
 }
 
 void apply_diff(vespalib::string &str, int diff, char small, char big, int len) {
-    if (diff < len) {
-        for (int i = 0; i < diff; ++i) {
+    for (int i = 0; i < diff && i < len; ++i) {
+        if (diff + i >= len * 2) {
+            str.append(big);
+        } else {
             str.append(small);
-        }
-    } else {
-        diff -= len;
-        for (int i = 0; i < len; ++i) {
-            if (diff > i) {
-                str.append(big);
-            } else {
-                str.append(small);                
-            }
         }
     }
 }
@@ -311,6 +304,8 @@ struct Node {
     vespalib::string  type = "unknown";
     uint32_t          id = 0;
     uint32_t          docid_limit = 0;
+    vespalib::string  field_name;
+    vespalib::string  query_term;
     bool              strict = false;
     FlowStats         flow_stats = FlowStats(0.0, 0.0, 0.0);
     size_t            count = 0;
@@ -328,6 +323,26 @@ struct Node {
         type = strip_name(type);
         id = obj["id"].asLong();
         docid_limit = obj["docid_limit"].asLong();
+        query_term = obj["query_term"].asString().make_stringref();
+        if (query_term.size() > 0) {
+            const Inspector &attr = obj["attribute"];
+            if (attr.valid()) {
+                field_name = attr["name"].asString().make_stringref();
+                if (type == "AttributeFieldBlueprint") {
+                    type = fmt("Attribute{%s,%s}",
+                               attr["type"].asString().make_string().c_str(),
+                               attr["fast_search"].asBool() ? "fs" : "lookup");
+                }
+            } else {
+                field_name = obj["field_name"].asString().make_stringref();
+                if (type == "DiskTermBlueprint") {
+                    type = "DiskTerm";
+                }
+                if (type == "MemoryTermBlueprint") {
+                    type = "MemoryTerm";
+                }
+            }
+        }
         strict = obj["strict"].asBool();
         flow_stats.estimate = obj["relative_estimate"].asDouble();
         flow_stats.cost = obj["cost"].asDouble();
@@ -344,11 +359,18 @@ struct Node {
     }
     ~Node();
     vespalib::string name() const {
+        vespalib::string res = type;
         if (id > 0) {
-            return fmt("%s[%u]", type.c_str(), id);
-        } else {
-            return fmt("%s", type.c_str());
+            res.append(fmt("[%u]", id));
         }
+        if (query_term.size() > 0) {
+            if (field_name.size() > 0) {
+                res.append(fmt(" %s:%s", field_name.c_str(), query_term.c_str()));
+            } else {
+                res.append(fmt(" %s", query_term.c_str()));
+            }
+        }
+        return res;
     }
     double rel_count() const {
         return double(count) / docid_limit;
