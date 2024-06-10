@@ -316,10 +316,10 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 	}
 	_, err = t.deployServiceWait(jobSuccessFunc, requestFunc, timeout)
 	if err != nil {
-		return 0, fmt.Errorf("deployment run %d incomplete%s: %w", runID, waitDescription(timeout), err)
+		return 0, fmt.Errorf("deployment run %d not yet complete%s: %w", runID, waitDescription(timeout), err)
 	}
 	if !success {
-		return 0, fmt.Errorf("deployment run %d incomplete%s", runID, waitDescription(timeout))
+		return 0, fmt.Errorf("deployment run %d not yet complete%s", runID, waitDescription(timeout))
 	}
 	return runID, nil
 }

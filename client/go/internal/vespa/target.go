@@ -40,7 +40,7 @@ var errAuth = errors.New("auth failed")
 
 var (
 	// ErrWaitTimeout is the error returned when waiting for something times out.
-	ErrWaitTimeout = errors.New("giving up")
+	ErrWaitTimeout = errors.New("wait deadline reached")
 	// ErrDeployment is the error returned for terminal deployment failures.
 	ErrDeployment = errors.New("deployment failed")
 )
