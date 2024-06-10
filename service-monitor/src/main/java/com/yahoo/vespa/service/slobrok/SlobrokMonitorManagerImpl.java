@@ -152,7 +152,7 @@ public class SlobrokMonitorManagerImpl extends AbstractComponent implements Slob
             case "logserver":
             case "metricsproxy":
             case "slobrok":
-            case "transactionlogserver":
+            case "transactionlogserver": // TODO: Remove when oldest Vespa version in use is 8.354
                 return Optional.empty();
 
             case "qrserver":

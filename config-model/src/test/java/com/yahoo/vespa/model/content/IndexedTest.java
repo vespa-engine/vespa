@@ -131,7 +131,7 @@ public class IndexedTest extends ContentBaseTest {
         // String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
         //                               "logd", "configproxy","config-sentinel",
         //                               "container", "fleetcontroller",
-        //                               "storagenode", "searchnode", "distributor", "transactionlogserver"};
+        //                               "storagenode", "searchnode", "distributor"};
         // DomContentBuilderTest.assertServices(h, expectedServices);
         Routing routing = model.getRouting();
         assertNotNull(routing);
@@ -159,8 +159,7 @@ public class IndexedTest extends ContentBaseTest {
         // HostResource h = model.getHostSystem().getHosts().get(0);
         // String [] expectedServices = {"logserver", "configserver", "adminserver", "slobrok",
         //                               "logd", "configproxy","config-sentinel",
-        //                               "container", "storagenode", "searchnode", "distributor",
-        //                               "transactionlogserver"};
+        //                               "container", "storagenode", "searchnode", "distributor"};
         // DomContentBuilderTest.assertServices(h, expectedServices);
         ContentCluster s = model.getContentClusters().get("test");
 

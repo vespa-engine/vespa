@@ -84,33 +84,32 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
 
     // Non-private for testing purposes
     SuspensionLimit getConcurrentSuspensionLimit(ClusterApi clusterApi) {
-        // Possible service clusters on a node as of 2021-01-22:
+        // Possible service clusters on a node as of 2024-06-09:
         //
         //       CLUSTER ID           SERVICE TYPE                  HEALTH       ASSOCIATION
         //    1  CCN-controllers      container-clustercontrollers  Slobrok      1, 3, or 6 in content cluster
         //    2  CCN                  distributor                   Slobrok      content cluster
         //    3  CCN                  storagenode                   Slobrok      content cluster
         //    4  CCN                  searchnode                    Slobrok      content cluster
-        //    5  CCN                  transactionlogserver          not checked  content cluster
-        //    6  JCCN                 container                     Slobrok      jdisc container cluster
-        //    7  admin                slobrok                       not checked  1-3 in jdisc container cluster
-        //    8  metrics              metricsproxy-container        Slobrok      application
-        //    9  admin                logd                          not checked  application
-        //   10  admin                config-sentinel               not checked  application
-        //   11  admin                configproxy                   not checked  application
-        //   12  admin                logforwarder                  not checked  application
-        //   13  controller           controller                    state/v1     controllers
-        //   14  zone-config-servers  configserver                  state/v1     config servers
-        //   15  controller-host      hostadmin                     state/v1     controller hosts
-        //   16  configserver-host    hostadmin                     state/v1     config server hosts
-        //   17  tenant-host          hostadmin                     state/v1     tenant hosts
-        //   18  proxy-host           hostadmin                     state/v1     proxy hosts
+        //    5  JCCN                 container                     Slobrok      jdisc container cluster
+        //    6  admin                slobrok                       not checked  1-3 in jdisc container cluster
+        //    7  metrics              metricsproxy-container        Slobrok      application
+        //    8  admin                logd                          not checked  application
+        //    9  admin                config-sentinel               not checked  application
+        //   10  admin                configproxy                   not checked  application
+        //   11  admin                logforwarder                  not checked  application
+        //   12  controller           controller                    state/v1     controllers
+        //   13  zone-config-servers  configserver                  state/v1     config servers
+        //   14  controller-host      hostadmin                     state/v1     controller hosts
+        //   15  configserver-host    hostadmin                     state/v1     config server hosts
+        //   16  tenant-host          hostadmin                     state/v1     tenant hosts
+        //   17  proxy-host           hostadmin                     state/v1     proxy hosts
         //
         // CCN refers to the content cluster's name, as specified in services.xml.
         // JCCN refers to the jdisc container cluster's name, as specified in services.xml.
         //
-        // For instance a content node will have 2-5 and 8-12 and possibly 1, while a combined
-        // cluster node may have all 1-12.
+        // For instance a content node will have 2-4 and 7-11 and possibly 1, while a combined
+        // cluster node may have all 1-11.
         //
         // The services on a node can be categorized into these main types, ref association column above:
         //   A  content
