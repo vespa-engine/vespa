@@ -3,7 +3,6 @@
 #include "cf-handler.h"
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/common/configsystem.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
 
@@ -52,16 +51,5 @@ constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS(30 * 1000);
 
 void CfHandler::start(const std::string &configId) {
     LOG(debug, "Reading configuration with id '%s'", configId.c_str());
-    try {
-        subscribe(configId, CONFIG_TIMEOUT_MS);
-    } catch (config::ConfigTimeoutException & ex) {
-        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
-        std::_Exit(EXIT_FAILURE);
-    } catch (config::InvalidConfigException& ex) {
-        LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
-        std::_Exit(EXIT_FAILURE);
-    } catch (config::ConfigRuntimeException& ex) {
-        LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.getMessage().c_str());
-        std::_Exit(EXIT_FAILURE);
-    }
+    subscribe(configId, CONFIG_TIMEOUT_MS);
 }
