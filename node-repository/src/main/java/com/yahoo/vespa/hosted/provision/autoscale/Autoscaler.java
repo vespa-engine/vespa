@@ -1,7 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import ai.vespa.metrics.ConfigServerMetrics;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -10,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
@@ -57,7 +62,7 @@ public class Autoscaler {
      * @param enableDetailedLogging Whether to log autoscaling decision data
      * @return scaling advice for this cluster
      */
-    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, boolean enableDetailedLogging) {
+    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, boolean enableDetailedLogging, Metric metric) {
         var limits = Limits.of(cluster);
         var model = model(application, cluster, clusterNodes);
         if (model.isEmpty()) return Autoscaling.empty();
@@ -69,6 +74,17 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
         var loadAdjustment = model.loadAdjustment();
+
+        var context = metric.createContext(dimensions(application.id(), clusterNodes.clusterSpec()));
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_CPU.baseName(), model.idealLoad().cpu(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_CPU.baseName(), model.loadAdjustment().cpu(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_MEMORY.baseName(), model.idealLoad().memory(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_MEMORY.baseName(), model.loadAdjustment().memory(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_DISK.baseName(), model.idealLoad().disk(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_DISK.baseName(), model.loadAdjustment().disk(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_GPU.baseName(), model.idealLoad().gpu(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_GPU.baseName(), model.loadAdjustment().gpu(), context);
+
         if (enableDetailedLogging)
             log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " + loadAdjustment.toString());
 
@@ -131,4 +147,11 @@ public class Autoscaler {
         return Duration.ofHours(48);
     }
 
+    private static Map<String, String> dimensions(ApplicationId application, ClusterSpec clusterSpec) {
+        return Map.of("tenantName", application.tenant().value(),
+                "applicationId", application.serializedForm().replace(':', '.'),
+                "app", application.application().value() + "." + application.instance().value(),
+                "clusterid", clusterSpec.id().value(),
+                "clustertype", clusterSpec.type().name());
+    }
 }

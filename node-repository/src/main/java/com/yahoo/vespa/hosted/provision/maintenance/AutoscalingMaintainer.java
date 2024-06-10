@@ -99,7 +99,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             // Autoscale unless an autoscaling is already in progress
             Autoscaling autoscaling = null;
             if (cluster.target().resources().isEmpty() && !cluster.scalingInProgress()) {
-                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes, enableDetailedLogging);
+                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes, enableDetailedLogging, metric);
                 if (autoscaling.isPresent() || cluster.target().isEmpty()) // Ignore empty from recently started servers
                     cluster = cluster.withTarget(autoscaling);
             }

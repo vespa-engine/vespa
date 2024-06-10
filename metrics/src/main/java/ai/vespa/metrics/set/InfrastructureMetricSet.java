@@ -123,6 +123,14 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES.max());
         addMetric(metrics, ConfigServerMetrics.NODE_FAIL_THROTTLING.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALED.count());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_CPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_GPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_MEMORY.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_DISK.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_CPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_GPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_MEMORY.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_DISK.max());
 
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS.count());
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT.count());

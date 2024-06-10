@@ -147,7 +147,14 @@ public enum ConfigServerMetrics implements VespaMetrics {
     THROTTLED_NODE_FAILURES("throttledNodeFailures", Unit.HOST, "Number of node failures stopped due to throttling"),
     NODE_FAIL_THROTTLING("nodeFailThrottling", Unit.BINARY, "Metric indicating when node failure throttling is active. The value 1 means active, 0 means inactive"),
     CLUSTER_AUTOSCALED("clusterAutoscaled", Unit.OPERATION, "Number of times a cluster has been rescaled by the autoscaler"),
-
+    CLUSTER_AUTOSCALE_IDEAL_LOAD_CPU("clusterAutoscale.idealLoad.cpu", Unit.VCPU, "The ideal CPU load of a cluster"),
+    CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_CPU("clusterAutoscale.loadAdjustment.cpu", Unit.VCPU, "The CPU load adjustment of a cluster"),
+    CLUSTER_AUTOSCALE_IDEAL_LOAD_MEMORY("clusterAutoscale.idealLoad.memory", Unit.GIGABYTE, "The ideal memory load of a cluster"),
+    CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_MEMORY("clusterAutoscale.loadAdjustment.memory", Unit.GIGABYTE, "The memory load adjustment of a cluster"),
+    CLUSTER_AUTOSCALE_IDEAL_LOAD_DISK("clusterAutoscale.idealLoad.disk", Unit.GIGABYTE, "The ideal disk load of a cluster"),
+    CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_DISK("clusterAutoscale.loadAdjustment.disk", Unit.GIGABYTE, "The disk load adjustment of a cluster"),
+    CLUSTER_AUTOSCALE_IDEAL_LOAD_GPU("clusterAutoscale.idealLoad.gpu", Unit.VCPU, "The ideal GPU load of a cluster"),
+    CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_GPU("clusterAutoscale.loadAdjustment.gpu", Unit.VCPU, "The GPU load adjustment of a cluster"),
     DEPLOYMENT_PREPARE_MILLIS("deployment.prepareMillis", Unit.MILLISECOND, "Duration of deployment preparations"),
     DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations"),
 
