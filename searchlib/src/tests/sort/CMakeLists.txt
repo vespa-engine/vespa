@@ -21,5 +21,6 @@ vespa_add_executable(searchlib_uca_stress_app
     uca.cpp
     DEPENDS
     searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_uca_stress_app COMMAND searchlib_uca_stress_app BENCHMARK)
