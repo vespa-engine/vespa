@@ -11,7 +11,7 @@ LOG_SETUP("nearsearch_test");
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <set>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -108,28 +108,20 @@ MyQuery::~MyQuery() {}
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class Test : public vespalib::TestApp {
-private:
-    bool testNearSearch(MyQuery &query, uint32_t matchId);
+class NearSearchTest : public ::testing::Test {
+protected:
+    void testNearSearch(MyQuery &query, uint32_t matchId, const vespalib::string& label);
 
-public:
-    int Main() override;
-    void testBasicNear();
-    void testRepeatedTerms();
+    NearSearchTest();
+    ~NearSearchTest() override;
 };
 
-int
-Test::Main()
+NearSearchTest::NearSearchTest()
+    : ::testing::Test()
 {
-    TEST_INIT("nearsearch_test");
-
-    testBasicNear();     TEST_FLUSH();
-    testRepeatedTerms(); TEST_FLUSH();
-
-    TEST_DONE();
 }
 
-TEST_APPHOOK(Test);
+NearSearchTest::~NearSearchTest() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -137,84 +129,89 @@ TEST_APPHOOK(Test);
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void
-Test::testBasicNear()
+TEST_F(NearSearchTest, basic_near)
 {
     MyTerm foo(UIntList().add(69),
                UIntList().add(6).add(11));
     for (uint32_t i = 0; i <= 1; ++i) {
-        TEST_STATE(vespalib::make_string("i = %u", i).c_str());
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo), 69));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo), 69));
+        SCOPED_TRACE(vespalib::make_string("i = %u", i));
+        testNearSearch(MyQuery(false, i).addTerm(foo), 69, "near 1");
+        testNearSearch(MyQuery(true,  i).addTerm(foo), 69, "onear 1");
     }
 
     MyTerm bar(UIntList().add(68).add(69).add(70),
                UIntList().add(7).add(10));
-    TEST_DO(testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(bar), 0));
-    TEST_DO(testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(bar), 0));
+    testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(bar), 0, "near 2");
+    testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(bar), 0, "onear 2");
     for (uint32_t i = 1; i <= 2; ++i) {
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar), 69));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar), 69));
+        SCOPED_TRACE(vespalib::make_string("i = %u", i));
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar), 69, "near 3");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar), 69, "onear 3");
     }
 
     MyTerm baz(UIntList().add(69).add(70).add(71),
                UIntList().add(8).add(9));
     for (uint32_t i = 0; i <= 1; ++i) {
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar).addTerm(baz), 0));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(baz).addTerm(bar), 0));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(baz).addTerm(foo), 0));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(foo).addTerm(baz), 0));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(foo).addTerm(bar), 0));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(bar).addTerm(foo), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar).addTerm(baz), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(baz).addTerm(bar), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(baz).addTerm(foo), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(foo).addTerm(baz), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(foo).addTerm(bar), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(bar).addTerm(foo), 0));
+        SCOPED_TRACE(vespalib::make_string("i = %u", i));
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar).addTerm(baz), 0, "near 10");
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(baz).addTerm(bar), 0, "near 11");
+        testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(baz).addTerm(foo), 0, "near 12");
+        testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "near 13");
+        testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "near 14");
+        testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(bar).addTerm(foo), 0, "near 15");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar).addTerm(baz), 0, "onear 10");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(baz).addTerm(bar), 0, "onear 11");
+        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(baz).addTerm(foo), 0, "onear 12");
+        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "onear 13");
+        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "onear 14");
+        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(bar).addTerm(foo), 0, "onear 15");
     }
     for (uint32_t i = 2; i <= 3; ++i) {
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar).addTerm(baz), 69));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(baz).addTerm(bar), 69));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(baz).addTerm(foo), 69));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(foo).addTerm(baz), 69));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(foo).addTerm(bar), 69));
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(bar).addTerm(foo), 69));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar).addTerm(baz), 69));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(baz).addTerm(bar), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(baz).addTerm(foo), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(foo).addTerm(baz), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(foo).addTerm(bar), 0));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(bar).addTerm(foo), 69));
+        SCOPED_TRACE(vespalib::make_string("i = %u", i));
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar).addTerm(baz), 69, "near 20");
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(baz).addTerm(bar), 69, "near 21");
+        testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(baz).addTerm(foo), 69, "near 22");
+        testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(foo).addTerm(baz), 69, "near 23");
+        testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(foo).addTerm(bar), 69, "near 24");
+        testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(bar).addTerm(foo), 69, "near 25");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar).addTerm(baz), 69, "onear 20");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(baz).addTerm(bar), 0, "onear 21");
+        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(baz).addTerm(foo), 0, "onear 22");
+        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "onear 23");
+        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "onear 24");
+        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(bar).addTerm(foo), 69, "onear 25");
+    }
+}
+
+
+TEST_F(NearSearchTest, repeated_terms)
+{
+    MyTerm foo(UIntList().add(69),
+               UIntList().add(1).add(2).add(3));
+    testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(foo), 69, "near 50");
+    testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(foo), 0, "onear 50");
+    for (uint32_t i = 1; i <= 2; ++i) {
+        SCOPED_TRACE(vespalib::make_string("i = %u", i));
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo), 69, "near 51");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo), 69, "onear 51");
+    }
+
+    for (uint32_t i = 0; i <= 1; ++i) {
+        SCOPED_TRACE(vespalib::make_string("i = %u", i));
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo).addTerm(foo), 69, "near 52");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo).addTerm(foo), 0, "onear 52");
+    }
+    for (uint32_t i = 2; i <= 3; ++i) {
+        SCOPED_TRACE(vespalib::make_string("i = %u", i));
+        testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo).addTerm(foo), 69, "near 53");
+        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo).addTerm(foo), 69, "onear 53");
     }
 }
 
 void
-Test::testRepeatedTerms()
+NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const vespalib::string& label)
 {
-    MyTerm foo(UIntList().add(69),
-               UIntList().add(1).add(2).add(3));
-    TEST_DO(testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(foo), 69));
-    TEST_DO(testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(foo), 0));
-    for (uint32_t i = 1; i <= 2; ++i) {
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo), 69));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo), 69));
-    }
-
-    for (uint32_t i = 0; i <= 1; ++i) {
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo).addTerm(foo), 69));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo).addTerm(foo), 0));
-    }
-    for (uint32_t i = 2; i <= 3; ++i) {
-        TEST_DO(testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo).addTerm(foo), 69));
-        TEST_DO(testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo).addTerm(foo), 69));
-    }
-}
-
-bool
-Test::testNearSearch(MyQuery &query, uint32_t matchId)
-{
-    LOG(info, "testNearSearch(%d)", matchId);
+    SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
     search::queryeval::IntermediateBlueprint *near_b = nullptr;
     if (query.isOrdered()) {
         near_b = new search::queryeval::ONearBlueprint(query.getWindow());
@@ -240,13 +237,14 @@ Test::testNearSearch(MyQuery &query, uint32_t matchId)
         if (docId == matchId) {
             foundMatch = true;
         } else {
-            LOG(info, "Document %d matched unexpectedly.", docId);
-            return false;
+            FAIL() << "Document " << docId << " matched unexpectedly.";
         }
     }
     if (matchId == 0) {
-        return EXPECT_TRUE(!foundMatch);
+        EXPECT_TRUE(!foundMatch);
     } else {
-        return EXPECT_TRUE(foundMatch);
+        EXPECT_TRUE(foundMatch);
     }
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()
