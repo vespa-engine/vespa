@@ -238,7 +238,7 @@ public class SessionZooKeeperClient {
         // TODO: Empty version should not be possible any more - verify and remove
         return data.map(d -> new Version(Utf8.toString(d)))
                    .orElseGet(() -> {
-                       log.log(Level.WARNING, "No Vespa version found for session " + sessionId + ", returning current Vtag version");
+                       log.log(Level.WARNING, "No Vespa version found for session at " + versionPath().getAbsolute() + "," + "returning current Vtag version");
                        return Vtag.currentVersion;
                    });
     }
@@ -253,14 +253,16 @@ public class SessionZooKeeperClient {
     }
 
     public Instant readCreateTime() {
+        // TODO jonmv: clean up
+        RuntimeException stack = Math.random() < 1e-4 ? new RuntimeException("Trace log") : null;
         Optional<byte[]> data = curator.getData(getCreateTimePath());
         return data.map(d -> Instant.ofEpochSecond(Long.parseLong(Utf8.toString(d))))
                    .or(() -> {
-                       log.log(Level.WARNING, "No creation time found for session " + sessionId + ", returning session path ctime");
+                       log.log(Level.FINE, stack, () -> "No creation time found for session at " + getCreateTimePath().getAbsolute() + ", returning session path ctime");
                        return curator.getStat(sessionPath).map(s -> Instant.ofEpochMilli(s.getCtime()));
                    })
                    .orElseGet(() -> {
-                       log.log(Level.WARNING, "No ZK ctime found for session " + sessionId + ", returning epoch");
+                       log.log(Level.FINE, () -> "No ZK ctime found for session at " + sessionPath.getAbsolute() + ", returning epoch");
                        return Instant.EPOCH;
                    });
     }
@@ -374,7 +376,7 @@ public class SessionZooKeeperClient {
         return curator.getData(sessionPath.append(ACTIVATION_TRIGGERS_PATH))
                       .map(ActivationTriggersSerializer::fromJson)
                       .orElseGet(() -> {
-                          log.log(Level.WARNING, "No activation triggers found for session " + sessionId + ", returning empty");
+                          log.log(Level.WARNING, "No activation triggers found for session at " + sessionPath.append(ACTIVATION_TRIGGERS_PATH).getAbsolute() + ", returning empty");
                           return ActivationTriggers.empty();
                       });
     }
@@ -385,12 +387,14 @@ public class SessionZooKeeperClient {
      * @param createTime Time of session creation.
      */
     public void createNewSession(Instant createTime) {
+        log.log(Level.FINE, () -> "Creating new session at " + sessionPath.getAbsolute());
         CuratorTransaction transaction = new CuratorTransaction(curator);
         transaction.add(CuratorOperations.create(sessionPath.getAbsolute()));
         transaction.add(CuratorOperations.create(sessionPath.append(UPLOAD_BARRIER).getAbsolute()));
         transaction.add(CuratorOperations.create(sessionStatusPath.getAbsolute(), Utf8.toBytes(Status.NEW.name())));
         transaction.add(CuratorOperations.create(getCreateTimePath().getAbsolute(), Utf8.toBytes(String.valueOf(createTime.getEpochSecond()))));
         transaction.commit();
+        log.log(Level.FINE, () -> "Done creating new session at " + sessionPath.getAbsolute());
     }
 
     public static Path getSessionPath(TenantName tenantName, long sessionId) {
