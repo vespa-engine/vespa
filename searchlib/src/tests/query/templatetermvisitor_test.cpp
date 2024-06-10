@@ -1,37 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for templatetermvisitor.
 
-#include <vespa/log/log.h>
-LOG_SETUP("templatetermvisitor_test");
-
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::query;
 
 namespace {
 
 class MyVisitor;
-
-class Test : public vespalib::TestApp {
-    void requireThatAllTermsCanBeVisited();
-
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("templatetermvisitor_test");
-
-    TEST_DO(requireThatAllTermsCanBeVisited());
-
-    TEST_DONE();
-}
 
 class MyVisitor : public TemplateTermVisitor<MyVisitor, SimpleQueryNodeTypes>
 {
@@ -60,7 +40,8 @@ bool checkVisit() {
     return checkVisit(new T(typename T::Type(), "field", 0, Weight(0)));
 }
 
-void Test::requireThatAllTermsCanBeVisited() {
+TEST(TemplateTermVisitorTest, require_that_all_terms_can_be_visited)
+{
     EXPECT_TRUE(checkVisit<SimpleNumberTerm>());
     EXPECT_TRUE(checkVisit<SimpleLocationTerm>());
     EXPECT_TRUE(checkVisit<SimplePrefixTerm>());
@@ -83,4 +64,4 @@ void Test::requireThatAllTermsCanBeVisited() {
 
 }  // namespace
 
-TEST_APPHOOK(Test);
+GTEST_MAIN_RUN_ALL_TESTS()
