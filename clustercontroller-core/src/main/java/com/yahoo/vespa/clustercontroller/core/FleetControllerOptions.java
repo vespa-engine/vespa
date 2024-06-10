@@ -7,6 +7,7 @@ import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -108,7 +109,7 @@ public class FleetControllerOptions {
     /** Maximum time a node can be missing from slobrok before it is tagged down. */
     private final int maxSlobrokDisconnectGracePeriod;
 
-    private final Distribution storageDistribution;
+    private final DistributionConfigBundle distributionConfigBundle;
 
     // TODO: Get rid of this by always getting nodes by distribution.getNodes()
     private final Set<ConfiguredNode> nodes;
@@ -132,6 +133,8 @@ public class FleetControllerOptions {
     private final int maxNumberOfGroupsAllowedToBeDown;
 
     private final Function<FleetControllerContext, DatabaseFactory> dbFactoryFn;
+
+    private final boolean includeDistributionConfigInClusterStateBundles;
 
     // TODO less impressive length...!
     private FleetControllerOptions(String clusterName,
@@ -164,7 +167,7 @@ public class FleetControllerOptions {
                                    int minTimeBetweenNewSystemStates,
                                    boolean showLocalSystemStatesInEventLog,
                                    int maxSlobrokDisconnectGracePeriod,
-                                   Distribution storageDistribution,
+                                   DistributionConfigBundle distributionConfigBundle,
                                    Set<ConfiguredNode> nodes,
                                    Duration maxDeferredTaskVersionWaitTime,
                                    boolean clusterHasGlobalDocumentTypes,
@@ -175,7 +178,8 @@ public class FleetControllerOptions {
                                    Map<String, Double> clusterFeedBlockLimit,
                                    double clusterFeedBlockNoiseLevel,
                                    int maxNumberOfGroupsAllowedToBeDown,
-                                   Function<FleetControllerContext, DatabaseFactory> dbFactoryFn) {
+                                   Function<FleetControllerContext, DatabaseFactory> dbFactoryFn,
+                                   boolean includeDistributionConfigInClusterStateBundles) {
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
         this.fleetControllerCount = fleetControllerCount;
@@ -206,7 +210,7 @@ public class FleetControllerOptions {
         this.minTimeBetweenNewSystemStates = minTimeBetweenNewSystemStates;
         this.showLocalSystemStatesInEventLog = showLocalSystemStatesInEventLog;
         this.maxSlobrokDisconnectGracePeriod = maxSlobrokDisconnectGracePeriod;
-        this.storageDistribution = storageDistribution;
+        this.distributionConfigBundle = distributionConfigBundle;
         this.nodes = nodes;
         this.maxDeferredTaskVersionWaitTime = maxDeferredTaskVersionWaitTime;
         this.clusterHasGlobalDocumentTypes = clusterHasGlobalDocumentTypes;
@@ -218,6 +222,7 @@ public class FleetControllerOptions {
         this.clusterFeedBlockNoiseLevel = clusterFeedBlockNoiseLevel;
         this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
         this.dbFactoryFn = dbFactoryFn;
+        this.includeDistributionConfigInClusterStateBundles = includeDistributionConfigInClusterStateBundles;
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {
@@ -349,7 +354,11 @@ public class FleetControllerOptions {
     }
 
     public Distribution storageDistribution() {
-        return storageDistribution;
+        return distributionConfigBundle.distribution();
+    }
+
+    public DistributionConfigBundle distributionConfig() {
+        return distributionConfigBundle;
     }
 
     public Set<ConfiguredNode> nodes() {
@@ -392,6 +401,10 @@ public class FleetControllerOptions {
 
     public Function<FleetControllerContext, DatabaseFactory> dbFactoryFn() { return dbFactoryFn; }
 
+    public boolean includeDistributionConfigInClusterStateBundles() {
+        return this.includeDistributionConfigInClusterStateBundles;
+    }
+
     public static class Builder {
 
         private String clusterName;
@@ -424,7 +437,7 @@ public class FleetControllerOptions {
         private int minTimeBetweenNewSystemStates = 0;
         private boolean showLocalSystemStatesInEventLog = true;
         private int maxSlobrokDisconnectGracePeriod = 1000;
-        private Distribution storageDistribution;
+        private DistributionConfigBundle distributionConfigBundle;
         private Set<ConfiguredNode> nodes;
         private Duration maxDeferredTaskVersionWaitTime = Duration.ofSeconds(30);
         private boolean clusterHasGlobalDocumentTypes = false;
@@ -436,6 +449,7 @@ public class FleetControllerOptions {
         private double clusterFeedBlockNoiseLevel = 0.01;
         private int maxNumberOfGroupsAllowedToBeDown = 1;
         private Function<FleetControllerContext, DatabaseFactory> dbFactoryFn = ZooKeeperDatabaseFactory::new;
+        private boolean includeDistributionConfigInClusterStateBundles = false;
 
         public Builder(String clusterName, Collection<ConfiguredNode> nodes) {
             this.clusterName = clusterName;
@@ -629,8 +643,8 @@ public class FleetControllerOptions {
             return this;
         }
 
-        public Builder setStorageDistribution(Distribution storageDistribution) {
-            this.storageDistribution = storageDistribution;
+        public Builder setDistributionConfig(StorDistributionConfig config) {
+            this.distributionConfigBundle = DistributionConfigBundle.of(config);
             return this;
         }
 
@@ -693,6 +707,11 @@ public class FleetControllerOptions {
             return this;
         }
 
+        public Builder setIncludeDistributionConfigInClusterStateBundles(boolean includeConfig) {
+            this.includeDistributionConfigInClusterStateBundles = includeConfig;
+            return this;
+        }
+
         public FleetControllerOptions build() {
             return new FleetControllerOptions(clusterName,
                                               index,
@@ -724,7 +743,7 @@ public class FleetControllerOptions {
                                               minTimeBetweenNewSystemStates,
                                               showLocalSystemStatesInEventLog,
                                               maxSlobrokDisconnectGracePeriod,
-                                              storageDistribution,
+                                              distributionConfigBundle,
                                               nodes,
                                               maxDeferredTaskVersionWaitTime,
                                               clusterHasGlobalDocumentTypes,
@@ -735,7 +754,8 @@ public class FleetControllerOptions {
                                               clusterFeedBlockLimit,
                                               clusterFeedBlockNoiseLevel,
                                               maxNumberOfGroupsAllowedToBeDown,
-                                              dbFactoryFn);
+                                              dbFactoryFn,
+                                              includeDistributionConfigInClusterStateBundles);
         }
 
         public static Builder copy(FleetControllerOptions options) {
@@ -770,7 +790,7 @@ public class FleetControllerOptions {
             builder.minTimeBetweenNewSystemStates = options.minTimeBetweenNewSystemStates;
             builder.showLocalSystemStatesInEventLog = options.showLocalSystemStatesInEventLog;
             builder.maxSlobrokDisconnectGracePeriod = options.maxSlobrokDisconnectGracePeriod;
-            builder.storageDistribution = options.storageDistribution;
+            builder.distributionConfigBundle = options.distributionConfigBundle;
             builder.nodes = Set.copyOf(options.nodes);
             builder.maxDeferredTaskVersionWaitTime = options.maxDeferredTaskVersionWaitTime;
             builder.clusterHasGlobalDocumentTypes = options.clusterHasGlobalDocumentTypes;
@@ -782,6 +802,7 @@ public class FleetControllerOptions {
             builder.clusterFeedBlockNoiseLevel = options.clusterFeedBlockNoiseLevel;
             builder.maxNumberOfGroupsAllowedToBeDown = options.maxNumberOfGroupsAllowedToBeDown;
             builder.dbFactoryFn = options.dbFactoryFn;
+            builder.includeDistributionConfigInClusterStateBundles = options.includeDistributionConfigInClusterStateBundles;
 
             return builder;
         }

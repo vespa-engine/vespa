@@ -85,7 +85,7 @@ public abstract class FleetControllerTest implements Waiter {
     protected static FleetControllerOptions.Builder defaultOptions(Collection<ConfiguredNode> nodes) {
         var builder = new FleetControllerOptions.Builder("mycluster", nodes);
         builder.enableTwoPhaseClusterStateActivation(true); // Enable by default, tests can explicitly disable.
-        builder.setStorageDistribution(DistributionBuilder.forFlatCluster(builder.nodes().size()));
+        builder.setDistributionConfig(DistributionBuilder.configForFlatCluster(builder.nodes().size()));
         builder.setZooKeeperServerAddress("localhost:2181");
         return builder;
     }
