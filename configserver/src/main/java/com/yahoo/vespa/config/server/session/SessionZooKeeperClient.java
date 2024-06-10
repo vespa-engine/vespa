@@ -254,10 +254,10 @@ public class SessionZooKeeperClient {
 
     public Instant readCreateTime() {
         // TODO jonmv: clean up
-        RuntimeException stack = Math.random() < 1e-4 ? new RuntimeException("Trace log") : null;
         Optional<byte[]> data = curator.getData(getCreateTimePath());
         return data.map(d -> Instant.ofEpochSecond(Long.parseLong(Utf8.toString(d))))
                    .or(() -> {
+                       RuntimeException stack = Math.random() < 1e-4 ? new RuntimeException("Trace log") : null;
                        log.log(Level.FINE, stack, () -> "No creation time found for session at " + getCreateTimePath().getAbsolute() + ", returning session path ctime");
                        return curator.getStat(sessionPath).map(s -> Instant.ofEpochMilli(s.getCtime()));
                    })
