@@ -54,6 +54,7 @@ type CLI struct {
 
 	now           func() time.Time
 	retryInterval time.Duration
+	waitTimeout   *time.Duration
 
 	cmd     *cobra.Command
 	config  *Config
@@ -376,7 +377,9 @@ func (c *CLI) confirm(question string, confirmByDefault bool) (bool, error) {
 	}
 }
 
-func (c *CLI) waiter(timeout time.Duration) *Waiter { return &Waiter{Timeout: timeout, cli: c} }
+func (c *CLI) waiter(timeout time.Duration, cmd *cobra.Command) *Waiter {
+	return &Waiter{Timeout: timeout, cli: c, cmd: cmd}
+}
 
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {

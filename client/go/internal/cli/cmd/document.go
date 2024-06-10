@@ -27,8 +27,8 @@ func addDocumentFlags(cli *CLI, cmd *cobra.Command, printCurl *bool, timeoutSecs
 	cli.bindWaitFlag(cmd, 0, waitSecs)
 }
 
-func documentClient(cli *CLI, timeoutSecs, waitSecs int, printCurl bool) (*document.Client, *vespa.Service, error) {
-	docService, err := documentService(cli, waitSecs)
+func documentClient(cli *CLI, timeoutSecs int, waiter *Waiter, printCurl bool) (*document.Client, *vespa.Service, error) {
+	docService, err := documentService(cli, waiter)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,8 +47,8 @@ func documentClient(cli *CLI, timeoutSecs, waitSecs int, printCurl bool) (*docum
 	return client, docService, nil
 }
 
-func sendOperation(op document.Operation, args []string, timeoutSecs, waitSecs int, printCurl bool, cli *CLI) error {
-	client, service, err := documentClient(cli, timeoutSecs, waitSecs, printCurl)
+func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI) error {
+	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl)
 	if err != nil {
 		return err
 	}
@@ -91,8 +91,8 @@ func sendOperation(op document.Operation, args []string, timeoutSecs, waitSecs i
 	return printResult(cli, operationResult(false, doc, service, result), false)
 }
 
-func readDocument(id string, timeoutSecs, waitSecs int, printCurl bool, cli *CLI) error {
-	client, service, err := documentClient(cli, timeoutSecs, waitSecs, printCurl)
+func readDocument(id string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI) error {
+	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,8 @@ should be used instead of this.`,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sendOperation(-1, args, timeoutSecs, waitSecs, printCurl, cli)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
+			return sendOperation(-1, args, timeoutSecs, waiter, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs)
@@ -171,7 +172,8 @@ $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resour
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sendOperation(document.OperationPut, args, timeoutSecs, waitSecs, printCurl, cli)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
+			return sendOperation(document.OperationPut, args, timeoutSecs, waiter, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs)
@@ -195,7 +197,8 @@ $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/res
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sendOperation(document.OperationUpdate, args, timeoutSecs, waitSecs, printCurl, cli)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
+			return sendOperation(document.OperationUpdate, args, timeoutSecs, waiter, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs)
@@ -219,8 +222,9 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			if strings.HasPrefix(args[0], "id:") {
-				client, service, err := documentClient(cli, timeoutSecs, waitSecs, printCurl)
+				client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl)
 				if err != nil {
 					return err
 				}
@@ -232,7 +236,7 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 				result := client.Send(doc)
 				return printResult(cli, operationResult(false, doc, service, result), false)
 			} else {
-				return sendOperation(document.OperationRemove, args, timeoutSecs, waitSecs, printCurl, cli)
+				return sendOperation(document.OperationRemove, args, timeoutSecs, waiter, printCurl, cli)
 			}
 		},
 	}
@@ -254,19 +258,19 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return readDocument(args[0], timeoutSecs, waitSecs, printCurl, cli)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
+			return readDocument(args[0], timeoutSecs, waiter, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs)
 	return cmd
 }
 
-func documentService(cli *CLI, waitSecs int) (*vespa.Service, error) {
+func documentService(cli *CLI, waiter *Waiter) (*vespa.Service, error) {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	return waiter.Service(target, cli.config.cluster())
 }
 

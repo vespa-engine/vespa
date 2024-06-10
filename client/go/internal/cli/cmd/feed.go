@@ -108,7 +108,7 @@ $ cat docs.jsonl | vespa feed -`,
 				pprof.StartCPUProfile(f)
 				defer pprof.StopCPUProfile()
 			}
-			err := feed(args, options, cli)
+			err := feed(args, options, cli, cmd)
 			if options.memprofile != "" {
 				f, err := os.Create(options.memprofile)
 				if err != nil {
@@ -124,7 +124,7 @@ $ cat docs.jsonl | vespa feed -`,
 	return cmd
 }
 
-func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]httputil.Client, string, error) {
+func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter) ([]httputil.Client, string, error) {
 	if n < 1 {
 		return nil, "", fmt.Errorf("need at least one client")
 	}
@@ -134,7 +134,6 @@ func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]htt
 	}
 	services := make([]httputil.Client, 0, n)
 	baseURL := ""
-	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	for i := 0; i < n; i++ {
 		service, err := waiter.Service(target, cli.config.cluster())
 		if err != nil {
@@ -228,9 +227,10 @@ func enqueueAndWait(files []string, dispatcher *document.Dispatcher, options fee
 	return fmt.Errorf("at least one file to feed from must specified")
 }
 
-func feed(files []string, options feedOptions, cli *CLI) error {
+func feed(files []string, options feedOptions, cli *CLI, cmd *cobra.Command) error {
 	timeout := time.Duration(options.timeoutSecs) * time.Second
-	clients, baseURL, err := createServices(options.connections, timeout, options.waitSecs, cli)
+	waiter := cli.waiter(time.Duration(options.waitSecs)*time.Second, cmd)
+	clients, baseURL, err := createServices(options.connections, timeout, cli, waiter)
 	if err != nil {
 		return err
 	}

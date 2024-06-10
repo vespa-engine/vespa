@@ -50,7 +50,7 @@ $ vepsa status --format plain --cluster mycluster`,
 			if err := verifyFormat(format); err != nil {
 				return err
 			}
-			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			var failingContainers []*vespa.Service
 			if cluster == "" {
 				services, err := waiter.Services(t)
@@ -126,7 +126,7 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 			if err := verifyFormat(format); err != nil {
 				return err
 			}
-			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			s, err := waiter.DeployService(t)
 			if err != nil {
 				return err
@@ -174,7 +174,7 @@ $ vespa status deployment -t local [session-id] --wait 600
 			if err != nil {
 				return err
 			}
-			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
 				var hints []string

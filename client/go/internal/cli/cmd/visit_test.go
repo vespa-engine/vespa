@@ -97,7 +97,7 @@ func withMockClient(t *testing.T, prepCli func(*mock.HTTPClient), runOp func(*ve
 	prepCli(client)
 	cli, _, _ := newTestCLI(t)
 	cli.httpClient = client
-	service, err := documentService(cli, 0)
+	service, err := documentService(cli, &Waiter{cli: cli})
 	if err != nil {
 		t.Fatal(err)
 	}

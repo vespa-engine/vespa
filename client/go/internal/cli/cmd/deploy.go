@@ -72,21 +72,16 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 					return err
 				}
 			}
-			if opts.Target.IsCloud() && waitSecs == 0 && !cmd.PersistentFlags().Changed("wait") {
-				// If --wait is not explicitly given, we always wait a few seconds in Cloud to catch fast failures, e.g.
-				// invalid application package
-				waitSecs = 2
-			}
-			timeout := time.Duration(waitSecs) * time.Second
-			waiter := cli.waiter(timeout)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			if _, err := waiter.DeployService(target); err != nil {
 				return err
 			}
 			var result vespa.PrepareResult
-			if err := cli.spinner(cli.Stderr, "Uploading application package...", func() error {
+			err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
 				result, err = vespa.Deploy(opts)
 				return err
-			}); err != nil {
+			})
+			if err != nil {
 				return err
 			}
 			log.Println()
@@ -100,7 +95,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status deployment"))
 				log.Print(color.CyanString(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID)))
 			}
-			return waitForDeploymentReady(cli, target, result.ID, timeout)
+			return waitForVespaReady(target, result.ID, waiter)
 		},
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
@@ -162,8 +157,7 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			timeout := time.Duration(waitSecs) * time.Second
-			waiter := cli.waiter(timeout)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			if _, err := waiter.DeployService(target); err != nil {
 				return err
 			}
@@ -173,23 +167,28 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			cli.printSuccess("Activated application with session ", sessionID)
-			return waitForDeploymentReady(cli, target, sessionID, timeout)
+			return waitForVespaReady(target, sessionID, waiter)
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
 }
 
-func waitForDeploymentReady(cli *CLI, target vespa.Target, sessionOrRunID int64, timeout time.Duration) error {
-	if timeout == 0 {
-		return nil
+func waitForVespaReady(target vespa.Target, sessionOrRunID int64, waiter *Waiter) error {
+	fastWait := waiter.FastWaitOn(target)
+	hasTimeout := waiter.Timeout > 0
+	if fastWait || hasTimeout {
+		// Wait for deployment convergence
+		if _, err := waiter.Deployment(target, sessionOrRunID); err != nil {
+			return err
+		}
+		// Wait for healthy services
+		if hasTimeout {
+			_, err := waiter.Services(target)
+			return err
+		}
 	}
-	waiter := cli.waiter(timeout)
-	if _, err := waiter.Deployment(target, sessionOrRunID); err != nil {
-		return err
-	}
-	_, err := waiter.Services(target)
-	return err
+	return nil
 }
 
 func printPrepareLog(stderr io.Writer, result vespa.PrepareResult) {

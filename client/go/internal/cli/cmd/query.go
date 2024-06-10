@@ -45,7 +45,8 @@ can be set by the syntax [parameter-name]=[value].`,
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return query(cli, args, queryTimeoutSecs, waitSecs, printCurl, format, headers)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
+			return query(cli, args, queryTimeoutSecs, printCurl, format, headers, waiter)
 		},
 	}
 	cmd.Flags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
@@ -81,12 +82,11 @@ func parseHeaders(headers []string) (http.Header, error) {
 	return h, nil
 }
 
-func query(cli *CLI, arguments []string, timeoutSecs, waitSecs int, curl bool, format string, headers []string) error {
+func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format string, headers []string, waiter *Waiter) error {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
 	}
-	waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
 	service, err := waiter.Service(target, cli.config.cluster())
 	if err != nil {
 		return err
