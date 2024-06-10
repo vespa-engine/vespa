@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/fastlib/text/normwordfolder.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vsm/searcher/fold.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
@@ -23,9 +23,9 @@ using SizeV = Vector<size_t>;
 using SFSB = UTF8StringFieldSearcherBase;
 using FSFS = FUTF8StrChrFieldSearcher;
 
-class TextUtilTest : public vespalib::TestApp
+class TextUtilTest : public ::testing::Test
 {
-private:
+protected:
     ucs4_t getUTF8Char(const char * src);
     template <typename BW, bool OFF>
     void assertSkipSeparators(const char * input, size_t len, const UCS4V & expdstbuf, const SizeV & expoffsets);
@@ -38,23 +38,23 @@ private:
 
     template <typename BW, bool OFF>
     void testSkipSeparators();
-    void testSkipSeparators();
-    void testSeparatorCharacter();
-    void testAnsiFold();
-    void test_lfoldua();
-#ifdef __x86_64__
-    void test_sse2_foldua();
-#endif
 
-public:
-    int Main() override;
+    TextUtilTest();
+    ~TextUtilTest() override;
 };
+
+TextUtilTest::TextUtilTest()
+    : ::testing::Test()
+{
+}
+
+TextUtilTest::~TextUtilTest() = default;
 
 ucs4_t
 TextUtilTest::getUTF8Char(const char * src)
 {
     ucs4_t retval = Fast_UnicodeUtil::GetUTF8Char(src);
-    ASSERT_TRUE(retval != Fast_UnicodeUtil::_BadUTF8Char);
+    EXPECT_TRUE(retval != Fast_UnicodeUtil::_BadUTF8Char);
     return retval;
 }
 
@@ -68,12 +68,12 @@ TextUtilTest::assertSkipSeparators(const char * input, size_t len, const UCS4V &
     UTF8StrChrFieldSearcher fs(0);
     BW bw(dstbuf.get(), offsets.get());
     size_t dstlen = fs.skipSeparators(srcbuf, len, bw);
-    EXPECT_EQUAL(dstlen, expdstbuf.size());
+    EXPECT_EQ(dstlen, expdstbuf.size());
     ASSERT_TRUE(dstlen == expdstbuf.size());
     for (size_t i = 0; i < dstlen; ++i) {
-        EXPECT_EQUAL(dstbuf[i], expdstbuf[i]);
+        EXPECT_EQ(dstbuf[i], expdstbuf[i]);
         if (OFF) {
-            EXPECT_EQUAL(offsets[i], expoffsets[i]);
+            EXPECT_EQ(offsets[i], expoffsets[i]);
         }
     }
 }
@@ -83,7 +83,7 @@ TextUtilTest::assertAnsiFold(const std::string & toFold, const std::string & exp
 {
     char folded[256];
     EXPECT_TRUE(FSFS::ansiFold(toFold.c_str(), toFold.size(), folded));
-    EXPECT_EQUAL(std::string(folded, toFold.size()), exp);
+    EXPECT_EQ(std::string(folded, toFold.size()), exp);
 }
 
 void
@@ -91,7 +91,7 @@ TextUtilTest::assertAnsiFold(char c, char exp)
 {
     char folded;
     EXPECT_TRUE(FSFS::ansiFold(&c, 1, &folded));
-    EXPECT_EQUAL((int32_t)folded, (int32_t)exp);
+    EXPECT_EQ((int32_t)folded, (int32_t)exp);
 }
 
 #ifdef __x86_64__
@@ -103,8 +103,8 @@ TextUtilTest::assert_sse2_foldua(const std::string & toFold, size_t charFolded, 
     const unsigned char * toFoldOrg = reinterpret_cast<const unsigned char *>(toFold.c_str());
     const unsigned char * retval =
         sse2_foldua(toFoldOrg, toFold.size(), reinterpret_cast<unsigned char *>(folded + alignedStart));
-    EXPECT_EQUAL((size_t)(retval - toFoldOrg), charFolded);
-    EXPECT_EQUAL(std::string(folded + alignedStart, charFolded), exp);
+    EXPECT_EQ((size_t)(retval - toFoldOrg), charFolded);
+    EXPECT_EQ(std::string(folded + alignedStart, charFolded), exp);
 }
 
 void
@@ -115,9 +115,9 @@ TextUtilTest::assert_sse2_foldua(unsigned char c, unsigned char exp, size_t char
     unsigned char folded[32];
     size_t alignedStart =  0xF - (size_t(folded + 0xF) % 0x10);
     const unsigned char * retval = sse2_foldua(toFold, 16, folded + alignedStart);
-    EXPECT_EQUAL((size_t)(retval - toFold), charFolded);
+    EXPECT_EQ((size_t)(retval - toFold), charFolded);
     for (size_t i = 0; i < charFolded; ++i) {
-        EXPECT_EQUAL((int32_t)folded[i + alignedStart], (int32_t)exp);
+        EXPECT_EQ((int32_t)folded[i + alignedStart], (int32_t)exp);
     }
 }
 #endif
@@ -145,8 +145,7 @@ TextUtilTest::testSkipSeparators()
                                                              SizeV().a(0).a(0).a(2).a(3).a(3));
 }
 
-void
-TextUtilTest::testSkipSeparators()
+TEST_F(TextUtilTest, skip_separators)
 {
     Fast_NormalizeWordFolder::Setup(Fast_NormalizeWordFolder::DO_SHARP_S_SUBSTITUTION);
 
@@ -154,8 +153,7 @@ TextUtilTest::testSkipSeparators()
     testSkipSeparators<SFSB::OffsetWrapper, true>();
 }
 
-void
-TextUtilTest::testSeparatorCharacter()
+TEST_F(TextUtilTest, separator_character)
 {
     EXPECT_TRUE(SFSB::isSeparatorCharacter('\x00'));
     EXPECT_TRUE(SFSB::isSeparatorCharacter('\x01'));
@@ -194,8 +192,7 @@ TextUtilTest::testSeparatorCharacter()
     EXPECT_TRUE(! SFSB::isSeparatorCharacter('\x20')); // space
 }
 
-void
-TextUtilTest::testAnsiFold()
+TEST_F(TextUtilTest, ansi_fold)
 {
     FieldSearcher::init();
     assertAnsiFold("", "");
@@ -220,8 +217,7 @@ TextUtilTest::testAnsiFold()
     }
 }
 
-void
-TextUtilTest::test_lfoldua()
+TEST_F(TextUtilTest, lfoldua)
 {
     FieldSearcher::init();
     char folded[256];
@@ -229,12 +225,11 @@ TextUtilTest::test_lfoldua()
     const char * toFold = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     size_t len = strlen(toFold);
     EXPECT_TRUE(FSFS::lfoldua(toFold, len, folded, alignedStart));
-    EXPECT_EQUAL(std::string(folded + alignedStart, len), "abcdefghijklmnopqrstuvwxyz");
+    EXPECT_EQ(std::string(folded + alignedStart, len), "abcdefghijklmnopqrstuvwxyz");
 }
 
 #ifdef __x86_64__
-void
-TextUtilTest::test_sse2_foldua()
+TEST_F(TextUtilTest, sse2_foldua)
 {
     assert_sse2_foldua("", 0, "");
     assert_sse2_foldua("ABCD", 0, "");
@@ -263,22 +258,6 @@ TextUtilTest::test_sse2_foldua()
 }
 #endif
 
-int
-TextUtilTest::Main()
-{
-    TEST_INIT("textutil_test");
-
-    testSkipSeparators();
-    testSeparatorCharacter();
-    testAnsiFold();
-    test_lfoldua();
-#ifdef __x86_64__
-    test_sse2_foldua();
-#endif
-
-    TEST_DONE();
 }
 
-}
-
-TEST_APPHOOK(vsm::TextUtilTest);
+GTEST_MAIN_RUN_ALL_TESTS()

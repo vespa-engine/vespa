@@ -4,5 +4,6 @@ vespa_add_executable(vsm_textutil_test_app TEST
     textutil_test.cpp
     DEPENDS
     streamingvisitors
+    GTest::gtest
 )
 vespa_add_test(NAME vsm_textutil_test_app COMMAND vsm_textutil_test_app)
