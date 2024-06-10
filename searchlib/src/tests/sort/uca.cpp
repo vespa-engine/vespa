@@ -1,27 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/common/sortspec.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/array.h>
 #include <unicode/ustring.h>
 #include <unicode/coll.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("uca_stress");
-
 using icu::Collator;
 
-class Test : public vespalib::TestApp
-{
-public:
-    int Main() override;
-    void testFromDat();
-};
-
-
-void Test::testFromDat()
+TEST(UcaStressTest, from_dat)
 {
     size_t badnesses = 0;
 
@@ -40,8 +30,6 @@ void Test::testFromDat()
     int fd = open("sort-blobs.dat", O_RDONLY);
     char sbuf[4];
 
-    int num=0;
-
     uint32_t atleast = 0;
 
     while (read(fd, sbuf, 4) == 4) {
@@ -49,20 +37,20 @@ void Test::testFromDat()
             uint32_t len = 0;
             int r = read(fd, &len, 4);
 
-            EXPECT_EQUAL(4, r);
+            EXPECT_EQ(4, r);
             r = read(fd, sbuf, 4);
-            EXPECT_EQUAL(4, r);
-            EXPECT_EQUAL(midMark, sbuf);
+            EXPECT_EQ(4, r);
+            EXPECT_EQ(midMark, sbuf);
 
             if (u16buffer.size() < len) {
                 u16buffer.resize(len);
             }
             r = read(fd, &u16buffer[0], len*2);
-            EXPECT_EQUAL((int)len*2, r);
+            EXPECT_EQ((int)len*2, r);
 
             r = read(fd, sbuf, 4);
-            EXPECT_EQUAL(4, r);
-            EXPECT_EQUAL(endMark, sbuf);
+            EXPECT_EQ(4, r);
+            EXPECT_EQ(endMark, sbuf);
 
             uint32_t wanted = coll->getSortKey(&u16buffer[0], len, NULL, 0);
 
@@ -77,7 +65,7 @@ void Test::testFromDat()
             for (uint32_t pretend = 1; pretend < wanted+8; ++pretend) {
                 memset(&u8buffer[0], 0x99, u8buffer.size());
                 uint32_t got = coll->getSortKey(&u16buffer[0], len, &u8buffer[0], pretend);
-                EXPECT_EQUAL(wanted, got);
+                EXPECT_EQ(wanted, got);
 
                 if (u8buffer[pretend+1] != 0x99) {
                     printf("wrote 2 bytes too far: wanted space %d, pretend allocated %d, last good=%02x, bad=%02x %02x\n",
@@ -95,24 +83,13 @@ void Test::testFromDat()
 
             memset(&u8buffer[0], 0x99, u8buffer.size());
             uint32_t got = coll->getSortKey(&u16buffer[0], len, &u8buffer[0], u8buffer.size());
-            EXPECT_EQUAL(wanted, got);
+            EXPECT_EQ(wanted, got);
 
-            EXPECT_EQUAL('\0', u8buffer[got-1]);
-            EXPECT_EQUAL((uint8_t)0x99, u8buffer[got]);
-        }
-        if (++num >= 10000) {
-            TEST_FLUSH();
-            num=0;
+            EXPECT_EQ('\0', u8buffer[got-1]);
+            EXPECT_EQ((uint8_t)0x99, u8buffer[got]);
         }
     }
-    EXPECT_EQUAL(0u, badnesses);
+    EXPECT_EQ(0u, badnesses);
 }
 
-TEST_APPHOOK(Test);
-
-int Test::Main()
-{
-    TEST_INIT("uca_stress");
-    testFromDat();
-    TEST_DONE();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
