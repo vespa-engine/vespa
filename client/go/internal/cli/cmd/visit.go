@@ -109,7 +109,8 @@ $ vespa visit --field-set "[id]" # list document IDs
 			if !result.Success {
 				return fmt.Errorf("argument error: %s", result.Message)
 			}
-			service, err := documentService(cli, vArgs.waitSecs)
+			waiter := cli.waiter(time.Duration(vArgs.waitSecs)*time.Second, cmd)
+			service, err := documentService(cli, waiter)
 			if err != nil {
 				return err
 			}

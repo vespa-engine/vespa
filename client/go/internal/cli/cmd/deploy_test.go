@@ -62,6 +62,46 @@ Hint: Pass --add-cert to use the certificate of the current application
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
 }
 
+func TestDeployCloudFastWait(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	cli, stdout, stderr := newTestCLI(t, "CI=true")
+	httpClient := &mock.HTTPClient{}
+	cli.httpClient = httpClient
+
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+
+	// Deployment completes quickly
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "success"}`)
+	require.Nil(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+	assert.True(t, httpClient.Consumed())
+
+	// Deployment fails quickly
+	stdout.Reset()
+	stderr.Reset()
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
+	require.NotNil(t, cli.Run("deploy", pkgDir))
+	assert.Equal(t, stderr.String(), "Error: deployment run 0 incomplete after waiting up to 2s: aborting wait: deployment failed: run 0 ended with unsuccessful status: unsuccesful\n")
+	assert.True(t, httpClient.Consumed())
+
+	// Deployment which is running does not return error
+	stdout.Reset()
+	stderr.Reset()
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": true, "status": "running"}`)
+	require.Nil(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+	assert.True(t, httpClient.Consumed())
+}
+
 func TestDeployWait(t *testing.T) {
 	cli, stdout, _ := newTestCLI(t)
 	client := &mock.HTTPClient{}

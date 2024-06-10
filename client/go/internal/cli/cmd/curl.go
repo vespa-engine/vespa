@@ -37,7 +37,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
-			waiter := cli.waiter(time.Duration(waitSecs) * time.Second)
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			service, err := waiter.Service(target, cli.config.cluster())
 			if err != nil {
 				return err

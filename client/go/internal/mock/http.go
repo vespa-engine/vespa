@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -16,6 +17,9 @@ type HTTPClient struct {
 
 	// The errors to return for future requests. If non-nil, these errors are returned before any responses in nextResponses.
 	nextErrors []error
+
+	// LogRequests enables logging of all requests made through this client.
+	LogRequests bool
 
 	// LastRequest is the last HTTP request made through this.
 	LastRequest *http.Request
@@ -56,7 +60,12 @@ func (c *HTTPClient) NextResponseError(err error) {
 	c.nextErrors = append(c.nextErrors, err)
 }
 
+func (c *HTTPClient) Consumed() bool { return len(c.nextResponses) == 0 }
+
 func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
+	if c.LogRequests {
+		fmt.Fprintf(os.Stderr, "Sending request %+v\n", request)
+	}
 	c.LastRequest = request
 	if len(c.nextErrors) > 0 {
 		err := c.nextErrors[0]

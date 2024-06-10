@@ -36,8 +36,14 @@ const (
 	AnyDeployment int64 = -2
 )
 
-var errWaitTimeout = errors.New("giving up")
 var errAuth = errors.New("auth failed")
+
+var (
+	// ErrWaitTimeout is the error returned when waiting for something times out.
+	ErrWaitTimeout = errors.New("giving up")
+	// ErrDeployment is the error returned for terminal deployment failures.
+	ErrDeployment = errors.New("deployment failed")
+)
 
 // Authenticator authenticates the given HTTP request.
 type Authenticator interface {
@@ -290,7 +296,7 @@ func wait(service *Service, okFn responseFunc, reqFn requestFunc, timeout, retry
 		time.Sleep(retryInterval)
 	}
 	if err == nil {
-		return status, errWaitTimeout
+		return status, ErrWaitTimeout
 	}
 	return status, err
 }

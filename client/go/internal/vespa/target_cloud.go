@@ -233,7 +233,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 		timeout = math.MaxInt64 // No timeout
 	}
 	// Ignore wait error because logFunc has no concept of completion, we just want to print log entries until timeout is reached
-	if _, err := t.deployServiceWait(logFunc, requestFunc, timeout); err != nil && !errors.Is(err, errWaitTimeout) {
+	if _, err := t.deployServiceWait(logFunc, requestFunc, timeout); err != nil && !errors.Is(err, ErrWaitTimeout) {
 		return fmt.Errorf("failed to read logs: %s", err)
 	}
 	return nil
@@ -309,7 +309,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 			return false, nil
 		}
 		if resp.Status != "success" {
-			return false, fmt.Errorf("run %d ended with unsuccessful status: %s", runID, resp.Status)
+			return false, fmt.Errorf("%w: run %d ended with unsuccessful status: %s", ErrDeployment, runID, resp.Status)
 		}
 		success = true
 		return success, nil
