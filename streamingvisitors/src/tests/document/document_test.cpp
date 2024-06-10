@@ -36,27 +36,27 @@ TEST(DocumentTest, storage_document)
     StorageDocument sdoc(std::move(doc), fpmap, 3);
     ASSERT_TRUE(sdoc.valid());
 
-    EXPECT_EQ(std::string("foo"), sdoc.getField(0)->getAsString());
-    EXPECT_EQ(std::string("bar"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("foo", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("bar", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
     // test caching
-    EXPECT_EQ(std::string("foo"), sdoc.getField(0)->getAsString());
-    EXPECT_EQ(std::string("bar"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("foo", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("bar", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
 
     // set new values
     EXPECT_TRUE(sdoc.setField(0, FieldValue::UP(new StringFieldValue("baz"))));
-    EXPECT_EQ(std::string("baz"), sdoc.getField(0)->getAsString());
-    EXPECT_EQ(std::string("bar"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("baz", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("bar", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
     EXPECT_TRUE(sdoc.setField(1, FieldValue::UP(new StringFieldValue("qux"))));
-    EXPECT_EQ(std::string("baz"), sdoc.getField(0)->getAsString());
-    EXPECT_EQ(std::string("qux"), sdoc.getField(1)->getAsString());
+    EXPECT_EQ("baz", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("qux", sdoc.getField(1)->getAsString());
     EXPECT_TRUE(sdoc.getField(2) == nullptr);
     EXPECT_TRUE(sdoc.setField(2, FieldValue::UP(new StringFieldValue("quux"))));
-    EXPECT_EQ(std::string("baz"), sdoc.getField(0)->getAsString());
-    EXPECT_EQ(std::string("qux"), sdoc.getField(1)->getAsString());
-    EXPECT_EQ(std::string("quux"), sdoc.getField(2)->getAsString());
+    EXPECT_EQ("baz", sdoc.getField(0)->getAsString());
+    EXPECT_EQ("qux", sdoc.getField(1)->getAsString());
+    EXPECT_EQ("quux", sdoc.getField(2)->getAsString());
 
     EXPECT_TRUE(!sdoc.setField(3, FieldValue::UP(new StringFieldValue("thud"))));
 
