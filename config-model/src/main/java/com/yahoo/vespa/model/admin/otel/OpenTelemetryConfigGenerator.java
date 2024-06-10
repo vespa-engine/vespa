@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -35,10 +36,12 @@ public class OpenTelemetryConfigGenerator {
     private List<StatePortInfo> statePorts = new ArrayList<>();
     private final Zone zone;
     private final ApplicationId applicationId;
+    private final boolean isHostedVespa;
 
-    OpenTelemetryConfigGenerator(Zone zone, ApplicationId applicationId) {
+    OpenTelemetryConfigGenerator(Zone zone, ApplicationId applicationId, boolean isHostedVespa) {
         this.zone = zone;
         this.applicationId = applicationId;
+        this.isHostedVespa = isHostedVespa;
         boolean isCd = true;
         boolean isPublic = true;
         if (zone != null) {
@@ -103,9 +106,28 @@ public class OpenTelemetryConfigGenerator {
                     g.writeStringField(entry.getKey(), entry.getValue());
                 }
             }
+            String ph = findParentHost(statePort.hostName());
+            if (isHostedVespa && ph != null) {
+                g.writeStringField("parentHostname", ph);
+            }
             g.writeEndObject();
         }
         g.writeEndObject();
+    }
+    // note: this pattern should match entire node name
+    static private final Pattern expectedNodeName1 = Pattern.compile("[a-z0-9]+-v6-[0-9]+[.].+");
+    static private final Pattern expectedNodeName2 = Pattern.compile("[a-z]*[0-9]+[a-z][.].+");
+    // matches the part we want to replace with just a dot
+    static private final Pattern replaceNodeName1 = Pattern.compile("-v6-[0-9]+[.]");
+    static private final Pattern replaceNodeName2 = Pattern.compile("[a-z][.]");
+    static String findParentHost(String nodeName) {
+        if (expectedNodeName1.matcher(nodeName).matches()) {
+            return replaceNodeName1.matcher(nodeName).replaceFirst(".");
+        }
+        if (expectedNodeName2.matcher(nodeName).matches()) {
+            return replaceNodeName2.matcher(nodeName).replaceFirst(".");
+        }
+        return null;
     }
     private void addTls(JsonGenerator g) throws java.io.IOException {
         g.writeFieldName("tls");

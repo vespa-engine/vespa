@@ -31,7 +31,7 @@ public class OpenTelemetryConfigGeneratorTest {
     void testBuildsYaml() {
         var mockZone = new Zone(SystemName.PublicCd, Environment.prod, RegionName.from("mock"));
         var app = ApplicationId.from("mytenant", "myapp", "myinstance");
-        var generator = new OpenTelemetryConfigGenerator(mockZone, app);
+        var generator = new OpenTelemetryConfigGenerator(mockZone, app, true);
         var root = new MockRoot();
 
         var mockHost = new Host(root, "localhost2.local");
@@ -50,12 +50,15 @@ public class OpenTelemetryConfigGeneratorTest {
         var mockSvc2 = new MockService(root, "searchnode");
         mockSvc2.setProp("clustername", "mycluster");
         mockSvc2.setProp("clustertype", "mockup");
-        var mockPort2 = new StatePortInfo("other.host.local", 19102, mockSvc2);
+        var mockPort2 = new StatePortInfo("other123x.host.local", 19102, mockSvc2);
 
         generator.addStatePorts(List.of(mockPort1, mockPort2));
         String yaml = generator.generate();
         // System.err.println(">>>\n" + yaml + "\n<<<");
         assertTrue(yaml.contains("sentinel"));
+        String want = """
+                      "parentHostname":"other123.host.local""";
+        assertTrue(yaml.contains(want));
     }
 
     static class MockService extends AbstractService {
@@ -70,4 +73,22 @@ public class OpenTelemetryConfigGeneratorTest {
         @Override public void allocatePorts(int start, PortAllocBridge from) { }
     }
 
+    @Test
+    void testFindParentHost() {
+        String result;
+        result = OpenTelemetryConfigGenerator.findParentHost("n1234c.foo.bar.some.cloud");
+        assertEquals("n1234.foo.bar.some.cloud", result);
+        result = OpenTelemetryConfigGenerator.findParentHost("n1234-v6-7.foo.bar.some.cloud");
+        assertEquals("n1234.foo.bar.some.cloud", result);
+        result = OpenTelemetryConfigGenerator.findParentHost("2000a.foo.bar.some.cloud");
+        assertEquals("2000.foo.bar.some.cloud", result);
+        result = OpenTelemetryConfigGenerator.findParentHost("2000-v6-10.foo.bar.some.cloud");
+        assertEquals("2000.foo.bar.some.cloud", result);
+        result = OpenTelemetryConfigGenerator.findParentHost("foobar.some.cloud");
+        assertNull(result);
+        result = OpenTelemetryConfigGenerator.findParentHost("foo123bar.some.cloud");
+        assertNull(result);
+        result = OpenTelemetryConfigGenerator.findParentHost("foo123.some.cloud");
+        assertNull(result);
+    }
 }

@@ -19,11 +19,13 @@ public class OpenTelemetryCollector extends AbstractService implements OpenTelem
 
     private final Zone zone;
     private final ApplicationId applicationId;
+    private final boolean isHostedVespa;
 
     public OpenTelemetryCollector(TreeConfigProducer<?> parent) {
         super(parent, "otelcol");
         this.zone = null;
         this.applicationId = null;
+        this.isHostedVespa = false;
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
     }
@@ -32,6 +34,7 @@ public class OpenTelemetryCollector extends AbstractService implements OpenTelem
         super(parent, "otelcol");
         this.zone = deployState.zone();
         this.applicationId = deployState.getProperties().applicationId();
+        this.isHostedVespa = deployState.isHosted();
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
     }
@@ -54,7 +57,7 @@ public class OpenTelemetryCollector extends AbstractService implements OpenTelem
 
     @Override
     public void getConfig(OpenTelemetryConfig.Builder builder) {
-        var generator = new OpenTelemetryConfigGenerator(zone, applicationId);
+        var generator = new OpenTelemetryConfigGenerator(zone, applicationId, isHostedVespa);
         AnyConfigProducer pp = this;
         AnyConfigProducer p = pp.getParent();
         while (p != null && p != pp) {
