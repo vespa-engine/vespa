@@ -232,7 +232,7 @@ public class EventRendererTestCase {
 
                 event: end
                 """;
-        assertEquals(expected, result);  // Todo: support other types of data such as search results (hits), timing and trace
+        assertEquals(expected, result);
     }
 
     static HitGroup newHitGroup(EventStream eventStream, String id) {

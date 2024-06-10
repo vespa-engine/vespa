@@ -37,7 +37,7 @@ public class RAGSearcher extends LLMSearcher {
     public Result search(Query query, Execution execution) {
         Result result = execution.search(query);
         execution.fill(result);
-        return complete(query, buildPrompt(query, result));
+        return complete(query, buildPrompt(query, result), result, execution);
     }
 
     protected Prompt buildPrompt(Query query, Result result) {
