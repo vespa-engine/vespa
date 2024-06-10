@@ -9227,7 +9227,7 @@
     "methods" : [
       "public void <init>(ai.vespa.search.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
-      "protected com.yahoo.search.Result complete(com.yahoo.search.Query, ai.vespa.llm.completion.Prompt)",
+      "protected com.yahoo.search.Result complete(com.yahoo.search.Query, ai.vespa.llm.completion.Prompt, com.yahoo.search.Result, com.yahoo.search.searchchain.Execution)",
       "public java.lang.String getPrompt(com.yahoo.search.Query)",
       "public java.lang.String getPropertyPrefix()",
       "public java.lang.String lookupProperty(java.lang.String, com.yahoo.search.Query)",

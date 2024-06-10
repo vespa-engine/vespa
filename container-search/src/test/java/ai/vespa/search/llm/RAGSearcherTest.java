@@ -115,7 +115,7 @@ public class RAGSearcherTest {
         return execution.search(query);
     }
 
-    private static Searcher createRAGSearcher(Map<String, LanguageModel> llms) {
+    static Searcher createRAGSearcher(Map<String, LanguageModel> llms) {
         var config = new LlmSearcherConfig.Builder().stream(false).build();
         ComponentRegistry<LanguageModel> models = new ComponentRegistry<>();
         llms.forEach((key, value) -> models.register(ComponentId.fromString(key), value));

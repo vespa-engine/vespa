@@ -79,13 +79,16 @@ public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator.writeRaw("event: " + event.type() + "\n");
             }
             generator.writeRaw("data: ");
-            generator.writeStartObject();
-            generator.writeStringField(event.type(), event.toString());
-            generator.writeEndObject();
+            if (event.type().equals("hits")) {
+                generator.writeRaw(event.toString());
+            } else {
+                generator.writeStartObject();
+                generator.writeStringField(event.type(), event.toString());
+                generator.writeEndObject();
+            }
             generator.writeRaw("\n\n");
             generator.flush();
         }
-        // Todo: support other types of data such as search results (hits), timing and trace
     }
 
     @Override
