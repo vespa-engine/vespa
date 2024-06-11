@@ -7,7 +7,6 @@ package com.yahoo.config.model.api.container;
 public enum ContainerServiceType {
 
     CONTAINER("container"),
-    QRSERVER("qrserver"),
     CLUSTERCONTROLLER_CONTAINER("container-clustercontroller"),
     LOGSERVER_CONTAINER("logserver-container"),
     METRICS_PROXY_CONTAINER("metricsproxy-container");

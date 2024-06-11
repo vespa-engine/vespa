@@ -10,7 +10,6 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Before;
 import org.junit.Rule;
@@ -46,7 +45,7 @@ public class SuperModelRequestHandlerTest {
     public void setup() {
         counter = new SuperModelGenerationCounter(new MockCurator());
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        manager = new SuperModelManager(configserverConfig, Zone.defaultZone(), counter, new InMemoryFlagSource());
+        manager = new SuperModelManager(configserverConfig, Zone.defaultZone(), counter);
         controller = new SuperModelRequestHandler(new TestConfigDefinitionRepo(), configserverConfig, manager);
     }
 
@@ -96,7 +95,7 @@ public class SuperModelRequestHandlerTest {
         ApplicationId foo = applicationId("a", "foo");
         long masterGen = 10;
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen));
-        manager = new SuperModelManager(configserverConfig, Zone.defaultZone(), counter, new InMemoryFlagSource());
+        manager = new SuperModelManager(configserverConfig, Zone.defaultZone(), counter);
         controller = new SuperModelRequestHandler(new TestConfigDefinitionRepo(), configserverConfig, manager);
 
         long gen = counter.get();

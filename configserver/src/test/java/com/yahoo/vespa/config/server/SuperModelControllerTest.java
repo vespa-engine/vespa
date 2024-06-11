@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +54,8 @@ public class SuperModelControllerTest {
                                                ApplicationName.from("foo"), InstanceName.defaultName());
         models.put(app, new ApplicationInfo(app, 4L, new VespaModel(FilesApplicationPackage.fromFile(testApp))));
         SuperModel superModel = new SuperModel(models, true);
-        handler = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
+        handler = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()),
+                                           new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
     }
     
     @Test
@@ -98,7 +98,8 @@ public class SuperModelControllerTest {
         models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4L));
 
         SuperModel superModel = new SuperModel(models, true);
-        SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
+        SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()),
+                                                            new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);
         LbServicesConfig lbc = new LbServicesConfig(lb);

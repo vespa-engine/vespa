@@ -7,7 +7,6 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERC
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -17,13 +16,12 @@ public class ContainerServiceTypeTest {
 
     @Test
     public void new_values_are_not_added_without_updating_tests() {
-        assertEquals(5, ContainerServiceType.values().length);
+        assertEquals(4, ContainerServiceType.values().length);
     }
 
     @Test
     public void service_names_do_not_change() {
         assertEquals("container", CONTAINER.serviceName);
-        assertEquals("qrserver", QRSERVER.serviceName);
         assertEquals("container-clustercontroller", CLUSTERCONTROLLER_CONTAINER.serviceName);
         assertEquals("logserver-container", LOGSERVER_CONTAINER.serviceName);
         assertEquals("metricsproxy-container", METRICS_PROXY_CONTAINER.serviceName);

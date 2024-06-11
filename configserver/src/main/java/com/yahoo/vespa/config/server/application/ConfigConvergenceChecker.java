@@ -52,7 +52,6 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERC
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 
 /**
  * Checks for convergence of config generation for a given application.
@@ -67,7 +66,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private final static Set<String> serviceTypesToCheck = Set.of(
             CONTAINER.serviceName,
-            QRSERVER.serviceName,
             LOGSERVER_CONTAINER.serviceName,
             CLUSTERCONTROLLER_CONTAINER.serviceName,
             METRICS_PROXY_CONTAINER.serviceName,
@@ -151,7 +149,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     private boolean isNotContainer(ServiceInfo serviceInfo) {
-        return ! List.of(CONTAINER.serviceName, QRSERVER.serviceName, METRICS_PROXY_CONTAINER).contains(serviceInfo.getServiceType());
+        return ! List.of(CONTAINER.serviceName, METRICS_PROXY_CONTAINER).contains(serviceInfo.getServiceType());
     }
 
     // Don't check service in a cluster which uses restartOnDeploy (new config will not be used until service is restarted)

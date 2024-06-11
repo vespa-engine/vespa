@@ -1864,7 +1864,6 @@
     ],
     "fields" : [
       "public static final enum com.yahoo.config.model.api.container.ContainerServiceType CONTAINER",
-      "public static final enum com.yahoo.config.model.api.container.ContainerServiceType QRSERVER",
       "public static final enum com.yahoo.config.model.api.container.ContainerServiceType CLUSTERCONTROLLER_CONTAINER",
       "public static final enum com.yahoo.config.model.api.container.ContainerServiceType LOGSERVER_CONTAINER",
       "public static final enum com.yahoo.config.model.api.container.ContainerServiceType METRICS_PROXY_CONTAINER",

@@ -17,10 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 
 /**
  * Produces lb-services cfg
@@ -32,7 +30,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
 
-    public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
+    public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone) {
         this.models = models;
         this.zone = zone;
     }
@@ -99,10 +97,9 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private boolean getActiveRotation(ApplicationInfo app) {
         boolean activeRotation = false;
         for (HostInfo hostInfo : app.getModel().getHosts()) {
-            Optional<ServiceInfo> container = hostInfo.getServices().stream().filter(
-                    serviceInfo -> serviceInfo.getServiceType().equals(CONTAINER.serviceName) ||
-                                   serviceInfo.getServiceType().equals(QRSERVER.serviceName)).
-                    findAny();
+            Optional<ServiceInfo> container = hostInfo.getServices().stream()
+                    .filter(serviceInfo -> serviceInfo.getServiceType().equals(CONTAINER.serviceName))
+                    .findAny();
             if (container.isPresent()) {
                 activeRotation |= Boolean.parseBoolean(container.get().getProperty("activeRotation").orElse("false"));
             }

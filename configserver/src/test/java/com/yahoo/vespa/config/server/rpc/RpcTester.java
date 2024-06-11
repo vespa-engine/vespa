@@ -24,8 +24,6 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
-import org.junit.After;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
@@ -122,15 +120,13 @@ public class RpcTester implements AutoCloseable {
     }
 
     RpcServer createRpcServer(ConfigserverConfig config) throws IOException {
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
         RpcServer rpcServer = new RpcServer(config,
                                             new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                           config,
                                                           new SuperModelManager(
                                                                   config,
                                                                   Zone.defaultZone(),
-                                                                  new MemoryGenerationCounter(),
-                                                                  flagSource)),
+                                                                  new MemoryGenerationCounter())),
                                             Metrics.createTestMetrics(),
                                             hostRegistry,
                                             new FileServer(config, new FileDirectory(temporaryFolder.newFolder())),
