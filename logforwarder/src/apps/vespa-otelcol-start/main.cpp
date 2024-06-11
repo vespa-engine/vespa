@@ -3,6 +3,7 @@
 #include "wrapper.h"
 #include <csignal>
 #include <unistd.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/sig_catch.h>
 
 #include <vespa/defaults.h>
@@ -12,10 +13,21 @@ LOG_SETUP("vespa-otelcol-start");
 static void run(const char *configId) {
     vespalib::SigCatch catcher;
     Wrapper handler(configId);
-    handler.start(configId);
-    while (! catcher.receivedStopSignal()) {
-        handler.check();
-        usleep(125000); // Avoid busy looping;
+    try {
+        handler.start(configId);
+        while (! catcher.receivedStopSignal()) {
+            handler.check();
+            usleep(125000); // Avoid busy looping;
+        }
+    } catch (config::ConfigTimeoutException & ex) {
+        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
+        std::_Exit(EXIT_FAILURE);
+    } catch (config::InvalidConfigException& ex) {
+        LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
+        std::_Exit(EXIT_FAILURE);
+    } catch (config::ConfigRuntimeException& ex) {
+        LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.getMessage().c_str());
+        std::_Exit(EXIT_FAILURE);
     }
     handler.stop();
 };
