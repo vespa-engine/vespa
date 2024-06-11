@@ -257,6 +257,7 @@ public class VespaMetricSet {
         addMetric(metrics, ClusterControllerMetrics.RETIRED_COUNT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.STOPPING_COUNT.last());
         addMetric(metrics, ClusterControllerMetrics.UP_COUNT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ClusterControllerMetrics.NODES_NOT_CONVERGED.max());
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_CHANGE_COUNT.baseName());
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_BUCKETS_OUT_OF_SYNC_RATIO.max());
         addMetric(metrics, ClusterControllerMetrics.BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count)); // TODO: Vespa 9: Remove last
