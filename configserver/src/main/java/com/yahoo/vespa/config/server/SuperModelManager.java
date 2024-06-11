@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.component.annotation.Inject;
@@ -13,7 +12,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
-import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,7 +31,6 @@ public class SuperModelManager implements SuperModelProvider {
     private final Zone zone;
 
     private final Object monitor = new Object();
-    private final FlagSource flagSource;
     private SuperModelConfigProvider superModelConfigProvider;  // Guarded by 'this' monitor
     private final List<SuperModelListener> listeners = new ArrayList<>();  // Guarded by 'this' monitor
 
@@ -46,11 +43,7 @@ public class SuperModelManager implements SuperModelProvider {
     private final Optional<Set<ApplicationId>> bootstrapApplicationSet = Optional.empty();
 
     @Inject
-    public SuperModelManager(ConfigserverConfig configserverConfig,
-                             Zone zone,
-                             GenerationCounter generationCounter,
-                             FlagSource flagSource) {
-        this.flagSource = flagSource;
+    public SuperModelManager(ConfigserverConfig configserverConfig, Zone zone, GenerationCounter generationCounter) {
         this.zone = zone;
         this.generationCounter = generationCounter;
         this.masterGeneration = configserverConfig.masterGeneration();
@@ -123,12 +116,12 @@ public class SuperModelManager implements SuperModelProvider {
         // there is no need to bump generation counter.
         logger.log(Level.FINE, "Super model is complete");
         SuperModel newSuperModel = getSuperModel().cloneAsComplete();
-        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone, flagSource);
+        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone);
         listeners.forEach(listener -> listener.notifyOfCompleteness(newSuperModel));
     }
 
     private void makeNewSuperModelConfigProvider(SuperModel newSuperModel) {
         generation = masterGeneration + generationCounter.get();
-        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone, flagSource);
+        superModelConfigProvider = new SuperModelConfigProvider(newSuperModel, zone);
     }
 }

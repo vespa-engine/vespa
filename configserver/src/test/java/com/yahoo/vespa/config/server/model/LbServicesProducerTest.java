@@ -19,7 +19,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -56,8 +55,6 @@ public class LbServicesProducerTest {
             new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.application, List.of("app-endpoint"))
     );
 
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-
     @Test
     public void testDeterministicGetConfig() {
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().endpoints(endpoints));
@@ -86,7 +83,7 @@ public class LbServicesProducerTest {
     }
 
     private LbServicesConfig getLbServicesConfig(Zone zone, Map<TenantName, Set<ApplicationInfo>> testModel) {
-        LbServicesProducer producer = new LbServicesProducer(testModel, zone, flagSource);
+        LbServicesProducer producer = new LbServicesProducer(testModel, zone);
         LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
         producer.getConfig(builder);
         return new LbServicesConfig(builder);
@@ -134,7 +131,9 @@ public class LbServicesProducerTest {
                            .applications("baz:prod:default:custom-t"));
     }
 
-    private void assertContainsEndpoint(List<Endpoints> endpoints, String dnsName, String clusterId, Endpoints.Scope.Enum scope, Endpoints.RoutingMethod.Enum routingMethod, int weight, List<String> hosts) {
+    private void assertContainsEndpoint(List<Endpoints> endpoints, String dnsName, String clusterId,
+                                        Endpoints.Scope.Enum scope, Endpoints.RoutingMethod.Enum routingMethod,
+                                        int weight, List<String> hosts) {
         assertTrue(endpoints.contains(new Endpoints.Builder()
                                               .dnsName(dnsName)
                                               .clusterId(clusterId)

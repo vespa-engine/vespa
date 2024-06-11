@@ -24,9 +24,9 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer  {
     private final SuperModel superModel;
     private final LbServicesProducer lbProd;
 
-    public SuperModelConfigProvider(SuperModel superModel, Zone zone, FlagSource flagSource) {
+    public SuperModelConfigProvider(SuperModel superModel, Zone zone) {
         this.superModel = superModel;
-        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()), zone, flagSource);
+        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()), zone);
     }
 
     public SuperModel getSuperModel() {

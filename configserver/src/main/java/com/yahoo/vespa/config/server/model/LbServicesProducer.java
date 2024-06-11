@@ -30,7 +30,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
 
-    public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
+    public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone) {
         this.models = models;
         this.zone = zone;
     }
