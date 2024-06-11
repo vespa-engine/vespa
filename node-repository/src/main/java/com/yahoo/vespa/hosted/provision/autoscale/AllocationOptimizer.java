@@ -133,7 +133,7 @@ public class AllocationOptimizer {
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
                         ? model.current().advertisedResources().nodeResources()
                         : limits.min().nodeResources(); // min=max for non-scaled
-        return nonScaled.withVcpu(scaled.vcpu()).withMemoryGb(scaled.memoryGb()).withDiskGb(scaled.diskGb());
+        return nonScaled.withVcpu(scaled.vcpu()).withMemoryGiB(scaled.memoryGiB()).withDiskGb(scaled.diskGb());
     }
 
     /** Returns a copy of the given limits where the minimum nodes are at least the given value when allowed */

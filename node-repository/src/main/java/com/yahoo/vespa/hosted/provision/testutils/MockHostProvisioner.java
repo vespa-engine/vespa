@@ -229,7 +229,7 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     public boolean compatible(Flavor flavor, NodeResources resources) {
-        NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
+        NodeResources resourcesToVerify = resources.withMemoryGiB(resources.memoryGiB() - memoryTaxGb);
 
         if (flavor.resources().storageType() == NodeResources.StorageType.remote
             && flavor.resources().diskGb() >= resources.diskGb())

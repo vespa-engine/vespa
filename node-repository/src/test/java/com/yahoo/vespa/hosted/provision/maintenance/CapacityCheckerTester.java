@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.Exclusivity;
-import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -105,7 +103,7 @@ public class CapacityCheckerTester {
                         child.type = NodeType.tenant;
                         NodeResources cnr = childResources.get(j % childResources.size());
                         child.minCpuCores = cnr.vcpu();
-                        child.minMainMemoryAvailableGb = cnr.memoryGb();
+                        child.minMainMemoryAvailableGb = cnr.memoryGiB();
                         child.minDiskAvailableGb = cnr.diskGb();
                         child.fastDisk = true;
                         child.ipAddresses = List.of();

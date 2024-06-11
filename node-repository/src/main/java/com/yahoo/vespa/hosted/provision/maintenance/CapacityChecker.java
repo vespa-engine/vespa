@@ -56,7 +56,7 @@ public class CapacityChecker {
         List<Node> overcommittedNodes = new ArrayList<>();
         for (var entry : availableResources.entrySet()) {
             var resources = entry.getValue().nodeResources;
-            if (resources.vcpu() < 0 || resources.memoryGb() < 0 || resources.diskGb() < 0) {
+            if (resources.vcpu() < 0 || resources.memoryGiB() < 0 || resources.diskGb() < 0) {
                 overcommittedNodes.add(entry.getKey());
             }
         }
@@ -299,7 +299,7 @@ public class CapacityChecker {
 
             if (l.vcpu() < r.vcpu())
                 reason.insufficientVcpu = true;
-            if (l.memoryGb() < r.memoryGb())
+            if (l.memoryGiB() < r.memoryGiB())
                 reason.insufficientMemoryGb = true;
             if (l.diskGb() < r.diskGb())
                 reason.insufficientDiskGb = true;

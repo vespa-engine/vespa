@@ -305,8 +305,8 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         @Override
         public int compare(NodeResources a, NodeResources b) {
-            if (a.memoryGb() > b.memoryGb()) return 1;
-            if (a.memoryGb() < b.memoryGb()) return -1;
+            if (a.memoryGiB() > b.memoryGiB()) return 1;
+            if (a.memoryGiB() < b.memoryGiB()) return -1;
             if (a.diskGb() > b.diskGb()) return 1;
             if (a.diskGb() < b.diskGb()) return -1;
             return Double.compare(a.vcpu(), b.vcpu());

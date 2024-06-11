@@ -42,7 +42,7 @@ public class ResourcesReductionValidator implements ChangeValidator {
             NodeResources currentResources = current.totalResources();
             NodeResources nextResources = next.totalResources();
             if (nextResources.vcpu() < 0.5 * currentResources.vcpu() ||
-                nextResources.memoryGb() < 0.5 * currentResources.memoryGb() ||
+                nextResources.memoryGiB() < 0.5 * currentResources.memoryGiB() ||
                 nextResources.diskGb() < 0.5 * currentResources.diskGb())
                 context.invalid(ValidationId.resourcesReduction,
                                 "Resource reduction in '" + clusterId.value() + "' is too large: " +

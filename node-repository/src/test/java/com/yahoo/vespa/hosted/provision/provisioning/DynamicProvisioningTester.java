@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -11,7 +10,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.Mutex;
@@ -185,7 +183,7 @@ public class DynamicProvisioningTester {
                                 NodeResources expectedResources,
                                 ClusterResources resources) {
         assertResources(message, nodeCount, groupCount,
-                        expectedResources.vcpu(), expectedResources.memoryGb(), expectedResources.diskGb(),
+                        expectedResources.vcpu(), expectedResources.memoryGiB(), expectedResources.diskGb(),
                         resources);
     }
 
@@ -196,7 +194,7 @@ public class DynamicProvisioningTester {
         assertTrue("Resources are present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
                    autoscaling.resources().isPresent());
         assertResources(message, nodeCount, groupCount,
-                        expectedResources.vcpu(), expectedResources.memoryGb(), expectedResources.diskGb(),
+                        expectedResources.vcpu(), expectedResources.memoryGiB(), expectedResources.diskGb(),
                         autoscaling.resources().get());
     }
 
@@ -228,7 +226,7 @@ public class DynamicProvisioningTester {
         assertEquals("Node count in " + resources + ": " + message, nodeCount, resources.nodes());
         assertEquals("Group count in " + resources+ ": " + message, groupCount, resources.groups());
         assertEquals("Cpu in " + resources + ": " + message, approxCpu, Math.round(nodeResources.vcpu() * 10) / 10.0, delta);
-        assertEquals("Memory in " + resources + ": " + message, approxMemory, Math.round(nodeResources.memoryGb() * 10) / 10.0, delta);
+        assertEquals("Memory in " + resources + ": " + message, approxMemory, Math.round(nodeResources.memoryGiB() * 10) / 10.0, delta);
         assertEquals("Disk in: " + resources + ": "  + message, approxDisk, Math.round(nodeResources.diskGb() * 10) / 10.0, delta);
     }
 
@@ -254,7 +252,7 @@ public class DynamicProvisioningTester {
         @Override
         public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             if (zone.cloud().dynamicProvisioning())
-                return node.resources().withMemoryGb(node.resources().memoryGb());
+                return node.resources().withMemoryGiB(node.resources().memoryGiB());
             else
                 return node.resources();
         }
@@ -262,19 +260,19 @@ public class DynamicProvisioningTester {
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             if (zone.cloud().dynamicProvisioning())
-                return flavor.resources().withMemoryGb(flavor.resources().memoryGb());
+                return flavor.resources().withMemoryGiB(flavor.resources().memoryGiB());
             else
                 return flavor.resources();
         }
 
         @Override
         public NodeResources requestToReal(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
-            return resources.withMemoryGb(resources.memoryGb());
+            return resources.withMemoryGiB(resources.memoryGiB());
         }
 
         @Override
         public NodeResources realToRequest(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
-            return resources.withMemoryGb(resources.memoryGb());
+            return resources.withMemoryGiB(resources.memoryGiB());
         }
 
         @Override

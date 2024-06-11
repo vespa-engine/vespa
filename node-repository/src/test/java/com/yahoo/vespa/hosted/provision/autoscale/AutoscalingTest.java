@@ -415,7 +415,7 @@ public class AutoscalingTest {
         fixture.loader().applyLoad(new Load(0.25, 0.95, 0.95, 0, 0), 120);
         fixture.tester().assertResources("Scaling up",
                                          5, 1,
-                                         defaultResources.vcpu(), defaultResources.memoryGb(), defaultResources.diskGb(),
+                                         defaultResources.vcpu(), defaultResources.memoryGiB(), defaultResources.diskGb(),
                                          fixture.autoscale());
     }
 

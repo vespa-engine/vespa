@@ -52,7 +52,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
         double diskOverhead   = consideredFlavors.stream()
                                                  .mapToDouble(flavor -> resourcesCalculator.diskOverhead(flavor, advertisedResources, false, exclusive))
                                                  .reduce(bestCase ? Double::min : Double::max).orElse(0);
-        return advertisedResources.withMemoryGb(advertisedResources.memoryGb() - memoryOverhead)
+        return advertisedResources.withMemoryGiB(advertisedResources.memoryGiB() - memoryOverhead)
                                   .withDiskGb(advertisedResources.diskGb() - diskOverhead);
     }
 
@@ -63,7 +63,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
         for (VespaFlavor flavor : consideredFlavorsGivenReal(realResources)) {
             double memoryOverhead = resourcesCalculator.memoryOverhead(flavor, realResources, true);
             double diskOverhead = resourcesCalculator.diskOverhead(flavor, realResources, true, exclusive);
-            NodeResources advertised = realResources.withMemoryGb(realResources.memoryGb() + memoryOverhead)
+            NodeResources advertised = realResources.withMemoryGiB(realResources.memoryGiB() + memoryOverhead)
                                                     .withDiskGb(realResources.diskGb() + diskOverhead);
             if ( ! flavor.advertisedResources().satisfies(advertised)) continue;
             if (bestCase ? memoryOverhead < chosenMemoryOverhead : memoryOverhead > chosenDiskOverhead)
@@ -71,7 +71,7 @@ public class AwsHostResourcesCalculatorImpl implements HostResourcesCalculator {
             if (bestCase ? diskOverhead < chosenDiskOverhead : diskOverhead > chosenDiskOverhead)
                 chosenDiskOverhead = diskOverhead;
         }
-        return realResources.withMemoryGb(realResources.memoryGb() + chosenMemoryOverhead)
+        return realResources.withMemoryGiB(realResources.memoryGiB() + chosenMemoryOverhead)
                             .withDiskGb(realResources.diskGb() + chosenDiskOverhead);
     }
 

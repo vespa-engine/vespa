@@ -59,7 +59,7 @@ public class Limits {
         if (isEmpty()) return resources;
         if (min.nodeResources().isUnspecified()) return resources; // means max is also unspecified
         resources = resources.withVcpu(between(min.nodeResources().vcpu(), max.nodeResources().vcpu(), resources.vcpu()));
-        resources = resources.withMemoryGb(between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), resources.memoryGb()));
+        resources = resources.withMemoryGiB(between(min.nodeResources().memoryGiB(), max.nodeResources().memoryGiB(), resources.memoryGiB()));
         resources = resources.withDiskGb(between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), resources.diskGb()));
         return resources;
     }

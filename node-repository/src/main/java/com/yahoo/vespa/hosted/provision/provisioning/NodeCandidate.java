@@ -247,7 +247,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         var n = node.resources();
         var h = node.parent.get().resources();
         if (h.vcpu()     < n.vcpu()     * 2) return false;
-        if (h.memoryGb() < n.memoryGb() * 2) return false;
+        if (h.memoryGiB() < n.memoryGiB() * 2) return false;
         if (h.diskGb()   < n.diskGb()   * 2) return false;
         return true;
     }

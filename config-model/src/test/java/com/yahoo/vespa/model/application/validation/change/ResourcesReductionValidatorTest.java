@@ -209,7 +209,7 @@ public class ResourcesReductionValidatorTest {
         String resourcesStr = resources == null ?
                 "" :
                 String.format("        <resources vcpu='%.0f' memory='%.0fG' disk='%.0fG'/>",
-                        resources.vcpu(), resources.memoryGb(), resources.diskGb());
+                        resources.vcpu(), resources.memoryGiB(), resources.diskGb());
         return "<services version='1.0'>" +
                 "  <container id='default' version='1.0'>" +
                 "    <nodes count='" + nodes + "'>" +
@@ -223,7 +223,7 @@ public class ResourcesReductionValidatorTest {
         String resourcesStr = resources == null ?
                               "" :
                               String.format("        <resources vcpu='%.0f' memory='%.0fG' disk='%.0fG'/>",
-                                            resources.vcpu(), resources.memoryGb(), resources.diskGb());
+                                            resources.vcpu(), resources.memoryGiB(), resources.diskGb());
         return "<services version='1.0'>" +
                "  <content id='default' version='1.0'>" +
                "    <redundancy>1</redundancy>" +

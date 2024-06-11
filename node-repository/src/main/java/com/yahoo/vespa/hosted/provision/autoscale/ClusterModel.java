@@ -444,11 +444,11 @@ public class ClusterModel {
                 return nodeRepository.resourcesCalculator().requestToReal(initialResources,
                                                                           cloudAccount(),
                                                                           nodeRepository.exclusivity().allocation(clusterSpec),
-                                                                          false).memoryGb();
+                                                                          false).memoryGiB();
             }
             else {
                 return nodes.stream()
-                            .mapToDouble(node -> nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).memoryGb())
+                            .mapToDouble(node -> nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).memoryGiB())
                             .average()
                             .getAsDouble();
             }

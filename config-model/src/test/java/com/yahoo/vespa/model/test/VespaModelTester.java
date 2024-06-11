@@ -88,7 +88,7 @@ public class VespaModelTester {
             // (for e.g cluster controllers and slobrok nodes)
             String hostname = String.format("%s-%02d",
                                             "node" + "-" + Math.round(resources.vcpu()) +
-                                                     "-" + Math.round(resources.memoryGb()) +
+                                                     "-" + Math.round(resources.memoryGiB()) +
                                                      "-" + Math.round(resources.diskGb()),
                                             count - i);
             hosts.add(new Host(hostname, List.of(), flavor));

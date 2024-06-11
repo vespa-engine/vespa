@@ -8,14 +8,12 @@ import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.CapacityPolicies;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -26,7 +24,6 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -332,8 +329,8 @@ public class ProvisioningTester {
                        expected.justNonNumbers().compatibleWith(node.resources().justNonNumbers()));
             assertEquals(explanation + ": Vcpu: Expected " + expected.vcpu() + " but was " + node.resources().vcpu(),
                          expected.vcpu(), node.resources().vcpu(), 0.05);
-            assertEquals(explanation + ": Memory: Expected " + expected.memoryGb() + " but was " + node.resources().memoryGb(),
-                         expected.memoryGb(), node.resources().memoryGb(), 0.05);
+            assertEquals(explanation + ": Memory: Expected " + expected.memoryGiB() + " but was " + node.resources().memoryGiB(),
+                         expected.memoryGiB(), node.resources().memoryGiB(), 0.05);
             assertEquals(explanation + ": Disk: Expected " + expected.diskGb() + " but was " + node.resources().diskGb(),
                          expected.diskGb(), node.resources().diskGb(), 0.05);
         }
@@ -772,14 +769,14 @@ public class ProvisioningTester {
             FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
             flavor.name(flavorName);
             flavor.minCpuCores(resources.vcpu());
-            flavor.minMainMemoryAvailableGb(resources.memoryGb());
+            flavor.minMainMemoryAvailableGb(resources.memoryGiB());
             flavor.minDiskAvailableGb(resources.diskGb());
             flavor.bandwidth(resources.bandwidthGbps() * 1000);
             flavor.fastDisk(resources.diskSpeed().compatibleWith(com.yahoo.config.provision.NodeResources.DiskSpeed.fast));
             flavor.remoteStorage(resources.storageType().compatibleWith(com.yahoo.config.provision.NodeResources.StorageType.remote));
             flavor.architecture(resources.architecture().toString());
             flavor.gpuCount(resources.gpuResources().count());
-            flavor.gpuMemoryGb(resources.gpuResources().memoryGb());
+            flavor.gpuMemoryGb(resources.gpuResources().memoryGiB());
             return flavor;
         }
 
@@ -799,7 +796,7 @@ public class ProvisioningTester {
         public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             NodeResources resources = node.resources();
             if (node.type() == NodeType.host) return resources;
-            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+            return resources.withMemoryGiB(resources.memoryGiB() - memoryTaxGb)
                             .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0));
         }
 
@@ -807,18 +804,18 @@ public class ProvisioningTester {
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             NodeResources resources = flavor.resources();
             if ( ! flavor.isConfigured()) return resources;
-            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb);
+            return resources.withMemoryGiB(resources.memoryGiB() + memoryTaxGb);
         }
 
         @Override
         public NodeResources requestToReal(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
-            return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
+            return resources.withMemoryGiB(resources.memoryGiB() - memoryTaxGb)
                             .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0) );
         }
 
         @Override
         public NodeResources realToRequest(NodeResources resources, CloudAccount cloudAccount, boolean exclusive, boolean bestCase) {
-            return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
+            return resources.withMemoryGiB(resources.memoryGiB() + memoryTaxGb)
                             .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
         }
 

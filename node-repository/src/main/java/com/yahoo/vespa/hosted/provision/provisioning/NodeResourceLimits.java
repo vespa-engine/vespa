@@ -31,15 +31,15 @@ public class NodeResourceLimits {
         boolean exclusive = nodeRepository.exclusivity().allocation(cluster);
         if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(cluster, exclusive))
             illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster, exclusive));
-        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(cluster, exclusive))
-            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster, exclusive));
-        if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, exclusive))
+        if (! requested.memoryIsUnspecified() && requested.memoryGiB() < minAdvertisedMemoryGb(cluster, exclusive))
+            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGiB(), minAdvertisedMemoryGb(cluster, exclusive));
+        if (! requested.diskIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, exclusive))
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, exclusive));
     }
 
     // TODO: Remove this when we are ready to fail, not just warn on this. */
     public boolean isWithinAdvertisedDiskLimits(NodeResources requested, ClusterSpec cluster) {
-        if (requested.diskGbIsUnspecified() || requested.memoryGbIsUnspecified()) return true;
+        if (requested.diskIsUnspecified() || requested.memoryIsUnspecified()) return true;
         return requested.diskGb() >= minAdvertisedDiskGb(requested, cluster);
     }
 
@@ -55,7 +55,7 @@ public class NodeResourceLimits {
         if (realResources.isUnspecified()) return true;
 
         if (realResources.vcpu() < minRealVcpu(cluster)) return false;
-        if (realResources.memoryGb() < minRealMemoryGb(cluster)) return false;
+        if (realResources.memoryGiB() < minRealMemoryGb(cluster)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
     }
@@ -67,7 +67,7 @@ public class NodeResourceLimits {
             requested = requested.withDiskGb(Math.max(minAdvertisedDiskGb(requested, cluster), requested.diskGb()));
 
         return requested.withVcpu(Math.max(minAdvertisedVcpu(cluster, exclusive), requested.vcpu()))
-                        .withMemoryGb(Math.max(minAdvertisedMemoryGb(cluster, exclusive), requested.memoryGb()))
+                        .withMemoryGiB(Math.max(minAdvertisedMemoryGb(cluster, exclusive), requested.memoryGiB()))
                         .withDiskGb(Math.max(minAdvertisedDiskGb(requested, exclusive), requested.diskGb()));
     }
 
@@ -89,7 +89,7 @@ public class NodeResourceLimits {
 
     // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
     private static double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster) {
-        return requested.memoryGb() * switch (cluster.type()) {
+        return requested.memoryGiB() * switch (cluster.type()) {
             case combined, content -> 3;
             case container -> 2;
             default -> 0; // No constraint on other types

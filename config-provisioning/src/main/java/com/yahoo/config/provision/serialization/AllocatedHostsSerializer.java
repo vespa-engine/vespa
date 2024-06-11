@@ -104,7 +104,7 @@ public class AllocatedHostsSerializer {
 
     private static void toSlime(NodeResources resources, Cursor resourcesObject) {
         resourcesObject.setDouble(vcpuKey, resources.vcpu());
-        resourcesObject.setDouble(memoryKey, resources.memoryGb());
+        resourcesObject.setDouble(memoryKey, resources.memoryGiB());
         resourcesObject.setDouble(diskKey, resources.diskGb());
         resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
         resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
@@ -113,7 +113,7 @@ public class AllocatedHostsSerializer {
         if (!resources.gpuResources().isDefault()) {
             Cursor gpuObject = resourcesObject.setObject(gpuKey);
             gpuObject.setLong(gpuCountKey, resources.gpuResources().count());
-            gpuObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGb());
+            gpuObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGiB());
         }
     }
 
