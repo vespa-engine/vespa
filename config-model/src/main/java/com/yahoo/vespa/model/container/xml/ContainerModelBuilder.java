@@ -140,6 +140,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
 
+    static final String HOSTED_VESPA_TENANT_PARENT_DOMAIN = "vespa.tenant.";
+
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
@@ -235,6 +237,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Must be added after nodes:
         addDeploymentSpecConfig(cluster, context, deployState.getDeployLogger());
         addZooKeeper(cluster, spec);
+        addAthenzServiceIdentityProvider(cluster, context, deployState.getDeployLogger());
 
         addParameterStoreValidationHandler(cluster, deployState);
     }
@@ -342,6 +345,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         cluster.addComponent(cloudSecretStore);
+    }
+
+    private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
+        if ( ! context.getDeployState().isHosted()) return;
+        if ( ! context.getDeployState().zone().system().isPublic()) return; // Non-public is handled by deployment spec config.
+        if ( ! context.properties().launchApplicationAthenzService()) return;
+        addIdentityProvider(cluster,
+                            context.getDeployState().getProperties().configServerSpecs(),
+                            context.getDeployState().getProperties().loadBalancerName(),
+                            context.getDeployState().getProperties().ztsUrl(),
+                            context.getDeployState().getProperties().athenzDnsSuffix(),
+                            context.getDeployState().zone(),
+                            AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
+                            AthenzService.from(context.properties().applicationId().application().value()));
     }
 
     private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
@@ -1295,37 +1312,36 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addIdentityProvider(ApplicationContainerCluster cluster,
-                                     List<ConfigServerSpec> configServerSpecs,
-                                     HostName loadBalancerName,
-                                     URI ztsUrl,
-                                     String athenzDnsSuffix,
-                                     Zone zone,
-                                     DeploymentSpec spec) {
-        spec.athenzDomain()
-            .ifPresent(domain -> {
-                AthenzService service = spec.athenzService(app.getApplicationId().instance(), zone.environment(), zone.region())
-                                            .orElseThrow(() -> new IllegalArgumentException("Missing Athenz service configuration in instance '" +
-                                                                                            app.getApplicationId().instance() + "'"));
-            String zoneDnsSuffix = zone.environment().value() + "-" + zone.region().value() + "." + athenzDnsSuffix;
-            IdentityProvider identityProvider = new IdentityProvider(domain,
-                                                                     service,
-                                                                     getLoadBalancerName(loadBalancerName, configServerSpecs),
-                                                                     ztsUrl,
-                                                                     zoneDnsSuffix,
-                                                                     zone);
+    private void addIdentityProvider(ApplicationContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName,
+                                     URI ztsUrl, String athenzDnsSuffix, Zone zone, DeploymentSpec spec) {
+        spec.athenzDomain().ifPresent(domain -> {
+            AthenzService service = spec.athenzService(app.getApplicationId().instance(), zone.environment(), zone.region())
+                                        .orElseThrow(() -> new IllegalArgumentException("Missing Athenz service configuration in instance '" +
+                                                                                        app.getApplicationId().instance() + "'"));
+            addIdentityProvider(cluster, configServerSpecs, loadBalancerName, ztsUrl, athenzDnsSuffix, zone, domain, service);
+        });
+    }
 
-            // Replace AthenzIdentityProviderProvider
-            cluster.removeComponent(ComponentId.fromString("com.yahoo.container.jdisc.AthenzIdentityProviderProvider"));
-            cluster.addComponent(identityProvider);
+    private void addIdentityProvider(ApplicationContainerCluster cluster, List<ConfigServerSpec> configServerSpecs, HostName loadBalancerName,
+                                     URI ztsUrl, String athenzDnsSuffix, Zone zone, AthenzDomain domain, AthenzService service) {
+        String zoneDnsSuffix = zone.environment().value() + "-" + zone.region().value() + "." + athenzDnsSuffix;
+        IdentityProvider identityProvider = new IdentityProvider(domain,
+                                                                 service,
+                                                                 getLoadBalancerName(loadBalancerName, configServerSpecs),
+                                                                 ztsUrl,
+                                                                 zoneDnsSuffix,
+                                                                 zone);
 
-            var serviceIdentityProviderProvider = "com.yahoo.vespa.athenz.identityprovider.client.ServiceIdentityProviderProvider";
-            cluster.addComponent(new SimpleComponent(new ComponentModel(serviceIdentityProviderProvider, serviceIdentityProviderProvider, "vespa-athenz")));
+        // Replace AthenzIdentityProviderProvider
+        cluster.removeComponent(ComponentId.fromString("com.yahoo.container.jdisc.AthenzIdentityProviderProvider"));
+        cluster.addComponent(identityProvider);
 
-            cluster.getContainers().forEach(container -> {
-                container.setProp("identity.domain", domain.value());
-                container.setProp("identity.service", service.value());
-            });
+        var serviceIdentityProviderProvider = "com.yahoo.vespa.athenz.identityprovider.client.ServiceIdentityProviderProvider";
+        cluster.addComponent(new SimpleComponent(new ComponentModel(serviceIdentityProviderProvider, serviceIdentityProviderProvider, "vespa-athenz")));
+
+        cluster.getContainers().forEach(container -> {
+            container.setProp("identity.domain", domain.value());
+            container.setProp("identity.service", service.value());
         });
     }
 
