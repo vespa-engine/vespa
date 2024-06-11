@@ -214,6 +214,7 @@ public class ModelContextImpl implements ModelContext {
         private final Architecture adminClusterArchitecture;
         private final boolean symmetricPutAndActivateReplicaSelection;
         private final boolean enforceStrictlyIncreasingClusterStateVersions;
+        private final boolean launchApplicationAthenzService;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -261,6 +262,7 @@ public class ModelContextImpl implements ModelContext {
             this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
             this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
+            this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -346,6 +348,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean allowUserFilters;
         private final Duration endpointConnectionTtl;
         private final List<String> requestPrefixForLoggingContent;
+        private final boolean launchApplicationAthenzService;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -393,6 +396,7 @@ public class ModelContextImpl implements ModelContext {
             this.endpointConnectionTtl = Duration.ofSeconds(PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource).with(applicationId).value());
             this.dataplaneTokens = dataplaneTokens;
             this.requestPrefixForLoggingContent = PermanentFlags.LOG_REQUEST_CONTENT.bindTo(flagSource).with(applicationId).value();
+            this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(flagSource).with(applicationId).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -492,5 +496,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
 
         @Override public List<String> requestPrefixForLoggingContent() { return requestPrefixForLoggingContent; }
+
+        @Override public boolean launchApplicationAthenzService() { return launchApplicationAthenzService; }
     }
+
 }

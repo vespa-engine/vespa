@@ -176,6 +176,8 @@ public interface ModelContext {
 
         default List<String> requestPrefixForLoggingContent() { return List.of(); }
 
+        default boolean launchApplicationAthenzService() { return false; }
+
     }
 
     @Retention(RetentionPolicy.RUNTIME)

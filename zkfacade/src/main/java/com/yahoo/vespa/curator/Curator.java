@@ -228,7 +228,9 @@ public class Curator extends AbstractComponent implements AutoCloseable {
 
 
     /** @see #create(Path, Duration) */
-    public boolean create(Path path) { return create(path, null); }
+    public boolean create(Path path) {
+        return create(path, null);
+    }
 
     /**
      * Creates an empty node at a path, creating any parents as necessary.
@@ -262,7 +264,9 @@ public class Curator extends AbstractComponent implements AutoCloseable {
     }
 
     /**
-     * Creates all the given paths in a single transaction. Any paths which already exists are ignored.
+     * Creates all the given paths in a single transaction. Any paths which already exists are ignored.<br>
+     * <em>No, this is <strong>NOT</strong> atomic, when viewed from other ZK clients!</em> Maybe it once was, but it is not anymore,
+     * unless ZK is configured to run commits and read in a single thread, which is not the default.
      */
     public void createAtomically(Path... paths) {
         try {
@@ -272,7 +276,7 @@ public class Curator extends AbstractComponent implements AutoCloseable {
                     transaction = transaction.create().forPath(path.getAbsolute(), new byte[0]).and();
                 }
             }
-            ((CuratorTransactionFinal)transaction).commit();
+            ((CuratorTransactionFinal) transaction).commit();
         } catch (Exception e) {
             throw new RuntimeException("Could not create " + Arrays.toString(paths), e);
         }
