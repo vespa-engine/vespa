@@ -156,7 +156,7 @@ public class ComponentNode extends Node {
             Duration duration = Duration.between(start, Instant.now());
             log.log(duration.compareTo(Duration.ofMinutes(1)) > 0 ? INFO : FINE,
                     () -> "Finished constructing " + idAndType() + " in " + duration);
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | IllegalArgumentException | ClassCastException e) {
             StackTraceElement dependencyInjectorMarker = new StackTraceElement("============= Dependency Injection =============", "newInstance", null, -1);
             throw removeStackTrace(new ComponentConstructorException("Error constructing " + idAndType() + ": " + e.getMessage(), cutStackTraceAtConstructor(e.getCause(), dependencyInjectorMarker)));
         }
