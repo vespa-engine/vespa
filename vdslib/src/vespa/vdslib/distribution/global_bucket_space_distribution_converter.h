@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include <vespa/config-stor-distribution.h>
+#include "distribution.h"
 #include <memory>
 
-namespace storage::lib { class Distribution; }
-namespace storage {
+namespace storage::lib {
 
 struct GlobalBucketSpaceDistributionConverter {
-    using DistributionConfig = vespa::config::content::StorDistributionConfig;
+    using DistributionConfig = Distribution::DistributionConfig;
 
     static std::shared_ptr<DistributionConfig> convert_to_global(const DistributionConfig&);
     static std::shared_ptr<lib::Distribution>  convert_to_global(const lib::Distribution&);

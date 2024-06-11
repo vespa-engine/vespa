@@ -930,8 +930,9 @@ FileStorManager::updateState()
     for (const auto &elem : _component.getBucketSpaceRepo()) {
         BucketSpace bucketSpace(elem.first);
         ContentBucketSpace& contentBucketSpace = *elem.second;
-        auto derivedClusterState = contentBucketSpace.getClusterState();
-        const bool node_up_in_space = derivedClusterState->getNodeState(node).getState().oneOf("uir");
+        auto state_and_distr = contentBucketSpace.state_and_distribution();
+        assert(state_and_distr->valid());
+        const bool node_up_in_space = state_and_distr->cluster_state().getNodeState(node).getState().oneOf("uir");
         if (should_deactivate_buckets(contentBucketSpace, node_up_in_space, in_maintenance)) {
             LOG(debug, "Received cluster state where this node is down; de-activating all buckets "
                        "in database for bucket space %s", bucketSpace.toString().c_str());
@@ -941,9 +942,8 @@ FileStorManager::updateState()
         }
         contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(node_up_in_space);
         contentBucketSpace.setNodeMaintenanceInLastNodeStateSeenByProvider(in_maintenance);
-        spi::ClusterState spiState(*derivedClusterState, _component.getIndex(),
-                                   *contentBucketSpace.getDistribution(),
-                                   in_maintenance);
+        spi::ClusterState spiState(state_and_distr->cluster_state(), _component.getIndex(),
+                                   state_and_distr->distribution(), in_maintenance);
         _provider->setClusterState(bucketSpace, spiState);
     }
 }
@@ -959,6 +959,7 @@ FileStorManager::propagateClusterStates()
 {
     auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
     for (const auto &elem : _component.getBucketSpaceRepo()) {
+        // TODO also distribution! bundle and repo must be 1-1
         elem.second->setClusterState(clusterStateBundle->getDerivedClusterState(elem.first));
     }
 }

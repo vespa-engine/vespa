@@ -283,7 +283,7 @@ private:
     void propagate_config_snapshot_to_internal_components();
 
     // Additional implementations of TickableStripe:
-    void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) override;
+    void update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) override;
     void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) override;
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) override;
     void clear_pending_cluster_state_bundle() override;

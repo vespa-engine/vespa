@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "bucket_space_distribution_configs.h"
+#include "global_bucket_space_distribution_converter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/distribution/distribution.h>
 
-namespace storage::distributor {
+namespace storage::lib {
 
 BucketSpaceDistributionConfigs
 BucketSpaceDistributionConfigs::from_default_distribution(std::shared_ptr<const lib::Distribution> distribution) {

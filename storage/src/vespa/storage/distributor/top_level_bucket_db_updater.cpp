@@ -2,7 +2,6 @@
 
 #include "top_level_bucket_db_updater.h"
 #include "bucket_db_prune_elision.h"
-#include "bucket_space_distribution_configs.h"
 #include "bucket_space_distribution_context.h"
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
@@ -11,11 +10,12 @@
 #include "simpleclusterinformation.h"
 #include "stripe_access_guard.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/vdslib/distribution/bucket_space_distribution_configs.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <thread>
@@ -54,6 +54,7 @@ TopLevelBucketDBUpdater::TopLevelBucketDBUpdater(const DistributorNodeContext& n
 {
     // FIXME STRIPE top-level Distributor needs a proper way to track the current cluster state bundle!
     propagate_active_state_bundle_internally(true); // We're just starting up so assume ownership transfer.
+    // TODO bootstrap cluster state bundle instead? version:0 cluster:d
     bootstrap_distribution_config(std::move(bootstrap_distribution));
 }
 
@@ -71,7 +72,7 @@ TopLevelBucketDBUpdater::propagate_active_state_bundle_internally(bool has_bucke
 
 void
 TopLevelBucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distribution> distribution) {
-    auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
+    auto global_distr = lib::GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     _op_ctx.bucket_space_states().get(document::FixedBucketSpaces::default_space()).set_distribution(distribution);
     _op_ctx.bucket_space_states().get(document::FixedBucketSpaces::global_space()).set_distribution(global_distr);
     // TODO STRIPE do we need to bootstrap the stripes as well here? Or do they do this on their own volition?
@@ -79,7 +80,7 @@ TopLevelBucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib
 }
 
 void
-TopLevelBucketDBUpdater::propagate_distribution_config(const BucketSpaceDistributionConfigs& configs) {
+TopLevelBucketDBUpdater::propagate_distribution_config(const lib::BucketSpaceDistributionConfigs& configs) {
     if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::default_space())) {
         _op_ctx.bucket_space_states().get(document::FixedBucketSpaces::default_space()).set_distribution(distr);
     }
@@ -183,13 +184,14 @@ TopLevelBucketDBUpdater::complete_transition_timer()
 }
 
 void
-TopLevelBucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfigs& configs)
+TopLevelBucketDBUpdater::storage_distribution_changed(const lib::BucketSpaceDistributionConfigs& configs)
 {
     propagate_distribution_config(configs);
     ensure_transition_timer_started();
 
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
     // FIXME STRIPE might this cause a mismatch with the component stuff's own distribution config..?!
+    // TODO should be part of bundle only...!!
     guard->update_distribution_config(configs);
     remove_superfluous_buckets(*guard, _active_state_bundle, true);
 

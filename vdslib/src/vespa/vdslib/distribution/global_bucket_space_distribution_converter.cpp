@@ -1,15 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "distribution_config_util.h"
 #include "global_bucket_space_distribution_converter.h"
-#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/config-stor-distribution.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.hpp>
-#include <vespa/vdslib/distribution/distribution_config_util.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
 #include <map>
 
-namespace storage {
+namespace storage::lib {
 
 using DistributionConfig = vespa::config::content::StorDistributionConfig;
 using DistributionConfigBuilder = vespa::config::content::StorDistributionConfigBuilder;
@@ -159,7 +159,7 @@ GlobalBucketSpaceDistributionConverter::convert_to_global(const DistributionConf
 
 std::shared_ptr<lib::Distribution>
 GlobalBucketSpaceDistributionConverter::convert_to_global(const lib::Distribution& distr) {
-    const auto src_config = distr.serialize();
+    const auto& src_config = distr.serialized();
     auto global_config = convert_to_global(*string_to_config(src_config));
     return std::make_shared<lib::Distribution>(*global_config);
 }

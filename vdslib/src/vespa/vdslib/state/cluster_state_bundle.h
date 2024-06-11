@@ -3,11 +3,12 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketspace.h>
+#include <vespa/vdslib/distribution/distribution_config_bundle.h>
 #include <iosfwd>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <memory>
 
 namespace storage::lib {
 
@@ -17,10 +18,8 @@ class ClusterState;
  * Class representing the baseline cluster state and the derived cluster
  * state for each bucket space.
  */
-class ClusterStateBundle
-{
+class ClusterStateBundle {
 public:
-
     /**
      * Represents feed blocking status of the entire cluster.
      *
@@ -36,10 +35,10 @@ public:
     public:
         FeedBlock(bool block_feed_in_cluster_in,
                   const vespalib::string& description_in);
-        bool block_feed_in_cluster() const { return _block_feed_in_cluster; }
-        const vespalib::string& description() const { return _description; }
-        bool operator==(const FeedBlock& rhs) const;
-        bool operator!=(const FeedBlock& rhs) const { return !operator==(rhs); }
+        [[nodiscard]] bool block_feed_in_cluster() const noexcept { return _block_feed_in_cluster; }
+        [[nodiscard]] const vespalib::string& description() const noexcept { return _description; }
+        bool operator==(const FeedBlock& rhs) const noexcept;
+        bool operator!=(const FeedBlock& rhs) const noexcept { return !operator==(rhs); }
     };
 
     using BucketSpaceStateMapping = std::unordered_map<
@@ -50,6 +49,7 @@ public:
     std::shared_ptr<const ClusterState> _baselineClusterState;
     BucketSpaceStateMapping _derivedBucketSpaceStates;
     std::optional<FeedBlock> _feed_block;
+    std::shared_ptr<const DistributionConfigBundle> _distribution_bundle;
     bool _deferredActivation;
 public:
     explicit ClusterStateBundle(const ClusterState &baselineClusterState);
@@ -62,6 +62,11 @@ public:
                        BucketSpaceStateMapping derivedBucketSpaceStates,
                        const FeedBlock& feed_block_in,
                        bool deferredActivation);
+    ClusterStateBundle(const ClusterState& baseline_cluster_state,
+                       BucketSpaceStateMapping derived_bucket_space_states,
+                       std::optional<FeedBlock> feed_block_in,
+                       std::shared_ptr<const DistributionConfigBundle> distribution_bundle,
+                       bool deferred_activation);
 
     ClusterStateBundle(const ClusterStateBundle&);
     ClusterStateBundle& operator=(const ClusterStateBundle&);
@@ -77,10 +82,20 @@ public:
     [[nodiscard]] bool block_feed_in_cluster() const noexcept {
         return _feed_block.has_value() && _feed_block->block_feed_in_cluster();
     }
-    const std::optional<FeedBlock>& feed_block() const { return _feed_block; }
-    uint32_t getVersion() const;
-    bool deferredActivation() const noexcept { return _deferredActivation; }
-    std::string toString() const;
+    [[nodiscard]] bool has_distribution_config() const noexcept {
+        return static_cast<bool>(_distribution_bundle);
+    }
+    [[nodiscard]] const DistributionConfigBundle* distribution_config_bundle_or_nullptr() const noexcept {
+        return _distribution_bundle.get();
+    }
+    // Only guaranteed to not be nullptr iff has_distribution_config() == true
+    [[nodiscard]] const std::shared_ptr<const DistributionConfigBundle>& distribution_config_bundle() const noexcept {
+        return _distribution_bundle;
+    }
+    [[nodiscard]] const std::optional<FeedBlock>& feed_block() const { return _feed_block; }
+    [[nodiscard]] uint32_t getVersion() const;
+    [[nodiscard]] bool deferredActivation() const noexcept { return _deferredActivation; }
+    [[nodiscard]] std::string toString() const;
     bool operator==(const ClusterStateBundle &rhs) const noexcept;
     bool operator!=(const ClusterStateBundle &rhs) const noexcept { return !operator==(rhs); }
 };

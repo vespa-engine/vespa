@@ -78,6 +78,11 @@ Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> c
 
 Distribution::ConfigWrapper::~ConfigWrapper() = default;
 
+std::unique_ptr<Distribution::DistributionConfig>
+Distribution::ConfigWrapper::steal() noexcept {
+    return std::move(_cfg);
+}
+
 Distribution::Distribution(const ConfigWrapper & config) :
     Distribution(config.get())
 { }
@@ -206,7 +211,7 @@ Distribution::getStorageSeed(const document::BucketId& bucket, const ClusterStat
 
 void
 Distribution::print(std::ostream& out, bool, const std::string&) const {
-    out << serialize();
+    out << serialized();
 }
 
 namespace {

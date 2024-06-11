@@ -17,7 +17,7 @@ ClusterState::ClusterState(const lib::ClusterState& state,
                            const lib::Distribution& distribution,
                            bool maintenanceInAllSpaces)
     : _state(std::make_unique<lib::ClusterState>(state)),
-      _distribution(std::make_unique<lib::Distribution>(distribution.serialize())),
+      _distribution(std::make_unique<lib::Distribution>(distribution.serialized())),
       _nodeIndex(nodeIndex),
       _maintenanceInAllSpaces(maintenanceInAllSpaces)
 {
@@ -99,7 +99,7 @@ void ClusterState::serialize(vespalib::nbostream& o) const {
     vespalib::asciistream tmp;
     _state->serialize(tmp);
     o << tmp.str() << _nodeIndex;
-    o << _distribution->serialize();
+    o << _distribution->serialized();
 }
 
 }

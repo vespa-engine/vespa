@@ -33,7 +33,7 @@ void MultiThreadedStripeAccessGuard::update_total_distributor_config(std::shared
     });
 }
 
-void MultiThreadedStripeAccessGuard::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
+void MultiThreadedStripeAccessGuard::update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) {
     for_each_stripe([&](TickableStripe& stripe) {
         stripe.update_distribution_config(new_configs);
     });

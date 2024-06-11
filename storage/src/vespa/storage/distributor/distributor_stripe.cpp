@@ -12,7 +12,6 @@
 #include "stripe_host_info_notifier.h"
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
@@ -21,6 +20,7 @@
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <algorithm>
 
@@ -545,7 +545,7 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace, const 
 void
 DistributorStripe::propagateDefaultDistribution(std::shared_ptr<const lib::Distribution> distribution)
 {
-    auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
+    auto global_distr = lib::GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
         repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
@@ -554,7 +554,7 @@ DistributorStripe::propagateDefaultDistribution(std::shared_ptr<const lib::Distr
 
 // Only called when stripe is in rendezvous freeze
 void
-DistributorStripe::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
+DistributorStripe::update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) {
     auto default_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::default_space());
     auto global_distr  = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
     assert(default_distr && global_distr);

@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/config-stor-distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
 
-namespace storage {
+namespace storage::lib {
 
 using DistributionConfig = vespa::config::content::StorDistributionConfig;
 
@@ -254,7 +255,7 @@ TEST(GlobalBucketSpaceDistributionConverterTest, can_transform_concrete_distribu
     auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_flat_config);
     lib::Distribution flat_distr(*default_cfg);
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(flat_distr);
-    EXPECT_EQ(expected_flat_global_config, global_distr->serialize());
+    EXPECT_EQ(expected_flat_global_config, global_distr->serialized());
 }
 
 TEST(GlobalBucketSpaceDistributionConverterTest, config_retired_state_is_propagated) {

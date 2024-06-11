@@ -39,7 +39,7 @@ public:
 
     virtual void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) = 0;
 
-    virtual void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) = 0;
+    virtual void update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) = 0;
     virtual void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) = 0;
     virtual void clear_pending_cluster_state_bundle() = 0;
     virtual void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,

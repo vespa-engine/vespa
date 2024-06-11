@@ -92,7 +92,8 @@ public:
         ConfigWrapper & operator = (ConfigWrapper && rhs) noexcept = default;
         explicit ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept;
         ~ConfigWrapper();
-        const DistributionConfig & get() const { return *_cfg; }
+        [[nodiscard]] const DistributionConfig & get() const noexcept { return *_cfg; }
+        [[nodiscard]] std::unique_ptr<DistributionConfig> steal() noexcept;
     private:
         std::unique_ptr<DistributionConfig> _cfg;
     };
@@ -105,14 +106,14 @@ public:
 
     Distribution& operator=(const Distribution&) = delete;
 
-    const vespalib::string& serialize() const noexcept { return _serialized; }
+    [[nodiscard]] const vespalib::string& serialized() const noexcept { return _serialized; }
 
-    const Group& getNodeGraph() const noexcept { return *_nodeGraph; }
-    uint16_t getRedundancy() const noexcept { return _redundancy; }
-    uint16_t getInitialRedundancy() const noexcept { return _initialRedundancy; }
-    uint16_t getReadyCopies() const noexcept { return _readyCopies; }
-    bool ensurePrimaryPersisted() const noexcept { return _ensurePrimaryPersisted; }
-    bool activePerGroup() const noexcept { return _activePerGroup; }
+    [[nodiscard]] const Group& getNodeGraph() const noexcept { return *_nodeGraph; }
+    [[nodiscard]] uint16_t getRedundancy() const noexcept { return _redundancy; }
+    [[nodiscard]] uint16_t getInitialRedundancy() const noexcept { return _initialRedundancy; }
+    [[nodiscard]] uint16_t getReadyCopies() const noexcept { return _readyCopies; }
+    [[nodiscard]] bool ensurePrimaryPersisted() const noexcept { return _ensurePrimaryPersisted; }
+    [[nodiscard]] bool activePerGroup() const noexcept { return _activePerGroup; }
 
     bool operator==(const Distribution& o) const noexcept { return (_serialized == o._serialized); }
     bool operator!=(const Distribution& o) const noexcept { return (_serialized != o._serialized); }
@@ -120,10 +121,10 @@ public:
     void print(std::ostream& out, bool, const std::string&) const override;
 
     /** Simplified wrapper for getIdealNodes() */
-    std::vector<uint16_t> getIdealStorageNodes(const ClusterState&, const document::BucketId&, const char* upStates = "uim") const;
+    [[nodiscard]] std::vector<uint16_t> getIdealStorageNodes(const ClusterState&, const document::BucketId&, const char* upStates = "uim") const;
 
     /** Simplified wrapper for getIdealNodes() */
-    uint16_t getIdealDistributorNode(const ClusterState&, const document::BucketId&, const char* upStates = "uim") const;
+    [[nodiscard]] uint16_t getIdealDistributorNode(const ClusterState&, const document::BucketId&, const char* upStates = "uim") const;
 
     /**
      * @throws TooFewBucketBitsInUseException If distribution bit count is

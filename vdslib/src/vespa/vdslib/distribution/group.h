@@ -48,14 +48,14 @@ private:
     void getConfigHash(vespalib::asciistream & out) const;
 
 public:
-        // Create leaf node
+    // Create leaf node
     Group(uint16_t index, vespalib::stringref name) noexcept;
-        // Create branch node
+    // Create branch node
     Group(uint16_t index, vespalib::stringref name,
           const Distribution&, uint16_t redundancy);
-    virtual ~Group();
+    ~Group() override;
 
-    bool isLeafGroup() const noexcept { return ! _nodes.empty(); }
+    [[nodiscard]] bool isLeafGroup() const noexcept { return ! _nodes.empty(); }
     bool operator==(const Group& other) const noexcept;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
