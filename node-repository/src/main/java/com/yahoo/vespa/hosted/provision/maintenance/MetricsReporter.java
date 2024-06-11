@@ -143,6 +143,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         metric.set(ConfigServerMetrics.CLUSTER_LOAD_IDEAL_CPU.baseName(), cluster.get().target().ideal().cpu(), context);
         metric.set(ConfigServerMetrics.CLUSTER_LOAD_IDEAL_MEMORY.baseName(), cluster.get().target().ideal().memory(), context);
         metric.set(ConfigServerMetrics.CLUSTER_LOAD_IDEAL_DISK.baseName(), cluster.get().target().ideal().disk(), context);
+        metric.set(ConfigServerMetrics.CLUSTER_LOAD_PEAK_CPU.baseName(), cluster.get().target().peak().cpu(), context);
+        metric.set(ConfigServerMetrics.CLUSTER_LOAD_PEAK_MEMORY.baseName(), cluster.get().target().peak().memory(), context);
+        metric.set(ConfigServerMetrics.CLUSTER_LOAD_PEAK_DISK.baseName(), cluster.get().target().peak().disk(), context);
     }
 
     private void updateZoneMetrics() {
