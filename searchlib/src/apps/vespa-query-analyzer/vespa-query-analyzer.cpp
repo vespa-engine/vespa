@@ -16,13 +16,9 @@
 
 using namespace vespalib::slime::convenience;
 using vespalib::make_string_short::fmt;
-using vespalib::slime::JsonFormat;
-using vespalib::slime::ARRAY;
-using vespalib::slime::OBJECT;
-using vespalib::slime::STRING;
-using vespalib::slime::DOUBLE;
-using vespalib::slime::BOOL;
 using namespace search::queryeval;
+using namespace vespalib::slime;
+using namespace vespalib;
 
 //-----------------------------------------------------------------------------
 
@@ -586,9 +582,9 @@ struct Analyzer {
                 data.calc_cost(true);
                 data.normalize();
                 data.print();
-                fprintf(stderr, "distribution key: %d, total_time_ms: %g, estimated ms_per_cost: %g\n", key, total_ms, data.ms_per_cost);
+                fprintf(stdout, "distribution key: %d, total_time_ms: %g, estimated ms_per_cost: %g\n", key, total_ms, data.ms_per_cost);
                 for (auto [type, time]: time_map) {
-                    fprintf(stderr, "sample type %s used %g ms total\n", Sample::type_to_str(type).c_str(), time);
+                    fprintf(stdout, "sample type %s used %g ms total\n", Sample::type_to_str(type).c_str(), time);
                 }
             }
         }
@@ -620,18 +616,45 @@ MyApp::parse_params(int argc, char **argv) {
     return true;
 }
 
+class StdIn : public Input {
+private:
+    bool _eof = false;
+    SimpleBuffer _input;
+public:
+    Memory obtain() override {
+        if ((_input.get().size == 0) && !_eof) {
+            WritableMemory buf = _input.reserve(4096);
+            ssize_t res = read(STDIN_FILENO, buf.data, buf.size);
+            _eof = (res == 0);
+            assert(res >= 0); // fail on stdio read errors
+            _input.commit(res);
+        }
+        return _input.obtain();
+    }
+    Input &evict(size_t bytes) override {
+        _input.evict(bytes);
+        return *this;
+    }
+};
+
 int
 MyApp::main()
 {
-    vespalib::MappedFileInput file(file_name);
-    if (!file.valid()) {
-        fprintf(stderr, "could not read input file: '%s'\n",
-                file_name.c_str());
-        return 1;
-    }
     Slime slime;
-    if(JsonFormat::decode(file, slime) == 0) {
-        fprintf(stderr, "file contains invalid json: '%s'\n",
+    std::unique_ptr<Input> input;
+    if (file_name == "-") {
+        input = std::make_unique<StdIn>();
+    } else {
+        auto file = std::make_unique<MappedFileInput>(file_name);
+        if (!file->valid()) {
+            fprintf(stderr, "could not read input file: '%s'\n",
+                    file_name.c_str());
+            return 1;
+        }
+        input = std::move(file);
+    }
+    if(JsonFormat::decode(*input, slime) == 0) {
+        fprintf(stderr, "input contains invalid json (%s)\n",
                 file_name.c_str());
         return 1;
     }
