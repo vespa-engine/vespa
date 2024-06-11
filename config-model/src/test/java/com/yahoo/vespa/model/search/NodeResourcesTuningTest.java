@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import static com.yahoo.vespa.model.Host.memoryOverheadGb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.MB;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.MiB;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.GiB;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 
 /**
@@ -28,7 +29,7 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_hwinfo_memory_size_is_set() {
-        assertEquals(24 * GB, configFromMemorySetting(24 + memoryOverheadGb, 0).hwinfo().memory().size());
+        assertEquals(24 * GiB, configFromMemorySetting(24 + memoryOverheadGb, 0).hwinfo().memory().size());
         assertEquals(1.9585050869E10, configFromMemorySetting(24 + memoryOverheadGb, ApplicationContainerCluster.heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster * 0.01).hwinfo().memory().size(), 1000);
     }
 
@@ -84,26 +85,26 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_document_store_maxfilesize_is_set_based_on_available_memory() {
-        assertDocumentStoreMaxFileSize(256 * MB, 4);
-        assertDocumentStoreMaxFileSize(256 * MB, 6);
-        assertDocumentStoreMaxFileSize(256 * MB, 8);
-        assertDocumentStoreMaxFileSize(256 * MB, 12);
-        assertDocumentStoreMaxFileSize((long) (16 * GB * 0.02), 16);
-        assertDocumentStoreMaxFileSize((long) (24 * GB * 0.02), 24);
-        assertDocumentStoreMaxFileSize((long) (32 * GB * 0.02), 32);
-        assertDocumentStoreMaxFileSize((long) (48 * GB * 0.02), 48);
-        assertDocumentStoreMaxFileSize((long) (64 * GB * 0.02), 64);
-        assertDocumentStoreMaxFileSize((long) (128 * GB * 0.02), 128);
-        assertDocumentStoreMaxFileSize((long) (256 * GB * 0.02), 256);
-        assertDocumentStoreMaxFileSize((long) (512 * GB * 0.02), 512);
+        assertDocumentStoreMaxFileSize(256 * MiB, 4);
+        assertDocumentStoreMaxFileSize(256 * MiB, 6);
+        assertDocumentStoreMaxFileSize(256 * MiB, 8);
+        assertDocumentStoreMaxFileSize(256 * MiB, 12);
+        assertDocumentStoreMaxFileSize((long) (16 * GiB * 0.02), 16);
+        assertDocumentStoreMaxFileSize((long) (24 * GiB * 0.02), 24);
+        assertDocumentStoreMaxFileSize((long) (32 * GiB * 0.02), 32);
+        assertDocumentStoreMaxFileSize((long) (48 * GiB * 0.02), 48);
+        assertDocumentStoreMaxFileSize((long) (64 * GiB * 0.02), 64);
+        assertDocumentStoreMaxFileSize((long) (128 * GiB * 0.02), 128);
+        assertDocumentStoreMaxFileSize((long) (256 * GiB * 0.02), 256);
+        assertDocumentStoreMaxFileSize((long) (512 * GiB * 0.02), 512);
     }
 
     @Test
     void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
-        assertFlushStrategyMemory((long) (4 * GB * DEFAULT_MEMORY_GAIN), 4);
-        assertFlushStrategyMemory((long) (8 * GB * DEFAULT_MEMORY_GAIN), 8);
-        assertFlushStrategyMemory((long) (24 * GB * DEFAULT_MEMORY_GAIN), 24);
-        assertFlushStrategyMemory((long) (64 * GB * DEFAULT_MEMORY_GAIN), 64);
+        assertFlushStrategyMemory((long) (4 * GiB * DEFAULT_MEMORY_GAIN), 4);
+        assertFlushStrategyMemory((long) (8 * GiB * DEFAULT_MEMORY_GAIN), 8);
+        assertFlushStrategyMemory((long) (24 * GiB * DEFAULT_MEMORY_GAIN), 24);
+        assertFlushStrategyMemory((long) (64 * GiB * DEFAULT_MEMORY_GAIN), 64);
     }
 
     @Test
@@ -129,8 +130,8 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
-        assertEquals(1 * GB / 25, configFromMemorySetting(1 + memoryOverheadGb, 0).summary().cache().maxbytes());
-        assertEquals(256 * GB / 25, configFromMemorySetting(256 + memoryOverheadGb, 0).summary().cache().maxbytes());
+        assertEquals(1 * GiB / 25, configFromMemorySetting(1 + memoryOverheadGb, 0).summary().cache().maxbytes());
+        assertEquals(256 * GiB / 25, configFromMemorySetting(256 + memoryOverheadGb, 0).summary().cache().maxbytes());
     }
 
     @Test

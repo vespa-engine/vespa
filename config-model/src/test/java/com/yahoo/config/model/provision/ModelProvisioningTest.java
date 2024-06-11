@@ -60,7 +60,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed;
 import static com.yahoo.config.provision.NodeResources.StorageType;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.Host.memoryOverheadGb;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.GiB;
 import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -2580,7 +2580,7 @@ public class ModelProvisioningTest {
         ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
-        assertEquals((long) ((128 - memoryOverheadGb) * GB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+        assertEquals((long) ((128 - memoryOverheadGb) * GiB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {

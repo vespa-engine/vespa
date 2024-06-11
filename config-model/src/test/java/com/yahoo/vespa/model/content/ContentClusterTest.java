@@ -1278,7 +1278,7 @@ public class ContentClusterTest extends ContentBaseTest {
     void verify_max_tls_size() throws Exception {
         var flavor = new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().name("test").minDiskAvailableGb(100)));
         assertEquals(21474836480L, resolveMaxTLSSize(Optional.empty()));
-        assertEquals(2147483648L, resolveMaxTLSSize(Optional.of(flavor)));
+        assertEquals(2_000_000_000, resolveMaxTLSSize(Optional.of(flavor)));
     }
 
     void assertZookeeperServerImplementation(String expectedClassName,
