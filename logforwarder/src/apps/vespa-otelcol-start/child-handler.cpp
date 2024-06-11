@@ -58,8 +58,9 @@ void ChildHandler::startChild(const std::string &progPath, const std::string &cf
         return;
     }
     if (child == 0) {
-        std::string cfArg{"--config=file:" + cfPath};
-        const char *cargv[] = { progPath.c_str(), cfArg.c_str(), nullptr };
+        std::string cfArg1{"--config=file:" "/etc/otelcol/gw-config.yaml"};
+        std::string cfArg2{"--config=file:" + cfPath};
+        const char *cargv[] = { progPath.c_str(), cfArg1.c_str(), cfArg2.c_str(), nullptr };
         execv(progPath.c_str(), const_cast<char **>(cargv));
         // if execv fails:
         perror(progPath.c_str());
