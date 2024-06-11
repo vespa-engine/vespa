@@ -52,7 +52,6 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -69,13 +68,16 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import static com.yahoo.vespa.config.server.session.Session.Status.ACTIVATE;
+import static com.yahoo.vespa.config.server.session.Session.Status.DEACTIVATE;
+import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
+import static com.yahoo.vespa.config.server.session.Session.Status.UNKNOWN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -97,7 +99,6 @@ public class ApplicationRepositoryTest {
     private final static File app2 = new File("src/test/apps/cs2");
 
     private final static TenantName tenant1 = TenantName.from("test1");
-    private final static TenantName tenant2 = TenantName.from("test2");
     private final static ManualClock clock = new ManualClock(Instant.now());
 
     private ApplicationRepository applicationRepository;
@@ -138,7 +139,6 @@ public class ApplicationRepositoryTest {
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
-        tenantRepository.addTenant(tenant2);
         orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -235,7 +235,7 @@ public class ApplicationRepositoryTest {
         assertApplicationData(firstSessionId, firstSessionId);
 
         // Prepare, last deployed session id should be the new one
-        prepare(testApp, secondSessionId);
+        prepare(secondSessionId);
         assertApplicationData(firstSessionId, secondSessionId);
 
         // Activate, active session id should be the new one
@@ -365,7 +365,7 @@ public class ApplicationRepositoryTest {
             deployApp(testApp);
 
             // Deploy another app (with id fooId)
-            ApplicationId fooId = applicationId(tenant2);
+            ApplicationId fooId = applicationId("fooId");
             PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
             deployApp(testAppJdiscOnly, prepareParams2);
             assertNotNull(applicationRepository.getActiveSession(fooId));
@@ -395,44 +395,47 @@ public class ApplicationRepositoryTest {
                 .flagSource(flagSource)
                 .build();
         tester.deployApp("src/test/apps/app"); // session 2 (numbering starts at 2)
+        var applicationRepo = tester.tenant().getApplicationRepo();
+        var applicationRepository = tester.applicationRepository();
+        var sessionRepository = tester.tenant().getSessionRepository();
 
         clock.advance(Duration.ofSeconds(10));
         Optional<Deployment> deployment2 = tester.redeployFromLocalActive();
-
         assertTrue(deployment2.isPresent());
         deployment2.get().activate(); // session 3
-        long activeSessionId = tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId());
+
+        long activeSessionId = applicationRepo.requireActiveSessionOf(tester.applicationId());
 
         clock.advance(Duration.ofSeconds(10));
-        Optional<com.yahoo.config.provision.Deployment> deployment3 = tester.redeployFromLocalActive();
+        var deployment3 = tester.redeployFromLocalActive();
         assertTrue(deployment3.isPresent());
         deployment3.get().prepare();  // session 4 (not activated)
 
-        Session deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
+        var deployment3session = ((com.yahoo.vespa.config.server.deploy.Deployment) deployment3.get()).session();
         assertNotEquals(activeSessionId, deployment3session.getSessionId());
         // No change to active session id
-        assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
-        SessionRepository sessionRepository = tester.tenant().getSessionRepository();
+        assertEquals(activeSessionId, applicationRepo.requireActiveSessionOf(tester.applicationId()));
+
         assertEquals(3, sessionRepository.getLocalSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
         // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
-        tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = sessionRepository.getLocalSessions();
-        assertEquals(1, sessions.size());
-        ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
-        LocalSession localSession = localSessions.get(0);
+        applicationRepository.deleteExpiredLocalSessions();
+        var localSessions = new ArrayList<>(sessionRepository.getLocalSessions());
+        assertEquals(1, localSessions.size());
+        var localSession = localSessions.get(0);
         assertEquals(3, localSession.getSessionId());
 
         // All sessions except 3 should be removed after the call to deleteExpiredRemoteSessions
-        assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock));
-        ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessionsFromZooKeeper());
-        Session remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
+        assertEquals(2, applicationRepository.deleteExpiredRemoteSessions());
+        var remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessionsFromZooKeeper());
+        assertEquals(1, remoteSessions.size());
+        var remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
         assertEquals(3, remoteSession.getSessionId());
 
         // Deploy, but do not activate
-        Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
+        var deployment4 = tester.redeployFromLocalActive();
         assertTrue(deployment4.isPresent());
         deployment4.get().prepare();  // session 5 (not activated)
 
@@ -443,23 +446,25 @@ public class ApplicationRepositoryTest {
         // Create a local session without any data in zookeeper (corner case seen in production occasionally)
         // and check that expiring local sessions still works
         int sessionId = 6;
-        TenantName tenantName = tester.tenant().getName();
-        Instant session6CreateTime = clock.instant();
-        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(serverdb, tenantName);
+        var tenantName = tester.tenant().getName();
+        var session6CreateTime = clock.instant();
+        var tenantFileSystemDirs = new TenantFileSystemDirs(serverdb, tenantName);
         Files.createDirectory(tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath());
-        LocalSession localSession2 = new LocalSession(tenantName,
-                                                      sessionId,
-                                                      FilesApplicationPackage.fromFile(testApp),
-                                                      new SessionZooKeeperClient(curator, tenantName, sessionId, configserverConfig));
+        var localSession2 = new LocalSession(tenantName,
+                                             sessionId,
+                                             FilesApplicationPackage.fromFile(testApp),
+                                             new SessionZooKeeperClient(curator, tenantName, sessionId, configserverConfig));
         sessionRepository.addLocalSession(localSession2);
         assertEquals(2, sessionRepository.getLocalSessions().size());
 
         // Create a session, set status to UNKNOWN, we don't want to expire those (creation time is then EPOCH,
         // so will be candidate for expiry)
         sessionId = 7;
-        Session session = sessionRepository.createRemoteSession(sessionId);
+        var session = sessionRepository.createRemoteSession(sessionId);
         sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
-        sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN).commit();
+        try (var t = sessionRepository.createSetStatusTransaction(session, UNKNOWN)) {
+            t.commit();
+        }
         assertEquals(2, sessionRepository.getLocalSessions().size()); // Still 2, no new local session
 
         // Check that trying to expire local session when there exists a local session without any data in zookeeper
@@ -479,10 +484,12 @@ public class ApplicationRepositoryTest {
 
         // Create a local session with invalid application package and check that expiring local sessions still works
         sessionId = 8;
-        java.nio.file.Path applicationPath = tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath();
+        var applicationPath = tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath();
         session = sessionRepository.createRemoteSession(sessionId);
         sessionRepository.createSessionZooKeeperClient(sessionId).createNewSession(clock.instant());
-        sessionRepository.createSetStatusTransaction(session, Session.Status.PREPARE).commit();
+        try (var t = sessionRepository.createSetStatusTransaction(session, PREPARE)){
+            t.commit();
+        }
         Files.createDirectory(applicationPath);
         Files.writeString(Files.createFile(applicationPath.resolve("services.xml")), "non-legal xml");
         assertEquals(0, sessionRepository.getLocalSessions().size());  // Will not show up in local sessions
@@ -565,7 +572,7 @@ public class ApplicationRepositoryTest {
 
         Session activeSession = applicationRepository.getActiveSession(applicationId()).get();
         assertEquals(firstSession, activeSession.getSessionId());
-        assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
+        assertEquals(ACTIVATE, activeSession.getStatus());
     }
 
     @Test
@@ -581,7 +588,7 @@ public class ApplicationRepositoryTest {
 
         Session activeSession = applicationRepository.getActiveSession(applicationId()).get();
         assertEquals(firstSession, activeSession.getSessionId());
-        assertEquals(Session.Status.ACTIVATE, activeSession.getStatus());
+        assertEquals(ACTIVATE, activeSession.getStatus());
     }
 
     @Test
@@ -621,7 +628,7 @@ public class ApplicationRepositoryTest {
 
         deployApp(testAppJdiscOnly);
 
-        assertEquals(Session.Status.DEACTIVATE, firstSession.getStatus());
+        assertEquals(DEACTIVATE, firstSession.getStatus());
     }
 
     @Test
@@ -705,9 +712,8 @@ public class ApplicationRepositoryTest {
         return applicationRepository.deploy(application, prepareParams());
     }
 
-    private long prepare(File application, long sessionId) {
+    private void prepare(long sessionId) {
         applicationRepository.prepare(sessionId, prepareParams());
-        return sessionId;
     }
 
     private PrepareResult deployApp(File applicationPackage) {
@@ -722,10 +728,10 @@ public class ApplicationRepositoryTest {
         return new PrepareParams.Builder().applicationId(applicationId()).build();
     }
 
-    private ApplicationId applicationId() { return applicationId(tenant1); }
+    private ApplicationId applicationId() { return applicationId("testapp"); }
 
-    private ApplicationId applicationId(TenantName tenantName) {
-        return ApplicationId.from(tenantName, ApplicationName.from("testapp"), InstanceName.defaultName());
+    private ApplicationId applicationId(String appName) {
+        return ApplicationId.from(tenant1, ApplicationName.from(appName), InstanceName.defaultName());
     }
 
     private Tenant tenant() { return applicationRepository.getTenant(applicationId()); }
@@ -756,14 +762,10 @@ public class ApplicationRepositoryTest {
             return new Context(properties);
         }
 
-        private static class Context implements Metric.Context {
-
-            private final Map<String, ?> point;
-
-            public Context(Map<String, ?> point) {
+        private record Context(Map<String, ?> point) implements Metric.Context {
+            private Context(Map<String, ?> point) {
                 this.point = Map.copyOf(point);
             }
-
         }
 
     }

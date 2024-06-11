@@ -960,10 +960,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public int deleteExpiredRemoteSessions(Clock clock) {
+    public int deleteExpiredRemoteSessions() {
         return tenantRepository.getAllTenants()
                 .stream()
-                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock, session -> sessionIsActiveForItsApplication(tenant, session)))
+                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(session -> sessionIsActiveForItsApplication(tenant, session)))
                 .mapToInt(i -> i)
                 .sum();
     }
