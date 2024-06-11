@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
+import ai.vespa.net.InetAddressUtil;
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
@@ -452,7 +453,7 @@ public record IP() {
 
     /** Convert IP address to string. This uses :: for zero compression in IPv6 addresses.  */
     public static String asString(InetAddress inetAddress) {
-        return InetAddresses.toAddrString(inetAddress);
+        return InetAddressUtil.toString(inetAddress);
     }
 
     /** Returns whether given string is an IPv4 address */

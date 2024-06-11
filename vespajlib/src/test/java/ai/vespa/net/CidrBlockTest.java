@@ -2,7 +2,6 @@
 package ai.vespa.net;
 
 import com.google.common.net.InetAddresses;
-import ai.vespa.net.CidrBlock;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -99,7 +98,7 @@ public class CidrBlockTest {
 
         assertEquals(StreamSupport.stream(superBlock.iterableIps().spliterator(), false)
                         .skip(24)
-                        .map(ip -> InetAddresses.toAddrString(ip) + "/32")
+                        .map(ip -> InetAddressUtil.toString(ip) + "/32")
                         .collect(Collectors.toList()),
                 StreamSupport.stream(CidrBlock.fromString("10.12.14.24/32").iterableCidrs().spliterator(), false)
                         .takeWhile(superBlock::overlapsWith)
@@ -111,12 +110,12 @@ public class CidrBlockTest {
     public void iterableIps() {
         assertEquals(List.of("10.12.14.24", "10.12.14.25", "10.12.14.26", "10.12.14.27", "10.12.14.28", "10.12.14.29", "10.12.14.30", "10.12.14.31"),
                 StreamSupport.stream(CidrBlock.fromString("10.12.14.24/29").iterableIps().spliterator(), false)
-                        .map(InetAddresses::toAddrString)
+                        .map(InetAddressUtil::toString)
                         .collect(Collectors.toList()));
 
         assertEquals(List.of("10.12.14.24"),
                 StreamSupport.stream(CidrBlock.fromString("10.12.14.24/32").iterableIps().spliterator(), false)
-                        .map(InetAddresses::toAddrString)
+                        .map(InetAddressUtil::toString)
                         .collect(Collectors.toList()));
     }
 
