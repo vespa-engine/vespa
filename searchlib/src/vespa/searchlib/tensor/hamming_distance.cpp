@@ -5,17 +5,18 @@
 #include <vespa/vespalib/util/binary_hamming_distance.h>
 
 using vespalib::typify_invoke;
-using vespalib::eval::TypifyCellType;
 using vespalib::eval::TypedCells;
+using vespalib::eval::TypifyCellType;
 
 namespace search::tensor {
 
 using vespalib::eval::Int8Float;
 
-template<typename FloatType>
+template <typename VectorStoreType>
 class BoundHammingDistance final : public BoundDistanceFunction {
 private:
-    mutable TemporaryVectorStore<FloatType> _tmpSpace;
+    using FloatType = VectorStoreType::FloatType;
+    mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
 public:
     explicit BoundHammingDistance(TypedCells lhs)
@@ -47,18 +48,30 @@ public:
     }
 };
 
+template class BoundHammingDistance<TemporaryVectorStore<Int8Float>>;
+template class BoundHammingDistance<TemporaryVectorStore<float>>;
+template class BoundHammingDistance<TemporaryVectorStore<double>>;
+template class BoundHammingDistance<ReferenceVectorStore<Int8Float>>;
+template class BoundHammingDistance<ReferenceVectorStore<float>>;
+template class BoundHammingDistance<ReferenceVectorStore<double>>;
+
 template <typename FloatType>
 BoundDistanceFunction::UP
 HammingDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
-    using DFT = BoundHammingDistance<FloatType>;
+    using DFT = BoundHammingDistance<TemporaryVectorStore<FloatType>>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 HammingDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
-    using DFT = BoundHammingDistance<FloatType>;
-    return std::make_unique<DFT>(lhs);
+    if (_reference_insertion_vector) {
+        using DFT = BoundHammingDistance<ReferenceVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    } else {
+        using DFT = BoundHammingDistance<TemporaryVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    }
 }
 
 template class HammingDistanceFunctionFactory<Int8Float>;

@@ -13,9 +13,11 @@
 LOG_SETUP("distance_function_test");
 
 using namespace search::tensor;
+using search::attribute::DistanceMetric;
+using vespalib::BFloat16;
+using vespalib::eval::CellType;
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypedCells;
-using search::attribute::DistanceMetric;
 
 template <typename T>
 TypedCells t(const std::vector<T> &v) { return TypedCells(v); }
@@ -716,6 +718,73 @@ TEST(DistanceFunctionsTest, transformed_mips_growing_norm)
     EXPECT_GT(-29900.0, f->calc(t(p9d)));
 }
 
+template <typename FloatType>
+void
+expect_reference_insertion_vector(FloatType exp_dist, DistanceMetric metric, CellType cell_type)
+{
+    std::vector<FloatType> lhs{0.0, 1.0};
+    std::vector<FloatType> rhs{0.0, 1.0};
+    auto factory = make_distance_function_factory(metric, cell_type);
+    auto func = factory->for_insertion_vector(t(lhs));
+    // Updating the insertion vector should be reflected in the calculation.
+    lhs[0] = 1.0;
+    lhs[1] = 0.0;
+    EXPECT_EQ(exp_dist, func->calc(t(rhs)));
+}
+
+template <typename FloatType>
+void
+expect_not_reference_insertion_vector(FloatType exp_dist, DistanceMetric metric, CellType cell_type)
+{
+    std::vector<FloatType> lhs{1.0, 0.0};
+    std::vector<FloatType> rhs{0.0, 1.0};
+    auto factory = make_distance_function_factory(metric, cell_type);
+    auto func = factory->for_insertion_vector(t(lhs));
+    // Updating the insertion vector should NOT be reflected in the calculation, as a copy has been created.
+    lhs[0] = 0.0;
+    lhs[1] = 1.0;
+    EXPECT_EQ(exp_dist, func->calc(t(rhs)));
+}
+
+TEST(DistanceFunctionsTest, angular_can_reference_insertion_vector)
+{
+    expect_reference_insertion_vector<float>(1.0, DistanceMetric::Angular, CellType::FLOAT);
+    expect_reference_insertion_vector<double>(1.0, DistanceMetric::Angular, CellType::DOUBLE);
+    expect_reference_insertion_vector<Int8Float>(1.0, DistanceMetric::Angular, CellType::INT8);
+    expect_not_reference_insertion_vector<BFloat16>(1.0, DistanceMetric::Angular, CellType::BFLOAT16);
+}
+
+TEST(DistanceFunctionsTest, prenormalized_angular_can_reference_insertion_vector)
+{
+    expect_reference_insertion_vector<float>(1.0, DistanceMetric::PrenormalizedAngular, CellType::FLOAT);
+    expect_reference_insertion_vector<double>(1.0, DistanceMetric::PrenormalizedAngular, CellType::DOUBLE);
+    expect_reference_insertion_vector<Int8Float>(1.0, DistanceMetric::PrenormalizedAngular, CellType::INT8);
+    expect_not_reference_insertion_vector<BFloat16>(1.0, DistanceMetric::PrenormalizedAngular, CellType::BFLOAT16);
+}
+
+TEST(DistanceFunctionsTest, euclidean_can_reference_insertion_vector)
+{
+    expect_reference_insertion_vector<float>(2.0, DistanceMetric::Euclidean, CellType::FLOAT);
+    expect_reference_insertion_vector<double>(2.0, DistanceMetric::Euclidean, CellType::DOUBLE);
+    expect_reference_insertion_vector<Int8Float>(2.0, DistanceMetric::Euclidean, CellType::INT8);
+    expect_not_reference_insertion_vector<BFloat16>(2.0, DistanceMetric::Euclidean, CellType::BFLOAT16);
+}
+
+TEST(DistanceFunctionsTest, dotproduct_can_reference_insertion_vector)
+{
+    expect_reference_insertion_vector<float>(0.0, DistanceMetric::Dotproduct, CellType::FLOAT);
+    expect_reference_insertion_vector<double>(0.0, DistanceMetric::Dotproduct, CellType::DOUBLE);
+    expect_reference_insertion_vector<Int8Float>(0.0, DistanceMetric::Dotproduct, CellType::INT8);
+    expect_not_reference_insertion_vector<BFloat16>(0.0, DistanceMetric::Dotproduct, CellType::BFLOAT16);
+}
+
+TEST(DistanceFunctionsTest, hamming_can_reference_insertion_vector)
+{
+    expect_reference_insertion_vector<float>(2.0, DistanceMetric::Hamming, CellType::FLOAT);
+    expect_reference_insertion_vector<double>(2.0, DistanceMetric::Hamming, CellType::DOUBLE);
+    expect_reference_insertion_vector<Int8Float>(2.0, DistanceMetric::Hamming, CellType::INT8);
+    expect_not_reference_insertion_vector<BFloat16>(2.0, DistanceMetric::Hamming, CellType::BFLOAT16);
+}
 
 GTEST_MAIN_RUN_ALL_TESTS()
 

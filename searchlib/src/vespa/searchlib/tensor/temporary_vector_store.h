@@ -6,9 +6,13 @@
 
 namespace search::tensor {
 
-/** helper class - temporary storage of possibly-converted vector cells */
-template <typename FloatType>
+/**
+ * Helper class containing temporary memory storage for possibly converted vector cells.
+ */
+template <typename FloatTypeT>
 class TemporaryVectorStore {
+public:
+    using FloatType = FloatTypeT;
 private:
     using TypedCells = vespalib::eval::TypedCells;
     std::vector<FloatType> _tmpSpace;
@@ -24,6 +28,26 @@ public:
         } else {
             return internal_convert(cells, cells.size);
         }
+    }
+};
+
+/**
+ * Helper class used when TypedCells vector memory is just referenced,
+ * and used directly in calculations without any transforms.
+ */
+template <typename FloatTypeT>
+class ReferenceVectorStore {
+public:
+    using FloatType = FloatTypeT;
+private:
+    using TypedCells = vespalib::eval::TypedCells;
+public:
+    explicit ReferenceVectorStore(size_t vector_size) noexcept { (void) vector_size; }
+    vespalib::ConstArrayRef<FloatType> storeLhs(TypedCells cells) noexcept {
+        return cells.unsafe_typify<FloatType>();
+    }
+    vespalib::ConstArrayRef<FloatType> convertRhs(TypedCells cells) noexcept {
+        return cells.unsafe_typify<FloatType>();
     }
 };
 
