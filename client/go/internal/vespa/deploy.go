@@ -20,6 +20,7 @@ import (
 
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa/ignore"
 )
 
 var (
@@ -197,7 +198,7 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	zipFile := filepath.Join(tmpDir, "application.zip")
-	if err := zipDir(dir, zipFile); err != nil {
+	if err := zipDir(dir, zipFile, &ignore.List{}); err != nil {
 		return err
 	}
 	return os.Rename(zipFile, path)
