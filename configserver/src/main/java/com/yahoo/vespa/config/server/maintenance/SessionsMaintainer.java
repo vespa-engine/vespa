@@ -24,7 +24,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
     protected double maintain() {
         applicationRepository.deleteExpiredLocalSessions();
 
-        int deleted = applicationRepository.deleteExpiredRemoteSessions(applicationRepository.clock());
+        int deleted = applicationRepository.deleteExpiredRemoteSessions();
         log.log(Level.FINE, () -> "Deleted " + deleted + " expired remote sessions");
 
         return 1.0;

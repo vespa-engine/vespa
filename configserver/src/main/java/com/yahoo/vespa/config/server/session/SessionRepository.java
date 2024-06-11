@@ -373,7 +373,7 @@ public class SessionRepository {
         return session;
     }
 
-    public int deleteExpiredRemoteSessions(Clock clock, Predicate<Session> sessionIsActiveForApplication) {
+    public int deleteExpiredRemoteSessions(Predicate<Session> sessionIsActiveForApplication) {
         Duration expiryTime = Duration.ofSeconds(expiryTimeFlag.value());
         List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
         log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
@@ -386,7 +386,7 @@ public class SessionRepository {
             if (session == null)
                 session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
             if (session.getStatus() == Session.Status.ACTIVATE && sessionIsActiveForApplication.test(session)) continue;
-            if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
+            if (sessionHasExpired(session.getCreateTime(), expiryTime)) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 deleteRemoteSessionFromZooKeeper(session);
                 deleted++;
@@ -411,7 +411,7 @@ public class SessionRepository {
         transaction.close();
     }
 
-    private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
+    private boolean sessionHasExpired(Instant created, Duration expiryTime) {
         return created.plus(expiryTime).isBefore(clock.instant());
     }
 
