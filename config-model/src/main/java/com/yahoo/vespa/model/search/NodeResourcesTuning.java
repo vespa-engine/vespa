@@ -114,7 +114,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     /** Returns the memory we can expect will be available for the content node processes */
     private double usableMemoryGb() {
-        double usableMemoryGb = resources.memoryGb() - Host.memoryOverheadGb;
+        double usableMemoryGb = resources.memoryGiB() - Host.memoryOverheadGb;
         return usableMemoryGb * (1 - fractionOfMemoryReserved);
     }
 

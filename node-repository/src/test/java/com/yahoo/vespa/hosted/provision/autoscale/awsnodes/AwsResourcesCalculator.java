@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.autoscale.awsnodes;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Zone;
 
 /**
  * Calculations and logic on node resources common to provision-service and host-admin (at least).
@@ -28,7 +27,7 @@ public class AwsResourcesCalculator {
     public NodeResources realResourcesOfChildContainer(NodeResources resources, VespaFlavor hostFlavor) {
         // This must match realResourcesOfChildSaturatingHost() if exclusive is true, and vice versa
         boolean exclusive = saturates(hostFlavor, resources);
-        return resources.withMemoryGb(resources.memoryGb() - memoryOverhead(hostFlavor, resources, false))
+        return resources.withMemoryGiB(resources.memoryGiB() - memoryOverhead(hostFlavor, resources, false))
                         .withDiskGb(resources.diskGb() - diskOverhead(hostFlavor, resources, false, exclusive));
     }
 
@@ -39,13 +38,13 @@ public class AwsResourcesCalculator {
      */
     public double memoryOverhead(VespaFlavor hostFlavor, NodeResources resources, boolean real) {
         double hostMemoryOverhead =
-                hostFlavor.advertisedResources().memoryGb() - hostFlavor.realResources().memoryGb()
+                hostFlavor.advertisedResources().memoryGiB() - hostFlavor.realResources().memoryGiB()
                 + hostMemory; // Approximate cost of host administration processes
 
-        if (hostMemoryOverhead > hostFlavor.advertisedResources().memoryGb()) // An unusably small flavor,
-            return resources.memoryGb(); // all will be overhead
-        double memoryShare = resources.memoryGb() /
-                             ( hostFlavor.advertisedResources().memoryGb() - ( real ? hostMemoryOverhead : 0));
+        if (hostMemoryOverhead > hostFlavor.advertisedResources().memoryGiB()) // An unusably small flavor,
+            return resources.memoryGiB(); // all will be overhead
+        double memoryShare = resources.memoryGiB() /
+                             ( hostFlavor.advertisedResources().memoryGiB() - ( real ? hostMemoryOverhead : 0));
         if (memoryShare > 1) // The real resources of the host cannot fit the requested real resources after overhead
             memoryShare = 1;
 
@@ -69,7 +68,7 @@ public class AwsResourcesCalculator {
     private boolean saturates(VespaFlavor hostFlavor, NodeResources nodeResources) {
         NodeResources hostResources = hostFlavor.advertisedResources();
         return equal(hostResources.vcpu(), nodeResources.vcpu()) ||
-               equal(hostResources.memoryGb(), nodeResources.memoryGb()) ||
+               equal(hostResources.memoryGiB(), nodeResources.memoryGiB()) ||
                equal(hostResources.diskGb(), nodeResources.diskGb()) ||
                equal(hostResources.bandwidthGbps(), nodeResources.bandwidthGbps());
     }

@@ -122,7 +122,7 @@ public class AllocatableResources {
 
     private static double fulfilment(ClusterResources realResources, ClusterResources idealResources) {
         double vcpuFulfilment     = Math.min(1, realResources.totalResources().vcpu()     / idealResources.totalResources().vcpu());
-        double memoryGbFulfilment = Math.min(1, realResources.totalResources().memoryGb() / idealResources.totalResources().memoryGb());
+        double memoryGbFulfilment = Math.min(1, realResources.totalResources().memoryGiB() / idealResources.totalResources().memoryGiB());
         double diskGbFulfilment   = Math.min(1, realResources.totalResources().diskGb()   / idealResources.totalResources().diskGb());
         double fulfilment = (vcpuFulfilment + memoryGbFulfilment + diskGbFulfilment) / 3;
         if (equal(fulfilment, 0)) return 0;
@@ -163,7 +163,7 @@ public class AllocatableResources {
         }
         return nodes.get(0).allocation().get().requestedResources()
                                        .withVcpu(sum.vcpu() / nodes.size())
-                                       .withMemoryGb(sum.memoryGb() / nodes.size())
+                                       .withMemoryGiB(sum.memoryGiB() / nodes.size())
                                        .withDiskGb(sum.diskGb() / nodes.size())
                                        .withBandwidthGbps(sum.bandwidthGbps() / nodes.size());
     }

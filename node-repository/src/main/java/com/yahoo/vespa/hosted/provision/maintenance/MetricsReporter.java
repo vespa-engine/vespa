@@ -356,12 +356,12 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     private void updateContainerMetrics(NodeList nodes) {
         NodeResources totalCapacity = getCapacityTotal(nodes);
         metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU.baseName(), totalCapacity.vcpu(), null);
-        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM.baseName(), totalCapacity.memoryGb(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM.baseName(), totalCapacity.memoryGiB(), null);
         metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_DISK.baseName(), totalCapacity.diskGb(), null);
 
         NodeResources totalFreeCapacity = getFreeCapacityTotal(nodes);
         metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_CPU.baseName(), totalFreeCapacity.vcpu(), null);
-        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_MEM.baseName(), totalFreeCapacity.memoryGb(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_MEM.baseName(), totalFreeCapacity.memoryGiB(), null);
         metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_DISK.baseName(), totalFreeCapacity.diskGb(), null);
     }
 
@@ -378,7 +378,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                             var context = getContext(dimensions(applicationId));
 
                             metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU.baseName(), allocatedCapacity.vcpu(), context);
-                            metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM.baseName(), allocatedCapacity.memoryGb(), context);
+                            metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM.baseName(), allocatedCapacity.memoryGiB(), context);
                             metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK.baseName(), allocatedCapacity.diskGb(), context);
                         }
                 );

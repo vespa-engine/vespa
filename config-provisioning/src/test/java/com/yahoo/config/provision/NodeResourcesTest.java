@@ -3,7 +3,6 @@ package com.yahoo.config.provision;
 
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
-import com.yahoo.config.provision.NodeResources.GpuResources;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import org.junit.jupiter.api.Test;
 
@@ -93,9 +92,9 @@ class NodeResourcesTest {
         assertEquals(3, empty.withUnspecifiedFieldsFrom(empty.withVcpu(3)).vcpu());
         assertEquals(2, empty.withVcpu(2).withUnspecifiedFieldsFrom(empty.withVcpu(3)).vcpu());
 
-        assertEquals(0, empty.withUnspecifiedFieldsFrom(empty).memoryGb());
-        assertEquals(3, empty.withUnspecifiedFieldsFrom(empty.withMemoryGb(3)).memoryGb());
-        assertEquals(2, empty.withMemoryGb(2).withUnspecifiedFieldsFrom(empty.withMemoryGb(3)).memoryGb());
+        assertEquals(0, empty.withUnspecifiedFieldsFrom(empty).memoryGiB());
+        assertEquals(3, empty.withUnspecifiedFieldsFrom(empty.withMemoryGiB(3)).memoryGiB());
+        assertEquals(2, empty.withMemoryGiB(2).withUnspecifiedFieldsFrom(empty.withMemoryGiB(3)).memoryGiB());
 
         assertEquals(0, empty.withUnspecifiedFieldsFrom(empty).diskGb());
         assertEquals(3, empty.withUnspecifiedFieldsFrom(empty.withDiskGb(3)).diskGb());
@@ -132,7 +131,7 @@ class NodeResourcesTest {
 
         var other = resources.with(new NodeResources.GpuResources(4, 32));
         var expected = resources.withVcpu(2)
-                .withMemoryGb(4)
+                .withMemoryGiB(4)
                 .withDiskGb(6)
                 .withBandwidthGbps(2)
                 .with(new NodeResources.GpuResources(1, 192));

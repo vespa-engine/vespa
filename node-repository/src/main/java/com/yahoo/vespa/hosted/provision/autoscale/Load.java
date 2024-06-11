@@ -41,7 +41,7 @@ public record Load(double cpu, double memory, double disk, double gpu, double gp
     }
 
     public Load multiply(NodeResources resources) {
-        return new Load(cpu * resources.vcpu(), memory * resources.memoryGb(), disk * resources.diskGb(), gpu * resources.gpuResources().count(), gpu * resources.gpuResources().memoryGb());
+        return new Load(cpu * resources.vcpu(), memory * resources.memoryGiB(), disk * resources.diskGb(), gpu * resources.gpuResources().count(), gpu * resources.gpuResources().memoryGiB());
     }
     public Load multiply(double factor) {
         return map(v -> v * factor);
@@ -57,7 +57,7 @@ public record Load(double cpu, double memory, double disk, double gpu, double gp
         return map(v -> divide(v, divisor));
     }
     public Load divide(NodeResources resources) {
-        return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()), divide(gpu, resources.gpuResources().count()), divide(gpuMemory, resources.gpuResources().memoryGb()));
+        return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGiB()), divide(disk, resources.diskGb()), divide(gpu, resources.gpuResources().count()), divide(gpuMemory, resources.gpuResources().memoryGiB()));
     }
 
     /** Returns the load where the given function is applied to each dimension of this. */
@@ -85,7 +85,7 @@ public record Load(double cpu, double memory, double disk, double gpu, double gp
 
     public NodeResources scaled(NodeResources resources) {
         return resources.withVcpu(cpu * resources.vcpu())
-                        .withMemoryGb(memory * resources.memoryGb())
+                        .withMemoryGiB(memory * resources.memoryGiB())
                         .withDiskGb(disk * resources.diskGb());
     }
 
@@ -122,10 +122,10 @@ public record Load(double cpu, double memory, double disk, double gpu, double gp
 
     public static Load byDividing(NodeResources a, NodeResources b) {
         return new Load(divide(a.vcpu(), b.vcpu()),
-                        divide(a.memoryGb(), b.memoryGb()),
+                        divide(a.memoryGiB(), b.memoryGiB()),
                         divide(a.diskGb(), b.diskGb()),
                         divide(a.gpuResources().count(), b.gpuResources().count()),
-                        divide(a.gpuResources().memoryGb(), b.gpuResources().memoryGb()));
+                        divide(a.gpuResources().memoryGiB(), b.gpuResources().memoryGiB()));
     }
 
 }

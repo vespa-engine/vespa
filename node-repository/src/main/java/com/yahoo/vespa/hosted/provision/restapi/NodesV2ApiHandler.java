@@ -332,7 +332,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
             if (resourcesInspector.field("vcpu").valid())
                 flavor = flavor.with(flavor.resources().withVcpu(resourcesInspector.field("vcpu").asDouble()));
             if (resourcesInspector.field("memoryGb").valid())
-                flavor = flavor.with(flavor.resources().withMemoryGb(resourcesInspector.field("memoryGb").asDouble()));
+                flavor = flavor.with(flavor.resources().withMemoryGiB(resourcesInspector.field("memoryGb").asDouble()));
             if (resourcesInspector.field("diskGb").valid())
                 flavor = flavor.with(flavor.resources().withDiskGb(resourcesInspector.field("diskGb").asDouble()));
             if (resourcesInspector.field("bandwidthGbps").valid())

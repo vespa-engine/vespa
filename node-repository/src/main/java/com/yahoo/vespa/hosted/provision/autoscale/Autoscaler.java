@@ -110,7 +110,7 @@ public class Autoscaler {
     public static boolean worthRescaling(ClusterResources from, ClusterResources to) {
         // *Increase* if needed with no regard for cost difference to prevent running out of a resource
         if (meaningfulIncrease(from.totalResources().vcpu(), to.totalResources().vcpu())) return true;
-        if (meaningfulIncrease(from.totalResources().memoryGb(), to.totalResources().memoryGb())) return true;
+        if (meaningfulIncrease(from.totalResources().memoryGiB(), to.totalResources().memoryGiB())) return true;
         if (meaningfulIncrease(from.totalResources().diskGb(), to.totalResources().diskGb())) return true;
 
         // Otherwise, only *decrease* if

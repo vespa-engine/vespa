@@ -244,7 +244,7 @@ public class NodePatcher {
             case "diskGb":
                 return node.with(node.flavor().with(node.flavor().resources().withDiskGb(value.asDouble())), Agent.operator, clock.instant());
             case "memoryGb":
-                return node.with(node.flavor().with(node.flavor().resources().withMemoryGb(value.asDouble())), Agent.operator, clock.instant());
+                return node.with(node.flavor().with(node.flavor().resources().withMemoryGiB(value.asDouble())), Agent.operator, clock.instant());
             case "vcpu":
                 return node.with(node.flavor().with(node.flavor().resources().withVcpu(value.asDouble())), Agent.operator, clock.instant());
             case "fastDisk":

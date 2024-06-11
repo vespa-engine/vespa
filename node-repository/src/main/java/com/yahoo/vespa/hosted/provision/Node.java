@@ -627,7 +627,7 @@ public final class Node implements Nodelike {
         NodeResources allocated = all.subtract(freeHostCapacity.justNumbers());
 
         return new Mean(allocated.vcpu() / all.vcpu(),
-                        allocated.memoryGb() / all.memoryGb(),
+                        allocated.memoryGiB() / all.memoryGiB(),
                         allocated.diskGb() / all.diskGb())
                        .deviation();
     }

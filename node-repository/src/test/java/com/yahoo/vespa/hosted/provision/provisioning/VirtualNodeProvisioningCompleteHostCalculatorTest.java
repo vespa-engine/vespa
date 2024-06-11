@@ -87,8 +87,8 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         }
 
         NodeResources realResourcesOf(NodeResources advertisedResources) {
-            return advertisedResources.withMemoryGb(advertisedResources.memoryGb() -
-                                                    memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), advertisedResources, false))
+            return advertisedResources.withMemoryGiB(advertisedResources.memoryGiB() -
+                                                    memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGiB(), advertisedResources, false))
                                       .withDiskGb(advertisedResources.diskGb() -
                                                   diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), advertisedResources, false));
         }
@@ -96,25 +96,25 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         @Override
         public NodeResources requestToReal(NodeResources advertisedResources, CloudAccount cloudAccount,
                                            boolean exclusive, boolean bestCase) {
-            double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), advertisedResources, false);
+            double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGiB(), advertisedResources, false);
             double diskOverhead = diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), advertisedResources, false);
-            return advertisedResources.withMemoryGb(advertisedResources.memoryGb() - memoryOverhead)
+            return advertisedResources.withMemoryGiB(advertisedResources.memoryGiB() - memoryOverhead)
                                       .withDiskGb(advertisedResources.diskGb() - diskOverhead);
         }
 
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             if ( ! flavor.equals(hostFlavor)) return flavor.resources(); // Node 'flavors' just wrap the advertised resources
-            return hostFlavor.resources().withMemoryGb(hostFlavor.resources().memoryGb() + memoryOverhead)
+            return hostFlavor.resources().withMemoryGiB(hostFlavor.resources().memoryGiB() + memoryOverhead)
                              .withDiskGb(hostFlavor.resources().diskGb() + diskOverhead);
         }
 
         @Override
         public NodeResources realToRequest(NodeResources realResources, CloudAccount cloudAccount,
                                            boolean exclusive, boolean bestCase) {
-            double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGb(), realResources, true);
+            double memoryOverhead = memoryOverhead(advertisedResourcesOf(hostFlavor).memoryGiB(), realResources, true);
             double diskOverhead = diskOverhead(advertisedResourcesOf(hostFlavor).diskGb(), realResources, true);
-            return realResources.withMemoryGb(realResources.memoryGb() + memoryOverhead)
+            return realResources.withMemoryGiB(realResources.memoryGiB() + memoryOverhead)
                                 .withDiskGb(realResources.diskGb() + diskOverhead);
         }
 
@@ -127,7 +127,7 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
          * @param real true if the given resources are in real values, false if they are in advertised
          */
         private double memoryOverhead(double hostAdvertisedMemoryGb, NodeResources resources, boolean real) {
-            double memoryShare = resources.memoryGb() /
+            double memoryShare = resources.memoryGiB() /
                                  ( hostAdvertisedMemoryGb - (real ? memoryOverhead : 0));
             return memoryOverhead * memoryShare;
         }

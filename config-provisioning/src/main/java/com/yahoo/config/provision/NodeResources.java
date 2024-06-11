@@ -121,20 +121,23 @@ public class NodeResources {
 
     }
 
-    public record GpuResources(int count, double memoryGb) {
+    public record GpuResources(int count, double memoryGiB) {
 
         private static final GpuResources zero = new GpuResources(0, 0);
 
         public GpuResources {
-            validate(memoryGb, "memory");
+            validate(memoryGiB, "memory");
         }
 
         private boolean lessThan(GpuResources other) {
             return this.count < other.count ||
-                   this.memoryGb < other.memoryGb;
+                   this.memoryGiB < other.memoryGiB;
         }
 
         public boolean isZero() { return this.equals(zero); }
+
+        @Deprecated(forRemoval = true)
+        public double memoryGb() { return memoryGiB; } // Remove after 8.355.18 is gone
 
         public static GpuResources zero() { return zero; }
 
@@ -145,20 +148,20 @@ public class NodeResources {
 
         public GpuResources plus(GpuResources other) {
             if (other.isZero()) return this;
-            var thisMem = this.count() * this.memoryGb();
-            var otherMem = other.count() * other.memoryGb();
+            var thisMem = this.count() * this.memoryGiB();
+            var otherMem = other.count() * other.memoryGiB();
             return new NodeResources.GpuResources(1, thisMem + otherMem);
         }
 
         public GpuResources minus(GpuResources other) {
             if (other.isZero()) return this;
-            var thisMem = this.count() * this.memoryGb();
-            var otherMem = other.count() * other.memoryGb();
+            var thisMem = this.count() * this.memoryGiB();
+            var otherMem = other.count() * other.memoryGiB();
             return new NodeResources.GpuResources(1, thisMem - otherMem);
         }
 
         public GpuResources multipliedBy(double factor) {
-            return new GpuResources(this.count, this.memoryGb * factor);
+            return new GpuResources(this.count, this.memoryGiB * factor);
         }
 
         @Override
@@ -166,17 +169,17 @@ public class NodeResources {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             GpuResources that = (GpuResources) o;
-            return count == that.count && equal(this.memoryGb, that.memoryGb);
+            return count == that.count && equal(this.memoryGiB, that.memoryGiB);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(count, memoryGb);
+            return Objects.hash(count, memoryGiB);
         }
     }
 
     private final double vcpu;
-    private final double memoryGb;
+    private final double memoryGiB;
     private final double diskGb;
     private final double bandwidthGbps;
     private final GpuResources gpuResources;
@@ -184,25 +187,25 @@ public class NodeResources {
     private final StorageType storageType;
     private final Architecture architecture;
 
-    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps) {
-        this(vcpu, memoryGb, diskGb, bandwidthGbps, DiskSpeed.getDefault());
+    public NodeResources(double vcpu, double memoryGiB, double diskGb, double bandwidthGbps) {
+        this(vcpu, memoryGiB, diskGb, bandwidthGbps, DiskSpeed.getDefault());
     }
 
-    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed) {
-        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, StorageType.getDefault(), Architecture.getDefault(), GpuResources.getDefault());
+    public NodeResources(double vcpu, double memoryGiB, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed) {
+        this(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, StorageType.getDefault(), Architecture.getDefault(), GpuResources.getDefault());
     }
 
-    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType) {
-        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, Architecture.getDefault(), GpuResources.getDefault());
+    public NodeResources(double vcpu, double memoryGiB, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType) {
+        this(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, Architecture.getDefault(), GpuResources.getDefault());
     }
 
-    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType, Architecture architecture) {
-        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, GpuResources.getDefault());
+    public NodeResources(double vcpu, double memoryGiB, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType, Architecture architecture) {
+        this(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, GpuResources.getDefault());
     }
 
-    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType, Architecture architecture, GpuResources gpuResources) {
+    public NodeResources(double vcpu, double memoryGiB, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType, Architecture architecture, GpuResources gpuResources) {
         this.vcpu = validate(vcpu, "vcpu");
-        this.memoryGb = validate(memoryGb, "memory");
+        this.memoryGiB = validate(memoryGiB, "memory");
         this.diskGb = validate(diskGb, "disk");
         this.bandwidthGbps = validate(bandwidthGbps, "bandwidth");
         this.gpuResources = gpuResources;
@@ -212,7 +215,9 @@ public class NodeResources {
     }
 
     public double vcpu() { return vcpu; }
-    public double memoryGb() { return memoryGb; }
+    @Deprecated(forRemoval = true)
+    public double memoryGb() { return memoryGiB; } // Remove after 8.355.18 is gone
+    public double memoryGiB() { return memoryGiB; }
     public double diskGb() { return diskGb; }
     public double bandwidthGbps() { return bandwidthGbps; }
     public DiskSpeed diskSpeed() { return diskSpeed; }
@@ -221,70 +226,70 @@ public class NodeResources {
     public GpuResources gpuResources() { return gpuResources; }
 
     public boolean vcpuIsUnspecified() { return vcpu == 0; }
-    public boolean memoryGbIsUnspecified() { return memoryGb == 0; }
-    public boolean diskGbIsUnspecified() { return diskGb == 0; }
+    public boolean memoryIsUnspecified() { return memoryGiB == 0; }
+    public boolean diskIsUnspecified() { return diskGb == 0; }
     public boolean bandwidthGbpsIsUnspecified() { return bandwidthGbps == 0; }
 
     /** Returns the standard cost of these resources, in dollars per hour */
     public double cost() {
         return (vcpu * cpuUnitCost) +
-               (memoryGb * memoryUnitCost) +
+               (memoryGiB * memoryUnitCost) +
                (diskGb * diskUnitCost) +
-               (gpuResources.count * gpuResources.memoryGb * gpuUnitCost);
+               (gpuResources.count * gpuResources.memoryGiB * gpuUnitCost);
     }
 
     public NodeResources withVcpu(double vcpu) {
         if (vcpu == this.vcpu) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
-    public NodeResources withMemoryGb(double memoryGb) {
-        if (memoryGb == this.memoryGb) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+    public NodeResources withMemoryGiB(double memoryGiB) {
+        if (memoryGiB == this.memoryGiB) return this;
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withDiskGb(double diskGb) {
         if (diskGb == this.diskGb) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
         ensureSpecified();
         if (bandwidthGbps == this.bandwidthGbps) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources with(DiskSpeed diskSpeed) {
         ensureSpecified();
         if (diskSpeed == this.diskSpeed) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources with(StorageType storageType) {
         ensureSpecified();
         if (storageType == this.storageType) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources with(Architecture architecture) {
         ensureSpecified();
         if (architecture == this.architecture) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources with(GpuResources gpuResources) {
         ensureSpecified();
         if (this.gpuResources.equals(gpuResources)) return this;
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+        return new NodeResources(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withUnspecifiedFieldsFrom(NodeResources fullySpecified) {
         var resources = this;
         if (resources.vcpuIsUnspecified())
             resources = resources.withVcpu(fullySpecified.vcpu());
-        if (resources.memoryGbIsUnspecified())
-            resources = resources.withMemoryGb(fullySpecified.memoryGb());
-        if (resources.diskGbIsUnspecified())
+        if (resources.memoryIsUnspecified())
+            resources = resources.withMemoryGiB(fullySpecified.memoryGiB());
+        if (resources.diskIsUnspecified())
             resources = resources.withDiskGb(fullySpecified.diskGb());
         if (resources.bandwidthGbpsIsUnspecified())
             resources = resources.withBandwidthGbps(fullySpecified.bandwidthGbps());
@@ -307,7 +312,7 @@ public class NodeResources {
     /** Returns this with all numbers set to 0 */
     public NodeResources justNonNumbers() {
         if (isUnspecified()) return unspecified();
-        return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0).with(GpuResources.zero());
+        return withVcpu(0).withMemoryGiB(0).withDiskGb(0).withBandwidthGbps(0).with(GpuResources.zero());
     }
 
     public NodeResources subtract(NodeResources other) {
@@ -316,7 +321,7 @@ public class NodeResources {
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");
         return new NodeResources(vcpu - other.vcpu,
-                                 memoryGb - other.memoryGb,
+                                 memoryGiB - other.memoryGiB,
                                  diskGb - other.diskGb,
                                  bandwidthGbps - other.bandwidthGbps,
                                  this.diskSpeed.combineWith(other.diskSpeed),
@@ -330,7 +335,7 @@ public class NodeResources {
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");
         return new NodeResources(vcpu + other.vcpu,
-                                 memoryGb + other.memoryGb,
+                                 memoryGiB + other.memoryGiB,
                                  diskGb + other.diskGb,
                                  bandwidthGbps + other.bandwidthGbps,
                                  this.diskSpeed.combineWith(other.diskSpeed),
@@ -342,7 +347,7 @@ public class NodeResources {
     public NodeResources multipliedBy(double factor) {
         if (isUnspecified()) return this;
         return this.withVcpu(vcpu * factor)
-                   .withMemoryGb(memoryGb * factor)
+                   .withMemoryGiB(memoryGiB * factor)
                    .withDiskGb(diskGb * factor)
                    .withBandwidthGbps(bandwidthGbps * factor)
                    .with(gpuResources.multipliedBy(factor));
@@ -365,7 +370,7 @@ public class NodeResources {
         if (o == this) return true;
         if ( ! (o instanceof NodeResources other)) return false;
         if ( ! equal(this.vcpu, other.vcpu)) return false;
-        if ( ! equal(this.memoryGb, other.memoryGb)) return false;
+        if ( ! equal(this.memoryGiB, other.memoryGiB)) return false;
         if ( ! equal(this.diskGb, other.diskGb)) return false;
         if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if ( ! this.gpuResources.equals(other.gpuResources)) return false;
@@ -377,7 +382,7 @@ public class NodeResources {
 
     @Override
     public int hashCode() {
-        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return Objects.hash(vcpu, memoryGiB, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
     private static StringBuilder appendDouble(StringBuilder sb, double d) {
@@ -394,7 +399,7 @@ public class NodeResources {
         StringBuilder sb = new StringBuilder("[vcpu: ");
         appendDouble(sb, vcpu);
         sb.append(", memory: ");
-        appendDouble(sb, memoryGb);
+        appendDouble(sb, memoryGiB);
         sb.append(" Gb, disk: ");
         appendDouble(sb, diskGb);
         sb.append(" Gb");
@@ -413,7 +418,7 @@ public class NodeResources {
         if ( !gpuResources.isDefault()) {
             sb.append(", gpu count: ").append(gpuResources.count());
             sb.append(", gpu memory: ");
-            appendDouble(sb, gpuResources.memoryGb());
+            appendDouble(sb, gpuResources.memoryGiB());
             sb.append(" Gb");
         }
         sb.append(']');
@@ -425,7 +430,7 @@ public class NodeResources {
         ensureSpecified();
         other.ensureSpecified();
         if (this.vcpu < other.vcpu) return false;
-        if (this.memoryGb < other.memoryGb) return false;
+        if (this.memoryGiB < other.memoryGiB) return false;
         if (this.diskGb < other.diskGb) return false;
         if (this.bandwidthGbps < other.bandwidthGbps) return false;
         if (this.gpuResources.lessThan(other.gpuResources)) return false;
@@ -452,7 +457,7 @@ public class NodeResources {
      */
     public boolean compatibleWith(NodeResources requested) {
         if ( ! equal(this.vcpu, requested.vcpu)) return false;
-        if ( ! equal(this.memoryGb, requested.memoryGb)) return false;
+        if ( ! equal(this.memoryGiB, requested.memoryGiB)) return false;
         if (this.storageType == StorageType.local || requested.storageType == StorageType.local) {
             if ( ! equal(this.diskGb, requested.diskGb)) return false;
         }
@@ -474,7 +479,7 @@ public class NodeResources {
      */
     public boolean equalsWhereSpecified(NodeResources other) {
         if ( ! equal(this.vcpu, other.vcpu)) return false;
-        if ( ! equal(this.memoryGb, other.memoryGb)) return false;
+        if ( ! equal(this.memoryGiB, other.memoryGiB)) return false;
         if ( ! equal(this.diskGb, other.diskGb)) return false;
         if ( ! equal(this.bandwidthGbps, other.bandwidthGbps)) return false;
         if ( ! this.gpuResources.equals(other.gpuResources)) return false;
@@ -499,7 +504,7 @@ public class NodeResources {
         if ( ! this.diskSpeed().compatibleWith(other.diskSpeed())) return Double.MAX_VALUE;
         if ( ! this.storageType().compatibleWith(other.storageType())) return Double.MAX_VALUE;
 
-        double distance =  Math.pow(this.vcpu() - other.vcpu(), 2) + Math.pow(this.memoryGb() - other.memoryGb(), 2);
+        double distance =  Math.pow(this.vcpu() - other.vcpu(), 2) + Math.pow(this.memoryGiB() - other.memoryGiB(), 2);
         if (this.storageType() == StorageType.local || other.storageType() == StorageType.local)
             distance += Math.pow(this.diskGb() - other.diskGb(), 2);
         return distance;

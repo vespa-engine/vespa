@@ -24,7 +24,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.net.HostName;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
@@ -285,11 +284,11 @@ public class HostCapacityMaintainerTest {
         tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).allowHostSharing(false).build(), new MockNameResolver());
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGiB(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
                                                         "container"),
-                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGiB(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
                                                         null));
@@ -325,7 +324,7 @@ public class HostCapacityMaintainerTest {
         tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).allowHostSharing(false).build(), new MockNameResolver());
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                    new ClusterCapacity(1, resources1.vcpu(), resources1.memoryGiB(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
                                                         null));
@@ -362,7 +361,7 @@ public class HostCapacityMaintainerTest {
         tester = new DynamicProvisioningTester();
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                    new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGiB(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
                                                         resources1.storageType().name(), resources1.architecture().name(),
                                                         null));
@@ -420,7 +419,7 @@ public class HostCapacityMaintainerTest {
         setPreprovisionCapacityFlag(tester,
                                     new ClusterCapacity(3,
                                                         resources1.vcpu() - applicationNodeResources.vcpu(),
-                                                        resources1.memoryGb() - applicationNodeResources.memoryGb(),
+                                                        resources1.memoryGiB() - applicationNodeResources.memoryGiB(),
                                                         resources1.diskGb() - applicationNodeResources.diskGb(),
                                                         resources1.bandwidthGbps() - applicationNodeResources.bandwidthGbps(),
                                                         resources1.diskSpeed().name(),
@@ -433,7 +432,7 @@ public class HostCapacityMaintainerTest {
         setPreprovisionCapacityFlag(tester,
                                     new ClusterCapacity(3,
                                                         resources1.vcpu() - applicationNodeResources.vcpu() + 1,
-                                                        resources1.memoryGb() - applicationNodeResources.memoryGb() + 1,
+                                                        resources1.memoryGiB() - applicationNodeResources.memoryGiB() + 1,
                                                         resources1.diskGb() - applicationNodeResources.diskGb() + 1,
                                                         resources1.bandwidthGbps(),
                                                         resources1.diskSpeed().name(),

@@ -42,8 +42,8 @@ public class NodesSpecificationTest {
         assertEquals(2, spec.minResources().nodeResources().vcpu(), 1e-9);
         assertEquals(2, spec.maxResources().nodeResources().vcpu(), 1e-9);
 
-        assertEquals(3e15, spec.minResources().nodeResources().memoryGb(), 1e-9);
-        assertEquals(3e15, spec.maxResources().nodeResources().memoryGb(), 1e-9);
+        assertEquals(3e15, spec.minResources().nodeResources().memoryGiB(), 1e-9);
+        assertEquals(3e15, spec.maxResources().nodeResources().memoryGiB(), 1e-9);
 
         assertEquals(4e3, spec.minResources().nodeResources().diskGb(), 1e-9);
         assertEquals(4e3, spec.maxResources().nodeResources().diskGb(), 1e-9);
@@ -54,8 +54,8 @@ public class NodesSpecificationTest {
         assertEquals(1 << 30, spec.minResources().nodeResources().gpuResources().count());
         assertEquals(1 << 30, spec.maxResources().nodeResources().gpuResources().count());
 
-        assertEquals(3e-9, spec.minResources().nodeResources().gpuResources().memoryGb(), 1e-12);
-        assertEquals(3e-9, spec.maxResources().nodeResources().gpuResources().memoryGb(), 1e-12);
+        assertEquals(3e-9, spec.minResources().nodeResources().gpuResources().memoryGiB(), 1e-12);
+        assertEquals(3e-9, spec.maxResources().nodeResources().gpuResources().memoryGiB(), 1e-12);
 
         assertEquals(DiskSpeed.fast, spec.minResources().nodeResources().diskSpeed());
         assertEquals(DiskSpeed.fast, spec.maxResources().nodeResources().diskSpeed());

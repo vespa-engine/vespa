@@ -12,7 +12,7 @@ public class NodeResourcesSerializer {
 
     static void toSlime(NodeResources resources, Cursor object) {
         object.setDouble("vcpu", resources.vcpu());
-        object.setDouble("memoryGb", resources.memoryGb());
+        object.setDouble("memoryGb", resources.memoryGiB());
         object.setDouble("diskGb", resources.diskGb());
         object.setDouble("bandwidthGbps", resources.bandwidthGbps());
         object.setString("diskSpeed", toString(resources.diskSpeed()));
@@ -20,7 +20,7 @@ public class NodeResourcesSerializer {
         object.setString("architecture", toString(resources.architecture()));
         if (!resources.gpuResources().isDefault()) {
             object.setLong("gpuCount", resources.gpuResources().count());
-            object.setDouble("gpuMemoryGb", resources.gpuResources().memoryGb());
+            object.setDouble("gpuMemoryGb", resources.gpuResources().memoryGiB());
         }
     }
 

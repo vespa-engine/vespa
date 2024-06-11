@@ -213,7 +213,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             if (getContainers().isEmpty()) return Optional.of(JvmMemoryPercentage.of(heapSizePercentageOfAvailable)); // Node memory is not known
 
             // Node memory is known, so compute heap size as a percentage of available memory (excluding overhead, which the startup scripts also account for)
-            double totalMemoryGb = getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGb()).min().orElseThrow();
+            double totalMemoryGb = getContainers().stream().mapToDouble(c -> c.getHostResource().realResources().memoryGiB()).min().orElseThrow();
             double totalMemoryMinusOverhead = Math.max(0, totalMemoryGb - Host.memoryOverheadGb);
             double onnxModelCostGb = onnxModelCostCalculator.aggregatedModelCostInBytes() / (1024D * 1024 * 1024);
             double availableMemoryGb = Math.max(0, totalMemoryMinusOverhead - onnxModelCostGb);
