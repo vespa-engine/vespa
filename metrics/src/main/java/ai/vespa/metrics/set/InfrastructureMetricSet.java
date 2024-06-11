@@ -127,10 +127,10 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_GPU.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_MEMORY.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_DISK.max());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_CPU.max());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_GPU.max());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_MEMORY.max());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_DISK.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_CPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_GPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_MEMORY.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_DISK.max());
 
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS.count());
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT.count());

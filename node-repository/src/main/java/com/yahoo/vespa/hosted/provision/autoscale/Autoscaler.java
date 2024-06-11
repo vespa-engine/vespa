@@ -77,13 +77,13 @@ public class Autoscaler {
 
         var context = metric.createContext(dimensions(application.id(), clusterNodes.clusterSpec()));
         metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_CPU.baseName(), model.idealLoad().cpu(), context);
-        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_CPU.baseName(), model.loadAdjustment().cpu(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_CPU.baseName(), model.peakLoad().cpu(), context);
         metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_MEMORY.baseName(), model.idealLoad().memory(), context);
-        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_MEMORY.baseName(), model.loadAdjustment().memory(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_MEMORY.baseName(), model.peakLoad().memory(), context);
         metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_DISK.baseName(), model.idealLoad().disk(), context);
-        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_DISK.baseName(), model.loadAdjustment().disk(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_DISK.baseName(), model.peakLoad().disk(), context);
         metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_IDEAL_LOAD_GPU.baseName(), model.idealLoad().gpu(), context);
-        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_LOAD_ADJUSTMENT_GPU.baseName(), model.loadAdjustment().gpu(), context);
+        metric.add(ConfigServerMetrics.CLUSTER_AUTOSCALE_PEAK_LOAD_GPU.baseName(), model.peakLoad().gpu(), context);
 
         if (enableDetailedLogging)
             log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " + loadAdjustment.toString());
