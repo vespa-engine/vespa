@@ -582,9 +582,9 @@ struct Analyzer {
                 data.calc_cost(true);
                 data.normalize();
                 data.print();
-                fprintf(stderr, "distribution key: %d, total_time_ms: %g, estimated ms_per_cost: %g\n", key, total_ms, data.ms_per_cost);
+                fprintf(stdout, "distribution key: %d, total_time_ms: %g, estimated ms_per_cost: %g\n", key, total_ms, data.ms_per_cost);
                 for (auto [type, time]: time_map) {
-                    fprintf(stderr, "sample type %s used %g ms total\n", Sample::type_to_str(type).c_str(), time);
+                    fprintf(stdout, "sample type %s used %g ms total\n", Sample::type_to_str(type).c_str(), time);
                 }
             }
         }
