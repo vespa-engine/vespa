@@ -366,6 +366,13 @@ public class PermanentFlags {
             "Takes effect immediately"
     );
 
+    public static final UnboundLongFlag CONFIG_SERVER_SESSION_LIFETIME = defineLongFlag(
+            "config-server-session-lifetime", 3600,
+            "Lifetime / expiry time in seconds for config sessions. " +
+            "This can be lowered if there are incidents/bugs where one needs to delete sessions quickly",
+            "Takes effect immediately"
+    );
+
     public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
             "dispatch-notifications", true,
             "Whether we should send notification for a given tenant",
