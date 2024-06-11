@@ -466,6 +466,12 @@ public class Flags {
             "Whether to sync contacts to HubSpot",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag DELETE_EXPIRED_CONFIG_SESSIONS_NEW_PROCEDURE = defineFeatureFlag(
+            "delete-expired-config-sessions-new-procedure", false,
+            List.of("hmusum"), "2024-06-10", "2024-08-10",
+            "Whether to delete remote and local config sessions at the same time",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
