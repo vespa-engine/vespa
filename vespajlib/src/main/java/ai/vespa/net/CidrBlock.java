@@ -205,7 +205,7 @@ public class CidrBlock {
     }
 
     public String asString() {
-        return InetAddresses.toAddrString(getInetAddress()) + "/" + prefixLength;
+        return InetAddressUtil.toString(getInetAddress()) + "/" + prefixLength;
     }
 
     public static CidrBlock fromString(String cidr) {
