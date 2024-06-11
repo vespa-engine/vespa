@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.Host;
-import com.yahoo.vespa.model.content.Redundancy;
 
 import static java.lang.Long.min;
 import static java.lang.Long.max;
@@ -21,8 +20,9 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static double MEMORY_GAIN_AS_FRACTION_OF_MEMORY = 0.08;
     private final static double MIN_MEMORY_PER_FLUSH_THREAD_GB = 11.0;
     private final static double TLS_SIZE_FRACTION = 0.02;
-    final static long MB = 1024 * 1024;
-    public final static long GB = MB * 1024;
+    final static long MiB = 1024 * 1024;
+    public final static long GiB = MiB * 1024;
+    public final static long GB = 1_000_000_000;
     private final NodeResources resources;
     private final int threadsPerSearch;
     private final double fractionOfMemoryReserved;
@@ -50,14 +50,14 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
-        long memoryLimitBytes = (long) ((usableMemoryGb() * SUMMARY_CACHE_SIZE_AS_FRACTION_OF_MEMORY) * GB);
+        long memoryLimitBytes = (long) ((usableMemoryGb() * SUMMARY_CACHE_SIZE_AS_FRACTION_OF_MEMORY) * GiB);
         builder.maxbytes(memoryLimitBytes);
     }
 
     private void setHwInfo(ProtonConfig.Builder builder) {
         builder.hwinfo.disk.shared(true);
         builder.hwinfo.cpu.cores((int)resources.vcpu());
-        builder.hwinfo.memory.size((long)(usableMemoryGb() * GB));
+        builder.hwinfo.memory.size((long)(usableMemoryGb() * GiB));
         builder.hwinfo.disk.size((long)(resources.diskGb() * GB));
     }
 
@@ -68,12 +68,12 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneDocumentStoreMaxFileSize(ProtonConfig.Summary.Log.Builder builder) {
-        long fileSizeBytes = (long) Math.max(256*MB, usableMemoryGb()*GB*SUMMARY_FILE_SIZE_AS_FRACTION_OF_MEMORY);
+        long fileSizeBytes = (long) Math.max(256* MiB, usableMemoryGb()* GiB *SUMMARY_FILE_SIZE_AS_FRACTION_OF_MEMORY);
         builder.maxfilesize(fileSizeBytes);
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
-        long memoryLimitBytes = (long) ((usableMemoryGb() * MEMORY_GAIN_AS_FRACTION_OF_MEMORY) * GB);
+        long memoryLimitBytes = (long) ((usableMemoryGb() * MEMORY_GAIN_AS_FRACTION_OF_MEMORY) * GiB);
         builder.maxmemory(memoryLimitBytes);
         builder.each.maxmemory(memoryLimitBytes);
     }
@@ -89,7 +89,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
         long tlsSizeBytes = (long) ((resources.diskGb() * TLS_SIZE_FRACTION) * GB);
-        tlsSizeBytes = max(2*GB, min(tlsSizeBytes, 100 * GB));
+        tlsSizeBytes = max(2* GB, min(tlsSizeBytes, 100 * GB));
         builder.maxtlssize(tlsSizeBytes);
     }
 
