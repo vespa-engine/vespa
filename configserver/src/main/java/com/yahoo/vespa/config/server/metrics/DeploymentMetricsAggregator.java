@@ -11,7 +11,6 @@ public class DeploymentMetricsAggregator {
 
     private LatencyMetrics feed;
     private LatencyMetrics read;
-    private LatencyMetrics qr;
     private LatencyMetrics container;
     private Double documentCount;
     private ResourceUsage memoryUsage;
@@ -24,11 +23,6 @@ public class DeploymentMetricsAggregator {
 
     public synchronized DeploymentMetricsAggregator addReadLatency(double sum, double count) {
         this.read = combineLatency(this.read, sum, count);
-        return this;
-    }
-
-    public synchronized DeploymentMetricsAggregator addQrLatency(double sum, double count) {
-        this.qr = combineLatency(this.qr, sum, count);
         return this;
     }
 
@@ -69,17 +63,15 @@ public class DeploymentMetricsAggregator {
     }
 
     public Optional<Double> aggregateQueryLatency() {
-        if (container == null && qr == null) return Optional.empty();
-        var c = Optional.ofNullable(container).orElseGet(LatencyMetrics::new);
-        var q = Optional.ofNullable(qr).orElseGet(LatencyMetrics::new);
-        return Optional.of((c.sum + q.sum) / (c.count + q.count)).filter(num -> !num.isNaN());
+        if (container == null) return Optional.empty();
+        var c = Optional.of(container).orElseGet(LatencyMetrics::new);
+        return Optional.of(c.sum / c.count).filter(num -> !num.isNaN());
     }
 
     public Optional<Double> aggregateQueryRate() {
-        if (container == null && qr == null) return Optional.empty();
-        var c = Optional.ofNullable(container).orElseGet(LatencyMetrics::new);
-        var q = Optional.ofNullable(qr).orElseGet(LatencyMetrics::new);
-        return Optional.of((c.count + q.count) / 60);
+        if (container == null) return Optional.empty();
+        var c = Optional.of(container).orElseGet(LatencyMetrics::new);
+        return Optional.of(c.count / 60);
     }
 
     public Optional<Double> aggregateDocumentCount() {

@@ -79,7 +79,6 @@ public class ClusterDeploymentMetricsRetrieverTest {
                 new DeploymentMetricsAggregator()
                         .addContainerLatency(3000, 43)
                         .addContainerLatency(2000, 0)
-                        .addQrLatency(3000, 43)
                         .addFeedLatency(3000, 43),
                 aggregatorMap.get(expectedContainerCluster)
 

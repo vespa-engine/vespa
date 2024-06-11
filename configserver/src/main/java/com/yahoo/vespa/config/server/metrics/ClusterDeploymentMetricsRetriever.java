@@ -47,10 +47,9 @@ public class ClusterDeploymentMetricsRetriever {
     private static final Logger log = Logger.getLogger(ClusterDeploymentMetricsRetriever.class.getName());
 
     private static final String VESPA_CONTAINER = "vespa.container";
-    private static final String VESPA_QRSERVER = "vespa.qrserver";
     private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
     private static final String VESPA_CONTAINER_CLUSTERCONTROLLER = "vespa.container-clustercontroller";
-    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR, VESPA_CONTAINER_CLUSTERCONTROLLER);
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_DISTRIBUTOR, VESPA_CONTAINER_CLUSTERCONTROLLER);
 
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
@@ -132,8 +131,6 @@ public class ClusterDeploymentMetricsRetriever {
                 optionalDouble(values.field("feed.latency.sum")).ifPresent(flSum ->
                         aggregator.get().addFeedLatency(flSum, values.field("feed.latency.count").asDouble()));
             }
-            case VESPA_QRSERVER -> optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
-                    aggregator.get().addQrLatency(qlSum, values.field("query_latency.count").asDouble()));
             case VESPA_DISTRIBUTOR -> {
                 optionalDouble(values.field("vds.distributor.docsstored.average"))
                         .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));

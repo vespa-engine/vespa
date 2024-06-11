@@ -30,22 +30,6 @@
           }
         }
       ]
-    },
-    {
-      "name": "vespa.qrserver",
-      "timestamp": 1557306075,
-      "metrics": [
-        {
-          "values": {
-            "query_latency.count": 43.0,
-            "query_latency.sum": 3000
-          },
-          "dimensions": {
-            "clustertype": "container",
-            "clusterid": "container_cluster_id"
-          }
-        }
-      ]
     }
   ]
 }
