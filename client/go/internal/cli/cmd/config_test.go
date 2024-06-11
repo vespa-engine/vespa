@@ -156,19 +156,19 @@ func assertConfigCommandErr(t *testing.T, configHome, expected string, args ...s
 
 func TestReadAPIKey(t *testing.T) {
 	cli, _, _ := newTestCLI(t)
-	key, err := cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err := cli.config.readAPIKey(cli, "t1")
 	assert.Nil(t, key)
 	require.NotNil(t, err)
 
 	// From default path when it exists
 	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "t1.api-key.pem"), []byte("foo"), 0600))
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Equal(t, []byte("foo"), key)
 
 	// Cloud CI never reads key from disk as it's not expected to have any
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_CLOUD_CI=true")
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Nil(t, key)
 
@@ -176,20 +176,20 @@ func TestReadAPIKey(t *testing.T) {
 	keyFile := filepath.Join(t.TempDir(), "key")
 	require.Nil(t, os.WriteFile(keyFile, []byte("bar"), 0600))
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY_FILE="+keyFile)
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Equal(t, []byte("bar"), key)
 
 	// From key specified in environment
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY=baz")
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Equal(t, []byte("baz"), key)
 
 	// Prefer Auth0 if we have auth config
 	cli, _, _ = newTestCLI(t)
 	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte("foo"), 0600))
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Nil(t, key)
 }

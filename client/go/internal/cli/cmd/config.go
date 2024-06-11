@@ -513,7 +513,7 @@ func (c *Config) authConfigPath() string {
 	return filepath.Join(c.homeDir, "auth.json")
 }
 
-func (c *Config) readAPIKey(cli *CLI, system vespa.System, tenantName string) ([]byte, error) {
+func (c *Config) readAPIKey(cli *CLI, tenantName string) ([]byte, error) {
 	if override, ok := c.apiKeyFromEnv(); ok {
 		return override, nil
 	}
