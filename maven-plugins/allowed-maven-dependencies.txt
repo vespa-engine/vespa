@@ -14,7 +14,6 @@ com.google.j2objc:j2objc-annotations:${j2objc-annotations.vespa.version}
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-io:commons-io:${commons-io.vespa.version}
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
-javax.annotation:javax.annotation-api:${javax.annotation.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
 junit:junit:${junit4.vespa.version}
 net.bytebuddy:byte-buddy-agent:${byte-buddy.vespa.version}

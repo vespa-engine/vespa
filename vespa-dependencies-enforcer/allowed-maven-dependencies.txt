@@ -18,6 +18,7 @@ com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
+com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
@@ -74,7 +75,6 @@ io.prometheus:simpleclient_tracer_otel:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
 javax.activation:javax.activation-api:${javax.activation-api.vespa.version}
-javax.annotation:javax.annotation-api:${javax.annotation.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
 javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}
 javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}
@@ -109,6 +109,8 @@ org.apache.maven.plugin-tools:maven-plugin-annotations:${maven-plugin-tools.vesp
 org.apache.maven.plugins:maven-jar-plugin:${maven-jar-plugin.vespa.version}
 org.apache.maven.shared:file-management:3.1.0
 org.apache.maven.wagon:wagon-provider-api:${maven-wagon.vespa.version}
+org.apache.maven:maven-api-meta:${maven-xml-impl.vespa.version}
+org.apache.maven:maven-api-xml:${maven-xml-impl.vespa.version}
 org.apache.maven:maven-archiver:${maven-archiver.vespa.version}
 org.apache.maven:maven-artifact-manager:2.2.1
 org.apache.maven:maven-artifact:${maven-core.vespa.version}
@@ -119,6 +121,7 @@ org.apache.maven:maven-profile:2.2.1
 org.apache.maven:maven-project:2.2.1
 org.apache.maven:maven-repository-metadata:${maven-core.vespa.version}
 org.apache.maven:maven-settings:${maven-core.vespa.version}
+org.apache.maven:maven-xml-impl:${maven-xml-impl.vespa.version}
 org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}
 org.apache.velocity:velocity-engine-core:${velocity.vespa.version}
 org.apache.yetus:audience-annotations:0.12.0
@@ -136,6 +139,8 @@ org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:${plexus-interpolation.vespa.version}
 org.codehaus.plexus:plexus-io:${plexus-io.vespa.version}
 org.codehaus.plexus:plexus-utils:${plexus-utils.vespa.version}
+org.codehaus.plexus:plexus-xml:${plexus-xml.vespa.version}
+org.codehaus.woodstox:stax2-api:${stax2-api.vespa.version}
 org.eclipse.angus:angus-activation:${eclipse-angus.vespa.version}
 org.eclipse.collections:eclipse-collections-api:${eclipse-collections.vespa.version}
 org.eclipse.collections:eclipse-collections:${eclipse-collections.vespa.version}
