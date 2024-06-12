@@ -7,49 +7,13 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
  */
 class EntityBindingsMapperTest {
-
-    @Test
-    public void legacy_persists_unknown_json_members() throws IOException {
-        var originalJson =
-                """
-                {
-                  "signature": "sig",
-                  "signing-key-version": 0,
-                  "provider-unique-id": "0.cluster.instance.app.tenant.us-west-1.test.node",
-                  "provider-service": "domain.service",
-                  "document-version": 2,
-                  "configserver-hostname": "cfg",
-                  "instance-hostname": "host",
-                  "created-at": 12345.0,
-                  "ip-addresses": [],
-                  "identity-type": "node",
-                  "cluster-type": "admin",
-                  "zts-url": "https://zts.url/",
-                  "unknown-string": "string-value",
-                  "unknown-object": { "member-in-unknown-object": 123 }
-                }
-                """;
-        var entity = EntityBindingsMapper.fromString(originalJson);
-        assertInstanceOf(LegacySignedIdentityDocument.class, entity);
-        assertEquals(2, entity.identityDocument().unknownAttributes().size(), entity.identityDocument().unknownAttributes().toString());
-        var json = EntityBindingsMapper.toAttestationData(entity);
-
-        var expectedMemberInJson = "member-in-unknown-object";
-        assertTrue(json.contains(expectedMemberInJson),
-                   () -> "Expected JSON to contain '%s', but got \n'%s'".formatted(expectedMemberInJson, json));
-        assertEquals(EntityBindingsMapper.mapper.readTree(originalJson), EntityBindingsMapper.mapper.readTree(json));
-    }
 
     @Test
     public void reads_unknown_json_members() throws IOException {
