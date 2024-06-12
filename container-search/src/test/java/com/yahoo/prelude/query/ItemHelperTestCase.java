@@ -34,7 +34,6 @@ public class ItemHelperTestCase {
         ItemHelper helper = new ItemHelper();
         Query q = new Query("/?query=" + enc("a b c \"d e\" -f"));
         List<IndexedItem> l = new ArrayList<>();
-        System.out.println(q.getModel());
         helper.getPositiveTerms(q.getModel().getQueryTree().getRoot(), l);
         assertEquals(4, l.size());
         boolean a = false;

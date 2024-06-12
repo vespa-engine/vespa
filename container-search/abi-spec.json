@@ -2119,6 +2119,7 @@
       "public com.yahoo.search.Query clone()",
       "public com.yahoo.search.query.Presentation getPresentation()",
       "public com.yahoo.search.query.Select getSelect()",
+      "public void setSelect(java.lang.String)",
       "public com.yahoo.search.query.Ranking getRanking()",
       "public com.yahoo.search.query.Model getModel()",
       "public com.yahoo.search.query.Trace getTrace()",

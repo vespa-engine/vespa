@@ -115,9 +115,7 @@ public class Select implements Cloneable {
     public String getGroupingExpressionString() { return groupingExpressionString; }
 
     /** Returns the grouping in the query */
-    public String getGroupingString(){
-        return grouping;
-    }
+    public String getGroupingString() { return grouping; }
 
     /**
      * Returns the query's {@link GroupingRequest} as a mutable list. Changing this directly changes the grouping

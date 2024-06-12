@@ -25,7 +25,6 @@ public class DumpToolTestCase {
 
     @Test
     void testNoDimensionValues() {
-        System.out.println(new DumpTool().resolveAndDump("multiprofile1", profileDir));
         assertTrue(new DumpTool().resolveAndDump("multiprofile1", profileDir).contains("a=general-a\n"));
     }
 
