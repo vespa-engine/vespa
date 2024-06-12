@@ -171,7 +171,7 @@
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>
         <maven-compiler-plugin.vespa.version>3.13.0</maven-compiler-plugin.vespa.version>
         <maven-core.vespa.version>3.9.7</maven-core.vespa.version>
-        <maven-dependency-plugin.vespa.version>3.6.1</maven-dependency-plugin.vespa.version>
+        <maven-dependency-plugin.vespa.version>3.7.0</maven-dependency-plugin.vespa.version>
         <maven-deploy-plugin.vespa.version>3.1.2</maven-deploy-plugin.vespa.version>
         <maven-enforcer-plugin.vespa.version>3.5.0</maven-enforcer-plugin.vespa.version>
         <maven-failsafe-plugin.vespa.version>3.2.5</maven-failsafe-plugin.vespa.version>
