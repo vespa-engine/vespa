@@ -429,51 +429,76 @@ func (c *Config) privateKeyPath(app vespa.ApplicationID, targetType string) (cre
 	return c.credentialsFile(app, targetType, false)
 }
 
-func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (vespa.TLSOptions, error) {
-	_, trustAll := c.environment["VESPA_CLI_DATA_PLANE_TRUST_ALL"]
-	cert, certOk := c.environment["VESPA_CLI_DATA_PLANE_CERT"]
-	key, keyOk := c.environment["VESPA_CLI_DATA_PLANE_KEY"]
-	caCertText, caCertOk := c.environment["VESPA_CLI_DATA_PLANE_CA_CERT"]
-	options := vespa.TLSOptions{TrustAll: trustAll}
-	// CA certificate
+func (c *Config) caCertificatePEM() ([]byte, string, error) {
+	envVar := "VESPA_CLI_DATA_PLANE_CA_CERT"
+	caCertText, caCertOk := c.environment[envVar]
 	if caCertOk {
-		options.CACertificate = []byte(caCertText)
-	} else if caCertFile := c.caCertificatePath(); caCertFile != "" {
+		return []byte(caCertText), envVar, nil
+	}
+	if caCertFile := c.caCertificatePath(); caCertFile != "" {
 		b, err := os.ReadFile(caCertFile)
 		if err != nil {
-			return options, err
+			return nil, "", err
 		}
-		options.CACertificate = b
-		options.CACertificateFile = caCertFile
+		return b, caCertFile, nil
 	}
-	// Certificate and private key
-	if certOk && keyOk {
-		kp, err := tls.X509KeyPair([]byte(cert), []byte(key))
+	return nil, "", nil
+}
+
+func (c *Config) credentialsPEM(envVar string, credentialsFile credentialsFile) ([]byte, string, error) {
+	if pem, ok := c.environment[envVar]; ok {
+		return []byte(pem), envVar, nil
+	}
+	pem, err := os.ReadFile(credentialsFile.path)
+	if err != nil {
+		if os.IsNotExist(err) && credentialsFile.optional {
+			return nil, "", nil
+		}
+		return nil, "", err
+	}
+	return []byte(pem), credentialsFile.path, nil
+}
+
+func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (vespa.TLSOptions, error) {
+	var options vespa.TLSOptions
+	// Certificate
+	if certPath, err := c.certificatePath(app, targetType); err == nil {
+		certPEM, certFile, err := c.credentialsPEM("VESPA_CLI_DATA_PLANE_CERT", certPath)
+		if err != nil {
+			return vespa.TLSOptions{}, err
+		}
+		options.CertificatePEM = certPEM
+		options.CertificateFile = certFile
+	} else {
+		return vespa.TLSOptions{}, err
+	}
+	// Private key
+	if keyPath, err := c.privateKeyPath(app, targetType); err == nil {
+		keyPEM, keyFile, err := c.credentialsPEM("VESPA_CLI_DATA_PLANE_KEY", keyPath)
+		if err != nil {
+			return vespa.TLSOptions{}, err
+		}
+		options.PrivateKeyPEM = keyPEM
+		options.PrivateKeyFile = keyFile
+	} else {
+		return vespa.TLSOptions{}, err
+
+	}
+	// CA certificate
+	_, options.TrustAll = c.environment["VESPA_CLI_DATA_PLANE_TRUST_ALL"]
+	caCertificate, caCertificateFile, err := c.caCertificatePEM()
+	if err != nil {
+		return vespa.TLSOptions{}, err
+	}
+	options.CACertificatePEM = caCertificate
+	options.CACertificateFile = caCertificateFile
+	// Key pair
+	if len(options.CertificatePEM) > 0 && len(options.PrivateKeyPEM) > 0 {
+		kp, err := tls.X509KeyPair(options.CertificatePEM, options.PrivateKeyPEM)
 		if err != nil {
 			return vespa.TLSOptions{}, err
 		}
 		options.KeyPair = []tls.Certificate{kp}
-	} else {
-		keyFile, err := c.privateKeyPath(app, targetType)
-		if err != nil {
-			return vespa.TLSOptions{}, err
-		}
-		certFile, err := c.certificatePath(app, targetType)
-		if err != nil {
-			return vespa.TLSOptions{}, err
-		}
-		kp, err := tls.LoadX509KeyPair(certFile.path, keyFile.path)
-		allowMissing := os.IsNotExist(err) && keyFile.optional && certFile.optional
-		if err == nil {
-			options.KeyPair = []tls.Certificate{kp}
-			options.PrivateKeyFile = keyFile.path
-			options.CertificateFile = certFile.path
-		} else if err != nil && !allowMissing {
-			return vespa.TLSOptions{}, err
-		}
-	}
-	// If we found a key pair, parse it and check expiry
-	if options.KeyPair != nil {
 		cert, err := x509.ParseCertificate(options.KeyPair[0].Certificate[0])
 		if err != nil {
 			return vespa.TLSOptions{}, err

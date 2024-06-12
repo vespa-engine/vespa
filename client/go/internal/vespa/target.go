@@ -126,9 +126,12 @@ type Target interface {
 
 // TLSOptions holds the client certificate to use for cloud API or service requests.
 type TLSOptions struct {
-	CACertificate []byte
-	KeyPair       []tls.Certificate
-	TrustAll      bool
+	KeyPair  []tls.Certificate
+	TrustAll bool
+
+	CACertificatePEM []byte
+	CertificatePEM   []byte
+	PrivateKeyPEM    []byte
 
 	CACertificateFile string
 	CertificateFile   string
@@ -149,7 +152,7 @@ type LogOptions struct {
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
 	if !s.customClient {
 		// Do not override TLS config if a custom client has been configured
-		httputil.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
+		httputil.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificatePEM, s.TLSOptions.TrustAll)
 	}
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
