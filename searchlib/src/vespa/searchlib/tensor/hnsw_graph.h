@@ -82,7 +82,7 @@ struct HnswGraph {
         if (levels_ref.valid()) {
             return levels_store.get(levels_ref);
         }
-        return LevelArrayRef();
+        return {};
     }
 
     LevelArrayRef get_level_array(uint32_t nodeid) const {
@@ -102,7 +102,7 @@ struct HnswGraph {
                 return links_store.get(links_ref);
             }
         }
-        return LinkArrayRef();
+        return {};
     }
 
     LinkArrayRef get_link_array(uint32_t nodeid, uint32_t level) const {
@@ -126,12 +126,12 @@ struct HnswGraph {
         uint32_t nodeid;
         LevelsRef levels_ref;
         int32_t level;
-        EntryNode()
+        EntryNode() noexcept
           : nodeid(0), // Note that nodeid 0 is reserved and never used
             levels_ref(),
             level(-1)
         {}
-        EntryNode(uint32_t nodeid_in, LevelsRef levels_ref_in, int32_t level_in)
+        EntryNode(uint32_t nodeid_in, LevelsRef levels_ref_in, int32_t level_in) noexcept
           : nodeid(nodeid_in),
             levels_ref(levels_ref_in),
             level(level_in)

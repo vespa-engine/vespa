@@ -16,10 +16,7 @@ class HnswSimpleNode {
     AtomicEntryRef _levels_ref;
 
 public:
-    HnswSimpleNode()
-        : _levels_ref()
-    {
-    }
+    HnswSimpleNode() noexcept : _levels_ref() { }
     AtomicEntryRef& levels_ref() noexcept { return _levels_ref; }
     const AtomicEntryRef& levels_ref() const noexcept { return _levels_ref; }
     void store_docid(uint32_t docid) noexcept { (void) docid; }
