@@ -22,6 +22,7 @@ public class ServiceIdentityProviderProvider implements Provider<ServiceIdentity
     @Override
     public ServiceIdentityProvider get() {
         if (athenzIdentityProvider instanceof AthenzIdentityProviderImpl impl) return impl;
+        if (athenzIdentityProvider instanceof LegacyAthenzIdentityProviderImpl legacyImpl) return legacyImpl;
         return null;
     }
 
