@@ -155,8 +155,8 @@ HnswIndex<type>::make_default_level_array_store_config()
                                                        vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                        vespalib::alloc::MemoryAllocator::PAGE_SIZE,
                                                        ArrayStoreConfig::default_max_buffer_size,
-                                                 min_num_arrays_for_new_buffer,
-                                                 alloc_grow_factor).enable_free_lists(true);
+                                                       min_num_arrays_for_new_buffer,
+                                                       alloc_grow_factor).enable_free_lists(true);
 }
 
 template <HnswIndexType type>
@@ -373,9 +373,7 @@ HnswIndex<type>::estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, u
 
 template <HnswIndexType type>
 HnswCandidate
-HnswIndex<type>::find_nearest_in_layer(
-        const BoundDistanceFunction &df,
-        const HnswCandidate& entry_point, uint32_t level) const
+HnswIndex<type>::find_nearest_in_layer(const BoundDistanceFunction &df, const HnswCandidate& entry_point, uint32_t level) const
 {
     HnswCandidate nearest = entry_point;
     bool keep_searching = true;
@@ -401,12 +399,10 @@ HnswIndex<type>::find_nearest_in_layer(
 template <HnswIndexType type>
 template <class VisitedTracker, class BestNeighbors>
 void
-HnswIndex<type>::search_layer_helper(
-        const BoundDistanceFunction &df,
-        uint32_t neighbors_to_find,
-        BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
-        uint32_t nodeid_limit, const vespalib::Doom* const doom,
-        uint32_t estimated_visited_nodes) const
+HnswIndex<type>::search_layer_helper(const BoundDistanceFunction &df, uint32_t neighbors_to_find,
+                                     BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
+                                     uint32_t nodeid_limit, const vespalib::Doom* const doom,
+                                     uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
     GlobalFilterWrapper<type> filter_wrapper(filter);
@@ -471,11 +467,8 @@ HnswIndex<type>::search_layer_helper(
 template <HnswIndexType type>
 template <class BestNeighbors>
 void
-HnswIndex<type>::search_layer(
-        const BoundDistanceFunction &df,
-        uint32_t neighbors_to_find,
-        BestNeighbors& best_neighbors, uint32_t level,
-        const vespalib::Doom* const doom, const GlobalFilter *filter) const
+HnswIndex<type>::search_layer(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
+                              uint32_t level, const vespalib::Doom* const doom, const GlobalFilter *filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
@@ -488,7 +481,7 @@ HnswIndex<type>::search_layer(
 
 template <HnswIndexType type>
 HnswIndex<type>::HnswIndex(const DocVectorAccess& vectors, DistanceFunctionFactory::UP distance_ff,
-                     RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg)
+                           RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg)
     : _graph(),
       _vectors(vectors),
       _distance_ff(std::move(distance_ff)),
@@ -633,9 +626,7 @@ HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid, uin
 
 template <HnswIndexType type>
 std::unique_ptr<PrepareResult>
-HnswIndex<type>::prepare_add_document(uint32_t docid,
-                                VectorBundle vectors,
-                                vespalib::GenerationHandler::Guard read_guard) const
+HnswIndex<type>::prepare_add_document(uint32_t docid, VectorBundle vectors, vespalib::GenerationHandler::Guard read_guard) const
 {
     uint32_t active_nodes = _graph.get_active_nodes();
     if (active_nodes < _cfg.min_size_before_two_phase()) {
@@ -930,12 +921,8 @@ struct NeighborsByDocId {
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::top_k_by_docid(
-        uint32_t k,
-        const BoundDistanceFunction &df,
-        const GlobalFilter *filter, uint32_t explore_k,
-        const vespalib::Doom& doom,
-        double distance_threshold) const
+HnswIndex<type>::top_k_by_docid(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter,
+                                uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const
 {
     SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter, doom);
     auto result = candidates.get_neighbors(k, distance_threshold);
@@ -945,34 +932,23 @@ HnswIndex<type>::top_k_by_docid(
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::find_top_k(
-        uint32_t k,
-        const BoundDistanceFunction &df,
-        uint32_t explore_k,
-        const vespalib::Doom& doom,
-        double distance_threshold) const
+HnswIndex<type>::find_top_k(uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k,
+                            const vespalib::Doom& doom, double distance_threshold) const
 {
     return top_k_by_docid(k, df, nullptr, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::find_top_k_with_filter(
-        uint32_t k,
-        const BoundDistanceFunction &df,
-        const GlobalFilter &filter, uint32_t explore_k,
-        const vespalib::Doom& doom,
-        double distance_threshold) const
+HnswIndex<type>::find_top_k_with_filter(uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter,
+                                        uint32_t explore_k, const vespalib::Doom& doom, double distance_threshold) const
 {
     return top_k_by_docid(k, df, &filter, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 typename HnswIndex<type>::SearchBestNeighbors
-HnswIndex<type>::top_k_candidates(
-        const BoundDistanceFunction &df,
-        uint32_t k, const GlobalFilter *filter,
-        const vespalib::Doom& doom) const
+HnswIndex<type>::top_k_candidates(const BoundDistanceFunction &df, uint32_t k, const GlobalFilter *filter, const vespalib::Doom& doom) const
 {
     SearchBestNeighbors best_neighbors;
     auto entry = _graph.get_entry_node();
