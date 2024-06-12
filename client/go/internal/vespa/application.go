@@ -3,6 +3,7 @@ package vespa
 
 import (
 	"archive/zip"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -20,6 +21,14 @@ type ApplicationPackage struct {
 }
 
 func (ap *ApplicationPackage) HasCertificate() bool { return ap.hasFile("security", "clients.pem") }
+
+func (ap *ApplicationPackage) HasMatchingCertificate(certificatePEM []byte) (bool, error) {
+	clientsPEM, err := os.ReadFile(filepath.Join(ap.Path, "security", "clients.pem"))
+	if err != nil {
+		return false, err
+	}
+	return bytes.Equal(clientsPEM, certificatePEM), nil
+}
 
 func (ap *ApplicationPackage) HasDeploymentSpec() bool { return ap.hasFile("deployment.xml", "") }
 

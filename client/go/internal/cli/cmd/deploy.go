@@ -68,7 +68,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				opts.Version = version
 			}
 			if target.Type() == vespa.TargetCloud {
-				if err := maybeCopyCertificate(copyCert, true, cli, target, pkg); err != nil {
+				if err := requireCertificate(copyCert, true, cli, target, pkg); err != nil {
 					return err
 				}
 			}

@@ -62,6 +62,21 @@ Hint: Pass --add-cert to use the certificate of the current application
 	buf.WriteString("y\n")
 	require.Nil(t, cli.Run("deploy", "--add-cert=false", "--wait=0", pkgDir2))
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+
+	// Missing application certificate is detected
+	stderr.Reset()
+	require.NotNil(t, cli.Run("deploy", "--application=t1.a2.i2", pkgDir2))
+	assert.Equal(t, "Error: no certificate exists for t1.a2.i2\nHint: Try (re)creating the certificate with 'vespa auth cert'\n", stderr.String())
+
+	// Mismatching certificate is detected
+	stdout.Reset()
+	stderr.Reset()
+	assert.Nil(t, cli.Run("auth", "cert", "--application=t1.a1.i1", "-f", "--no-add"))
+	require.NotNil(t, cli.Run("deploy", "--application=t1.a1.i1", pkgDir2))
+	assert.Equal(t, `Error: certificate in security/clients.pem does not match the stored key pair for t1.a1.i1
+Hint: If this application was deployed using a different application ID in the past, the matching key pair may be stored under a different ID in `+
+		cli.config.homeDir+"\nHint: Specify the matching application with --application, or add the current certificate to the package using --add-cert\n",
+		stderr.String())
 }
 
 func TestDeployCloudFastWait(t *testing.T) {
