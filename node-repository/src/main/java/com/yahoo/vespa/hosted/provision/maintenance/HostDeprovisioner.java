@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ThrottleProvisioningException;
 
 import java.time.Duration;
 import java.util.logging.Level;
@@ -48,6 +49,9 @@ public class HostDeprovisioner extends NodeRepositoryMaintainer {
                 //   if we want to support aborting deprovision if operator manually intervenes
                 if (hostProvisioner.deprovision(host))
                     nodeRepository().nodes().removeRecursively(host, true);
+            } catch (ThrottleProvisioningException e) {
+                log.log(Level.INFO, "Failed to deprovision " + host.hostname() + ", will retry in " + interval() + ": " + e.getMessage());
+                break;
             } catch (RuntimeException e) {
                 failures++;
                 log.log(Level.WARNING, "Failed to deprovision " + host.hostname() + ", will retry in " + interval(), e);
