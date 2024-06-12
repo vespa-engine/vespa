@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ThrottleProvisioningException;
 import com.yahoo.yolean.Exceptions;
 
 import javax.naming.NamingException;
@@ -60,6 +61,9 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
             } catch (IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " +
                                     interval() + ": " + Exceptions.toMessageString(e));
+            } catch (ThrottleProvisioningException e) {
+                log.log(Level.INFO, "Failed to provision " + host.hostname() + ", will retry in " + interval() + ": " + e.getMessage());
+                break;
             } catch (FatalProvisioningException e) {
                 // FatalProvisioningException is thrown if node is not found in the cloud, allow for
                 // some time for the state to propagate
