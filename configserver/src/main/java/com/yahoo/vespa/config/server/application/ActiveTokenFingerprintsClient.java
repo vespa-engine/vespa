@@ -30,8 +30,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Phaser;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.slime.SlimeUtils.entriesStream;
 import static com.yahoo.slime.SlimeUtils.jsonToSlime;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -55,7 +57,8 @@ public class ActiveTokenFingerprintsClient implements ActiveTokenFingerprints, A
         return getFingerprints(application.getModel().getHosts().stream()
                                           .filter(host -> containersWithTokenFilter.contains(host.getHostname()))
                                           .flatMap(host -> host.getServices().stream())
-                                          .filter(service ->    service.getServiceType().equals(CONTAINER.serviceName))
+                                          .filter(service ->    service.getServiceType().equals(CONTAINER.serviceName)
+                                                             || service.getServiceType().equals(QRSERVER.serviceName))
                                           .toList());
     }
 
