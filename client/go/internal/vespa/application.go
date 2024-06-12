@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa/ignore"
 )
 
 type ApplicationPackage struct {
@@ -73,7 +74,7 @@ func (ap *ApplicationPackage) Validate() error {
 
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
 
-func zipDir(dir string, destination string) error {
+func zipDir(dir string, destination string, ignores *ignore.List) error {
 	if !ioutil.Exists(dir) {
 		message := "'" + dir + "' should be an application package zip or dir, but does not exist"
 		return errors.New(message)
@@ -82,22 +83,23 @@ func zipDir(dir string, destination string) error {
 		message := "'" + dir + "' should be an application package dir, but is a (non-zip) file"
 		return errors.New(message)
 	}
-
 	file, err := os.Create(destination)
 	if err != nil {
 		message := "Could not create a temporary zip file for the application package: " + err.Error()
 		return errors.New(message)
 	}
 	defer file.Close()
-
 	w := zip.NewWriter(file)
 	defer w.Close()
-
 	walker := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if ignorePackageFile(filepath.Base(path)) {
+		zipPath, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		if ignores.Match(zipPath) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -106,22 +108,16 @@ func zipDir(dir string, destination string) error {
 		if info.IsDir() {
 			return nil
 		}
-		file, err := os.Open(path)
+		srcFile, err := os.Open(path)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
-
-		zippath, err := filepath.Rel(dir, path)
+		defer srcFile.Close()
+		zipFile, err := w.Create(zipPath)
 		if err != nil {
 			return err
 		}
-		zipfile, err := w.Create(zippath)
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(zipfile, file)
+		_, err = io.Copy(zipFile, srcFile)
 		if err != nil {
 			return err
 		}
@@ -130,39 +126,38 @@ func zipDir(dir string, destination string) error {
 	return filepath.Walk(dir, walker)
 }
 
-func ignorePackageFile(name string) bool {
-	switch name {
-	case ".DS_Store":
-		return true
-	}
-	return false
-}
-
-func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
-	zipFile := ap.Path
-	if test {
-		zipFile = ap.TestPath
-	}
-	if !ap.IsZip() {
-		tempZip, err := os.CreateTemp("", "vespa")
-		if err != nil {
-			return nil, fmt.Errorf("could not create a temporary zip file for the application package: %w", err)
-		}
-		defer func() {
-			tempZip.Close()
-			os.Remove(tempZip.Name())
-			// TODO: Caller must remove temporary file
-		}()
-		if err := zipDir(zipFile, tempZip.Name()); err != nil {
-			return nil, err
-		}
-		zipFile = tempZip.Name()
-	}
-	f, err := os.Open(zipFile)
+func (ap *ApplicationPackage) openZip(name string) (io.ReadCloser, error) {
+	f, err := os.Open(name)
 	if err != nil {
 		return nil, fmt.Errorf("could not open application package at '%s': %w", ap.Path, err)
 	}
 	return f, nil
+}
+
+func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
+	path := ap.Path
+	if test {
+		path = ap.TestPath
+	}
+	if ap.IsZip() {
+		return ap.openZip(path)
+	}
+	tmp, err := os.CreateTemp("", "vespa")
+	if err != nil {
+		return nil, fmt.Errorf("could not create a temporary zip file for the application package: %w", err)
+	}
+	defer func() {
+		tmp.Close()
+		os.Remove(tmp.Name())
+	}()
+	ignores, err := ignore.ReadFile(filepath.Join(path, ".vespaignore"))
+	if err != nil {
+		return nil, fmt.Errorf("could not read .vespaignore: %w", err)
+	}
+	if err := zipDir(path, tmp.Name(), ignores); err != nil {
+		return nil, err
+	}
+	return ap.openZip(tmp.Name())
 }
 
 func (ap *ApplicationPackage) Unzip(test bool) (string, error) {
@@ -283,7 +278,7 @@ func findApplicationPackage(zipOrDir string, options PackageOptions) (Applicatio
 		testPath := existingPath(filepath.Join(zipOrDir, "src", "test", "application"))
 		return ApplicationPackage{Path: path, TestPath: testPath}, nil
 	}
-	// Application without Java components
+	// Application without Maven/Java
 	if ioutil.Exists(filepath.Join(zipOrDir, "services.xml")) {
 		testPath := ""
 		if ioutil.Exists(filepath.Join(zipOrDir, "tests")) {

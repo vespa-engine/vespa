@@ -5,8 +5,10 @@
 package cmd
 
 import (
+	"archive/zip"
 	"bytes"
 	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -134,8 +136,7 @@ func TestPrepareZip(t *testing.T) {
 }
 
 func TestActivateZip(t *testing.T) {
-	assertActivate("testdata/applications/withTarget/target/application.zip",
-		[]string{"activate", "--wait=0", "testdata/applications/withTarget/target/application.zip"}, t)
+	assertActivate([]string{"activate", "--wait=0", "testdata/applications/withTarget/target/application.zip"}, t)
 }
 
 func TestDeployZip(t *testing.T) {
@@ -183,6 +184,32 @@ func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 	assert.Equal(t,
 		"Error: found pom.xml, but testdata/applications/withEmptyTarget/target/application does not exist: run 'mvn package' first\n",
 		stderr.String())
+}
+
+func TestDeployIncludesExpectedFiles(t *testing.T) {
+	cli, stdout, _ := newTestCLI(t)
+	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	assert.Nil(t, cli.Run("deploy", "--wait=0", "testdata/applications/withSource"))
+	applicationPackage := "testdata/applications/withSource/src/main/application"
+	assert.Equal(t,
+		"\nSuccess: Deployed '"+applicationPackage+"' with session ID 0\n",
+		stdout.String())
+
+	zipName := filepath.Join(t.TempDir(), "tmp.zip")
+	f, err := os.Create(zipName)
+	assert.Nil(t, err)
+	if _, err := io.Copy(f, client.LastRequest.Body); err != nil {
+		t.Fatal(err)
+	}
+	zr, err := zip.OpenReader(zipName)
+	assert.Nil(t, err)
+	defer zr.Close()
+	var zipFiles []string
+	for _, f := range zr.File {
+		zipFiles = append(zipFiles, f.Name)
+	}
+	assert.Equal(t, []string{".vespaignore", "hosts.xml", "schemas/msmarco.sd", "services.xml"}, zipFiles)
 }
 
 func TestDeployApplicationPackageErrorWithUnexpectedNonJson(t *testing.T) {
@@ -251,7 +278,7 @@ func assertPrepare(applicationPackage string, arguments []string, t *testing.T) 
 	assert.Equal(t, "PUT", client.Requests[1].Method)
 }
 
-func assertActivate(applicationPackage string, arguments []string, t *testing.T) {
+func assertActivate(arguments []string, t *testing.T) {
 	t.Helper()
 	client := &mock.HTTPClient{}
 	cli, stdout, _ := newTestCLI(t)
