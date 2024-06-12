@@ -8,7 +8,7 @@ require (
 	github.com/fatih/color v1.17.0
 	// This is the most recent version compatible with Go 1.20. Upgrade when we upgrade our Go version
 	github.com/go-json-experiment/json v0.0.0-20230324203220-04923b7a9528
-	github.com/klauspost/compress v1.17.8
+	github.com/klauspost/compress v1.17.9
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-isatty v0.0.20
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
