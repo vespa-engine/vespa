@@ -4,11 +4,9 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.DefaultSignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.IdentityDocumentEntity;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.LegacySignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.yolean.Exceptions;
@@ -54,25 +52,7 @@ public class EntityBindingsMapper {
     }
 
     public static SignedIdentityDocument toSignedIdentityDocument(SignedIdentityDocumentEntity entity) {
-        if (entity instanceof LegacySignedIdentityDocumentEntity docEntity) {
-            IdentityDocument doc = new IdentityDocument(
-                    fromDottedString(docEntity.providerUniqueId()),
-                    new AthenzService(docEntity.providerService()),
-                    docEntity.configServerHostname(),
-                    docEntity.instanceHostname(),
-                    docEntity.createdAt(),
-                    docEntity.ipAddresses(),
-                    IdentityType.fromId(docEntity.identityType()),
-                    Optional.ofNullable(docEntity.clusterType()).map(ClusterType::from).orElse(null),
-                    docEntity.ztsUrl(),
-                    Optional.ofNullable(docEntity.serviceIdentity()).map(AthenzIdentities::from).orElse(null),
-                    docEntity.unknownAttributes());
-            return new LegacySignedIdentityDocument(
-                    docEntity.signature(),
-                    docEntity.signingKeyVersion(),
-                    entity.documentVersion(),
-                    doc);
-        } else if (entity instanceof DefaultSignedIdentityDocumentEntity docEntity) {
+        if (entity instanceof DefaultSignedIdentityDocumentEntity docEntity) {
             return new DefaultSignedIdentityDocument(docEntity.signature(),
                                                      docEntity.signingKeyVersion(),
                                                      docEntity.documentVersion(),
@@ -83,24 +63,7 @@ public class EntityBindingsMapper {
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
-        if (model instanceof LegacySignedIdentityDocument legacyModel) {
-            IdentityDocument idDoc = legacyModel.identityDocument();
-            return new LegacySignedIdentityDocumentEntity(
-                    legacyModel.signature(),
-                    legacyModel.signingKeyVersion(),
-                    idDoc.providerUniqueId().asDottedString(),
-                    idDoc.providerService().getFullName(),
-                    legacyModel.documentVersion(),
-                    idDoc.configServerHostname(),
-                    idDoc.instanceHostname(),
-                    idDoc.createdAt(),
-                    idDoc.ipAddresses(),
-                    idDoc.identityType().id(),
-                    Optional.ofNullable(idDoc.clusterType()).map(ClusterType::toConfigValue).orElse(null),
-                    idDoc.ztsUrl(),
-                    Optional.ofNullable(idDoc.serviceIdentity()).map(AthenzIdentity::getFullName).orElse(null),
-                    idDoc.unknownAttributes());
-        } else if (model instanceof DefaultSignedIdentityDocument defaultModel){
+        if (model instanceof DefaultSignedIdentityDocument defaultModel){
             return new DefaultSignedIdentityDocumentEntity(defaultModel.signature(),
                                                            defaultModel.signingKeyVersion(),
                                                            defaultModel.documentVersion(),
