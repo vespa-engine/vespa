@@ -2,26 +2,26 @@
 
 #include "bucketmanager.h"
 #include "minimumusedbitstracker.h"
-#include <iomanip>
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/metrics/jsonwriter.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
-#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/stat.h>
+#include <vespa/storageapi/message/state.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/storageframework/generic/thread/thread.h>
-#include <vespa/storageframework/generic/clock/timer.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/stat.h>
-#include <vespa/metrics/jsonwriter.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <iomanip>
 #include <ranges>
-#include <vespa/config/helper/configgetter.hpp>
 #include <chrono>
 #include <thread>
 
@@ -526,6 +526,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     using RBISP = std::shared_ptr<api::RequestBucketInfoCommand>;
     std::map<uint16_t, RBISP> requests;
 
+    // TODO fetch distribution from bundle as well
     auto distribution(_component.getBucketSpaceRepo().get(bucketSpace).getDistribution());
     auto clusterStateBundle(_component.getStateUpdater().getClusterStateBundle());
     assert(clusterStateBundle);

@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 //
 #include "blockingoperationstarter.h"
-#include "bucket_space_distribution_configs.h"
 #include "top_level_bucket_db_updater.h"
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
@@ -16,7 +15,6 @@
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -25,7 +23,9 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include <vespa/vdslib/distribution/bucket_space_distribution_configs.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <algorithm>
 
@@ -323,7 +323,7 @@ TopLevelDistributor::enable_next_distribution_if_changed()
     if (_next_distribution) {
         _distribution = _next_distribution;
         _next_distribution = std::shared_ptr<lib::Distribution>();
-        auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(_distribution);
+        auto new_configs = lib::BucketSpaceDistributionConfigs::from_default_distribution(_distribution);
         _bucket_db_updater->storage_distribution_changed(new_configs); // Transitively updates all stripes' configs
     }
 }
@@ -334,7 +334,7 @@ TopLevelDistributor::propagate_default_distribution_thread_unsafe(
 {
     // Should only be called at ctor time, at which point the pool is not yet running.
     assert(_stripe_pool.stripe_count() == 0);
-    auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
+    auto new_configs = lib::BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
     for (auto& stripe : _stripes) {
         stripe->update_distribution_config(new_configs);
     }

@@ -10,7 +10,7 @@ struct MockTickableStripe : TickableStripe {
     bool tick() override { abort(); }
     void flush_and_close() override { abort(); }
     void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration>) override { abort(); }
-    void update_distribution_config(const BucketSpaceDistributionConfigs&) override { abort(); }
+    void update_distribution_config(const lib::BucketSpaceDistributionConfigs&) override { abort(); }
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle&) override { abort(); }
     void clear_pending_cluster_state_bundle() override { abort(); }
     void enable_cluster_state_bundle(const lib::ClusterStateBundle&, bool) override { abort(); }

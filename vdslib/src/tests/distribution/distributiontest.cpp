@@ -370,7 +370,7 @@ TEST(DistributionTest, test_serialize_deserialize)
 {
     MyTest t1;
     MyTest t2;
-    t2.distribution(new Distribution(t1._distribution->serialize()));
+    t2.distribution(new Distribution(t1._distribution->serialized()));
     EXPECT_EQ(t1.getNodeCounts(), t2.getNodeCounts());
 }
 

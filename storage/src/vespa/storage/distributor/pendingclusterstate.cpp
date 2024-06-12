@@ -5,7 +5,6 @@
 #include "pendingclusterstate.h"
 #include "top_level_bucket_db_updater.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlstream.hpp>

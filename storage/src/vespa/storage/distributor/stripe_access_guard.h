@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bucket_space_distribution_configs.h"
 #include "pending_bucket_space_db_transition_entry.h"
 #include "potential_data_loss_report.h"
 #include "outdated_nodes.h"
 #include <vespa/document/bucket/bucketspace.h>
+#include <vespa/vdslib/distribution/bucket_space_distribution_configs.h>
 #include <vespa/storageapi/defs.h>
 #include <unordered_set> // TODO use hash_set instead
 
@@ -38,7 +38,7 @@ public:
 
     virtual void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) = 0;
 
-    virtual void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) = 0;
+    virtual void update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) = 0;
     virtual void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) = 0;
     virtual void clear_pending_cluster_state_bundle() = 0;
     virtual void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,

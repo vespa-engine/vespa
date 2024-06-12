@@ -77,7 +77,7 @@ DistributorStripeTestUtil::setup_stripe(int redundancy, int node_count, const li
     // trigger_distribution_change().
     // This isn't pretty, folks, but it avoids breaking the world for now,
     // as many tests have implicit assumptions about this being the behavior.
-    auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
+    auto new_configs = lib::BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
     _stripe->update_distribution_config(new_configs);
 }
 
@@ -95,7 +95,7 @@ void
 DistributorStripeTestUtil::trigger_distribution_change(lib::Distribution::SP distr)
 {
     _node->getComponentRegister().setDistribution(distr);
-    auto new_config = BucketSpaceDistributionConfigs::from_default_distribution(std::move(distr));
+    auto new_config = lib::BucketSpaceDistributionConfigs::from_default_distribution(std::move(distr));
     _stripe->update_distribution_config(new_config);
 }
 

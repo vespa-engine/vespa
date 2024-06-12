@@ -23,9 +23,12 @@ class XmlOutputStream;
 class XmlAttribute;
 }
 
+namespace storage::lib {
+struct BucketSpaceDistributionConfigs;
+}
+
 namespace storage::distributor {
 
-struct BucketSpaceDistributionConfigs;
 class BucketSpaceDistributionContext;
 class ClusterStateBundleActivationListener;
 class DistributorInterface;
@@ -57,9 +60,9 @@ public:
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     void resend_delayed_messages();
-    void storage_distribution_changed(const BucketSpaceDistributionConfigs& configs);
+    void storage_distribution_changed(const lib::BucketSpaceDistributionConfigs& configs);
     void bootstrap_distribution_config(std::shared_ptr<const lib::Distribution>);
-    void propagate_distribution_config(const BucketSpaceDistributionConfigs& configs);
+    void propagate_distribution_config(const lib::BucketSpaceDistributionConfigs& configs);
 
     vespalib::string report_xml_status(vespalib::xml::XmlOutputStream& xos, const framework::HttpUrlPath&) const;
 

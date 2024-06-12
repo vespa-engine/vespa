@@ -19,6 +19,7 @@ uint16_t
 BucketOwnershipNotifier::getOwnerDistributorForBucket(const document::Bucket &bucket) const
 {
     try {
+        // TODO use state updater bundle for everything?
         auto distribution(_component.getBucketSpaceRepo().get(bucket.getBucketSpace()).getDistribution());
         const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
         const auto &clusterState = *clusterStateBundle->getDerivedClusterState(bucket.getBucketSpace());

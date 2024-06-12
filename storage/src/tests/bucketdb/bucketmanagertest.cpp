@@ -14,16 +14,17 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/metrics/updatehook.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/config-stor-distribution.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -667,7 +668,7 @@ public:
 
     static std::unique_ptr<lib::Distribution> default_grouped_distribution() {
         return std::make_unique<lib::Distribution>(
-                lib::Distribution::ConfigWrapper(GlobalBucketSpaceDistributionConverter::string_to_config(vespalib::string(
+                lib::Distribution::ConfigWrapper(lib::GlobalBucketSpaceDistributionConverter::string_to_config(vespalib::string(
 R"(redundancy 2
 group[3]
 group[0].name "invalid"
@@ -691,7 +692,7 @@ group[2].nodes[2].index 5
 
     static std::shared_ptr<lib::Distribution> derived_global_grouped_distribution() {
         auto default_distr = default_grouped_distribution();
-        return  GlobalBucketSpaceDistributionConverter::convert_to_global(*default_distr);
+        return lib::GlobalBucketSpaceDistributionConverter::convert_to_global(*default_distr);
     }
 
 private:

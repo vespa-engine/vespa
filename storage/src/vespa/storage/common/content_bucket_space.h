@@ -12,6 +12,27 @@ class ClusterState;
 class Distribution;
 }
 
+struct ClusterStateAndDistribution {
+    std::shared_ptr<const lib::ClusterState> _cluster_state;
+    std::shared_ptr<const lib::Distribution> _distribution;
+
+    ClusterStateAndDistribution() = default;
+    ClusterStateAndDistribution(std::shared_ptr<const lib::ClusterState> cluster_state,
+                                std::shared_ptr<const lib::Distribution> distribution) noexcept;
+    ~ClusterStateAndDistribution();
+
+    [[nodiscard]] bool valid() const noexcept { return _cluster_state && _distribution; }
+
+    // Precondition: valid() == true
+    [[nodiscard]] const lib::ClusterState& cluster_state() const noexcept { return *_cluster_state; }
+    [[nodiscard]] const lib::Distribution& distribution() const noexcept { return  *_distribution; }
+
+    [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> with_new_state(
+            std::shared_ptr<const lib::ClusterState> cluster_state) const;
+    [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> with_new_distribution(
+            std::shared_ptr<const lib::Distribution> distribution) const;
+};
+
 /**
  * Class representing a bucket space (with associated bucket database) on a content node.
  */
@@ -20,8 +41,7 @@ private:
     document::BucketSpace _bucketSpace;
     StorBucketDatabase _bucketDatabase;
     mutable std::mutex _lock;
-    std::shared_ptr<const lib::ClusterState> _clusterState;
-    std::shared_ptr<const lib::Distribution> _distribution;
+    std::shared_ptr<const ClusterStateAndDistribution> _state_and_distribution;
     bool _nodeUpInLastNodeStateSeenByProvider;
     bool _nodeMaintenanceInLastNodeStateSeenByProvider;
 
@@ -31,10 +51,18 @@ public:
 
     document::BucketSpace bucketSpace() const noexcept { return _bucketSpace; }
     StorBucketDatabase &bucketDatabase() { return _bucketDatabase; }
+
+    void set_state_and_distribution(std::shared_ptr<const ClusterStateAndDistribution> state_and_distr) noexcept;
+    [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> state_and_distribution() const noexcept;
+    // TODO deprecate; only use atomic state+distribution setter
     void setClusterState(std::shared_ptr<const lib::ClusterState> clusterState);
+    // TODO deprecate; only use atomic state+distribution getter
     std::shared_ptr<const lib::ClusterState> getClusterState() const;
+    // TODO deprecate; only use atomic state+distribution setter
     void setDistribution(std::shared_ptr<const lib::Distribution> distribution);
+    // TODO deprecate; only use atomic state+distribution getter
     std::shared_ptr<const lib::Distribution> getDistribution() const;
+
     bool getNodeUpInLastNodeStateSeenByProvider() const;
     void setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNodeStateSeenByProvider);
     bool getNodeMaintenanceInLastNodeStateSeenByProvider() const;

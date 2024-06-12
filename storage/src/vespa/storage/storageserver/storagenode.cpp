@@ -452,11 +452,17 @@ StorageNode::stage_config_change(ConfigWrapper<ConfigT>& cfg, std::unique_ptr<Co
     // else is doing configuration work, and then we write the new config
     // to a variable where we can find it later when processing config
     // updates
+    // TODO bail if we're shutting down to avoid racing with chain destruction?
+    //   - only relevant for distribution config since it's not pushed by main thread
+    //   - or have some way of injecting config changes from that level...? must be done atomically!
+    //     - ideally want to expose cluster state _bundles_ to relevant components, not config alone!
+    bool live_update;
     {
         std::lock_guard config_lock_guard(_configLock);
         cfg.staging = std::move(new_cfg);
+        live_update = static_cast<bool>(cfg.active);
     }
-    if (cfg.active) {
+    if (live_update) {
         InitialGuard concurrent_config_guard(_initial_config_mutex);
         handleLiveConfigUpdate(concurrent_config_guard);
     }
