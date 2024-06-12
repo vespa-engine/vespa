@@ -12,14 +12,13 @@ using vespalib::eval::TypedCells;
 namespace search::tensor {
 
 using vespalib::eval::Int8Float;
-using vespalib::BFloat16;
 
-template<typename AttributeCellType>
+template <typename VectorStoreType>
 class BoundEuclideanDistance final : public BoundDistanceFunction {
-    using FloatType = std::conditional_t<std::is_same<AttributeCellType, BFloat16>::value, float, AttributeCellType>;
 private:
+    using FloatType = VectorStoreType::FloatType;
     const vespalib::hwaccelrated::IAccelrated & _computer;
-    mutable TemporaryVectorStore<FloatType> _tmpSpace;
+    mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
 public:
     explicit BoundEuclideanDistance(TypedCells lhs)
@@ -46,27 +45,33 @@ public:
     }
 };
 
-template class BoundEuclideanDistance<Int8Float>;
-template class BoundEuclideanDistance<BFloat16>;
-template class BoundEuclideanDistance<float>;
-template class BoundEuclideanDistance<double>;
+template class BoundEuclideanDistance<TemporaryVectorStore<Int8Float>>;
+template class BoundEuclideanDistance<TemporaryVectorStore<float>>;
+template class BoundEuclideanDistance<TemporaryVectorStore<double>>;
+template class BoundEuclideanDistance<ReferenceVectorStore<Int8Float>>;
+template class BoundEuclideanDistance<ReferenceVectorStore<float>>;
+template class BoundEuclideanDistance<ReferenceVectorStore<double>>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 EuclideanDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
-    using DFT = BoundEuclideanDistance<FloatType>;
+    using DFT = BoundEuclideanDistance<TemporaryVectorStore<FloatType>>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
-    using DFT = BoundEuclideanDistance<FloatType>;
-    return std::make_unique<DFT>(lhs);
+    if (_reference_insertion_vector) {
+        using DFT = BoundEuclideanDistance<ReferenceVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    } else {
+        using DFT = BoundEuclideanDistance<TemporaryVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    }
 }
 
 template class EuclideanDistanceFunctionFactory<Int8Float>;
-template class EuclideanDistanceFunctionFactory<BFloat16>;
 template class EuclideanDistanceFunctionFactory<float>;
 template class EuclideanDistanceFunctionFactory<double>;
 

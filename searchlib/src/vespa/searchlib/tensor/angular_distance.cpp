@@ -13,11 +13,12 @@ using vespalib::eval::Int8Float;
 
 namespace search::tensor {
 
-template<typename FloatType>
+template <typename VectorStoreType>
 class BoundAngularDistance final : public BoundDistanceFunction {
 private:
+    using FloatType = VectorStoreType::FloatType;
     const vespalib::hwaccelrated::IAccelrated & _computer;
-    mutable TemporaryVectorStore<FloatType> _tmpSpace;
+    mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs;
     double _lhs_norm_sq;
 public:
@@ -66,21 +67,30 @@ public:
     }
 };
 
-template class BoundAngularDistance<float>;
-template class BoundAngularDistance<double>;
+template class BoundAngularDistance<TemporaryVectorStore<float>>;
+template class BoundAngularDistance<TemporaryVectorStore<double>>;
+template class BoundAngularDistance<TemporaryVectorStore<Int8Float>>;
+template class BoundAngularDistance<ReferenceVectorStore<float>>;
+template class BoundAngularDistance<ReferenceVectorStore<double>>;
+template class BoundAngularDistance<ReferenceVectorStore<Int8Float>>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 AngularDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
-    using DFT = BoundAngularDistance<FloatType>;
+    using DFT = BoundAngularDistance<TemporaryVectorStore<FloatType>>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 AngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
-    using DFT = BoundAngularDistance<FloatType>;
-    return std::make_unique<DFT>(lhs);
+    if (_reference_insertion_vector) {
+        using DFT = BoundAngularDistance<ReferenceVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    } else {
+        using DFT = BoundAngularDistance<TemporaryVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    }
 }
 
 template class AngularDistanceFunctionFactory<float>;

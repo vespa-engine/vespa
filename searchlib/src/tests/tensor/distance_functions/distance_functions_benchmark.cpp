@@ -75,7 +75,11 @@ void benchmark(size_t iterations, size_t elems, const DistanceFunctionFactory & 
 template<typename T>
 void benchmark(size_t iterations, size_t elems, const std::string & dist_functions) {
     if (dist_functions.find("euclid") != npos) {
-        benchmark<T>(iterations, elems, EuclideanDistanceFunctionFactory<T>());
+        if constexpr ( ! std::is_same<T, BFloat16>()) {
+            benchmark<T>(iterations, elems, EuclideanDistanceFunctionFactory<T>());
+        } else {
+            benchmark<BFloat16>(iterations, elems, EuclideanDistanceFunctionFactory<float>());
+        }
     }
     if (dist_functions.find("angular") != npos) {
         if constexpr ( ! std::is_same<T, BFloat16>()) {

@@ -10,11 +10,19 @@ namespace search::tensor {
  * Calculates angular distance between vectors
  * Will use instruction optimal for the cpu it is running on
  * after converting both vectors to an optimal cell type.
+ *
+ * When reference_insertion_vector == true:
+ *   - Vectors passed to for_insertion_vector() and BoundDistanceFunction::calc() are assumed to have the same type as FloatType.
+ *   - The TypedCells memory is just referenced and used directly in calculations,
+ *     and thus no transformation via a temporary memory buffer occurs.
  */
 template <typename FloatType>
 class AngularDistanceFunctionFactory : public DistanceFunctionFactory {
+private:
+    bool _reference_insertion_vector;
 public:
-    AngularDistanceFunctionFactory() = default;
+    AngularDistanceFunctionFactory() noexcept : AngularDistanceFunctionFactory(false) {}
+    AngularDistanceFunctionFactory(bool reference_insertion_vector) noexcept : _reference_insertion_vector(reference_insertion_vector) {}
     BoundDistanceFunction::UP for_query_vector(TypedCells lhs) const override;
     BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) const override;
 };

@@ -4,17 +4,18 @@
 #include "temporary_vector_store.h"
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
-using vespalib::typify_invoke;
-using vespalib::eval::TypifyCellType;
 using vespalib::eval::Int8Float;
+using vespalib::eval::TypifyCellType;
+using vespalib::typify_invoke;
 
 namespace search::tensor {
 
-template<typename FloatType>
+template <typename VectorStoreType>
 class BoundPrenormalizedAngularDistance final : public BoundDistanceFunction {
 private:
+    using FloatType = VectorStoreType::FloatType;
     const vespalib::hwaccelrated::IAccelrated & _computer;
-    mutable TemporaryVectorStore<FloatType> _tmpSpace;
+    mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs;
     double _lhs_norm_sq;
 public:
@@ -46,7 +47,7 @@ public:
     double to_rawscore(double distance) const noexcept override {
         double dot_product = _lhs_norm_sq - distance;
         double cosine_similarity = dot_product / _lhs_norm_sq;
-        // should be in in range [-1,1] but roundoff may cause problems:
+        // should be in range [-1,1] but roundoff may cause problems:
         cosine_similarity = std::min(1.0, cosine_similarity);
         cosine_similarity = std::max(-1.0, cosine_similarity);
         double cosine_distance = 1.0 - cosine_similarity; // in range [0,2]
@@ -58,21 +59,30 @@ public:
     }
 };
 
-template class BoundPrenormalizedAngularDistance<float>;
-template class BoundPrenormalizedAngularDistance<double>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<float>>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<double>>;
+template class BoundPrenormalizedAngularDistance<TemporaryVectorStore<Int8Float>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<float>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<double>>;
+template class BoundPrenormalizedAngularDistance<ReferenceVectorStore<Int8Float>>;
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 PrenormalizedAngularDistanceFunctionFactory<FloatType>::for_query_vector(TypedCells lhs) const {
-    using DFT = BoundPrenormalizedAngularDistance<FloatType>;
+    using DFT = BoundPrenormalizedAngularDistance<TemporaryVectorStore<FloatType>>;
     return std::make_unique<DFT>(lhs);
 }
 
 template <typename FloatType>
 BoundDistanceFunction::UP
 PrenormalizedAngularDistanceFunctionFactory<FloatType>::for_insertion_vector(TypedCells lhs) const {
-    using DFT = BoundPrenormalizedAngularDistance<FloatType>;
-    return std::make_unique<DFT>(lhs);
+    if (_reference_insertion_vector) {
+        using DFT = BoundPrenormalizedAngularDistance<ReferenceVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    } else {
+        using DFT = BoundPrenormalizedAngularDistance<TemporaryVectorStore<FloatType>>;
+        return std::make_unique<DFT>(lhs);
+    }
 }
 
 template class PrenormalizedAngularDistanceFunctionFactory<float>;

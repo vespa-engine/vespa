@@ -55,11 +55,19 @@ public:
  * problem.  When inserting vectors, an extra dimension is
  * added ensuring behavior "as if" all vectors had length equal
  * to the longest vector inserted so far, or at least length 1.
+ *
+ * When reference_insertion_vector == true:
+ *   - Vectors passed to for_insertion_vector() and BoundDistanceFunction::calc() are assumed to have the same type as FloatType.
+ *   - The TypedCells memory is just referenced and used directly in calculations,
+ *     and thus no transformation via a temporary memory buffer occurs.
  */
-template<typename FloatType>
+template <typename FloatType>
 class MipsDistanceFunctionFactory : public MipsDistanceFunctionFactoryBase {
+private:
+    bool _reference_insertion_vector;
 public:
-    MipsDistanceFunctionFactory() noexcept = default;
+    MipsDistanceFunctionFactory() noexcept : MipsDistanceFunctionFactory(false) {}
+    MipsDistanceFunctionFactory(bool reference_insertion_vector) noexcept : _reference_insertion_vector(reference_insertion_vector) {}
     ~MipsDistanceFunctionFactory() override = default;
 
     BoundDistanceFunction::UP for_query_vector(TypedCells lhs) const override;
