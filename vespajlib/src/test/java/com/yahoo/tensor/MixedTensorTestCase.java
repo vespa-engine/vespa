@@ -2,9 +2,14 @@
 
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.functions.Reduce;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -157,6 +162,27 @@ public class MixedTensorTestCase {
                      "{i:b,j:0,k:d,l:0}:13.0, {i:b,j:0,k:d,l:1}:14.0, {i:b,j:1,k:c,l:0}:11.0, {i:b,j:1,k:c,l:1}:12.0, "+
                      "{i:b,j:1,k:d,l:0}:15.0, {i:b,j:1,k:d,l:1}:16.0}",
                 tensor.toString());
+    }
+
+    @Test
+    public void testSplitIntoDense() {
+        TensorType type = new TensorType.Builder().mapped("key").indexed("x", 3).build();
+        Tensor tensor = MixedTensor.Builder.of(type).
+                cell().label("key", "key1").label("x", 0).value(1).
+                cell().label("key", "key1").label("x", 1).value(2).
+                cell().label("key", "key1").label("x", 2).value(3).
+                cell().label("key", "key2").label("x", 0).value(4).
+                cell().label("key", "key2").label("x", 1).value(5).
+                cell().label("key", "key2").label("x", 2).value(6).
+                build();
+
+        Map<String, Tensor> indexedTensors = new HashMap<>();
+        tensor.sum("x").cellIterator()
+              .forEachRemaining(cell -> indexedTensors.put(cell.getKey().label(0),
+                                                           tensor.multiply(Tensor.Builder.of(type.mappedSubtype()).cell(cell.getKey(), 1.0).build()).sum("key")));
+
+        assertEquals("tensor(x[3]):[1.0, 2.0, 3.0]", indexedTensors.get("key1").toString());
+        assertEquals("tensor(x[3]):[4.0, 5.0, 6.0]", indexedTensors.get("key2").toString());
     }
 
 }

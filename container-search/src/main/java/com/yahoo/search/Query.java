@@ -384,9 +384,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             // We need special handling for "select" because it can be both the prefix of the nested JSON select
             // parameters, and a plain select expression. The latter will be disallowed by query profile types
             // since they contain the former.
-            String select = requestMap.get(Select.SELECT);
+            Object select = requestMap.get(Select.SELECT);
+            if (select == null)
+                select = queryProfile.get(Select.SELECT, requestMap);
             if (select != null)
-                properties().set(Select.SELECT, select);
+                properties().set(Select.SELECT, select.toString());
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
@@ -905,6 +907,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns the select to be used for this query, never null */
     public Select getSelect() { return select; }
+
+    /** Sets the select (grouping) parameter from a string. */
+    public void setSelect(String groupingString) { select.setGroupingExpressionString(groupingString); }
 
     /** Returns the ranking to be used for this query, never null */
     public Ranking getRanking() { return ranking; }

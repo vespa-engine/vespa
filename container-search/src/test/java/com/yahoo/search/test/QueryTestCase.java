@@ -306,6 +306,24 @@ public class QueryTestCase {
         assertEquals("Profile: myProfile", q.properties().get("myField"));
     }
 
+    /** Select is special handled due to the strange idea to also use it to contain subproperties with JSON. */
+    @Test
+    void testQueryProfileWithSelect() {
+        String grouping = "all(group(customerid) each(output(count())))";
+
+        { // select in the request
+            QueryProfile profile = new QueryProfile("myProfile");
+            Query q = new Query(QueryTestCase.httpEncode("/search?query=macbook&queryProfile=myProfile&select=" + grouping), profile.compile(null));
+            assertEquals(grouping, q.getSelect().getGroupingExpressionString());
+        }
+        { // select in the query profile
+            QueryProfile profile = new QueryProfile("myProfile");
+            profile.set("select", grouping, null);
+            Query q = new Query(QueryTestCase.httpEncode("/search?query=macbook&queryProfile=myProfile"), profile.compile(null));
+            assertEquals(grouping, q.getSelect().getGroupingExpressionString());
+        }
+    }
+
     @Test
     void testQueryProfileSourceAccess() {
         QueryProfile profile = new QueryProfile("myProfile");

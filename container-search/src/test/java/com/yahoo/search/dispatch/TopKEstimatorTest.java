@@ -88,7 +88,7 @@ public class TopKEstimatorTest {
 
     @Test
     void requireThatLargeKAreSane() {
-        System.out.println(dumpProbability(10, 0.05));
+        // System.out.println(dumpProbability(10, 0.05));
         TopKEstimator idealEstimator = new TopKEstimator(30, 0.9999);
         TopKEstimator skewedEstimator = new TopKEstimator(30, 0.9999, 0.05);
         int [] K = {10, 20, 40, 80, 100, 200, 400, 800, 1000, 2000, 4000, 8000, 10000, 20000, 40000, 80000, 100000};

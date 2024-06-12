@@ -740,13 +740,6 @@ public class JSONStringTestCase {
         Inspector value5 = new JSONString("{\"foo\":1}").inspect();
         Inspector value6 = new JSONString("[1,2,3]").inspect();
 
-        System.out.println("1: " + value1);
-        System.out.println("2: " + value2);
-        System.out.println("3: " + value3);
-        System.out.println("4: " + value4);
-        System.out.println("5: " + value5);
-        System.out.println("6: " + value6);
-
         assertEquals(Type.STRING, value1.type());
         assertEquals("", value1.asString());
 
