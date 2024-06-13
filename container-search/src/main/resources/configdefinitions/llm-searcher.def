@@ -9,3 +9,6 @@ stream bool default=true
 
 # The external LLM provider - the id of a LanguageModel component
 providerId string default=""
+
+# The default prompt to use if not overridden in query
+prompt string default=""

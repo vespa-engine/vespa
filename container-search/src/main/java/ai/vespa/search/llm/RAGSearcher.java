@@ -11,7 +11,11 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.Execution;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * An LLM searcher that uses the RAG (Retrieval-Augmented Generation) model to generate completions.
@@ -26,6 +30,7 @@ public class RAGSearcher extends LLMSearcher {
     private static Logger log = Logger.getLogger(RAGSearcher.class.getName());
 
     private static final String CONTEXT_PROPERTY = "context";
+    private static final String FIELDS_TO_INCLUDE_PROPERTY = "fields";
 
     @Inject
     public RAGSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
@@ -59,16 +64,29 @@ public class RAGSearcher extends LLMSearcher {
     }
 
     private String buildContext(Result result) {
+        Set<String> fieldsToInclude = getFieldsToInclude(result.getQuery());
+
         StringBuilder sb = new StringBuilder();
         var hits = result.hits();
-        hits.forEach(hit -> {
+        int counter = 1;
+        for (var hit: hits) {
+            sb.append("document [").append(counter++).append("]:\n");
             hit.fields().forEach((key, value) -> {
-                sb.append(key).append(": ").append(value).append("\n");
+                if (fieldsToInclude.isEmpty() || fieldsToInclude.contains(key)) {
+                    sb.append(key).append(": ").append(value).append("\n");
+                }
             });
             sb.append("\n");
-        });
-        var context = sb.toString();
-        return context;
+        }
+        return sb.toString();
+    }
+
+    private Set<String> getFieldsToInclude(Query query) {
+        String includedFields = lookupProperty(FIELDS_TO_INCLUDE_PROPERTY, query);
+        if (includedFields != null) {
+            return Arrays.stream(includedFields.split(",")).map(String::trim).collect(Collectors.toSet());
+        }
+        return new HashSet<>();
     }
 
 }
