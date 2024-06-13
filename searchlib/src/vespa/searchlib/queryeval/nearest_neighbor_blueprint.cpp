@@ -2,7 +2,7 @@
 
 #include "nearest_neighbor_blueprint.h"
 #include "emptysearch.h"
-#include "nearest_neighbor_iterator.h"
+#include "exact_nearest_neighbor_iterator.h"
 #include "nns_index_iterator.h"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -143,9 +143,9 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     default:
         ;
     }
-    return NearestNeighborIterator::create(strict(), tfmd,
-                                           std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
-                                           _distance_heap, *_global_filter);
+    return ExactNearestNeighborIterator::create(strict(), tfmd,
+                                                std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
+                                                _distance_heap, *_global_filter);
 }
 
 void

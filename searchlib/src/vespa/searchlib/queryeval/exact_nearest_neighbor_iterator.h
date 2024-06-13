@@ -16,7 +16,7 @@ namespace search::queryeval {
 
 class GlobalFilter;
 
-class NearestNeighborIterator : public SearchIterator
+class ExactNearestNeighborIterator : public SearchIterator
 {
 public:
     using ITensorAttribute = search::tensor::ITensorAttribute;
@@ -39,11 +39,11 @@ public:
         {}
     };
 
-    explicit NearestNeighborIterator(Params params_in)
+    explicit ExactNearestNeighborIterator(Params params_in)
         : _params(std::move(params_in))
     {}
 
-    static std::unique_ptr<NearestNeighborIterator> create(
+    static std::unique_ptr<ExactNearestNeighborIterator> create(
             bool strict,
             fef::TermFieldMatchData &tfmd,
             std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,

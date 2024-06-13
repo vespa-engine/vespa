@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "nearest_neighbor_iterator.h"
+#include "exact_nearest_neighbor_iterator.h"
 #include "global_filter.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
@@ -20,16 +20,16 @@ namespace search::queryeval {
  * Currently always does brute-force scanning, which is very expensive.
  **/
 template <bool strict, bool has_filter, bool has_single_subspace>
-class NearestNeighborImpl final : public NearestNeighborIterator
+class ExactNearestNeighborImpl final : public ExactNearestNeighborIterator
 {
 public:
-    explicit NearestNeighborImpl(Params params_in)
-        : NearestNeighborIterator(std::move(params_in)),
+    explicit ExactNearestNeighborImpl(Params params_in)
+        : ExactNearestNeighborIterator(std::move(params_in)),
           _lastScore(0.0)
     {
     }
 
-    ~NearestNeighborImpl() override;
+    ~ExactNearestNeighborImpl() override;
 
     void doSeek(uint32_t docId) override {
         double distanceLimit = params().distanceHeap.distanceLimit();
@@ -68,26 +68,26 @@ private:
 };
 
 template <bool strict, bool has_filter, bool has_single_subspace>
-NearestNeighborImpl<strict, has_filter, has_single_subspace>::~NearestNeighborImpl() = default;
+ExactNearestNeighborImpl<strict, has_filter, has_single_subspace>::~ExactNearestNeighborImpl() = default;
 
 namespace {
 
 template <bool strict, bool has_filter>
-std::unique_ptr<NearestNeighborIterator>
-resolve_single_subspace(NearestNeighborIterator::Params params)
+std::unique_ptr<ExactNearestNeighborIterator>
+resolve_single_subspace(ExactNearestNeighborIterator::Params params)
 {
     if (params.distance_calc->has_single_subspace()) {
-        using NNI = NearestNeighborImpl<strict, has_filter, true>;
+        using NNI = ExactNearestNeighborImpl<strict, has_filter, true>;
         return std::make_unique<NNI>(std::move(params));
     } else {
-        using NNI = NearestNeighborImpl<strict, has_filter, false>;
+        using NNI = ExactNearestNeighborImpl<strict, has_filter, false>;
         return std::make_unique<NNI>(std::move(params));
     }
 }
 
 template <bool has_filter>
-std::unique_ptr<NearestNeighborIterator>
-resolve_strict(bool strict, NearestNeighborIterator::Params params)
+std::unique_ptr<ExactNearestNeighborIterator>
+resolve_strict(bool strict, ExactNearestNeighborIterator::Params params)
 {
     if (strict) {
         return resolve_single_subspace<true, has_filter>(std::move(params));
@@ -98,8 +98,8 @@ resolve_strict(bool strict, NearestNeighborIterator::Params params)
 
 } // namespace <unnamed>
 
-std::unique_ptr<NearestNeighborIterator>
-NearestNeighborIterator::create(bool strict, fef::TermFieldMatchData &tfmd,
+std::unique_ptr<ExactNearestNeighborIterator>
+ExactNearestNeighborIterator::create(bool strict, fef::TermFieldMatchData &tfmd,
                                 std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                 NearestNeighborDistanceHeap &distanceHeap, const GlobalFilter &filter)
 {

@@ -7,7 +7,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
-#include <vespa/searchlib/queryeval/nearest_neighbor_iterator.h>
+#include <vespa/searchlib/queryeval/exact_nearest_neighbor_iterator.h>
 #include <vespa/searchlib/queryeval/nns_index_iterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -15,11 +15,7 @@
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("nearest_neighbor_test");
 
 #define EPS 1.0e-6
 
@@ -129,9 +125,9 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(threshold);
     const GlobalFilter &filter = *env._global_filter;
-    auto search = NearestNeighborIterator::create(strict, tfmd,
-                                                  std::make_unique<DistanceCalculator>(attr, qtv),
-                                                  dh, filter);
+    auto search = ExactNearestNeighborIterator::create(strict, tfmd,
+                                                       std::make_unique<DistanceCalculator>(attr, qtv),
+                                                       dh, filter);
     if (strict) {
         return SimpleResult().searchStrict(*search, attr.getNumDocs());
     } else {
@@ -201,17 +197,17 @@ std::ostream& operator<<(std::ostream& os, const TestParam& param)
     return os;
 }
 
-struct NnsIndexIteratorParameterizedTest : public ::testing::TestWithParam<TestParam> {};
+struct ExactNearestNeighborIteratorParameterizedTest : public ::testing::TestWithParam<TestParam> {};
 
-INSTANTIATE_TEST_SUITE_P(NnsTestSuite,
-                         NnsIndexIteratorParameterizedTest,
+INSTANTIATE_TEST_SUITE_P(ExactNearestNeighborIteratorTestSuite,
+                         ExactNearestNeighborIteratorParameterizedTest,
                          ::testing::Values(
                                  TestParam(denseSpecDouble, denseSpecDouble),
                                  TestParam(denseSpecFloat, denseSpecFloat),
                                  TestParam(mixed_spec, denseSpecDouble)
                          ));
 
-TEST_P(NnsIndexIteratorParameterizedTest, require_that_iterator_returns_expected_results) {
+TEST_P(ExactNearestNeighborIteratorParameterizedTest, require_that_iterator_returns_expected_results) {
     auto param = GetParam();
     verify_iterator_returns_expected_results(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
 }
@@ -243,7 +239,7 @@ verify_iterator_returns_filtered_results(const vespalib::string& attribute_tenso
     EXPECT_EQ(result, farExpect);
 }
 
-TEST_P(NnsIndexIteratorParameterizedTest, require_that_iterator_returns_filtered_results) {
+TEST_P(ExactNearestNeighborIteratorParameterizedTest, require_that_iterator_returns_filtered_results) {
     auto param = GetParam();
     verify_iterator_returns_filtered_results(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
 }
@@ -256,9 +252,9 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
     NearestNeighborDistanceHeap dh(2);
     auto dummy_filter = GlobalFilter::create();
-    auto search = NearestNeighborIterator::create(strict, tfmd,
-                                                  std::make_unique<DistanceCalculator>(attr, qtv),
-                                                  dh, *dummy_filter);
+    auto search = ExactNearestNeighborIterator::create(strict, tfmd,
+                                                       std::make_unique<DistanceCalculator>(attr, qtv),
+                                                       dh, *dummy_filter);
     uint32_t limit = attr.getNumDocs();
     uint32_t docid = 1;
     search->initRange(docid, limit);
@@ -299,7 +295,7 @@ verify_iterator_sets_expected_rawscore(const vespalib::string& attribute_tensor_
     }
 }
 
-TEST_P(NnsIndexIteratorParameterizedTest, require_that_iterator_sets_expected_rawscore) {
+TEST_P(ExactNearestNeighborIteratorParameterizedTest, require_that_iterator_sets_expected_rawscore) {
     auto param = GetParam();
     verify_iterator_sets_expected_rawscore(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
 }

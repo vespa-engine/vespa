@@ -199,6 +199,7 @@ vespa_define_module(
     src/tests/queryeval/blueprint
     src/tests/queryeval/dot_product
     src/tests/queryeval/equiv
+    src/tests/queryeval/exact_nearest_neighbor
     src/tests/queryeval/fake_searchable
     src/tests/queryeval/filter_search
     src/tests/queryeval/flow
@@ -208,7 +209,6 @@ vespa_define_module(
     src/tests/queryeval/matching_elements_search
     src/tests/queryeval/monitoring_search_iterator
     src/tests/queryeval/multibitvectoriterator
-    src/tests/queryeval/nearest_neighbor
     src/tests/queryeval/or_speed
     src/tests/queryeval/parallel_weak_and
     src/tests/queryeval/predicate
