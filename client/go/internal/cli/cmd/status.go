@@ -150,7 +150,7 @@ func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
 		Long: `Show status of a Vespa deployment.
 
 This commands shows whether a Vespa deployment has converged on the latest run
- (Vespa Cloud) or config generation (self-hosted). If an argument is given,
+(Vespa Cloud) or config generation (self-hosted). If an argument is given,
 show the convergence status of that particular run or generation.
 `,
 		Example: `$ vespa status deployment

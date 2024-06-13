@@ -13,8 +13,7 @@ func newFetchCmd(cli *CLI) *cobra.Command {
 
 This command can be used to download an already deployed Vespa application
 package. The package is written as a ZIP file to the given path, or current
-directory if no path is given.
-`,
+directory if no path is given.`,
 		Example: `$ vespa fetch
 $ vespa fetch mydir/
 $ vespa fetch -t cloud mycloudapp.zip

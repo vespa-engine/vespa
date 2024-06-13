@@ -29,19 +29,22 @@ func newDeployCmd(cli *CLI) *cobra.Command {
 		Short: "Deploy (prepare and activate) an application package",
 		Long: `Deploy (prepare and activate) an application package.
 
-When this returns successfully the application package has been validated
-and activated on config servers. The process of applying it on individual nodes
-has started but may not have completed.
+An application package defines a deployable Vespa application. See
+https://docs.vespa.ai/en/reference/application-packages-reference.html for
+details about the files contained in this package.
+
+To get started, 'vespa clone' can be used to download a sample application.
+
+This command deploys an application package. When deploy returns successfully
+the application package has been validated and activated on config servers. The
+process of applying it on individual nodes has started but may not have
+completed.
 
 If application directory is not specified, it defaults to working directory.
 
-When deploying to Vespa Cloud the system can be overridden by setting the
-environment variable VESPA_CLI_CLOUD_SYSTEM. This is intended for internal use
-only.
-
-In Vespa Cloud you may override the Vespa runtime version for your deployment.
-This option should only be used if you have a reason for using a specific
-version. By default Vespa Cloud chooses a suitable version for you.
+In Vespa Cloud you may override the Vespa runtime version (--version) for your
+deployment. This option should only be used if you have a reason for using a
+specific version. By default Vespa Cloud chooses a suitable version for you.
 `,
 		Example: `$ vespa deploy .
 $ vespa deploy -t cloud

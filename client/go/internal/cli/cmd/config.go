@@ -35,7 +35,7 @@ func newConfigCmd() *cobra.Command {
 
 This command allows setting persistent values for the global flags found in
 Vespa CLI. On future invocations the flag can then be omitted as it is read
- from the config file instead.
+from the config file instead.
 
 Configuration is written to $HOME/.vespa by default. This path can be
 overridden by setting the VESPA_CLI_HOME environment variable.
@@ -114,8 +114,7 @@ zone
 Specifies a custom zone to use when connecting to a Vespa Cloud application.
 This is only relevant for cloud and hosted targets and defaults to a dev zone.
 See https://cloud.vespa.ai/en/reference/zones for available zones. Examples:
-dev.aws-us-east-1c, dev.gcp-us-central1-f, perf.aws-us-east-1c
-`,
+dev.aws-us-east-1c, dev.gcp-us-central1-f, perf.aws-us-east-1c`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,
 		Args:              cobra.MinimumNArgs(1),
@@ -143,8 +142,7 @@ $ vespa config set application my-tenant.my-application.my-instance
 $ vespa config set instance other-instance
 
 # Set an option in local configuration, for the current application only
-$ vespa config set --local wait 600
-`,
+$ vespa config set --local zone perf.us-north-1`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(2),
@@ -180,8 +178,7 @@ Unsetting a configuration option will reset it to its default value, which may b
 $ vespa config unset target
 
 # Stop overriding application option in local config
-$ vespa config unset --local application
-`,
+$ vespa config unset --local application`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(1),
@@ -216,8 +213,7 @@ application, i.e. it takes into account any local configuration located in
 `,
 		Example: `$ vespa config get
 $ vespa config get target
-$ vespa config get --local
-`,
+$ vespa config get --local`,
 		Args:              cobra.MaximumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
