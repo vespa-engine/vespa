@@ -5,6 +5,7 @@
 #include "asciiconfigreader.h"
 #include <vespa/config/common/types.h>
 #include <vespa/config/common/configvalue.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
 

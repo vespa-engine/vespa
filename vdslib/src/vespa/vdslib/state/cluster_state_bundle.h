@@ -46,13 +46,13 @@ public:
         std::shared_ptr<const ClusterState>,
         document::BucketSpace::hash
     >;
-    std::shared_ptr<const ClusterState> _baselineClusterState;
-    BucketSpaceStateMapping _derivedBucketSpaceStates;
-    std::optional<FeedBlock> _feed_block;
+    std::shared_ptr<const ClusterState>             _baselineClusterState;
+    BucketSpaceStateMapping                         _derivedBucketSpaceStates;
+    std::optional<FeedBlock>                        _feed_block;
     std::shared_ptr<const DistributionConfigBundle> _distribution_bundle;
-    bool _deferredActivation;
+    bool                                            _deferredActivation;
 public:
-    explicit ClusterStateBundle(const ClusterState &baselineClusterState);
+    explicit ClusterStateBundle(const ClusterState& baselineClusterState);
     ClusterStateBundle(const ClusterState& baselineClusterState,
                        BucketSpaceStateMapping derivedBucketSpaceStates);
     ClusterStateBundle(const ClusterState& baselineClusterState,
@@ -62,7 +62,7 @@ public:
                        BucketSpaceStateMapping derivedBucketSpaceStates,
                        const FeedBlock& feed_block_in,
                        bool deferredActivation);
-    ClusterStateBundle(const ClusterState& baseline_cluster_state,
+    ClusterStateBundle(std::shared_ptr<const ClusterState> baseline_cluster_state,
                        BucketSpaceStateMapping derived_bucket_space_states,
                        std::optional<FeedBlock> feed_block_in,
                        std::shared_ptr<const DistributionConfigBundle> distribution_bundle,
@@ -74,8 +74,14 @@ public:
     ClusterStateBundle& operator=(ClusterStateBundle&&) noexcept;
 
     ~ClusterStateBundle();
-    const std::shared_ptr<const ClusterState> &getBaselineClusterState() const;
-    const std::shared_ptr<const ClusterState> &getDerivedClusterState(document::BucketSpace bucketSpace) const;
+
+    // Factory function for "simulating" atomic cluster states with distribution config attached
+    // when the cluster controller is not yet on version that sends bundled config.
+    [[nodiscard]] std::shared_ptr<const ClusterStateBundle> clone_with_new_distribution(
+            std::shared_ptr<const DistributionConfigBundle>) const;
+
+    const std::shared_ptr<const ClusterState>& getBaselineClusterState() const;
+    const std::shared_ptr<const ClusterState>& getDerivedClusterState(document::BucketSpace bucketSpace) const;
     const BucketSpaceStateMapping& getDerivedClusterStates() const noexcept {
         return _derivedBucketSpaceStates;
     }
@@ -96,8 +102,8 @@ public:
     [[nodiscard]] uint32_t getVersion() const;
     [[nodiscard]] bool deferredActivation() const noexcept { return _deferredActivation; }
     [[nodiscard]] std::string toString() const;
-    bool operator==(const ClusterStateBundle &rhs) const noexcept;
-    bool operator!=(const ClusterStateBundle &rhs) const noexcept { return !operator==(rhs); }
+    bool operator==(const ClusterStateBundle& rhs) const noexcept;
+    bool operator!=(const ClusterStateBundle& rhs) const noexcept { return !operator==(rhs); }
 };
 
 std::ostream& operator<<(std::ostream&, const ClusterStateBundle&);

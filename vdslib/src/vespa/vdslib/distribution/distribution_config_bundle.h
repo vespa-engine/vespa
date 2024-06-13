@@ -7,6 +7,11 @@
 
 namespace storage::lib {
 
+/**
+ * Encapsulates immutable distribution config bound to a particular cluster state version.
+ * Implicitly derives (and provides) bucket space-specific distribution configs, allowing
+ * such transforms to be performed and stored in one location.
+ */
 class DistributionConfigBundle {
     std::unique_ptr<const Distribution::DistributionConfig> _config;
     std::shared_ptr<const Distribution>                     _default_distribution;
@@ -14,12 +19,11 @@ class DistributionConfigBundle {
     uint16_t                                                _total_node_count;
     uint16_t                                                _total_leaf_group_count;
 public:
-    // TODO shared_ptr?
-    explicit DistributionConfigBundle(std::unique_ptr<const Distribution::DistributionConfig> config);
+    explicit DistributionConfigBundle(std::shared_ptr<const Distribution> distr);
+    explicit DistributionConfigBundle(std::unique_ptr<const Distribution::DistributionConfig> config); // TODO shared_ptr?
     explicit DistributionConfigBundle(Distribution::ConfigWrapper config);
     ~DistributionConfigBundle();
 
-    // TODO config_sp?
     [[nodiscard]] const Distribution::DistributionConfig& config() const noexcept { return *_config; }
 
     [[nodiscard]] const Distribution& default_distribution() const noexcept { return *_default_distribution; }
@@ -28,6 +32,9 @@ public:
     }
     [[nodiscard]] std::shared_ptr<const Distribution> bucket_space_distribution_or_nullptr(document::BucketSpace space) const noexcept {
         return _bucket_space_distributions.get_or_nullptr(space);
+    }
+    [[nodiscard]] const BucketSpaceDistributionConfigs& bucket_space_distributions() const noexcept {
+        return _bucket_space_distributions;
     }
 
     [[nodiscard]] uint16_t total_node_count() const noexcept { return _total_node_count; }
@@ -41,6 +48,7 @@ public:
         return !(*this == rhs);
     }
 
+    [[nodiscard]] static std::shared_ptr<DistributionConfigBundle> of(std::shared_ptr<const Distribution> cfg);
     [[nodiscard]] static std::shared_ptr<DistributionConfigBundle> of(Distribution::ConfigWrapper cfg);
     [[nodiscard]] static std::shared_ptr<DistributionConfigBundle> of(std::unique_ptr<const Distribution::DistributionConfig> cfg);
 };

@@ -54,7 +54,7 @@ bundle_with_feed_block(const ClusterStateBundle::FeedBlock& feed_block) {
 ClusterStateBundle
 bundle_with_distribution(Distribution::ConfigWrapper dist_cfg_wrapper) {
     auto distr_bundle = DistributionConfigBundle::of(std::move(dist_cfg_wrapper));
-    return {ClusterState("storage:2"), {}, std::nullopt, std::move(distr_bundle), false};
+    return {std::make_shared<ClusterState>("storage:2"), {}, std::nullopt, std::move(distr_bundle), false};
 }
 
 TEST(ClusterStateBundleTest, verify_equality_operator) {

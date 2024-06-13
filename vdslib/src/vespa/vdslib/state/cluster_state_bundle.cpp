@@ -65,12 +65,12 @@ ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
 {
 }
 
-ClusterStateBundle::ClusterStateBundle(const ClusterState& baseline_cluster_state,
+ClusterStateBundle::ClusterStateBundle(std::shared_ptr<const ClusterState> baseline_cluster_state,
                                        BucketSpaceStateMapping derived_bucket_space_states,
                                        std::optional<FeedBlock> feed_block_in,
                                        std::shared_ptr<const DistributionConfigBundle> distribution_bundle,
                                        bool deferred_activation)
-    : _baselineClusterState(std::make_shared<const ClusterState>(baseline_cluster_state)),
+    : _baselineClusterState(std::move(baseline_cluster_state)),
       _derivedBucketSpaceStates(std::move(derived_bucket_space_states)),
       _feed_block(std::move(feed_block_in)),
       _distribution_bundle(std::move(distribution_bundle)),
@@ -85,13 +85,20 @@ ClusterStateBundle& ClusterStateBundle::operator=(ClusterStateBundle&&) noexcept
 
 ClusterStateBundle::~ClusterStateBundle() = default;
 
-const std::shared_ptr<const lib::ClusterState> &
+std::shared_ptr<const ClusterStateBundle>
+ClusterStateBundle::clone_with_new_distribution(std::shared_ptr<const DistributionConfigBundle> distribution) const
+{
+    return std::make_shared<const ClusterStateBundle>(_baselineClusterState, _derivedBucketSpaceStates, _feed_block,
+                                                      std::move(distribution), _deferredActivation);
+}
+
+const std::shared_ptr<const lib::ClusterState>&
 ClusterStateBundle::getBaselineClusterState() const
 {
     return _baselineClusterState;
 }
 
-const std::shared_ptr<const lib::ClusterState> &
+const std::shared_ptr<const lib::ClusterState>&
 ClusterStateBundle::getDerivedClusterState(document::BucketSpace bucketSpace) const
 {
     auto itr = _derivedBucketSpaceStates.find(bucketSpace);

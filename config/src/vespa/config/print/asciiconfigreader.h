@@ -3,6 +3,8 @@
 
 #include "configreader.h"
 
+namespace vespalib { class asciistream; }
+
 namespace config {
 
 class ConfigFormatter;
