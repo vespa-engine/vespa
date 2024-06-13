@@ -23,14 +23,13 @@ When run interactively, the command will prompt for confirmation before
 removing the application. When run non-interactively, the command will refuse
 to remove the application unless the --force option is given.
 
-This command can only be used to remove non-production deployments. See
-https://cloud.vespa.ai/en/deleting-applications for how to remove
-production deployments. This command can only be used for deployments to
-Vespa Cloud, for other systems destroy an application by cleaning up
-containers in use by the application, see e.g
-https://github.com/vespa-engine/sample-apps/tree/master/examples/operations/multinode-HA#clean-up-after-testing
+This command can only be used to remove non-production deployments, in Vespa
+Cloud. See https://cloud.vespa.ai/en/deleting-applications for how to remove
+production deployments.
 
-`,
+For other systems, destroy the application by removing the
+containers in use by the application. For example:
+https://github.com/vespa-engine/sample-apps/tree/master/examples/operations/multinode-HA#clean-up-after-testing`,
 		Example: `$ vespa destroy
 $ vespa destroy -a mytenant.myapp.myinstance
 $ vespa destroy --force`,
