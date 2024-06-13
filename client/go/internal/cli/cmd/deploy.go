@@ -42,13 +42,9 @@ completed.
 
 If application directory is not specified, it defaults to working directory.
 
-When deploying to Vespa Cloud the system can be overridden by setting the
-environment variable VESPA_CLI_CLOUD_SYSTEM. This is intended for internal use
-only.
-
-In Vespa Cloud you may override the Vespa runtime version for your deployment.
-This option should only be used if you have a reason for using a specific
-version. By default Vespa Cloud chooses a suitable version for you.
+In Vespa Cloud you may override the Vespa runtime version (--version) for your
+deployment. This option should only be used if you have a reason for using a
+specific version. By default Vespa Cloud chooses a suitable version for you.
 `,
 		Example: `$ vespa deploy .
 $ vespa deploy -t cloud
