@@ -6,6 +6,7 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import org.junit.jupiter.api.Test;
@@ -22,10 +23,17 @@ public class OpportunisticWeakAndSearcherTestCase {
         return root;
     }
 
+    private static CompositeItem addItem(CompositeItem composite, Item item) {
+        composite.addItem(item);
+        return composite;
+    }
+
     @Test
     public void requireThatWeakAndIsDetected() {
         assertEquals(-1, OpportunisticWeakAndSearcher.targetHits(new OrItem()));
-        assertEquals(33, OpportunisticWeakAndSearcher.targetHits(new WeakAndItem(33)));
+        assertEquals(-1, OpportunisticWeakAndSearcher.targetHits(new WeakAndItem(33)));
+        assertEquals(-1, OpportunisticWeakAndSearcher.targetHits(addItem(new WeakAndItem(33), new TrueItem())));
+        assertEquals(33, OpportunisticWeakAndSearcher.targetHits(addItem(addItem(new WeakAndItem(33), new TrueItem()), new TrueItem())));
         assertEquals(77, OpportunisticWeakAndSearcher.targetHits(buildQueryItem(new OrItem(), new WeakAndItem(77))));
         assertEquals(77, OpportunisticWeakAndSearcher.targetHits(buildQueryItem(new AndItem(), new WeakAndItem(77))));
         assertEquals(-1, OpportunisticWeakAndSearcher.targetHits(buildQueryItem(new OrItem(), new AndItem())));

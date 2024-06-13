@@ -52,7 +52,9 @@ public class OpportunisticWeakAndSearcher extends Searcher {
     // returns targetHits for the first WeakAndItem found, -1 if none found.
     static int targetHits(Item item) {
         if (!(item instanceof CompositeItem compositeItem)) return -1;
-        if (item instanceof WeakAndItem weakAndItem) return weakAndItem.getN();
+        if (item instanceof WeakAndItem weakAndItem) {
+            return (weakAndItem.getItemCount() >= 2) ? weakAndItem.getN() : -1;
+        }
         for (int i = 0; i < compositeItem.getItemCount(); i++) {
             int targetHits = targetHits(compositeItem.getItem(i));
             if (targetHits >= 0) return targetHits;
