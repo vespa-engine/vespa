@@ -9253,6 +9253,7 @@
       "public ai.vespa.search.llm.LlmSearcherConfig$Builder propertyPrefix(java.lang.String)",
       "public ai.vespa.search.llm.LlmSearcherConfig$Builder stream(boolean)",
       "public ai.vespa.search.llm.LlmSearcherConfig$Builder providerId(java.lang.String)",
+      "public ai.vespa.search.llm.LlmSearcherConfig$Builder prompt(java.lang.String)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -9292,7 +9293,8 @@
       "public void <init>(ai.vespa.search.llm.LlmSearcherConfig$Builder)",
       "public java.lang.String propertyPrefix()",
       "public boolean stream()",
-      "public java.lang.String providerId()"
+      "public java.lang.String providerId()",
+      "public java.lang.String prompt()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

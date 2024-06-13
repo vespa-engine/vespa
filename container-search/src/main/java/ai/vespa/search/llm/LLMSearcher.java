@@ -47,6 +47,7 @@ public class LLMSearcher extends Searcher {
     private final JsonRenderer jsonRenderer;
 
     private final String propertyPrefix;
+    private final String prompt;
     private final boolean stream;
     private final LanguageModel languageModel;
     private final String languageModelId;
@@ -54,6 +55,7 @@ public class LLMSearcher extends Searcher {
     @Inject
     public LLMSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.stream = config.stream();
+        this.prompt = config.prompt();
         this.languageModelId = config.providerId();
         this.languageModel = findLanguageModel(languageModelId, languageModels);
         this.propertyPrefix = config.propertyPrefix();
@@ -183,6 +185,10 @@ public class LLMSearcher extends Searcher {
         String prompt = lookupPropertyWithOrWithoutPrefix(PROMPT_PROPERTY, p -> query.properties().getString(p));
         if (prompt != null)
             return prompt;
+
+        // Look for prompt defined in config
+        if (this.prompt != null && this.prompt.length() > 0)
+            return this.prompt;
 
         // If not found, use query directly
         prompt = query.getModel().getQueryString();
