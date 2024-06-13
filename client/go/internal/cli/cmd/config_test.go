@@ -156,19 +156,19 @@ func assertConfigCommandErr(t *testing.T, configHome, expected string, args ...s
 
 func TestReadAPIKey(t *testing.T) {
 	cli, _, _ := newTestCLI(t)
-	key, err := cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err := cli.config.readAPIKey(cli, "t1")
 	assert.Nil(t, key)
 	require.NotNil(t, err)
 
 	// From default path when it exists
 	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "t1.api-key.pem"), []byte("foo"), 0600))
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Equal(t, []byte("foo"), key)
 
 	// Cloud CI never reads key from disk as it's not expected to have any
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_CLOUD_CI=true")
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Nil(t, key)
 
@@ -176,20 +176,20 @@ func TestReadAPIKey(t *testing.T) {
 	keyFile := filepath.Join(t.TempDir(), "key")
 	require.Nil(t, os.WriteFile(keyFile, []byte("bar"), 0600))
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY_FILE="+keyFile)
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Equal(t, []byte("bar"), key)
 
 	// From key specified in environment
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY=baz")
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Equal(t, []byte("baz"), key)
 
 	// Prefer Auth0 if we have auth config
 	cli, _, _ = newTestCLI(t)
 	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte("foo"), 0600))
-	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Nil(t, key)
 }
@@ -209,9 +209,14 @@ func TestConfigReadTLSOptions(t *testing.T) {
 	assertTLSOptions(t, homeDir, app,
 		vespa.TargetLocal,
 		vespa.TLSOptions{
-			TrustAll:      true,
-			CACertificate: []byte("cacert"),
-			KeyPair:       []tls.Certificate{keyPair},
+			TrustAll:          true,
+			KeyPair:           []tls.Certificate{keyPair},
+			CACertificatePEM:  []byte("cacert"),
+			CertificatePEM:    pemCert,
+			PrivateKeyPEM:     pemKey,
+			CACertificateFile: "VESPA_CLI_DATA_PLANE_CA_CERT",
+			CertificateFile:   "VESPA_CLI_DATA_PLANE_CERT",
+			PrivateKeyFile:    "VESPA_CLI_DATA_PLANE_KEY",
 		},
 		"VESPA_CLI_DATA_PLANE_TRUST_ALL=true",
 		"VESPA_CLI_DATA_PLANE_CA_CERT=cacert",
@@ -230,7 +235,9 @@ func TestConfigReadTLSOptions(t *testing.T) {
 		vespa.TargetLocal,
 		vespa.TLSOptions{
 			KeyPair:           []tls.Certificate{keyPair},
-			CACertificate:     []byte("cacert"),
+			CACertificatePEM:  []byte("cacert"),
+			CertificatePEM:    pemCert,
+			PrivateKeyPEM:     pemKey,
 			CACertificateFile: caCertFile,
 			CertificateFile:   certFile,
 			PrivateKeyFile:    keyFile,
@@ -249,6 +256,8 @@ func TestConfigReadTLSOptions(t *testing.T) {
 		vespa.TargetLocal,
 		vespa.TLSOptions{
 			KeyPair:         []tls.Certificate{keyPair},
+			CertificatePEM:  pemCert,
+			PrivateKeyPEM:   pemKey,
 			CertificateFile: defaultCertFile,
 			PrivateKeyFile:  defaultKeyFile,
 		},

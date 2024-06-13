@@ -463,7 +463,7 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 }
 
 func (c *CLI) cloudApiAuthenticator(deployment vespa.Deployment, system vespa.System) (vespa.Authenticator, error) {
-	apiKey, err := c.config.readAPIKey(c, system, deployment.Application.Tenant)
+	apiKey, err := c.config.readAPIKey(c, deployment.Application.Tenant)
 	if err != nil {
 		return nil, err
 	}

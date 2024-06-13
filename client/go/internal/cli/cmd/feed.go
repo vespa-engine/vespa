@@ -143,7 +143,7 @@ func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter) ([]h
 		// Create a separate HTTP client for each service
 		client := cli.httpClientFactory(timeout)
 		// Feeding should always use HTTP/2
-		httputil.ForceHTTP2(client, service.TLSOptions.KeyPair, service.TLSOptions.CACertificate, service.TLSOptions.TrustAll)
+		httputil.ForceHTTP2(client, service.TLSOptions.KeyPair, service.TLSOptions.CACertificatePEM, service.TLSOptions.TrustAll)
 		service.SetClient(client)
 		services = append(services, service)
 	}

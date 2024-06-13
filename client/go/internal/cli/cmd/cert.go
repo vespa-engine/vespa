@@ -160,10 +160,10 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	if pkg.HasCertificate() && !overwriteCertificate {
 		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
 	}
-	return maybeCopyCertificate(true, false, cli, target, pkg)
+	return requireCertificate(true, false, cli, target, pkg)
 }
 
-func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
+func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
 	if pkg.IsZip() {
 		if ignoreZip {
 			cli.printWarning("Cannot verify existence of "+color.CyanString("security/clients.pem")+" since '"+pkg.Path+"' is compressed",
@@ -175,10 +175,28 @@ func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, 
 			return errHint(fmt.Errorf("cannot add certificate to compressed application package: '%s'", pkg.Path), hint)
 		}
 	}
+	tlsOptions, err := cli.config.readTLSOptions(target.Deployment().Application, target.Type())
+	if err != nil {
+		return err
+	}
+	if len(tlsOptions.CertificatePEM) == 0 {
+		return errHint(fmt.Errorf("no certificate exists for %s", target.Deployment().Application.String()), "Try (re)creating the certificate with 'vespa auth cert'")
+	}
 	if force {
-		return copyCertificate(cli, target, pkg)
+		return copyCertificate(tlsOptions, cli, pkg)
 	}
 	if pkg.HasCertificate() {
+		matches, err := pkg.HasMatchingCertificate(tlsOptions.CertificatePEM)
+		if err != nil {
+			return err
+		}
+		if !matches {
+			return errHint(fmt.Errorf("certificate in %s does not match the stored key pair for %s",
+				filepath.Join("security", "clients.pem"),
+				target.Deployment().Application.String()),
+				"If this application was deployed using a different application ID in the past, the matching key pair may be stored under a different ID in "+cli.config.homeDir,
+				"Specify the matching application with --application, or add the current certificate to the package using --add-cert")
+		}
 		return nil
 	}
 	if cli.isTerminal() {
@@ -188,7 +206,7 @@ func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, 
 			return err
 		}
 		if ok {
-			return copyCertificate(cli, target, pkg)
+			return copyCertificate(tlsOptions, cli, pkg)
 		}
 	}
 	return errHint(fmt.Errorf("deployment to Vespa Cloud requires certificate in application package"),
@@ -196,15 +214,7 @@ func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, 
 		"Pass --add-cert to use the certificate of the current application")
 }
 
-func copyCertificate(cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
-	tlsOptions, err := cli.config.readTLSOptions(target.Deployment().Application, target.Type())
-	if err != nil {
-		return err
-	}
-	hint := "Try generating the certificate with 'vespa auth cert'"
-	if tlsOptions.CertificateFile == "" {
-		return errHint(fmt.Errorf("no certificate exists for "+target.Deployment().Application.String()), hint)
-	}
+func copyCertificate(tlsOptions vespa.TLSOptions, cli *CLI, pkg vespa.ApplicationPackage) error {
 	data, err := os.ReadFile(tlsOptions.CertificateFile)
 	if err != nil {
 		return errHint(fmt.Errorf("could not read certificate file: %w", err))
