@@ -17,6 +17,7 @@
 namespace proton::matching {
 
 using namespace search::fef;
+using search::queryeval::MatchingPhase;
 using search::queryeval::SearchIterator;
 using vespalib::FeatureSet;
 using vespalib::ThreadBundle;
@@ -89,7 +90,9 @@ MatchMaster::match(search::engine::Trace & trace,
      * We need a non-const first phase rank lookup since it will be populated
      * later on when selecting documents for second phase ranking.
      */
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.heapSize), mtf.get_first_phase_rank_lookup());
+    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.heapSize),
+                                       mtf.get_first_phase_rank_lookup(),
+                                       [&mtf]() noexcept { mtf.query().set_matching_phase(MatchingPhase::SECOND_PHASE); });
     TimedMatchLoopCommunicator timedCommunicator(communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 

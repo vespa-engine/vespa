@@ -7,6 +7,7 @@
 #include "unpackinfo.h"
 #include "executeinfo.h"
 #include "global_filter.h"
+#include "matching_phase.h"
 #include "multisearch.h"
 #include <vespa/searchlib/common/bitvector.h>
 
@@ -387,6 +388,8 @@ public:
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
 
+    virtual void set_matching_phase(MatchingPhase matching_phase) noexcept = 0;
+
     virtual SearchIteratorUP createSearch(fef::MatchData &md) const = 0;
     virtual SearchIteratorUP createFilterSearch(FilterConstraint constraint) const = 0;
     static SearchIteratorUP create_and_filter(const Children &children, bool strict, FilterConstraint constraint);
@@ -512,6 +515,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
+    void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
     IntermediateBlueprint * asIntermediate() noexcept final { return this; }
@@ -558,6 +562,7 @@ public:
     const State &getState() const final { return _state; }
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
+    void set_matching_phase(MatchingPhase matching_phase) noexcept override;
     SearchIteratorUP createSearch(fef::MatchData &md) const override;
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 

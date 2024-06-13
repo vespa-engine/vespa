@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <algorithm>
+#include <atomic>
 
 using namespace proton::matching;
 
@@ -27,6 +28,8 @@ void PrintTo(const Scores& scores, std::ostream* os) {
 }
 
 std::vector<Hit> hit_vec(std::vector<Hit> list) { return list; }
+
+auto do_nothing = []() noexcept {};
 
 Hits makeScores(size_t id) {
     switch (id) {
@@ -103,7 +106,7 @@ TEST(MatchLoopCommunicatorTest, require_that_selectBest_gives_appropriate_result
 {
     constexpr size_t num_threads = 1;
     constexpr size_t thread_id = 0;
-    MatchLoopCommunicator f1(num_threads, 3, std::make_unique<EveryOdd>(), nullptr);
+    MatchLoopCommunicator f1(num_threads, 3, std::make_unique<EveryOdd>(), nullptr, do_nothing);
     EXPECT_EQ(hit_vec({{1, 5}}), selectBest(f1, hit_vec({{1, 5}, {2, 4}}), thread_id));
     EXPECT_EQ(hit_vec({{1, 5}, {3, 3}}), selectBest(f1, hit_vec({{1, 5}, {2, 4}, {3, 3}}), thread_id));
     EXPECT_EQ(hit_vec({{1, 5}, {3, 3}, {5, 1}}), selectBest(f1, hit_vec({{1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}, {6, 0}}), thread_id));
@@ -215,8 +218,8 @@ TEST(MatchLoopCommunicatorTest, require_that_hits_dropped_due_to_lack_of_diversi
     constexpr size_t num_threads = 1;
     constexpr size_t thread_id = 0;
     MatchLoopCommunicator f1(num_threads, 3);
-    MatchLoopCommunicator f2(num_threads, 3, std::make_unique<EveryOdd>(), nullptr);
-    MatchLoopCommunicator f3(num_threads, 3, std::make_unique<None>(), nullptr);
+    MatchLoopCommunicator f2(num_threads, 3, std::make_unique<EveryOdd>(), nullptr, do_nothing);
+    MatchLoopCommunicator f3(num_threads, 3, std::make_unique<None>(), nullptr, do_nothing);
     auto hits_in = hit_vec({{1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}});
     auto [my_work1, hits1, ranges1] = second_phase(f1, hits_in, thread_id, 10);
     auto [my_work2, hits2, ranges2] = second_phase(f2, hits_in, thread_id, 10);
@@ -303,13 +306,28 @@ TEST(MatchLoopCommunicatorTest, require_that_first_phase_rank_lookup_is_populate
     constexpr size_t thread_id = 0;
     FirstPhaseRankLookup l1;
     FirstPhaseRankLookup l2;
-    MatchLoopCommunicator f1(num_threads, 3, {}, &l1);
-    MatchLoopCommunicator f2(num_threads, 3, std::make_unique<EveryOdd>(), &l2);
+    MatchLoopCommunicator f1(num_threads, 3, {}, &l1, do_nothing);
+    MatchLoopCommunicator f2(num_threads, 3, std::make_unique<EveryOdd>(), &l2, do_nothing);
     auto hits_in = hit_vec({{21, 5}, {22, 4}, {23, 3}, {24, 2}, {25, 1}});
     auto res1 = second_phase(f1, hits_in, thread_id, 10);
     auto res2 = second_phase(f2, hits_in, thread_id, 10);
     EXPECT_EQ(FeatureVec({1, 2, 3, unranked, unranked}), extract_ranks(l1));
     EXPECT_EQ(FeatureVec({1, unranked, 3, unranked, 5}), extract_ranks(l2));
+}
+
+TEST(MatchLoopCommunicatorTest, require_that_before_second_phase_is_called_once)
+{
+    constexpr size_t num_threads = 5;
+    std::atomic<int> cnt(0);
+    auto before_second_phase = [&cnt]() noexcept { ++cnt; };
+    MatchLoopCommunicator f1(num_threads, 3, {}, nullptr, before_second_phase);
+    auto task = [&f1](Nexus& ctx) {
+                    auto thread_id = ctx.thread_id();
+                    auto hits_in = hit_vec({});
+                    (void) second_phase(f1, hits_in, thread_id, 1000.0);
+                };
+    Nexus::run(num_threads, task);
+    EXPECT_EQ(1, cnt.load(std::memory_order_acquire));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
