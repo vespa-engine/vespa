@@ -35,7 +35,7 @@ func newConfigCmd() *cobra.Command {
 
 This command allows setting persistent values for the global flags found in
 Vespa CLI. On future invocations the flag can then be omitted as it is read
- from the config file instead.
+from the config file instead.
 
 Configuration is written to $HOME/.vespa by default. This path can be
 overridden by setting the VESPA_CLI_HOME environment variable.
