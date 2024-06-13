@@ -18,6 +18,9 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * Will opportunistically replace the WeakAND with an AND as it is faster.
  * If enough hits are returned all is good and we return. If not we fall back to the original query.
+ * It is default off, and is enabled with weakAnd.opportunistic.and=true.
+ * It can be tuned with weakAnd.opportunistic.factor. Higher value than 1 might increase quality, lower value will
+ * improve performance. Default is 1.0. This factor is multiplied with the heap size of the wand(default 100) as target hits.
  *
  * @author baldersheim
  */
