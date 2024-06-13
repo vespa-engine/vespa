@@ -47,6 +47,7 @@ private:
     std::optional<uint32_t> _global_filter_hits;
     std::optional<double> _global_filter_hit_ratio;
     const vespalib::Doom& _doom;
+    MatchingPhase _matching_phase;
 
     void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index);
 public:
@@ -80,6 +81,7 @@ public:
     }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
+    void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 };
 
 std::ostream&
