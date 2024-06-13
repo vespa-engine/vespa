@@ -32,18 +32,21 @@ public class RAGSearcherTest {
     public void testRAGGeneration() {
         var eventStream = runRAGQuery(Map.of(
                 "prompt", "why are ducks better than cats?",
-                "traceLevel", "1"));
+                "llm.fields", "title,content",
+                "llm.includePrompt", "true"));
         var events = eventStream.incoming().drain();
         assertEquals(2, events.size());
 
         // Generated prompt
         var promptEvent = (EventStream.Event) events.get(0);
         assertEquals("prompt", promptEvent.type());
-        assertEquals("title: " + DOC1_TITLE + "\n" +
-                     "content: " + DOC1_CONTENT + "\n\n" +
-                     "title: " + DOC2_TITLE + "\n" +
-                     "content: " + DOC2_CONTENT + "\n\n\n" +
-                     "why are ducks better than cats?", promptEvent.toString());
+        assertEquals("document [1]:\n" +
+                "title: " + DOC1_TITLE + "\n" +
+                "content: " + DOC1_CONTENT + "\n\n" +
+                "document [2]:\n" +
+                "title: " + DOC2_TITLE + "\n" +
+                "content: " + DOC2_CONTENT + "\n\n\n" +
+                "why are ducks better than cats?", promptEvent.toString());
 
         // Generated completion
         var completionEvent = (EventStream.Event) events.get(1);
@@ -55,14 +58,17 @@ public class RAGSearcherTest {
     public void testPromptGeneration() {
         var eventStream = runRAGQuery(Map.of(
                 "query", "why are ducks better than cats?",
-                "prompt", "{context}\nGiven these documents, answer this query as concisely as possible: @query",
+                "llm.fields", "title,content",
+                "llm.prompt", "{context}\nGiven these documents, answer this query as concisely as possible: @query",
                 "traceLevel", "1"));
         var events = eventStream.incoming().drain();
 
         var promptEvent = (EventStream.Event) events.get(0);
         assertEquals("prompt", promptEvent.type());
-        assertEquals("title: " + DOC1_TITLE + "\n" +
+        assertEquals("document [1]:\n" +
+                "title: " + DOC1_TITLE + "\n" +
                 "content: " + DOC1_CONTENT + "\n\n" +
+                "document [2]:\n" +
                 "title: " + DOC2_TITLE + "\n" +
                 "content: " + DOC2_CONTENT + "\n\n\n" +
                 "Given these documents, answer this query as concisely as possible: " +
@@ -89,10 +95,13 @@ public class RAGSearcherTest {
             Hit hit1 = new Hit("1");
             hit1.setField("title", DOC1_TITLE);
             hit1.setField("content", DOC1_CONTENT);
+            hit1.setField("matchfeatures", "...");
 
             Hit hit2 = new Hit("2");
             hit2.setField("title", DOC2_TITLE);
             hit2.setField("content", DOC2_CONTENT);
+            hit2.setField("summaryfeatures", "...");
+            hit2.setField("rankfeatures", "...");
 
             Result r = new Result(query);
             r.hits().add(hit1);
