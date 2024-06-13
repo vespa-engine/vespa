@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -170,6 +172,7 @@ public class OpenTelemetryConfigGenerator {
         g.writeStartObject();
         addResourceProcessor(g);
         addRenameProcessor(g);
+        addFilterProcessor(g);
         g.writeEndObject();
     }
     private void addRenameProcessor(JsonGenerator g) throws java.io.IOException {
@@ -220,6 +223,35 @@ public class OpenTelemetryConfigGenerator {
         g.writeStringField("action", "insert");
         g.writeEndObject();
     }
+    static private Set<String> wantedMetrics() {
+        Set<String> result = new TreeSet<>();
+        var metrics = MetricsConsumer.vespa9.metrics();
+        for (var metric : metrics.values()) {
+            String oldName = PrometheusUtil.sanitize(metric.name);
+            String newName = PrometheusUtil.sanitize(metric.outputName);
+            result.add(oldName);
+            result.add(newName);
+        }
+        return result;
+    }
+    private void addFilterProcessor(JsonGenerator g) throws java.io.IOException {
+        g.writeFieldName("filter/metricset");
+        g.writeStartObject();
+        g.writeFieldName("metrics");
+        g.writeStartObject();
+        g.writeFieldName("include");
+        g.writeStartObject();
+        g.writeStringField("match_type", "strict");
+        g.writeFieldName("metric_names");
+        g.writeStartArray();
+        for (String metricName : wantedMetrics()) {
+            g.writeString(metricName);
+        }
+        g.writeEndArray();
+        g.writeEndObject();
+        g.writeEndObject();
+        g.writeEndObject();
+    }
     private void addServiceBlock(JsonGenerator g) throws java.io.IOException {
         g.writeFieldName("service");
         g.writeStartObject();
@@ -257,6 +289,7 @@ public class OpenTelemetryConfigGenerator {
         g.writeFieldName("processors");
         g.writeStartArray();
         g.writeString("metricstransform/rename");
+        g.writeString("filter/metricset");
         g.writeString("resource");
         g.writeEndArray();
         {
