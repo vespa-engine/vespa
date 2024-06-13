@@ -159,6 +159,7 @@ For detailed description of flags and configuration, see 'vespa help config'.
 			return fmt.Errorf("invalid command: %s", args[0])
 		},
 	}
+	cmd.CompletionOptions.HiddenDefaultCmd = true // Do not show the 'completion' command in help output
 	env := make(map[string]string)
 	for _, entry := range environment {
 		parts := strings.SplitN(entry, "=", 2)
