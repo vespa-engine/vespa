@@ -24,6 +24,7 @@ using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IntermediateBlueprint;
 using search::queryeval::MatchingElementsSearch;
+using search::queryeval::MatchingPhase;
 using search::queryeval::SameElementBlueprint;
 using search::queryeval::SearchIterator;
 using vespalib::FeatureSet;
@@ -41,8 +42,10 @@ get_feature_set(const MatchToolsFactory &mtf,
 {
     MatchTools::UP matchTools = mtf.createMatchTools();
     if (summaryFeatures) {
+        mtf.query().set_matching_phase(MatchingPhase::SUMMARY_FEATURES);
         matchTools->setup_summary();
     } else {
+        mtf.query().set_matching_phase(MatchingPhase::DUMP_FEATURES);
         matchTools->setup_dump();
     }
     auto retval = ExtractFeatures::get_feature_set(matchTools->search(), matchTools->rank_program(), docs,

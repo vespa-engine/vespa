@@ -728,6 +728,14 @@ IntermediateBlueprint::freeze()
     freeze_self();
 }
 
+void
+IntermediateBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
+{
+    for (auto &child : _children) {
+        child->set_matching_phase(matching_phase);
+    }
+}
+
 namespace {
 
 bool
@@ -800,6 +808,11 @@ void
 LeafBlueprint::freeze()
 {
     freeze_self();
+}
+
+void
+LeafBlueprint::set_matching_phase(MatchingPhase) noexcept
+{
 }
 
 SearchIterator::UP

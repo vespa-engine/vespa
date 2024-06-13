@@ -9,13 +9,13 @@ using search::features::FirstPhaseRankLookup;
 namespace proton:: matching {
 
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
-    : MatchLoopCommunicator(threads, topN, {}, nullptr)
+    : MatchLoopCommunicator(threads, topN, {}, nullptr, []() noexcept {})
 {}
-MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup)
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phase)
     : _best_scores(),
       _best_dropped(),
       _estimate_match_frequency(threads),
-      _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier), first_phase_rank_lookup),
+      _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier), first_phase_rank_lookup, std::move(before_second_phase)),
       _complete_second_phase(threads, topN, _best_scores, _best_dropped)
 {}
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
@@ -60,13 +60,14 @@ public:
 
 }
 
-MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup)
+MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phase)
     : vespalib::Rendezvous<SortedHitSequence, TaggedHits, true>(n),
       topN(topN_in),
       best_scores(best_scores_in),
       best_dropped(best_dropped_in),
       _diversifier(std::move(diversifier)),
-      _first_phase_rank_lookup(first_phase_rank_lookup)
+      _first_phase_rank_lookup(first_phase_rank_lookup),
+      _before_second_phase(std::move(before_second_phase))
 {}
 
 MatchLoopCommunicator::GetSecondPhaseWork::~GetSecondPhaseWork() = default;
@@ -120,6 +121,7 @@ MatchLoopCommunicator::GetSecondPhaseWork::mingle(Q &queue, R register_first_pha
 void
 MatchLoopCommunicator::GetSecondPhaseWork::mingle()
 {
+    _before_second_phase();
     best_scores = Range();
     best_dropped.valid = false;
     size_t est_out = (topN / size()) + 1;

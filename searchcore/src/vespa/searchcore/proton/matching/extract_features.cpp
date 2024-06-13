@@ -19,6 +19,7 @@ using vespalib::Runnable;
 using vespalib::ThreadBundle;
 using search::fef::FeatureResolver;
 using search::fef::RankProgram;
+using search::queryeval::MatchingPhase;
 using search::queryeval::SearchIterator;
 
 namespace proton::matching {
@@ -112,6 +113,7 @@ FeatureValues
 ExtractFeatures::get_match_features(const MatchToolsFactory &mtf, const OrderedDocs &docs, ThreadBundle &thread_bundle)
 {
     FeatureValues result;
+    mtf.query().set_matching_phase(MatchingPhase::MATCH_FEATURES);
     auto tools = mtf.createMatchTools();
     tools->setup_match_features();
     FeatureResolver resolver(tools->rank_program().get_seeds(false));

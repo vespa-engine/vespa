@@ -132,6 +132,7 @@ public:
                                      vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace);
 
     void freeze();
+    void set_matching_phase(search::queryeval::MatchingPhase matching_phase) const noexcept;
 
     /**
      * Create the actual search iterator tree used to find matches.

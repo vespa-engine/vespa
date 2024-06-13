@@ -39,6 +39,7 @@ using search::queryeval::Blueprint;
 using search::queryeval::GlobalFilter;
 using search::queryeval::IRequestContext;
 using search::queryeval::IntermediateBlueprint;
+using search::queryeval::MatchingPhase;
 using search::queryeval::RankBlueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Issue;
@@ -284,6 +285,12 @@ void
 Query::freeze()
 {
     _blueprint->freeze();
+}
+
+void
+Query::set_matching_phase(MatchingPhase matching_phase) const noexcept
+{
+    _blueprint->set_matching_phase(matching_phase);
 }
 
 Blueprint::HitEstimate
