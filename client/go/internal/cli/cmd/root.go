@@ -142,7 +142,12 @@ func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
 
 Use it on Vespa instances running locally, remotely or in Vespa Cloud.
 
-Vespa documentation: https://docs.vespa.ai
+To get started, see the following quick start guides:
+
+- Local Vespa instance: https://docs.vespa.ai/en/vespa-quick-start.html
+- Vespa Cloud: https://cloud.vespa.ai/en/getting-started
+
+The complete Vespa documentation is available at https://docs.vespa.ai.
 
 For detailed description of flags and configuration, see 'vespa help config'.
 `,
