@@ -32,7 +32,6 @@ private:
     score_t                        _boostedThreshold;
     const MatchParams              _matchParams;
     std::vector<score_t>           _localScores;
-    const bool                     _readonly_scores_heap;
 
     void updateThreshold(score_t newThreshold) {
         if (newThreshold > _threshold) {
@@ -68,8 +67,7 @@ private:
 public:
     ParallelWeakAndSearchImpl(fef::TermFieldMatchData &tfmd,
                               VectorizedTerms &&terms,
-                              const MatchParams &matchParams,
-                              bool readonly_scores_heap)
+                              const MatchParams &matchParams)
         : _tfmd(tfmd),
           _terms(std::move(terms)),
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
@@ -77,8 +75,7 @@ public:
           _threshold(matchParams.scoreThreshold),
           _boostedThreshold(_threshold * matchParams.thresholdBoostFactor),
           _matchParams(matchParams),
-          _localScores(),
-          _readonly_scores_heap(readonly_scores_heap)
+          _localScores()
     {
         _localScores.reserve(_matchParams.scoresAdjustFrequency);
     }
@@ -97,12 +94,10 @@ public:
     }
     void doUnpack(uint32_t docid) override {
         score_t score = _algo.get_full_score(_terms, _heaps, DotProductScorer());
-        if (!_readonly_scores_heap) {
-            _localScores.push_back(score);
-            if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
-                _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
-                _localScores.clear();
-            }
+        _localScores.push_back(score);
+        if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
+            _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
+            _localScores.clear();
         }
         _tfmd.setRawScore(docid, score);
     }
@@ -135,8 +130,7 @@ template <typename FutureHeap, typename PastHeap, bool IS_STRICT>
 SearchIterator::UP
 createWand(const wand::Terms &terms,
            const ParallelWeakAndSearch::MatchParams &matchParams,
-           ParallelWeakAndSearch::RankParams &&rankParams,
-           bool readonly_scores_heap)
+           ParallelWeakAndSearch::RankParams &&rankParams)
 {
     using WandType = ParallelWeakAndSearchImpl<VectorizedIteratorTerms, FutureHeap, PastHeap, IS_STRICT>;
     if (should_monitor_wand()) {
@@ -150,7 +144,7 @@ createWand(const wand::Terms &terms,
                                                                    DotProductScorer(),
                                                                    matchParams.docIdLimit,
                                                                    std::move(rankParams.childrenMatchData)),
-                                           matchParams, readonly_scores_heap),
+                                           matchParams),
                 false);
         return std::make_unique<MonitoringDumpIterator>(std::move(monitoringIterator));
     }
@@ -159,7 +153,7 @@ createWand(const wand::Terms &terms,
                                                               DotProductScorer(),
                                                               matchParams.docIdLimit,
                                                               std::move(rankParams.childrenMatchData)),
-                                      matchParams, readonly_scores_heap);
+                                      matchParams);
 }
 
 } // namespace search::queryeval::wand::<unnamed>
@@ -170,36 +164,33 @@ SearchIterator::UP
 ParallelWeakAndSearch::createArrayWand(const Terms &terms,
                                        const MatchParams &matchParams,
                                        RankParams &&rankParams,
-                                       bool strict,
-                                       bool readonly_scores_heap)
+                                       bool strict)
 {
     return strict
-        ? wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>(terms, matchParams, std::move(rankParams), readonly_scores_heap)
-        : wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>(terms, matchParams, std::move(rankParams), readonly_scores_heap);
+        ? wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>(terms, matchParams, std::move(rankParams))
+        : wand::createWand<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>(terms, matchParams, std::move(rankParams));
 }
 
 SearchIterator::UP
 ParallelWeakAndSearch::createHeapWand(const Terms &terms,
                                       const MatchParams &matchParams,
                                       RankParams &&rankParams,
-                                      bool strict,
-                                      bool readonly_scores_heap)
+                                      bool strict)
 {
     return strict
-        ? wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, true>(terms, matchParams, std::move(rankParams), readonly_scores_heap)
-        : wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, false>(terms, matchParams, std::move(rankParams), readonly_scores_heap);
+        ? wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, true>(terms, matchParams, std::move(rankParams))
+        : wand::createWand<vespalib::LeftHeap, vespalib::RightHeap, false>(terms, matchParams, std::move(rankParams));
 }
 
 SearchIterator::UP
 ParallelWeakAndSearch::create(const Terms &terms,
                               const MatchParams &matchParams,
                               RankParams &&rankParams,
-                              bool strict,
-                              bool readonly_scores_heap)
+                              bool strict)
 {
     return (terms.size() < 128)
-        ? createArrayWand(terms, matchParams, std::move(rankParams), strict, readonly_scores_heap)
-        : createHeapWand(terms, matchParams, std::move(rankParams), strict, readonly_scores_heap);
+        ? createArrayWand(terms, matchParams, std::move(rankParams), strict)
+        : createHeapWand(terms, matchParams, std::move(rankParams), strict);
 }
 
 //-----------------------------------------------------------------------------
@@ -207,19 +198,19 @@ ParallelWeakAndSearch::create(const Terms &terms,
 namespace {
 
 template <typename VectorizedTerms, typename FutureHeap, typename PastHeap>
-SearchIterator::UP create_helper(search::fef::TermFieldMatchData &tfmd, VectorizedTerms &&terms, const MatchParams &params, bool strict, bool readonly_scores_heap) {
+SearchIterator::UP create_helper(search::fef::TermFieldMatchData &tfmd, VectorizedTerms &&terms, const MatchParams &params, bool strict) {
     if (strict) {
-        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, true>>(tfmd, std::forward<VectorizedTerms>(terms), params, readonly_scores_heap);
+        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, true>>(tfmd, std::forward<VectorizedTerms>(terms), params);
     } else {
-        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, false>>(tfmd, std::forward<VectorizedTerms>(terms), params, readonly_scores_heap);
+        return std::make_unique<wand::ParallelWeakAndSearchImpl<VectorizedTerms, FutureHeap, PastHeap, false>>(tfmd, std::forward<VectorizedTerms>(terms), params);
     }
 }
 
 template <typename VectorizedTerms>
-SearchIterator::UP create_helper(search::fef::TermFieldMatchData &tfmd, VectorizedTerms &&terms, const MatchParams &params, bool strict, bool readonly_scores_heap, bool use_array) {
+SearchIterator::UP create_helper(search::fef::TermFieldMatchData &tfmd, VectorizedTerms &&terms, const MatchParams &params, bool strict, bool use_array) {
     return (use_array)
-        ? create_helper<VectorizedTerms, vespalib::LeftArrayHeap, vespalib::RightArrayHeap>(tfmd, std::forward<VectorizedTerms>(terms), params, strict, readonly_scores_heap)
-        : create_helper<VectorizedTerms, vespalib::LeftHeap, vespalib::RightHeap>(tfmd, std::forward<VectorizedTerms>(terms), params, strict, readonly_scores_heap);
+        ? create_helper<VectorizedTerms, vespalib::LeftArrayHeap, vespalib::RightArrayHeap>(tfmd, std::forward<VectorizedTerms>(terms), params, strict)
+        : create_helper<VectorizedTerms, vespalib::LeftHeap, vespalib::RightHeap>(tfmd, std::forward<VectorizedTerms>(terms), params, strict);
 }
 
 } // namespace search::queryeval::<unnamed>
@@ -230,13 +221,12 @@ ParallelWeakAndSearch::create(search::fef::TermFieldMatchData &tfmd,
                               const std::vector<int32_t> &weights,
                               const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
                               const IDocidWithWeightPostingStore &attr,
-                              bool strict,
-                              bool readonly_scores_heap)
+                              bool strict)
 {
     assert(weights.size() == dict_entries.size());
     if (!wand::should_monitor_wand()) {
         wand::VectorizedAttributeTerms terms(weights, dict_entries, attr, wand::DotProductScorer(), matchParams.docIdLimit);
-        return create_helper(tfmd, std::move(terms), matchParams, strict, readonly_scores_heap, (weights.size() < 128));
+        return create_helper(tfmd, std::move(terms), matchParams, strict, (weights.size() < 128));
     } else {
         // reverse-wrap direct iterators into old API to be compatible with monitoring
         fef::MatchDataLayout layout;
@@ -255,7 +245,7 @@ ParallelWeakAndSearch::create(search::fef::TermFieldMatchData &tfmd,
                                dict_entries[i].posting_size,
                                childrenMatchData->resolveTermField(handles[i]));
         }
-        return create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict, readonly_scores_heap);
+        return create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict);
     }
 }
 
