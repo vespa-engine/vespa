@@ -81,6 +81,7 @@ using search::queryeval::FieldSpecBase;
 using search::queryeval::FieldSpecBaseList;
 using search::queryeval::FilterWrapper;
 using search::queryeval::IRequestContext;
+using search::queryeval::MatchingPhase;
 using search::queryeval::NoUnpack;
 using search::queryeval::OrLikeSearch;
 using search::queryeval::OrSearch;
@@ -451,6 +452,7 @@ private:
     std::vector<IDirectPostingStore::LookupResult> _terms;
     const IDocidWithWeightPostingStore            &_attr;
     vespalib::datastore::EntryRef                  _dictionary_snapshot;
+    MatchingPhase                                  _matching_phase;
 
 
 public:
@@ -465,7 +467,8 @@ public:
           _weights(),
           _terms(),
           _attr(attr),
-          _dictionary_snapshot(_attr.get_dictionary_snapshot())
+          _dictionary_snapshot(_attr.get_dictionary_snapshot()),
+          _matching_phase(MatchingPhase::FIRST_PHASE)
     {
         _weights.reserve(size_hint);
         _terms.reserve(size_hint);
@@ -509,13 +512,15 @@ public:
         if (_terms.empty()) {
             return std::make_unique<queryeval::EmptySearch>();
         }
+        bool readonly_scores_heap = (_matching_phase != MatchingPhase::FIRST_PHASE);
         return queryeval::ParallelWeakAndSearch::create(*tfmda[0],
                 queryeval::ParallelWeakAndSearch::MatchParams(*_scores, _scoreThreshold, _thresholdBoostFactor,
                                                               _scoresAdjustFrequency, get_docid_limit()),
-                                                        _weights, _terms, _attr, strict());
+                                                        _weights, _terms, _attr, strict(), readonly_scores_heap);
     }
     std::unique_ptr<SearchIterator> createFilterSearch(FilterConstraint constraint) const override;
     bool always_needs_unpack() const override { return true; }
+    void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 };
 
 DirectWandBlueprint::~DirectWandBlueprint() = default;
@@ -532,6 +537,27 @@ DirectWandBlueprint::createFilterSearch(FilterConstraint constraint) const
         return attribute::MultiTermOrFilterSearch::create(std::move(iterators));
     } else {
         return std::make_unique<queryeval::EmptySearch>();
+    }
+}
+
+void
+DirectWandBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
+{
+    _matching_phase = matching_phase;
+    if (matching_phase != MatchingPhase::FIRST_PHASE) {
+        /*
+         * During first phase matching, the scores heap is adjusted by
+         * the iterators. The minimum score is increased when the
+         * scores heap is full while handling a matching document with
+         * a higher score than the worst existing one.
+         *
+         * During later matching phases, only the original minimum
+         * score is used, and the heap is not updated by the
+         * iterators. This ensures that all documents considered a hit
+         * by the first phase matching will also be considered as hits
+         * by the later matching phases.
+         */
+        _scores->set_min_score(_scoreThreshold);
     }
 }
 

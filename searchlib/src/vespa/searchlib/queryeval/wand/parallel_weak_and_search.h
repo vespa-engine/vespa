@@ -62,14 +62,15 @@ struct ParallelWeakAndSearch : public SearchIterator
     virtual score_t get_max_score(size_t idx) const = 0;
     virtual const MatchParams &getMatchParams() const = 0;
 
-    static SearchIterator::UP createArrayWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
-    static SearchIterator::UP createHeapWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
-    static SearchIterator::UP create(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
+    static SearchIterator::UP createArrayWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict, bool readonly_scores_heap);
+    static SearchIterator::UP createHeapWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict, bool readonly_scores_heap);
+    static SearchIterator::UP create(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict, bool readonly_scores_heap);
 
     static SearchIterator::UP create(fef::TermFieldMatchData &tmd, const MatchParams &matchParams,
                                      const std::vector<int32_t> &weights,
                                      const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
-                                     const IDocidWithWeightPostingStore &attr, bool strict);
+                                     const IDocidWithWeightPostingStore &attr, bool strict,
+                                     bool readonly_scores_heap);
 };
 
 }

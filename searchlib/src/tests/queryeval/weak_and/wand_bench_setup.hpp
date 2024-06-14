@@ -156,7 +156,7 @@ struct VespaParallelWandFactory : public WandFactory {
     SearchIterator::UP create(const wand::Terms &terms) override {
         return ParallelWeakAndSearch::create(terms,
                         PWMatchParams(scores, 0, 1, 1),
-                        PWRankParams(rootMatchData, {}), true);
+                        PWRankParams(rootMatchData, {}), true, false);
     }
 };
 
@@ -169,7 +169,7 @@ struct VespaParallelArrayWandFactory : public VespaParallelWandFactory {
     SearchIterator::UP create(const wand::Terms &terms) override {
         return ParallelWeakAndSearch::createArrayWand(terms,
                         PWMatchParams(scores, 0, 1, 1),
-                        PWRankParams(rootMatchData, {}), true);
+                        PWRankParams(rootMatchData, {}), true, false);
     }
 };
 
@@ -182,7 +182,7 @@ struct VespaParallelHeapWandFactory : public VespaParallelWandFactory {
     SearchIterator::UP create(const wand::Terms &terms) override {
         return ParallelWeakAndSearch::createHeapWand(terms,
                         PWMatchParams(scores, 0, 1, 1),
-                        PWRankParams(rootMatchData, {}), true);
+                        PWRankParams(rootMatchData, {}), true, false);
     }
 };
 
