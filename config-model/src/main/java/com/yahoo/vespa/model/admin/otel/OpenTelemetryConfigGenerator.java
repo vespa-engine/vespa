@@ -295,7 +295,7 @@ public class OpenTelemetryConfigGenerator {
         {
             g.writeFieldName("exporters");
             g.writeStartArray();
-            g.writeString("file");
+            g.writeString("otlphttp/gw");
             g.writeEndArray();
         }
         g.writeEndObject(); // metrics
