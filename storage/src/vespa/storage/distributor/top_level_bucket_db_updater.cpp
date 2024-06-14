@@ -186,28 +186,41 @@ TopLevelBucketDBUpdater::complete_transition_timer()
 void
 TopLevelBucketDBUpdater::storage_distribution_changed(const lib::BucketSpaceDistributionConfigs& configs)
 {
+    auto guard = _stripe_accessor.rendezvous_and_hold_all();
+    storage_distribution_changed_impl(*guard, configs, false);
+}
+
+void
+TopLevelBucketDBUpdater::storage_distribution_changed_impl(StripeAccessGuard& guard,
+                                                           const lib::BucketSpaceDistributionConfigs& configs,
+                                                           bool inhibit_request_sending)
+{
     propagate_distribution_config(configs);
     ensure_transition_timer_started();
 
-    auto guard = _stripe_accessor.rendezvous_and_hold_all();
-    // FIXME STRIPE might this cause a mismatch with the component stuff's own distribution config..?!
     // TODO should be part of bundle only...!!
-    guard->update_distribution_config(configs);
-    remove_superfluous_buckets(*guard, _active_state_bundle, true);
+    guard.update_distribution_config(configs);
+    remove_superfluous_buckets(guard, _active_state_bundle, true);
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _node_ctx.node_index(),
             _active_state_bundle,
             storage_node_up_states());
+    // If distribution has changed as part of a SetSystemState we do not send bucket info
+    // requests, but we do all the other work to enumerate the set of nodes that we _would_
+    // have sent to (_outdated_nodes_map), which is then reused when we immediately after
+    // process the cluster state itself. The cluster state might not have any changes in and
+    // by itself, but the outdated nodes map ensures that we send necessary requests anyway.
     _pending_cluster_state = PendingClusterState::createForDistributionChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
             _sender,
             _op_ctx.bucket_space_states(),
-            _op_ctx.generate_unique_timestamp());
+            _op_ctx.generate_unique_timestamp(),
+            inhibit_request_sending);
     _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
 
-    guard->set_pending_cluster_state_bundle(_pending_cluster_state->getNewClusterStateBundle());
+    guard.set_pending_cluster_state_bundle(_pending_cluster_state->getNewClusterStateBundle());
 }
 
 void
@@ -238,7 +251,7 @@ TopLevelBucketDBUpdater::onSetSystemState(
 
     const lib::ClusterStateBundle& state = cmd->getClusterStateBundle();
 
-    if (state == _active_state_bundle) {
+    if (state == _active_state_bundle) { // Also considers distribution configs, if present
         return false;
     }
     ensure_transition_timer_started();
@@ -246,8 +259,22 @@ TopLevelBucketDBUpdater::onSetSystemState(
     framework::MilliSecTimer process_timer(_node_ctx.clock());
 
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
-    guard->update_read_snapshot_before_db_pruning();
     const auto& bundle = cmd->getClusterStateBundle();
+    if (bundle.has_distribution_config()) {
+        const auto distr_bundle = bundle.distribution_config_bundle();
+        if (_distributor_interface.receive_distribution_from_cluster_controller(distr_bundle->default_distribution_sp())) {
+            // This stages the distribution config change internally and does everything _except_
+            // actually send bucket info requests to the content nodes, as they would be inherently
+            // doomed due to having a stale cluster state version. Instead, we remember the set of
+            // affected nodes and reuse this below when we send the properly versioned info requests.
+            storage_distribution_changed_impl(*guard, distr_bundle->bucket_space_distributions(), true);
+        }
+    } else if (_distributor_interface.cluster_controller_is_distribution_source_of_truth()) {
+        // Cluster controller has stopped sending config (possibly rolled back or reconfigured), so
+        // we have to follow suit and go back to listening to internal config changes instead.
+        _distributor_interface.revert_distribution_source_of_truth_to_node_internal_config();
+    }
+    guard->update_read_snapshot_before_db_pruning();
     remove_superfluous_buckets(*guard, bundle, false);
     guard->update_read_snapshot_after_db_pruning(bundle);
     reply_to_previous_pending_cluster_state_if_any();
@@ -263,7 +290,7 @@ TopLevelBucketDBUpdater::onSetSystemState(
             _op_ctx.bucket_space_states(),
             cmd,
             _outdated_nodes_map,
-            _op_ctx.generate_unique_timestamp()); // FIXME STRIPE must be atomic across all threads
+            _op_ctx.generate_unique_timestamp());
     _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
 
     _distributor_interface.metrics().set_cluster_state_processing_time.addValue(

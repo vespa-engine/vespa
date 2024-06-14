@@ -99,7 +99,12 @@ public:
     int getDistributorIndex() const override { return _component.node_index(); }
     const ClusterContext& cluster_context() const override { return _component.cluster_context(); }
 
+    // Called from top-level storage component when config is updated from config server
     void storageDistributionChanged() override;
+
+    bool receive_distribution_from_cluster_controller(std::shared_ptr<const lib::Distribution> distribution) override;
+    bool cluster_controller_is_distribution_source_of_truth() const noexcept override;
+    void revert_distribution_source_of_truth_to_node_internal_config() override;
 
     // StatusReporter implementation
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
@@ -185,6 +190,7 @@ private:
     DistributorComponentRegister&         _comp_reg;
     DoneInitializeHandler&                _done_init_handler;
     bool                                  _done_initializing;
+    bool                                  _cc_is_distribution_source_of_truth;
     std::shared_ptr<DistributorTotalMetrics> _total_metrics;
     std::shared_ptr<IdealStateTotalMetrics> _ideal_state_total_metrics;
     ChainedMessageSender*                 _messageSender;
@@ -218,8 +224,8 @@ private:
     DistributorHostInfoReporter          _hostInfoReporter;
 
     mutable std::mutex                   _distribution_mutex;
-    std::shared_ptr<lib::Distribution>   _distribution;
-    std::shared_ptr<lib::Distribution>   _next_distribution;
+    std::shared_ptr<const lib::Distribution> _distribution;
+    std::shared_ptr<const lib::Distribution> _next_distribution;
 
     uint64_t                             _current_internal_config_generation;
 };
