@@ -26,6 +26,7 @@ private:
     fef::MatchDataLayout                  _layout;
     std::vector<int32_t>                  _weights;
     std::vector<Blueprint::UP>            _terms;
+    MatchingPhase                         _matching_phase;
 
 public:
     ParallelWeakAndBlueprint(const ParallelWeakAndBlueprint &) = delete;
@@ -60,6 +61,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     bool always_needs_unpack() const override;
+    void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 };
 
 }

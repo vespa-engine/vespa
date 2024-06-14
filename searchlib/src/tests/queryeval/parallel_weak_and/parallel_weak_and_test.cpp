@@ -86,6 +86,7 @@ struct WandTestSpec : public WandSpec
     HeapType heap;
     TermFieldMatchData rootMatchData;
     MatchParams matchParams;
+    MatchingPhase matching_phase;
 
     explicit WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdjustFrequency = 1,
                           score_t scoreThreshold = 0, double thresholdBoostFactor = 1);
@@ -93,6 +94,7 @@ struct WandTestSpec : public WandSpec
     SearchIterator::UP create() {
         MatchData::UP childrenMatchData = createMatchData();
         MatchData *tmp = childrenMatchData.get();
+        bool readonly_scores_heap = (matching_phase != MatchingPhase::FIRST_PHASE);
         return SearchIterator::UP(
                 new TrackedSearch("PWAND", getHistory(),
                                   ParallelWeakAndSearch::create(
@@ -100,8 +102,9 @@ struct WandTestSpec : public WandSpec
                                           matchParams,
                                           RankParams(rootMatchData,
                                                      std::move(childrenMatchData)),
-                                          true)));
+                                          true, readonly_scores_heap)));
     }
+    void set_second_phase() { matching_phase = MatchingPhase::SECOND_PHASE; }
 };
 
 template <typename HeapType>
@@ -110,7 +113,8 @@ WandTestSpec<HeapType>::WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdju
     : WandSpec(),
       heap(scoresToTrack),
       rootMatchData(),
-      matchParams(heap, scoreThreshold, thresholdBoostFactor, scoresAdjustFrequency)
+      matchParams(heap, scoreThreshold, thresholdBoostFactor, scoresAdjustFrequency),
+      matching_phase(MatchingPhase::FIRST_PHASE)
 {}
 
 template <typename HeapType>
@@ -220,7 +224,16 @@ struct FixtureBase
 
 struct AlgoSimpleFixture : public FixtureBase
 {
-    AlgoSimpleFixture() : FixtureBase(2, 1) {
+    AlgoSimpleFixture()
+        : AlgoSimpleFixture(false)
+    {
+    }
+    explicit AlgoSimpleFixture(bool second_phase)
+        : FixtureBase(2, 1)
+    {
+        if (second_phase) {
+            spec.set_second_phase();
+        }
         spec.leaf(LeafSpec("A", 1).doc(1, 1).doc(2, 2).doc(3, 3).doc(4, 4).doc(5, 5).doc(6, 6));
         spec.leaf(LeafSpec("B", 4).doc(1, 1).doc(3, 3).doc(5, 5));
         prepare();
@@ -287,12 +300,25 @@ struct AlgoExhaustPastFixture : public FixtureBase
 
 TEST(ParallelWeakAndTest, require_that_algorithm_prunes_bad_hits_after_enough_good_ones_are_obtained)
 {
-    AlgoSimpleFixture f;
+    AlgoSimpleFixture f; // First phase
     FakeResult expect = FakeResult()
                         .doc(1).score(1 * 1 + 4 * 1)
                         .doc(2).score(1 * 2)
                         .doc(3).score(1 * 3 + 4 * 3)
                         .doc(5).score(1 * 5 + 4 * 5);
+    EXPECT_EQ(expect, f.result);
+}
+
+TEST(ParallelWeakAndTest, require_that_algorithm_does_not_prune_hits_in_pater_matching_phases)
+{
+    AlgoSimpleFixture f(true); // Second phase
+    FakeResult expect = FakeResult()
+                        .doc(1).score(1 * 1 + 4 * 1)
+                        .doc(2).score(1 * 2)
+                        .doc(3).score(1 * 3 + 4 * 3)
+                        .doc(4).score(1 * 4)
+                        .doc(5).score(1 * 5 + 4 * 5)
+                        .doc(6).score(1 * 6);
     EXPECT_EQ(expect, f.result);
 }
 
@@ -687,7 +713,7 @@ SearchIterator::UP create_wand(bool use_dww,
                                bool strict)
 {
     if (use_dww) {
-        return ParallelWeakAndSearch::create(tfmd, matchParams, weights, dict_entries, attr, strict);
+        return ParallelWeakAndSearch::create(tfmd, matchParams, weights, dict_entries, attr, strict, false);
     }
     // use search iterators as children
     MatchDataLayout layout;
@@ -705,7 +731,7 @@ SearchIterator::UP create_wand(bool use_dww,
                                    childrenMatchData->resolveTermField(handles[i])));
     }
     assert(terms.size() == dict_entries.size());
-    return SearchIterator::UP(ParallelWeakAndSearch::create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict));
+    return SearchIterator::UP(ParallelWeakAndSearch::create(terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict, false));
 }
 
 class Verifier : public search::test::DwwIteratorChildrenVerifier {
