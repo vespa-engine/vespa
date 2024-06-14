@@ -23,6 +23,7 @@ private:
     MatchParams                    _matchParams;
     std::vector<score_t>           _localScores;
     const uint32_t                 _n;
+    const bool                     _readonly_scores_heap;
 
     void seek_strict(uint32_t docid) {
         _algo.set_candidate(_terms, _heaps, docid);
@@ -49,14 +50,15 @@ private:
 
 public:
     template<typename Scorer>
-    WeakAndSearchLR(const Terms &terms, const MatchParams & matchParams, const Scorer & scorer, uint32_t n)
+    WeakAndSearchLR(const Terms &terms, const MatchParams & matchParams, const Scorer & scorer, uint32_t n, bool readonly_scores_heap)
         : _terms(terms, scorer, 0, {}),
           _heaps(DocIdOrder(_terms.docId()), _terms.size()),
           _algo(),
           _threshold(matchParams.scoreThreshold),
           _matchParams(matchParams),
           _localScores(),
-          _n(n)
+          _n(n),
+          _readonly_scores_heap(readonly_scores_heap)
     {
         _localScores.reserve(_matchParams.scoresAdjustFrequency);
     }
@@ -75,11 +77,13 @@ public:
     }
     void doUnpack(uint32_t docid) override {
         _algo.find_matching_terms(_terms, _heaps);
-        score_t score = _algo.get_upper_bound();
-        _localScores.push_back(score);
-        if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
-            _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
-            _localScores.clear();
+        if (!_readonly_scores_heap) {
+            score_t score = _algo.get_upper_bound();
+            _localScores.push_back(score);
+            if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
+                _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
+                _localScores.clear();
+            }
         }
         ref_t *end = _heaps.present_end();
         for (ref_t *ref = _heaps.present_begin(); ref != end; ++ref) {
@@ -114,48 +118,51 @@ WeakAndSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
 template<typename Scorer>
 SearchIterator::UP
 WeakAndSearch::createArrayWand(const Terms &terms, const MatchParams & params,
-                               const Scorer & scorer, uint32_t n, bool strict)
+                               const Scorer & scorer, uint32_t n, bool strict,
+                               bool readonly_scores_heap)
 {
     if (strict) {
-        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>>(terms, params, scorer, n);
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, true>>(terms, params, scorer, n, readonly_scores_heap);
     } else {
-        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>>(terms, params, scorer, n);
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftArrayHeap, vespalib::RightArrayHeap, false>>(terms, params, scorer, n, readonly_scores_heap);
     }
 }
 
 template<typename Scorer>
 SearchIterator::UP
-WeakAndSearch::createHeapWand(const Terms &terms, const MatchParams & params, const Scorer & scorer, uint32_t n, bool strict)
+WeakAndSearch::createHeapWand(const Terms &terms, const MatchParams & params,
+                              const Scorer & scorer, uint32_t n, bool strict,
+                              bool readonly_scores_heap)
 {
     if (strict) {
-        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, true>>(terms, params, scorer, n);
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, true>>(terms, params, scorer, n, readonly_scores_heap);
     } else {
-        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, false>>(terms, params, scorer, n);
+        return std::make_unique<wand::WeakAndSearchLR<vespalib::LeftHeap, vespalib::RightHeap, false>>(terms, params, scorer, n, readonly_scores_heap);
     }
 }
 
 template<typename Scorer>
 SearchIterator::UP
-WeakAndSearch::create(const Terms &terms, const MatchParams & params, const Scorer & scorer, uint32_t n, bool strict)
+WeakAndSearch::create(const Terms &terms, const MatchParams & params, const Scorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap)
 {
     if (terms.size() < 128) {
-        return createArrayWand(terms, params, scorer, n, strict);
+        return createArrayWand(terms, params, scorer, n, strict, readonly_scores_heap);
     } else {
-        return createHeapWand(terms, params, scorer, n, strict);
+        return createHeapWand(terms, params, scorer, n, strict, readonly_scores_heap);
     }
 }
 
 SearchIterator::UP
-WeakAndSearch::create(const Terms &terms, const MatchParams & params, uint32_t n, bool strict)
+WeakAndSearch::create(const Terms &terms, const MatchParams & params, uint32_t n, bool strict, bool readonly_scores_heap)
 {
-    return create(terms, params, wand::TermFrequencyScorer(), n, strict);
+    return create(terms, params, wand::TermFrequencyScorer(), n, strict, readonly_scores_heap);
 }
 
 //-----------------------------------------------------------------------------
 
-template SearchIterator::UP WeakAndSearch::create<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict);
-template SearchIterator::UP WeakAndSearch::create<wand::Bm25TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::Bm25TermFrequencyScorer & scorer, uint32_t n, bool strict);
-template SearchIterator::UP WeakAndSearch::createArrayWand<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict);
-template SearchIterator::UP WeakAndSearch::createHeapWand<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict);
+template SearchIterator::UP WeakAndSearch::create<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
+template SearchIterator::UP WeakAndSearch::create<wand::Bm25TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::Bm25TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
+template SearchIterator::UP WeakAndSearch::createArrayWand<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
+template SearchIterator::UP WeakAndSearch::createHeapWand<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
 
 }

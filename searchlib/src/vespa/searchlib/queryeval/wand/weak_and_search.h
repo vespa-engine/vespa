@@ -18,15 +18,15 @@ struct WeakAndSearch : SearchIterator {
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     template<typename Scorer>
     static SearchIterator::UP createArrayWand(const Terms &terms, const MatchParams & matchParams,
-                                              const Scorer & scorer, uint32_t n, bool strict);
+                                              const Scorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
     template<typename Scorer>
     static SearchIterator::UP createHeapWand(const Terms &terms, const MatchParams & matchParams,
-                                             const Scorer & scorer, uint32_t n, bool strict);
+                                             const Scorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
     template<typename Scorer>
     static SearchIterator::UP create(const Terms &terms, const MatchParams & matchParams,
-                                     const Scorer & scorer, uint32_t n, bool strict);
+                                     const Scorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
     static SearchIterator::UP create(const Terms &terms, const MatchParams & matchParams,
-                                     uint32_t n, bool strict);
+                                     uint32_t n, bool strict, bool readonly_scores_heap);
 };
 
 }

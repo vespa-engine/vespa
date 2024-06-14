@@ -93,6 +93,7 @@ private:
     uint32_t              _n;
     float                 _idf_range;
     std::vector<uint32_t> _weights;
+    MatchingPhase         _matching_phase;
 
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
@@ -117,6 +118,7 @@ public:
     }
     uint32_t getN() const noexcept { return _n; }
     const std::vector<uint32_t> &getWeights() const noexcept { return _weights; }
+    void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 };
 
 //-----------------------------------------------------------------------------
