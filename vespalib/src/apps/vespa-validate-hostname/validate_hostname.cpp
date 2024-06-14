@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <set>
