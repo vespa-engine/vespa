@@ -48,7 +48,8 @@ public:
             fef::TermFieldMatchData &tfmd,
             std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
             NearestNeighborDistanceHeap &distanceHeap,
-            const GlobalFilter &filter);
+            const GlobalFilter &filter,
+            bool readonly_distance_heap);
 
     const Params& params() const { return _params; }
 private:

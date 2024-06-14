@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/queryeval/exact_nearest_neighbor_iterator.h>
+#include <vespa/searchlib/queryeval/matching_phase.h>
 #include <vespa/searchlib/queryeval/nns_index_iterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -23,6 +24,7 @@ using search::AttributeVector;
 using search::BitVector;
 using search::attribute::DistanceMetric;
 using search::feature_t;
+using search::queryeval::MatchingPhase;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::DistanceCalculator;
 using search::tensor::SerializedFastValueAttribute;
@@ -73,13 +75,15 @@ struct Fixture {
     vespalib::string _typeSpec;
     std::shared_ptr<TensorAttribute> _attr;
     std::shared_ptr<GlobalFilter> _global_filter;
+    MatchingPhase _matching_phase;
 
     Fixture(const vespalib::string &typeSpec)
         : _cfg(BasicType::TENSOR, CollectionType::SINGLE),
           _name("test"),
           _typeSpec(typeSpec),
           _attr(),
-          _global_filter(GlobalFilter::create())
+          _global_filter(GlobalFilter::create()),
+          _matching_phase(MatchingPhase::FIRST_PHASE)
     {
         _cfg.setTensorType(ValueType::from_spec(typeSpec));
         _attr = make_attr(_name, _cfg);
@@ -111,6 +115,7 @@ struct Fixture {
         auto t = createTensor(_typeSpec, v1, v2);
         setTensor(docId, *t);
     }
+    void set_second_phase() { _matching_phase = MatchingPhase::SECOND_PHASE; }
 };
 
 template <bool strict>
@@ -127,7 +132,8 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     const GlobalFilter &filter = *env._global_filter;
     auto search = ExactNearestNeighborIterator::create(strict, tfmd,
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
-                                                       dh, filter);
+                                                       dh, filter,
+                                                       env._matching_phase != MatchingPhase::FIRST_PHASE);
     if (strict) {
         return SimpleResult().searchStrict(*search, attr.getNumDocs());
     } else {
@@ -166,11 +172,29 @@ verify_iterator_returns_expected_results(const vespalib::string& attribute_tenso
     result = find_matches<false>(fixture, *nullTensor, 5.0);
     EXPECT_EQ(result, null_thr5_exp);
 
+    SimpleResult null_thr10_exp({1,2,4,6});
+    result = find_matches<true>(fixture, *nullTensor, 10.0);
+    EXPECT_EQ(null_thr10_exp, result);
+    result = find_matches<false>(fixture, *nullTensor, 10.0);
+    EXPECT_EQ(null_thr10_exp, result);
+
     SimpleResult far_thr4_exp({2,5});
     result = find_matches<true>(fixture, *farTensor, 4.0);
     EXPECT_EQ(result, far_thr4_exp);
     result = find_matches<false>(fixture, *farTensor, 4.0);
     EXPECT_EQ(result, far_thr4_exp);
+
+    fixture.set_second_phase();
+    SimpleResult all_exp({1,2,3,4,5,6});
+    result = find_matches<true>(fixture, *nullTensor);
+    EXPECT_EQ(all_exp, result);
+    result = find_matches<false>(fixture, *nullTensor);
+    EXPECT_EQ(all_exp, result);
+    SimpleResult null_thr10_second_phase_exp({1,2,4,5,6});
+    result = find_matches<true>(fixture, *nullTensor, 10.0);
+    EXPECT_EQ(null_thr10_second_phase_exp, result);
+    result = find_matches<false>(fixture, *nullTensor, 10.0);
+    EXPECT_EQ(null_thr10_second_phase_exp, result);
 }
 
 struct TestParam {
@@ -254,7 +278,7 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto dummy_filter = GlobalFilter::create();
     auto search = ExactNearestNeighborIterator::create(strict, tfmd,
                                                        std::make_unique<DistanceCalculator>(attr, qtv),
-                                                       dh, *dummy_filter);
+                                                       dh, *dummy_filter, false);
     uint32_t limit = attr.getNumDocs();
     uint32_t docid = 1;
     search->initRange(docid, limit);
