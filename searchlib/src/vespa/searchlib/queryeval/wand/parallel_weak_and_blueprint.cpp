@@ -20,7 +20,8 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field, uint32_t
       _scoresAdjustFrequency(wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
       _layout(),
       _weights(),
-      _terms()
+      _terms(),
+      _matching_phase(MatchingPhase::FIRST_PHASE)
 {
 }
 
