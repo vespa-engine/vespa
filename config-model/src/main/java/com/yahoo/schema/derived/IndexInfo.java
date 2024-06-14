@@ -106,15 +106,18 @@ public class IndexInfo extends Derived {
     }
 
     private static boolean isPositionField(ImmutableSDField field) {
-        return GeoPos.isAnyPos(field);
+        return (field != null) && GeoPos.isAnyPos(field);
+    }
+    private static boolean isMultivalueField(ImmutableSDField field) {
+        return (field != null) && field.getDataType().isMultivalue();
     }
 
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
-        derive(field, schema, false);
+        derive(field, schema, null);
     }
 
-    protected void derive(ImmutableSDField field, Schema schema, boolean inPosition) {
+    protected void derive(ImmutableSDField field, Schema schema, ImmutableSDField parent) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
             addIndexCommand(field, CMD_PREDICATE);
             Index index = field.getIndex(field.getName());
@@ -134,14 +137,13 @@ public class IndexInfo extends Derived {
             String name = e.getValue();
             addIndexAlias(alias, name);
         }
-        boolean isPosition = isPositionField(field);
         if (field.usesStructOrMap()) {
             for (ImmutableSDField structField : field.getStructFields()) {
-                derive(structField, schema, isPosition); // Recursion
+                derive(structField, schema, field); // Recursion
             }
         }
 
-        if (isPosition) {
+        if (isPositionField(field)) {
             addIndexCommand(field.getName(), CMD_DEFAULT_POSITION);
         }
 
@@ -153,12 +155,12 @@ public class IndexInfo extends Derived {
             addIndexCommand(field, CMD_LOWERCASE);
         }
 
-        if (field.getDataType().isMultivalue()) {
+        if (isMultivalueField(field) || isMultivalueField(parent)) {
             addIndexCommand(field, CMD_MULTIVALUE);
         }
 
         Attribute attribute = field.getAttribute();
-        if ((field.doesAttributing() || (attribute != null && !inPosition)) && !field.doesIndexing()) {
+        if ((field.doesAttributing() || (attribute != null && !isPositionField(parent))) && !field.doesIndexing()) {
             addIndexCommand(field.getName(), CMD_ATTRIBUTE);
             if (attribute != null && attribute.isFastSearch())
                 addIndexCommand(field.getName(), CMD_FAST_SEARCH);
