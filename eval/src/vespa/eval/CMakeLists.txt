@@ -11,6 +11,7 @@ vespa_add_library(vespaeval
     $<TARGET_OBJECTS:eval_streamed>
     INSTALL lib64
     DEPENDS
+    hwaccelrated
     onnxruntime
     ${VESPA_LLVM_LIB}
 )
