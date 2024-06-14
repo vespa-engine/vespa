@@ -423,7 +423,8 @@ WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range, bool thread_safe
     : _scores(WeakAndPriorityQueue::createHeap(n, thread_safe)),
       _n(n),
       _idf_range(idf_range),
-      _weights()
+      _weights(),
+      _matching_phase(MatchingPhase::FIRST_PHASE)
 {}
 
 WeakAndBlueprint::~WeakAndBlueprint() = default;
@@ -488,9 +489,12 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
         terms.emplace_back(sub_searches[i].release(), _weights[i],
                            getChild(i).getState().estimate().estHits);
     }
+    bool readonly_scores_heap = (_matching_phase != MatchingPhase::FIRST_PHASE);
     return (_idf_range == 0.0)
-        ? WeakAndSearch::create(terms, wand::MatchParams(*_scores), wand::TermFrequencyScorer(), _n, strict())
-        : WeakAndSearch::create(terms, wand::MatchParams(*_scores), wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict());
+        ? WeakAndSearch::create(terms, wand::MatchParams(*_scores), wand::TermFrequencyScorer(), _n, strict(),
+                                readonly_scores_heap)
+        : WeakAndSearch::create(terms, wand::MatchParams(*_scores), wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict(),
+                                readonly_scores_heap);
 }
 
 SearchIterator::UP
@@ -498,6 +502,28 @@ WeakAndBlueprint::createFilterSearch(FilterConstraint constraint) const
 {
     return create_atmost_or_filter(get_children(), strict(), constraint);
 }
+
+void
+WeakAndBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
+{
+    _matching_phase = matching_phase;
+    if (matching_phase != MatchingPhase::FIRST_PHASE) {
+        /*
+         * During first phase matching, the scores heap is adjusted by
+         * the iterators. The minimum score is increased when the
+         * scores heap is full while handling a matching document with
+         * a higher score than the worst existing one.
+         *
+         * During later matching phases, only the original minimum
+         * score is used, and the heap is not updated by the
+         * iterators. This ensures that all documents considered a hit
+         * by the first phase matching will also be considered as hits
+         * by the later matching phases.
+         */
+        _scores->set_min_score(1);
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 
@@ -509,7 +535,7 @@ NearBlueprint::my_flow(InFlow in_flow) const
 
 FlowStats
 NearBlueprint::calculate_flow_stats(uint32_t) const {
-    double est = AndFlow::estimate_of(get_children()); 
+    double est = AndFlow::estimate_of(get_children());
     return {est,
             AndFlow::cost_of(get_children(), false) + childCnt() * est,
             AndFlow::cost_of(get_children(), true) + childCnt() * est};

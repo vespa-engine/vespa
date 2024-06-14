@@ -62,6 +62,7 @@ public:
     Scores &getScores() noexcept { return _bestScores; }
     void adjust(score_t *begin, score_t *end) override;
     static std::unique_ptr<WeakAndPriorityQueue> createHeap(uint32_t scoresToTrack, bool thread_safe);
+    void set_min_score(score_t min_score) noexcept { setMinScore(min_score); }
 };
 
 class SharedWeakAndPriorityQueue final : public WeakAndPriorityQueue

@@ -202,7 +202,7 @@ struct VespaWandFactory : SparseVectorFactory {
         for (size_t i = 0; i < childCnt; ++i) {
             terms.emplace_back(childFactory.createChild(i, limit), default_weight, limit / (i + 1));
         }
-        return WeakAndSearch::create(terms, wand::MatchParams(_scores), n, true);
+        return WeakAndSearch::create(terms, wand::MatchParams(_scores), n, true, false);
     }
 };
 

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_heap.h>
+#include <vespa/searchlib/queryeval/matching_phase.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
@@ -21,18 +22,36 @@ struct MyWandSpec : public WandSpec
 {
     SharedWeakAndPriorityQueue scores;
     uint32_t n;
+    MatchingPhase matching_phase;
 
-    explicit MyWandSpec(uint32_t n_in) : WandSpec(), scores(n_in), n(n_in) {}
+    explicit MyWandSpec(uint32_t n_in)
+        : WandSpec(),
+          scores(n_in),
+          n(n_in),
+          matching_phase(MatchingPhase::FIRST_PHASE)
+    {}
     SearchIterator *create() {
+        bool readonly_scores_heap = (matching_phase != MatchingPhase::FIRST_PHASE);
         return new TrackedSearch("WAND", getHistory(),
-                                 WeakAndSearch::create(getTerms(), wand::MatchParams(scores, 1, 1), n, true));
+                                 WeakAndSearch::create(getTerms(), wand::MatchParams(scores, 1, 1), n, true, readonly_scores_heap));
     }
+    void set_second_phase() { matching_phase = MatchingPhase::SECOND_PHASE; }
 };
 
 struct SimpleWandFixture {
     MyWandSpec   spec;
     SimpleResult hits;
-    SimpleWandFixture() : spec(2), hits() {
+    SimpleWandFixture()
+        : SimpleWandFixture(false)
+    {
+    }
+    explicit SimpleWandFixture(bool second_phase)
+        : spec(2),
+          hits()
+    {
+        if (second_phase) {
+            spec.set_second_phase();
+        }
         spec.leaf(LeafSpec("foo").doc(1).doc(2).doc(3).doc(4).doc(5).doc(6));
         spec.leaf(LeafSpec("bar").doc(1).doc(3).doc(5));
         SearchIterator::UP search(spec.create());
@@ -70,8 +89,14 @@ struct WeightOrder {
 
 TEST(WeakAndTest, require_that_wand_prunes_bad_hits_after_enough_good_ones_are_obtained)
 {
-    SimpleWandFixture f;
+    SimpleWandFixture f; // First phase
     EXPECT_EQ(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(5), f.hits);
+}
+
+TEST(WeakAndTest, require_that_wand_does_not_prune_hits_in_later_matching_phases)
+{
+    SimpleWandFixture f(true); // Second phase
+    EXPECT_EQ(SimpleResult().addHit(1).addHit(2).addHit(3).addHit(4).addHit(5).addHit(6), f.hits);
 }
 
 TEST(WeakAndTest, require_that_wand_uses_subsearches_as_expected)
@@ -106,7 +131,7 @@ TEST(WeakAndTest, require_that_initial_docid_for_subsearches_are_taken_into_acco
     terms.push_back(wand::Term(new TrackedSearch("foo", history, new EagerChild(search::endDocId)), 100, 1));
     terms.push_back(wand::Term(new TrackedSearch("bar", history, new EagerChild(10)), 100, 2));
     SharedWeakAndPriorityQueue scores(2);
-    auto search = std::make_unique<TrackedSearch>("WAND", history, WeakAndSearch::create(terms, wand::MatchParams(scores), 2, true));
+    auto search = std::make_unique<TrackedSearch>("WAND", history, WeakAndSearch::create(terms, wand::MatchParams(scores), 2, true, false));
     SimpleResult hits;
     hits.search(*search);
     EXPECT_EQ(SimpleResult().addHit(10), hits);
@@ -129,7 +154,7 @@ private:
         }
         static constexpr size_t LARGE_ENOUGH_HEAP_FOR_ALL = 10000;
         _scores.push_back(std::make_unique<SharedWeakAndPriorityQueue>(LARGE_ENOUGH_HEAP_FOR_ALL));
-        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), 1, 1), -1, strict);
+        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), 1, 1), -1, strict, false);
     }
 };
 
