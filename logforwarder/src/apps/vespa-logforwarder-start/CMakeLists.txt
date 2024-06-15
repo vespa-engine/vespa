@@ -9,7 +9,7 @@ vespa_add_executable(logforwarder-start_app
     OUTPUT_NAME vespa-logforwarder-start
     INSTALL bin
     DEPENDS
-    config_cloudconfig
+    vespa_config
     configdefinitions
     vespalib
 )

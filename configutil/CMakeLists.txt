@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespadefaults
-    config_cloudconfig
+    vespa_config
     vbench
     vespalib
 

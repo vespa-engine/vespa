@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespalib
-    config_cloudconfig
+    vespa_config
 
     LIBS
     src/vespa

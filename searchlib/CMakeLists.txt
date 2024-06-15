@@ -8,7 +8,7 @@ vespa_define_module(
     configdefinitions
     metrics
     document
-    config_cloudconfig
+    vespa_config
 
     EXTERNAL_DEPENDS
     ${VESPA_GLIBC_RT_LIB}

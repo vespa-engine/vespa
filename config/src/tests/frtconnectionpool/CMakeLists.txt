@@ -3,7 +3,7 @@ vespa_add_executable(config_frtconnectionpool_test_app TEST
     SOURCES
     frtconnectionpool.cpp
     DEPENDS
-    config_cloudconfig
+    vespa_config
     GTest::gtest
 )
 vespa_add_test(NAME config_frtconnectionpool_test_app COMMAND config_frtconnectionpool_test_app)

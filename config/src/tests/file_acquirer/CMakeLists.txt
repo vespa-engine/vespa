@@ -3,6 +3,6 @@ vespa_add_executable(config_file_acquirer_test_app TEST
     SOURCES
     file_acquirer_test.cpp
     DEPENDS
-    config_cloudconfig
+    vespa_config
 )
 vespa_add_test(NAME config_file_acquirer_test_app COMMAND config_file_acquirer_test_app)

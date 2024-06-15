@@ -3,7 +3,7 @@ vespa_add_executable(config_functiontest_test_app TEST
     SOURCES
     functiontest.cpp
     DEPENDS
-    config_cloudconfig
+    vespa_config
 )
 vespa_add_test(NAME config_functiontest_test_app COMMAND config_functiontest_test_app)
 vespa_generate_config(config_functiontest_test_app ../../test/resources/configdefinitions/function-test.def)

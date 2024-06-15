@@ -3,6 +3,6 @@ vespa_add_executable(config_trace_test_app TEST
     SOURCES
     trace.cpp
     DEPENDS
-    config_cloudconfig
+    vespa_config
 )
 vespa_add_test(NAME config_trace_test_app COMMAND config_trace_test_app)
