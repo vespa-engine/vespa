@@ -6,12 +6,15 @@ else()
   unset(ACCEL_FILES)
 endif()
 
-vespa_add_library(vespalib_vespalib_hwaccelrated OBJECT
+vespa_add_library(hwaccelrated OBJECT
     SOURCES
     iaccelrated.cpp
     generic.cpp
     ${ACCEL_FILES}
     DEPENDS
+    INSTALL lib64
 )
 set_source_files_properties(avx2.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=haswell")
 set_source_files_properties(avx512.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=skylake-avx512 -mprefer-vector-width=512")
+set(BLA_VENDOR OpenBLAS)
+vespa_add_target_package_dependency(hwaccelrated BLAS)

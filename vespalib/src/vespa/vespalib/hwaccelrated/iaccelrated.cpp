@@ -124,15 +124,15 @@ std::vector<uint64_t>
 simpleInvert(const std::vector<uint64_t> & src) {
     std::vector<uint64_t> inverted;
     inverted.reserve(src.size());
-    for (size_t i(0); i < src.size(); i++) {
-        inverted.push_back(~src[i]);
+    for (unsigned long i : src) {
+        inverted.push_back(~i);
     }
     return inverted;
 }
 
 std::vector<uint64_t>
 optionallyInvert(bool invert, std::vector<uint64_t> v) {
-    return invert ? simpleInvert(std::move(v)) : std::move(v);
+    return invert ? simpleInvert(v) : std::move(v);
 }
 
 bool shouldInvert(bool invertSome) {
@@ -215,7 +215,7 @@ class RuntimeVerificator
 public:
     RuntimeVerificator();
 private:
-    void verify(const IAccelrated & accelrated) {
+    static void verify(const IAccelrated & accelrated) {
         verifyDotproduct<float>(accelrated);
         verifyDotproduct<double>(accelrated);
         verifyDotproduct<int32_t>(accelrated);
@@ -230,20 +230,16 @@ private:
 
 RuntimeVerificator::RuntimeVerificator()
 {
-    GenericAccelrator generic;
-    verify(generic);
-
-    const IAccelrated & thisCpu(IAccelrated::getAccelerator());
-    verify(thisCpu);
+    verify(GenericAccelrator());
+    verify(*create_accelerator());
 }
 
 }
-
-RuntimeVerificator _G_verifyAccelrator;
 
 const IAccelrated &
 IAccelrated::getAccelerator()
 {
+    static RuntimeVerificator verifyAccelrator_once;
     static IAccelrated::UP accelrator = create_accelerator();
     return *accelrator;
 }

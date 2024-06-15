@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_hwaccelrated_test_app TEST
     hwaccelrated_test.cpp
     DEPENDS
     vespalib
+    hwaccelrated
 )
 vespa_add_test(NAME vespalib_hwaccelrated_test_app COMMAND vespalib_hwaccelrated_test_app)
 
@@ -12,4 +13,5 @@ vespa_add_executable(vespalib_hwaccelrated_bench_app
     hwaccelrated_bench.cpp
     DEPENDS
     vespalib
+    hwaccelrated
 )
