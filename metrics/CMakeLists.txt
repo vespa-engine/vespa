@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     vespalog
     vespalib
-    config_cloudconfig
+    vespa_config
 
     LIBS
     src/vespa/metrics

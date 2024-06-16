@@ -3,7 +3,7 @@ vespa_add_executable(config_frt_test_app TEST
     SOURCES
     frt.cpp
     DEPENDS
-    config_cloudconfig
+    vespa_config
 )
 vespa_add_test(NAME config_frt_test_app COMMAND config_frt_test_app)
 vespa_generate_config(config_frt_test_app ../../test/resources/configdefinitions/my.def)

@@ -5,7 +5,7 @@ vespa_define_module(
     vespalog
     vespalib
     metrics
-    config_cloudconfig
+    vespa_config
     configdefinitions
     document
     searchlib

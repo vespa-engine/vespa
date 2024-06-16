@@ -3,6 +3,6 @@ vespa_add_executable(config_payload_converter_test_app TEST
     SOURCES
     payload_converter.cpp
     DEPENDS
-    config_cloudconfig
+    vespa_config
 )
 vespa_add_test(NAME config_payload_converter_test_app COMMAND config_payload_converter_test_app)

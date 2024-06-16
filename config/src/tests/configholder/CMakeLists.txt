@@ -3,6 +3,6 @@ vespa_add_executable(config_configholder_test_app TEST
     SOURCES
     configholder.cpp
     DEPENDS
-    config_cloudconfig
+    vespa_config
 )
 vespa_add_test(NAME config_configholder_test_app COMMAND config_configholder_test_app)
