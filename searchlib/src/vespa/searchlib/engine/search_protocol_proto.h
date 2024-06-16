@@ -2,4 +2,4 @@
 
 #pragma once
 
-#include "search_protocol.pb.h"
+#include <vespa/searchlib/engine/search_protocol.pb.h>
