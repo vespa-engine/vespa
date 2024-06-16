@@ -378,8 +378,9 @@ public class OpenTelemetryConfigGenerator {
 
     private Map<String, String> serviceAttributes(Service svc) {
         Map<String, String> dimvals = new LinkedHashMap<>();
-        dimvals.put("instance", svc.getServiceName()); // should maybe be "local_service_name" ?
-        dimvals.put("instanceType", svc.getServiceType()); // maybe "local_service_type", or remove
+        // currently unused - can be added if necessary:
+        // dimvals.put("local_service_name", svc.getServiceName());
+        // dimvals.put("local_service_type", svc.getServiceType());
         String cName = svc.getServicePropertyString("clustername", null);
         if (cName != null) {
             // overridden by cluster membership below (if available)
