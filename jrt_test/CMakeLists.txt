@@ -5,7 +5,7 @@ vespa_define_module(
     vespalib
     fnet
     slobrok
-    configdefinitions
+    vespa_configdefinitions
 
     APPS
     src/binref

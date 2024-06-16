@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespadefaults
-    configdefinitions
+    vespa_configdefinitions
     vespa_config
     vespalog
     document

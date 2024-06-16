@@ -126,5 +126,5 @@ vespa_add_library(searchcore_server STATIC
     searchcore_reprocessing
     searchcore_summaryengine
     searchcore_reference
-    configdefinitions
+    vespa_configdefinitions
 )

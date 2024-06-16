@@ -10,6 +10,6 @@ vespa_add_executable(logforwarder-start_app
     INSTALL bin
     DEPENDS
     vespa_config
-    configdefinitions
+    vespa_configdefinitions
     vespalib
 )
