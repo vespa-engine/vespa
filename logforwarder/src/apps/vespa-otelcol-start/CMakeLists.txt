@@ -10,6 +10,6 @@ vespa_add_executable(otelcol_start_app
     INSTALL bin
     DEPENDS
     vespa_config
-    configdefinitions
+    vespa_configdefinitions
     vespalib
 )

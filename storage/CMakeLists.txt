@@ -4,7 +4,7 @@ vespa_define_module(
     vespadefaults
     metrics
     vespa_config
-    configdefinitions
+    vespa_configdefinitions
     vespalog
     messagebus
     documentapi

@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     vespalog
     vespalib
-    configdefinitions
+    vespa_configdefinitions
     document
     searchlib
 

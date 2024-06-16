@@ -5,5 +5,5 @@ vespa_add_library(configutil_util STATIC
     modelinspect.cpp
     configstatus.cpp
     DEPENDS
-    configdefinitions
+    vespa_configdefinitions
 )

@@ -8,7 +8,7 @@ vespa_define_module(
     document
     slobrok
     messagebus
-    configdefinitions
+    vespa_configdefinitions
     vdslib
 
     LIBS
