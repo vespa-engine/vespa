@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     vespalog
     vespalib
-    document
+    vespa_document
     vdslib
 
     LIBS

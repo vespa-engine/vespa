@@ -8,7 +8,7 @@ vespa_define_module(
     vespalog
     messagebus
     documentapi
-    document
+    vespa_document
     vespalib
     vdslib
     persistence

@@ -7,7 +7,7 @@ vespa_define_module(
     metrics
     vespa_config
     vespa_configdefinitions
-    document
+    vespa_document
     searchlib
     messagebus
     persistence

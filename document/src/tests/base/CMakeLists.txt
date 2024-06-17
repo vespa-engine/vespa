@@ -3,13 +3,13 @@ vespa_add_executable(document_documentid_test_app TEST
     SOURCES
     documentid_test.cpp
     DEPENDS
-    document
+    vespa_document
 )
 vespa_add_test(NAME document_documentid_test_app COMMAND document_documentid_test_app)
 vespa_add_executable(document_documentid_benchmark_app
     SOURCES
     documentid_benchmark.cpp
     DEPENDS
-    document
+    vespa_document
 )
 vespa_add_test(NAME document_documentid_benchmark_app COMMAND document_documentid_benchmark_app BENCHMARK)
