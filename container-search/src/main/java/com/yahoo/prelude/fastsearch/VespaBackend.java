@@ -52,6 +52,7 @@ public abstract class VespaBackend {
 
     /** The name of this source */
     private final String name;
+    protected enum DispatchPhase{SEARCH, FILL}
 
     protected VespaBackend(ClusterParams clusterParams) {
         this.serverId = clusterParams.getServerId();
@@ -166,7 +167,7 @@ public abstract class VespaBackend {
 
         resolveDocumentDatabase(query);
         transformQuery(query);
-        traceQuery(name, "search", query, query.getOffset(), query.getHits(), 1, Optional.empty());
+        traceQuery(name, DispatchPhase.SEARCH, query, query.getOffset(), query.getHits(), 1, Optional.empty());
 
         root = query.getModel().getQueryTree().getRoot();
         if (root == null || root instanceof NullItem) // root can become null after resolving and transformation?
@@ -238,11 +239,11 @@ public abstract class VespaBackend {
         destination.hits().addErrorsFrom(source.hits());
     }
 
-    void traceQuery(String sourceName, String type, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {
+    void traceQuery(String sourceName, DispatchPhase phase, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {
         if ((query.getTrace().getLevel()<level) || !query.getTrace().getQuery()) return;
 
         StringBuilder s = new StringBuilder();
-        s.append(sourceName).append(" ").append(type).append(" to dispatch: ")
+        s.append(sourceName).append(" ").append(phase.name().toLowerCase()).append(" to dispatch: ")
                 .append("query=[")
                 .append(query.getModel().getQueryTree().getRoot().toString())
                 .append("]");
@@ -285,10 +286,12 @@ public abstract class VespaBackend {
             s.append(" sessionId=").append(query.getSessionId(getServerId()));
         }
 
-        List<Grouping> grouping = GroupingExecutor.getGroupingList(query);
-        s.append(" grouping=").append(grouping.size()).append(" : ");
-        for(Grouping g : grouping) {
-            s.append(g.toString());
+        if (query.getTrace().getLevel() >= (level+3)) {
+            List<Grouping> grouping = GroupingExecutor.getGroupingList(query);
+            s.append(" grouping=").append(grouping.size()).append(" : ");
+            for (Grouping g : grouping) {
+                s.append(g.toString());
+            }
         }
 
         if ( ! query.getRanking().getProperties().isEmpty()) {

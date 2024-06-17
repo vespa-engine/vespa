@@ -103,7 +103,7 @@ public class IndexedBackend extends VespaBackend {
         if (result.isFilled(summaryClass)) return;
 
         Query query = result.getQuery();
-        traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 1, quotedSummaryClass(summaryClass));
+        traceQuery(getName(), DispatchPhase.FILL, query, query.getOffset(), query.getHits(), 1, quotedSummaryClass(summaryClass));
 
         try (FillInvoker invoker = getFillInvoker(result)) {
             invoker.fill(result, summaryClass);
