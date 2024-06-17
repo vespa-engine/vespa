@@ -4,7 +4,7 @@ vespa_add_executable(documentapi_policies_test_app TEST
     testframe.cpp
     policies_test.cpp
     DEPENDS
-    documentapi
+    vespa_documentapi
     GTest::gtest
 )
 vespa_add_test(NAME documentapi_policies_test_app COMMAND documentapi_policies_test_app)
