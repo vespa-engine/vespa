@@ -67,6 +67,9 @@ public:
     score_t get_max_score(size_t idx) const override { return _terms.maxScore(idx); }
     const Terms &getTerms() const override { return _terms.input_terms(); }
     uint32_t getN() const override { return _n; }
+    void transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f) override {
+        _terms.transform_children(std::move(f));
+    }
     void doSeek(uint32_t docid) override {
         updateThreshold(_matchParams.scores.getMinScore());
         if (IS_STRICT) {

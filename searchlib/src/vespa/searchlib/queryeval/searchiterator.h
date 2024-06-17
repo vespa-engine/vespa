@@ -20,6 +20,8 @@ namespace search::attribute { class ISearchContext; }
 
 namespace search::queryeval {
 
+struct WeakAndSearch;
+
 /**
  * This is the abstract superclass of all search objects. Each search
  * object act as an iterator over documents that are results for the
@@ -356,6 +358,8 @@ public:
      * @return true if it is a multi search
      */
     virtual bool isMultiSearch() const { return false; }
+
+    virtual WeakAndSearch *as_weak_and() noexcept { return nullptr; }
 
     /**
      * This is used for adding an extra filter. If it is accepted it will return an empty UP.

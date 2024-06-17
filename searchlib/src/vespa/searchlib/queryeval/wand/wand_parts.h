@@ -55,12 +55,18 @@ struct Term {
     uint32_t                 estHits;
     fef::TermFieldMatchData *matchData;
     score_t                  maxScore = 0.0; // <- only used by rise wand test
+    size_t                   old_idx = 0; // reverse-mapping used by iterator profiling
     Term(SearchIterator *s, int32_t w, uint32_t e, fef::TermFieldMatchData *tfmd) noexcept
         : search(s), weight(w), estHits(e), matchData(tfmd)
     {}
     Term() noexcept : Term(nullptr, 0, 0, nullptr){}
     Term(SearchIterator *s, int32_t w, uint32_t e) noexcept : Term(s, w, e, nullptr) {}
     Term(SearchIterator::UP s, int32_t w, uint32_t e) noexcept : Term(s.release(), w, e, nullptr) {}
+    Term copy_from(size_t idx) const noexcept {
+        Term result = *this;
+        result.old_idx = idx;
+        return result;
+    }
 };
 using Terms = std::vector<Term>;
 //-----------------------------------------------------------------------------
@@ -263,6 +269,13 @@ public:
     void unpack(uint16_t ref, uint32_t docid) { iteratorPack().unpack(ref, docid); }
     void visit_members(vespalib::ObjectVisitor &visitor) const;
     const Terms &input_terms() const { return _terms; }
+    void transform_children(auto f) {
+        iteratorPack().transform_children([&](auto itr, size_t idx){
+                                              auto ret = f(std::move(itr), _terms[idx].old_idx);
+                                              _terms[idx].search = ret.get();
+                                              return ret;
+                                          });
+    }
 };
 
 template <typename Scorer>
@@ -271,7 +284,7 @@ VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer & 
     : _terms()
 {
     std::vector<ref_t> order = init_state<Scorer>(TermInput(t), scorer, docIdLimit);
-    _terms = assemble([&t](ref_t ref){ return t[ref]; }, order);
+    _terms = assemble([&t](ref_t ref){ return t[ref].copy_from(ref); }, order);
     iteratorPack() = SearchIteratorPack(assemble([&t](ref_t ref){ return t[ref].search; }, order),
                                         assemble([&t](ref_t ref){ return t[ref].matchData; }, order),
                                         std::move(childrenMatchData));

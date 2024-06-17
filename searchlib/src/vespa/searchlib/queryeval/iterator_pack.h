@@ -61,6 +61,11 @@ public:
     }
     std::unique_ptr<BitVector> get_hits(uint32_t begin_id, uint32_t end_id) const;
     void or_hits_into(BitVector &result, uint32_t begin_id) const;
+    void transform_children(auto f) {
+        for (size_t i = 0; i < _children.size(); ++i) {
+            _children[i] = f(std::move(_children[i]), i);
+        }
+    }
 };
 
 using SearchIteratorPack = SearchIteratorPackT<uint16_t>;
