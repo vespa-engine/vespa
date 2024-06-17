@@ -86,7 +86,7 @@ class ApplicationApiHandlerTest {
     public Path dbDir, defsDir, refsDir;
 
     @BeforeEach
-    public void setupRepo() throws IOException {
+    public void setupRepo() {
         configserverConfig = new ConfigserverConfig.Builder()
                 .hostedVespa(true)
                 .configServerDBDir(dbDir.toString())
@@ -113,7 +113,7 @@ class ApplicationApiHandlerTest {
                                             Zone.defaultZone());
     }
 
-    private HttpResponse put(long sessionId, Map<String, String> parameters) throws IOException {
+    private HttpResponse put(long sessionId, Map<String, String> parameters) {
         var request = com.yahoo.container.jdisc.HttpRequest.createTestRequest("http://host:123/application/v2/tenant/" + tenant + "/prepareandactivate/" + sessionId,
                                                                               Method.PUT,
                                                                               InputStream.nullInputStream(),
