@@ -541,19 +541,19 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
         {
             auto& pcmd = dynamic_cast<PropagateVisitorConfig&>(*cmd);
             const vespa::config::content::core::StorVisitorConfig& config(pcmd.getConfig());
-            LOG(config, "Updating visitor thread configuration in visitor "
-                        "thread %u: "
-                        "Current config(defaultParallelIterators %u,"
-                        " iteratorsPerBucket %u,"
-                        " visitorMemoryUsageLimit %u)"
-                        "New config(defaultParallelIterators %u,"
-                        " visitorMemoryUsageLimit %u)",
-                        _threadIndex,
-                        _defaultParallelIterators,
-                        _iteratorsPerBucket,
-                        _visitorMemoryUsageLimit,
-                        config.defaultparalleliterators,
-                        config.visitorMemoryUsageLimit
+            LOG(debug, "Updating visitor thread configuration in visitor "
+                       "thread %u: "
+                       "Current config(defaultParallelIterators %u,"
+                       " iteratorsPerBucket %u,"
+                       " visitorMemoryUsageLimit %u)"
+                       "New config(defaultParallelIterators %u,"
+                       " visitorMemoryUsageLimit %u)",
+                       _threadIndex,
+                       _defaultParallelIterators,
+                       _iteratorsPerBucket,
+                       _visitorMemoryUsageLimit,
+                       config.defaultparalleliterators,
+                       config.visitorMemoryUsageLimit
                );
             _defaultParallelIterators = config.defaultparalleliterators;
             _visitorMemoryUsageLimit = config.visitorMemoryUsageLimit;
