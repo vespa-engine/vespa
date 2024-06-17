@@ -240,7 +240,7 @@ TEST("testSortSpec")
 TEST("testSameAsJavaOrder")
 {
     std::vector<vespalib::string> javaOrder;
-    std::ifstream is("javaorder.zh");
+    std::ifstream is(TEST_PATH("javaorder.zh"));
     while (!is.eof()) {
         std::string line;
         getline(is, line);
