@@ -69,7 +69,7 @@ void Wrapper::check() {
 
 void Wrapper::gotConfig(const OpenTelemetryConfig& config) {
     _childHandler.stopChild();
-    std::string progPath = vespa::Defaults::underVespaHome("sbin/otelcol-contrib");
+    std::string progPath = "/opt/vespa-deps/bin/vespa-otelcol";
     std::string cfPath = cfFilePath();
     writeConfig(config.yaml, cfPath);
     _childHandler.startChild(progPath, cfPath);
