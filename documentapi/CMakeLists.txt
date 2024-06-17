@@ -5,7 +5,7 @@ vespa_define_module(
     vespa_config
     vespalib
     fnet
-    document
+    vespa_document
     slobrok
     messagebus
     vespa_configdefinitions

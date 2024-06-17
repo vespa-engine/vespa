@@ -5,7 +5,7 @@ vespa_define_module(
     vespalib
     vespa_config
     vespa_configdefinitions
-    document
+    vespa_document
 
     LIBS
     src/vespa/vdslib

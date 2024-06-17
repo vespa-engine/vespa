@@ -3,7 +3,7 @@ vespa_add_executable(document_struct_anno_test_app TEST
     SOURCES
     struct_anno_test.cpp
     DEPENDS
-    document
+    vespa_document
     GTest::gtest
 )
 vespa_add_test(NAME document_struct_anno_test_app COMMAND document_struct_anno_test_app)

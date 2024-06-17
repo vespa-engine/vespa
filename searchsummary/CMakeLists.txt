@@ -4,7 +4,7 @@ vespa_define_module(
     vespalog
     vespalib
     vespa_configdefinitions
-    document
+    vespa_document
     searchlib
 
     LIBS

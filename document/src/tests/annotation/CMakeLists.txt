@@ -3,6 +3,6 @@ vespa_add_executable(document_annotation_test_app TEST
     SOURCES
     annotation_test.cpp
     DEPENDS
-    document
+    vespa_document
 )
 vespa_add_test(NAME document_annotation_test_app COMMAND document_annotation_test_app)

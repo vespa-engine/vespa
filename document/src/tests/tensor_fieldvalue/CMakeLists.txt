@@ -3,6 +3,6 @@ vespa_add_executable(document_tensor_fieldvalue_test_app TEST
     SOURCES
     tensor_fieldvalue_test.cpp
     DEPENDS
-    document
+    vespa_document
 )
 vespa_add_test(NAME document_tensor_fieldvalue_test_app COMMAND document_tensor_fieldvalue_test_app)

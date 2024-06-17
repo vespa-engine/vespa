@@ -7,7 +7,7 @@ vespa_define_module(
     fnet
     vespa_configdefinitions
     metrics
-    document
+    vespa_document
     vespa_config
 
     EXTERNAL_DEPENDS

@@ -3,7 +3,7 @@ vespa_add_executable(document_select_test_app TEST
     SOURCES
     select_test.cpp
     DEPENDS
-    document
+    vespa_document
     GTest::GTest
 )
 vespa_add_test(NAME document_select_test_app COMMAND document_select_test_app)
