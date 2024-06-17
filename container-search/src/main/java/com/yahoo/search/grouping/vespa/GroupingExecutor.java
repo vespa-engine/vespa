@@ -99,24 +99,28 @@ public class GroupingExecutor extends Searcher {
         return result;
     }
 
+    private String extractSummaryClass(Hit hit, String summaryClass) {
+        Object metaData = hit.getSearcherSpecificMetaData(this);
+        if (metaData instanceof String metaDataString) {
+            // Use the summary class specified by grouping, set in HitConverter, for the first fill request
+            // after grouping. This assumes the first fill request is using the default summary class,
+            // which may be a fragile assumption. But currently we cannot do better because the difference
+            // between explicit and implicit summary class in fill is erased by the Execution.
+            //
+            // We reset the summary class here such that following fill calls will execute with the
+            // summary class they specify
+            hit.setSearcherSpecificMetaData(this, null);
+            return metaDataString;
+        }
+        return summaryClass;
+    }
+
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
         Map<String, Result> summaryMap = new HashMap<>();
         for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
             Hit hit = it.next();
-            Object metaData = hit.getSearcherSpecificMetaData(this);
-            if (metaData instanceof String) {
-                // Use the summary class specified by grouping, set in HitConverter, for the first fill request
-                // after grouping. This assumes the first fill request is using the default summary class,
-                // which may be a fragile assumption. But currently we cannot do better because the difference
-                // between explicit and implicit summary class in fill is erased by the Execution.
-                // 
-                // We reset the summary class here such that following fill calls will execute with the
-                // summary class they specify
-                summaryClass = (String) metaData;
-                hit.setSearcherSpecificMetaData(this, null);
-            }
-            Result summaryResult = summaryMap.computeIfAbsent(summaryClass, key -> new Result(result.getQuery()));
+            Result summaryResult = summaryMap.computeIfAbsent(extractSummaryClass(hit, summaryClass), key -> new Result(result.getQuery()));
             summaryResult.hits().add(hit);
         }
         Trace trace = result.getQuery().getTrace();
