@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
@@ -38,7 +39,8 @@ public class GlobalDocumentChangeValidator implements ChangeValidator {
                     if ( ! context.deployState().validationOverrides().allows(ValidationId.globalDocumentChange, context.deployState().now()))
                         context.invalid(ValidationId.globalDocumentChange, reason);
                     else if (context.deployState().isHosted())
-                        context.require(new VespaRestartAction(ClusterSpec.Id.from(clusterName), reason));
+                        context.require(new VespaRestartAction(ClusterSpec.Id.from(clusterName), reason,
+                                                               nextCluster.getSearch().getSearchNodes().stream().map(AbstractService::getServiceInfo).toList()));
                 }
             }
         });
