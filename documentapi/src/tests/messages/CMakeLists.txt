@@ -7,7 +7,7 @@ vespa_add_executable(documentapi_messages_test_app TEST
     messages80test.cpp
     messages_app.cpp
     DEPENDS
-    documentapi
+    vespa_documentapi
     GTest::GTest
 )
 vespa_add_test(NAME documentapi_messages_test_app COMMAND documentapi_messages_test_app)
