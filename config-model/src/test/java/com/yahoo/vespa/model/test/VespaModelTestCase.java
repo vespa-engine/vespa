@@ -20,9 +20,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
@@ -37,6 +34,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -265,9 +263,9 @@ public class VespaModelTestCase {
         assertEquals(1, admin.getConfigservers().size());
         Set<HostInfo> hosts = model.getHosts();
         assertEquals(1, hosts.size());
-        //logd, config proxy, sentinel, config server, slobrok, log server
+        // logd, config proxy, sentinel, config server, slobrok, logserver, logserver container
         HostInfo host = hosts.iterator().next();
-        assertEquals(7, host.getServices().size());
+        assertEquals(8, host.getServices().size());
         new LogdConfig((LogdConfig.Builder) model.getConfig(new LogdConfig.Builder(), "admin/model"));
 
     }

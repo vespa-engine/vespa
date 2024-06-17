@@ -57,10 +57,11 @@ public class ConfigValueChangeValidatorTest {
                 createVespaModel(createQrStartConfigSegment(true, 2096)),
                 createVespaModel(createQrStartConfigSegment(false, 2096))
         );
-        assertEquals(3, changes.size());
+        assertEquals(4, changes.size());
         assertComponentsEquals(changes, "default/container.0", 0);
-        assertComponentsEquals(changes, "admin/cluster-controllers/0", 1);
-        assertComponentsEquals(changes, "admin/metrics/localhost", 2);
+        assertComponentsEquals(changes, "admin/logs/0", 1);
+        assertComponentsEquals(changes, "admin/cluster-controllers/0", 2);
+        assertComponentsEquals(changes, "admin/metrics/localhost", 3);
     }
 
     @Test

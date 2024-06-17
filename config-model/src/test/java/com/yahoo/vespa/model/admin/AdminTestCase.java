@@ -50,8 +50,8 @@ public class AdminTestCase {
     void testAdmin20() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "adminconfig20");
 
-        // Verify that the admin plugin has been loaded (always loads routing).
-        assertEquals(2, vespaModel.configModelRepo().asMap().size());
+        // Verify that the admin plugin has been loaded (always loads 'routing' and 'logs')
+        assertEquals(3, vespaModel.configModelRepo().asMap().size());
 
         ApplicationConfigProducerRoot root = vespaModel.getVespa();
         assertNotNull(root);
@@ -81,10 +81,10 @@ public class AdminTestCase {
 
         StateserverConfig.Builder ssb = new StateserverConfig.Builder();
         vespaModel.getConfig(ssb, "admin/slobrok.0");
-        assertEquals(19100, new StateserverConfig(ssb).httpport());
+        assertEquals(19103, new StateserverConfig(ssb).httpport());
 
         vespaModel.getConfig(ssb, "admin/slobrok.1");
-        assertEquals(19102, new StateserverConfig(ssb).httpport());
+        assertEquals(19105, new StateserverConfig(ssb).httpport());
 
         LogdConfig.Builder lb = new LogdConfig.Builder();
         vespaModel.getConfig(lb, "admin/slobrok.0");
@@ -98,12 +98,13 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertEquals(5, sentinelConfig.service().size());
+        assertEquals(6, sentinelConfig.service().size());
         assertEquals("logserver", sentinelConfig.service(0).name());
-        assertEquals("slobrok", sentinelConfig.service(1).name());
-        assertEquals("slobrok2", sentinelConfig.service(2).name());
-        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(3).name());
-        assertEquals("logd", sentinelConfig.service(4).name());
+        assertEquals("logserver-container", sentinelConfig.service(1).name());
+        assertEquals("slobrok", sentinelConfig.service(2).name());
+        assertEquals("slobrok2", sentinelConfig.service(3).name());
+        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(4).name());
+        assertEquals("logd", sentinelConfig.service(5).name());
     }
 
     /**
@@ -114,8 +115,8 @@ public class AdminTestCase {
     void testOnlyAdminserver() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "simpleadminconfig20");
 
-        // Verify that the admin plugin has been loaded (always loads routing).
-        assertEquals(2, vespaModel.configModelRepo().asMap().size());
+        // Verify that the admin plugin has been loaded (always loads 'routing' and 'logs')
+        assertEquals(3, vespaModel.configModelRepo().asMap().size());
 
         ApplicationConfigProducerRoot root = vespaModel.getVespa();
         assertNotNull(root);
@@ -134,11 +135,12 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertEquals(4, sentinelConfig.service().size());
+        assertEquals(5, sentinelConfig.service().size());
         assertEquals("logserver", sentinelConfig.service(0).name());
-        assertEquals("slobrok", sentinelConfig.service(1).name());
-        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(2).name());
-        assertEquals("logd", sentinelConfig.service(3).name());
+        assertEquals("logserver-container", sentinelConfig.service(1).name());
+        assertEquals("slobrok", sentinelConfig.service(2).name());
+        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(3).name());
+        assertEquals("logd", sentinelConfig.service(4).name());
         assertEquals(-1, sentinelConfig.service(0).affinity().cpuSocket());
         assertTrue(sentinelConfig.service(0).preShutdownCommand().isEmpty());
 
@@ -175,8 +177,8 @@ public class AdminTestCase {
     void testMultipleConfigServers() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "multipleconfigservers");
 
-        // Verify that the admin plugin has been loaded (always loads routing).
-        assertEquals(2, vespaModel.configModelRepo().asMap().size());
+        // Verify that the admin plugin has been loaded (always loads 'routing' and 'logs')
+        assertEquals(3, vespaModel.configModelRepo().asMap().size());
         ApplicationConfigProducerRoot root = vespaModel.getVespa();
         assertNotNull(root);
 

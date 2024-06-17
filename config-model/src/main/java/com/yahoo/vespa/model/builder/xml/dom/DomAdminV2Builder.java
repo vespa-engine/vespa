@@ -12,15 +12,18 @@ import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.Logserver;
+import com.yahoo.vespa.model.admin.LogserverContainer;
+import com.yahoo.vespa.model.admin.LogserverContainerCluster;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.admin.otel.OpenTelemetryCollector;
-import com.yahoo.vespa.model.admin.otel.OpenTelemetryConfigGenerator;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilderBase;
 import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,10 +38,13 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
     private static final String ATTRIBUTE_CLUSTER_CONTROLLER_STANDALONE_ZK = "standalone-zookeeper";
 
-    public DomAdminV2Builder(ConfigModelContext.ApplicationType applicationType,
+    private final ConfigModelContext context;
+
+    public DomAdminV2Builder(ConfigModelContext context,
                              boolean multitenant,
                              List<ConfigServerSpec> configServerSpecs) {
-        super(applicationType, multitenant, configServerSpecs);
+        super(context.getApplicationType(), multitenant, configServerSpecs);
+        this.context = context;
     }
 
     private void addOtelcol(TreeConfigProducer<?> parent, DeployState deployState, HostResource hostResource) {
@@ -52,6 +58,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         List<Configserver> configservers = parseConfigservers(deployState, admin, adminE);
         var logserver = parseLogserver(deployState, admin, adminE);
         admin.setLogserver(logserver);
+        createContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
         if (deployState.featureFlags().logserverOtelCol()) {
             // for manual testing
             addOtelcol(admin, deployState, logserver.getHostResource());
@@ -63,6 +70,20 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin, deployState);
         addLoggingSpecs(new ModelElement(adminE).child("logging"), admin);
+    }
+
+    private void createContainerOnLogserverHost(DeployState deployState, Admin admin, HostResource hostResource) {
+        LogserverContainerCluster logServerCluster = new LogserverContainerCluster(admin, "logs", deployState);
+        ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
+        logserverClusterModel.setCluster(logServerCluster);
+
+        LogserverContainer container = new LogserverContainer(logServerCluster, deployState);
+        container.setHostResource(hostResource);
+        container.initService(deployState);
+        logServerCluster.addContainer(container);
+        admin.addAndInitializeService(deployState, hostResource, container);
+        admin.setLogserverContainerCluster(logServerCluster);
+        context.getConfigModelRepoAdder().add(logserverClusterModel);
     }
 
     private List<Configserver> parseConfigservers(DeployState deployState, Admin admin, Element adminE) {

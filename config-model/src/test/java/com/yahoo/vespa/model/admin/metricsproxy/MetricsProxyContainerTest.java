@@ -150,7 +150,7 @@ public class MetricsProxyContainerTest {
     @Test
     void vespa_services_config_has_all_services() {
         VespaServicesConfig vespaServicesConfig = getVespaServicesConfig(hostedServicesWithContent());
-        assertEquals(10, vespaServicesConfig.service().size());
+        assertEquals(11, vespaServicesConfig.service().size());
 
         for (var service : vespaServicesConfig.service()) {
             if (service.configId().equals("admin/cluster-controllers/0")) {

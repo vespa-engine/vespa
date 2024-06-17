@@ -62,7 +62,7 @@ public class SystemModelTestCase {
         VespaModel vespaModel = getVespaModelDoNotValidateXml(TESTDIR + "simpleconfig/");
         assertNotNull(vespaModel);
 
-        assertEquals(4, vespaModel.configModelRepo().asMap().size(), "There are two instances of the simple model + Routing and AdminModel (set up implicitly)");
+        assertEquals(5, vespaModel.configModelRepo().asMap().size(), "There are two instances of the simple model + Routing, Logs and AdminModel (set up implicitly)");
         assertNotNull(vespaModel.configModelRepo().asMap().get("simple"), "One gets the default name as there is no explicit id");
         assertNotNull(vespaModel.configModelRepo().asMap().get("second"), "The other gets the explicit id as name");
 
@@ -116,9 +116,9 @@ public class SystemModelTestCase {
         assertEquals(host1, host2);
         assertEquals(host2, host3);
 
-        // all three host aliases are for the same host, so the number of services should be 3 + 8
-        // (3 simpleservices and logd, configproxy, config sentinel, admin server config server, slobrok, logserver and metricsproxy)
-        assertEquals(10, host1.getServices().size());
+        // all three host aliases are for the same host, so the number of services should be 3 + 9
+        // (3 simpleservices and logd, configproxy, config sentinel, admin server config server, slobrok, logserver, logserver-container and metricsproxy)
+        assertEquals(11, host1.getServices().size());
 
         assertNotNull(host1.getService("simpleservice"));
         assertNotNull(host1.getService("simpleservice2"));
@@ -145,7 +145,7 @@ public class SystemModelTestCase {
         assertNotNull(vespaModel);
         ApplicationConfigProducerRoot root = vespaModel.getVespa();
 
-        assertEquals(5, vespaModel.configModelRepo().asMap().size());
+        assertEquals(6, vespaModel.configModelRepo().asMap().size());
         assertTrue(vespaModel.configModelRepo().asMap().containsKey("simple"));
         assertTrue(vespaModel.configModelRepo().asMap().containsKey("api"));
         assertTrue(root.getConfigIds().contains("simple/simpleservice.0"));
@@ -155,6 +155,8 @@ public class SystemModelTestCase {
         // Verify that configModelRegistry iterates in dependency order
         Iterator<ConfigModel> i = vespaModel.configModelRepo().iterator();
         ConfigModel plugin = i.next();
+        assertEquals("logs", plugin.getId());
+        plugin = i.next();
         assertEquals("admin", plugin.getId());
         plugin = i.next();
         assertEquals("simple", plugin.getId());

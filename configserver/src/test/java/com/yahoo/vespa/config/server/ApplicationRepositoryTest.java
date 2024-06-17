@@ -547,7 +547,10 @@ public class ApplicationRepositoryTest {
         list.add(new NetworkPorts.Allocation(19100, "container", "container/container.0", "http/1"));
         list.add(new NetworkPorts.Allocation(19101, "container", "container/container.0", "messaging"));
         list.add(new NetworkPorts.Allocation(19102, "container", "container/container.0", "rpc/admin"));
-        list.add(new NetworkPorts.Allocation(19103, "slobrok", "admin/slobrok.0", "http"));
+        list.add(new NetworkPorts.Allocation(19103, "logserver-container", "admin/logs/0", "http"));
+        list.add(new NetworkPorts.Allocation(19104, "logserver-container", "admin/logs/0", "http/1"));
+        list.add(new NetworkPorts.Allocation(19105, "logserver-container", "admin/logs/0", "rpc/admin"));
+        list.add(new NetworkPorts.Allocation(19106, "slobrok", "admin/slobrok.0", "http"));
 
         AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);

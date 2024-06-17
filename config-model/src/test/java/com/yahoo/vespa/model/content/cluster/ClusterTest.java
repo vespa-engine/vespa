@@ -111,9 +111,9 @@ public class ClusterTest {
         assertEquals(1, nodesConfig.node(1).key());
         assertEquals(2, nodesConfig.node(2).key());
 
-        assertEquals(19106, nodesConfig.node(0).port());
-        assertEquals(19118, nodesConfig.node(1).port());
-        assertEquals(19130, nodesConfig.node(2).port());
+        assertEquals(19109, nodesConfig.node(0).port());
+        assertEquals(19121, nodesConfig.node(1).port());
+        assertEquals(19133, nodesConfig.node(2).port());
 
         assertEquals(0, nodesConfig.node(0).group());
         assertEquals(0, nodesConfig.node(1).group());
