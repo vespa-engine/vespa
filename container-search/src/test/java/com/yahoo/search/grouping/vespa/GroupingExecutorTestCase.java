@@ -185,7 +185,7 @@ public class GroupingExecutorTestCase {
         Group grp = req.getResultGroup(exec.search(query));
         assertEquals(1, grp.size());
         Hit hit = grp.get(0);
-        assertTrue(hit instanceof GroupList);
+        assertInstanceOf(GroupList.class, hit);
         GroupList lst = (GroupList) hit;
         assertEquals(3, lst.size());
         assertNotNull(hit = lst.get("group:string:uniqueA"));
@@ -218,7 +218,7 @@ public class GroupingExecutorTestCase {
         Group grp = req.getResultGroup(exec.search(query));
         assertEquals(1, grp.size());
         Hit hit = grp.get(0);
-        assertTrue(hit instanceof GroupList);
+        assertInstanceOf(GroupList.class, hit);
         GroupList lst = (GroupList) hit;
         assertEquals(1, lst.size());
         assertNotNull(hit = lst.get("group:string:expected"));
@@ -399,7 +399,7 @@ public class GroupingExecutorTestCase {
         assertNotNull(lst);
         assertEquals(1, lst.size());
         Hit hit = lst.get(0);
-        assertTrue(hit instanceof FastHit);
+        assertInstanceOf(FastHit.class, hit);
         assertEquals(1, ((FastHit) hit).getPartId());
         assertEquals(gid1, ((FastHit) hit).getGlobalId());
 
@@ -407,7 +407,7 @@ public class GroupingExecutorTestCase {
         assertNotNull(lst);
         assertEquals(1, lst.size());
         hit = lst.get(0);
-        assertTrue(hit instanceof FastHit);
+        assertInstanceOf(FastHit.class, hit);
         assertEquals(4, ((FastHit) hit).getPartId());
         assertEquals(gid2, ((FastHit) hit).getGlobalId());
     }
@@ -439,7 +439,7 @@ public class GroupingExecutorTestCase {
         exec.fill(res);
 
         Hit hit = ((HitList) ((Group) ((GroupList) req.getResultGroup(res).get(0)).get(0)).get(0)).get(0);
-        assertTrue(hit instanceof FastHit);
+        assertInstanceOf(FastHit.class, hit);
         assertTrue(hit.isFilled(null));
     }
 
@@ -577,7 +577,7 @@ public class GroupingExecutorTestCase {
         Group group = request.getResultGroup(result);
         assertEquals(1, group.size());
         Hit hit = group.get(0);
-        assertTrue(hit instanceof GroupList);
+        assertInstanceOf(GroupList.class, hit);
         GroupList list = (GroupList) hit;
 
         assertEquals(4, list.size());
