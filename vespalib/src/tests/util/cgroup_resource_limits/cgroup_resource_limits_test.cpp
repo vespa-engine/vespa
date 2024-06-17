@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/cgroup_resource_limits.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -20,7 +21,8 @@ CGroupResourceLimitsTest::~CGroupResourceLimitsTest() = default;
 void
 CGroupResourceLimitsTest::check_limits(const std::string &base, const std::optional<uint64_t>& memory_limit, const std::optional<uint32_t>& cpu_limit)
 {
-    CGroupResourceLimits cg_limits(base + "/cgroup", base + "/self");
+    auto src_base = TEST_PATH(base);
+    CGroupResourceLimits cg_limits(src_base + "/cgroup", src_base + "/self");
     EXPECT_EQ(memory_limit, cg_limits.get_memory_limit());
     EXPECT_EQ(cpu_limit, cg_limits.get_cpu_limit());
 }
