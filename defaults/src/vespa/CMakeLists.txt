@@ -33,4 +33,5 @@ endfunction()
 
 vespa_configure_config_h()
 
-install(FILES defaults.h config.h DESTINATION include/vespa)
+install(FILES defaults.h DESTINATION include/vespa)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/vespa)
