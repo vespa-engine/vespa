@@ -3,6 +3,6 @@ vespa_add_executable(fnet_method_pt_test_app TEST
     SOURCES
     method_pt.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_method_pt_test_app COMMAND fnet_method_pt_test_app)

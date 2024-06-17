@@ -3,6 +3,6 @@ vespa_add_executable(fnet_timespeed_test_app TEST
     SOURCES
     timespeed.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_timespeed_test_app NO_VALGRIND COMMAND fnet_timespeed_test_app)

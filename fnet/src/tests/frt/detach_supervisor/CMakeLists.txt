@@ -3,6 +3,6 @@ vespa_add_executable(fnet_detach_supervisor_test_app TEST
     SOURCES
     detach_supervisor_test.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_detach_supervisor_test_app COMMAND fnet_detach_supervisor_test_app)

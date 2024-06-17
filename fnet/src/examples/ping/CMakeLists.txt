@@ -4,12 +4,12 @@ vespa_add_executable(fnet_pingserver_app
     packets.cpp
     pingserver.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_executable(fnet_pingclient_app
     SOURCES
     packets.cpp
     pingclient.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )

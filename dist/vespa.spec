@@ -570,7 +570,7 @@ fi
 %endif
 %dir %{_prefix}
 %dir %{_prefix}/lib64
-%{_prefix}/lib64/libfnet.so
+%{_prefix}/lib64/libvespa_fnet.so
 %{_prefix}/lib64/libvespadefaults.so
 %{_prefix}/lib64/libvespalib.so
 %{_prefix}/lib64/libvespalog.so
@@ -581,7 +581,7 @@ fi
 %endif
 %dir %{_prefix}
 %{_prefix}/lib64
-%exclude %{_prefix}/lib64/libfnet.so
+%exclude %{_prefix}/lib64/libvespa_fnet.so
 %exclude %{_prefix}/lib64/libvespadefaults.so
 %exclude %{_prefix}/lib64/libvespalib.so
 %exclude %{_prefix}/lib64/libvespalog.so

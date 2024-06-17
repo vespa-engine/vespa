@@ -3,5 +3,5 @@ vespa_add_executable(fnet_timeout_app
     SOURCES
     timeout.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )

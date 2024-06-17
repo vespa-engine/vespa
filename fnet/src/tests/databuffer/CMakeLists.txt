@@ -3,6 +3,6 @@ vespa_add_executable(fnet_databuffer_test_app TEST
     SOURCES
     databuffer.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_databuffer_test_app COMMAND fnet_databuffer_test_app)

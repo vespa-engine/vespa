@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     vespalib
     vespalog
-    fnet
+    vespa_fnet
 
     EXTERNAL_DEPENDS
     lz4

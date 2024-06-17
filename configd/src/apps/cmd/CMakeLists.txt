@@ -5,6 +5,6 @@ vespa_add_executable(configd_vespa-sentinel-cmd_app
     OUTPUT_NAME vespa-sentinel-cmd-bin
     INSTALL bin
     DEPENDS
-    fnet
+    vespa_fnet
     vespalib
 )

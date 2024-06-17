@@ -4,7 +4,7 @@ vespa_define_module(
     vespalog
     vespa_config
     vespalib
-    fnet
+    vespa_fnet
     slobrok
 
     LIBS

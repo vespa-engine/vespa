@@ -3,6 +3,6 @@ vespa_add_executable(fnet_thread_selection_test_app TEST
     SOURCES
     thread_selection_test.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_thread_selection_test_app COMMAND fnet_thread_selection_test_app)
