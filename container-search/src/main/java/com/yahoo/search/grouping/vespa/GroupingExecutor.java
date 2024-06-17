@@ -15,6 +15,7 @@ import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.GroupingValidator;
 import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.RootGroup;
+import com.yahoo.search.query.Trace;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -115,12 +116,12 @@ public class GroupingExecutor extends Searcher {
                 summaryClass = (String) metaData;
                 hit.setSearcherSpecificMetaData(this, null);
             }
-            Result summaryResult = summaryMap.get(summaryClass);
-            if (summaryResult == null) {
-                summaryResult = new Result(result.getQuery());
-                summaryMap.put(summaryClass, summaryResult);
-            }
+            Result summaryResult = summaryMap.computeIfAbsent(summaryClass, key -> new Result(result.getQuery()));
             summaryResult.hits().add(hit);
+        }
+        Trace trace = result.getQuery().getTrace();
+        if (trace.isTraceable(2)) {
+            trace.trace("GroupingExecutor.fill(" + summaryClass + ") = {" + summaryMap.keySet() + "}", 2);
         }
         for (Map.Entry<String, Result> entry : summaryMap.entrySet()) {
             Result res = entry.getValue();
