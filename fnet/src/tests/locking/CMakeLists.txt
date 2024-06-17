@@ -3,7 +3,7 @@ vespa_add_executable(fnet_drainpackets_test_app TEST
     SOURCES
     drainpackets.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_drainpackets_test_app NO_VALGRIND COMMAND fnet_drainpackets_test_app)
 vespa_add_executable(fnet_lockspeed_test_app TEST
@@ -11,13 +11,13 @@ vespa_add_executable(fnet_lockspeed_test_app TEST
     lockspeed.cpp
     dummy.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_lockspeed_test_app NO_VALGRIND COMMAND fnet_lockspeed_test_app)
 vespa_add_executable(fnet_castspeed_test_app TEST
     SOURCES
     castspeed.cpp
     DEPENDS
-    fnet
+    vespa_fnet
 )
 vespa_add_test(NAME fnet_castspeed_test_app NO_VALGRIND COMMAND fnet_castspeed_test_app)

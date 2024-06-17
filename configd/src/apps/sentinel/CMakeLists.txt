@@ -25,7 +25,7 @@ vespa_add_executable(configd_config-sentinel_app
     OUTPUT_NAME vespa-config-sentinel
     INSTALL sbin
     DEPENDS
-    fnet
+    vespa_fnet
     vespa_configdefinitions
     vespalib
 )

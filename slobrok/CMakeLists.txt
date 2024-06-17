@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespalib
-    fnet
+    vespa_fnet
     vespa_configdefinitions
 
     LIBS

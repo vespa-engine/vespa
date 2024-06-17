@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     vespalog
     vespalib
-    fnet
+    vespa_fnet
     slobrok
     vespa_configdefinitions
 
