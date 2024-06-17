@@ -405,9 +405,9 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !c.isCloudCI() { // Vespa Cloud always runs an up-to-date version
-		if err := target.CheckVersion(c.version); err != nil {
-			c.printWarning(err, "This version may not work as expected", "Try 'vespa version' to check for a new version")
+	if target.IsCloud() && !c.isCloudCI() { // Vespa Cloud always runs an up-to-date version
+		if err := target.CompatibleWith(c.version); err != nil {
+			c.printWarning(err, "This version of CLI may not work as expected", "Try 'vespa version' to check for a new version")
 		}
 	}
 	return target, nil

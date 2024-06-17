@@ -123,8 +123,8 @@ type Target interface {
 	// PrintLog writes the logs of this deployment using given options to control output.
 	PrintLog(options LogOptions) error
 
-	// CheckVersion verifies whether clientVersion is compatible with this target.
-	CheckVersion(clientVersion version.Version) error
+	// CompatibleWith returns nil if target is compatible with the given version.
+	CompatibleWith(version version.Version) error
 }
 
 // TLSOptions holds the client certificate to use for cloud API or service requests.

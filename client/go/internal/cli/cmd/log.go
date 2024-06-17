@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/version"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -58,7 +59,12 @@ $ vespa log --follow`,
 				options.To = to
 			}
 			if err := target.PrintLog(options); err != nil {
-				return fmt.Errorf("could not retrieve logs: %w", err)
+				versionWithLogContainer := version.MustParse("8.359.0")
+				var hints []string
+				if err := target.CompatibleWith(versionWithLogContainer); err != nil {
+					hints = []string{fmt.Sprintf("This command requires a newer version of the Vespa platform: %s", err)}
+				}
+				return errHint(fmt.Errorf("could not retrieve logs: %w", err), hints...)
 			}
 			return nil
 		},

@@ -72,7 +72,40 @@ func (t *customTarget) PrintLog(options LogOptions) error {
 	return pollLogs(t, logsURL, options, t.retryInterval)
 }
 
-func (t *customTarget) CheckVersion(version version.Version) error { return nil }
+func (t *customTarget) CompatibleWith(minVersion version.Version) error {
+	if minVersion.IsZero() { // development version is always fine
+		return nil
+	}
+	deployService, err := t.DeployService()
+	if err != nil {
+		return err
+	}
+	versionURL := deployService.BaseURL + "/state/v1/version"
+	req, err := http.NewRequest("GET", versionURL, nil)
+	if err != nil {
+		return err
+	}
+	var versionResponse struct {
+		Version string `json:"version"`
+	}
+	response, err := deployService.Do(req, 10*time.Second)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	dec := json.NewDecoder(response.Body)
+	if err := dec.Decode(&versionResponse); err != nil {
+		return err
+	}
+	targetVersion, err := version.Parse(versionResponse.Version)
+	if err != nil {
+		return err
+	}
+	if targetVersion.Less(minVersion) {
+		return fmt.Errorf("platform version is older than required version: %s < %s", targetVersion, minVersion)
+	}
+	return nil
+}
 
 func (t *customTarget) newService(url, name string, deployAPI bool) *Service {
 	return &Service{

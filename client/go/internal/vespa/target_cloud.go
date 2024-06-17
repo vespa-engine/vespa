@@ -145,7 +145,7 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 	return services, nil
 }
 
-func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
+func (t *cloudTarget) CompatibleWith(clientVersion version.Version) error {
 	if clientVersion.IsZero() { // development version is always fine
 		return nil
 	}
