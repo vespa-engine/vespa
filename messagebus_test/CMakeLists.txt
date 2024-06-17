@@ -2,7 +2,7 @@
 vespa_define_module(
   DEPENDS
   slobrok_slobrokserver
-  messagebus
+  vespa_messagebus
 
   APPS
   src/binref

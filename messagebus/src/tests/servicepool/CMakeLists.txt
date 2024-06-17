@@ -4,6 +4,6 @@ vespa_add_executable(messagebus_servicepool_test_app TEST
     servicepool.cpp
     DEPENDS
     messagebus_messagebus-test
-    messagebus
+    vespa_messagebus
 )
 vespa_add_test(NAME messagebus_servicepool_test_app COMMAND messagebus_servicepool_test_app)

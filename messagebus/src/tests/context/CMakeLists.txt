@@ -4,6 +4,6 @@ vespa_add_executable(messagebus_context_test_app TEST
     context.cpp
     DEPENDS
     messagebus_messagebus-test
-    messagebus
+    vespa_messagebus
 )
 vespa_add_test(NAME messagebus_context_test_app COMMAND messagebus_context_test_app)

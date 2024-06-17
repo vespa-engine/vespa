@@ -6,7 +6,7 @@ vespa_define_module(
     vespa_config
     vespa_configdefinitions
     vespalog
-    messagebus
+    vespa_messagebus
     vespa_documentapi
     vespa_document
     vespalib

@@ -3,5 +3,5 @@ vespa_add_executable(messagebus_printversion_app
     SOURCES
     printversion.cpp
     DEPENDS
-    messagebus
+    vespa_messagebus
 )

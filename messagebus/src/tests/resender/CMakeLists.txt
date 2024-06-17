@@ -4,7 +4,7 @@ vespa_add_executable(messagebus_resender_test_app TEST
     resender.cpp
     DEPENDS
     messagebus_messagebus-test
-    messagebus
+    vespa_messagebus
     GTest::gtest
 )
 vespa_add_test(NAME messagebus_resender_test_app COMMAND messagebus_resender_test_app)

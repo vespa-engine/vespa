@@ -1,5 +1,5 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(messagebus
+vespa_add_library(vespa_messagebus
     SOURCES
     blob.cpp
     blobref.cpp
@@ -36,5 +36,5 @@ vespa_add_library(messagebus
     INSTALL lib64
     DEPENDS
 )
-vespa_generate_config(messagebus ../../main/config/messagebus.def)
+vespa_generate_config(vespa_messagebus ../../main/config/messagebus.def)
 install_config_definition(../../main/config/messagebus.def messagebus.messagebus.def)

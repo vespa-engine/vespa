@@ -4,6 +4,6 @@ vespa_add_executable(messagebus_auto-reply_test_app TEST
     auto-reply.cpp
     DEPENDS
     messagebus_messagebus-test
-    messagebus
+    vespa_messagebus
 )
 vespa_add_test(NAME messagebus_auto-reply_test_app COMMAND messagebus_auto-reply_test_app)
