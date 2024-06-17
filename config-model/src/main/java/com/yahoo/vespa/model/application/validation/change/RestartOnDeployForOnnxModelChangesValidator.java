@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.OnnxModelCost;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -99,7 +100,7 @@ public class RestartOnDeployForOnnxModelChangesValidator implements ChangeValida
         log.log(INFO, message);
         cluster.onnxModelCostCalculator().setRestartOnDeploy();
         cluster.onnxModelCostCalculator().store();
-        actions.add(new VespaRestartAction(cluster.id(), message));
+        actions.add(new VespaRestartAction(cluster.id(), message, cluster.getContainers().stream().map(AbstractService::getServiceInfo).toList()));
     }
 
     private static boolean enoughMemoryToAvoidRestart(ApplicationContainerCluster clusterInCurrentModel,

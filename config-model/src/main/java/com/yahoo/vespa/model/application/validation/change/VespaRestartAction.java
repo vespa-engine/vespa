@@ -16,6 +16,7 @@ public class VespaRestartAction extends VespaConfigChangeAction implements Confi
 
     private final boolean ignoreForInternalRedeploy;
 
+    /** <strong>This does <em>not</em> trigger restarts; you <em>need</em> the {@code ServiceInfo}!</strong>*/
     public VespaRestartAction(ClusterSpec.Id id, String message) {
         this(id, message, List.of());
     }

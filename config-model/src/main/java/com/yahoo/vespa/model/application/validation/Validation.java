@@ -23,6 +23,7 @@ import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForLoc
 import com.yahoo.vespa.model.application.validation.change.RestartOnDeployForOnnxModelChangesValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
+import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
 import com.yahoo.yolean.Exceptions;
 
@@ -215,6 +216,9 @@ public class Validation {
 
         @Override
         public void require(ConfigChangeAction action) {
+            if (action instanceof VespaRestartAction && action.getServices().isEmpty())
+                throw new IllegalStateException("restart actions must have services specified");
+
             actions.add(action);
             action.validationId().ifPresent(id -> invalid(id, action.getMessage()));
         }
