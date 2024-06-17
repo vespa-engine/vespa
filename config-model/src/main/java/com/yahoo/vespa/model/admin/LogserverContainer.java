@@ -8,14 +8,12 @@ import com.yahoo.vespa.model.container.Container;
 
 /**
  * Container that should be running on same host as the logserver. Sets up a handler for getting logs from logserver.
- * Only in use in hosted Vespa.
  */
 public class LogserverContainer extends Container {
 
     public LogserverContainer(TreeConfigProducer<?> parent, DeployState deployState) {
         super(parent, "" + 0, 0, deployState);
-        if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester())
-            useDynamicPorts();
+        useDynamicPorts();
     }
 
     @Override

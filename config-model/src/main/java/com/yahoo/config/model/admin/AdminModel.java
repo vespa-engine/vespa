@@ -84,7 +84,7 @@ public class AdminModel extends ConfigModel {
             }
             TreeConfigProducer<AnyConfigProducer> parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();
-            DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(),
+            DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext,
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs());
             model.admin = domBuilder.build(modelContext.getDeployState(), parent, adminElement);

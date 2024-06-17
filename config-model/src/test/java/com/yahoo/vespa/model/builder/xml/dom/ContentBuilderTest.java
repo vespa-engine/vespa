@@ -157,7 +157,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals("clu/storage/0", c.getRootGroup().getNodes().get(0).getConfigId()); // Due to reuse.
         assertEquals(1, c.getRoot().hostSystem().getHosts().size());
         HostResource h = c.getRoot().hostSystem().getHost("mockhost");
-        String [] expectedServices = {"configserver", "logserver", "logd", "container-clustercontroller", "metricsproxy-container", "slobrok", "configproxy", "config-sentinel", "container", "storagenode", "searchnode", "distributor"};
+        String [] expectedServices = {"configserver", "logserver", "logserver-container", "logd", "container-clustercontroller", "metricsproxy-container", "slobrok", "configproxy", "config-sentinel", "container", "storagenode", "searchnode", "distributor"};
         assertServices(h, expectedServices);
         assertEquals("clu/storage/0", h.getService("storagenode").getConfigId());
         assertEquals("clu/search/cluster.clu/0", h.getService("searchnode").getConfigId());
@@ -205,7 +205,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         HostResource h = cluster.getRoot().hostSystem().getHost("mockhost");
         String [] expectedServices = {
                 "logd", "configproxy", "config-sentinel", "configserver", "container", "logserver",
-                "slobrok", "storagenode", "distributor", "searchnode",
+                "logserver-container", "slobrok", "storagenode", "distributor", "searchnode",
                 CLUSTERCONTROLLER_CONTAINER.serviceName, METRICS_PROXY_CONTAINER.serviceName
         };
         assertServices(h, expectedServices);
