@@ -135,6 +135,7 @@ public:
     bool handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
 
     void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
+    void enable_next_distribution_if_changed();
 
     const lib::ClusterStateBundle& current_cluster_state_bundle() const;
 

@@ -66,11 +66,12 @@ public:
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
             const BucketSpaceStateMap& bucket_space_states,
-            api::Timestamp creationTimestamp)
+            api::Timestamp creationTimestamp,
+            bool inhibit_request_sending)
     {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucket_space_states, creationTimestamp));
+                clock, clusterInfo, sender, bucket_space_states, creationTimestamp, inhibit_request_sending));
     }
 
     PendingClusterState(const PendingClusterState &) = delete;
@@ -188,7 +189,8 @@ private:
             const ClusterInformation::CSP& clusterInfo,
             DistributorMessageSender& sender,
             const BucketSpaceStateMap& bucket_space_states,
-            api::Timestamp creationTimestamp);
+            api::Timestamp creationTimestamp,
+            bool inhibit_request_sending);
 
     struct BucketSpaceAndNode {
         document::BucketSpace bucketSpace;
@@ -200,7 +202,9 @@ private:
         }
     };
 
-    void initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap& outdatedNodesMap);
+    void initializeBucketSpaceTransitions(bool distributionChanged,
+                                          const OutdatedNodesMap& outdatedNodesMap,
+                                          bool inhibit_request_sending);
     void logConstructionInformation() const;
     void requestNode(BucketSpaceAndNode bucketSpaceAndNode);
     void requestNodes();

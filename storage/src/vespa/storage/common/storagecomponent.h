@@ -91,6 +91,8 @@ public:
 
     std::shared_ptr<Repos> getTypeRepo() const;
     const document::BucketIdFactory& getBucketIdFactory() const { return _bucketIdFactory; }
+    // Must NOT be used by lower-level components, as it may be out of sync with distribution
+    // config propagated from the cluster controller.
     DistributionSP getDistribution() const;
     NodeStateUpdater& getStateUpdater() const;
     uint64_t getGeneration() const { return _generation.load(std::memory_order_relaxed); }

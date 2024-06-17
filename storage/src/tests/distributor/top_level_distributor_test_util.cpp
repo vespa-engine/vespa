@@ -444,6 +444,12 @@ TopLevelDistributorTestUtil::trigger_distribution_change(std::shared_ptr<lib::Di
 {
     _node->getComponentRegister().setDistribution(std::move(distr));
     _distributor->storageDistributionChanged();
+    enable_next_distribution_if_changed();
+}
+
+void
+TopLevelDistributorTestUtil::enable_next_distribution_if_changed()
+{
     _distributor->enable_next_distribution_if_changed();
 }
 

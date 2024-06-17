@@ -94,6 +94,10 @@ private:
     void ensure_transition_timer_started();
     void complete_transition_timer();
 
+    void storage_distribution_changed_impl(StripeAccessGuard& guard,
+                                           const lib::BucketSpaceDistributionConfigs& configs,
+                                           bool inhibit_request_sending);
+
     void remove_superfluous_buckets(StripeAccessGuard& guard,
                                     const lib::ClusterStateBundle& new_state,
                                     bool is_distribution_config_change);

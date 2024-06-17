@@ -51,7 +51,7 @@ PendingClusterState::PendingClusterState(
       _node_features()
 {
     logConstructionInformation();
-    initializeBucketSpaceTransitions(false, outdatedNodesMap);
+    initializeBucketSpaceTransitions(false, outdatedNodesMap, false);
 }
 
 PendingClusterState::PendingClusterState(
@@ -59,7 +59,8 @@ PendingClusterState::PendingClusterState(
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
         const BucketSpaceStateMap& bucket_space_states,
-        api::Timestamp creationTimestamp)
+        api::Timestamp creationTimestamp,
+        bool inhibit_request_sending)
     : _requestedNodes(clusterInfo->getStorageNodeCount()),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
       _newClusterStateBundle(clusterInfo->getClusterStateBundle()),
@@ -75,13 +76,15 @@ PendingClusterState::PendingClusterState(
       _node_features()
 {
     logConstructionInformation();
-    initializeBucketSpaceTransitions(true, OutdatedNodesMap());
+    initializeBucketSpaceTransitions(true, OutdatedNodesMap(), inhibit_request_sending);
 }
 
 PendingClusterState::~PendingClusterState() = default;
 
 void
-PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap& outdatedNodesMap)
+PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged,
+                                                      const OutdatedNodesMap& outdatedNodesMap,
+                                                      bool inhibit_request_sending)
 {
     OutdatedNodes emptyOutdatedNodes;
     for (const auto &elem : _bucket_space_states) {
@@ -96,7 +99,7 @@ PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, 
         }
         _pendingTransitions.emplace(elem.first, std::move(pendingTransition));
     }
-    if (shouldRequestBucketInfo()) {
+    if (!inhibit_request_sending && shouldRequestBucketInfo()) {
         requestNodes();
     }
 }
