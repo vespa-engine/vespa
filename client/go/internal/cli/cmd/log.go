@@ -34,7 +34,7 @@ $ vespa log --follow`,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{logLevel: levelArg, supportedType: cloudTargetOnly})
+			target, err := cli.target(targetOptions{logLevel: levelArg})
 			if err != nil {
 				return err
 			}

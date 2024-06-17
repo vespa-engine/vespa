@@ -46,6 +46,6 @@ func TestLogOldClient(t *testing.T) {
 	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
 
 	assert.Nil(t, cli.Run("log"))
-	expected := "Warning: client version 7.0.0 is less than the minimum supported version: 8.0.0\nHint: This version may not work as expected\nHint: Try 'vespa version' to check for a new version\n"
+	expected := "Warning: client version 7.0.0 is less than the minimum supported version: 8.0.0\nHint: This version of CLI may not work as expected\nHint: Try 'vespa version' to check for a new version\n"
 	assert.Contains(t, stderr.String(), expected)
 }

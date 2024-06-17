@@ -64,7 +64,12 @@ func (t *customTarget) IsCloud() bool { return false }
 func (t *customTarget) Deployment() Deployment { return DefaultDeployment }
 
 func (t *customTarget) PrintLog(options LogOptions) error {
-	return fmt.Errorf("log access is only supported on cloud: run vespa-logfmt on the admin node instead, or export from a container image (here named 'vespa') using docker exec vespa vespa-logfmt")
+	deployService, err := t.DeployService()
+	if err != nil {
+		return err
+	}
+	logsURL := deployService.BaseURL + "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/logs"
+	return pollLogs(t, logsURL, options, t.retryInterval)
 }
 
 func (t *customTarget) CheckVersion(version version.Version) error { return nil }
