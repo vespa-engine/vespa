@@ -80,6 +80,17 @@ public class LoadBalancer {
         return new LoadBalancer(id, idSeed, Optional.of(instance), state, changedAt);
     }
 
+    @Override
+    public String toString() {
+        return "LoadBalancer{" +
+               "id=" + id +
+               ", idSeed='" + idSeed + '\'' +
+               ", instance=" + instance +
+               ", state=" + state +
+               ", changedAt=" + changedAt +
+               '}';
+    }
+
     /** Returns the effective container ID of given cluster. For combined clusters this returns the ID of the container cluster */
     public static ClusterSpec.Id containerId(ClusterSpec cluster) {
         return cluster.combinedId().orElse(cluster.id());
