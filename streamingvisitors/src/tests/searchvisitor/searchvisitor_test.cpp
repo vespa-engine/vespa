@@ -15,6 +15,7 @@
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchvisitor_test");
@@ -28,6 +29,10 @@ namespace streaming {
 
 vespalib::string get_doc_id(int id) {
     return "id:test:test::" + std::to_string(id);
+}
+
+vespalib::string src_cfg(vespalib::stringref prefix, vespalib::stringref suffix) {
+    return prefix + TEST_PATH("cfg") + suffix;
 }
 
 /**
@@ -160,9 +165,9 @@ public:
 
 SearchVisitorTest::SearchVisitorTest() :
     _componentRegister(),
-    _env(::config::ConfigUri("dir:cfg"), nullptr, ""),
-    _factory(::config::ConfigUri("dir:cfg"), nullptr, ""),
-    _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig("cfg/documenttypes.cfg"))),
+    _env(::config::ConfigUri(src_cfg("dir:", "")), nullptr, ""),
+    _factory(::config::ConfigUri(src_cfg("dir:", "")), nullptr, ""),
+    _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(src_cfg("", "/documenttypes.cfg")))),
     _doc_type(_repo->getDocumentType("test"))
 {
     assert(_doc_type != nullptr);
