@@ -185,8 +185,10 @@ func waitForVespaReady(target vespa.Target, sessionOrRunID int64, waiter *Waiter
 		if _, err := waiter.Deployment(target, sessionOrRunID); err != nil {
 			return err
 		}
-		// Wait for healthy services
-		if hasTimeout {
+		// Wait for healthy services where we expect them to be reachable (cloud and local). When using a custom target,
+		// we do not wait for services as there is no guarantee that they are reachable from the machine executing
+		// deploy.
+		if hasTimeout && (target.IsCloud() || target.Type() == vespa.TargetLocal) {
 			_, err := waiter.Services(target)
 			return err
 		}
