@@ -41,6 +41,13 @@ event: end
 	assertDecodeErr(io.EOF, dec, t)
 }
 
+func TestDecoderLarge(t *testing.T) {
+	data := strings.Repeat("c", (256*1024)-50)
+	r := strings.NewReader("event: foo\nid: 42\ndata: " + data + "\n")
+	dec := NewDecoderSize(r, 256*1024)
+	assertDecode(&Event{Name: "foo", ID: "42", Data: data}, dec, t)
+}
+
 func TestDecoderInvalid(t *testing.T) {
 	r := strings.NewReader(`
 event: foo

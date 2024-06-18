@@ -161,7 +161,8 @@ func printResponseBody(body io.Reader, options printOptions, cli *CLI) error {
 		_, err := io.Copy(cli.Stdout, body)
 		return err
 	} else if options.tokenStream {
-		dec := sse.NewDecoder(body)
+		bufSize := 1024 * 1024 // Handle events up to this size
+		dec := sse.NewDecoderSize(body, bufSize)
 		writingLine := false
 		for {
 			event, err := dec.Decode()
