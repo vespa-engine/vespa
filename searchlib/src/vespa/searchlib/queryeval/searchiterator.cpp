@@ -118,7 +118,7 @@ SearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 void
-SearchIterator::disclose_children(std::vector<UP*> &)
+SearchIterator::transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)>)
 {
 }
 

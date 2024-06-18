@@ -47,21 +47,6 @@ std::unique_ptr<SearchIterator> create(Profiler &profiler,
                                               ctor_token);    
 }
 
-void handle_leaf_node(Profiler &profiler, SearchIterator &leaf, const vespalib::string &path) {
-    if (leaf.isSourceBlender()) {
-        auto &source_blender = static_cast<SourceBlenderSearch&>(leaf);
-        for (size_t i = 0; i < source_blender.getNumChildren(); ++i) {
-            auto child = source_blender.steal(i);
-            child = ProfiledIterator::profile(profiler, std::move(child), fmt("%s%zu/", path.c_str(), i));
-            source_blender.setChild(i, std::move(child));
-        }
-    } else if (auto *weak_and = leaf.as_weak_and(); weak_and != nullptr) {
-        weak_and->transform_children([&](auto child, size_t i){
-                                         return ProfiledIterator::profile(profiler, std::move(child), fmt("%s%zu/", path.c_str(), i));
-                                     });
-    }
-}
-
 }
 
 void
@@ -116,26 +101,12 @@ ProfiledIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 std::unique_ptr<SearchIterator>
-ProfiledIterator::profile(Profiler &profiler, std::unique_ptr<SearchIterator> root, const vespalib::string &root_path)
+ProfiledIterator::profile(Profiler &profiler, std::unique_ptr<SearchIterator> node, const vespalib::string &path)
 {
-    std::vector<UP*> links({&root});
-    std::vector<vespalib::string> paths({root_path});
-    for (size_t offset = 0; offset < links.size(); ++offset) {
-        UP &link = *(links[offset]);
-        vespalib::string path = paths[offset];
-        size_t first_child = links.size();
-        link->disclose_children(links);
-        size_t num_children = links.size() - first_child;
-        if (num_children == 0) {
-            handle_leaf_node(profiler, *link, path);
-        } else {
-            for (size_t i = 0; i < num_children; ++i) {
-                paths.push_back(fmt("%s%zu/", path.c_str(), i));
-            }
-        }
-        link = create(profiler, path, std::move(link), ctor_tag{});
-    }
-    return root;
+    node->transform_children([&](auto child, size_t i){
+                                 return profile(profiler, std::move(child), fmt("%s%zu/", path.c_str(), i));
+                             });
+    return create(profiler, path, std::move(node), ctor_tag{});
 }
 
 }

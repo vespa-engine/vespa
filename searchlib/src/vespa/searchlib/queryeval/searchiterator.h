@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/trinary.h>
 #include <memory>
 #include <vector>
+#include <functional>
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
@@ -382,11 +383,11 @@ public:
     // number of matches: (False <= Undefined <= True)
     virtual Trinary matches_any() const { return Trinary::Undefined; }
 
-    // Disclose children by giving out references to owning
-    // pointers. This allows re-wiring from the outside, which is
-    // needed for deep decoration used by match profiling. Only
-    // disclose children that are treated as generic SearchIterators.
-    virtual void disclose_children(std::vector<UP*> &dst);
+    // Transform all children using the given function. The number
+    // passed with the child to be transformed should match the index
+    // of the child in the originating blueprint. This is used for
+    // deep decoration when doing match profiling.
+    virtual void transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f);
 };
 
 }

@@ -53,8 +53,8 @@ public:
     Trinary matches_any() const override { return _search->matches_any(); }
     const PostingInfo *getPostingInfo() const override { return _search->getPostingInfo(); }
     static std::unique_ptr<SearchIterator> profile(Profiler &profiler,
-                                                   std::unique_ptr<SearchIterator> root,
-                                                   const vespalib::string &root_path = "/");
+                                                   std::unique_ptr<SearchIterator> node,
+                                                   const vespalib::string &path = "/");
 };
 
 } // namespace
