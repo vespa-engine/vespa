@@ -6,6 +6,7 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include "wand/weak_and_search.h"
 
 #include <typeindex>
 
@@ -54,6 +55,10 @@ void handle_leaf_node(Profiler &profiler, SearchIterator &leaf, const vespalib::
             child = ProfiledIterator::profile(profiler, std::move(child), fmt("%s%zu/", path.c_str(), i));
             source_blender.setChild(i, std::move(child));
         }
+    } else if (auto *weak_and = leaf.as_weak_and(); weak_and != nullptr) {
+        weak_and->transform_children([&](auto child, size_t i){
+                                         return ProfiledIterator::profile(profiler, std::move(child), fmt("%s%zu/", path.c_str(), i));
+                                     });
     }
 }
 

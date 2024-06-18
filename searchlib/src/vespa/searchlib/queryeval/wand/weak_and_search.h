@@ -4,6 +4,7 @@
 
 #include "wand_parts.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <functional>
 
 namespace search::queryeval {
 
@@ -15,6 +16,8 @@ struct WeakAndSearch : SearchIterator {
     virtual wand::score_t get_max_score(size_t idx) const = 0;
     virtual const Terms &getTerms() const = 0;
     virtual uint32_t getN() const = 0;
+    WeakAndSearch *as_weak_and() noexcept override { return this; }
+    virtual void transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f) = 0;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     template<typename Scorer>
     static SearchIterator::UP createArrayWand(const Terms &terms, const MatchParams & matchParams,
