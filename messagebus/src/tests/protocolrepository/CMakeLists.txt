@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_protocolrepository_test_app TEST
     SOURCES
     protocolrepository.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_protocolrepository_test_app NO_VALGRIND COMMAND messagebus_protocolrepository_test_app)

@@ -50,6 +50,6 @@ vespa_add_library(searchcore_bmcluster STATIC
     searchcore_proton_metrics
     searchcorespi
     storageserver_storageapp
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )

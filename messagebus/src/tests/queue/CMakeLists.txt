@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_queue_test_app TEST
     SOURCES
     queue.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_queue_test_app COMMAND messagebus_queue_test_app)

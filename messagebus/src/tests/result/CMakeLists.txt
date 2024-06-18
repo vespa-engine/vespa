@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_result_test_app TEST
     SOURCES
     result.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
     GTest::gtest
 )

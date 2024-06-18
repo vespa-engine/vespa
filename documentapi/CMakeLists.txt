@@ -18,7 +18,7 @@ vespa_define_module(
     src/vespa/documentapi/messagebus/policies
 
     TEST_DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
 
     TESTS
     src/tests/messagebus

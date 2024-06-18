@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_shutdown_test_app TEST
     SOURCES
     shutdown.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_shutdown_test_app COMMAND messagebus_shutdown_test_app)

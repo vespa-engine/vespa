@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_messageordering_test_app TEST
     SOURCES
     messageordering.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(

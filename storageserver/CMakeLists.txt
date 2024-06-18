@@ -9,7 +9,7 @@ vespa_define_module(
     src/vespa/storageserver/app
 
     TEST_DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
 
     TESTS
     src/tests
