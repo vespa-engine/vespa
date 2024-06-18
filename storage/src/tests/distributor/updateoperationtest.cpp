@@ -11,7 +11,8 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
-#include <gtest/gtest.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 
 using config::ConfigGetter;
 using config::FileSpec;
@@ -31,7 +32,7 @@ struct UpdateOperationTest : Test, DistributorStripeTestUtil {
 
     UpdateOperationTest()
         : _repo(std::make_shared<DocumentTypeRepo>(*ConfigGetter<DocumenttypesConfig>::
-                                                   getConfig("config-doctypes", FileSpec("../config-doctypes.cfg")))),
+                                                   getConfig("config-doctypes", FileSpec(TEST_PATH("../config-doctypes.cfg"))))),
           _html_type(_repo->getDocumentType("text/html"))
     {
     }

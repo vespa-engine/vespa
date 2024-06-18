@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <chrono>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 
 namespace storage::distributor {
 
@@ -182,7 +183,7 @@ TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
 
     std::string jsonString = json.str();
 
-    std::string path = "../../../../protocols/getnodestate/distributor.json";
+    std::string path = TEST_PATH("../../../../protocols/getnodestate/distributor.json");
     std::string goldenString = File::readAll(path);
 
     vespalib::Memory goldenMemory(goldenString);
