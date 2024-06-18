@@ -6,7 +6,7 @@ vespa_define_module(
     vespaeval
     vespa_fnet
     vespa_configdefinitions
-    metrics
+    vespa_metrics
     vespa_document
     vespa_config
 
