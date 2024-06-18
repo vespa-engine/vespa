@@ -2,11 +2,8 @@
 package vespa
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -148,7 +145,7 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 	return services, nil
 }
 
-func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
+func (t *cloudTarget) CompatibleWith(clientVersion version.Version) error {
 	if clientVersion.IsZero() { // development version is always fine
 		return nil
 	}
@@ -190,61 +187,7 @@ func (t *cloudTarget) logsURL() string {
 }
 
 func (t *cloudTarget) PrintLog(options LogOptions) error {
-	req, err := http.NewRequest("GET", t.logsURL(), nil)
-	if err != nil {
-		return err
-	}
-	lastFrom := options.From
-	requestFunc := func() *http.Request {
-		fromMillis := lastFrom.Unix() * 1000
-		q := req.URL.Query()
-		q.Set("from", strconv.FormatInt(fromMillis, 10))
-		if !options.To.IsZero() {
-			toMillis := options.To.Unix() * 1000
-			q.Set("to", strconv.FormatInt(toMillis, 10))
-		}
-		req.URL.RawQuery = q.Encode()
-		return req
-	}
-	logFunc := func(status int, response []byte) (bool, error) {
-		if ok, err := isOK(status); !ok {
-			return ok, err
-		}
-		logEntries, err := ReadLogEntries(bytes.NewReader(response))
-		if err != nil {
-			return false, err
-		}
-		for _, le := range logEntries {
-			if !le.Time.After(lastFrom) {
-				continue
-			}
-			if LogLevel(le.Level) > options.Level {
-				continue
-			}
-			fmt.Fprintln(options.Writer, le.Format(options.Dequote))
-		}
-		if len(logEntries) > 0 {
-			lastFrom = logEntries[len(logEntries)-1].Time
-		}
-		return false, nil
-	}
-	var timeout time.Duration
-	if options.Follow {
-		timeout = math.MaxInt64 // No timeout
-	}
-	// Ignore wait error because logFunc has no concept of completion, we just want to print log entries until timeout is reached
-	if _, err := t.deployServiceWait(logFunc, requestFunc, timeout); err != nil && !errors.Is(err, ErrWaitTimeout) {
-		return fmt.Errorf("failed to read logs: %s", err)
-	}
-	return nil
-}
-
-func (t *cloudTarget) deployServiceWait(fn responseFunc, reqFn requestFunc, timeout time.Duration) (int, error) {
-	deployService, err := t.DeployService()
-	if err != nil {
-		return 0, err
-	}
-	return wait(deployService, fn, reqFn, timeout, t.retryInterval)
+	return pollLogs(t, t.logsURL(), options, t.retryInterval)
 }
 
 func (t *cloudTarget) discoverLatestRun(timeout time.Duration) (int64, error) {
@@ -269,7 +212,7 @@ func (t *cloudTarget) discoverLatestRun(timeout time.Duration) (int64, error) {
 		}
 		return false, nil
 	}
-	_, err = t.deployServiceWait(jobsSuccessFunc, requestFunc, timeout)
+	_, err = deployServiceWait(t, jobsSuccessFunc, requestFunc, timeout, t.retryInterval)
 	return lastRunID, err
 }
 
@@ -314,7 +257,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		success = true
 		return success, nil
 	}
-	_, err = t.deployServiceWait(jobSuccessFunc, requestFunc, timeout)
+	_, err = deployServiceWait(t, jobSuccessFunc, requestFunc, timeout, t.retryInterval)
 	if err != nil {
 		return 0, fmt.Errorf("deployment run %d not yet complete%s: %w", runID, waitDescription(timeout), err)
 	}
@@ -378,7 +321,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 		}
 		return true, nil
 	}
-	if _, err := t.deployServiceWait(endpointFunc, func() *http.Request { return req }, timeout); err != nil {
+	if _, err := deployServiceWait(t, endpointFunc, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
 		return nil, fmt.Errorf("no endpoints found in zone %s%s: %w", t.deploymentOptions.Deployment.Zone, waitDescription(timeout), err)
 	}
 	if len(urlsByCluster) == 0 {
