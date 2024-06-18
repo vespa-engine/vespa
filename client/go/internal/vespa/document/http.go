@@ -43,6 +43,7 @@ type Client struct {
 // ClientOptions specifices the configuration options of a feed client.
 type ClientOptions struct {
 	BaseURL     string
+	Header      http.Header
 	Timeout     time.Duration
 	Route       string
 	TraceLevel  int
@@ -216,10 +217,13 @@ func (c *Client) prepare(document Document) (*http.Request, *bytes.Buffer, error
 	return pd.request, pd.buf, pd.err
 }
 
-func newRequest(method, url string, body io.Reader, gzipped bool) (*http.Request, error) {
+func (c *Client) newRequest(method, url string, body io.Reader, gzipped bool) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
+	}
+	for k, v := range c.options.Header {
+		req.Header[k] = v
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if gzipped {
@@ -231,7 +235,7 @@ func newRequest(method, url string, body io.Reader, gzipped bool) (*http.Request
 func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffer) (*http.Request, error) {
 	buf.Reset()
 	if len(body) == 0 {
-		return newRequest(method, url, nil, false)
+		return c.newRequest(method, url, nil, false)
 	}
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	var r io.Reader
@@ -249,7 +253,7 @@ func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffe
 	} else {
 		r = bytes.NewReader(body)
 	}
-	return newRequest(method, url, r, useGzip)
+	return c.newRequest(method, url, r, useGzip)
 }
 
 func (c *Client) clientTimeout() time.Duration {
