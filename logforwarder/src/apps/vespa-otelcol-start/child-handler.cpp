@@ -58,10 +58,18 @@ void ChildHandler::startChild(const std::string &progPath, const std::string &cf
         return;
     }
     if (child == 0) {
-        std::string cfArg1{"--config=file:" "/etc/otelcol/gw-config.yaml"};
-        std::string cfArg2{"--config=file:" + cfPath};
-        const char *cargv[] = { progPath.c_str(), cfArg1.c_str(), cfArg2.c_str(), nullptr };
-        execv(progPath.c_str(), const_cast<char **>(cargv));
+        std::string cfgPrefix{"--config=file:"};
+        const char *gwCfg = "/etc/otelcol/gw-config.yaml";
+        std::string cfArg1{cfgPrefix + gwCfg};
+        std::string cfArg2{cfgPrefix + cfPath};
+        if (access(gwCfg, R_OK) == 0) {
+            const char *cargv[] = { progPath.c_str(), cfArg1.c_str(), cfArg2.c_str(), nullptr };
+            execv(progPath.c_str(), const_cast<char **>(cargv));
+        } else {
+            fprintf(stderr, "info\tMissing config file: %s (running without it)\n", gwCfg);
+            const char *cargv[] = { progPath.c_str(), cfArg2.c_str(), nullptr };
+            execv(progPath.c_str(), const_cast<char **>(cargv));
+        }
         // if execv fails:
         perror(progPath.c_str());
         std::_Exit(1);
