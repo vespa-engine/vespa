@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_routable_test_app TEST
     SOURCES
     routable.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_routable_test_app COMMAND messagebus_routable_test_app)

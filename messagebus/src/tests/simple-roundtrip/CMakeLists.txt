@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_simple-roundtrip_test_app TEST
     SOURCES
     simple-roundtrip.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_simple-roundtrip_test_app COMMAND messagebus_simple-roundtrip_test_app)

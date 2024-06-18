@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_replygate_test_app TEST
     SOURCES
     replygate.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_replygate_test_app COMMAND messagebus_replygate_test_app)

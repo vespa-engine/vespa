@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_retrypolicy_test_app TEST
     SOURCES
     retrypolicy.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_retrypolicy_test_app COMMAND messagebus_retrypolicy_test_app)

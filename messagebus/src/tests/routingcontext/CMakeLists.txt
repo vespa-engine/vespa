@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_routingcontext_test_app TEST
     SOURCES
     routingcontext.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
     GTest::gtest
 )

@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_slobrok_test_app TEST
     SOURCES
     slobrok.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
 )
 vespa_add_test(NAME messagebus_slobrok_test_app COMMAND messagebus_slobrok_test_app)

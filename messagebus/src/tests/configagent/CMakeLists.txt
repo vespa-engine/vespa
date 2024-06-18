@@ -3,7 +3,7 @@ vespa_add_executable(messagebus_configagent_test_app TEST
     SOURCES
     configagent.cpp
     DEPENDS
-    messagebus_messagebus-test
+    vespa_messagebus-test
     vespa_messagebus
     GTest::gtest
 )
