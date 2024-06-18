@@ -4,6 +4,6 @@ vespa_add_executable(messagebus_bucketsequence_test_app TEST
     bucketsequence.cpp
     DEPENDS
     messagebus_messagebus-test
-    messagebus
+    vespa_messagebus
 )
 vespa_add_test(NAME messagebus_bucketsequence_test_app COMMAND messagebus_bucketsequence_test_app)
