@@ -451,6 +451,13 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag ENABLE_NEW_TRIAL = defineFeatureFlag(
+            "enable-new-trial", false,
+            List.of("bjorncs"), "2024-06-18", "2025-01-01",
+            "Whether to enable the new trial experience",
+            "Takes effect immediately",
+            TENANT_ID);
+
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", false,
             List.of("vekterli"), "2024-06-03", "2024-08-01",
