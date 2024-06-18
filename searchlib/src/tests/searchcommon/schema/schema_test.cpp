@@ -3,6 +3,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <fstream>
 
@@ -17,6 +18,10 @@ using schema::DataType;
 using schema::CollectionType;
 using SIAF = Schema::ImportedAttributeField;
 using SIF = Schema::IndexField;
+
+vespalib::string src_path(vespalib::stringref prefix, vespalib::stringref path) {
+    return prefix + TEST_PATH(path);
+}
 
 void
 assertField(const Schema::Field& exp, const Schema::Field& act)
@@ -144,7 +149,7 @@ TEST(SchemaTest, test_load_and_save)
 
     { // load from config -> save to file -> load from file
         Schema s;
-        SchemaConfigurer configurer(s, "dir:load-save-cfg");
+        SchemaConfigurer configurer(s, src_path("dir:", "load-save-cfg"));
         EXPECT_EQ(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));
@@ -308,7 +313,7 @@ TEST(SchemaTest, require_that_imported_attribute_fields_are_not_saved_to_disk)
 TEST(SchemaTest, require_that_schema_can_be_built_with_imported_attribute_fields)
 {
     Schema s;
-    SchemaConfigurer configurer(s, "dir:imported-fields-cfg");
+    SchemaConfigurer configurer(s, src_path("dir:", "imported-fields-cfg"));
 
     const auto &imported = s.getImportedAttributeFields();
     ASSERT_EQ(2u, imported.size());
@@ -323,7 +328,7 @@ TEST(SchemaTest, require_that_schema_can_be_built_with_imported_attribute_fields
 TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_properties_are_not_set)
 {
     Schema s;
-    s.loadFromFile("schema-without-index-field-properties.txt");
+    s.loadFromFile(TEST_PATH("schema-without-index-field-properties.txt"));
 
     const auto& index_fields = s.getIndexFields();
     ASSERT_EQ(1, index_fields.size());
@@ -336,7 +341,7 @@ TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_pro
 
 TEST(SchemaTest, test_load_from_saved_schema_with_summary_fields)
 {
-    vespalib::string schema_name("old-schema-with-summary-fields.txt");
+    vespalib::string schema_name(TEST_PATH("old-schema-with-summary-fields.txt"));
     Schema s;
     s.addIndexField(Schema::IndexField("ifoo", DataType::STRING));
     s.addIndexField(Schema::IndexField("ibar", DataType::INT32));
