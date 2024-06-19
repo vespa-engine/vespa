@@ -179,13 +179,16 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 	if err != nil {
 		return err
 	}
-	if len(tlsOptions.CertificatePEM) == 0 {
-		return errHint(fmt.Errorf("no certificate exists for %s", target.Deployment().Application.String()), "Try (re)creating the certificate with 'vespa auth cert'")
-	}
 	if force {
 		return copyCertificate(tlsOptions, cli, pkg)
 	}
 	if pkg.HasCertificate() {
+		if cli.isCI() {
+			return nil // A matching certificate is not required in CI environments
+		}
+		if len(tlsOptions.CertificatePEM) == 0 {
+			return errHint(fmt.Errorf("no certificate exists for %s", target.Deployment().Application.String()), "Try (re)creating the certificate with 'vespa auth cert'")
+		}
 		matches, err := pkg.HasMatchingCertificate(tlsOptions.CertificatePEM)
 		if err != nil {
 			return err

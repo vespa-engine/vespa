@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
@@ -155,6 +156,29 @@ func TestProdDeploy(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false, false)
 	prodDeploy(pkgDir, t)
+}
+
+func TestProdDeployWithoutCertificate(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	httpClient := &mock.HTTPClient{}
+	cli, stdout, _ := newTestCLI(t, "CI=true")
+	cli.httpClient = httpClient
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	stdout.Reset()
+	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
+
+	// We have clients.pem, but no key pair for the application
+	require.Nil(t, os.MkdirAll(filepath.Join(pkgDir, "security"), 0755))
+	require.Nil(t, os.WriteFile(filepath.Join(pkgDir, "security", "clients.pem"), []byte{}, 0644))
+	httpClient.NextResponseString(200, `{"build": 42}`)
+	assert.Nil(t, cli.Run("prod", "deploy", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Deployed '"+pkgDir+"' with build number 42")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
 func TestProdDeployWithoutTests(t *testing.T) {
