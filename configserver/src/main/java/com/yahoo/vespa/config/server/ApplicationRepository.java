@@ -774,10 +774,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public List<Version> getAllVersions(ApplicationId applicationId) {
-        Optional<ApplicationVersions> applicationSet = getActiveApplicationSet(applicationId);
-        return applicationSet.isEmpty()
+        Optional<ApplicationVersions> applicationVersions = getActiveApplicationVersions(applicationId);
+        return applicationVersions.isEmpty()
                 ? List.of()
-                : applicationSet.get().versions(applicationId);
+                : applicationVersions.get().versions(applicationId);
     }
 
     public HttpResponse validateSecretStore(ApplicationId applicationId, SystemName systemName, Slime slime) {
@@ -1091,7 +1091,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
-    public Optional<ApplicationVersions> getActiveApplicationSet(ApplicationId appId) {
+    public Optional<ApplicationVersions> getActiveApplicationVersions(ApplicationId appId) {
         return getTenant(appId).getSessionRepository().activeApplicationVersions(appId);
     }
 

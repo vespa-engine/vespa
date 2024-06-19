@@ -41,7 +41,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
         for (Tenant tenant : applicationRepository.tenantRepository().getAllTenants()) {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications())
-                applicationRepository.getActiveApplicationSet(id)
+                applicationRepository.getActiveApplicationVersions(id)
                                      .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
                                      .ifPresent(application -> {
                                          try {

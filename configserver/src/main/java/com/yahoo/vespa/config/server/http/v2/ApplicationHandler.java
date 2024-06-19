@@ -267,7 +267,7 @@ public class ApplicationHandler extends HttpHandler {
 
 
     private Model getActiveModelOrThrow(ApplicationId id) {
-        return applicationRepository.getActiveApplicationSet(id)
+        return applicationRepository.getActiveApplicationVersions(id)
                                     .orElseThrow(() -> new NotFoundException("Application '" + id + "' not found"))
                                     .getForVersionOrLatest(Optional.empty(), applicationRepository.clock().instant())
                 .getModel();

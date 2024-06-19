@@ -34,11 +34,11 @@ public class RemoteSession extends Session {
      * @param tenant The name of the tenant creating session
      * @param sessionId The session id for this session.
      * @param zooKeeperClient a SessionZooKeeperClient instance
-     * @param applicationSet current application set for this session
+     * @param applicationVersions current application versions for this session
      */
-    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<ApplicationVersions> applicationSet) {
+    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<ApplicationVersions> applicationVersions) {
         super(tenant, sessionId, zooKeeperClient);
-        this.applicationVersions = applicationSet;
+        this.applicationVersions = applicationVersions;
     }
 
     @Override
