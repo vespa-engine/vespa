@@ -164,7 +164,6 @@ Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.4-1
 Requires: vespa-libzstd >= 1.5.6-1
-Requires: vespa-openblas >= %{_vespa_openblas_version}
 %if 0%{?amzn2023}
 Requires: vespa-re2 = 20210801
 %else
@@ -203,6 +202,7 @@ Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.18.0
 Requires: vespa-jllama = 3.2.1
+Requires: vespa-openblas >= %{_vespa_openblas_version}
 
 %description libs
 
