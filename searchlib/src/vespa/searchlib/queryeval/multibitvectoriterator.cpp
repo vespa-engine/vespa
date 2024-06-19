@@ -4,19 +4,19 @@
 #include "andsearch.h"
 #include "andnotsearch.h"
 #include "sourceblendersearch.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 namespace search::queryeval {
 
 using vespalib::Trinary;
-using vespalib::hwaccelrated::IAccelrated;
+using vespalib::hwaccelerated::IAccelerated;
 using Meta = MultiBitVectorBase::Meta;
 
 namespace {
 
 struct And {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
+    void operator () (const IAccelerated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
         accel.and128(offset, src, dest);
     }
     static constexpr bool isAnd() noexcept { return true; }
@@ -24,7 +24,7 @@ struct And {
 
 struct Or {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
+    void operator () (const IAccelerated & accel, size_t offset, const std::vector<Meta> & src, void *dest) noexcept {
         accel.or128(offset, src, dest);
     }
     static constexpr bool isAnd() noexcept { return false; }
@@ -52,7 +52,7 @@ template <typename Update>
 MultiBitVector<Update>::MultiBitVector(size_t reserved)
     : MultiBitVectorBase(reserved),
       _update(),
-      _accel(IAccelrated::getAccelerator()),
+      _accel(IAccelerated::getAccelerator()),
       _lastWords()
 {
     static_assert(sizeof(_lastWords) == 128, "Lastwords should have 128 byte size");

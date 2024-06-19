@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "iaccelrated.h"
+#include "iaccelerated.h"
 #include "generic.h"
 #ifdef __x86_64__
 #include "avx2.h"
@@ -11,13 +11,13 @@
 #include <vector>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".vespalib.hwaccelrated");
+LOG_SETUP(".vespalib.hwaccelerated");
 
-namespace vespalib::hwaccelrated {
+namespace vespalib::hwaccelerated {
 
 namespace {
 
-IAccelrated::UP create_accelerator() {
+IAccelerated::UP create_accelerator() {
 #ifdef __x86_64__
     __builtin_cpu_init();
     if (__builtin_cpu_supports("avx512f")) {
@@ -41,7 +41,7 @@ std::vector<T> createAndFill(size_t sz) {
 
 template<typename T>
 void
-verifyDotproduct(const IAccelrated & accel)
+verifyDotproduct(const IAccelerated & accel)
 {
     const size_t testLength(255);
     srand(1);
@@ -62,7 +62,7 @@ verifyDotproduct(const IAccelrated & accel)
 
 template<typename T>
 void
-verifyEuclideanDistance(const IAccelrated & accel) {
+verifyEuclideanDistance(const IAccelerated & accel) {
     const size_t testLength(255);
     srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
@@ -81,7 +81,7 @@ verifyEuclideanDistance(const IAccelrated & accel) {
 }
 
 void
-verifyPopulationCount(const IAccelrated & accel)
+verifyPopulationCount(const IAccelerated & accel)
 {
     const uint64_t words[7] = {0x123456789abcdef0L,  // 32
                                0x0000000000000000L,  // 0
@@ -140,7 +140,7 @@ bool shouldInvert(bool invertSome) {
 }
 
 void
-verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+verifyOr64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> & vectors,
            size_t offset, size_t num_vectors, bool invertSome)
 {
     std::vector<std::pair<const void *, bool>> vRefs;
@@ -162,7 +162,7 @@ verifyOr64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> &
 }
 
 void
-verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> & vectors,
+verifyAnd64(const IAccelerated & accel, const std::vector<std::vector<uint64_t>> & vectors,
            size_t offset, size_t num_vectors, bool invertSome)
 {
     std::vector<std::pair<const void *, bool>> vRefs;
@@ -183,7 +183,7 @@ verifyAnd64(const IAccelrated & accel, const std::vector<std::vector<uint64_t>> 
 }
 
 void
-verifyOr64(const IAccelrated & accel) {
+verifyOr64(const IAccelerated & accel) {
     std::vector<std::vector<uint64_t>> vectors(3) ;
     for (auto & v : vectors) {
         fill(v, 32);
@@ -197,7 +197,7 @@ verifyOr64(const IAccelrated & accel) {
 }
 
 void
-verifyAnd64(const IAccelrated & accel) {
+verifyAnd64(const IAccelerated & accel) {
     std::vector<std::vector<uint64_t>> vectors(3);
     for (auto & v : vectors) {
         fill(v, 32);
@@ -215,16 +215,16 @@ class RuntimeVerificator
 public:
     RuntimeVerificator();
 private:
-    static void verify(const IAccelrated & accelrated) {
-        verifyDotproduct<float>(accelrated);
-        verifyDotproduct<double>(accelrated);
-        verifyDotproduct<int32_t>(accelrated);
-        verifyDotproduct<int64_t>(accelrated);
-        verifyEuclideanDistance<float>(accelrated);
-        verifyEuclideanDistance<double>(accelrated);
-        verifyPopulationCount(accelrated);
-        verifyAnd64(accelrated);
-        verifyOr64(accelrated);
+    static void verify(const IAccelerated & accelerated) {
+        verifyDotproduct<float>(accelerated);
+        verifyDotproduct<double>(accelerated);
+        verifyDotproduct<int32_t>(accelerated);
+        verifyDotproduct<int64_t>(accelerated);
+        verifyEuclideanDistance<float>(accelerated);
+        verifyEuclideanDistance<double>(accelerated);
+        verifyPopulationCount(accelerated);
+        verifyAnd64(accelerated);
+        verifyOr64(accelerated);
     }
 };
 
@@ -236,11 +236,11 @@ RuntimeVerificator::RuntimeVerificator()
 
 }
 
-const IAccelrated &
-IAccelrated::getAccelerator()
+const IAccelerated &
+IAccelerated::getAccelerator()
 {
     static RuntimeVerificator verifyAccelrator_once;
-    static IAccelrated::UP accelrator = create_accelerator();
+    static IAccelerated::UP accelrator = create_accelerator();
     return *accelrator;
 }
 

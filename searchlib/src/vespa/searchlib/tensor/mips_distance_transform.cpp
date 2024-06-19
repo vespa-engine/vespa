@@ -2,7 +2,7 @@
 
 #include "mips_distance_transform.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <cmath>
 #include <variant>
 
@@ -16,7 +16,7 @@ private:
     using FloatType = VectorStoreType::FloatType;
     mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
-    const vespalib::hwaccelrated::IAccelrated & _computer;
+    const vespalib::hwaccelerated::IAccelerated & _computer;
     double _max_sq_norm;
     using ExtraDimT = std::conditional_t<extra_dim,double,std::monostate>;
     [[no_unique_address]] ExtraDimT _lhs_extra_dim;
@@ -26,7 +26,7 @@ public:
         : BoundDistanceFunction(),
           _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs)),
-          _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
+          _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator())
     {
         const FloatType * a = _lhs_vector.data();
         if constexpr (extra_dim) {

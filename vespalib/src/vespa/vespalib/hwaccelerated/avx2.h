@@ -4,7 +4,7 @@
 
 #include "generic.h"
 
-namespace vespalib::hwaccelrated {
+namespace vespalib::hwaccelerated {
 
 /**
  * Avx-512 implementation.

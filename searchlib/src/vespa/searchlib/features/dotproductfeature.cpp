@@ -20,7 +20,7 @@ using namespace search::fef;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
 using vespalib::Issue;
-using vespalib::hwaccelrated::IAccelrated;
+using vespalib::hwaccelerated::IAccelerated;
 
 namespace search::features {
 namespace dotproduct::wset {
@@ -213,7 +213,7 @@ namespace dotproduct::array {
 template <typename BaseType>
 DotProductExecutorBase<BaseType>::DotProductExecutorBase(const V & queryVector)
     : FeatureExecutor(),
-      _multiplier(IAccelrated::getAccelerator()),
+      _multiplier(IAccelerated::getAccelerator()),
       _queryVector(queryVector)
 {
 }

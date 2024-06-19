@@ -100,7 +100,7 @@ vespa_define_module(
     src/tests/growablebytebuffer
     src/tests/guard
     src/tests/host_name
-    src/tests/hwaccelrated
+    src/tests/hwaccelerated
     src/tests/invokeservice
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
@@ -233,7 +233,7 @@ vespa_define_module(
     src/vespa/vespalib/encoding
     src/vespa/vespalib/fuzzy
     src/vespa/vespalib/geo
-    src/vespa/vespalib/hwaccelrated
+    src/vespa/vespalib/hwaccelerated
     src/vespa/vespalib/io
     src/vespa/vespalib/locale
     src/vespa/vespalib/metrics

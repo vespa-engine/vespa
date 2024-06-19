@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
-#include <vespa/vespalib/hwaccelrated/generic.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <vespa/vespalib/hwaccelerated/generic.h>
 #include <vespa/vespalib/util/time.h>
 #include <cinttypes>
 
@@ -18,7 +18,7 @@ std::vector<T> createAndFill(size_t sz) {
 
 template<typename T>
 void
-benchmarkEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t sz, size_t count) {
+benchmarkEuclideanDistance(const hwaccelerated::IAccelerated & accel, size_t sz, size_t count) {
     srand(1);
     std::vector<T> a = createAndFill<T>(sz);
     std::vector<T> b = createAndFill<T>(sz);
@@ -33,7 +33,7 @@ benchmarkEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t sz, s
 }
 
 void
-benchMarkEuclidianDistance(const hwaccelrated::IAccelrated & accelrator, size_t sz, size_t count) {
+benchMarkEuclidianDistance(const hwaccelerated::IAccelerated & accelrator, size_t sz, size_t count) {
     printf("double : ");
     benchmarkEuclideanDistance<double>(accelrator, sz, count);
     printf("float  : ");
@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
     }
     printf("%s %d %d\n", argv[0], length, count);
     printf("Squared Euclidian Distance - Generic\n");
-    benchMarkEuclidianDistance(hwaccelrated::GenericAccelrator(), length, count);
+    benchMarkEuclidianDistance(hwaccelerated::GenericAccelrator(), length, count);
     printf("Squared Euclidian Distance - Optimized for this cpu\n");
-    benchMarkEuclidianDistance(hwaccelrated::IAccelrated::getAccelerator(), length, count);
+    benchMarkEuclidianDistance(hwaccelerated::IAccelerated::getAccelerator(), length, count);
     return 0;
 }

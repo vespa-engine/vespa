@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 using vespalib::ConstArrayRef;
 using vespalib::ArrayRef;
 using vespalib::eval::CellType;
 using vespalib::eval::TypedCells;
-using vespalib::hwaccelrated::IAccelrated;
+using vespalib::hwaccelerated::IAccelerated;
 
 namespace search::tensor {
 
@@ -33,7 +33,7 @@ template<>
 ConstArrayRef<float>
 convert_cells<vespalib::BFloat16, float>(ArrayRef<float> space, TypedCells cells) noexcept
 {
-    static const IAccelrated & accelerator = IAccelrated::getAccelerator();
+    static const IAccelerated & accelerator = IAccelerated::getAccelerator();
     accelerator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(cells.data), space.data(), space.size());
     return space;
 }

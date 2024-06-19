@@ -2,7 +2,7 @@
 
 #include "prenormalized_angular_distance.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypifyCellType;
@@ -14,13 +14,13 @@ template <typename VectorStoreType>
 class BoundPrenormalizedAngularDistance final : public BoundDistanceFunction {
 private:
     using FloatType = VectorStoreType::FloatType;
-    const vespalib::hwaccelrated::IAccelrated & _computer;
+    const vespalib::hwaccelerated::IAccelerated & _computer;
     mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs;
     double _lhs_norm_sq;
 public:
     explicit BoundPrenormalizedAngularDistance(TypedCells lhs)
-        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator()),
+        : _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator()),
           _tmpSpace(lhs.size),
           _lhs(_tmpSpace.storeLhs(lhs))
     {

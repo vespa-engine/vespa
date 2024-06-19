@@ -4,7 +4,7 @@
 
 #include "private_helpers.hpp"
 
-namespace vespalib::hwaccelrated::avx {
+namespace vespalib::hwaccelerated::avx {
 
 namespace {
 

@@ -3,7 +3,7 @@
 #pragma once
 #include <cstring>
 #include <vespa/vespalib/util/arrayref.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 template <typename T, size_t VLEN>
 static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)
@@ -34,9 +34,9 @@ static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)
 
 template <typename FltType = float>
 struct L2DistCalc {
-    const vespalib::hwaccelrated::IAccelrated & _hw;
+    const vespalib::hwaccelerated::IAccelerated & _hw;
 
-    L2DistCalc() : _hw(vespalib::hwaccelrated::IAccelrated::getAccelerator()) {}
+    L2DistCalc() : _hw(vespalib::hwaccelerated::IAccelerated::getAccelerator()) {}
 
     using Arr = vespalib::ArrayRef<FltType>;
     using ConstArr = vespalib::ConstArrayRef<FltType>;

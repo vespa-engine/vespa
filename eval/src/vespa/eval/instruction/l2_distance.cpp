@@ -3,7 +3,7 @@
 #include "l2_distance.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/util/require.h>
 
 #include <vespa/log/log.h>
@@ -15,7 +15,7 @@ using namespace tensor_function;
 
 namespace {
 
-static const auto &hw = hwaccelrated::IAccelrated::getAccelerator();
+static const auto &hw = hwaccelerated::IAccelerated::getAccelerator();
 
 template <typename T>
 double sq_l2(const Value &lhs, const Value &rhs, size_t len) {

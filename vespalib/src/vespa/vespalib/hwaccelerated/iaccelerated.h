@@ -6,17 +6,17 @@
 #include <cstdint>
 #include <vector>
 
-namespace vespalib::hwaccelrated {
+namespace vespalib::hwaccelerated {
 
 /**
  * This contains an interface to all primitives that has different cpu supported accelrations.
  * The actual implementation you get by calling the the static getAccelrator method.
  */
-class IAccelrated
+class IAccelerated
 {
 public:
-    virtual ~IAccelrated() = default;
-    using UP = std::unique_ptr<IAccelrated>;
+    virtual ~IAccelerated() = default;
+    using UP = std::unique_ptr<IAccelerated>;
     virtual float dotProduct(const float * a, const float * b, size_t sz) const noexcept = 0;
     virtual double dotProduct(const double * a, const double * b, size_t sz) const noexcept = 0;
     virtual int64_t dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept = 0;
@@ -37,7 +37,7 @@ public:
     // OR 128 bytes from multiple, optionally inverted sources
     virtual void or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept = 0;
 
-    static const IAccelrated & getAccelerator() __attribute__((noinline));
+    static const IAccelerated & getAccelerator() __attribute__((noinline));
 };
 
 }

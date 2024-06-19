@@ -5,7 +5,7 @@
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <cassert>
 
 using namespace vespalib::eval::tensor_function;
@@ -17,7 +17,7 @@ using Instruction = InterpretedFunction::Instruction;
 
 namespace {
 
-using hwaccelrated::IAccelrated;
+using hwaccelerated::IAccelerated;
 
 template <typename ICT, typename OCT>
 void my_generic_cell_cast_op(State &state, uint64_t param_in) {
@@ -40,7 +40,7 @@ void my_generic_cell_cast_op<BFloat16, float>(State &state, uint64_t param_in) {
     const Value &a = state.peek(0);
     auto input_cells = a.cells().typify<BFloat16>();
     auto output_cells = state.stash.create_uninitialized_array<float>(input_cells.size());
-    static const IAccelrated & accelrator = IAccelrated::getAccelerator();
+    static const IAccelerated & accelrator = IAccelerated::getAccelerator();
     accelrator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(input_cells.begin()),
                                          output_cells.data(), output_cells.size());
     Value &result_ref = state.stash.create<ValueView>(res_type, a.index(), TypedCells(output_cells));
