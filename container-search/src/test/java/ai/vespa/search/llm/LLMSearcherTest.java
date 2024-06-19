@@ -174,11 +174,6 @@ public class LLMSearcherTest {
         assertEquals("Ducks have adorable waddling walks.", sb.toString());
     }
 
-    @Test
-    public void testPromptTemplates() {
-
-    }
-
     private static String getCompletion(Result result) {
         assertTrue(result.hits().size() >= 1);
         return ((EventStream) result.hits().get(0)).incoming().drain().get(0).toString();
