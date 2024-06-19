@@ -11,7 +11,7 @@ vespa_define_module(
     vespa_searchlib
     vespa_messagebus
     vespa_persistence
-    searchsummary
+    vespa_searchsummary
     fileacquirer
 
     LIBS

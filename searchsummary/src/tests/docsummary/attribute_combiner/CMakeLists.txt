@@ -3,7 +3,7 @@ vespa_add_executable(searchsummary_attribute_combiner_test_app TEST
     SOURCES
     attribute_combiner_test.cpp
     DEPENDS
-    searchsummary
+    vespa_searchsummary
     searchsummary_test
     GTest::GTest
 )
