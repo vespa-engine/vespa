@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_tensor_buffer_type_mapper_test_app TEST
     SOURCES
     tensor_buffer_type_mapper_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_tensor_buffer_type_mapper_test_app COMMAND searchlib_tensor_buffer_type_mapper_test_app)

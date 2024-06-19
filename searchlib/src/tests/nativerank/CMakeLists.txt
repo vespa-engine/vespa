@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_nativerank_test_app TEST
     SOURCES
     nativerank_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
 )
 vespa_add_test(

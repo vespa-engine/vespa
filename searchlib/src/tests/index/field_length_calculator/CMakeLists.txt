@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_field_length_calculator_test_app TEST
     SOURCES
     field_length_calculator_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_field_length_calculator_test_app COMMAND searchlib_field_length_calculator_test_app)

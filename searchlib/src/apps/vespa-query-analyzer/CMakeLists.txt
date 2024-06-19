@@ -5,5 +5,5 @@ vespa_add_executable(searchlib_vespa-query-analyzer_app
     OUTPUT_NAME vespa-query-analyzer
     INSTALL bin
     DEPENDS
-    searchlib
+    vespa_searchlib
 )

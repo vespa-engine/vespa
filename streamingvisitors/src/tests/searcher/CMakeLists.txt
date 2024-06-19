@@ -3,7 +3,7 @@ vespa_add_executable(vsm_searcher_test_app TEST
     SOURCES
     searcher_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     streamingvisitors
 )

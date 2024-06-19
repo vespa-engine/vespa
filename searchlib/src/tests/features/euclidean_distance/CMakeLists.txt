@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_euclidean_distance_test_app TEST
     SOURCES
     euclidean_distance_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
 )
 vespa_add_test(NAME searchlib_euclidean_distance_test_app COMMAND searchlib_euclidean_distance_test_app)

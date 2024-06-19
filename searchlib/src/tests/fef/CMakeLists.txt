@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_fef_test_app TEST
     SOURCES
     fef_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_fef_test_app COMMAND searchlib_fef_test_app)

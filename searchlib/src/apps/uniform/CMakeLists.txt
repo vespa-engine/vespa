@@ -3,5 +3,5 @@ vespa_add_executable(searchlib_uniform_app
     SOURCES
     uniform.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )

@@ -5,5 +5,5 @@ vespa_add_executable(searchlib_vespa-index-inspect_app
     OUTPUT_NAME vespa-index-inspect
     INSTALL bin
     DEPENDS
-    searchlib
+    vespa_searchlib
 )

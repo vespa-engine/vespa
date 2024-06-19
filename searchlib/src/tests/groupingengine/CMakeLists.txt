@@ -3,13 +3,13 @@ vespa_add_executable(searchlib_groupingengine_test_app
     SOURCES
     groupingengine_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 #vespa_add_test(NAME searchlib_groupingengine_test_app COMMAND searchlib_groupingengine_test_app) 
 vespa_add_executable(searchlib_groupingengine_benchmark_app
     SOURCES
     groupingengine_benchmark.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_groupingengine_benchmark_app COMMAND searchlib_groupingengine_benchmark_app BENCHMARK)

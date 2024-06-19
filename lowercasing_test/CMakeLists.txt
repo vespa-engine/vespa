@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     vespalog
     vespalib
-    searchlib
+    vespa_searchlib
 
     APPS
     src/binref

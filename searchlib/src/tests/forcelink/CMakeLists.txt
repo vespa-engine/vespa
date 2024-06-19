@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_forcelink_test_app TEST
     SOURCES
     forcelink_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_forcelink_test_app COMMAND searchlib_forcelink_test_app)

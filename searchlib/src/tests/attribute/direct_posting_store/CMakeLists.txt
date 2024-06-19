@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_direct_posting_store_test_app TEST
     SOURCES
     direct_posting_store_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

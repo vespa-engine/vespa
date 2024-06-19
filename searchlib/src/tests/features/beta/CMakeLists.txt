@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_beta_features_test_app TEST
     SOURCES
     beta_features_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
 )
 vespa_add_test(

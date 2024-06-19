@@ -5,7 +5,7 @@ vespa_define_module(
     vespalib
     vespa_configdefinitions
     vespa_document
-    searchlib
+    vespa_searchlib
 
     LIBS
     src/vespa/juniper

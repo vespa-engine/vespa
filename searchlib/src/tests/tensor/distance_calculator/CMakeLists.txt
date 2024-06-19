@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_distance_calculator_test_app TEST
     SOURCES
     distance_calculator_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

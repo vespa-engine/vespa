@@ -8,7 +8,7 @@ vespa_define_module(
     vespa_config
     vespa_configdefinitions
     vespa_document
-    searchlib
+    vespa_searchlib
     vespa_messagebus
     vespa_persistence
     searchsummary

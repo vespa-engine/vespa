@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_field_length_scanner_test_app TEST
     SOURCES
     field_length_scanner_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

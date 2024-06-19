@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_featurenamebuilder_test_app TEST
     SOURCES
     featurenamebuilder_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_featurenamebuilder_test_app COMMAND searchlib_featurenamebuilder_test_app)

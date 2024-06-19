@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_features_first_phase_rank_test_app TEST
     SOURCES
     first_phase_rank_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

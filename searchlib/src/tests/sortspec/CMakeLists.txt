@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_multilevelsort_test_app TEST
     SOURCES
     multilevelsort_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_multilevelsort_test_app COMMAND searchlib_multilevelsort_test_app)

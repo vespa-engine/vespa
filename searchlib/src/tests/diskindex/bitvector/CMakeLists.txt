@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_bitvector_test-diskindex_app TEST
     SOURCES
     bitvector_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_bitvector_test-diskindex_app COMMAND searchlib_bitvector_test-diskindex_app)

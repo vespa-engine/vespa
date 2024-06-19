@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_verify_feature_test_app TEST
     SOURCES
     verify_feature_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_verify_feature_test_app COMMAND searchlib_verify_feature_test_app)

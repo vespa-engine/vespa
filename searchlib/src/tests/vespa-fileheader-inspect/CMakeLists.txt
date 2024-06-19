@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_vespa-fileheader-inspect_test_app TEST
     SOURCES
     vespa-fileheader-inspect_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     AFTER
     searchlib_vespa-fileheader-inspect_app
 )

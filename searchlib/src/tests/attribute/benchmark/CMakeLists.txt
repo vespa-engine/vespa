@@ -3,5 +3,5 @@ vespa_add_executable(searchlib_attributebenchmark_app
     SOURCES
     attributebenchmark.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )

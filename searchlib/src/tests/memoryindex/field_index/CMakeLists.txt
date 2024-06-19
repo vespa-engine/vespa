@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_field_index_test_app TEST
     SOURCES
     field_index_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )
@@ -13,7 +13,7 @@ vespa_add_executable(searchlib_field_index_iterator_test_app TEST
     SOURCES
     field_index_iterator_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
 )
 vespa_add_test(NAME searchlib_field_index_iterator_test_app COMMAND searchlib_field_index_iterator_test_app)

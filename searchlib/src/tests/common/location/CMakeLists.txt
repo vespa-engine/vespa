@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_geo_location_test_app TEST
     SOURCES
     geo_location_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_geo_location_test_app COMMAND searchlib_geo_location_test_app)

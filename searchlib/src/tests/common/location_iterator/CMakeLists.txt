@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_location_iterator_test_app TEST
     SOURCES
     location_iterator_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

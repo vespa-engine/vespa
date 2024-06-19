@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_phrasesplitter_test_app TEST
     SOURCES
     phrasesplitter_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_phrasesplitter_test_app COMMAND searchlib_phrasesplitter_test_app)
@@ -11,6 +11,6 @@ vespa_add_executable(searchlib_benchmark_app
     SOURCES
     benchmark.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_benchmark_app COMMAND searchlib_benchmark_app BENCHMARK)

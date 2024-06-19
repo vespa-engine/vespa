@@ -5,7 +5,7 @@ vespa_add_executable(searchlib_vespa-verify-logdatastore_app
     OUTPUT_NAME vespa-verify-logdatastore
     INSTALL bin
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_executable(searchlib_vespa-documentstore-inspect_app
     SOURCES
@@ -13,7 +13,7 @@ vespa_add_executable(searchlib_vespa-documentstore-inspect_app
     OUTPUT_NAME vespa-documentstore-inspect
     INSTALL bin
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_executable(searchlib_vespa-documentstore-benchmark_app
     SOURCES
@@ -21,7 +21,7 @@ vespa_add_executable(searchlib_vespa-documentstore-benchmark_app
     OUTPUT_NAME vespa-documentstore-benchmark
     INSTALL bin
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_executable(searchlib_vespa-create-idx-from-dat_app
     SOURCES
@@ -29,5 +29,5 @@ vespa_add_executable(searchlib_vespa-create-idx-from-dat_app
     OUTPUT_NAME vespa-create-idx-from-dat
     INSTALL bin
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
