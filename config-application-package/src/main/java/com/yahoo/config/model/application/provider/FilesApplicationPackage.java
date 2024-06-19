@@ -630,7 +630,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             tempDir = null;
         } catch (AccessDeniedException | DirectoryNotEmptyException e) {
             preprocess(appDir, preprocessedDir, zone);
-            IOUtils.recursiveDeleteDir(tempDir.toFile());
         } finally {
             if (tempDir != null)
                 IOUtils.recursiveDeleteDir(tempDir.toFile());
