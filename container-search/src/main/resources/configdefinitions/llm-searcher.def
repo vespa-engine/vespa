@@ -12,3 +12,6 @@ providerId string default=""
 
 # The default prompt to use if not overridden in query
 prompt string default=""
+
+# The default prompt template file to use if not overridden in query. Above prompt has precedence if it is set.
+promptTemplate path optional
