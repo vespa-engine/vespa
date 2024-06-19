@@ -17,7 +17,8 @@ import java.util.logging.Level;
 public class SessionsMaintainer extends ConfigServerMaintainer {
 
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
-        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, true);
+        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(),
+              interval, true, true);
     }
 
     @Override
