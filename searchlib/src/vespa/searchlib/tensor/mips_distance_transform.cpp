@@ -16,7 +16,7 @@ private:
     using FloatType = VectorStoreType::FloatType;
     mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs_vector;
-    const vespalib::hwaccelerated::IAccelrated & _computer;
+    const vespalib::hwaccelerated::IAccelerated & _computer;
     double _max_sq_norm;
     using ExtraDimT = std::conditional_t<extra_dim,double,std::monostate>;
     [[no_unique_address]] ExtraDimT _lhs_extra_dim;
@@ -26,7 +26,7 @@ public:
         : BoundDistanceFunction(),
           _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs)),
-          _computer(vespalib::hwaccelerated::IAccelrated::getAccelerator())
+          _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator())
     {
         const FloatType * a = _lhs_vector.data();
         if constexpr (extra_dim) {

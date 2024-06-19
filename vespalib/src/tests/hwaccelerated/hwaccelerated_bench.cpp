@@ -18,7 +18,7 @@ std::vector<T> createAndFill(size_t sz) {
 
 template<typename T>
 void
-benchmarkEuclideanDistance(const hwaccelerated::IAccelrated & accel, size_t sz, size_t count) {
+benchmarkEuclideanDistance(const hwaccelerated::IAccelerated & accel, size_t sz, size_t count) {
     srand(1);
     std::vector<T> a = createAndFill<T>(sz);
     std::vector<T> b = createAndFill<T>(sz);
@@ -33,7 +33,7 @@ benchmarkEuclideanDistance(const hwaccelerated::IAccelrated & accel, size_t sz, 
 }
 
 void
-benchMarkEuclidianDistance(const hwaccelerated::IAccelrated & accelrator, size_t sz, size_t count) {
+benchMarkEuclidianDistance(const hwaccelerated::IAccelerated & accelrator, size_t sz, size_t count) {
     printf("double : ");
     benchmarkEuclideanDistance<double>(accelrator, sz, count);
     printf("float  : ");
@@ -55,6 +55,6 @@ int main(int argc, char *argv[]) {
     printf("Squared Euclidian Distance - Generic\n");
     benchMarkEuclidianDistance(hwaccelerated::GenericAccelrator(), length, count);
     printf("Squared Euclidian Distance - Optimized for this cpu\n");
-    benchMarkEuclidianDistance(hwaccelerated::IAccelrated::getAccelerator(), length, count);
+    benchMarkEuclidianDistance(hwaccelerated::IAccelerated::getAccelerator(), length, count);
     return 0;
 }

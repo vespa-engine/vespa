@@ -34,9 +34,9 @@ static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)
 
 template <typename FltType = float>
 struct L2DistCalc {
-    const vespalib::hwaccelerated::IAccelrated & _hw;
+    const vespalib::hwaccelerated::IAccelerated & _hw;
 
-    L2DistCalc() : _hw(vespalib::hwaccelerated::IAccelrated::getAccelerator()) {}
+    L2DistCalc() : _hw(vespalib::hwaccelerated::IAccelerated::getAccelerator()) {}
 
     using Arr = vespalib::ArrayRef<FltType>;
     using ConstArr = vespalib::ConstArrayRef<FltType>;

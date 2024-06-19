@@ -15,7 +15,7 @@ using namespace tensor_function;
 
 namespace {
 
-static const auto &hw = hwaccelerated::IAccelrated::getAccelerator();
+static const auto &hw = hwaccelerated::IAccelerated::getAccelerator();
 
 template <typename T>
 double sq_l2(const Value &lhs, const Value &rhs, size_t len) {

@@ -8,7 +8,7 @@
 #include <functional>
 
 using namespace vespalib;
-using vespalib::hwaccelerated::IAccelrated;
+using vespalib::hwaccelerated::IAccelerated;
 
 class Benchmark {
 public:
@@ -54,14 +54,14 @@ public:
 private:
     std::vector<T> _values;
     std::vector<T> _query;
-    const IAccelrated & _dp;
+    const IAccelerated & _dp;
 };
 
 template <typename T>
 FullBenchmark<T>::FullBenchmark(size_t numDocs, size_t numValues)
     : _values(numDocs*numValues),
       _query(numValues),
-      _dp(IAccelrated::getAccelerator())
+      _dp(IAccelerated::getAccelerator())
 {
     for (size_t i(0); i < numDocs; i++) {
         for (size_t j(0); j < numValues; j++) {

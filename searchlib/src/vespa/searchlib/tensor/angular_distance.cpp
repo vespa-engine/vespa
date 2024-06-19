@@ -17,13 +17,13 @@ template <typename VectorStoreType>
 class BoundAngularDistance final : public BoundDistanceFunction {
 private:
     using FloatType = VectorStoreType::FloatType;
-    const vespalib::hwaccelerated::IAccelrated & _computer;
+    const vespalib::hwaccelerated::IAccelerated & _computer;
     mutable VectorStoreType _tmpSpace;
     const vespalib::ConstArrayRef<FloatType> _lhs;
     double _lhs_norm_sq;
 public:
     explicit BoundAngularDistance(TypedCells lhs)
-        : _computer(vespalib::hwaccelerated::IAccelrated::getAccelerator()),
+        : _computer(vespalib::hwaccelerated::IAccelerated::getAccelerator()),
           _tmpSpace(lhs.size),
           _lhs(_tmpSpace.storeLhs(lhs))
     {

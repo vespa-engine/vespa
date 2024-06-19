@@ -168,7 +168,7 @@ class DotProductExecutorBase : public fef::FeatureExecutor {
 public:
     using V  = std::vector<BaseType>;
 private:
-    const vespalib::hwaccelerated::IAccelrated   & _multiplier;
+    const vespalib::hwaccelerated::IAccelerated   & _multiplier;
     V                                             _queryVector;
     virtual vespalib::ConstArrayRef<BaseType> getAttributeValues(uint32_t docid) = 0;
 public:
