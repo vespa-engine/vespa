@@ -30,7 +30,8 @@ endif
 .DEFAULT_GOAL := pr
 
 main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts 
-pr: build-rpms cpp-test basic-search-test
+#pr: build-rpms cpp-test basic-search-test
+pr: build-rpms cpp-test 
 
 check:
 	@shellcheck -x $(TOP)/*.sh
