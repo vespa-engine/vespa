@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespadefaults
-    metrics
+    vespa_metrics
     vespa_config
     vespa_configdefinitions
     vespalog
