@@ -72,35 +72,22 @@ public class JuniperSearcher extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         Result result = execution.search(query);
-        highlight(query.getPresentation().getBolding(), result.hits().deepIterator(), null,
+        highlight(query.getPresentation().getBolding(), result.hits().unorderedDeepIterator(),
                   execution.context().getIndexFacts().newSession(query));
         return result;
     }
 
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
-        int worstCase = result.getHitCount();
-        List<Hit> hits = new ArrayList<>(worstCase);
-        for (Iterator<Hit> i = result.hits().deepIterator(); i.hasNext();) {
-            Hit hit = i.next();
-            if ( ! (hit instanceof FastHit fastHit)) continue;
-            if (fastHit.isFilled(summaryClass)) continue;
-
-            hits.add(fastHit);
-        }
         execution.fill(result, summaryClass);
-        highlight(result.getQuery().getPresentation().getBolding(), hits.iterator(), summaryClass,
+        highlight(result.getQuery().getPresentation().getBolding(), result.hits().unorderedDeepIterator(),
                   execution.context().getIndexFacts().newSession(result.getQuery()));
     }
 
-    private void highlight(boolean bolding, Iterator<Hit> hitsToHighlight,
-                           String summaryClass, IndexFacts.Session indexFacts) {
+    private void highlight(boolean bolding, Iterator<Hit> hitsToHighlight, IndexFacts.Session indexFacts) {
         while (hitsToHighlight.hasNext()) {
             Hit hit = hitsToHighlight.next();
             if ( ! (hit instanceof FastHit fastHit)) continue;
-
-            if (summaryClass != null &&  ! fastHit.isFilled(summaryClass)) continue;
-
             Object searchDefinitionField = fastHit.getField(Hit.SDDOCNAME_FIELD);
             if (searchDefinitionField == null) continue;
 
