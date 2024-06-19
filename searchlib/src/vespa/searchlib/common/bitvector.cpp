@@ -4,7 +4,7 @@
 #include "allocatedbitvector.h"
 #include "partialbitvector.h"
 #include <vespa/searchlib/util/file_settings.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -18,7 +18,7 @@ LOG_SETUP(".searchlib.common.bitvector");
 
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
-using vespalib::hwaccelrated::IAccelrated;
+using vespalib::hwaccelerated::IAccelrated;
 using vespalib::Optimized;
 using vespalib::alloc::Alloc;
 

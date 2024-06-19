@@ -6,7 +6,7 @@
 #include "unpackinfo.h"
 #include <vespa/searchlib/common/bitword.h>
 
-namespace vespalib::hwaccelrated { class IAccelrated; }
+namespace vespalib::hwaccelerated { class IAccelrated; }
 
 namespace search::queryeval {
 
@@ -46,7 +46,7 @@ private:
     VESPA_DLL_LOCAL bool updateLastValueCold(uint32_t docId) noexcept __attribute__((noinline));
     VESPA_DLL_LOCAL void fetchChunk(uint32_t docId) noexcept __attribute__((noinline));
 
-    using IAccelrated = vespalib::hwaccelrated::IAccelrated;
+    using IAccelrated = vespalib::hwaccelerated::IAccelrated;
 
     Update              _update;
     const IAccelrated & _accel;

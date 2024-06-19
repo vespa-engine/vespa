@@ -6,7 +6,7 @@
 #include <vespa/vespalib/util/optimized.h>
 #include <cstring>
 
-namespace vespalib::hwaccelrated::helper {
+namespace vespalib::hwaccelerated::helper {
 namespace {
 
 inline size_t

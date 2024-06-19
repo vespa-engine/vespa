@@ -20,7 +20,7 @@ using namespace search::fef;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
 using vespalib::Issue;
-using vespalib::hwaccelrated::IAccelrated;
+using vespalib::hwaccelerated::IAccelrated;
 
 namespace search::features {
 namespace dotproduct::wset {

@@ -3,7 +3,7 @@
 #include "avx2.h"
 #include "avxprivate.hpp"
 
-namespace vespalib::hwaccelrated {
+namespace vespalib::hwaccelerated {
 
 size_t
 Avx2Accelrator::populationCount(const uint64_t *a, size_t sz) const noexcept {

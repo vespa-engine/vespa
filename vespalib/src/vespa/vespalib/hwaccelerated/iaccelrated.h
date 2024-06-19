@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace vespalib::hwaccelrated {
+namespace vespalib::hwaccelerated {
 
 /**
  * This contains an interface to all primitives that has different cpu supported accelrations.

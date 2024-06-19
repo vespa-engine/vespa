@@ -5,7 +5,7 @@
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
 #include <cassert>
 
 using namespace vespalib::eval::tensor_function;
@@ -17,7 +17,7 @@ using Instruction = InterpretedFunction::Instruction;
 
 namespace {
 
-using hwaccelrated::IAccelrated;
+using hwaccelerated::IAccelrated;
 
 template <typename ICT, typename OCT>
 void my_generic_cell_cast_op(State &state, uint64_t param_in) {

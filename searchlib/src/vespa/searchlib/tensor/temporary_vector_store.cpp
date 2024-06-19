@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
 
 using vespalib::ConstArrayRef;
 using vespalib::ArrayRef;
 using vespalib::eval::CellType;
 using vespalib::eval::TypedCells;
-using vespalib::hwaccelrated::IAccelrated;
+using vespalib::hwaccelerated::IAccelrated;
 
 namespace search::tensor {
 

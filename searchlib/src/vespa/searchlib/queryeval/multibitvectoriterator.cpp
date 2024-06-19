@@ -4,12 +4,12 @@
 #include "andsearch.h"
 #include "andnotsearch.h"
 #include "sourceblendersearch.h"
-#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
 
 namespace search::queryeval {
 
 using vespalib::Trinary;
-using vespalib::hwaccelrated::IAccelrated;
+using vespalib::hwaccelerated::IAccelrated;
 using Meta = MultiBitVectorBase::Meta;
 
 namespace {

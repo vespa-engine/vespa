@@ -11,9 +11,9 @@
 #include <vector>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".vespalib.hwaccelrated");
+LOG_SETUP(".vespalib.hwaccelerated");
 
-namespace vespalib::hwaccelrated {
+namespace vespalib::hwaccelerated {
 
 namespace {
 

@@ -4,7 +4,7 @@
 #include "private_helpers.hpp"
 #include <cblas.h>
 
-namespace vespalib::hwaccelrated {
+namespace vespalib::hwaccelerated {
 
 namespace {
 

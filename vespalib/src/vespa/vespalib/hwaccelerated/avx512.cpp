@@ -3,7 +3,7 @@
 #include "avx512.h"
 #include "avxprivate.hpp"
 
-namespace vespalib:: hwaccelrated {
+namespace vespalib:: hwaccelerated {
 
 float
 Avx512Accelrator::dotProduct(const float * af, const float * bf, size_t sz) const noexcept {
