@@ -100,42 +100,42 @@ func NewClient(options ClientOptions, httpClients []httputil.Client) (*Client, e
 	return c, nil
 }
 
-func writeQueryParam(sb *bytes.Buffer, start int, escape bool, k, v string) {
-	if sb.Len() == start {
-		sb.WriteString("?")
+func writeQueryParam(buf *bytes.Buffer, start int, escape bool, k, v string) {
+	if buf.Len() == start {
+		buf.WriteString("?")
 	} else {
-		sb.WriteString("&")
+		buf.WriteString("&")
 	}
-	sb.WriteString(k)
-	sb.WriteString("=")
+	buf.WriteString(k)
+	buf.WriteString("=")
 	if escape {
-		sb.WriteString(url.QueryEscape(v))
+		buf.WriteString(url.QueryEscape(v))
 	} else {
-		sb.WriteString(v)
+		buf.WriteString(v)
 	}
 }
 
-func (c *Client) writeDocumentPath(id Id, sb *bytes.Buffer) {
-	sb.WriteString(strings.TrimSuffix(c.options.BaseURL, "/"))
-	sb.WriteString("/document/v1/")
-	sb.WriteString(url.PathEscape(id.Namespace))
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(id.Type))
+func (c *Client) writeDocumentPath(id Id, buf *bytes.Buffer) {
+	buf.WriteString(strings.TrimSuffix(c.options.BaseURL, "/"))
+	buf.WriteString("/document/v1/")
+	buf.WriteString(url.PathEscape(id.Namespace))
+	buf.WriteString("/")
+	buf.WriteString(url.PathEscape(id.Type))
 	if id.Number != nil {
-		sb.WriteString("/number/")
+		buf.WriteString("/number/")
 		n := uint64(*id.Number)
-		sb.WriteString(strconv.FormatUint(n, 10))
+		buf.WriteString(strconv.FormatUint(n, 10))
 	} else if id.Group != "" {
-		sb.WriteString("/group/")
-		sb.WriteString(url.PathEscape(id.Group))
+		buf.WriteString("/group/")
+		buf.WriteString(url.PathEscape(id.Group))
 	} else {
-		sb.WriteString("/docid")
+		buf.WriteString("/docid")
 	}
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(id.UserSpecific))
+	buf.WriteString("/")
+	buf.WriteString(url.PathEscape(id.UserSpecific))
 }
 
-func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
+func (c *Client) methodAndURL(d Document, buf *bytes.Buffer) (string, string) {
 	httpMethod := ""
 	switch d.Operation {
 	case OperationPut:
@@ -146,28 +146,28 @@ func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
 		httpMethod = http.MethodDelete
 	}
 	// Base URL and path
-	c.writeDocumentPath(d.Id, sb)
+	c.writeDocumentPath(d.Id, buf)
 	// Query part
-	queryStart := sb.Len()
+	queryStart := buf.Len()
 	if c.options.Timeout > 0 {
-		writeQueryParam(sb, queryStart, false, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+		writeQueryParam(buf, queryStart, false, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
 	}
 	if c.options.Route != "" {
-		writeQueryParam(sb, queryStart, true, "route", c.options.Route)
+		writeQueryParam(buf, queryStart, true, "route", c.options.Route)
 	}
 	if c.options.TraceLevel > 0 {
-		writeQueryParam(sb, queryStart, false, "tracelevel", strconv.Itoa(c.options.TraceLevel))
+		writeQueryParam(buf, queryStart, false, "tracelevel", strconv.Itoa(c.options.TraceLevel))
 	}
 	if c.options.Speedtest {
-		writeQueryParam(sb, queryStart, false, "dryRun", "true")
+		writeQueryParam(buf, queryStart, false, "dryRun", "true")
 	}
 	if d.Condition != "" {
-		writeQueryParam(sb, queryStart, true, "condition", d.Condition)
+		writeQueryParam(buf, queryStart, true, "condition", d.Condition)
 	}
 	if d.Create {
-		writeQueryParam(sb, queryStart, false, "create", "true")
+		writeQueryParam(buf, queryStart, false, "create", "true")
 	}
-	return httpMethod, sb.String()
+	return httpMethod, buf.String()
 }
 
 func (c *Client) leastBusyClient() *countingHTTPClient {
