@@ -8,6 +8,7 @@ import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.config.FileReference;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -16,11 +17,13 @@ import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,6 +74,14 @@ public class LLMSearcherTest {
         // Fallback to query if not given
         assertEquals("Ducks have adorable waddling walks.",
                 getCompletion(runMockSearch(searcher, Map.of("query", "why are ducks better than cats"))));
+    }
+
+    @Test
+    public void testPromptTemplate() {
+        var templateFile = FileReference.mockFileReferenceForUnitTesting(new File("src/test/resources/llm.template.txt"));
+        var config = new LlmSearcherConfig.Builder().stream(false).promptTemplate(Optional.of(templateFile)).build();
+        var searcher = createLLMSearcher(config, createLLMClient());
+        assertEquals("Dogs are loyal and friendly.", getCompletion(runMockSearch(searcher, Map.of())));
     }
 
     @Test
@@ -213,6 +224,8 @@ public class LLMSearcherTest {
                 if (temperature.isPresent() && temperature.get() > 0.5) {
                     answer = "Random text about ducks vs cats that makes no sense whatsoever.";
                 }
+            } else if (prompt.asString().contains("dogs")) {
+                answer = "Dogs are loyal and friendly.";
             }
             var maxTokens = options.getInt("maxTokens");
             if (maxTokens.isPresent()) {

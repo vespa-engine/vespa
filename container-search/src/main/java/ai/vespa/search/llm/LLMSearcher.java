@@ -22,6 +22,9 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.text.Utf8;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
@@ -55,10 +58,10 @@ public class LLMSearcher extends Searcher {
     @Inject
     public LLMSearcher(LlmSearcherConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.stream = config.stream();
-        this.prompt = config.prompt();
         this.languageModelId = config.providerId();
         this.languageModel = findLanguageModel(languageModelId, languageModels);
         this.propertyPrefix = config.propertyPrefix();
+        this.prompt = loadDefaultPrompt(config);
 
         this.jsonRenderer = new JsonRenderer();
     }
@@ -66,6 +69,20 @@ public class LLMSearcher extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         return complete(query, StringPrompt.from(getPrompt(query)), null, execution);
+    }
+
+    private String loadDefaultPrompt(LlmSearcherConfig config) {
+        if (config.prompt() != null && ! config.prompt().isEmpty()) {
+            return config.prompt();
+        } else if (config.promptTemplate().isPresent()) {
+            Path path = config.promptTemplate().get();
+            try {
+                return new String(Files.readAllBytes(path));
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Could not read prompt template file: " + path, e);
+            }
+        }
+        return null;
     }
 
     private LanguageModel findLanguageModel(String providerId, ComponentRegistry<LanguageModel> languageModels)
@@ -181,13 +198,13 @@ public class LLMSearcher extends Searcher {
     }
 
     public String getPrompt(Query query) {
-        // Look for prompt with or without prefix
+        // Look for prompt with or without prefix given in query
         String prompt = lookupPropertyWithOrWithoutPrefix(PROMPT_PROPERTY, p -> query.properties().getString(p));
         if (prompt != null)
             return prompt;
 
         // Look for prompt defined in config
-        if (this.prompt != null && this.prompt.length() > 0)
+        if (this.prompt != null && ! this.prompt.isEmpty())
             return this.prompt;
 
         // If not found, use query directly
