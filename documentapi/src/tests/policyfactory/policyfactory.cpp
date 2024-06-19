@@ -6,7 +6,7 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DocumentTypeRepo;
 using namespace documentapi;
@@ -70,14 +70,9 @@ createMessage()
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-TEST_SETUP(Test);
-
 const vespalib::duration TIMEOUT = 600s;
 
-int
-Test::Main()
-{
-    TEST_INIT("policyfactory_test");
+TEST("policyfactory_test") {
 
     std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo);
     mbus::Slobrok slobrok;
@@ -106,6 +101,6 @@ Test::Main()
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)DocumentProtocol::ERROR_POLICY_FAILURE, reply->getError(0).getCode());
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

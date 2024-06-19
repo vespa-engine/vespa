@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/sourcesession.h>
@@ -72,8 +72,6 @@ Server::handleMessage(Message::UP msg) {
 
 //-----------------------------------------------------------------------------
 
-TEST_SETUP(Test);
-
 RoutingSpec getRouting() {
     return RoutingSpec()
         .addTable(RoutingTableSpec("Simple")
@@ -82,10 +80,7 @@ RoutingSpec getRouting() {
                   .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("simple-roundtrip_test");
+TEST("simple-roundtrip_test") {
 
     Slobrok     slobrok;
     TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
@@ -119,5 +114,6 @@ Test::Main()
                   .addChild("Proxy reply")
                   .addChild("Client reply");
     EXPECT_TRUE(reply->getTrace().encode() == t.encode());
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

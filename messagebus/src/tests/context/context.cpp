@@ -9,7 +9,7 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <thread>
 
 using namespace mbus;
@@ -36,12 +36,7 @@ RoutingSpec getRouting() {
                   .addRoute(RouteSpec("test").addHop("test")));
 }
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("context_test");
+TEST("context_test") {
 
     Slobrok     slobrok;
     TestServer  src(Identity(""), getRouting(), slobrok);
@@ -92,5 +87,6 @@ Test::Main()
         ASSERT_TRUE(reply);
         EXPECT_EQUAL(reply->getContext().value.UINT64, 30u);
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

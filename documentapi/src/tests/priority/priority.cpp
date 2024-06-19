@@ -1,18 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/documentapi/messagebus/priority.h>
 #include <fstream>
 #include <algorithm>
 
 using namespace documentapi;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("priority_test");
+TEST("priority_test") {
 
     std::vector<int32_t> expected;
     expected.push_back(Priority::PRI_HIGHEST);
@@ -52,6 +47,6 @@ Test::Main()
         expected.erase(it);
     }
     ASSERT_TRUE(expected.empty());
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

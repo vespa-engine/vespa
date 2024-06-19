@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "producerconsumer.h"
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -9,8 +9,6 @@ LOG_SETUP("allocfree_test");
 using vespalib::Consumer;
 using vespalib::Producer;
 using vespalib::ProducerConsumer;
-
-TEST_SETUP(Test);
 
 //-----------------------------------------------------------------------------
 
@@ -57,21 +55,19 @@ MallocFreeWorker::~MallocFreeWorker() = default;
 
 //-----------------------------------------------------------------------------
 
-int Test::Main() {
+TEST_MAIN() {
     int duration = 10;
     int numCrossThreadAlloc(2);
     int numSameThreadAlloc(2);
-    if (_argc > 1) {
-        duration = atoi(_argv[1]);
+    if (argc > 1) {
+        duration = atoi(argv[1]);
     }
-    if (_argc > 2) {
-        numCrossThreadAlloc = atoi(_argv[2]);
+    if (argc > 2) {
+        numCrossThreadAlloc = atoi(argv[2]);
     }
-    if (_argc > 3) {
-        numSameThreadAlloc = atoi(_argv[3]);
+    if (argc > 3) {
+        numSameThreadAlloc = atoi(argv[3]);
     }
-    TEST_INIT("allocfree_test");
-
     vespalib::ThreadPool pool;
 
     std::map<int, std::shared_ptr<FreeWorker> > freeWorkers;
@@ -120,6 +116,4 @@ int Test::Main() {
     fprintf(stderr, "Did %lu Cross thread malloc/free operations\n", numCrossThreadMallocFreeOperations);
     fprintf(stderr, "Did %lu Same thread malloc/free operations\n", numSameThreadMallocFreeOperations);
     fprintf(stderr, "Did %lu Total operations\n", numCrossThreadMallocFreeOperations + numSameThreadMallocFreeOperations);
-
-    TEST_DONE();
 }

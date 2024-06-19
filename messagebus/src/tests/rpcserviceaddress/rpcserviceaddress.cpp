@@ -1,16 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/network/rpcserviceaddress.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("rpcserviceaddress_test");
+TEST("rpcserviceaddress_test") {
     {
         EXPECT_TRUE(RPCServiceAddress("", "bar").isMalformed());
         EXPECT_TRUE(RPCServiceAddress("foo", "bar").isMalformed());
@@ -38,5 +33,6 @@ Test::Main()
         EXPECT_TRUE(addr.getConnectionSpec() == "tcp/foo.com:42");
         EXPECT_TRUE(addr.getSessionName() == "");
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

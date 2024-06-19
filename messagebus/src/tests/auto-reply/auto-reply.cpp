@@ -4,16 +4,11 @@
 #include <vespa/messagebus/routablequeue.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("auto-reply_test");
+TEST("auto-reply_test") {
     RoutableQueue q;
     {
         Message::UP msg(new SimpleMessage("test"));
@@ -33,5 +28,6 @@ Test::Main()
         reply->pushHandler(q);
     }
     EXPECT_TRUE(q.size() == 2);
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

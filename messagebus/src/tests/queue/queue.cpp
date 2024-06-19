@@ -1,16 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/messagebus/queue.h>
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("queue_test");
+TEST("queue_test") {
     Queue<int> q;
     EXPECT_TRUE(q.size() == 0);
     q.push(1);
@@ -84,5 +79,6 @@ Test::Main()
     EXPECT_TRUE(q.front() == 3);
     q.pop();
     EXPECT_TRUE(q.size() == 0);
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

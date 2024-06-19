@@ -8,17 +8,12 @@
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/error.h>
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace mbus;
 using namespace std::chrono_literals;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("routable_test");
+TEST("routable_test") {
 
     {
         // Test message swap state.
@@ -89,6 +84,6 @@ Test::Main()
         Reply::UP ap = handler.getReplyNow();
         ASSERT_FALSE(ap);
     }
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

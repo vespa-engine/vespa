@@ -1,17 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("gencnt_test");
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/gencnt.h>
 
 using vespalib::GenCnt;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("gencnt_test");
+TEST("gencnt_test") {
 
     GenCnt first;
 
@@ -80,6 +75,6 @@ Test::Main()
     EXPECT_TRUE(b.distance(c) == 10);
     EXPECT_TRUE(!first.inRangeInclusive(a, c));
     EXPECT_TRUE(!first.inRangeInclusive(c, a));
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

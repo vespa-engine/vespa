@@ -17,15 +17,15 @@
 #define TEST_TRACE() TEST_MASTER.trace(__FILE__, __LINE__)
 #define TEST_THREAD(name) TEST_MASTER.setThreadName(name)
 #define TEST_BARRIER() TEST_MASTER.awaitThreadBarrier(__FILE__, __LINE__)
-#define TEST_MAIN()                        \
-  void test_kit_main();                    \
-  int main(int, char **)                   \
-  {                                        \
-      TEST_MASTER.init(__FILE__);          \
-      test_kit_main();                     \
-      return (TEST_MASTER.fini() ? 0 : 1); \
-  }                                        \
-  void test_kit_main()
+#define TEST_MAIN()                          \
+  void test_kit_main(int argc, char **argv); \
+  int main(int argc, char **argv)            \
+  {                                          \
+      TEST_MASTER.init(__FILE__);            \
+      test_kit_main(argc, argv);             \
+      return (TEST_MASTER.fini() ? 0 : 1);   \
+  }                                          \
+  void test_kit_main([[maybe_unused]] int argc, [[maybe_unused]] char **argv)
 
 //-----------------------------------------------------------------------------
 #include "generated_fixture_macros.h"

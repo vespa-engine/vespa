@@ -1,19 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 
 using search::IndexMetaInfo;
 
 using Snap = IndexMetaInfo::Snapshot;
 
-TEST_SETUP(Test)
-
-int
-Test::Main()
-{
-    TEST_INIT("indexmetainfo_test");
+TEST("indexmetainfo_test") {
     { // load pregenerated file
         IndexMetaInfo info(TEST_PATH(""));
         EXPECT_TRUE(info.load());
@@ -122,5 +116,6 @@ Test::Main()
         ASSERT_TRUE(b.snapshots().size() == 1);
         EXPECT_TRUE(b.snapshots()[0] == Snap(true, 50, "foo"));
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

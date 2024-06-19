@@ -1,18 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("stringtokenizer_test");
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <set>
 
 using namespace vespalib;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("stringtokenizer_test");
+TEST("stringtokenizer_test") {
     {
         string s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
         StringTokenizer tokenizer(s);
@@ -67,5 +62,6 @@ Test::Main()
         StringTokenizer tokenizer(s);
         EXPECT_EQUAL(0u, tokenizer.size());
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }
