@@ -18,6 +18,9 @@ import java.util.Optional;
  */
 public class PagedAttributeValidator extends Processor {
 
+    private static final String disavantagesUrl =
+            "https://docs.vespa.ai/en/attributes.html#paged-attributes-disadvantages";
+
     public PagedAttributeValidator(Schema schema,
                                    DeployLogger deployLogger,
                                    RankProfileRegistry rankProfileRegistry,
@@ -43,6 +46,10 @@ public class PagedAttributeValidator extends Processor {
         if (!isSupportedType(attribute)) {
             fail(schema, field, "The 'paged' attribute setting is not supported for fast-rank tensor and predicate types");
         }
+        if (attribute.getType() == Attribute.Type.TENSOR && attribute.hnswIndexParams().isPresent()) {
+            warn(schema.getName(), field.getName(), "The 'paged' attribute setting in combination with " +
+                            "HNSW indexing is strongly discouraged, see " + disavantagesUrl + " for details");
+        }
     }
 
     private boolean isSupportedType(Attribute attribute) {
@@ -56,10 +63,6 @@ public class PagedAttributeValidator extends Processor {
             return !fastRank;
         }
         return true;
-    }
-
-    private boolean isDenseTensorType(TensorType type) {
-        return type.dimensions().stream().allMatch(d -> d.isIndexed());
     }
 
 }
