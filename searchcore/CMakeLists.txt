@@ -10,7 +10,7 @@ vespa_define_module(
     vespa_document
     searchlib
     vespa_messagebus
-    persistence
+    vespa_persistence
     searchsummary
     fileacquirer
 

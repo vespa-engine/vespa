@@ -4,7 +4,7 @@ vespa_add_executable(persistence_dummyimpl_conformance_test_app TEST
     dummyimpltest.cpp
     DEPENDS
     persistence_persistence_conformancetest
-    persistence
+    vespa_persistence
 )
 
 vespa_add_test(
@@ -16,6 +16,6 @@ vespa_add_executable(persistence_dummypersistence_test_app TEST
     SOURCES
     dummypersistence_test.cpp
     DEPENDS
-    persistence
+    vespa_persistence
 )
 vespa_add_test(NAME persistence_dummypersistence_test_app COMMAND persistence_dummypersistence_test_app)
