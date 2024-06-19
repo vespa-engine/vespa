@@ -32,10 +32,17 @@ public abstract class ConfigServerMaintainer extends Maintainer {
     /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                            Clock clock, Duration interval, boolean useLock) {
+       this(applicationRepository, curator, flagSource, clock, interval, useLock, false);
+    }
+
+    /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
+    ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
+                           Clock clock, Duration interval, boolean useLock, boolean ignoreCollision) {
         super(null, interval, clock, new JobControl(new JobControlFlags(curator, flagSource, useLock)),
-              new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), false);
+              new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), ignoreCollision);
         this.applicationRepository = applicationRepository;
     }
+
 
     private static class ConfigServerJobMetrics extends JobMetrics {
 
