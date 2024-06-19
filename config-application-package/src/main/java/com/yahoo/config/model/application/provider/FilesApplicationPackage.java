@@ -616,8 +616,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
+        java.nio.file.Path tempDir = null;
         try {
-            java.nio.file.Path tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
+            tempDir = Files.createTempDirectory(appDir.getParentFile().toPath(), "preprocess-tempdir");
             preprocess(appDir, tempDir.toFile(), zone);
             IOUtils.recursiveDeleteDir(preprocessedDir);
             // Use 'move' to make sure we do this atomically, important to avoid writing only partial content e.g.
@@ -626,8 +627,12 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             // if it fails (with DirectoryNotEmptyException (!)) we need to use 'copy' instead
             // (this will always be the case for the application package for a standalone container).
             Files.move(tempDir, preprocessedDir.toPath());
+            tempDir = null;
         } catch (AccessDeniedException | DirectoryNotEmptyException e) {
             preprocess(appDir, preprocessedDir, zone);
+        } finally {
+            if (tempDir != null)
+                IOUtils.recursiveDeleteDir(tempDir.toFile());
         }
         FilesApplicationPackage preprocessedApp = fromFile(preprocessedDir, includeSourceFiles);
         preprocessedApp.copyUserDefsIntoApplication();
