@@ -7,11 +7,9 @@
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace mbus;
-
-TEST_SETUP(Test);
 
 RoutingSpec getRouting() {
     return RoutingSpec()
@@ -21,10 +19,7 @@ RoutingSpec getRouting() {
                   .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("simple-roundtrip_test");
+TEST("simple-roundtrip_test") {
 
     Slobrok     slobrok;
     TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
@@ -87,5 +82,6 @@ Test::Main()
     EXPECT_TRUE(reply->getProtocol() == SimpleProtocol::NAME);
     EXPECT_TRUE(reply->getType() == SimpleProtocol::REPLY);
     EXPECT_TRUE(dynamic_cast<SimpleReply&>(*reply).getValue() == "test reply pxy");
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

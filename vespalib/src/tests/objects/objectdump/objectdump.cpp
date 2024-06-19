@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
@@ -103,13 +103,9 @@ Foo::visitMembers(ObjectVisitor &v) const {
 
 IMPLEMENT_IDENTIFIABLE(Foo, Base);
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("objectdump_test");
+TEST("objectdump_test") {
     Foo foo;
     fprintf(stderr, "%s", foo.asString().c_str());
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

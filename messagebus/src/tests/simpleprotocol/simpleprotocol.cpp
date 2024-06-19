@@ -7,17 +7,12 @@
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/messagebus/routing/routingcontext.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/component/vtag.h>
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("simpleprotocol_test");
+TEST("simpleprotocol_test") {
 
     vespalib::Version version = vespalib::Vtag::currentVersion;
     SimpleProtocol protocol;
@@ -69,5 +64,6 @@ Test::Main()
         EXPECT_TRUE(tmp->getType() == SimpleProtocol::REPLY);
         EXPECT_TRUE(static_cast<SimpleReply&>(*tmp).getValue() == "reply");
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

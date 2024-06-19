@@ -1,19 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("featurenamebuilder_test");
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 
 using namespace search::fef;
 
 using B = FeatureNameBuilder;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("featurenamebuilder_test");
+TEST("featurenamebuilder_test") {
 
     // normal cases
     EXPECT_EQUAL(B().baseName("foo").buildName(), "foo");
@@ -72,6 +67,6 @@ Test::Main()
     EXPECT_EQUAL(B().baseName("foo").parameter(" bar ( a , b ) . out ", false).buildName(), "foo(bar(a,b).out)");
     EXPECT_EQUAL(B().baseName("foo").parameter(" bar ( a , b ) . out.2 ", false).buildName(), "foo(bar(a,b).out.2)");
     EXPECT_EQUAL(B().baseName("foo").parameter(" bar ( a , b ) . out . 2 ", false).buildName(), "foo(\" bar ( a , b ) . out . 2 \")");
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

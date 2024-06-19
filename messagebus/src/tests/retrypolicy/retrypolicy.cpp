@@ -2,16 +2,11 @@
 
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace mbus;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("retrypolicy_test");
+TEST("retrypolicy_test") {
     constexpr double DELAY(0.001);
     RetryTransientErrorsPolicy policy;
     policy.setBaseDelay(DELAY);
@@ -34,6 +29,6 @@ Test::Main()
             EXPECT_TRUE(!policy.canRetry(j));
         }
     }
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

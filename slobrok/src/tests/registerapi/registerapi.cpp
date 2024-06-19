@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/slobrok/sbregister.h>
@@ -17,9 +17,6 @@ LOG_SETUP("registerapi_test");
 using slobrok::api::MirrorAPI;
 using slobrok::api::RegisterAPI;
 using slobrok::SlobrokServer;
-
-
-TEST_SETUP(Test);
 
 
 std::string
@@ -71,10 +68,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
     return false;
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("registerapi_test");
+TEST("registerapi_test") {
 
     SlobrokServer mock(18548);
     std::this_thread::sleep_for(300ms);
@@ -219,5 +213,6 @@ Test::Main()
 
     mock.stop();
     server.shutdown();
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

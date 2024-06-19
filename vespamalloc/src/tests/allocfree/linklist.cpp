@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "producerconsumer.h"
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/util/callstack.h>
 #include <thread>
@@ -11,8 +11,6 @@ LOG_SETUP("linklist_test");
 using vespalib::Consumer;
 using vespalib::Producer;
 using vespalib::ProducerConsumer;
-
-TEST_SETUP(Test);
 
 //-----------------------------------------------------------------------------
 
@@ -115,12 +113,11 @@ private:
 
 //-----------------------------------------------------------------------------
 
-int Test::Main() {
+TEST_MAIN() {
     int duration = 10;
-    if (_argc > 1) {
-        duration = atoi(_argv[1]);
+    if (argc > 1) {
+        duration = atoi(argv[1]);
     }
-    TEST_INIT("allocfree_test");
 
     ASSERT_EQUAL(1024ul, sizeof(List));
 
@@ -185,5 +182,4 @@ int Test::Main() {
     }
     n =  List::linkOut(sharedList);
     ASSERT_TRUE(n == nullptr);
-    TEST_DONE();
 }

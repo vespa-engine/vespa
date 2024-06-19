@@ -12,12 +12,6 @@
     app myapp; \
     return myapp.Entry(argc, argv); \
   }
-#define TEST_SETUP(test) \
-  class test : public vespalib::TestApp \
-  { \
-    public: int Main() override; \
-  }; \
-  TEST_APPHOOK(test)
 
 namespace vespalib {
 

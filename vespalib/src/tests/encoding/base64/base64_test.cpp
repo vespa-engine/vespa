@@ -1,17 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vector>
 
 using namespace vespalib;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("base64_test");
+TEST("base64_test") {
 
         // Basic test without padding
     std::string source = "No need to pad this string.";
@@ -78,6 +73,6 @@ Test::Main()
     EXPECT_EQUAL(60, Base64::decode(encoded.c_str(), encoded.size(),
                                   &buffer[0], minSizeNeeded));
     EXPECT_EQUAL(source, std::string(&buffer[0], 60));
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

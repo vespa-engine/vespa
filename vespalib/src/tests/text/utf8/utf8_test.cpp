@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -15,12 +14,7 @@ LOG_SETUP("utf8_test");
 
 using namespace vespalib;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("utf8_test");
+TEST("utf8_test") {
 
     for (uint32_t h = 0; h < 0x1100; h++) {
         vespalib::string data;
@@ -80,5 +74,6 @@ Test::Main()
         }
         EXPECT_TRUE(! r.hasMore());
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

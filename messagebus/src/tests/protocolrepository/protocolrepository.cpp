@@ -1,11 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/protocolrepository.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace mbus;
-
-TEST_SETUP(Test);
 
 class TestProtocol : public IProtocol {
 private:
@@ -32,10 +30,7 @@ public:
     }
 };
 
-int
-Test::Main()
-{
-    TEST_INIT("protocolrepository_test");
+TEST("protocolrepository_test") {
 
     ProtocolRepository repo;
     IProtocol::SP prev;
@@ -49,6 +44,6 @@ Test::Main()
 
     policy = repo.getRoutingPolicy("foo", "bar", "baz");
     ASSERT_FALSE(policy);
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

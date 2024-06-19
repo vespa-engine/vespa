@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
@@ -14,8 +14,6 @@ LOG_SETUP("messageordering_test");
 
 using namespace mbus;
 using namespace std::chrono_literals;
-
-TEST_SETUP(Test);
 
 RoutingSpec
 getRouting()
@@ -138,10 +136,7 @@ VerifyReplyReceptor::waitUntilDone(int waitForCount) const
     }
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("messageordering_test");
+TEST("messageordering_test") {
 
     Slobrok     slobrok;
     TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
@@ -178,6 +173,6 @@ Test::Main()
     src.waitUntilDone(messageCount);
 
     ASSERT_EQUAL(std::string(), src.getFailure());
-
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

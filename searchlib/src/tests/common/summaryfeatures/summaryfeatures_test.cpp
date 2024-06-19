@@ -1,18 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("summaryfeatures_test");
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/featureset.h>
 
 using vespalib::FeatureSet;
 using vespalib::Memory;
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("summaryfeatures_test");
+TEST("summaryfeatures_test") {
     {
         FeatureSet sf;
         EXPECT_EQUAL(sf.getNames().size(), 0u);
@@ -152,5 +147,6 @@ Test::Main()
         EXPECT_TRUE(sf.getFeaturesByDocId(45) == nullptr);
         EXPECT_TRUE(sf.getFeaturesByDocId(55) == nullptr);
     }
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

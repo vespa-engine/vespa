@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <algorithm>
@@ -15,8 +15,6 @@ LOG_SETUP("mirrorapi_test");
 
 using slobrok::api::MirrorAPI;
 using slobrok::SlobrokServer;
-
-TEST_SETUP(Test);
 
 //-----------------------------------------------------------------------------
 
@@ -119,10 +117,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
 }
 
 
-int
-Test::Main()
-{
-    TEST_INIT("mirrorapi_test");
+TEST("mirrorapi_test") {
 
     SlobrokServer mock(18501);
     std::this_thread::sleep_for(300ms);
@@ -224,5 +219,6 @@ Test::Main()
 
     mock.stop();
     transport.ShutDown(true);
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }
