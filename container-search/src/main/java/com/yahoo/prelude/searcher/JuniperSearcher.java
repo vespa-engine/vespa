@@ -79,6 +79,7 @@ public class JuniperSearcher extends Searcher {
 
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
+        execution.fill(result, summaryClass);
         int worstCase = result.getHitCount();
         List<Hit> hits = new ArrayList<>(worstCase);
         for (Iterator<Hit> i = result.hits().unorderedDeepIterator(); i.hasNext();) {
@@ -88,7 +89,6 @@ public class JuniperSearcher extends Searcher {
 
             hits.add(fastHit);
         }
-        execution.fill(result, summaryClass);
         highlight(result.getQuery().getPresentation().getBolding(), hits.iterator(), summaryClass,
                   execution.context().getIndexFacts().newSession(result.getQuery()));
     }
