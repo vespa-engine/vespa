@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_folded_string_compare_test_app TEST
     SOURCES
     folded_string_compare_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_folded_string_compare_test_app COMMAND searchlib_folded_string_compare_test_app)

@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_tensor_from_labels_test_app TEST
     SOURCES
     tensor_from_labels_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
 )
 vespa_add_test(NAME searchlib_tensor_from_labels_test_app COMMAND searchlib_tensor_from_labels_test_app)

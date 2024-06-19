@@ -5,5 +5,5 @@ vespa_add_executable(searchlib_vespa-ranking-expression-analyzer_app
     OUTPUT_NAME vespa-ranking-expression-analyzer
     INSTALL bin
     DEPENDS
-    searchlib
+    vespa_searchlib
 )

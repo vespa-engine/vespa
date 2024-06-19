@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_posting_list_test_app TEST
     posting_list_test.cpp
     DEPENDS
     searchlib_test
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_posting_list_test_app NO_VALGRIND COMMAND searchlib_posting_list_test_app)
@@ -15,5 +15,5 @@ vespa_add_executable(searchlib_postinglistbm_app TEST
     stress_runner.cpp
     DEPENDS
     searchlib_test
-    searchlib
+    vespa_searchlib
 )

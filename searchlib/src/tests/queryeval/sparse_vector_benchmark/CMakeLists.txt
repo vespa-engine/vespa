@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_sparse_vector_benchmark_test_app
     SOURCES
     sparse_vector_benchmark_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_sparse_vector_benchmark_test_app COMMAND searchlib_sparse_vector_benchmark_test_app BENCHMARK) 

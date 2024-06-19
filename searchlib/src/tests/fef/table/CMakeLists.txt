@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_table_test_app TEST
     SOURCES
     table_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_table_test_app COMMAND searchlib_table_test_app)

@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_queryeval_flow_test_app TEST
     SOURCES
     queryeval_flow_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_queryeval_flow_test_app COMMAND searchlib_queryeval_flow_test_app)

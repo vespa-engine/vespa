@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_engine_proto_rpc_adapter_test_app TEST
     SOURCES
     proto_rpc_adapter_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_engine_proto_rpc_adapter_test_app COMMAND searchlib_engine_proto_rpc_adapter_test_app)

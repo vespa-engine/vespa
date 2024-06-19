@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_stringattribute_test_app TEST
     SOURCES
     stringattribute_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_stringattribute_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/stringattribute_test.sh
                DEPENDS searchlib_stringattribute_test_app)

@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_attribute_test_app TEST
     SOURCES
     attribute_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_attribute_test_app COMMAND searchlib_attribute_test_app COST 250)

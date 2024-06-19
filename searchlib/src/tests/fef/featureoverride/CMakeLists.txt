@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_featureoverride_test_app TEST
     SOURCES
     featureoverride_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_featureoverride_test_app COMMAND searchlib_featureoverride_test_app)

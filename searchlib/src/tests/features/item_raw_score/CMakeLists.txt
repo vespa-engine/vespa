@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_item_raw_score_test_app TEST
     SOURCES
     item_raw_score_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_item_raw_score_test_app COMMAND searchlib_item_raw_score_test_app)

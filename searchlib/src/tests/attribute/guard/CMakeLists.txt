@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_attributeguard_test_app TEST
     SOURCES
     attributeguard_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_attributeguard_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/attributeguard_test.sh

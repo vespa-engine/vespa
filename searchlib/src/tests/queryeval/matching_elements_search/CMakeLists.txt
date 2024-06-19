@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_matching_elements_search_test_app TEST
     SOURCES
     matching_elements_search_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

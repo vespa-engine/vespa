@@ -8,7 +8,7 @@ vespa_add_executable(searchlib_iterator_benchmark_test_app TEST
     disk_index_builder.cpp
     iterator_benchmark_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

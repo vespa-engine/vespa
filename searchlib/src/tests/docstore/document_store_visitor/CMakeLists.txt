@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_document_store_visitor_test_app TEST
     SOURCES
     document_store_visitor_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_document_store_visitor_test_app COMMAND searchlib_document_store_visitor_test_app)

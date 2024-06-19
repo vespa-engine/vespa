@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_monitoring_search_iterator_test_app TEST
     SOURCES
     monitoring_search_iterator_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
 )
 vespa_add_test(NAME searchlib_monitoring_search_iterator_test_app COMMAND searchlib_monitoring_search_iterator_test_app)

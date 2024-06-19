@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_features_bm25_test_app TEST
     SOURCES
     bm25_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

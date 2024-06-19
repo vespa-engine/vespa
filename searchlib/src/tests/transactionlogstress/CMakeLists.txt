@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_translogstress_app
     SOURCES
     translogstress.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_translogstress_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/translogstress_test.sh BENCHMARK)

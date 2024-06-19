@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_attributefilewriter_test_app TEST
     SOURCES
     attributefilewriter_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_attributefilewriter_test_app COMMAND searchlib_attributefilewriter_test_app)

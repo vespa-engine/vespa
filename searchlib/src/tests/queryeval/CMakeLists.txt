@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_queryeval_test_app TEST
     SOURCES
     queryeval_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
 )
 vespa_add_test(NAME searchlib_queryeval_test_app COMMAND searchlib_queryeval_test_app)

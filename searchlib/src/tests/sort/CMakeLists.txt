@@ -3,14 +3,14 @@ vespa_add_executable(searchlib_sortbenchmark_app
     SOURCES
     sortbenchmark.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_sortbenchmark_app COMMAND searchlib_sortbenchmark_app BENCHMARK)
 vespa_add_executable(searchlib_sort_test_app
     SOURCES
     sort_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
   target_link_options(searchlib_sort_test_app PRIVATE "-Wno-aggressive-loop-optimizations")
@@ -20,7 +20,7 @@ vespa_add_executable(searchlib_uca_stress_app
     SOURCES
     uca.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_uca_stress_app COMMAND searchlib_uca_stress_app BENCHMARK)

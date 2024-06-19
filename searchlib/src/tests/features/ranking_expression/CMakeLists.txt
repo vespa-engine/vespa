@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_ranking_expression_test_app TEST
     SOURCES
     ranking_expression_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_ranking_expression_test_app COMMAND searchlib_ranking_expression_test_app)

@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_document_inverter_collection_test_app TEST
     document_inverter_collection_test.cpp
     DEPENDS
     searchlib_test
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_document_inverter_collection_test_app COMMAND searchlib_document_inverter_collection_test_app)

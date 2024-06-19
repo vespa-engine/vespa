@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_simple_phrase_test_app TEST
     SOURCES
     simple_phrase_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_simple_phrase_test_app COMMAND searchlib_simple_phrase_test_app)

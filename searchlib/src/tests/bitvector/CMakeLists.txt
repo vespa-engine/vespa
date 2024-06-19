@@ -3,6 +3,6 @@ vespa_add_executable(searchlib_bitvectorbenchmark_test_app
     SOURCES
     bitvectorbenchmark.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
 )
 vespa_add_test(NAME searchlib_bitvectorbenchmark_test_app COMMAND searchlib_bitvectorbenchmark_test_app BENCHMARK)

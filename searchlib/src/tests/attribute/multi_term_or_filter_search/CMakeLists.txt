@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_multi_term_or_filter_search_test_app TEST
     SOURCES
     multi_term_or_filter_search_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     searchlib_test
     GTest::GTest
 )

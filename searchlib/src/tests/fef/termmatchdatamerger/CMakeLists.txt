@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_termmatchdatamerger_test_app TEST
     SOURCES
     termmatchdatamerger_test.cpp
     DEPENDS
-    searchlib
+    vespa_searchlib
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_termmatchdatamerger_test_app COMMAND searchlib_termmatchdatamerger_test_app)
