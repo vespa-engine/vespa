@@ -2,6 +2,7 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.schema.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
@@ -88,6 +89,31 @@ public class PagedAttributeValidatorTestCase {
     @Test
     void reference_attribute_support_paged_setting() throws ParseException {
         assertPagedSupported("reference<parent>", Optional.of(getSd("parent", "int", false)));
+    }
+
+    @Test
+    void hnsw_index_triggers_warning_with_paged_setting() throws ParseException {
+        var logger = new TestableDeployLogger();
+        var sd = """
+                schema test {
+                  document test {
+                    field pos type tensor(x[2]) {
+                       indexing: attribute | index
+                       attribute: paged
+                       index {
+                         hnsw {
+                         }
+                       }
+                    }
+                  }
+                }
+                """;
+        var schema = createFromString(sd, logger);
+        assertEquals(1, logger.warnings.size());
+        assertEquals("For schema 'test', field 'pos': " +
+                "The 'paged' attribute setting in combination with HNSW indexing is strongly discouraged, see " +
+                "https://docs.vespa.ai/en/attributes.html#paged-attributes-disadvantages for details",
+                logger.warnings.get(0));
     }
 
     private void assertPagedSettingNotSupported(String fieldType) throws ParseException {
