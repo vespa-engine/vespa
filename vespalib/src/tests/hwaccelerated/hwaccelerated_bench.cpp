@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/hwaccelerated/generic.h>
 #include <vespa/vespalib/util/time.h>
 #include <cinttypes>

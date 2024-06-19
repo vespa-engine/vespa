@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "iaccelrated.h"
+#include "iaccelerated.h"
 
 namespace vespalib::hwaccelerated {
 

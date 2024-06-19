@@ -4,7 +4,7 @@
 #include "andsearch.h"
 #include "andnotsearch.h"
 #include "sourceblendersearch.h"
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 namespace search::queryeval {
 

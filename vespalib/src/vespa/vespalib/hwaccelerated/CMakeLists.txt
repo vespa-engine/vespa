@@ -8,7 +8,7 @@ endif()
 
 vespa_add_library(vespa_hwaccelerated
     SOURCES
-    iaccelrated.cpp
+    iaccelerated.cpp
     generic.cpp
     ${ACCEL_FILES}
     DEPENDS

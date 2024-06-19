@@ -2,7 +2,7 @@
 
 #include "euclidean_distance.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <cmath>
 
 using vespalib::typify_invoke;

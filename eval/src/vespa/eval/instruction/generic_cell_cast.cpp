@@ -5,7 +5,7 @@
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <cassert>
 
 using namespace vespalib::eval::tensor_function;

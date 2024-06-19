@@ -3,7 +3,7 @@
 #pragma once
 #include <cstring>
 #include <vespa/vespalib/util/arrayref.h>
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 template <typename T, size_t VLEN>
 static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)

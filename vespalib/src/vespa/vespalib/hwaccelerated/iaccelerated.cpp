@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "iaccelrated.h"
+#include "iaccelerated.h"
 #include "generic.h"
 #ifdef __x86_64__
 #include "avx2.h"
@@ -215,16 +215,16 @@ class RuntimeVerificator
 public:
     RuntimeVerificator();
 private:
-    static void verify(const IAccelrated & accelrated) {
-        verifyDotproduct<float>(accelrated);
-        verifyDotproduct<double>(accelrated);
-        verifyDotproduct<int32_t>(accelrated);
-        verifyDotproduct<int64_t>(accelrated);
-        verifyEuclideanDistance<float>(accelrated);
-        verifyEuclideanDistance<double>(accelrated);
-        verifyPopulationCount(accelrated);
-        verifyAnd64(accelrated);
-        verifyOr64(accelrated);
+    static void verify(const IAccelrated & accelerated) {
+        verifyDotproduct<float>(accelerated);
+        verifyDotproduct<double>(accelerated);
+        verifyDotproduct<int32_t>(accelerated);
+        verifyDotproduct<int64_t>(accelerated);
+        verifyEuclideanDistance<float>(accelerated);
+        verifyEuclideanDistance<double>(accelerated);
+        verifyPopulationCount(accelerated);
+        verifyAnd64(accelerated);
+        verifyOr64(accelerated);
     }
 };
 

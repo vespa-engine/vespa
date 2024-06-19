@@ -2,7 +2,7 @@
 
 #include "prenormalized_angular_distance.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypifyCellType;

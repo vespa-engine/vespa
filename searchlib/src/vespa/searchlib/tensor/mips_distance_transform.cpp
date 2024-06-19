@@ -2,7 +2,7 @@
 
 #include "mips_distance_transform.h"
 #include "temporary_vector_store.h"
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <cmath>
 #include <variant>
 

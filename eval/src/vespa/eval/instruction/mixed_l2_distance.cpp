@@ -3,7 +3,7 @@
 #include "mixed_l2_distance.h"
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/util/require.h>
 
 #include <vespa/log/log.h>

@@ -4,7 +4,7 @@
 #include "allocatedbitvector.h"
 #include "partialbitvector.h"
 #include <vespa/searchlib/util/file_settings.h>
-#include <vespa/vespalib/hwaccelerated/iaccelrated.h>
+#include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/util/size_literals.h>
