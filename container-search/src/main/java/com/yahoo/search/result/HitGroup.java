@@ -442,7 +442,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     /**
      * Combines two error hits to one. Any one argument may be null, in which case the other is returned.
      *
-     * @return true if this should also be added to the list of hits of this result
+     * @return Merged errors
      */
     private DefaultErrorHit merge(DefaultErrorHit first, DefaultErrorHit second) {
         if (first == null) return second;
@@ -716,7 +716,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             Set<String> filled = getFilledInternal();
             if (filled == null) {
                 if (hitFilled.isEmpty()) {
-                    filled = null;
+                    // Intentionally empty
                 } else if (hitFilled.size() == 1) {
                     //TODO Avoid needing set that allows null ....
                     filled = Collections.singleton(hitFilled.iterator().next());
@@ -813,7 +813,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         }
 
 
-        for (; i.hasNext();) {
+        while (i.hasNext()) {
             Hit hit = i.next();
             analyzeHit(hit);
 

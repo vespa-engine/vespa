@@ -1,7 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * An iterator for the forest of hits in a result.
@@ -21,7 +25,7 @@ public class DeepHitIterator implements Iterator<Hit> {
      * Create a deep hit iterator based on the given hit iterator.
      *
      * @param it      The hits iterator to traverse.
-     * @param ordered Whether or not the hits should be ordered.
+     * @param ordered Whether the hits should be ordered.
      */
     public DeepHitIterator(Iterator<Hit> it, boolean ordered) {
         this.ordered = ordered;
