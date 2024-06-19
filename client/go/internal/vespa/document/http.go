@@ -282,11 +282,14 @@ func (c *Client) Send(document Document) Result {
 }
 
 // Get retrieves document with given ID.
-func (c *Client) Get(id Id) Result {
+func (c *Client) Get(id Id, fieldSet string) Result {
 	start := c.now()
 	buf := c.buffer()
 	defer c.buffers.Put(buf)
 	c.writeDocumentPath(id, buf)
+	if fieldSet != "" {
+		writeQueryParam(buf, buf.Len(), true, "fieldSet", fieldSet)
+	}
 	url := buf.String()
 	result := Result{Id: id}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
