@@ -92,7 +92,7 @@
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
         <commons-compress.vespa.version>1.26.2</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.8.0</commons-cli.vespa.version>
-        <curator.vespa.version>5.6.0</curator.vespa.version>
+        <curator.vespa.version>5.7.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
         <eclipse-angus.vespa.version>2.0.2</eclipse-angus.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
