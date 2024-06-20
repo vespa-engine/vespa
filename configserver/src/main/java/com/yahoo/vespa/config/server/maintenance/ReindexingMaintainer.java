@@ -16,7 +16,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +60,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         for (Tenant tenant : applicationRepository.tenantRepository().getAllTenants()) {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications())
-                applicationRepository.getActiveApplicationSet(id)
+                applicationRepository.getActiveApplicationVersions(id)
                                      .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
                                      .ifPresent(application -> {
                                          try {

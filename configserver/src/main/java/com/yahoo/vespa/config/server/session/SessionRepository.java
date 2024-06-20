@@ -547,13 +547,13 @@ public class SessionRepository {
         }
     }
 
-    private ApplicationVersions loadApplication(Session session, Optional<ApplicationVersions> previousApplicationSet) {
+    private ApplicationVersions loadApplication(Session session, Optional<ApplicationVersions> previousApplicationVersions) {
         log.log(Level.FINE, () -> "Loading application for " + session);
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         ActivatedModelsBuilder builder = new ActivatedModelsBuilder(session.getTenantName(),
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
-                                                                    previousApplicationSet,
+                                                                    previousApplicationVersions,
                                                                     sessionPreparer.getExecutor(),
                                                                     curator,
                                                                     metrics,

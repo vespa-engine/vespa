@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Immutable set of {@link Application}s with the same {@link ApplicationId}, applications have difference vespa versions.
+ * Immutable set of {@link Application}s with the same {@link ApplicationId},
+ * applications have different vespa versions. There will always be at least one application version.
  *
  * @author vegard
  */
@@ -24,23 +25,17 @@ public final class ApplicationVersions {
     private final HashMap<Version, Application> applications = new HashMap<>();
 
     private ApplicationVersions(List<Application> applications) {
-        if (applications.isEmpty()) throw new IllegalArgumentException("application list cannot be empty");
+        if (applications.isEmpty())
+            throw new IllegalArgumentException("application list cannot be empty");
+        if (applications.stream().map(Application::getId).distinct().count() > 1)
+            throw new IllegalArgumentException("All application ids must be equal");
+        if (applications.stream().map(Application::getApplicationGeneration).distinct().count() > 1)
+            throw new IllegalArgumentException("All config generations must be equal");
 
         Application firstApp = applications.get(0);
         applicationId = firstApp.getId();
         generation = firstApp.getApplicationGeneration();
-        for (Application application : applications) {
-            this.applications.put(application.getVespaVersion(), application);
-            ApplicationId applicationId = application.getId();
-            if ( ! applicationId.equals(this.applicationId)) {
-                throw new IllegalArgumentException("Trying to create set with different application ids (" +
-                                                   application + " and " + this.applicationId + ")");
-            }
-            if ( ! application.getApplicationGeneration().equals(generation)) {
-                throw new IllegalArgumentException("Trying to create set with different generations ("  +
-                                                   generation + " and " + this.generation + ")");
-            }
-        }
+        applications.forEach(application -> this.applications.put(application.getVespaVersion(), application));
         latestVersion = this.applications.keySet().stream().max(Version::compareTo).get();
     }
 
@@ -90,6 +85,7 @@ public final class ApplicationVersions {
         return applications.values().stream()
                 .flatMap(app -> app.getModel().getHosts().stream()
                         .map(HostInfo::getHostname))
+                .distinct()
                 .toList();
     }
 
@@ -105,9 +101,8 @@ public final class ApplicationVersions {
         return new ArrayList<>(applications.values());
     }
 
-    public List<Version> versions(ApplicationId applicationId) {
+    public List<Version> versions() {
         return applications.values().stream()
-                .filter(application -> application.getId().equals(applicationId))
                 .map(Application::getVespaVersion)
                 .sorted()
                 .toList();

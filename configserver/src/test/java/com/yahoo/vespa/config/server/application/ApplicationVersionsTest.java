@@ -53,7 +53,7 @@ public class ApplicationVersionsTest {
     public void testGetAllVersions() {
         applicationVersions = ApplicationVersions.fromList(applications);
         assertEquals(List.of(Version.fromString("1.2.3"), Version.fromString("1.2.4"), Version.fromString("1.2.5")),
-                     applicationVersions.versions(ApplicationId.defaultId()));
+                     applicationVersions.versions());
     }
 
     private Application createApplication(Version version) {
