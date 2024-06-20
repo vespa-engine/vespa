@@ -242,10 +242,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
     }
 
     private void notifyConfigActivationListeners(ApplicationVersions applicationVersions) {
-        List<Application> applications = applicationVersions.applications();
-        if (applications.isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
-
-        hostRegistry.update(applications.get(0).getId(), applicationVersions.allHosts());
+        hostRegistry.update(applicationVersions.getId(), applicationVersions.allHosts());
         configActivationListener.configActivated(applicationVersions);
     }
 

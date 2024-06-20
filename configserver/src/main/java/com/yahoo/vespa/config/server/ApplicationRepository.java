@@ -774,10 +774,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public List<Version> getAllVersions(ApplicationId applicationId) {
-        Optional<ApplicationVersions> applicationVersions = getActiveApplicationVersions(applicationId);
-        return applicationVersions.isEmpty()
-                ? List.of()
-                : applicationVersions.get().versions(applicationId);
+        return getActiveApplicationVersions(applicationId).map(ApplicationVersions::versions).orElse(List.of());
     }
 
     public HttpResponse validateSecretStore(ApplicationId applicationId, SystemName systemName, Slime slime) {
