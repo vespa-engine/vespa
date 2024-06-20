@@ -3,7 +3,7 @@ vespa_add_executable(vsm_charbuffer_test_app TEST
     SOURCES
     charbuffer_test.cpp
     DEPENDS
-    streamingvisitors
+    vespa_streamingvisitors
     GTest::gtest
 )
 vespa_add_test(NAME vsm_charbuffer_test_app COMMAND vsm_charbuffer_test_app)

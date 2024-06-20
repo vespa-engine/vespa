@@ -3,7 +3,7 @@ vespa_add_executable(streamingvisitors_tokens_converter_test_app TEST
     SOURCES
     tokens_converter_test.cpp
     DEPENDS
-    streamingvisitors
+    vespa_streamingvisitors
     GTest::gtest
 )
 

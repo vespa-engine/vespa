@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespa_storage
-    streamingvisitors
+    vespa_streamingvisitors
 
     APPS
     src/apps/storaged
