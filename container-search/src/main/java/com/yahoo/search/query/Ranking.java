@@ -16,6 +16,7 @@ import com.yahoo.search.query.ranking.RankFeatures;
 import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.query.ranking.SecondPhase;
 import com.yahoo.search.query.ranking.SoftTimeout;
+import com.yahoo.search.query.ranking.Significance;
 import com.yahoo.search.result.ErrorMessage;
 
 import java.util.Objects;
@@ -49,6 +50,7 @@ public class Ranking implements Cloneable {
     public static final String SECOND_PHASE = "secondPhase";
     public static final String GLOBAL_PHASE = "globalPhase";
     public static final String DIVERSITY = "diversity";
+    public static final String SIGNIFICANCE = "significance";
     public static final String SOFTTIMEOUT = "softtimeout";
     public static final String MATCHING = "matching";
     public static final String FEATURES = "features";
@@ -75,6 +77,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(Matching.getArgumentType())));
+        argumentType.addField(new FieldDescription(SIGNIFICANCE, new QueryProfileFieldType(Significance.getArgumentType())));
         argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature input")); // Repeated at the end of RankFeatures
         argumentType.addField(new FieldDescription(PROPERTIES, "query-profile", "rankproperty"));
         argumentType.freeze();
@@ -118,7 +121,7 @@ public class Ranking implements Cloneable {
 
     private SoftTimeout softTimeout = new SoftTimeout();
 
-    private boolean useSignificance = false;
+    private Significance significance = new Significance();
 
     public Ranking(Query parent) {
         this.parent = parent;
@@ -224,14 +227,6 @@ public class Ranking implements Cloneable {
     /** Returns whether rank features should be dumped with the result of this query, default false */
     public boolean getListFeatures() { return listFeatures; }
 
-    /** Set whether to use significance in ranking */
-    @com.yahoo.api.annotations.Beta
-    public void setUseSignificance(boolean useSignificance) { this.useSignificance = useSignificance; }
-
-    /** Returns whether to use significance in ranking */
-    @com.yahoo.api.annotations.Beta
-    public boolean getUseSignificance() { return useSignificance; }
-
     /** Returns the match phase rank settings of this. This is never null. */
     public MatchPhase getMatchPhase() { return matchPhase; }
 
@@ -246,6 +241,10 @@ public class Ranking implements Cloneable {
 
     /** Returns the soft timeout settings of this. This is never null. */
     public SoftTimeout getSoftTimeout() { return softTimeout; }
+
+    /** Returns the significance settings of this. This is never null. */
+    @com.yahoo.api.annotations.Beta
+    public Significance getSignificance() { return significance; }
 
     /** Returns the sorting spec of this query, or null if none is set */
     public Sorting getSorting() { return sorting; }

@@ -51,8 +51,17 @@ public class SignificanceSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
+        var ranking = query.getRanking();
         var rankProfileName = query.getRanking().getProfile();
 
+        Optional<Boolean> useSignificanceModelOverride = ranking.getSignificance().getUseModel();
+
+        if (useSignificanceModelOverride.isPresent() && !useSignificanceModelOverride.get()) {
+            return execution.search(query);
+        }
+        if (useSignificanceModelOverride.isPresent()) {
+            return calculateAndSetSignificance(query, execution);
+        }
         // Determine significance setup per schema for the given rank profile
         var perSchemaSetup = schemaInfo.newSession(query).schemas().stream()
                 .collect(Collectors.toMap(Schema::name, schema ->
@@ -72,7 +81,7 @@ public class SignificanceSearcher extends Searcher {
                                     "(https://docs.vespa.ai/en/schemas.html#multiple-schemas). " +
                                     "Specify same 'significance' configuration for all selected schemas " +
                                     "(https://docs.vespa.ai/en/reference/schema-reference.html#significance).")
-                            .formatted(rankProfileName, perSchemaSetup.keySet())));
+                                    .formatted(rankProfileName, perSchemaSetup.keySet())));
             return result;
         }
 
@@ -80,6 +89,10 @@ public class SignificanceSearcher extends Searcher {
         var useSignificanceModel = uniqueSetups.iterator().next();
         if (!useSignificanceModel) return execution.search(query);
 
+        return calculateAndSetSignificance(query, execution);
+    }
+
+    private Result calculateAndSetSignificance(Query query, Execution execution) {
         Language language = query.getModel().getParsingLanguage();
         Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
 
@@ -111,7 +124,6 @@ public class SignificanceSearcher extends Searcher {
     public static double calculateIDF(long N, long nq_i) {
         return Math.log(1 + (N - nq_i + 0.5) / (nq_i + 0.5));
     }
-
 }
 
 

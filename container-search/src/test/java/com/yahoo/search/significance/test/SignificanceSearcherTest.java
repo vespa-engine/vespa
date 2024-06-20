@@ -79,6 +79,40 @@ public class SignificanceSearcherTest {
         WordItem w0 = (WordItem) root.getItem(0);
         assertEquals(helloSignificanceValue, w0.getSignificance());
     }
+
+    @Test
+    void testSignificanceValueOnSimpleQueryWithRankingOverride() {
+        Query q1 = new Query("?query=hello&ranking.significance.useModel=true");
+        q1.getRanking().setProfile("significance-ranking");
+        AndItem root = new AndItem();
+        WordItem tmp;
+        tmp = new WordItem("hello", true);
+        root.addItem(tmp);
+
+        q1.getModel().getQueryTree().setRoot(root);
+
+        SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
+        var helloFrequency = model.documentFrequency("hello");
+        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
+        Result r = createExecution(searcher).search(q1);
+
+        root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
+        WordItem w0 = (WordItem) root.getItem(0);
+        assertEquals(helloSignificanceValue, w0.getSignificance());
+
+        Query q2 = new Query("?query=hello&ranking.significance.useModel=false");
+        q2.getRanking().setProfile("significance-ranking");
+        root = new AndItem();
+        tmp = new WordItem("hello", true);
+        root.addItem(tmp);
+
+        q2.getModel().getQueryTree().setRoot(root);
+        Result r2 = createExecution(searcher).search(q2);
+        root = (AndItem) r2.getQuery().getModel().getQueryTree().getRoot();
+        WordItem w1 = (WordItem) root.getItem(0);
+        assertEquals(0.0, w1.getSignificance());
+    }
+
     @Test
     void testSignificanceValueOnSimpleANDQuery() {
 

@@ -5511,13 +5511,12 @@
       "public com.yahoo.search.query.ranking.RankProperties getProperties()",
       "public void setListFeatures(boolean)",
       "public boolean getListFeatures()",
-      "public void setUseSignificance(boolean)",
-      "public boolean getUseSignificance()",
       "public com.yahoo.search.query.ranking.MatchPhase getMatchPhase()",
       "public com.yahoo.search.query.ranking.SecondPhase getSecondPhase()",
       "public com.yahoo.search.query.ranking.GlobalPhase getGlobalPhase()",
       "public com.yahoo.search.query.ranking.Matching getMatching()",
       "public com.yahoo.search.query.ranking.SoftTimeout getSoftTimeout()",
+      "public com.yahoo.search.query.ranking.Significance getSignificance()",
       "public com.yahoo.search.query.Sorting getSorting()",
       "public void setSorting(com.yahoo.search.query.Sorting)",
       "public void setSorting(java.lang.String)",
@@ -5546,6 +5545,7 @@
       "public static final java.lang.String SECOND_PHASE",
       "public static final java.lang.String GLOBAL_PHASE",
       "public static final java.lang.String DIVERSITY",
+      "public static final java.lang.String SIGNIFICANCE",
       "public static final java.lang.String SOFTTIMEOUT",
       "public static final java.lang.String MATCHING",
       "public static final java.lang.String FEATURES",
@@ -7191,6 +7191,28 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.search.query.ranking.Significance" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "java.lang.Cloneable"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void setUseModel(boolean)",
+      "public java.util.Optional getUseModel()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public com.yahoo.search.query.ranking.Significance clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [
+      "public static final java.lang.String USE_MODEL"
+    ]
   },
   "com.yahoo.search.query.ranking.SoftTimeout" : {
     "superClass" : "java.lang.Object",
