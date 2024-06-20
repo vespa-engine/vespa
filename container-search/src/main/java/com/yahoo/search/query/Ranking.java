@@ -243,6 +243,7 @@ public class Ranking implements Cloneable {
     public SoftTimeout getSoftTimeout() { return softTimeout; }
 
     /** Returns the significance settings of this. This is never null. */
+    @com.yahoo.api.annotations.Beta
     public Significance getSignificance() { return significance; }
 
     /** Returns the sorting spec of this query, or null if none is set */
