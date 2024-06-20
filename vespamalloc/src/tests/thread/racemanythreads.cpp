@@ -1,20 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <unistd.h>
 
 using namespace vespalib;
-
-class Test : public TestApp
-{
-public:
-    ~Test();
-    int Main() override;
-};
-
-Test::~Test()
-{
-}
 
 void * hammer(void * arg)
 {
@@ -42,15 +31,13 @@ void * hammer(void * arg)
     return arg;
 }
 
-int Test::Main()
-{
-    TEST_INIT("racemanythreads_test");
+TEST_MAIN() {
     size_t threadCount(1024);
     long seconds(10);
-    if (_argc >= 2) {
-        threadCount = strtoul(_argv[1], NULL, 0);
-        if (_argc >= 3) {
-            seconds = strtoul(_argv[2], NULL, 0);
+    if (argc >= 2) {
+        threadCount = strtoul(argv[1], NULL, 0);
+        if (argc >= 3) {
+            seconds = strtoul(argv[2], NULL, 0);
         }
     }
 
@@ -65,8 +52,4 @@ int Test::Main()
         void *retval;
         EXPECT_EQUAL(pthread_join(threads[i], &retval), 0);
     }
-
-    TEST_DONE();
 }
-
-TEST_APPHOOK(Test);
