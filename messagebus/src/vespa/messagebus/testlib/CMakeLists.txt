@@ -12,5 +12,5 @@ vespa_add_library(vespa_messagebus-test
     INSTALL lib64
     DEPENDS
     vespa_messagebus
-    slobrok_slobrokserver
+    vespa_slobrok_slobrokserver
 )

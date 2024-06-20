@@ -1,5 +1,5 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(slobrok_slobrokserver
+vespa_add_library(vespa_slobrok_slobrokserver
     SOURCES
     configshim.cpp
     exchange_manager.cpp
@@ -32,5 +32,5 @@ vespa_add_library(slobrok_slobrokserver
     union_service_map.cpp
     INSTALL lib64
     DEPENDS
-    slobrok
+    vespa_slobrok
 )

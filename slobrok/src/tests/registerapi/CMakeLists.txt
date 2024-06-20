@@ -3,6 +3,6 @@ vespa_add_executable(slobrok_registerapi_test_app TEST
     SOURCES
     registerapi.cpp
     DEPENDS
-    slobrok_slobrokserver
+    vespa_slobrok_slobrokserver
 )
 vespa_add_test(NAME slobrok_registerapi_test_app COMMAND slobrok_registerapi_test_app)
