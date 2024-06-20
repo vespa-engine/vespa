@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace vespalib;
 
@@ -31,21 +31,7 @@ void delete_vec_real(char *ptr)
 
 void (*delete_vec)(char *ptr) = delete_vec_real;
 
-class Test : public TestApp
-{
-public:
-    int Main() override;
-    ~Test();
-private:
-    void testFillValue(char *a);
-    void verifyPreWriteDetection(); // Should abort
-    void verifyPostWriteDetection(); // Should abort
-    void verifyWriteAfterFreeDetection(); // Should abort
-};
-
-Test::~Test() = default;
-
-void Test::testFillValue(char *a)
+void testFillValue(char *a)
 {
     // Verify fillvalue
     EXPECT_EQUAL((int)a[0], 0x66);
@@ -79,21 +65,21 @@ void Test::testFillValue(char *a)
     }
 }
 
-void Test::verifyPreWriteDetection()
+void verifyPreWriteDetection()
 {
     char * a = new_vec(8);
     overwrite_memory(a, -1);
     delete_vec(a);
 }
 
-void Test::verifyPostWriteDetection()
+void verifyPostWriteDetection()
 {
     char * a = new_vec(8);
     overwrite_memory(a, 8);
     delete_vec(a);
 }
 
-void Test::verifyWriteAfterFreeDetection()
+void verifyWriteAfterFreeDetection()
 {
     // Make sure that enough blocks of memory is allocated and freed.
     char * a = new_vec(256);
@@ -120,10 +106,7 @@ void Test::verifyWriteAfterFreeDetection()
     }
 }
 
-int Test::Main()
-{
-    TEST_INIT("overwrite_test");
-
+TEST_MAIN() {
     char * a = new_vec(256);
     memset(a, 0x77, 256);
     a[0] = 0;
@@ -136,17 +119,14 @@ int Test::Main()
     delete_vec(a);
     EXPECT_EQUAL(a, b);
 
-    if (_argc > 1) {
+    if (argc > 1) {
         testFillValue(a);
-        if (strcmp(_argv[1], "prewrite") == 0) {
+        if (strcmp(argv[1], "prewrite") == 0) {
             verifyPreWriteDetection();
-            return 0;
-        } else if (strcmp(_argv[1], "postwrite") == 0) {
+        } else if (strcmp(argv[1], "postwrite") == 0) {
             verifyPostWriteDetection();
-            return 0;
-        } else if (strcmp(_argv[1], "writeafterfree") == 0) {
+        } else if (strcmp(argv[1], "writeafterfree") == 0) {
             verifyWriteAfterFreeDetection();
-            return 0;
         }
 
     } else {
@@ -155,9 +135,4 @@ int Test::Main()
         EXPECT_EQUAL((int)a[1], 0x77);
         EXPECT_EQUAL((int)a[255], 0x77);
     }
-
-    TEST_DONE();
-    return 42;
 }
-
-TEST_APPHOOK(Test)
