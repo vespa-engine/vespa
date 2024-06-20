@@ -17,6 +17,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/curl"
+	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
 	"github.com/vespa-engine/vespa/client/go/internal/sse"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
@@ -68,20 +69,6 @@ func printCurl(stderr io.Writer, url string, service *vespa.Service) error {
 	return err
 }
 
-func parseHeaders(headers []string) (http.Header, error) {
-	h := make(http.Header)
-	for _, header := range headers {
-		kv := strings.SplitN(header, ":", 2)
-		if len(kv) < 2 {
-			return nil, fmt.Errorf("invalid header %q: missing colon separator", header)
-		}
-		k := kv[0]
-		v := strings.TrimSpace(kv[1])
-		h.Add(k, v)
-	}
-	return h, nil
-}
-
 func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format string, headers []string, waiter *Waiter) error {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
@@ -118,7 +105,7 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool, format stri
 			return err
 		}
 	}
-	header, err := parseHeaders(headers)
+	header, err := httputil.ParseHeader(headers)
 	if err != nil {
 		return err
 	}

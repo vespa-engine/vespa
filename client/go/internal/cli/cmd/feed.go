@@ -20,6 +20,7 @@ func addFeedFlags(cli *CLI, cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
 	cmd.PersistentFlags().StringVar(&options.compression, "compression", "auto", `Compression mode to use. Default is "auto" which compresses large documents. Must be "auto", "gzip" or "none"`)
 	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Individual feed operation timeout in seconds. 0 to disable (default 0)")
+	cmd.Flags().StringSliceVarP(&options.headers, "header", "", nil, "Add a header to all HTTP requests, on the format 'Header: Value'. This can be specified multiple times")
 	cmd.PersistentFlags().IntVar(&options.doomSecs, "deadline", 0, "Exit if this number of seconds elapse without any successful operations. 0 to disable (default 0)")
 	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 	cmd.PersistentFlags().StringVar(&options.route, "route", "", `Target Vespa route for feed operations (default "default")`)
@@ -49,6 +50,7 @@ type feedOptions struct {
 	speedtestBytes int
 	speedtestSecs  int
 	waitSecs       int
+	headers        []string
 
 	memprofile string
 	cpuprofile string
@@ -238,12 +240,17 @@ func feed(files []string, options feedOptions, cli *CLI, cmd *cobra.Command) err
 	if err != nil {
 		return err
 	}
+	header, err := httputil.ParseHeader(options.headers)
+	if err != nil {
+		return err
+	}
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
 		Timeout:     timeout,
 		Route:       options.route,
 		TraceLevel:  options.traceLevel,
 		BaseURL:     baseURL,
+		Header:      header,
 		Speedtest:   options.speedtestBytes > 0,
 		NowFunc:     cli.now,
 	}, clients)

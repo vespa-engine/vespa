@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/build"
@@ -98,4 +99,20 @@ func NewClient(timeout time.Duration) Client {
 			Transport: http.DefaultTransport,
 		},
 	}
+}
+
+// ParseHeader parses headers slice into a http.Header. Each element in the slice is expected to contain a string on
+// the format "Header: Value".
+func ParseHeader(headers []string) (http.Header, error) {
+	h := make(http.Header)
+	for _, header := range headers {
+		kv := strings.SplitN(header, ":", 2)
+		if len(kv) < 2 {
+			return nil, fmt.Errorf("invalid header %q: missing colon separator", header)
+		}
+		k := kv[0]
+		v := strings.TrimSpace(kv[1])
+		h.Add(k, v)
+	}
+	return h, nil
 }
