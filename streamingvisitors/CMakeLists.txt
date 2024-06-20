@@ -2,7 +2,7 @@
 vespa_define_module(
     DEPENDS
     vespalog
-    storage
+    vespa_storage
     vespa_config
     vespalib
     vespa_document

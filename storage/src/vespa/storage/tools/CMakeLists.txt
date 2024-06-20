@@ -3,13 +3,13 @@ vespa_add_executable(storage_getidealstate_app
     SOURCES
     getidealstate.cpp
     DEPENDS
-    storage
+    vespa_storage
 )
 vespa_add_executable(storage_generatedistributionbits_app
     SOURCES
     generatedistributionbits.cpp
     DEPENDS
-    storage
+    vespa_storage
 )
 vespa_add_executable(storage_storage-cmd_app
     SOURCES

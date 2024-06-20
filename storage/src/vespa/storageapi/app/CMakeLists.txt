@@ -3,5 +3,5 @@ vespa_add_executable(storageapi_getbucketid_app
     SOURCES
     getbucketid.cpp
     DEPENDS
-    storage
+    vespa_storage
 )

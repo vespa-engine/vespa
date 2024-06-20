@@ -7,7 +7,7 @@ vespa_add_executable(storageapi_gtest_runner_app TEST
     storageapi_testbuckets
     storageapi_testmbusprot
     storageapi_testmessageapi
-    storage
+    vespa_storage
     GTest::GTest
 )
 
