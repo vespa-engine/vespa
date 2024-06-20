@@ -120,6 +120,29 @@ func TestDeployCloudFastWait(t *testing.T) {
 	assert.True(t, httpClient.Consumed())
 }
 
+func TestDeployCloudUnauthorized(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	cli, _, stderr := newTestCLI(t, "CI=true")
+	httpClient := &mock.HTTPClient{}
+	cli.httpClient = httpClient
+
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+	httpClient.NextResponseString(403, "bugger off")
+	require.NotNil(t, cli.Run("deploy", pkgDir))
+	assert.Equal(t, `Error: deployment failed: unauthorized (status 403)
+bugger off
+Hint: You do not have access to the tenant t1
+Hint: You may need to create the tenant at https://console.vespa-cloud.com/tenant
+Hint: If the tenant already exists you may need to run 'vespa auth login' to gain access to it
+`, stderr.String())
+}
+
 func TestDeployWait(t *testing.T) {
 	cli, stdout, _ := newTestCLI(t)
 	client := &mock.HTTPClient{}
@@ -229,13 +252,13 @@ func TestDeployIncludesExpectedFiles(t *testing.T) {
 }
 
 func TestDeployApplicationPackageErrorWithUnexpectedNonJson(t *testing.T) {
-	assertApplicationPackageError(t, "deploy", 401,
+	assertApplicationPackageError(t, "deploy", 400,
 		"Raw text error",
 		"Raw text error")
 }
 
 func TestDeployApplicationPackageErrorWithUnexpectedJson(t *testing.T) {
-	assertApplicationPackageError(t, "deploy", 401,
+	assertApplicationPackageError(t, "deploy", 400,
 		`{
     "some-unexpected-json": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
 }`,
@@ -347,7 +370,7 @@ func assertApplicationPackageError(t *testing.T, cmd string, status int, expecte
 	args = append(args, "testdata/applications/withTarget/target/application.zip")
 	assert.NotNil(t, cli.Run(args...))
 	assert.Equal(t,
-		"Error: invalid application package (Status "+strconv.Itoa(status)+")\n"+expectedMessage+"\n",
+		"Error: invalid application package (status "+strconv.Itoa(status)+")\n"+expectedMessage+"\n",
 		stderr.String())
 }
 
@@ -359,6 +382,6 @@ func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("deploy", "--wait=0", "testdata/applications/withTarget/target/application.zip"))
 	assert.Equal(t,
-		"Error: error from deploy API at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
+		"Error: error from deploy API at 127.0.0.1:19071 (status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		stderr.String())
 }
