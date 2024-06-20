@@ -82,12 +82,15 @@ import org.apache.curator.framework.state.ConnectionStateErrorPolicy;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.RetryForever;
 import org.apache.curator.utils.EnsurePath;
+import org.apache.curator.utils.ZookeeperCompatibility;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.quorum.flexible.QuorumVerifier;
+
+import java.nio.file.FileSystem;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -134,11 +137,11 @@ public class MockCuratorFramework implements CuratorFramework  {
         this.shouldTimeoutOnEnter = shouldTimeoutOnEnter;
     }
 
-    public Map<String, MockAtomicCounter> atomicCounters() {
+    public Map<String, DistributedAtomicLong> atomicCounters() {
         return Collections.unmodifiableMap(atomicCounters);
     }
 
-    public MemoryFileSystem fileSystem() {
+    public FileSystem fileSystem() {
         return fileSystem;
     }
 
@@ -239,6 +242,11 @@ public class MockCuratorFramework implements CuratorFramework  {
 
             @Override
             public void removeWatchers() {}
+
+            @Override
+            public ZookeeperCompatibility getZookeeperCompatibility() {
+                return ZookeeperCompatibility.LATEST;
+            }
         }
         return new MockWatcherRemoveCuratorFramework(true, false);
     }
@@ -305,6 +313,11 @@ public class MockCuratorFramework implements CuratorFramework  {
         throw new UnsupportedOperationException("Not implemented in MockCurator");
     }
 
+    @Override
+    public ZookeeperCompatibility getZookeeperCompatibility() {
+        return ZookeeperCompatibility.LATEST;
+    }
+
     @Deprecated
     @Override
     public EnsurePath newNamespaceAwareEnsurePath(String path) {
@@ -337,7 +350,7 @@ public class MockCuratorFramework implements CuratorFramework  {
         return new MockLock(path);
     }
 
-    public MockAtomicCounter createAtomicCounter(String path) {
+    public DistributedAtomicLong createAtomicCounter(String path) {
         return atomicCounters.computeIfAbsent(path, (k) -> new MockAtomicCounter(path));
     }
 
@@ -438,17 +451,17 @@ public class MockCuratorFramework implements CuratorFramework  {
     }
 
     private String nodeName(String baseName, CreateMode createMode) {
-        switch (createMode) {
-            case PERSISTENT: case EPHEMERAL: case PERSISTENT_WITH_TTL: return baseName;
-            case PERSISTENT_SEQUENTIAL: case EPHEMERAL_SEQUENTIAL: return baseName + monotonicallyIncreasingNumber++;
-            default: throw new UnsupportedOperationException(createMode + " support not implemented in MockCurator");
-        }
+        return switch (createMode) {
+            case PERSISTENT, EPHEMERAL, PERSISTENT_WITH_TTL -> baseName;
+            case PERSISTENT_SEQUENTIAL, EPHEMERAL_SEQUENTIAL -> baseName + monotonicallyIncreasingNumber++;
+            default -> throw new UnsupportedOperationException(createMode + " support not implemented in MockCurator");
+        };
     }
 
     /** Validates a path using the same rules as ZooKeeper */
     public static String validatePath(String path) throws IllegalArgumentException {
         if (path == null) throw new IllegalArgumentException("Path cannot be null");
-        if (path.length() == 0) throw new IllegalArgumentException("Path length must be > 0");
+        if (path.isEmpty()) throw new IllegalArgumentException("Path length must be > 0");
         if (path.charAt(0) != '/') throw new IllegalArgumentException("Path must start with / character");
         if (path.length() == 1) return path; // done checking - it's the root
         if (path.charAt(path.length() - 1) == '/')
@@ -673,10 +686,6 @@ public class MockCuratorFramework implements CuratorFramework  {
         @Override
         public boolean succeeded() {
             return true;
-        }
-
-        public void setValue(long value) {
-            this.value.set(value);
         }
 
         @Override
@@ -1269,7 +1278,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     private class MockCuratorTransactionFinal implements CuratorTransactionFinal {
 
         /** The new directory root in which the transactional changes are made */
-        private MemoryFileSystem.Node newRoot;
+        private final MemoryFileSystem.Node newRoot;
 
         private boolean committed = false;
 

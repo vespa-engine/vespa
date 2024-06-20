@@ -47,12 +47,6 @@ public class MockCurator extends Curator {
         return (MockCuratorFramework) super.framework();
     }
 
-    /**
-     * Lists the entire content of this curator instance as a multiline string.
-     * Useful for debugging.
-     */
-    public String dumpState() { return mockFramework().fileSystem().dumpState(); }
-
     /** Returns an atomic counter in this, or empty if no such counter is created */
     public Optional<DistributedAtomicLong> counter(String path) {
         return Optional.ofNullable(mockFramework().atomicCounters().get(path));
