@@ -6,6 +6,6 @@ vespa_add_library(vdslib_teststate
     grouptest.cpp
     nodestatetest.cpp
     DEPENDS
-    vdslib
+    vespa_vdslib
     GTest::GTest
 )

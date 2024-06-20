@@ -10,7 +10,7 @@ vespa_define_module(
     vespa_documentapi
     vespa_document
     vespalib
-    vdslib
+    vespa_vdslib
     vespa_persistence
 
     EXTERNAL_DEPENDS
