@@ -5,9 +5,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.Sorting;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Arne Bergene Fossaa
@@ -96,4 +96,18 @@ public class RankingTestCase {
         assertEquals("17.5", ranking.getProperties().get("vespa.hitcollector.secondphase.rankscoredroplimit").get(0));
     }
 
+    @Test
+    void testSignificanceUseModel() {
+        var query = new Query("?query=test");
+        var ranking = query.getRanking();
+        assertTrue(ranking.getSignificance().getUseModel().isEmpty());
+
+        var query1 = new Query("?query=test&ranking.significance.useModel=true");
+        var ranking1 = query1.getRanking();
+        assertEquals(true, ranking1.getSignificance().getUseModel().get());
+
+        var query2 = new Query("?query=test&ranking.significance.useModel=false");
+        var ranking2 = query2.getRanking();
+        assertEquals(false, ranking2.getSignificance().getUseModel().get());
+    }
 }
