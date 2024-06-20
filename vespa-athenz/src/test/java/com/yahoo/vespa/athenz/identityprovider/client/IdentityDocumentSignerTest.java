@@ -6,7 +6,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
-import com.yahoo.vespa.athenz.identityprovider.api.DefaultSignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.V4SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
@@ -53,7 +53,7 @@ public class IdentityDocumentSignerTest {
         String signature =
         signer.generateSignature(data, keyPair.getPrivate());
 
-        SignedIdentityDocument signedIdentityDocument = new DefaultSignedIdentityDocument(
+        SignedIdentityDocument signedIdentityDocument = new V4SignedIdentityDocument(
                 signature, KEY_VERSION, DEFAULT_DOCUMENT_VERSION, data);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
