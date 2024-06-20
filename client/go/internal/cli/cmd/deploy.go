@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -85,6 +86,12 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				return err
 			})
 			if err != nil {
+				if target.IsCloud() && errors.Is(err, vespa.ErrUnauthorized) {
+					return errHint(err,
+						"You do not have access to the tenant "+color.CyanString(target.Deployment().Application.Tenant),
+						"You may need to create the tenant at "+color.CyanString(target.Deployment().System.ConsoleURL+"/tenant"),
+						"If the tenant already exists you may need to run 'vespa auth login' to gain access to it")
+				}
 				return err
 			}
 			log.Println()
