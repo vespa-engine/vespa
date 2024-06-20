@@ -85,6 +85,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.WANT_TO_DEPROVISION.max());
         addMetric(metrics, ConfigServerMetrics.SUSPENDED.max());
         addMetric(metrics, ConfigServerMetrics.SUSPENDED_SECONDS.count());
+        addMetric(metrics, ConfigServerMetrics.ACTIVE_SECONDS.count());
         addMetric(metrics, ConfigServerMetrics.SOME_SERVICES_DOWN.max());
         addMetric(metrics, ConfigServerMetrics.NODE_FAILER_BAD_NODE.max());
         addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max,average));
