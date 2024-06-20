@@ -2012,6 +2012,16 @@ public class JsonReaderTestCase {
                                    createPutWithTensor("""
                                                        "42280000be0000007f800000"
                                                        """, "dense_float_tensor"), "dense_float_tensor");
+        try {
+            assertTensorField(expected,
+                              createPutWithTensor("""
+                                                  ""
+                                                  """, "dense_int8_tensor"), "dense_int8_tensor");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains(
+                               "Bad string input for tensor with type tensor<int8>(x[2],y[3])"));
+        }
     }
 
     @Test

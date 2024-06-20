@@ -42,7 +42,7 @@ public class TensorReader {
         {
             double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
             if (decoded.length == 0)
-                throw new IllegalArgumentException("Bad string input for tensor");
+                throw new IllegalArgumentException("Bad string input for tensor with type " + builder.type());
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
