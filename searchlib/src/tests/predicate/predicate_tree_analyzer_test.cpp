@@ -7,7 +7,7 @@ LOG_SETUP("PredicateTreeAnalyzer_test");
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/searchlib/predicate/predicate_tree_analyzer.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::PredicateSlimeBuilder;
 using namespace search;

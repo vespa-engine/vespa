@@ -7,7 +7,7 @@ LOG_SETUP("predicate_printer_test");
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_printer.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using vespalib::Slime;
 using vespalib::slime::Cursor;

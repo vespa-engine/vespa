@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/adaptive_sequenced_executor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/singleexecutor.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
 #include <condition_variable>

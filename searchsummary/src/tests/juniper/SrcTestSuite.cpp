@@ -6,7 +6,7 @@
 #include "queryparserTest.h"
 #include "matchobjectTest.h"
 #include "auxTest.h"
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 /**
  * The SrcTestSuite class runs all the unit tests for the src module.
  *

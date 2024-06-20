@@ -7,7 +7,7 @@ LOG_SETUP("predicate_builder_test");
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_builder.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using std::string;
 using vespalib::Slime;

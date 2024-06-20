@@ -5,7 +5,7 @@
 LOG_SETUP("TreeCrumbs_test");
 
 #include <vespa/searchlib/predicate/tree_crumbs.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace search::predicate;
 

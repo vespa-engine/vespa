@@ -3,7 +3,7 @@
 #include <vespa/searchcore/proton/server/document_scan_iterator.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/stringfmt.h>
 

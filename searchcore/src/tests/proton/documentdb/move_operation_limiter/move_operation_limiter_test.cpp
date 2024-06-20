@@ -2,7 +2,7 @@
 
 #include <vespa/searchcore/proton/server/i_blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/move_operation_limiter.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <queue>
 
 #include <vespa/log/log.h>

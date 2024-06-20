@@ -15,7 +15,7 @@ LOG_SETUP("termdataextractor_test");
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/weight.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <string>
 #include <vector>
 

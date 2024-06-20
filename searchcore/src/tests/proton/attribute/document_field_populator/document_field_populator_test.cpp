@@ -2,7 +2,7 @@
 
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchlib/attribute/attributefactory.h>

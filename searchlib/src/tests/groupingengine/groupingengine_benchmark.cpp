@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
@@ -133,27 +133,18 @@ AggregationContext::AggregationContext()
 AggregationContext::~AggregationContext() = default;
 //-----------------------------------------------------------------------------
 
-class Test : public TestApp
+class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
 {
 public:
+    CheckAttributeReferences() : _numrefs(0) { }
+    int _numrefs;
 private:
-    bool testAggregation(AggregationContext &ctx, const Grouping &request, bool useEngine);
-    void benchmarkIntegerSum(bool useEngine, size_t numDocs, size_t numQueries, int64_t maxGroups);
-    void benchmarkIntegerCount(bool useEngine, size_t numDocs, size_t numQueries, int64_t maxGroups);
-    class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
-    {
-    public:
-        CheckAttributeReferences() : _numrefs(0) { }
-        int _numrefs;
-    private:
-        void execute(vespalib::Identifiable &obj) override {
-            if (static_cast<AttributeNode &>(obj).getAttribute() != nullptr) {
-                _numrefs++;
-            }
+    void execute(vespalib::Identifiable &obj) override {
+        if (static_cast<AttributeNode &>(obj).getAttribute() != nullptr) {
+            _numrefs++;
         }
-        virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
-    };
-    int Main() override;
+    }
+    virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
 };
 
 //-----------------------------------------------------------------------------
@@ -162,9 +153,7 @@ private:
  * Run the given grouping request and verify that the resulting group
  * tree matches the expected value.
  **/
-bool
-Test::testAggregation(AggregationContext &ctx, const Grouping &request, bool useEngine)
-{
+bool testAggregation(AggregationContext &ctx, const Grouping &request, bool useEngine) {
     Grouping tmp = request; // create local copy
     ctx.setup(tmp);
     if (useEngine) {
@@ -183,9 +172,7 @@ Test::testAggregation(AggregationContext &ctx, const Grouping &request, bool use
 
 #define MU std::make_unique
 
-void
-Test::benchmarkIntegerSum(bool useEngine, size_t numDocs, size_t numQueries, int64_t maxGroups)
-{
+void benchmarkIntegerSum(bool useEngine, size_t numDocs, size_t numQueries, int64_t maxGroups) {
     IntAttrBuilder attrB("attr0");
     for (size_t i=0; i < numDocs; i++) {
         attrB.add(i);
@@ -212,9 +199,7 @@ Test::benchmarkIntegerSum(bool useEngine, size_t numDocs, size_t numQueries, int
     }
 }
 
-void
-Test::benchmarkIntegerCount(bool useEngine, size_t numDocs, size_t numQueries, int64_t maxGroups)
-{
+void benchmarkIntegerCount(bool useEngine, size_t numDocs, size_t numQueries, int64_t maxGroups) {
     IntAttrBuilder attrB("attr0");
     for (size_t i=0; i < numDocs; i++) {
         attrB.add(i);
@@ -241,34 +226,31 @@ Test::benchmarkIntegerCount(bool useEngine, size_t numDocs, size_t numQueries, i
     }
 }
 
-int
-Test::Main()
-{
+TEST_MAIN() {
     size_t numDocs = 1000000;
     size_t numQueries = 1000;
     int64_t maxGroups = -1;
     bool useEngine = true;
     vespalib::string idType = "int";
     vespalib::string aggrType = "sum";
-    if (_argc > 1) {
-        useEngine = (strcmp(_argv[1], "tree") != 0);
+    if (argc > 1) {
+        useEngine = (strcmp(argv[1], "tree") != 0);
     }
-    if (_argc > 2) {
-        idType = _argv[2];
+    if (argc > 2) {
+        idType = argv[2];
     }
-    if (_argc > 3) {
-        aggrType = _argv[3];
+    if (argc > 3) {
+        aggrType = argv[3];
     }
-    if (_argc > 4) {
-        numDocs = strtol(_argv[4], nullptr, 0);
+    if (argc > 4) {
+        numDocs = strtol(argv[4], nullptr, 0);
     }
-    if (_argc > 5) {
-        numQueries = strtol(_argv[5], nullptr, 0);
+    if (argc > 5) {
+        numQueries = strtol(argv[5], nullptr, 0);
     }
-    if (_argc > 6) {
-        maxGroups = strtol(_argv[6], nullptr, 0);
+    if (argc > 6) {
+        maxGroups = strtol(argv[6], nullptr, 0);
     }
-    TEST_INIT("grouping_benchmark");
     LOG(info, "sizeof(Group) = %ld", sizeof(Group));
     LOG(info, "sizeof(ResultNode::CP) = %ld", sizeof(ResultNode::CP));
     LOG(info, "sizeof(RawRank) = %ld", sizeof(RawRank));
@@ -290,7 +272,4 @@ Test::Main()
     }
     LOG(info, "rusage = {\n%s\n}", vespalib::RUsage::createSelf(start).toString().c_str());
     ASSERT_EQUAL(0, kill(0, SIGPROF));
-    TEST_DONE();
 }
-
-TEST_APPHOOK(Test);

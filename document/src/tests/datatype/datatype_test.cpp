@@ -7,7 +7,7 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using namespace document;

@@ -3,7 +3,7 @@
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/idstringexception.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace document;
 using vespalib::string;

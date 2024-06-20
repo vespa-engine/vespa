@@ -43,7 +43,7 @@
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <filesystem>

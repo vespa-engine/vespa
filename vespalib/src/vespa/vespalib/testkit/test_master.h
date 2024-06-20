@@ -71,9 +71,9 @@ private:
     };
 
 private:
-    std::mutex                                     _lock;
-    std::string                                    _name;
-    SharedState                                    _state;
+    std::mutex                                 _lock;
+    std::string                                _name;
+    SharedState                                _state;
     std::vector<std::unique_ptr<ThreadState> > _threadStorage;
     using lock_guard = std::lock_guard<std::mutex>;
 
@@ -107,6 +107,7 @@ public:
     size_t getThreadFailCnt();
     Progress getProgress();
     void openDebugFiles(const std::string &lhsFile, const std::string &rhsFile);
+    void close_debug_files();
     void pushState(const char *file, uint32_t line, const char *msg);
     void popState();
     bool check(bool rc, const char *file, uint32_t line,

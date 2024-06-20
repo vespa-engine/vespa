@@ -19,7 +19,7 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/stllike/asciistream.h>

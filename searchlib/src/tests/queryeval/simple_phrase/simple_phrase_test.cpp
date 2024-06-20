@@ -10,7 +10,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/vespalib/util/testclock.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("simple_phrase_test");
@@ -45,46 +45,6 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
         return create_default_filter(constraint);
     }
 };
-
-class Test : public vespalib::TestApp {
-    void requireThatIteratorFindsSimplePhrase(bool useBlueprint);
-    void requireThatIteratorFindsLongPhrase(bool useBlueprint);
-    void requireThatStrictIteratorFindsNextMatch(bool useBlueprint);
-    void requireThatPhrasesAreUnpacked(bool useBlueprint, bool unpack_normal_features, bool unpack_interleaved_features);
-    void requireThatTermsCanBeEvaluatedInPriorityOrder();
-    void requireThatBlueprintExposesFieldWithEstimate();
-    void requireThatBlueprintForcesPositionDataOnChildren();
-
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("phrasesearch_test");
-
-    TEST_DO(requireThatIteratorFindsSimplePhrase(false));
-    TEST_DO(requireThatIteratorFindsLongPhrase(false));
-    TEST_DO(requireThatStrictIteratorFindsNextMatch(false));
-    TEST_DO(requireThatPhrasesAreUnpacked(false, true, false));
-    TEST_DO(requireThatPhrasesAreUnpacked(false, true, true));
-    TEST_DO(requireThatPhrasesAreUnpacked(false, false, false));
-    TEST_DO(requireThatPhrasesAreUnpacked(false, false, true));
-    TEST_DO(requireThatTermsCanBeEvaluatedInPriorityOrder());
-
-    TEST_DO(requireThatIteratorFindsSimplePhrase(true));
-    TEST_DO(requireThatIteratorFindsLongPhrase(true));
-    TEST_DO(requireThatStrictIteratorFindsNextMatch(true));
-    TEST_DO(requireThatPhrasesAreUnpacked(true, true, false));
-    TEST_DO(requireThatPhrasesAreUnpacked(true, true, true));
-    TEST_DO(requireThatPhrasesAreUnpacked(true, false, false));
-    TEST_DO(requireThatPhrasesAreUnpacked(true, false, true));
-    TEST_DO(requireThatBlueprintExposesFieldWithEstimate());
-    TEST_DO(requireThatBlueprintForcesPositionDataOnChildren());
-
-    TEST_DONE();
-}
 
 const string field = "field";
 const uint32_t fieldId = 1;
@@ -198,73 +158,85 @@ PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
 {}
 PhraseSearchTest::~PhraseSearchTest() = default;
 
-void Test::requireThatIteratorFindsSimplePhrase(bool useBlueprint) {
-    PhraseSearchTest test;
-    test.addTerm("foo", 0).addTerm("bar", 1);
+TEST("requireThatIteratorFindsSimplePhrase") {
+    for (bool useBlueprint: {false, true}) {
+        PhraseSearchTest test;
+        test.addTerm("foo", 0).addTerm("bar", 1);
 
-    test.fetchPostings(useBlueprint);
-    unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
-    EXPECT_TRUE(!search->seek(1u));
-    EXPECT_TRUE(search->seek(doc_match));
-    EXPECT_TRUE(!search->seek(doc_no_match));
-}
-
-void Test::requireThatIteratorFindsLongPhrase(bool useBlueprint) {
-    PhraseSearchTest test;
-    test.addTerm("foo", 0).addTerm("bar", 0).addTerm("baz", 0)
-        .addTerm("qux", 1);
-
-    test.fetchPostings(useBlueprint);
-    unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
-    EXPECT_TRUE(!search->seek(1u));
-    EXPECT_TRUE(search->seek(doc_match));
-    EXPECT_TRUE(!search->seek(doc_no_match));
-}
-
-void Test::requireThatStrictIteratorFindsNextMatch(bool useBlueprint) {
-    PhraseSearchTest test;
-    test.setStrict(true);
-    test.addTerm("foo", 0).addTerm("bar", 1);
-
-    test.fetchPostings(useBlueprint);
-    unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
-    EXPECT_TRUE(!search->seek(1u));
-    EXPECT_EQUAL(doc_match, search->getDocId());
-    EXPECT_TRUE(!search->seek(doc_no_match));
-    EXPECT_TRUE(search->isAtEnd());
-}
-
-void Test::requireThatPhrasesAreUnpacked(bool useBlueprint, bool unpack_normal_features, bool unpack_interleaved_features) {
-    PhraseSearchTest test;
-    test.addTerm("foo", FakeResult()
-                 .doc(doc_match).pos(1).pos(11).pos(21).field_length(30).num_occs(3));
-    test.addTerm("bar", FakeResult()
-                 .doc(doc_match).pos(2).pos(16).pos(22).field_length(30).num_occs(3));
-    test.writable_term_field_match_data().setNeedNormalFeatures(unpack_normal_features);
-    test.writable_term_field_match_data().setNeedInterleavedFeatures(unpack_interleaved_features);
-    test.fetchPostings(useBlueprint);
-    unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
-    EXPECT_TRUE(search->seek(doc_match));
-    search->unpack(doc_match);
-
-    EXPECT_EQUAL(doc_match, test.tmd().getDocId());
-    if (unpack_normal_features) {
-        EXPECT_EQUAL(2, std::distance(test.tmd().begin(), test.tmd().end()));
-        EXPECT_EQUAL(1u, test.tmd().begin()->getPosition());
-        EXPECT_EQUAL(21u, (test.tmd().begin() + 1)->getPosition());
-    } else {
-        EXPECT_EQUAL(0, std::distance(test.tmd().begin(), test.tmd().end()));
-    }
-    if (unpack_interleaved_features) {
-        EXPECT_EQUAL(2u, test.tmd().getNumOccs());
-        EXPECT_EQUAL(30u, test.tmd().getFieldLength());
-    } else {
-        EXPECT_EQUAL(0u, test.tmd().getNumOccs());
-        EXPECT_EQUAL(0u, test.tmd().getFieldLength());
+        test.fetchPostings(useBlueprint);
+        unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
+        EXPECT_TRUE(!search->seek(1u));
+        EXPECT_TRUE(search->seek(doc_match));
+        EXPECT_TRUE(!search->seek(doc_no_match));
     }
 }
 
-void Test::requireThatTermsCanBeEvaluatedInPriorityOrder() {
+TEST("requireThatIteratorFindsLongPhrase") {
+    for (bool useBlueprint: {false, true}) {
+        PhraseSearchTest test;
+        test.addTerm("foo", 0).addTerm("bar", 0).addTerm("baz", 0)
+            .addTerm("qux", 1);
+
+        test.fetchPostings(useBlueprint);
+        unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
+        EXPECT_TRUE(!search->seek(1u));
+        EXPECT_TRUE(search->seek(doc_match));
+        EXPECT_TRUE(!search->seek(doc_no_match));
+    }
+}
+
+TEST("requireThatStrictIteratorFindsNextMatch") {
+    for (bool useBlueprint: {false, true}) {
+        PhraseSearchTest test;
+        test.setStrict(true);
+        test.addTerm("foo", 0).addTerm("bar", 1);
+
+        test.fetchPostings(useBlueprint);
+        unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
+        EXPECT_TRUE(!search->seek(1u));
+        EXPECT_EQUAL(doc_match, search->getDocId());
+        EXPECT_TRUE(!search->seek(doc_no_match));
+        EXPECT_TRUE(search->isAtEnd());
+    }
+}
+
+TEST("requireThatPhrasesAreUnpacked") {
+    for (bool useBlueprint: {false, true}) {
+        for (bool unpack_normal_features: {false, true}) {
+            for (bool unpack_interleaved_features: {false, true}) {
+                PhraseSearchTest test;
+                test.addTerm("foo", FakeResult()
+                             .doc(doc_match).pos(1).pos(11).pos(21).field_length(30).num_occs(3));
+                test.addTerm("bar", FakeResult()
+                             .doc(doc_match).pos(2).pos(16).pos(22).field_length(30).num_occs(3));
+                test.writable_term_field_match_data().setNeedNormalFeatures(unpack_normal_features);
+                test.writable_term_field_match_data().setNeedInterleavedFeatures(unpack_interleaved_features);
+                test.fetchPostings(useBlueprint);
+                unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
+                EXPECT_TRUE(search->seek(doc_match));
+                search->unpack(doc_match);
+
+                EXPECT_EQUAL(doc_match, test.tmd().getDocId());
+                if (unpack_normal_features) {
+                    EXPECT_EQUAL(2, std::distance(test.tmd().begin(), test.tmd().end()));
+                    EXPECT_EQUAL(1u, test.tmd().begin()->getPosition());
+                    EXPECT_EQUAL(21u, (test.tmd().begin() + 1)->getPosition());
+                } else {
+                    EXPECT_EQUAL(0, std::distance(test.tmd().begin(), test.tmd().end()));
+                }
+                if (unpack_interleaved_features) {
+                    EXPECT_EQUAL(2u, test.tmd().getNumOccs());
+                    EXPECT_EQUAL(30u, test.tmd().getFieldLength());
+                } else {
+                    EXPECT_EQUAL(0u, test.tmd().getNumOccs());
+                    EXPECT_EQUAL(0u, test.tmd().getFieldLength());
+                }
+            }
+        }
+    }
+}
+
+TEST("requireThatTermsCanBeEvaluatedInPriorityOrder") {
     vector<uint32_t> order;
     order.push_back(2);
     order.push_back(0);
@@ -280,9 +252,7 @@ void Test::requireThatTermsCanBeEvaluatedInPriorityOrder() {
     EXPECT_TRUE(!search->seek(doc_no_match));
 }
 
-void
-Test::requireThatBlueprintExposesFieldWithEstimate()
-{
+TEST("requireThatBlueprintExposesFieldWithEstimate") {
     FieldSpec f("foo", 1, 1);
     SimplePhraseBlueprint phrase(f, false);
     ASSERT_TRUE(phrase.getState().numFields() == 1);
@@ -305,9 +275,7 @@ Test::requireThatBlueprintExposesFieldWithEstimate()
     EXPECT_EQUAL(5u, phrase.getState().estimate().estHits);
 }
 
-void
-Test::requireThatBlueprintForcesPositionDataOnChildren()
-{
+TEST("requireThatBlueprintForcesPositionDataOnChildren") {
     FieldSpec f("foo", 1, 1, true);
     SimplePhraseBlueprint phrase(f, false);
     EXPECT_TRUE(f.isFilter());
@@ -316,4 +284,4 @@ Test::requireThatBlueprintForcesPositionDataOnChildren()
 
 } // namespace
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

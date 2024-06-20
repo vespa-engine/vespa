@@ -13,7 +13,7 @@
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <mutex>
 #include <thread>
 

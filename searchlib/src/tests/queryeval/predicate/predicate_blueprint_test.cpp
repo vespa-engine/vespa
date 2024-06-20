@@ -11,7 +11,7 @@
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_blueprint_test");

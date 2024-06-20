@@ -38,7 +38,7 @@
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>

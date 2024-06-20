@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("buckethandler_test");

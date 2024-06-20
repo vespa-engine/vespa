@@ -2,7 +2,7 @@
 
 #include <vespa/config-proton.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/hw_info.h>
 
 #include <vespa/log/log.h>

@@ -7,7 +7,7 @@ LOG_SETUP("predicate_interval_store_test");
 #include <vespa/searchlib/predicate/predicate_interval_store.h>
 
 #include <vespa/searchlib/predicate/predicate_index.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vector>
 
 using namespace search;

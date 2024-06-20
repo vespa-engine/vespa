@@ -6,7 +6,7 @@ LOG_SETUP("resultset_test");
 
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/arraysize.h>
 
 using namespace search;

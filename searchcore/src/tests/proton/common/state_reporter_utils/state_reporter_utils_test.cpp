@@ -4,7 +4,7 @@ LOG_SETUP("state_reporter_utils_test");
 
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace proton;
 using namespace vespalib::slime;

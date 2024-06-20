@@ -2,7 +2,7 @@
 
 #include "matchobjectTest.h"
 #include "testenv.h"
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/juniper/wildcard_match.h>
 #include <iostream>
 

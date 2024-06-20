@@ -13,7 +13,7 @@
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_initializer_test");

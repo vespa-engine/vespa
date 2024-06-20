@@ -5,7 +5,7 @@
 LOG_SETUP("vector_map_test");
 
 #include <vespa/vespalib/stllike/vector_map.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using vespalib::vector_map;
 

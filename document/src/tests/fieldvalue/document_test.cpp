@@ -4,7 +4,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using namespace document;

@@ -5,7 +5,7 @@
 #include <vespa/searchlib/predicate/simple_index_saver.hpp>
 #include <vespa/searchlib/predicate/nbo_write.h>
 #include <vespa/searchlib/util/data_buffer_writer.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>

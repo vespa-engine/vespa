@@ -7,7 +7,7 @@ LOG_SETUP("predicate_search_test");
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/predicate_search.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/arraysize.h>
 
 using search::fef::TermFieldMatchData;
