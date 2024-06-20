@@ -54,14 +54,6 @@ public:
 
     void set_state_and_distribution(std::shared_ptr<const ClusterStateAndDistribution> state_and_distr) noexcept;
     [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> state_and_distribution() const noexcept;
-    // TODO deprecate; only use atomic state+distribution setter
-    void setClusterState(std::shared_ptr<const lib::ClusterState> clusterState);
-    // TODO deprecate; only use atomic state+distribution getter
-    std::shared_ptr<const lib::ClusterState> getClusterState() const;
-    // TODO deprecate; only use atomic state+distribution setter
-    void setDistribution(std::shared_ptr<const lib::Distribution> distribution);
-    // TODO deprecate; only use atomic state+distribution getter
-    std::shared_ptr<const lib::Distribution> getDistribution() const;
 
     bool getNodeUpInLastNodeStateSeenByProvider() const;
     void setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNodeStateSeenByProvider);

@@ -21,6 +21,11 @@ struct BucketSpaceDistributionConfigs {
         return (iter != space_configs.end()) ? iter->second : std::shared_ptr<const Distribution>();
     }
 
+    [[nodiscard]] const Distribution* get_or_nullptr_raw(document::BucketSpace space) const noexcept {
+        auto iter = space_configs.find(space);
+        return (iter != space_configs.end()) ? iter->second.get() : nullptr;
+    }
+
     static BucketSpaceDistributionConfigs from_default_distribution(std::shared_ptr<const Distribution>);
 };
 

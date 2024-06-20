@@ -29,7 +29,18 @@ using vespalib::make_string_short::fmt;
 namespace storage {
 
 namespace {
-    constexpr vespalib::duration MAX_TIMEOUT = 600s;
+constexpr vespalib::duration MAX_TIMEOUT = 600s;
+
+[[nodiscard]] std::shared_ptr<const lib::ClusterStateBundle>
+make_bootstrap_state_bundle(std::shared_ptr<const lib::Distribution> config) {
+    return std::make_shared<const lib::ClusterStateBundle>(
+            std::make_shared<lib::ClusterState>(),
+            lib::ClusterStateBundle::BucketSpaceStateMapping{},
+            std::nullopt,
+            lib::DistributionConfigBundle::of(std::move(config)),
+            false);
+}
+
 }
 
 struct StateManager::StateManagerMetrics : metrics::MetricSet {
@@ -62,7 +73,8 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _listenerLock(),
       _nodeState(std::make_shared<lib::NodeState>(_component.getNodeType(), lib::State::DOWN)),
       _nextNodeState(),
-      _systemState(std::make_shared<const ClusterStateBundle>(lib::ClusterState())),
+      _configured_distribution(_component.getDistribution()),
+      _systemState(make_bootstrap_state_bundle(_configured_distribution)),
       _nextSystemState(),
       _reported_host_info_cluster_state_version(0),
       _stateListeners(),
@@ -81,6 +93,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _noThreadTestMode(testMode),
       _grabbedExternalLock(false),
       _require_strictly_increasing_cluster_state_versions(false),
+      _receiving_distribution_config_from_cc(false),
       _notifyingListeners(false),
       _requested_almost_immediate_node_state_replies(false)
 {
@@ -170,8 +183,7 @@ lib::NodeState::CSP
 StateManager::getCurrentNodeState() const
 {
     std::lock_guard lock(_stateLock);
-    return std::make_shared<const lib::NodeState>
-        (_systemState->getBaselineClusterState()->getNodeState(thisNode()));
+    return std::make_shared<const lib::NodeState>(_systemState->getBaselineClusterState()->getNodeState(thisNode()));
 }
 
 std::shared_ptr<const lib::ClusterStateBundle>
@@ -179,6 +191,28 @@ StateManager::getClusterStateBundle() const
 {
     std::lock_guard lock(_stateLock);
     return _systemState;
+}
+
+// TODO remove when distribution config is only received from cluster controller
+void
+StateManager::storageDistributionChanged()
+{
+    {
+        std::lock_guard lock(_stateLock);
+        _configured_distribution = _component.getDistribution();
+        if (_receiving_distribution_config_from_cc) {
+            return; // nothing more to do
+        }
+        // Avoid losing any pending state if this callback happens in the middle of a
+        // state update. This edge case is practically impossible to unit test today...
+        const auto patch_state = _nextSystemState ? _nextSystemState : _systemState;
+        _nextSystemState = patch_state->clone_with_new_distribution(
+                lib::DistributionConfigBundle::of(_configured_distribution));
+    }
+    // We've assembled a new state bundle based on the (non-distribution carrying) state
+    // bundle from the cluster controller and our own internal config. Propagate it as one
+    // unit to the internal components.
+    notifyStateListeners();
 }
 
 void
@@ -316,12 +350,12 @@ using BucketSpaceToTransitionString = std::unordered_map<document::BucketSpace,
                                                          document::BucketSpace::hash>;
 
 void
-considerInsertDerivedTransition(const lib::State &currentBaseline,
-                                const lib::State &newBaseline,
-                                const lib::State &currentDerived,
-                                const lib::State &newDerived,
-                                const document::BucketSpace &bucketSpace,
-                                BucketSpaceToTransitionString &transitions)
+considerInsertDerivedTransition(const lib::State& currentBaseline,
+                                const lib::State& newBaseline,
+                                const lib::State& currentDerived,
+                                const lib::State& newDerived,
+                                const document::BucketSpace& bucketSpace,
+                                BucketSpaceToTransitionString& transitions)
 {
     bool considerDerivedTransition = ((currentDerived != newDerived) &&
             ((currentDerived != currentBaseline) || (newDerived != newBaseline)));
@@ -333,28 +367,28 @@ considerInsertDerivedTransition(const lib::State &currentBaseline,
 }
 
 BucketSpaceToTransitionString
-calculateDerivedClusterStateTransitions(const ClusterStateBundle &currentState,
-                                        const ClusterStateBundle &newState,
+calculateDerivedClusterStateTransitions(const ClusterStateBundle& currentState,
+                                        const ClusterStateBundle& newState,
                                         const lib::Node node)
 {
     BucketSpaceToTransitionString result;
-    const lib::State &currentBaseline = currentState.getBaselineClusterState()->getNodeState(node).getState();
-    const lib::State &newBaseline = newState.getBaselineClusterState()->getNodeState(node).getState();
-    for (const auto &entry : currentState.getDerivedClusterStates()) {
-        const lib::State &currentDerived = entry.second->getNodeState(node).getState();
-        const lib::State &newDerived = newState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
+    const lib::State& currentBaseline = currentState.getBaselineClusterState()->getNodeState(node).getState();
+    const lib::State& newBaseline = newState.getBaselineClusterState()->getNodeState(node).getState();
+    for (const auto& entry : currentState.getDerivedClusterStates()) {
+        const lib::State& currentDerived = entry.second->getNodeState(node).getState();
+        const lib::State& newDerived = newState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
         considerInsertDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived, entry.first, result);
     }
-    for (const auto &entry : newState.getDerivedClusterStates()) {
-        const lib::State &newDerived = entry.second->getNodeState(node).getState();
-        const lib::State &currentDerived = currentState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
+    for (const auto& entry : newState.getDerivedClusterStates()) {
+        const lib::State& newDerived = entry.second->getNodeState(node).getState();
+        const lib::State& currentDerived = currentState.getDerivedClusterState(entry.first)->getNodeState(node).getState();
         considerInsertDerivedTransition(currentBaseline, newBaseline, currentDerived, newDerived, entry.first, result);
     }
     return result;
 }
 
 vespalib::string
-transitionsToString(const BucketSpaceToTransitionString &transitions)
+transitionsToString(const BucketSpaceToTransitionString& transitions)
 {
     if (transitions.empty()) {
         return "";
@@ -362,7 +396,7 @@ transitionsToString(const BucketSpaceToTransitionString &transitions)
     vespalib::asciistream stream;
     stream << "[";
     bool first = true;
-    for (const auto &entry : transitions) {
+    for (const auto& entry : transitions) {
         if (!first) {
             stream << ", ";
         }
@@ -435,7 +469,7 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
 }
 
 void
-StateManager::mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex> &, uint16_t controller_index) {
+StateManager::mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex>&, uint16_t controller_index) {
     _controllers_observed_explicit_node_state.emplace(controller_index);
 }
 
@@ -483,7 +517,16 @@ StateManager::try_set_cluster_state_bundle(std::shared_ptr<const ClusterStateBun
             }
         }
         _last_accepted_cluster_state_time = now;
-        _nextSystemState = std::move(c);
+        _receiving_distribution_config_from_cc = c->has_distribution_config();
+        if (!c->has_distribution_config()) {
+            LOG(debug, "Next state bundle '%s' does not have distribution config; patching in existing config '%s'",
+                c->toString().c_str(), _configured_distribution->getNodeGraph().getDistributionConfigHash().c_str());
+            _nextSystemState = c->clone_with_new_distribution(lib::DistributionConfigBundle::of(_configured_distribution));
+        } else {
+            LOG(debug, "Next state bundle is '%s'", c->toString().c_str());
+            // TODO print what's changed in distribution config?
+            _nextSystemState = std::move(c);
+        }
     }
     notifyStateListeners();
     return std::nullopt;

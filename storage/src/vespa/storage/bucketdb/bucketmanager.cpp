@@ -526,12 +526,12 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     using RBISP = std::shared_ptr<api::RequestBucketInfoCommand>;
     std::map<uint16_t, RBISP> requests;
 
-    // TODO fetch distribution from bundle as well
-    auto distribution(_component.getBucketSpaceRepo().get(bucketSpace).getDistribution());
-    auto clusterStateBundle(_component.getStateUpdater().getClusterStateBundle());
-    assert(clusterStateBundle);
-    lib::ClusterState::CSP clusterState(clusterStateBundle->getDerivedClusterState(bucketSpace));
-    assert(clusterState.get());
+    auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
+    assert(clusterStateBundle && clusterStateBundle->has_distribution_config());
+    auto clusterState = clusterStateBundle->getDerivedClusterState(bucketSpace);
+    assert(clusterState);
+    const auto distribution = clusterStateBundle->bucket_space_distribution_or_nullptr(bucketSpace);
+    assert(distribution);
 
     const auto our_hash = distribution->getNodeGraph().getDistributionConfigHash();
 
