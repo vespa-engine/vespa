@@ -1,5 +1,5 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(storage
+vespa_add_library(vespa_storage
     SOURCES
     $<TARGET_OBJECTS:storage_bucketdb>
     $<TARGET_OBJECTS:storage_common>
@@ -36,4 +36,4 @@ vespa_add_library(storage
     protobuf::libprotobuf
 )
 
-vespa_add_target_package_dependency(storage Protobuf)
+vespa_add_target_package_dependency(vespa_storage Protobuf)

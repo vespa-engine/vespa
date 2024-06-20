@@ -7,7 +7,7 @@ vespa_add_executable(storage_bucketdb_gtest_runner_app TEST
     gtest_runner.cpp
     lockablemaptest.cpp
     DEPENDS
-    storage
+    vespa_storage
     storage_testcommon
     GTest::GTest
 )

@@ -7,7 +7,7 @@ vespa_add_library(storage_testcommon TEST
     testnodestateupdater.cpp
     teststorageapp.cpp
     DEPENDS
-    storage
+    vespa_storage
 )
 
 vespa_add_executable(storage_common_gtest_runner_app TEST
@@ -19,7 +19,7 @@ vespa_add_executable(storage_common_gtest_runner_app TEST
     storagelinktest.cpp
     DEPENDS
     storage_testcommon
-    storage
+    vespa_storage
     GTest::GTest
 )
 

@@ -3,7 +3,7 @@ vespa_add_library(storage_testhostreporter TEST
     SOURCES
     util.cpp
     DEPENDS
-    storage
+    vespa_storage
 )
 
 vespa_add_executable(storage_hostreporter_gtest_runner_app TEST
@@ -12,7 +12,7 @@ vespa_add_executable(storage_hostreporter_gtest_runner_app TEST
     hostinfotest.cpp
     versionreportertest.cpp
     DEPENDS
-    storage
+    vespa_storage
     storage_testhostreporter
     GTest::GTest
 )
