@@ -4,6 +4,6 @@ vespa_add_executable(vbench_time_queue_test_app TEST
     time_queue_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_time_queue_test_app COMMAND vbench_time_queue_test_app)

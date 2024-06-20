@@ -4,6 +4,6 @@ vespa_add_executable(vbench_dropped_tagger_test_app TEST
     dropped_tagger_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_dropped_tagger_test_app COMMAND vbench_dropped_tagger_test_app)

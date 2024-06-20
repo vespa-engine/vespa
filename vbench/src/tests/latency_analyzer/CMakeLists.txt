@@ -4,6 +4,6 @@ vespa_add_executable(vbench_latency_analyzer_test_app TEST
     latency_analyzer_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_latency_analyzer_test_app COMMAND vbench_latency_analyzer_test_app)

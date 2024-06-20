@@ -4,6 +4,6 @@ vespa_add_executable(vbench_app_dumpurl_test_app TEST
     app_dumpurl_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_app_dumpurl_test_app NO_VALGRIND COMMAND vbench_app_dumpurl_test_app)

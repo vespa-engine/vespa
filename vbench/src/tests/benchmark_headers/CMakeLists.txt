@@ -4,6 +4,6 @@ vespa_add_executable(vbench_benchmark_headers_test_app TEST
     benchmark_headers_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_benchmark_headers_test_app COMMAND vbench_benchmark_headers_test_app)

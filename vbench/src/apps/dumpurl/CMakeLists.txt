@@ -3,5 +3,5 @@ vespa_add_executable(vbench_dumpurl_app
     SOURCES
     dumpurl.cpp
     DEPENDS
-    vbench
+    vespa_vbench
 )

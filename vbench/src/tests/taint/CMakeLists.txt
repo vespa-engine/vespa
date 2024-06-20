@@ -4,6 +4,6 @@ vespa_add_executable(vbench_taint_test_app TEST
     taint_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_taint_test_app COMMAND vbench_taint_test_app)

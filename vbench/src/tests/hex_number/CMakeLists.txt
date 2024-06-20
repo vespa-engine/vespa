@@ -4,6 +4,6 @@ vespa_add_executable(vbench_hex_number_test_app TEST
     hex_number_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_hex_number_test_app COMMAND vbench_hex_number_test_app)

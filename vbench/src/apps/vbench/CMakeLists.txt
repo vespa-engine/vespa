@@ -3,5 +3,5 @@ vespa_add_executable(vbench_app
     SOURCES
     vbench.cpp
     DEPENDS
-    vbench
+    vespa_vbench
 )

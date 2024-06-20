@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     vespadefaults
     vespa_config
-    vbench
+    vespa_vbench
     vespalib
 
     LIBS
