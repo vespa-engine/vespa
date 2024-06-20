@@ -91,7 +91,7 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 	return printResult(cli, operationResult(false, doc, service, result), false)
 }
 
-func readDocument(id string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI) error {
+func readDocument(id string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string) error {
 	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func readDocument(id string, timeoutSecs int, waiter *Waiter, printCurl bool, cl
 	if err != nil {
 		return err
 	}
-	result := client.Get(docId)
+	result := client.Get(docId, fieldSet)
 	return printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true)
 }
 
@@ -249,6 +249,7 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 		printCurl   bool
 		timeoutSecs int
 		waitSecs    int
+		fieldSet    string
 	)
 	cmd := &cobra.Command{
 		Use:               "get id",
@@ -259,9 +260,10 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return readDocument(args[0], timeoutSecs, waiter, printCurl, cli)
+			return readDocument(args[0], timeoutSecs, waiter, printCurl, cli, fieldSet)
 		},
 	}
+	cmd.Flags().StringVar(&fieldSet, "field-set", "", "Fields to include when reading document")
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs)
 	return cmd
 }

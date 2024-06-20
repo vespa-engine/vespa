@@ -177,7 +177,7 @@ func TestClientGet(t *testing.T) {
 }`
 	id := Id{Namespace: "mynamespace", Type: "music", UserSpecific: "doc1"}
 	httpClient.NextResponseString(200, doc)
-	result := client.Get(id)
+	result := client.Get(id, "")
 	want := Result{
 		Id:         id,
 		Body:       []byte(doc),
@@ -188,6 +188,17 @@ func TestClientGet(t *testing.T) {
 	}
 	if !reflect.DeepEqual(want, result) {
 		t.Errorf("got %+v, want %+v", result, want)
+	}
+	gotURL := httpClient.LastRequest.URL.String()
+	wantURL := "https://example.com:1337/document/v1/mynamespace/music/docid/doc1"
+	if gotURL != wantURL {
+		t.Errorf("got URL=%s, want %s", gotURL, wantURL)
+	}
+	client.Get(id, "[all]")
+	gotURL = httpClient.LastRequest.URL.String()
+	wantURL = "https://example.com:1337/document/v1/mynamespace/music/docid/doc1?fieldSet=%5Ball%5D"
+	if gotURL != wantURL {
+		t.Errorf("got URL=%s, want %s", gotURL, wantURL)
 	}
 }
 
