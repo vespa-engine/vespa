@@ -4,6 +4,6 @@ vespa_add_executable(vbench_qps_tagger_test_app TEST
     qps_tagger_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_qps_tagger_test_app COMMAND vbench_qps_tagger_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(vbench_server_spec_test_app TEST
     server_spec_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_server_spec_test_app COMMAND vbench_server_spec_test_app)

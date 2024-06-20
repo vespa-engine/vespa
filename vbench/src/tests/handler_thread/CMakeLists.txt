@@ -4,6 +4,6 @@ vespa_add_executable(vbench_handler_thread_test_app TEST
     handler_thread_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_handler_thread_test_app COMMAND vbench_handler_thread_test_app)

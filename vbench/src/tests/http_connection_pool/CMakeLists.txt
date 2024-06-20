@@ -4,6 +4,6 @@ vespa_add_executable(vbench_http_connection_pool_test_app TEST
     http_connection_pool_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_http_connection_pool_test_app COMMAND vbench_http_connection_pool_test_app)

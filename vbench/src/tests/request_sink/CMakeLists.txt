@@ -4,6 +4,6 @@ vespa_add_executable(vbench_request_sink_test_app TEST
     request_sink_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_request_sink_test_app COMMAND vbench_request_sink_test_app)

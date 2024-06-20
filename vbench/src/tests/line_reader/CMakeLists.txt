@@ -4,6 +4,6 @@ vespa_add_executable(vbench_line_reader_test_app TEST
     line_reader_test.cpp
     DEPENDS
     vbench_test
-    vbench
+    vespa_vbench
 )
 vespa_add_test(NAME vbench_line_reader_test_app COMMAND vbench_line_reader_test_app)
