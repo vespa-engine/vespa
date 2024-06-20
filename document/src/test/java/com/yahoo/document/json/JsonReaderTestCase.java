@@ -175,6 +175,8 @@ public class JsonReaderTestCase {
                     new TensorDataType(new TensorType.Builder().indexed("x", 2).indexed("y", 3).build())));
             x.addField(new Field("dense_int8_tensor",
                     new TensorDataType(TensorType.fromSpec("tensor<int8>(x[2],y[3])"))));
+            x.addField(new Field("dense_float_tensor",
+                    new TensorDataType(TensorType.fromSpec("tensor<float>(y[3])"))));
             x.addField(new Field("dense_unbound_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             x.addField(new Field("mixed_tensor",
@@ -1780,7 +1782,7 @@ public class JsonReaderTestCase {
                               "remove": "id:unittest:smoke::whee",
                               "what is love": "baby, do not hurt me... much
                             }
-                          ]""";
+                          ]"""; // "
 
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }
@@ -1996,6 +1998,30 @@ public class JsonReaderTestCase {
                                                                 "values": "020304050607"
                                                               }""", "dense_int8_tensor"), "dense_int8_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+        tensor = assertTensorField(expected,
+                                   createPutWithTensor("""
+                                                       "020304050607"
+                                                       """, "dense_int8_tensor"), "dense_int8_tensor");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+        builder = Tensor.Builder.of(TensorType.fromSpec("tensor<float>(y[3])"));
+        builder.cell().label("y", 0).value(42.0);
+        builder.cell().label("y", 1).value(-0.125);
+        builder.cell().label("y", 2).value(Double.POSITIVE_INFINITY);
+        expected = builder.build();
+        tensor = assertTensorField(expected,
+                                   createPutWithTensor("""
+                                                       "42280000be0000007f800000"
+                                                       """, "dense_float_tensor"), "dense_float_tensor");
+        try {
+            assertTensorField(expected,
+                              createPutWithTensor("""
+                                                  ""
+                                                  """, "dense_int8_tensor"), "dense_int8_tensor");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains(
+                               "Bad string input for tensor with type tensor<int8>(x[2],y[3])"));
+        }
     }
 
     @Test
@@ -2018,6 +2044,13 @@ public class JsonReaderTestCase {
                            """;
         var put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
         Tensor tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
+        mixedJson = """
+                           {
+                             "blocks":{"foo":"400040404080", "bar":"40A040C040E0"}
+                           }
+                    """;
+        put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
+        tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
     }
 
     /** Tests parsing of various tensor values set at the root, i.e. no 'cells', 'blocks' or 'values' */

@@ -6,7 +6,9 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.ValueUpdate;
 
@@ -41,6 +43,11 @@ public class SingleValueReader {
     }
 
     public static FieldValue readSingleValue(TokenBuffer buffer, DataType expectedType, boolean ignoreUndefinedFields) {
+        if (expectedType instanceof TensorDataType) {
+            FieldValue fieldValue = expectedType.createFieldValue();
+            TensorReader.fillTensor(buffer, (TensorFieldValue) fieldValue);
+            return fieldValue;
+        }
         if (buffer.current().isScalarValue()) {
             return readAtomic(buffer.currentText(), expectedType);
         } else {

@@ -37,6 +37,18 @@ public class TensorReader {
     // MUST be kept in sync with com.yahoo.tensor.serialization.JsonFormat.decode in vespajlib
     static void fillTensor(TokenBuffer buffer, TensorFieldValue tensorFieldValue) {
         Tensor.Builder builder = Tensor.Builder.of(tensorFieldValue.getDataType().getTensorType());
+        if (buffer.current() == JsonToken.VALUE_STRING
+            && builder instanceof IndexedTensor.BoundBuilder indexedBuilder)
+        {
+            double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
+            if (decoded.length == 0)
+                throw new IllegalArgumentException("Bad string input for tensor with type " + builder.type());
+            for (int i = 0; i < decoded.length; i++) {
+                indexedBuilder.cellByDirectIndex(i, decoded[i]);
+            }
+            tensorFieldValue.assign(builder.build());
+            return;
+        }
         expectOneOf(buffer.current(), JsonToken.START_OBJECT, JsonToken.START_ARRAY);
         int initNesting = buffer.nesting();
         while (true) {
