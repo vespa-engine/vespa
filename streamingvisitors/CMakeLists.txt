@@ -6,7 +6,7 @@ vespa_define_module(
     vespa_config
     vespalib
     vespa_document
-    vdslib
+    vespa_vdslib
     vespa_searchlib
     vespa_searchsummary
 

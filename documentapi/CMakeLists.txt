@@ -9,7 +9,7 @@ vespa_define_module(
     vespa_slobrok
     vespa_messagebus
     vespa_configdefinitions
-    vdslib
+    vespa_vdslib
 
     LIBS
     src/vespa/documentapi

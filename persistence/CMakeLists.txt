@@ -4,7 +4,7 @@ vespa_define_module(
     vespalog
     vespalib
     vespa_document
-    vdslib
+    vespa_vdslib
 
     LIBS
     src/vespa/persistence
