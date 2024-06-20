@@ -239,7 +239,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                             .orElse(0L);
                     metric.add(ConfigServerMetrics.SUSPENDED_SECONDS.baseName(), suspendedSeconds, context);
                 });
-        if (nodeRepository().zone().environment().isAnyOf(Environment.staging, Environment.test) && node.state() == State.active) {
+        if (nodeRepository().zone().environment().isTest() && node.state() == State.active) {
             node.history()
                     .event(History.Event.Type.activated)
                     .ifPresent(event -> {
