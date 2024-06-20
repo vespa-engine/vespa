@@ -234,10 +234,9 @@ SearchIterator::UP
 MultiBitVectorIteratorBase::optimize(SearchIterator::UP parentIt)
 {
     if (parentIt->isSourceBlender()) {
-        auto & parent(static_cast<SourceBlenderSearch &>(*parentIt));
-        for (size_t i(0); i < parent.getNumChildren(); i++) {
-            parent.setChild(i, optimize(parent.steal(i)));
-        }
+        parentIt->transform_children([](auto child, size_t){
+                                         return optimize(std::move(child));
+                                     });
     } else if (parentIt->isMultiSearch()) {
         parentIt = optimizeMultiSearch(std::move(parentIt));
     }

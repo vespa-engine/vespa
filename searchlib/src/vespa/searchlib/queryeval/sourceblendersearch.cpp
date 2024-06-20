@@ -161,9 +161,14 @@ SourceBlenderSearch::~SourceBlenderSearch()
 }
 
 void
-SourceBlenderSearch::setChild(size_t index, SearchIterator::UP child) {
-    assert(_sources[_children[index]] == nullptr);
-    _sources[_children[index]] = child.release();
+SourceBlenderSearch::transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f)
+{
+    for (size_t i = 0; i < _children.size(); ++i) {
+        SearchIterator::UP ptr(_sources[_children[i]]);
+        _sources[_children[i]] = nullptr;
+        ptr = f(std::move(ptr), i);
+        _sources[_children[i]] = ptr.release();
+    }
 }
 
 SearchIterator::UP

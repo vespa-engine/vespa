@@ -72,13 +72,7 @@ public:
                                      const Children &children,
                                      bool strict);
     ~SourceBlenderSearch() override;
-    size_t getNumChildren() const { return _children.size(); }
-    SearchIterator::UP steal(size_t index) {
-        SearchIterator::UP retval(_sources[_children[index]]);
-        _sources[_children[index]] = nullptr;
-        return retval;
-    }
-    void setChild(size_t index, SearchIterator::UP child);
+    void transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f) override;
     void initRange(uint32_t beginId, uint32_t endId) override;
 };
 

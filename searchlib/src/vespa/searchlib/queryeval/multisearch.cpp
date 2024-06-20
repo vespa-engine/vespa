@@ -55,10 +55,10 @@ MultiSearch::initRange(uint32_t beginid, uint32_t endid)
 }
 
 void
-MultiSearch::disclose_children(std::vector<UP*> &dst)
+MultiSearch::transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f)
 {
-    for (auto &child: _children) {
-        dst.push_back(&child);
+    for (size_t i = 0; i < _children.size(); ++i) {
+        _children[i] = f(std::move(_children[i]), i);
     }
 }
 
