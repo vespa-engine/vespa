@@ -93,6 +93,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
     FAIL_REPORT("failReport", Unit.BINARY, "One if there is a fail report for the node, zero if not"),
     SUSPENDED("suspended", Unit.BINARY, "One if the node is suspended, zero if not"),
     SUSPENDED_SECONDS("suspendedSeconds", Unit.SECOND, "The number of seconds the node has been suspended"),
+    ACTIVE_SECONDS("activeSeconds", Unit.SECOND, "The number of seconds the node has been active"),
     NUMBER_OF_SERVICES_UP("numberOfServicesUp", Unit.INSTANCE, "The number of services confirmed to be running on a node"),
     NUMBER_OF_SERVICES_NOT_CHECKED("numberOfServicesNotChecked", Unit.INSTANCE, "The number of services supposed to run on a node, that has not checked"),
     NUMBER_OF_SERVICES_DOWN("numberOfServicesDown", Unit.INSTANCE, "The number of services confirmed to not be running on a node"),

@@ -6,6 +6,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
@@ -238,6 +239,14 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                             .orElse(0L);
                     metric.add(ConfigServerMetrics.SUSPENDED_SECONDS.baseName(), suspendedSeconds, context);
                 });
+        if (nodeRepository().zone().environment().isTest() && node.state() == State.active) {
+            node.history()
+                    .event(History.Event.Type.activated)
+                    .ifPresent(event -> {
+                        var activeSeconds = Duration.between(event.at(), clock().instant()).getSeconds();
+                        metric.add(ConfigServerMetrics.ACTIVE_SECONDS.baseName(), activeSeconds, context);
+                    });
+        }
 
         long numberOfServices;
         List<ServiceInstance> services = serviceModel.getServiceInstancesByHostName().get(hostname);
