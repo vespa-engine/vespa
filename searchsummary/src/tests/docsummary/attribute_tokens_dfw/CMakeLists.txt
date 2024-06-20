@@ -3,7 +3,7 @@ vespa_add_executable(searchsummary_attribute_tokens_dfw_test_app TEST
     SOURCES
     attribute_tokens_dfw_test.cpp
     DEPENDS
-    searchsummary
+    vespa_searchsummary
     searchsummary_test
     GTest::GTest
 )

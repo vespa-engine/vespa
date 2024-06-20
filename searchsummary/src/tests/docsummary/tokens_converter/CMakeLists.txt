@@ -3,7 +3,7 @@ vespa_add_executable(searchsummary_tokens_converter_test_app TEST
     SOURCES
     tokens_converter_test.cpp
     DEPENDS
-    searchsummary
+    vespa_searchsummary
     GTest::gtest
 )
 

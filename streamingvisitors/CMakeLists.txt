@@ -8,7 +8,7 @@ vespa_define_module(
     vespa_document
     vdslib
     vespa_searchlib
-    searchsummary
+    vespa_searchsummary
 
     LIBS
     src/vespa/searchvisitor
