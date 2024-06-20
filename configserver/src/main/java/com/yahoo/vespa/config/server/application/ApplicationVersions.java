@@ -81,11 +81,11 @@ public final class ApplicationVersions {
 
     public ApplicationId getId() { return applicationId; }
 
-    // TODO: This will return duplicates when the same host is in multiple applications (common case)
     public Collection<String> allHosts() {
         return applications.values().stream()
                 .flatMap(app -> app.getModel().getHosts().stream()
                         .map(HostInfo::getHostname))
+                .distinct()
                 .toList();
     }
 
