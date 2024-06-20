@@ -4,7 +4,7 @@
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/identity.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <memory>
 #include <vector>

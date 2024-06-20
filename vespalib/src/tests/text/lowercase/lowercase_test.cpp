@@ -2,7 +2,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("lowercase_test");
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <iostream>
 #include <fstream>

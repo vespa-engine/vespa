@@ -10,7 +10,7 @@ LOG_SETUP("resolveviewvisitor_test");
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <string>
 
 namespace fef_test = search::fef::test;

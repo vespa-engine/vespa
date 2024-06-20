@@ -8,7 +8,7 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("combiningfeedview_test");

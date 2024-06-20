@@ -14,7 +14,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchcore/proton/attribute/document_field_extractor.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::Field;
 using document::DataType;

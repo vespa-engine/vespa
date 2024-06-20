@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <cassert>
 #include <vespa/log/log.h>
 LOG_SETUP("document_db_reference_test");

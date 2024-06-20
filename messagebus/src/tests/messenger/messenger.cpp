@@ -2,7 +2,7 @@
 
 #include <vespa/messagebus/messenger.h>
 #include <vespa/vespalib/util/barrier.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace mbus;
 

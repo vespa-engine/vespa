@@ -291,6 +291,13 @@ TestMaster::openDebugFiles(const std::string &lhsFile,
 }
 
 void
+TestMaster::close_debug_files()
+{
+    lock_guard guard(_lock);
+    closeDebugFiles(guard);
+}
+
+void
 TestMaster::pushState(const char *file, uint32_t line, const char *msg)
 {
     threadState().traceStack.emplace_back(skip_path(file), line, msg);

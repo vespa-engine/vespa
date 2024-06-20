@@ -11,7 +11,7 @@ LOG_SETUP("fieldvalue_test");
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace document;
 using vespalib::eval::SimpleValue;

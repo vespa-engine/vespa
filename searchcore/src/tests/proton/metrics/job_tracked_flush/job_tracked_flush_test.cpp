@@ -5,7 +5,7 @@
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
 #include <vespa/searchlib/common/flush_token.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/gate.h>

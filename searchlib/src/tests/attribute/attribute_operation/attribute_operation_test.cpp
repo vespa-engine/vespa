@@ -5,7 +5,7 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_operation_test");

@@ -3,7 +3,7 @@
 LOG_SETUP("job_load_sampler_test");
 
 #include <vespa/searchcore/proton/metrics/job_load_sampler.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <chrono>
 
 using namespace proton;

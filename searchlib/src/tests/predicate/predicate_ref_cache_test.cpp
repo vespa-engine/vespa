@@ -5,7 +5,7 @@
 LOG_SETUP("predicate_ref_cache_test");
 
 #include <vespa/searchlib/predicate/predicate_ref_cache.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vector>
 
 using namespace search;

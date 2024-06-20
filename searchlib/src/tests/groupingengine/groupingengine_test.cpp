@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
@@ -131,69 +131,37 @@ AggregationContext::~AggregationContext() {}
 
 //-----------------------------------------------------------------------------
 
-class Test : public TestApp
+class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
 {
 public:
-    bool testAggregation(AggregationContext &ctx,
-                         const Grouping &request,
-                         const Group &expect);
-    bool testMerge(const Grouping &a, const Grouping &b,
-                   const Group &expect);
-    bool testMerge(const Grouping &a, const Grouping &b, const Grouping &c,
-                   const Group &expect);
-    bool testPrune(const Grouping &a, const Grouping &b,
-                   const Group &expect);
-    bool testPartialMerge(const Grouping &a, const Grouping &b,
-                   const Group &expect);
-    void testAggregationSimple();
-    void testAggregationLevels();
-    void testAggregationMaxGroups();
-    void testAggregationGroupOrder();
-    void testAggregationGroupRank();
-    void testAggregationGroupCapping();
-    void testMergeSimpleSum();
-    void testMergeLevels();
-    void testMergeGroups();
-    void testMergeTrees();
-    void testPruneSimple();
-    void testPruneComplex();
-    void testPartialMerging();
-    void testCount();
-    void testTopN();
-    void testFS4HitCollection();
-    bool checkBucket(const NumericResultNode &width, const NumericResultNode &value, const BucketResultNode &bucket);
-    bool checkHits(const Grouping &g, uint32_t first, uint32_t last, uint32_t cnt);
-    void testFixedWidthBuckets();
-    void testThatNanIsConverted();
-    void testNanSorting();
-    void testGroupingEngineFromRequest();
-    int Main() override;
+    CheckAttributeReferences() : _numrefs(0) { }
+    int _numrefs;
 private:
-    bool verifyEqual(const Group & a, const Group & b);
-    void testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr);
-    class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
-    {
-    public:
-        CheckAttributeReferences() : _numrefs(0) { }
-        int _numrefs;
-    private:
-        virtual void execute(vespalib::Identifiable &obj) override {
-            if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
-                _numrefs++;
-            }
+    virtual void execute(vespalib::Identifiable &obj) override {
+        if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
+            _numrefs++;
         }
-        virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
-    };
+    }
+    virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
 };
 
 //-----------------------------------------------------------------------------
+
+bool verifyEqual(const Group & a, const Group & b)
+{
+    bool ok = EXPECT_EQUAL(a.asString(), b.asString());
+    if (!ok) {
+        std::cerr << a.asString() << std::endl << b.asString() << std::endl;
+    }
+    return ok;
+}
 
 /**
  * Run the given grouping request and verify that the resulting group
  * tree matches the expected value.
  **/
 bool
-Test::testAggregation(AggregationContext &ctx,
+testAggregation(AggregationContext &ctx,
                       const Grouping &request,
                       const Group &expect)
 {
@@ -210,21 +178,12 @@ Test::testAggregation(AggregationContext &ctx,
     return verifyEqual(*result, expect);
 }
 
-bool Test::verifyEqual(const Group & a, const Group & b)
-{
-    bool ok = EXPECT_EQUAL(a.asString(), b.asString());
-    if (!ok) {
-        std::cerr << a.asString() << std::endl << b.asString() << std::endl;
-    }
-    return ok;
-}
-
 /**
  * Merge the given grouping requests and verify that the resulting
  * group tree matches the expected value.
  **/
 bool
-Test::testMerge(const Grouping &a, const Grouping &b,
+testMerge(const Grouping &a, const Grouping &b,
                 const Group &expect)
 {
     Grouping tmp = a; // create local copy
@@ -249,7 +208,7 @@ Test::testMerge(const Grouping &a, const Grouping &b,
  * group tree matches the expected value.
  **/
 bool
-Test::testPrune(const Grouping &a, const Grouping &b,
+testPrune(const Grouping &a, const Grouping &b,
                 const Group &expect)
 {
     Grouping tmp = a; // create local copy
@@ -266,7 +225,7 @@ Test::testPrune(const Grouping &a, const Grouping &b,
  * partial request is correct.
  **/
 bool
-Test::testPartialMerge(const Grouping &a, const Grouping &b,
+testPartialMerge(const Grouping &a, const Grouping &b,
                 const Group &expect)
 {
     Grouping tmp = a; // create local copy
@@ -283,7 +242,7 @@ Test::testPartialMerge(const Grouping &a, const Grouping &b,
  * group tree matches the expected value.
  **/
 bool
-Test::testMerge(const Grouping &a, const Grouping &b, const Grouping &c,
+testMerge(const Grouping &a, const Grouping &b, const Grouping &c,
                 const Group &expect)
 {
     Grouping tmp = a; // create local copy
@@ -298,28 +257,9 @@ Test::testMerge(const Grouping &a, const Grouping &b, const Grouping &c,
 
 //-----------------------------------------------------------------------------
 
-/**
- * Test collecting the sum of the values from a single attribute
- * vector directly into the root node. Consider this a smoke test.
- **/
-void
-Test::testAggregationSimple()
-{
-    AggregationContext ctx;
-    ctx.result().add(0).add(1).add(2);
-    ctx.add(IntAttrBuilder("int").add(3).add(7).add(15).sp());
-    ctx.add(FloatAttrBuilder("float").add(3).add(7).add(15).sp());
-    ctx.add(StringAttrBuilder("string").add("3").add("7").add("15").sp());
-
-    char strsum[3] = {(char)-101, '5', 0};
-    testAggregationSimpleSum(ctx, SumAggregationResult(), Int64ResultNode(25), FloatResultNode(25), StringResultNode(strsum));
-    testAggregationSimpleSum(ctx, MinAggregationResult(), Int64ResultNode(3), FloatResultNode(3), StringResultNode("15"));
-    testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15), StringResultNode("7"));
-}
-
 #define MU std::make_unique
 
-void Test::testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr)
+void testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr)
 {
     ExpressionNode::CP clone(aggr);
     Grouping request;
@@ -335,6 +275,25 @@ void Test::testAggregationSimpleSum(AggregationContext & ctx, const AggregationR
           .addResult(static_cast<AggregationResult &>(*clone).setExpression(MU<AttributeNode>("string")).setResult(sr));
 
     EXPECT_TRUE(testAggregation(ctx, request, expect));
+}
+
+/**
+ * Test collecting the sum of the values from a single attribute
+ * vector directly into the root node. Consider this a smoke test.
+ **/
+void
+testAggregationSimple()
+{
+    AggregationContext ctx;
+    ctx.result().add(0).add(1).add(2);
+    ctx.add(IntAttrBuilder("int").add(3).add(7).add(15).sp());
+    ctx.add(FloatAttrBuilder("float").add(3).add(7).add(15).sp());
+    ctx.add(StringAttrBuilder("string").add("3").add("7").add("15").sp());
+
+    char strsum[3] = {(char)-101, '5', 0};
+    testAggregationSimpleSum(ctx, SumAggregationResult(), Int64ResultNode(25), FloatResultNode(25), StringResultNode(strsum));
+    testAggregationSimpleSum(ctx, MinAggregationResult(), Int64ResultNode(3), FloatResultNode(3), StringResultNode("15"));
+    testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15), StringResultNode("7"));
 }
 
 GroupingLevel
@@ -374,7 +333,7 @@ createGL(size_t maxGroups, ExpressionNode::UP expr, ExpressionNode::UP result) {
  * lastLevel parameters.
  **/
 void
-Test::testAggregationLevels()
+testAggregationLevels()
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr0").add(10).add(10).sp());
@@ -496,7 +455,7 @@ Test::testAggregationLevels()
  * indicated by the maxgroups parameter.
  **/
 void
-Test::testAggregationMaxGroups()
+testAggregationMaxGroups()
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr").add(5).add(10).add(15).sp());
@@ -547,7 +506,7 @@ Test::testAggregationMaxGroups()
  * Verify that groups are sorted by group id
  **/
 void
-Test::testAggregationGroupOrder()
+testAggregationGroupOrder()
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr").add(10).add(25).add(35).add(5).add(20).add(15).add(30).sp());
@@ -574,7 +533,7 @@ Test::testAggregationGroupOrder()
  * Verify that groups are tagged with the appropriate rank value.
  **/
 void
-Test::testAggregationGroupRank()
+testAggregationGroupRank()
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr")
@@ -624,7 +583,7 @@ createNumAggr(NumericResultNode::UP r, ExpressionNode::UP e) {
 }
 
 void
-Test::testAggregationGroupCapping()
+testAggregationGroupCapping()
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr")
@@ -748,7 +707,7 @@ Test::testAggregationGroupCapping()
  * smoke test.
  **/
 void
-Test::testMergeSimpleSum()
+testMergeSimpleSum()
 {
     Grouping a  = Grouping()
                   .setRoot(Group()
@@ -777,7 +736,7 @@ Test::testMergeSimpleSum()
  * Verify that frozen levels are not touched during merge.
  **/
 void
-Test::testMergeLevels()
+testMergeLevels()
 {
     Grouping request = Grouping()
                        .addLevel(createGL(MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
@@ -957,7 +916,7 @@ Test::testMergeLevels()
  * and that they are sorted by group id.
  **/
 void
-Test::testMergeGroups()
+testMergeGroups()
 {
     Grouping request = Grouping().addLevel(createGL(MU<AttributeNode>("attr")));
 
@@ -1018,7 +977,7 @@ Test::testMergeGroups()
  * end result is as expected.
  **/
 void
-Test::testMergeTrees()
+testMergeTrees()
 {
     Grouping request;
     request.addLevel(createGL(3, MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
@@ -1283,7 +1242,7 @@ Test::testMergeTrees()
 }
 
 void
-Test::testPruneComplex()
+testPruneComplex()
 {
     { // First level
         Group baseTree = Group()
@@ -1423,7 +1382,7 @@ Test::testPruneComplex()
  * results.
  **/
 void
-Test::testPartialMerging()
+testPartialMerging()
 {
     Grouping baseRequest;
     baseRequest.addLevel(createGL(MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
@@ -1588,7 +1547,7 @@ Test::testPartialMerging()
  * Test that pruning a simple grouping tree works.
  **/
 void
-Test::testPruneSimple()
+testPruneSimple()
 {
     {
         Grouping request;
@@ -1614,7 +1573,7 @@ Test::testPruneSimple()
  * that we init, calculate and ignore.
  **/
 void
-Test::testTopN()
+testTopN()
 {
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
@@ -1655,7 +1614,7 @@ Test::testTopN()
  * that we init, calculate and ignore.
  **/
 void
-Test::testCount()
+testCount()
 {
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
@@ -1676,7 +1635,7 @@ Test::testCount()
 //-----------------------------------------------------------------------------
 
 bool
-Test::checkHits(const Grouping &g, uint32_t first, uint32_t last, uint32_t cnt)
+checkHits(const Grouping &g, uint32_t first, uint32_t last, uint32_t cnt)
 {
     CountFS4Hits pop;
     Grouping tmp = g;
@@ -1685,7 +1644,7 @@ Test::checkHits(const Grouping &g, uint32_t first, uint32_t last, uint32_t cnt)
 }
 
 void
-Test::testFS4HitCollection()
+testFS4HitCollection()
 {
     { // aggregation
         AggregationContext ctx;
@@ -1801,7 +1760,7 @@ Test::testFS4HitCollection()
 }
 
 bool
-Test::checkBucket(const NumericResultNode &width, const NumericResultNode &value, const BucketResultNode &bucket)
+checkBucket(const NumericResultNode &width, const NumericResultNode &value, const BucketResultNode &bucket)
 {
     AggregationContext ctx;
     ctx.result().add(0);
@@ -1821,7 +1780,7 @@ Test::checkBucket(const NumericResultNode &width, const NumericResultNode &value
 }
 
 void
-Test::testFixedWidthBuckets()
+testFixedWidthBuckets()
 {
     using Int = Int64ResultNode;
     using Float = FloatResultNode;
@@ -1879,7 +1838,7 @@ Test::testFixedWidthBuckets()
 
 
 void
-Test::testNanSorting()
+testNanSorting()
 {
     // Attempt at reproducing issue with segfault when setting NaN value. Not
     // successful yet, so no point in running test.
@@ -1913,7 +1872,7 @@ Test::testNanSorting()
 }
 
 void
-Test::testThatNanIsConverted()
+testThatNanIsConverted()
 {
     Group g;
     double myNan = std::sqrt(-1);
@@ -1923,7 +1882,7 @@ Test::testThatNanIsConverted()
 }
 
 void
-Test::testGroupingEngineFromRequest()
+testGroupingEngineFromRequest()
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr0").add(10).add(10).sp());
@@ -1943,19 +1902,8 @@ Test::testGroupingEngineFromRequest()
 
 //-----------------------------------------------------------------------------
 
-struct RunDiff { ~RunDiff() {
-    [[maybe_unused]] int system_result = system("diff -u lhs.out rhs.out > diff.txt");
-}};
-
-//-----------------------------------------------------------------------------
-
-int
-Test::Main()
-{
-    RunDiff runDiff;
-    (void) runDiff;
+TEST_MAIN() {
     TEST_DEBUG("lhs.out", "rhs.out");
-    TEST_INIT("groupingengine_test");
     testGroupingEngineFromRequest();
     testAggregationSimple();
     testAggregationLevels();
@@ -1978,7 +1926,6 @@ Test::Main()
     testTopN();
     testThatNanIsConverted();
     testNanSorting();
-    TEST_DONE();
+    TEST_DEBUG_STOP();
+    [[maybe_unused]] int system_result = system("diff -u lhs.out rhs.out > diff.txt");
 }
-
-TEST_APPHOOK(Test);

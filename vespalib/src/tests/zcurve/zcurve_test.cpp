@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <algorithm>
 #include <limits>
@@ -10,45 +10,14 @@
 #include <vespa/log/log.h>
 LOG_SETUP("zcurve_test");
 
-namespace vespalib {
+using namespace vespalib;
 
 using geo::ZCurve;
 
-class ZCurveTest : public vespalib::TestApp
-{
-public:
-    ZCurveTest(void)
-        : vespalib::TestApp()
-    {
-    }
-
-    void testEncoding();
-
-    void testDecoding();
-
-    double ftime();
-
-    static inline int64_t encodexy3(int32_t x, int32_t y);
-
 #define BMLIMIT 0x1000000
 
-    template <bool decode>
-    int64_t bm();
-
-    template <bool decode>
-    int64_t bm2();
-
-    template <bool decode>
-    int64_t bm3();
-
-    int64_t bmcheck();
-
-    int Main() override;
-};
-
-
 void
-ZCurveTest::testEncoding(void)
+testEncoding(void)
 {
     int32_t x = 0;
     int32_t y = 0;
@@ -83,7 +52,7 @@ ZCurveTest::testEncoding(void)
 
 
 void
-ZCurveTest::testDecoding(void)
+testDecoding(void)
 {
     int32_t x = 0;
     int32_t y = 0;
@@ -134,7 +103,7 @@ ZCurveTest::testDecoding(void)
 
 
 double
-ZCurveTest::ftime()
+ftime()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -142,7 +111,7 @@ ZCurveTest::ftime()
 }
 
 int64_t
-ZCurveTest::encodexy3(int32_t x, int32_t y)
+encodexy3(int32_t x, int32_t y)
 {
     uint32_t resxl;
     uint32_t resxh;
@@ -177,7 +146,7 @@ ZCurveTest::encodexy3(int32_t x, int32_t y)
 
 template <bool decode>
 int64_t
-ZCurveTest::bm()
+bm()
 {
     int64_t res = 0;
     double before = ftime();
@@ -218,7 +187,7 @@ ZCurveTest::bm()
 
 template <bool decode>
 int64_t
-ZCurveTest::bm2(void)
+bm2(void)
 {
     int64_t res = 0;
     double before = ftime();
@@ -259,7 +228,7 @@ ZCurveTest::bm2(void)
 
 template <bool decode>
 int64_t
-ZCurveTest::bm3()
+bm3()
 {
     int64_t res = 0;
     double before = ftime();
@@ -299,7 +268,7 @@ ZCurveTest::bm3()
 
 
 int64_t
-ZCurveTest::bmcheck()
+bmcheck()
 {
     int64_t res = 0;
     double before = ftime();
@@ -340,12 +309,7 @@ ZCurveTest::bmcheck()
     return res;
 }
 
-
-int
-ZCurveTest::Main()
-{
-    TEST_INIT("zcurve_test");
-
+TEST_MAIN() {
     for (int32_t x = 0; x < 4; x++) {
         for (int32_t y = 0; y < 4; y++) {
             int64_t enc = 0;
@@ -368,7 +332,7 @@ ZCurveTest::Main()
     }
     testEncoding();
     testDecoding();
-    if (_argc >= 2) {
+    if (argc >= 2) {
         int64_t enc1 = bm<true>();
         int64_t enc1b = bm<false>();
         int64_t enc2 = bm2<true>();
@@ -383,10 +347,4 @@ ZCurveTest::Main()
         ASSERT_TRUE(enc1 == enc3b);
         ASSERT_TRUE(enc1 == enc4);
     }
-
-    TEST_DONE();
 }
-
-}
-
-TEST_APPHOOK(vespalib::ZCurveTest);

@@ -2,7 +2,7 @@
 // Unit tests for dummypersistence.
 
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdslib/distribution/distribution.h>

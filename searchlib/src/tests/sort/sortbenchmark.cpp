@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
@@ -8,21 +8,15 @@
 using vespalib::Array;
 using vespalib::ConstBufferRef;
 
-class Test : public vespalib::TestApp
-{
-public:
+struct Test {
     using V = std::vector<uint32_t>;
     std::vector< std::vector<uint32_t> > _data;
-    int Main() override;
     void generateVectors(size_t numVectors, size_t values);
     V merge();
     void twoWayMerge();
     V cat() const;
-    Test();
-    ~Test() override;
+    ~Test();
 };
-
-Test::Test() = default;
 Test::~Test() = default;
 
 void
@@ -82,31 +76,27 @@ Test::cat() const
     return c;
 }
 
-TEST_APPHOOK(Test);
-
-int Test::Main()
-{
-    TEST_INIT("sortbenchmark");
+TEST_MAIN() {
     size_t numVectors(11);
     size_t values(10000000);
     vespalib::string type("radix");
-    if (_argc > 1) {
-        values = strtol(_argv[1], NULL, 0);
-        if (_argc > 2) {
-            numVectors = strtol(_argv[2], NULL, 0);
-            if (_argc > 2) {
-                type = _argv[3];
+    if (argc > 1) {
+        values = strtol(argv[1], NULL, 0);
+        if (argc > 2) {
+            numVectors = strtol(argv[2], NULL, 0);
+            if (argc > 2) {
+                type = argv[3];
             }
         }
     }
-
+    Test test;
     printf("Start with %ld vectors with %ld values and type '%s'(radix, qsort, merge)\n", numVectors, values, type.c_str());
-    generateVectors(numVectors, values);
+    test.generateVectors(numVectors, values);
     printf("Start cat\n");
-    V v = cat();
+    auto v = test.cat();
     printf("Cat %ld values\n", v.size());
     if (type == "merge") {
-        V m = merge();
+        auto m = test.merge();
         printf("Merged %ld values\n", m.size());
     } else if (type == "qsort") {
         std::sort(v.begin(), v.end());
@@ -116,6 +106,4 @@ int Test::Main()
         S(&v[0], v.size());
         printf("sorted %ld value with radix::sort\n", v.size());
     }
-
-    TEST_DONE();
 }

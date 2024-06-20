@@ -5,7 +5,7 @@
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using proton::HwInfoSampler;
 using search::test::DirectoryHandler;

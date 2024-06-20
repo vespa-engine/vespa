@@ -20,7 +20,7 @@
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config-imported-fields.h>
 
 #include <vespa/log/log.h>

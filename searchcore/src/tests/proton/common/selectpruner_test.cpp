@@ -10,7 +10,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("selectpruner_test");

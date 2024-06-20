@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
@@ -17,15 +17,11 @@ using namespace search;
 
 //-----------------------------------------------------------------------------
 
-class Test : public vespalib::TestApp
+struct Fixture
 {
-public:
-    ~Test() {}
     void benchmark();
-    int Main() override;
     template <typename T>
     void testSearch(bool strict);
-private:
     void searchAndCompare(SearchIterator::UP s, uint32_t docIdLimit);
     void setup();
     std::vector< BitVector::UP > _bvs;
@@ -35,9 +31,22 @@ private:
     bool             _optimize;
     vespalib::string _type;
     std::vector<int> _fillLimits;
-};
 
-void Test::setup()
+    Fixture(int argc, char **argv) {
+        _type = argv[1];
+        _strict = vespalib::string(argv[2]) == vespalib::string("strict");
+        _optimize = vespalib::string(argv[3]) == vespalib::string("optimize");
+        _numSearch = strtoul(argv[4], NULL, 0);
+        _numDocs = strtoul(argv[5], NULL, 0);
+        for (int i(6); i < argc; i++) {
+            _fillLimits.push_back((RAND_MAX/100) * strtoul(argv[i], NULL, 0));
+        }
+    }
+    ~Fixture();
+};
+Fixture::~Fixture() = default;
+
+void Fixture::setup()
 {
     for(size_t i(0); i < _fillLimits.size(); i++) {
         _bvs.push_back(BitVector::create(_numDocs));
@@ -76,7 +85,7 @@ seek(SearchIterator & s, uint32_t docIdLimit)
 }
 
 void
-Test::benchmark()
+Fixture::benchmark()
 {
     if (_type == "and") {
         LOG(info, "Testing 'and'");
@@ -93,7 +102,7 @@ Test::benchmark()
 
 template <typename T>
 void
-Test::testSearch(bool strict)
+Fixture::testSearch(bool strict)
 {
     TermFieldMatchData tfmd;
     MultiSearch::Children andd;
@@ -109,29 +118,15 @@ Test::testSearch(bool strict)
     LOG(info, "Found %ld hits", h.size());
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("multibitvectoriterator_benchmark");
-    if (_argc < 6) {
-        LOG(info, "%s <'and/or'> <'strict/no-strict'> <'optimize/no-optimize> <numsearch> <numdocs> <fill 1> [<fill N>]", _argv[0]);
-        return -1;
+TEST_MAIN() {
+    if (argc < 6) {
+        LOG(info, "%s <'and/or'> <'strict/no-strict'> <'optimize/no-optimize> <numsearch> <numdocs> <fill 1> [<fill N>]", argv[0]);
+        exit(1);
     }
-    _type = _argv[1];
-    _strict = vespalib::string(_argv[2]) == vespalib::string("strict");
-    _optimize = vespalib::string(_argv[3]) == vespalib::string("optimize");
-    _numSearch = strtoul(_argv[4], NULL, 0);
-    _numDocs = strtoul(_argv[5], NULL, 0);
-    for (int i(6); i < _argc; i++) {
-        _fillLimits.push_back((RAND_MAX/100) * strtoul(_argv[i], NULL, 0));
-    }
-    LOG(info, "Start setup of '%s' isearch with %ld vectors with %d documents", _type.c_str(), _fillLimits.size(), _numDocs);
-    setup();
+    Fixture fixture(argc, argv);
+    LOG(info, "Start setup of '%s' isearch with %ld vectors with %d documents", fixture._type.c_str(), fixture._fillLimits.size(), fixture._numDocs);
+    fixture.setup();
     LOG(info, "Start benchmark");
-    benchmark();
+    fixture.benchmark();
     LOG(info, "Done benchmark");
-    TEST_FLUSH();
-    TEST_DONE();
 }
-
-TEST_APPHOOK(Test);

@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/datastore/array_store_config.h>
 #include <vespa/vespalib/util/size_literals.h>

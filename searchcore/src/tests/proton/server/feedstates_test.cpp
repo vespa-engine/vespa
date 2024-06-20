@@ -16,7 +16,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/buffer.h>
 
 #include <vespa/log/log.h>

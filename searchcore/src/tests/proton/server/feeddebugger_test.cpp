@@ -6,7 +6,7 @@ LOG_SETUP("feeddebugger_test");
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DocumentId;
 using std::string;

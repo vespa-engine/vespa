@@ -38,7 +38,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_updater_test");

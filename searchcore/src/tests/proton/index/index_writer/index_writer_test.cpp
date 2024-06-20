@@ -4,7 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/test/mock_index_manager.h>
 #include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
