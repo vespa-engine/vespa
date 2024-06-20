@@ -6,6 +6,7 @@ import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
 import ai.vespa.http.HttpURL.Scheme;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.FileReference;
@@ -1189,14 +1190,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         ApplicationVersions applicationVersions = getActiveApplicationVersions(applicationId)
                 .orElseThrow(() -> new NotFoundException("Unable to get logs for for " + applicationId + " (application not found)"));
-        Map<String, Integer> ports = logserverHostInfo(applicationVersions);
-        return ports.entrySet().stream()
-                .map(entry -> HttpURL.create(Scheme.http, DomainName.of(entry.getKey()), entry.getValue(), HttpURL.Path.parse("logs")))
+        List<Pair<String, Integer>> hostInfo = logserverHostInfo(applicationVersions);
+        return hostInfo.stream()
+                .map(h -> HttpURL.create(Scheme.http, DomainName.of(h.getFirst()), h.getSecond(), HttpURL.Path.parse("logs")))
                 .toList();
     }
 
-    // Finds hostname and port for logserver container for all models/versions
-    private Map<String, Integer> logserverHostInfo(ApplicationVersions applicationVersions) {
+    // Returns a list with hostname and port pairs for logserver container for all models/versions
+    private List<Pair<String, Integer>> logserverHostInfo(ApplicationVersions applicationVersions) {
         return applicationVersions.applications().stream()
                 .peek(app -> log.log(Level.FINE, "Finding logserver host and port for version " + app.getVespaVersion()))
                 .map(Application::getModel)
@@ -1210,7 +1211,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                 .filter(service -> CONTAINER.serviceName.equals(service.getServiceType()))
                                 .findFirst())
                         .orElseThrow(() -> new IllegalArgumentException("No container running on logserver host")))
-                .collect(Collectors.toMap(ServiceInfo::getHostName, this::servicePort, (a, b) -> a));
+                .map(s -> new Pair<>(s.getHostName(), servicePort(s)))
+                .toList();
     }
 
     private int servicePort(ServiceInfo serviceInfo) {
