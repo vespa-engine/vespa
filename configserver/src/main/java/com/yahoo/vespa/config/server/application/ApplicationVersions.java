@@ -66,7 +66,7 @@ public final class ApplicationVersions {
         if (application != null)
             return Optional.of(application);
 
-        // Does the latest version specify we can use it regardless?
+        // Does the latest version specify that we can use it regardless?
         Application latest = applications.get(latestVersion);
         if (latest.getModel().allowModelVersionMismatch(now))
             return Optional.of(latest);
@@ -97,7 +97,7 @@ public final class ApplicationVersions {
         return generation;
     }
 
-    List<Application> applications() {
+    public List<Application> applications() {
         return new ArrayList<>(applications.values());
     }
 

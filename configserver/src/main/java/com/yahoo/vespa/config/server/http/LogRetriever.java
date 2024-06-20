@@ -38,7 +38,7 @@ public class LogRetriever {
             if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(2))))
                 return new EmptyResponse();
 
-            return HttpErrorResponse.internalServerError("Failed to get logs: " + Exceptions.toMessageString(e));
+            throw new RuntimeException("Failed to get logs from " + logServerUri, e);
         }
     }
 
