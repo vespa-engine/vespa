@@ -87,6 +87,15 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{scanner: bufio.NewScanner(r)}
 }
 
+// NewDecoderSize creates a new Decoder that reads from r. The size argument specifies of the size of the buffer that
+// decoder will use when decoding events. Size must be large enough to fit the largest expected event.
+func NewDecoderSize(r io.Reader, size int) *Decoder {
+	scanner := bufio.NewScanner(r)
+	buf := make([]byte, 0, size)
+	scanner.Buffer(buf, size)
+	return &Decoder{scanner: scanner}
+}
+
 // IsEnd returns whether this event indicates that the stream has ended.
 func (e Event) IsEnd() bool { return e.Name == "end" }
 

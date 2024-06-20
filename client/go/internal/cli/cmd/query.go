@@ -5,7 +5,6 @@
 package cmd
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -146,13 +145,11 @@ type printOptions struct {
 
 func printResponseBody(body io.Reader, options printOptions, cli *CLI) error {
 	if options.plainStream {
-		scanner := bufio.NewScanner(body)
-		for scanner.Scan() {
-			fmt.Fprintln(cli.Stdout, scanner.Text())
-		}
-		return scanner.Err()
+		_, err := io.Copy(cli.Stdout, body)
+		return err
 	} else if options.tokenStream {
-		dec := sse.NewDecoder(body)
+		bufSize := 1024 * 1024 // Handle events up to this size
+		dec := sse.NewDecoderSize(body, bufSize)
 		writingLine := false
 		for {
 			event, err := dec.Decode()
