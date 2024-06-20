@@ -5,9 +5,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.Sorting;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Arne Bergene Fossaa

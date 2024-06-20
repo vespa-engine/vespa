@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The second-phase ranking settings of this query.
+ * The significance ranking settings of this query.
  *
  * @author MariusArhaug
  */
