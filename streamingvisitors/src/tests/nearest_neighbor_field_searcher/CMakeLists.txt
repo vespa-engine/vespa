@@ -5,7 +5,7 @@ vespa_add_executable(vsm_nearest_neighbor_field_searcher_test_app TEST
     DEPENDS
     vespa_searchlib
     searchlib_test
-    streamingvisitors
+    vespa_streamingvisitors
     GTest::GTest
 )
 

@@ -3,7 +3,7 @@ vespa_add_executable(vsm_docsum_test_app TEST
     SOURCES
     docsum_test.cpp
     DEPENDS
-    streamingvisitors
+    vespa_streamingvisitors
     GTest::gtest
 )
 vespa_add_test(NAME vsm_docsum_test_app COMMAND vsm_docsum_test_app)

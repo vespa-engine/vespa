@@ -5,6 +5,6 @@ vespa_add_executable(vsm_searcher_test_app TEST
     DEPENDS
     vespa_searchlib
     searchlib_test
-    streamingvisitors
+    vespa_streamingvisitors
 )
 vespa_add_test(NAME vsm_searcher_test_app COMMAND vsm_searcher_test_app)
