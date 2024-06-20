@@ -3,6 +3,6 @@ vespa_add_executable(slobrok_standalone_test_app TEST
     SOURCES
     standalone.cpp
     DEPENDS
-    slobrok_slobrokserver
+    vespa_slobrok_slobrokserver
 )
 vespa_add_test(NAME slobrok_standalone_test_app COMMAND slobrok_standalone_test_app)
