@@ -24,7 +24,7 @@ func TestDeployCloud(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false, false)
 
-	cli, stdout, stderr := newTestCLI(t, "CI=true", "NO_COLOR=true")
+	cli, stdout, stderr := newTestCLI(t, "NO_COLOR=true")
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponseString(200, `ok`)
 	cli.httpClient = httpClient
@@ -37,11 +37,12 @@ func TestDeployCloud(t *testing.T) {
 
 	stderr.Reset()
 	require.NotNil(t, cli.Run("deploy", pkgDir))
+	apiKeyWarning := "Warning: Authenticating with API key, intended for use in CI environments.\nHint: Authenticate with 'vespa auth login' instead\n"
 	certError := `Error: deployment to Vespa Cloud requires certificate in application package
 Hint: See https://cloud.vespa.ai/en/security/guide
 Hint: Pass --add-cert to use the certificate of the current application
 `
-	assert.Equal(t, certError, stderr.String())
+	assert.Equal(t, apiKeyWarning+certError, stderr.String())
 
 	require.Nil(t, cli.Run("deploy", "--add-cert", "--wait=0", pkgDir))
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
@@ -57,7 +58,7 @@ Hint: Pass --add-cert to use the certificate of the current application
 	buf.WriteString("wat\nthe\nfck\nn\n")
 	cli.Stdin = &buf
 	require.NotNil(t, cli.Run("deploy", "--add-cert=false", "--wait=0", pkgDir2))
-	warning := "Warning: Application package does not contain security/clients.pem, which is required for deployments to Vespa Cloud\n"
+	warning := apiKeyWarning + "Warning: Application package does not contain security/clients.pem, which is required for deployments to Vespa Cloud\n"
 	assert.Equal(t, warning+strings.Repeat("Error: please answer 'y' or 'n'\n", 3)+certError, stderr.String())
 	buf.WriteString("y\n")
 	require.Nil(t, cli.Run("deploy", "--add-cert=false", "--wait=0", pkgDir2))
@@ -66,14 +67,14 @@ Hint: Pass --add-cert to use the certificate of the current application
 	// Missing application certificate is detected
 	stderr.Reset()
 	require.NotNil(t, cli.Run("deploy", "--application=t1.a2.i2", pkgDir2))
-	assert.Equal(t, "Error: no certificate exists for t1.a2.i2\nHint: Try (re)creating the certificate with 'vespa auth cert'\n", stderr.String())
+	assert.Equal(t, apiKeyWarning+"Error: no certificate exists for t1.a2.i2\nHint: Try (re)creating the certificate with 'vespa auth cert'\n", stderr.String())
 
 	// Mismatching certificate is detected
 	stdout.Reset()
 	stderr.Reset()
 	assert.Nil(t, cli.Run("auth", "cert", "--application=t1.a1.i1", "-f", "--no-add"))
 	require.NotNil(t, cli.Run("deploy", "--application=t1.a1.i1", pkgDir2))
-	assert.Equal(t, `Error: certificate in security/clients.pem does not match the stored key pair for t1.a1.i1
+	assert.Equal(t, apiKeyWarning+`Error: certificate in security/clients.pem does not match the stored key pair for t1.a1.i1
 Hint: If this application was deployed using a different application ID in the past, the matching key pair may be stored under a different ID in `+
 		cli.config.homeDir+"\nHint: Specify the matching application with --application, or add the current certificate to the package using --add-cert\n",
 		stderr.String())
