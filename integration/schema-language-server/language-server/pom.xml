@@ -24,6 +24,14 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-deprecation</arg>
+            <arg>-Xlint:-unchecked</arg>
+            <arg>-Xlint:-rawtypes</arg>
+          </compilerArgs>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -69,7 +77,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.7.0</version>
         <configuration>
-            <excludePackageNames>ai.vespa.languageserver</excludePackageNames>
+            <excludePackageNames>ai.vespa.languageserver.parser</excludePackageNames>
         </configuration>
       </plugin>
       <plugin>
@@ -84,12 +92,12 @@
             </goals>
             <configuration>
               <sources>
-              <source>target/generate-sources/ccc</source>
+                <source>target/generate-sources/ccc</source>
               </sources>
             </configuration>
           </execution>
-    </executions>
-      </plugin>
+        </executions>
+    </plugin>
     </plugins>
   </build>
 </project>

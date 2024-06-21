@@ -1,16 +1,10 @@
-
 PARSER_CLASS=SchemaParser;
-PARSER_PACKAGE=ai.vespa.languageserver;
+PARSER_PACKAGE=ai.vespa.languageserver.parser;
+FAULT_TOLERANT=true;
 
 INJECT :
 {
-    package ai.vespa.languageserver;
-
-    public class SchemaParser {
-        public SchemaParser(SimpleCharStream stream) {
-            this(stream);
-        }
-    }
+    package ai.vespa.languageserver.parser;
 }
 
 // --------------------------------------------------------------------------------
@@ -252,3 +246,177 @@ UNPARSED :
   <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* >
 ;
 
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+/**
+ * The rule consumes any schema and returns the corresponding object. This is the only production that should
+ * ever consume leading newlines.
+ *
+ * @return the schema object
+ * TODO: implement rootDocument
+ */
+ParsedSchema Root :
+{
+    ParsedSchema schema;
+}
+    (<NL>)* (schema = rootSchema)
+    { return schema; }
+;
+
+/**
+ * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @return the schema definition object.
+ * TODO: implement inheritance
+ */
+ParsedSchema rootSchema :
+{
+    String name;
+    ParsedSchema schema;
+}
+    ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
+        schema = new ParsedSchema(name);
+      }
+      openLbrace (rootSchemaItem(schema) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
+    { return schema; }
+;
+
+rootSchemaItem(ParsedSchema schema) :
+    ( 
+        <STRING>
+    )
+;
+
+/**
+ * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
+ * identifiers.
+ *
+ * @return the identifier string
+ */
+String identifierStr :
+    ( <ALIAS>
+      | <ALWAYS>
+      | <ANNOTATION>
+      | <ANNOTATIONREFERENCE>
+      | <ARITY>
+      | <ARRAY>
+      | <AS>
+      | <ASCENDING>
+      | <ATTRIBUTE>
+      | <BOLDING>
+      | <BTREE>
+      | <CASED>
+      | <CONSTANT>
+      | <CONSTANTS>
+      | <CONTEXT>
+      | <DESCENDING>
+      | <DICTIONARY>
+      | <DIRECT>
+      | <DIVERSITY>
+      | <DOCUMENT>
+      | <DOUBLE_KEYWORD>
+      | <FLOAT_KEYWORD>
+      | <LONG_KEYWORD>
+      | <STRING_KEYWORD>
+      | <DYNAMIC>
+      | <EXACT>
+      | <FALSE>
+      | <FIELD>
+      | <FIELDS>
+      | <FIELDSET>
+      | <FILE>
+      | <FILTER>
+      | <FULL>
+      | <FUNCTION>
+      | <GRAM>
+      | <HASH>
+      | <HNSW>
+      | <ID>
+      | <IDENTICAL>
+      | <IDENTIFIER>
+      | <IMPORT>
+      | <INDEX>
+      | <INDEXING>
+      | <INHERITS>
+      | <INLINE>
+      | <INPUTS>
+      | <INTEGER>
+      | <LITERAL>
+      | <LOCALE>
+      | <LONG>
+      | <LOOSE>
+      | <LOWERCASE>
+      | <MACRO>
+      | <MAP>
+      | <MATCH>
+      | <MODEL>
+      | <MTOKEN>
+      | <MUTABLE>
+      | <MUTATE>
+      | <NEVER>
+      | <NONE>
+      | <NORMAL>
+      | <NORMALIZING>
+      | <OFF>
+      | <ON>
+      | <OPERATION>
+      | <ORDER>
+      | <PAGED>
+      | <PARALLEL>
+      | <PREFIX>
+      | <PRIMARY>
+      | <PROPERTIES>
+      | <QUATERNARY>
+      | <QUERY>
+      | <RANK>
+      | <RAW>
+      | <REFERENCE>
+      | <SCHEMA>
+      | <SEARCH>
+      | <SECONDARY>
+      | <SEQUENTIAL>
+      | <SORTING>
+      | <SOURCE>
+      | <SSCONTEXTUAL>
+      | <SSOVERRIDE>
+      | <SSTITLE>
+      | <SSURL>
+      | <STATIC>
+      | <STEMMING>
+      | <STRENGTH>
+      | <STRICT>
+      | <SIGNIFICANCE>
+      | <STRING>
+      | <STRUCT>
+      | <SUBSTRING>
+      | <SUFFIX>
+      | <SUMMARY>
+      | <SYMMETRIC>
+      | <TERTIARY>
+      | <TEXT>
+      | <TO>
+      | <TOKENS>
+      | <TRUE>
+      | <TYPE>
+      | <UCA>
+      | <UNCASED>
+      | <URI>
+      | <VARIABLE>
+      | <WEIGHT>
+      | <WEIGHTEDSET>
+      | <WORD>
+    ) {
+        return lastConsumedToken.toString();
+    }
+;
+
+
+openLbrace :
+    (<NL>)* <LBRACE> (<NL>)*
+;
