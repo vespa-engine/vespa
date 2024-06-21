@@ -6,9 +6,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <thread>
 
-#include <vespa/log/log.h>
-LOG_SETUP("documentdb_job_trackers_test");
-
 using namespace proton;
 using namespace searchcorespi;
 
@@ -115,5 +112,3 @@ TEST_F("require that un-known flush targets are not tracked", Fixture)
     EXPECT_EQUAL(1u, output.size());
     EXPECT_EQUAL(&*output[0].get(), &*input[0]);
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

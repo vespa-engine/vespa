@@ -37,5 +37,3 @@ TEST("require that custom status report works")
 }
 
 }  // namespace proton
-
-TEST_MAIN() { TEST_RUN_ALL(); }

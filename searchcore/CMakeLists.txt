@@ -68,11 +68,8 @@ vespa_define_module(
     src/tests/proton/bucketdb/bucketdb
     src/tests/proton/common
     src/tests/proton/common/alloc_config
-    src/tests/proton/common/attribute_updater
-    src/tests/proton/common/document_type_inspector
     src/tests/proton/common/hw_info_sampler
     src/tests/proton/common/operation_rate_tracker
-    src/tests/proton/common/state_reporter_utils
     src/tests/proton/common/timer
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
@@ -101,7 +98,6 @@ vespa_define_module(
     src/tests/proton/documentmetastore/lid_allocator
     src/tests/proton/documentmetastore/lid_state_vector
     src/tests/proton/feed_and_search
-    src/tests/proton/feedoperation
     src/tests/proton/feedtoken
     src/tests/proton/flushengine
     src/tests/proton/flushengine/prepare_restart_flush_strategy
@@ -121,9 +117,6 @@ vespa_define_module(
     src/tests/proton/matching/request_context
     src/tests/proton/matching/same_element_builder
     src/tests/proton/matching/unpacking_iterators_optimizer
-    src/tests/proton/metrics/documentdb_job_trackers
-    src/tests/proton/metrics/job_load_sampler
-    src/tests/proton/metrics/job_tracked_flush
     src/tests/proton/metrics/metrics_engine
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
@@ -152,7 +145,6 @@ vespa_define_module(
     src/tests/proton/server/memory_flush_config_updater
     src/tests/proton/server/memoryflush
     src/tests/proton/server/shared_threading_service
-    src/tests/proton/statusreport
     src/tests/proton/summaryengine
     src/tests/proton/verify_ranksetup
     src/tests/index/disk_indexes

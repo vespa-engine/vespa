@@ -40,9 +40,6 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_updater_test");
-
 using namespace document;
 using document::config_builder::Array;
 using document::config_builder::Map;
@@ -472,6 +469,3 @@ TEST_F("require that tensor remove update is applied",
 }
 
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }
-

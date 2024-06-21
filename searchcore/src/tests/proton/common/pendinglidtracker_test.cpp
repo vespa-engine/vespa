@@ -3,9 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("pendinglidtracker_test");
-
 using namespace proton;
 
 constexpr uint32_t LID_1 = 1u;
@@ -76,5 +73,3 @@ TEST("test pendinglidtracker for needcommit") {
     EXPECT_EQUAL(ILidCommitState::State::COMPLETED, tracker.getState(LID_1));
     EXPECT_EQUAL(ILidCommitState::State::COMPLETED, tracker.getState(LIDV_2_1_3));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

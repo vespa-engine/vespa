@@ -10,9 +10,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/gate.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("job_tracked_flush_test");
-
 using namespace proton;
 using namespace searchcorespi;
 using search::SerialNum;
@@ -134,5 +131,3 @@ TEST_F("require that nullptr flush task is not tracked", Fixture)
     FlushTask::UP task = f._trackedFlush.initFlush(0, std::make_shared<search::FlushToken>());
     EXPECT_TRUE(task.get() == nullptr);
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }
