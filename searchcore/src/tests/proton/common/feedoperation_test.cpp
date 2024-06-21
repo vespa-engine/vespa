@@ -357,5 +357,3 @@ TEST_F("require that we can serialize and deserialize remove by gid operations",
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

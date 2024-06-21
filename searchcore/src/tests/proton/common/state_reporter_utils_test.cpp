@@ -1,6 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("state_reporter_utils_test");
 
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -44,4 +42,3 @@ TEST("require that advanced status report is correctly converted to slime")
                     message("foo"))));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }

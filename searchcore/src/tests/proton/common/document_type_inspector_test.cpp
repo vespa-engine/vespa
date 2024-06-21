@@ -127,8 +127,3 @@ TEST_F("require that struct addition is detected", Fixture(false, false))
     EXPECT_FALSE(inspector.hasUnchangedField("map.key"));
     EXPECT_FALSE(inspector.hasUnchangedField("map.value"));
 }
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}

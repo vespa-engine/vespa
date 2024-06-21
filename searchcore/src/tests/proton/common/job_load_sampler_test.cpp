@@ -1,6 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("job_load_sampler_test");
 
 #include <vespa/searchcore/proton/metrics/job_load_sampler.h>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -101,5 +99,3 @@ TEST_F("require that multiple jobs that starts and ends in several intervals get
     f.end(45);
     EXPECT_APPROX(0.5, f.sample(50), EPS);
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }
