@@ -168,7 +168,7 @@ func TestStatusCloudDeployment(t *testing.T) {
 }
 
 func isLocalTarget(args []string) bool {
-	for i := 0; i < len(args)-1; i++ {
+	for i := range len(args) - 1 {
 		if args[i] == "-t" {
 			return args[i+1] == "local"
 		}
@@ -197,7 +197,7 @@ func assertStatus(expectedTarget string, args []string, t *testing.T) {
 	t.Helper()
 	client := &mock.HTTPClient{}
 	clusterName := ""
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		if isLocalTarget(args) {
 			clusterName = "foo"
 			mockServiceStatus(client, clusterName)

@@ -176,7 +176,7 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	if len(docs) != len(result) {
 		t.Errorf("len(result) = %d, want %d", len(result), len(docs))
 	}
-	for i := 0; i < len(docs); i++ {
+	for i := range len(docs) {
 		got := result[i]
 		want := docs[i]
 		if !got.Equal(want) {

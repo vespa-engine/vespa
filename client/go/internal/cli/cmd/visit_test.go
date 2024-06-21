@@ -41,7 +41,7 @@ func TestQuoteFunc(t *testing.T) {
 	var buf []byte = make([]byte, 3)
 	buf[0] = 'a'
 	buf[2] = 'z'
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		buf[1] = byte(i)
 		s := string(buf)
 		res := quoteArgForUrl(s)

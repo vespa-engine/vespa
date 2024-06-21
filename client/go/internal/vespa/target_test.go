@@ -20,7 +20,7 @@ func TestLocalTarget(t *testing.T) {
 	client := &mock.HTTPClient{}
 	lt := LocalTarget(client, TLSOptions{}, 0)
 	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		response := `
 {
   "services": [
@@ -83,7 +83,7 @@ func TestCustomTargetWait(t *testing.T) {
 	client.NextStatus(500)
 	assertService(t, true, target, "", 0)
 	// Fails multiple times
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		client.NextStatus(500)
 		client.NextResponseError(io.EOF)
 	}
@@ -120,7 +120,7 @@ func TestCustomTargetAwaitDeployment(t *testing.T) {
 func TestCustomTargetCompatibleWith(t *testing.T) {
 	client := &mock.HTTPClient{}
 	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		client.NextResponse(mock.HTTPResponse{
 			URI:    "/state/v1/version",
 			Status: 200,
@@ -249,7 +249,7 @@ func TestLog(t *testing.T) {
 
 func TestCloudCompatibleWith(t *testing.T) {
 	target, client := createCloudTarget(t, io.Discard)
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		client.NextResponse(mock.HTTPResponse{URI: "/cli/v1/", Status: 200, Body: []byte(`{"minVersion":"8.0.0"}`)})
 	}
 	assert.Nil(t, target.CompatibleWith(version.MustParse("8.0.0")))
