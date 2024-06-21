@@ -76,7 +76,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                                 ApplicationId application) {
         if (exception != null) {
             if (failures.get() < maxWarningsPerInvocation)
-                log.log(Level.WARNING, "Could not update metrics for " + application + ": " +
+                log.log(Level.INFO, "Could not update metrics for " + application + ": " +
                                        Exceptions.toMessageString(exception));
             failures.add(1);
         }
