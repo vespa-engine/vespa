@@ -55,6 +55,27 @@ public class DefaultSignificanceModelRegistryTest {
     }
 
     @Test
+    public void testDefaultSignificanceModelRegistryWithZSTDecompressing() {
+        List<Path> models = new ArrayList<>();
+
+        models.add(Path.of("src/test/models/docv1.json.zst"));
+
+        DefaultSignificanceModelRegistry defaultSignificanceModelRegistry = new DefaultSignificanceModelRegistry(models);
+
+        var optionalEnglishModel = defaultSignificanceModelRegistry.getModel(Language.ENGLISH);
+        assertTrue(optionalEnglishModel.isPresent());
+
+        var englishModel = optionalEnglishModel.get();
+
+        assertTrue( defaultSignificanceModelRegistry.getModel(Language.FRENCH).isEmpty());
+        assertNotNull(englishModel);
+        assertEquals("test::1", englishModel.getId());
+        assertEquals(2, englishModel.documentFrequency("test").frequency());
+        assertEquals(10, englishModel.documentFrequency("test").corpusSize());
+
+    }
+
+    @Test
     public void testDefaultSignificanceModelRegistryInOppsiteOrder() {
 
         List<Path> models = new ArrayList<>();

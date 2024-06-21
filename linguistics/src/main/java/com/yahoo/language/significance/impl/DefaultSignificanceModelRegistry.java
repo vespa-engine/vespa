@@ -7,9 +7,12 @@ import com.yahoo.language.Language;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.search.significance.config.SignificanceConfig;
+import io.airlift.compress.zstd.ZstdInputStream;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
@@ -44,7 +47,11 @@ public class DefaultSignificanceModelRegistry implements SignificanceModelRegist
     public void addModel(Path path) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            SignificanceModelFile file = objectMapper.readValue(path.toFile(), SignificanceModelFile.class);
+            InputStream in = path.toString().endsWith(".zst") ?
+                    new ZstdInputStream(new FileInputStream(path.toFile())) :
+                    new FileInputStream(path.toFile());
+
+            SignificanceModelFile file = objectMapper.readValue(in, SignificanceModelFile.class);
             for (var pair : file.languages().entrySet()) {
                 this.models.put(
                         Language.fromLanguageTag(pair.getKey()),

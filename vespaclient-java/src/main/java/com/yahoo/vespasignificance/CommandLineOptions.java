@@ -26,6 +26,7 @@ public class CommandLineOptions {
     public static final String FIELD_OPTION = "field";
     public static final String LANGUAGE_OPTION = "language";
     public static final String DOC_TYPE_OPTION = "doc-type";
+    public static final String ZST_COMPRESSION = "zst-compression";
 
     private final Options options = createOptions();
 
@@ -40,33 +41,44 @@ public class CommandLineOptions {
                 .build());
 
         options.addOption(Option.builder("i")
+                .required()
                 .hasArg(true)
                 .desc("Input file")
                 .longOpt(INPUT_OPTION)
                 .build());
 
         options.addOption(Option.builder("i")
+                .required()
                 .hasArg(true)
                 .desc("Output file")
                 .longOpt(OUTPUT_OPTION)
                 .build());
 
         options.addOption(Option.builder("f")
+                .required()
                 .hasArg(true)
                 .desc("Field to analyze")
                 .longOpt(FIELD_OPTION)
                 .build());
 
         options.addOption(Option.builder("l")
+                .required()
                 .hasArg(true)
                 .desc("Language tag for output file")
                 .longOpt(LANGUAGE_OPTION)
                 .build());
 
         options.addOption(Option.builder("d")
+                .required()
                 .hasArg(true)
                 .desc("Document type identifier")
                 .longOpt(DOC_TYPE_OPTION)
+                .build());
+
+        options.addOption(Option.builder("zst")
+                .hasArg(true)
+                .desc("Use Zstandard compression")
+                .longOpt(ZST_COMPRESSION)
                 .build());
 
         return options;
@@ -93,6 +105,7 @@ public class CommandLineOptions {
             builder.setField(cl.getOptionValue(FIELD_OPTION));
             builder.setLanguage(cl.getOptionValue(LANGUAGE_OPTION));
             builder.setDocType(cl.getOptionValue(DOC_TYPE_OPTION));
+            builder.setZstCompression(cl.hasOption(ZST_COMPRESSION) ? cl.getOptionValue(ZST_COMPRESSION) : "true");
 
             return builder.build();
         } catch (ParseException e) {
