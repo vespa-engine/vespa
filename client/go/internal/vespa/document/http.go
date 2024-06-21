@@ -3,6 +3,7 @@ package document
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -15,7 +16,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-json-experiment/json"
 	"github.com/klauspost/compress/gzip"
 
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
@@ -335,7 +335,7 @@ func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result R
 	} else {
 		if result.Success() && c.options.TraceLevel > 0 {
 			var jsonResponse struct {
-				Trace json.RawValue `json:"trace"`
+				Trace json.RawMessage `json:"trace"`
 			}
 			if err := json.Unmarshal(buf.Bytes(), &jsonResponse); err != nil {
 				result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err), elapsed)
