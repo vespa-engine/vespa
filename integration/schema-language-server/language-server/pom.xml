@@ -8,12 +8,16 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../../../parent/pom.xml</relativePath>
   </parent>
-  <artifactId>language-server</artifactId>
+  <artifactId>schema-language-server</artifactId>
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>
-  <name>languageserver</name>
+  <name>Schema Language Server</name>
   <dependencies>
-
+    <dependency>
+      <groupId>org.eclipse.lsp4j</groupId>
+      <artifactId>org.eclipse.lsp4j</artifactId>
+      <version>0.23.1</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -36,7 +40,7 @@
           </execution>
         </executions>
         <configuration>
-          <mainClass>ai.vespa.languageserver.LanguageServer</mainClass>
+          <mainClass>ai.vespa.schemals.Launcher</mainClass>
         </configuration>
       </plugin>
       <plugin>
