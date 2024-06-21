@@ -21,9 +21,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const jarPath = path.join(__dirname, '..', '..', '..', 'language-server', 'target', 'schema-language-server-jar-with-dependencies.jar')
 
+	const config = vscode.workspace.getConfiguration();
+	const logFile = config.get('vespaSchemaLS.logFile');
+
+	const logArgs = typeof(logFile) === "string" ? ['-t', logFile] : []
+
 	const serverOptions: ServerOptions = {
 		command: excecutable,
-		args: ['-jar', jarPath, '-t', 'vespaSchema.log'],
+		args: ['-jar', jarPath, ...logArgs],
 		options: {}
 	};
 
