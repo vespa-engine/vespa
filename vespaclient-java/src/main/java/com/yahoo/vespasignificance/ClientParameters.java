@@ -26,19 +26,24 @@ public class ClientParameters {
     // Document type identifier
     public final String docType;
 
+    // Zstandard compression
+    public final boolean zstCompression;
+
     public ClientParameters(
             boolean help,
             String inputFile,
             String outputFile,
             String field,
             String language,
-            String docType) {
+            String docType,
+            boolean zstCompression) {
         this.help = help;
         this.inputFile = inputFile;
         this.outputFile = outputFile;
         this.field = field;
         this.language = language;
         this.docType = docType;
+        this.zstCompression = zstCompression;
     }
 
     public static class Builder {
@@ -47,8 +52,8 @@ public class ClientParameters {
         private String outputFile;
         private String field;
         private String language;
-
         private String docType;
+        private boolean zstCompression;
 
         public Builder setHelp(boolean help) {
             this.help = help;
@@ -79,8 +84,13 @@ public class ClientParameters {
             return this;
         }
 
+        public Builder setZstCompression(String useZstCompression) {
+            this.zstCompression = Boolean.parseBoolean(useZstCompression);
+            return this;
+        }
+
         public ClientParameters build() {
-            return new ClientParameters(help, inputFile, outputFile, field, language, docType);
+            return new ClientParameters(help, inputFile, outputFile, field, language, docType, zstCompression);
         }
     }
 }
