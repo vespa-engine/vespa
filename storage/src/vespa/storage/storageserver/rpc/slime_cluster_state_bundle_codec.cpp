@@ -1,9 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "slime_cluster_state_bundle_codec.h"
+#include <vespa/config-stor-distribution.h>
+#include <vespa/config/common/misc.h>
+#include <vespa/config/configgen/configpayload.h>
+#include <vespa/config/print/configdatabuffer.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/data/slime/array_traverser.h>
+#include <vespa/vespalib/data/slime/object_traverser.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -17,6 +23,7 @@ using vespalib::compression::CompressionConfig;
 using vespalib::compression::decompress;
 using vespalib::compression::compress;
 using vespalib::Memory;
+using DistributionConfigBuilder = storage::lib::Distribution::DistributionConfigBuilder;
 using namespace vespalib::slime;
 
 namespace storage::rpc {
@@ -48,21 +55,94 @@ vespalib::string serialize_state(const lib::ClusterState& state) {
     return as.str();
 }
 
-const Memory StatesField("states");
 const Memory BaselineField("baseline");
-const Memory SpacesField("spaces");
-const Memory DeferredActivationField("deferred-activation");
-const Memory FeedBlockField("feed-block");
 const Memory BlockFeedInClusterField("block-feed-in-cluster");
+const Memory DeferredActivationField("deferred-activation");
 const Memory DescriptionField("description");
+const Memory DistributionConfigField("distribution-config");
+const Memory FeedBlockField("feed-block");
+const Memory SpacesField("spaces");
+const Memory StatesField("states");
 
+// Important: these conversion routines are NOT complete and NOT general! They are only to be used
+// by code transitively used by unit tests that expect a particular type subset and "shape" of config.
+
+void convert_struct(const Inspector& in, Cursor& out);
+
+struct ConfigArrayConverter : ArrayTraverser {
+    Cursor& _out;
+    explicit ConfigArrayConverter(Cursor& out) noexcept: _out(out) {}
+
+    void entry([[maybe_unused]] size_t idx, const Inspector& in) override {
+        assert(in.type().getId() == OBJECT::ID);
+        auto type = in["type"].asString();
+        auto& value = in["value"];
+        assert(value.valid());
+        if (type == "int") {
+            _out.addLong(value.asLong());
+        } else if (type == "bool") {
+            _out.addBool(value.asBool());
+        } else if (type == "string") {
+            _out.addString(value.asString());
+        } else if (type == "double") {
+            _out.addDouble(value.asDouble());
+        } else if (type == "array") {
+            assert(value.type().getId() == ARRAY::ID);
+            ConfigArrayConverter arr_conv(_out.addArray());
+            value.traverse(arr_conv);
+        } else if (type == "struct") {
+            convert_struct(value, _out.addObject());
+        } else {
+            fprintf(stderr, "unknown array entry type '%s'\n", type.make_string().c_str());
+            abort();
+        }
+    }
+};
+
+struct ConfigObjectConverter : ObjectTraverser {
+    Cursor& _out;
+    explicit ConfigObjectConverter(Cursor& out) noexcept: _out(out) {}
+
+    void field(const Memory& name, const Inspector& in) override {
+        assert(in.type().getId() == OBJECT::ID);
+        auto type = in["type"].asString();
+        auto& value = in["value"];
+        assert(value.valid());
+        if (type == "int") {
+            _out.setLong(name, value.asLong());
+        } else if (type == "bool") {
+            _out.setBool(name, value.asBool());
+        } else if (type == "string") {
+            _out.setString(name, value.asString());
+        } else if (type == "double") {
+            _out.setDouble(name, value.asDouble());
+        } else if (type == "array") {
+            assert(value.type().getId() == ARRAY::ID);
+            ConfigArrayConverter arr_conv(_out.setArray(name));
+            value.traverse(arr_conv);
+        } else if (type == "struct") {
+            convert_struct(value, _out.setObject(name));
+        } else {
+            fprintf(stderr, "unknown struct entry type '%s'\n", type.make_string().c_str());
+            abort();
+        }
+    }
+};
+
+void convert_struct(const Inspector& in, Cursor& out) {
+    ConfigObjectConverter conv(out);
+    in.traverse(conv);
 }
+
+void convert_to_config_payload(const Inspector& in, Cursor& out) {
+    convert_struct(in["configPayload"], out);
+}
+
+} // anon ns
 
 // Only used from unit tests; the cluster controller encodes all bundles
 // we decode in practice.
-EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(
-        const lib::ClusterStateBundle& bundle) const
-{
+EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(const lib::ClusterStateBundle& bundle) const {
     vespalib::Slime slime;
     Cursor& root = slime.setObject();
     if (bundle.deferredActivation()) {
@@ -79,6 +159,15 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(
         Cursor& feed_block = root.setObject(FeedBlockField);
         feed_block.setBool(BlockFeedInClusterField, true);
         feed_block.setString(DescriptionField, bundle.feed_block()->description());
+    }
+
+    if (bundle.has_distribution_config()) {
+        Cursor& distr_root = root.setObject(DistributionConfigField);
+        ::config::ConfigDataBuffer buf;
+        bundle.distribution_config_bundle()->config().serialize(buf);
+        // There is no way in C++ to directly serialize to the actual payload format we expect to
+        // deserialize, so we have to manually convert the type-annotated config snapshot :I
+        convert_to_config_payload(buf.slimeObject().get(), distr_root);
     }
 
     OutputBuf out_buf(4_Ki);
@@ -130,7 +219,7 @@ std::shared_ptr<const lib::ClusterStateBundle> SlimeClusterStateBundleCodec::dec
     BinaryFormat::decode(Memory(uncompressed.getData(), uncompressed.getDataLen()), slime);
     Inspector& root = slime.get();
     Inspector& states = root[StatesField];
-    lib::ClusterState baseline(states[BaselineField].asString().make_string());
+    auto baseline = std::make_shared<lib::ClusterState>(states[BaselineField].asString().make_string());
 
     Inspector& spaces = states[SpacesField];
     lib::ClusterStateBundle::BucketSpaceStateMapping space_states;
@@ -138,16 +227,21 @@ std::shared_ptr<const lib::ClusterStateBundle> SlimeClusterStateBundleCodec::dec
     spaces.traverse(inserter);
 
     const bool deferred_activation = root[DeferredActivationField].asBool(); // Defaults to false if not set.
+    std::shared_ptr<const lib::DistributionConfigBundle> distribution_config;
+    std::optional<lib::ClusterStateBundle::FeedBlock> feed_block;
 
     Inspector& fb = root[FeedBlockField];
     if (fb.valid()) {
-        lib::ClusterStateBundle::FeedBlock feed_block(fb[BlockFeedInClusterField].asBool(),
-                                                      fb[DescriptionField].asString().make_string());
-        return std::make_shared<lib::ClusterStateBundle>(baseline, std::move(space_states), feed_block, deferred_activation);
+        feed_block = lib::ClusterStateBundle::FeedBlock(fb[BlockFeedInClusterField].asBool(),
+                                                        fb[DescriptionField].asString().make_string());
     }
-
-    // TODO add shared_ptr constructor for baseline?
-    return std::make_shared<lib::ClusterStateBundle>(baseline, std::move(space_states), deferred_activation);
+    Inspector& dc = root[DistributionConfigField];
+    if (dc.valid()) {
+        auto raw_cfg = std::make_unique<DistributionConfigBuilder>(::config::ConfigPayload(dc));
+        distribution_config = lib::DistributionConfigBundle::of(std::move(raw_cfg));
+    }
+    return std::make_shared<lib::ClusterStateBundle>(std::move(baseline), std::move(space_states), std::move(feed_block),
+                                                     std::move(distribution_config), deferred_activation);
 }
 
 }

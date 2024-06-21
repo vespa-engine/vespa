@@ -121,7 +121,7 @@ struct SetStateFixture : FixtureBase {
     }
 
     static lib::ClusterStateBundle dummy_baseline_bundle_with_deferred_activation(bool deferred) {
-        return lib::ClusterStateBundle(lib::ClusterState("version:123 distributor:3 storage:3"), {}, deferred);
+        return {lib::ClusterState("version:123 distributor:3 storage:3"), {}, deferred};
     }
 };
 
@@ -162,6 +162,16 @@ TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_states_rpc_with_feed
     lib::ClusterStateBundle bundle(
             lib::ClusterState("version:123 distributor:3 storage:3"), {},
             lib::ClusterStateBundle::FeedBlock(true, "full disk"), true);
+
+    f.assert_request_received_and_propagated(bundle);
+}
+
+TEST_F(ClusterControllerApiRpcServiceTest, can_receive_cluster_state_bundle_with_embedded_distribution_config) {
+    auto distr_cfg = lib::DistributionConfigBundle::of(lib::Distribution::getDefaultDistributionConfig(3, 14));
+    SetStateFixture f;
+    lib::ClusterStateBundle bundle(
+            std::make_shared<const lib::ClusterState>("version:123 distributor:3 storage:3"),
+            {}, std::nullopt, std::move(distr_cfg), false);
 
     f.assert_request_received_and_propagated(bundle);
 }
