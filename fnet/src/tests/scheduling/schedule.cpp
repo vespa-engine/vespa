@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
+#include <cassert>
 
 using vespalib::steady_clock;
 using vespalib::steady_time;

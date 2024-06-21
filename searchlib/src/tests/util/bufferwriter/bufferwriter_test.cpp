@@ -5,6 +5,7 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/drainingbufferwriter.h>
 #include <vespa/vespalib/util/rand48.h>
+#include <cassert>
 
 namespace search {
 
@@ -20,7 +21,7 @@ public:
     static constexpr size_t BUFFER_SIZE = 262144;
 
     StoreBufferWriter();
-    ~StoreBufferWriter();
+    ~StoreBufferWriter() override;
 
     void flush() override;
     size_t getBytesWritten() const { return _bytesWritten; }

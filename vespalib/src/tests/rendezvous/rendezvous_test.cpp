@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/count_down_latch.h>
 #include <utility>
 #include <thread>
 

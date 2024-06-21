@@ -2,16 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/count_down_latch.h>
-#include <vespa/vespalib/util/barrier.h>
-#include <vespa/vespalib/util/thread.h>
-#include <thread>
-#include <string>
-#include <vector>
-#include <cassert>
 #include "test_master.h"
+#include <functional>
 
 namespace vespalib {
+
+class CountDownLatch;
 
 struct TestThreadEntry {
     virtual void threadEntry() = 0;
