@@ -23,7 +23,6 @@ public class SchemaLSLauncher {
         PrintStream logger;
 
         if (args.length > 0) {
-
             if (args[0].equalsIgnoreCase("-c")) {
                 logger = System.out;
             } else if (args[0].equalsIgnoreCase("-t")) {
