@@ -145,6 +145,10 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>ssm</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
