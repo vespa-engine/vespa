@@ -113,8 +113,10 @@ install-all: all manpages
 
 ci:
 ifdef CI
-# Ensure that CI systems use a proxy for downloading dependencies
+# Ensure that CI systems use a proxy for downloading dependencies, and
+# automatically downloads the necessary toolchain
 	go env -w GOPROXY="https://proxy.golang.org,direct"
+	go env -w GOTOOLCHAIN="auto"
 	go env
 endif
 
