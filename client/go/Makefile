@@ -17,6 +17,7 @@ GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/internal/build.
 PROJECT_ROOT := $(shell realpath $(CURDIR)/../..)
 GO_TMPDIR := $(PROJECT_ROOT)/build/go
 DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-linux-arm64 dist-win32 dist-win64
+GOTOOLCHAIN := $(shell go env GOTOOLCHAIN)
 
 all: test checkfmt install
 
@@ -111,7 +112,9 @@ install-all: all manpages
 # Development targets
 #
 
-ci:
+setenv:
+# Set GOTOOLCHAIN if its default value has been changed
+	@test "$(GOTOOLCHAIN)" = auto || go env -w GOTOOLCHAIN="auto"
 ifdef CI
 # Ensure that CI systems use a proxy for downloading dependencies
 	go env -w GOPROXY="https://proxy.golang.org,direct"
@@ -121,7 +124,7 @@ endif
 install-brew:
 	brew install vespa-cli
 
-install: ci
+install: setenv
 	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
 
 manpages: install
@@ -133,7 +136,7 @@ clean:
 	rm -f $(BIN)/vespa $(BIN)/vespa-wrapper $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
 	rmdir -p $(BIN) $(SHARE)/man/man1 > /dev/null 2>&1 || true
 
-test: ci
+test: setenv
 # Why custom GOTMPDIR? go builds executables for unit tests and by default these
 # end up in TMPDIR/GOTMPDIR. In some environments /tmp is mounted noexec so
 # running test executables will fail

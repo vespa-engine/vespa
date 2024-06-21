@@ -95,7 +95,7 @@ func NewClient(options ClientOptions, httpClients []httputil.Client) (*Client, e
 	}
 	c.gzippers.New = func() any { return gzip.NewWriter(io.Discard) }
 	c.buffers.New = func() any { return &bytes.Buffer{} }
-	for i := 0; i < runtime.NumCPU(); i++ {
+	for range runtime.NumCPU() {
 		go c.preparePending()
 	}
 	return c, nil

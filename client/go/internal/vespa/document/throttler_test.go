@@ -13,7 +13,7 @@ func TestThrottler(t *testing.T) {
 	if got, want := tr.TargetInflight(), int64(16); got != want {
 		t.Errorf("got TargetInflight() = %d, but want %d", got, want)
 	}
-	for i := 0; i < 65; i++ {
+	for range 65 {
 		tr.Sent()
 		tr.Success()
 	}
