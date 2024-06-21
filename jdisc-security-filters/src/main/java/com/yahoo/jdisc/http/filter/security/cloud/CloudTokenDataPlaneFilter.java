@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.filter.security.cloud;
 
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
@@ -32,6 +33,7 @@ import static com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler.CONT
  *
  * @author bjorncs
  */
+@Provides("Vespa Cloud Token Authorization Filter")
 public class CloudTokenDataPlaneFilter extends JsonSecurityRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(CloudTokenDataPlaneFilter.class.getName());
