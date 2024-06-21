@@ -38,6 +38,12 @@ TestMaster::TraceItem::TraceItem(const TraceItem &) = default;
 TestMaster::TraceItem & TestMaster::TraceItem::operator=(const TraceItem &) = default;
 TestMaster::TraceItem::~TraceItem() = default;
 
+TestMaster::ThreadState::~ThreadState() = default;
+TestMaster::ThreadState::ThreadState(const std::string &n)
+    : name(n), passCnt(0), failCnt(0), preIgnoreFailCnt(0),
+      ignore(false), unwind(false), traceStack(), barrier(nullptr)
+{}
+
 TestMaster::ThreadState &
 TestMaster::threadState(const lock_guard &)
 {
@@ -170,6 +176,8 @@ TestMaster::TestMaster()
 {
     setThreadName("master");
 }
+
+TestMaster::~TestMaster() = default;
 
 //-----------------------------------------------------------------------------
 
