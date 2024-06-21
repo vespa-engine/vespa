@@ -8,10 +8,6 @@
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <string>
-
-#include <vespa/log/log.h>
-LOG_SETUP("document_features_store_test");
 
 using namespace search;
 using namespace search::predicate;
@@ -233,5 +229,3 @@ TEST("require that serialization cleans up wordstore") {
 
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

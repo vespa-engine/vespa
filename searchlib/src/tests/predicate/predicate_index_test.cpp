@@ -12,9 +12,6 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_index_test");
-
 using namespace search;
 using namespace search::predicate;
 using std::make_pair;
@@ -454,5 +451,3 @@ TEST("require that predicate index saver protected by a generation guard observe
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

@@ -16,9 +16,6 @@
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <map>
 
-#include <vespa/log/log.h>
-LOG_SETUP("simple_index_test");
-
 using namespace search;
 using namespace search::predicate;
 using vespalib::GenerationHolder;
@@ -342,5 +339,3 @@ TEST_F("require that vector contains correct postings", Fixture) {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }
