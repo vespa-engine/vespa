@@ -118,7 +118,7 @@ public class AdvancedParser extends StructuredParser {
     }
 
     /** Returns whether the item is a specific word item */
-    private boolean isTheWord(String word, Item item) {
+    private static boolean isTheWord(String word, Item item) {
         if (!(item instanceof WordItem)) {
             return false;
         }
@@ -126,6 +126,11 @@ public class AdvancedParser extends StructuredParser {
     }
 
 
+    private static boolean needWeakAnd(Item topLevelItem, int n) {
+        return !(topLevelItem instanceof WeakAndItem topLevelWeakAnd) ||
+                ((n != 0 || topLevelWeakAnd.nIsExplicit()) && (n != topLevelWeakAnd.getN()));
+
+    }
 
     /** Returns the new top level, or null if the current item is not an operator */
     private Item handleAdvancedOperator(Item topLevelItem, Item item, boolean topLevelIsClosed) {
@@ -155,11 +160,11 @@ public class AdvancedParser extends StructuredParser {
             return topLevelItem;
         } else if (isTheWord("wand", item) || isTheWord("weakand", item)) {
             int n = consumeNumericArgument();
-            if (n == 0)
-                n = WeakAndItem.defaultN;
-            if (topLevelIsClosed || !(topLevelItem instanceof WeakAndItem) || n != ((WeakAndItem)topLevelItem).getN()) {
+            if (topLevelIsClosed || needWeakAnd(topLevelItem, n)) {
                 WeakAndItem wand = new WeakAndItem();
-                wand.setN(n);
+                if (n != 0) {
+                    wand.setN(n);
+                }
                 wand.addItem(topLevelItem);
                 return wand;
             }

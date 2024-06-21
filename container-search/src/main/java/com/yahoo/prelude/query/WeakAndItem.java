@@ -20,14 +20,14 @@ import java.util.Objects;
 public final class WeakAndItem extends NonReducibleCompositeItem {
 
     /** The default N used if none is specified: 100 */
-    public static final int defaultN = 100;
+    public static final int defaultN = 100;  //TODO Make private
 
     private int n;
     private String index;
 
     /** Creates a WAND item with default N */
     public WeakAndItem() {
-        this(defaultN);
+        this(-1);
     }
 
     public WeakAndItem(int N) {
@@ -72,25 +72,25 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
         buffer.append("(");
-        buffer.append(n);
+        buffer.append(getN());
         buffer.append(") ");
     }
 
-    public int getN() { return n; }
-
+    public int getN() { return nIsExplicit() ? n : defaultN; }
+    public boolean nIsExplicit() { return n > 0; }
     public void setN(int N) { this.n = N; }
 
     @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
-        IntegerCompressor.putCompressedPositiveNumber(n, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(getN(), buffer);
         putString(index, buffer);
     }
 
     @Override
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
-        discloser.addProperty("N", n);
+        discloser.addProperty("N", getN());
     }
 
     @Override

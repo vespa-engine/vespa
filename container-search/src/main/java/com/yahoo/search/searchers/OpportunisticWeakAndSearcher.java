@@ -32,6 +32,9 @@ public class OpportunisticWeakAndSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
+        if (query.getHits() > WeakAndItem.defaultN) {
+            adjustWeakAndHeap(query.getModel().getQueryTree().getRoot(), query.getHits());
+        }
         if (!query.properties().getBoolean(OPPORTUNISTIC_AND)) {
             return execution.search(query);
         }
@@ -50,6 +53,18 @@ public class OpportunisticWeakAndSearcher extends Searcher {
             return execution.search(query);
         }
         return execution.search(query);
+    }
+
+    static Item adjustWeakAndHeap(Item item, int hits) {
+        if (item instanceof WeakAndItem weakAnd && hits > weakAnd.getN() && !weakAnd.nIsExplicit()) {
+            weakAnd.setN(hits);
+        }
+        if (item instanceof CompositeItem compositeItem) {
+            for (int i = 0; i < compositeItem.getItemCount(); i++) {
+                adjustWeakAndHeap(compositeItem.getItem(i), hits);
+            }
+        }
+        return item;
     }
 
     // returns targetHits for the first WeakAndItem found, -1 if none found.

@@ -434,18 +434,12 @@ public class YqlParser implements Parser {
     }
 
     private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
-        Object arg = null;
-        switch (ast.getOperator()) {
-        case LITERAL:
-            arg = ast.getArgument(0);
-	    break;
-        case READ_FIELD:
-            arg = ast.getArgument(1);
-	    break;
-        default:
-            throw newUnexpectedArgumentException(ast.getOperator(),
-                                                 ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
-        }
+        Object arg = switch (ast.getOperator()) {
+            case LITERAL -> ast.getArgument(0);
+            case READ_FIELD -> ast.getArgument(1);
+            default -> throw newUnexpectedArgumentException(ast.getOperator(),
+                    ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+        };
         if (arg instanceof Number n) {
             return new ParsedDegree(n.doubleValue(), first, !first);
         }
@@ -822,8 +816,10 @@ public class YqlParser implements Parser {
 
         // Set grammar-specific annotations
         if (WEAKAND_GRAMMARS.contains(grammar) && item instanceof WeakAndItem weakAndItem) {
-            weakAndItem.setN(getAnnotation(ast, TARGET_HITS, Integer.class, WeakAndItem.defaultN,
-                                           "'targetHits' (N) for weak and"));
+            Integer targetNumHits = getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' (N) for weak and");
+            if (targetNumHits != null) {
+                weakAndItem.setN(targetNumHits);
+            }
         }
         return item;
     }
@@ -845,17 +841,16 @@ public class YqlParser implements Parser {
     }
 
     private String getStringContents(OperatorNode<ExpressionOperator> operator) {
-        switch (operator.getOperator()) {
-            case LITERAL:
-                return operator.getArgument(0, String.class);
-            case VARREF:
+        return switch (operator.getOperator()) {
+            case LITERAL -> operator.getArgument(0, String.class);
+            case VARREF -> {
                 Preconditions.checkState(userQuery != null,
-                                         "properties must be available when trying to fetch user input");
-                return userQuery.properties().getString(operator.getArgument(0, String.class));
-            default:
-                throw newUnexpectedArgumentException(operator.getOperator(),
-                                                     ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
-        }
+                        "properties must be available when trying to fetch user input");
+                yield userQuery.properties().getString(operator.getArgument(0, String.class));
+            }
+            default -> throw newUnexpectedArgumentException(operator.getOperator(),
+                    ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
+        };
     }
 
     private void propagateUserInputAnnotationsRecursively(OperatorNode<ExpressionOperator> ast, Item item) {
@@ -1139,16 +1134,15 @@ public class YqlParser implements Parser {
             negative = "-";
             ast = ast.getArgument(0);
         }
-        switch (ast.getOperator()) {
-            case VARREF:
+        return switch (ast.getOperator()) {
+            case VARREF -> {
                 Preconditions.checkState(userQuery != null,
-                                         "properties must be available when trying to fetch user input");
-                return negative + userQuery.properties().getString(ast.getArgument(0, String.class));
-            case LITERAL:
-                return negative + ast.getArgument(0).toString();
-            default:
-                throw new IllegalArgumentException("Expected VARREF or LITERAL, got " + ast.getOperator());
-        }
+                        "properties must be available when trying to fetch user input");
+                yield negative + userQuery.properties().getString(ast.getArgument(0, String.class));
+            }
+            case LITERAL -> negative + ast.getArgument(0).toString();
+            default -> throw new IllegalArgumentException("Expected VARREF or LITERAL, got " + ast.getOperator());
+        };
     }
 
     private String fetchConditionWord(OperatorNode<ExpressionOperator> ast) {
@@ -1301,17 +1295,21 @@ public class YqlParser implements Parser {
         } else {
             Limit from;
             Limit to;
-            if (BOUNDS_OPEN.equals(bounds)) {
-                from = new Limit(lowerArg, false);
-                to = new Limit(upperArg, false);
-            } else if (BOUNDS_LEFT_OPEN.equals(bounds)) {
-                from = new Limit(lowerArg, false);
-                to = new Limit(upperArg, true);
-            } else if (BOUNDS_RIGHT_OPEN.equals(bounds)) {
-                from = new Limit(lowerArg, true);
-                to = new Limit(upperArg, false);
-            } else {
-                throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
+            switch (bounds) {
+                case BOUNDS_OPEN -> {
+                    from = new Limit(lowerArg, false);
+                    to = new Limit(upperArg, false);
+                }
+                case BOUNDS_LEFT_OPEN -> {
+                    from = new Limit(lowerArg, false);
+                    to = new Limit(upperArg, true);
+                }
+                case BOUNDS_RIGHT_OPEN -> {
+                    from = new Limit(lowerArg, true);
+                    to = new Limit(upperArg, false);
+                }
+                default ->
+                        throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
             }
             return new IntItem(from, to, getIndex(args.get(0)));
         }
@@ -1418,7 +1416,7 @@ public class YqlParser implements Parser {
 
     private Item instantiateWordAlternativesItem(String field, OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-        Preconditions.checkArgument(args.size() >= 1, "Expected 1 or more arguments, got %s.", args.size());
+        Preconditions.checkArgument(!args.isEmpty(), "Expected 1 or more arguments, got %s.", args.size());
         Preconditions.checkArgument(args.get(0).getOperator() == ExpressionOperator.MAP, "Expected MAP, got %s.",
                                     args.get(0).getOperator());
 
@@ -1566,7 +1564,7 @@ public class YqlParser implements Parser {
         List<String> words = segmenter.segment(toSegment, usedLanguage);
 
         TaggableItem wordItem;
-        if (words.size() == 0) {
+        if (words.isEmpty()) {
             wordItem = new WordItem(wordData, fromQuery);
         } else if (words.size() == 1 || !phraseArgumentSupported(parent)) {
             wordItem = new WordItem(words.get(0), fromQuery);
@@ -1909,18 +1907,7 @@ public class YqlParser implements Parser {
         return new IllegalArgumentException(out.toString());
     }
 
-    private static final class ConnectedItem {
-
-        final double weight;
-        final int toId;
-        final TaggableItem fromItem;
-
-        ConnectedItem(TaggableItem fromItem, int toId, double weight) {
-            this.weight = weight;
-            this.toId = toId;
-            this.fromItem = fromItem;
-        }
-    }
+    private record ConnectedItem(TaggableItem fromItem, int toId, double weight) { }
 
     private class AnnotationPropagator extends QueryVisitor {
 

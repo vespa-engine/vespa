@@ -1875,6 +1875,7 @@
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
       "public int getN()",
+      "public boolean nIsExplicit()",
       "public void setN(int)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public int hashCode()",
