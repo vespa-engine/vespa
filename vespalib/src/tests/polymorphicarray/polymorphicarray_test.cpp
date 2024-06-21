@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
+#include <cassert>
 
 using namespace vespalib;
 

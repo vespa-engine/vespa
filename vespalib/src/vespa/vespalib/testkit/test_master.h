@@ -17,10 +17,6 @@ class Barrier;
  **/
 class TestMaster
 {
-private:
-    TestMaster(const TestMaster &);
-    TestMaster &operator=(const TestMaster &);
-
 public:
     struct Progress {
         size_t passCnt;
@@ -47,17 +43,17 @@ public:
 private:
     struct ThreadState {
         std::string            name;
-        bool                   unwind;
         size_t                 passCnt;
         size_t                 failCnt;
-        bool                   ignore;
         size_t                 preIgnoreFailCnt;
+        bool                   ignore;
+        bool                   unwind;
         std::vector<TraceItem> traceStack;
         Barrier               *barrier;
-        ThreadState(const std::string &n)
-            : name(n), unwind(false), passCnt(0),
-              failCnt(0), ignore(false), preIgnoreFailCnt(0), traceStack(),
-              barrier(0) {}
+        ~ThreadState();
+        ThreadState(const std::string &n);
+        ThreadState(ThreadState &&) noexcept = default;
+        ThreadState & operator=(ThreadState &&) noexcept = default;
     };
     static __thread ThreadState *_threadState;
 
@@ -66,11 +62,12 @@ private:
         size_t         failCnt;
         FILE          *lhsFile;
         FILE          *rhsFile;
-        SharedState() : passCnt(0), failCnt(0),
-                        lhsFile(0), rhsFile(0) {}
+        SharedState() noexcept
+            : passCnt(0), failCnt(0),
+              lhsFile(nullptr), rhsFile(nullptr)
+        {}
     };
 
-private:
     std::mutex                                 _lock;
     std::string                                _name;
     SharedState                                _state;
@@ -78,6 +75,7 @@ private:
     using lock_guard = std::lock_guard<std::mutex>;
 
 private:
+    TestMaster();
     ThreadState &threadState(const lock_guard &);
     ThreadState &threadState();
     void checkFailed(const lock_guard &,
@@ -90,10 +88,11 @@ private:
     void importThreads(const lock_guard &);
     bool reportConclusion(const lock_guard &);
 
-private:
-    TestMaster();
 
 public:
+    ~TestMaster();
+    TestMaster(const TestMaster &) = delete;
+    TestMaster &operator=(const TestMaster &) = delete;
     void init(const char *name);
     std::string getName();
     void setThreadName(const char *name);

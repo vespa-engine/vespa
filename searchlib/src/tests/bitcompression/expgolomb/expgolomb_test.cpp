@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <cinttypes>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP("expglomb_test");

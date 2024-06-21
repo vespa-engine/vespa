@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/barrier.h>
 #include <thread>
+#include <cassert>
 
 using vespalib::steady_clock;
 

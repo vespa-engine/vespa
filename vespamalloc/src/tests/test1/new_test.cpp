@@ -6,6 +6,7 @@
 #include <malloc.h>
 #include <dlfcn.h>
 #include <functional>
+#include <cassert>
 
 LOG_SETUP("new_test");
 

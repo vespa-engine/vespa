@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <atomic>
 
 #include <vespa/log/log.h>
 LOG_SETUP("compression_test");
