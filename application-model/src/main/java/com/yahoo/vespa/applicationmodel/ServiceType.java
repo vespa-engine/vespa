@@ -16,8 +16,6 @@ public class ServiceType {
     public static final ServiceType HOST_ADMIN = new ServiceType("hostadmin");
     public static final ServiceType CONFIG_SERVER = new ServiceType("configserver");
     public static final ServiceType CONTROLLER = new ServiceType("controller");
-    // TODO: Remove TRANSACTION_LOG_SERVER when oldest Vespa version in use is 8.354
-    public static final ServiceType TRANSACTION_LOG_SERVER = new ServiceType("transactionlogserver");
     public static final ServiceType CLUSTER_CONTROLLER = new ServiceType("container-clustercontroller");
     public static final ServiceType DISTRIBUTOR = new ServiceType("distributor");
     public static final ServiceType SEARCH = new ServiceType("searchnode");

@@ -131,7 +131,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             return SuspensionLimit.fromAllowedDown(1);
         }
 
-        if (Set.of(ServiceType.STORAGE, ServiceType.SEARCH, ServiceType.DISTRIBUTOR, ServiceType.TRANSACTION_LOG_SERVER)
+        if (Set.of(ServiceType.STORAGE, ServiceType.SEARCH, ServiceType.DISTRIBUTOR)
                 .contains(clusterApi.serviceType())) {
             // Delegate to the cluster controller
             return SuspensionLimit.fromAllowedDownRatio(1);
