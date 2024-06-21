@@ -21,6 +21,7 @@ com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
+com.google.code.gson:gson:2.11.0
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
@@ -162,6 +163,8 @@ org.eclipse.jetty:jetty-security:${jetty.vespa.version}
 org.eclipse.jetty:jetty-server:${jetty.vespa.version}
 org.eclipse.jetty:jetty-servlet:${jetty.vespa.version}
 org.eclipse.jetty:jetty-util:${jetty.vespa.version}
+org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1
+org.eclipse.lsp4j:org.eclipse.lsp4j:0.23.1
 org.eclipse.sisu:org.eclipse.sisu.inject:${eclipse-sisu.vespa.version}
 org.eclipse.sisu:org.eclipse.sisu.plexus:${eclipse-sisu.vespa.version}
 org.fusesource.jansi:jansi:1.18

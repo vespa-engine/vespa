@@ -1,10 +1,10 @@
 PARSER_CLASS=SchemaParser;
-PARSER_PACKAGE=ai.vespa.languageserver.parser;
+PARSER_PACKAGE=ai.vespa.schemals.parser;
 FAULT_TOLERANT=true;
 
 INJECT :
 {
-    package ai.vespa.languageserver.parser;
+    package ai.vespa.schemals.parser;
 }
 
 // --------------------------------------------------------------------------------

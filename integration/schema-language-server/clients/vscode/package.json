@@ -23,7 +23,17 @@
         ],
         "configuration": "./language-configuration.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Vespa Schema Language Support",
+      "properties": {
+        "vespaSchemaLS.logFile": {
+          "type": [ "string", "null" ],
+          "default": null,
+          "description": "A file to log to from the language server."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

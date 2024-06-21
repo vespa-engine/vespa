@@ -1,4 +1,4 @@
-package ai.vespa.languageserver.parser;
+package ai.vespa.schemals.parser;
 
 public class ParsedSchema {
     private String name;
