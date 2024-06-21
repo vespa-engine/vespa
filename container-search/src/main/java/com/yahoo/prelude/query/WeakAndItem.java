@@ -76,8 +76,8 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         buffer.append(") ");
     }
 
-    public int getN() { return isNExplicit() ? n : defaultN; }
-    public boolean isNExplicit() { return n > 0; }
+    public int getN() { return nIsExplicit() ? n : defaultN; }
+    public boolean nIsExplicit() { return n > 0; }
     public void setN(int N) { this.n = N; }
 
     @Override

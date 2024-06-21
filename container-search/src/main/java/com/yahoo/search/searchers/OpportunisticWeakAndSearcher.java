@@ -56,7 +56,7 @@ public class OpportunisticWeakAndSearcher extends Searcher {
     }
 
     static Item adjustWeakAndHeap(Item item, int hits) {
-        if (item instanceof WeakAndItem weakAnd && hits > weakAnd.getN() && !weakAnd.isNExplicit()) {
+        if (item instanceof WeakAndItem weakAnd && hits > weakAnd.getN() && !weakAnd.nIsExplicit()) {
             weakAnd.setN(hits);
         }
         if (item instanceof CompositeItem compositeItem) {

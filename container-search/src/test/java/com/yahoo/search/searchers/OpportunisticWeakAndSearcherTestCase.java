@@ -66,10 +66,10 @@ public class OpportunisticWeakAndSearcherTestCase {
     @Test
     public void requireThatDefaultWeakAndHeapIsAdjustedUpToHits() {
         assertEquals(1000, try2Adjust(new WeakAndItem(), 1000).getN());
-        assertFalse(try2Adjust(new WeakAndItem(), 10).isNExplicit());
+        assertFalse(try2Adjust(new WeakAndItem(), 10).nIsExplicit());
 
         assertEquals(1000, try2Adjust(new WeakAndItem(), new OrItem(), 1000).getN());
-        assertFalse(try2Adjust(new WeakAndItem(), new OrItem(), 10).isNExplicit());
+        assertFalse(try2Adjust(new WeakAndItem(), new OrItem(), 10).nIsExplicit());
     }
     @Test
     public void requireThatNonDefaultWeakAndHeapIsNotAdjustedUpToHits() {

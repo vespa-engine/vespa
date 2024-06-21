@@ -128,7 +128,7 @@ public class AdvancedParser extends StructuredParser {
 
     private static boolean needWeakAnd(Item topLevelItem, int n) {
         return !(topLevelItem instanceof WeakAndItem topLevelWeakAnd) ||
-                ((n != 0 || topLevelWeakAnd.isNExplicit()) && (n != topLevelWeakAnd.getN()));
+                ((n != 0 || topLevelWeakAnd.nIsExplicit()) && (n != topLevelWeakAnd.getN()));
 
     }
 

@@ -1049,7 +1049,7 @@ public class VespaSerializer {
         }
 
         private boolean needsAnnotationBlock(WeakAndItem item) {
-            return item.isNExplicit();
+            return item.nIsExplicit();
         }
 
         @Override
@@ -1057,7 +1057,7 @@ public class VespaSerializer {
             if (needsAnnotationBlock(item)) {
                 destination.append("({");
             }
-            if (item.isNExplicit()) {
+            if (item.nIsExplicit()) {
                 destination.append(TARGET_NUM_HITS).append(": ").append(item.getN());
             }
             if (needsAnnotationBlock(item)) {
