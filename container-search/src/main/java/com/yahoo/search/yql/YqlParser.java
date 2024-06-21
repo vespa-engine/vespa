@@ -816,8 +816,10 @@ public class YqlParser implements Parser {
 
         // Set grammar-specific annotations
         if (WEAKAND_GRAMMARS.contains(grammar) && item instanceof WeakAndItem weakAndItem) {
-            weakAndItem.setN(getAnnotation(ast, TARGET_HITS, Integer.class, WeakAndItem.defaultN,
-                                           "'targetHits' (N) for weak and"));
+            Integer targetNumHits = getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' (N) for weak and");
+            if (targetNumHits != null) {
+                weakAndItem.setN(targetNumHits);
+            }
         }
         return item;
     }

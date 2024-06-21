@@ -41,7 +41,9 @@ public class WeakAndReplacementSearcher extends Searcher {
      */
     private void replaceOrItems(Query query) {
         Item root = query.getModel().getQueryTree().getRoot();
-        int hits = query.properties().getInteger(WAND_HITS, WeakAndItem.defaultN);
+        int hits = query.getHits();
+        Integer wandHits = query.properties().getInteger(WAND_HITS);
+        if (wandHits != null) hits = wandHits;
         query.getModel().getQueryTree().setRoot(replaceOrItems(root, hits));
         if (root != query.getModel().getQueryTree().getRoot())
             query.trace("Replaced OR by WeakAnd", true, 2);
