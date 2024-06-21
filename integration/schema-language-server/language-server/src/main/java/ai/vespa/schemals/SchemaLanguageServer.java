@@ -1,14 +1,28 @@
 
 package ai.vespa.schemals;
 
-import java.io.PrintStream;
-import java.util.logging.Logger;
-import java.util.logging.StreamHandler;
-import java.util.logging.SimpleFormatter;
+import org.eclipse.lsp4j.services.LanguageServer;
+import org.eclipse.lsp4j.services.TextDocumentService;
+import org.eclipse.lsp4j.services.WorkspaceService;
+import org.eclipse.lsp4j.CompletionOptions;
+import org.eclipse.lsp4j.InitializeParams;
+import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.TextDocumentSyncKind;
+import org.eclipse.lsp4j.services.LanguageClient;
+import org.eclipse.lsp4j.services.LanguageClientAware;
 
-public class SchemaLanguageServer {
+import java.io.PrintStream;
+import java.util.concurrent.CompletableFuture;
+
+public class SchemaLanguageServer implements LanguageServer, LanguageClientAware {
+
+    private WorkspaceService workspaceService;
+    private TextDocumentService textDocumentService;
+    private LanguageClient client;
 
     private PrintStream logger;
+    private int errorCode = 1;
 
     public static void main(String[] args) {
         System.out.println("This function may be useful at one point");
@@ -18,14 +32,54 @@ public class SchemaLanguageServer {
         this(null);
     }
 
-    public SchemaLanguageServer(PrintStream _logger) {
-        if (_logger == null) {
-            logger = System.out;
+    public SchemaLanguageServer(PrintStream logger) {
+        if (logger == null) {
+            this.logger = System.out;
         } else {
-            logger = _logger;
+            this.logger = logger;
         }
 
+        this.logger.println("Hello World!");
 
-        logger.println("Hello World!");
+        this.textDocumentService = new SchemaTextDocumentService(this.logger);
+        this.workspaceService = new SchemaWorkspaceService();
+    }
+
+    @Override
+    public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {
+        final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
+
+        // Set the capabilities of the LS to inform the client.
+        initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
+        CompletionOptions completionOptions = new CompletionOptions();
+        initializeResult.getCapabilities().setCompletionProvider(completionOptions);
+        initializeResult.getCapabilities().setDocumentHighlightProvider(true);
+        return CompletableFuture.supplyAsync(()->initializeResult);
+    }
+
+    @Override
+    public CompletableFuture<Object> shutdown() {
+        errorCode = 0;
+        return null;
+    }
+
+    @Override
+    public void exit() {
+        System.exit(errorCode);
+    }
+
+    @Override
+    public WorkspaceService getWorkspaceService() {
+        return workspaceService;
+    }
+
+    @Override
+    public TextDocumentService getTextDocumentService() {
+        return textDocumentService;
+    }
+
+    @Override
+    public void connect(LanguageClient languageClient) {
+        this.client = languageClient;
     }
 }

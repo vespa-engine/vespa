@@ -6,19 +6,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.logging.FileHandler;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
-public class Launcher {
+import org.eclipse.lsp4j.jsonrpc.Launcher;
+import org.eclipse.lsp4j.launch.LSPLauncher;
+import org.eclipse.lsp4j.services.LanguageClient;
 
-    public static void main(String[] args) throws IOException {
-        Launcher(args);
-    }
+public class SchemaLSLauncher {
 
-    public static void Launcher(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
 
         PrintStream logger;
 
@@ -59,17 +59,20 @@ public class Launcher {
         Logger globaLogger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         globaLogger.setLevel(Level.OFF);
 
-        
-
-        // Logger logger = Logger.getLogger("DEBUG LOG");
-        // FileHandler fh = new FileHandler("./debug.log"); // TODO: this should be an argument
-        // fh.setFormatter(new SimpleFormatter());
-        // logger.addHandler(fh);
-
         startServer(System.in, System.out, logger);
     }
 
-    private static void startServer(InputStream in, OutputStream out, PrintStream logger) {
+    private static void startServer(InputStream in, OutputStream out, PrintStream logger) throws ExecutionException, InterruptedException {
         SchemaLanguageServer schemaLanguageServer = new SchemaLanguageServer(logger);
+
+        Launcher<LanguageClient> launcher = LSPLauncher.createServerLauncher(schemaLanguageServer, in, out);
+
+        LanguageClient client = launcher.getRemoteProxy();
+
+        schemaLanguageServer.connect(client);
+
+        Future<?> startListening = launcher.startListening();
+
+        startListening.get();
     }
 }

@@ -8,22 +8,22 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-lan
 let client: LanguageClient
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Vespa Language Support is not active.')
+	console.log('Vespa Language Support is active.')
 
-	const { JAVA_HOME } = process.env
+	const JAVA_HOME = process.env.JAVA_HOME ?? "/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home"
 	if (!JAVA_HOME) {
+		console.error("JAVA_HOME is not set!")
 		throw new Error("JAVA_HOME env is not set!")
 	}
 
 	console.log(`Using java from JAVA_HOME: ${JAVA_HOME}`)
 	const excecutable = path.join(JAVA_HOME, 'bin', 'java')
 
-	const classPath = path.join(__dirname, '..', '..', '..', 'launcher', 'target', 'laucnehr-jar-with-dependencies')
-	console.log(classPath)
+	const jarPath = path.join(__dirname, '..', '..', '..', 'language-server', 'target', 'schema-language-server-jar-with-dependencies.jar')
 
 	const serverOptions: ServerOptions = {
 		command: excecutable,
-		args: ['-cp', 'classPath'],
+		args: ['-jar', jarPath, '-t', 'vespaSchema.log'],
 		options: {}
 	};
 
@@ -48,22 +48,20 @@ export function activate(context: vscode.ExtensionContext) {
 				return r;
 			},
 			provideDocumentSemanticTokens: async (document, token, next) => {
-				console.log(token)
 				const r = await next(document, token)
 				return r
 			}
 		}
 	};
 
-	client = new LanguageClient('helloLS', 'HelloFalks Language Server', serverOptions, clientOptions)
-	console.log(client)
+	client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions)
 	client.start();
 
 }
 
 
 export function deactivate() { 
-	console.log('Vespa Language Support is now deactivated!');
+	console.log('Vespa Language Support is deactivated!');
 
 	if (!client) {
 		return undefined

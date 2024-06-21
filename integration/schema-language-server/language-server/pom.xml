@@ -40,7 +40,7 @@
           </execution>
         </executions>
         <configuration>
-          <mainClass>ai.vespa.schemals.Launcher</mainClass>
+          <mainClass>ai.vespa.schemals.SchemaLSLauncher</mainClass>
         </configuration>
       </plugin>
       <plugin>
