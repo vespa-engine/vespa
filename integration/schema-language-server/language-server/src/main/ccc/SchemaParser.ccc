@@ -1,0 +1,422 @@
+PARSER_CLASS=SchemaParser;
+PARSER_PACKAGE=ai.vespa.languageserver.parser;
+FAULT_TOLERANT=true;
+
+INJECT :
+{
+    package ai.vespa.languageserver.parser;
+}
+
+// --------------------------------------------------------------------------------
+//
+// Token declarations.
+//
+// --------------------------------------------------------------------------------
+
+// Declare white space characters. These do not include newline because it has
+// special meaning in several of the production rules.
+SKIP :
+  " " | "\t" | "\r" | "\f"
+;
+
+
+// Declare all tokens to be recognized. When a word token is added it MUST be
+// added to the identifier() production rule.
+TOKEN :
+  < NL: "\n" >
+| < ANNOTATION: "annotation" >
+| < ANNOTATIONREFERENCE: "annotationreference" >
+| < SCHEMA: "schema" >
+| < SEARCH: "search" >
+| < DIVERSITY: "diversity" >
+| < MIN_GROUPS: "min-groups" >
+| < CUTOFF_FACTOR: "cutoff-factor" >
+| < CUTOFF_STRATEGY: "cutoff-strategy" >
+| < LOOSE: "loose" >
+| < STRICT: "strict" >
+| < DOCUMENT: "document" >
+| < OPERATION: "operation" >
+| < ON_MATCH: "on-match" >
+| < ON_FIRST_PHASE: "on-first-phase" >
+| < ON_SECOND_PHASE: "on-second-phase" >
+| < ON_SUMMARY: "on-summary" >
+| < STRUCT: "struct" >
+| < INHERITS: "inherits" >
+| < FIELD: "field" >
+| < FIELDS: "fields" >
+| < FIELDSET: "fieldset" >
+| < STRUCT_FIELD: "struct-field" >
+| < IMPORT: "import" >
+| < AS: "as" >
+| < INDEXING: "indexing" >
+| < SUMMARY_TO: "summary-to" >
+| < DOCUMENT_SUMMARY: "document-summary" >
+| < RANK_TYPE: "rank-type" >
+| < WEIGHT: "weight" >
+| < TYPE: "type" >
+| < INDEX: "index" >
+| < INPUTS: "inputs">
+| < MTOKEN: "token" >
+| < TEXT: "text" >
+| < WORD: "word" >
+| < GRAM: "gram" >
+| < GRAM_SIZE: "gram-size" >
+| < MAX_LENGTH: "max-length" >
+| < MAX_OCCURRENCES: "max-occurrences" >
+| < MAX_TOKEN_LENGTH: "max-token-length" >
+| < PREFIX: "prefix" >
+| < SUBSTRING: "substring" >
+| < SUFFIX: "suffix" >
+| < CONSTANT: "constant">
+| < ONNX_MODEL: "onnx-model">
+| < SIGNIFICANCE: "significance">
+| < USE_MODEL: "use-model">
+| < INTRAOP_THREADS: "intraop-threads">
+| < INTEROP_THREADS: "interop-threads">
+| < GPU_DEVICE: "gpu-device">
+| < EXECUTION_MODE: "execution-mode">
+| < PARALLEL: "parallel">
+| < SEQUENTIAL: "sequential">
+| < MODEL: "model" >
+| < MUTATE: "mutate" >
+| < QUERY: "query" >
+| < RANK_PROFILE: "rank-profile" >
+| < RAW_AS_BASE64_IN_SUMMARY: "raw-as-base64-in-summary" >
+| < SUMMARY: "summary" >
+| < FULL: "full" >
+| < STATIC: "static" >
+| < DYNAMIC: "dynamic" >
+| < TOKENS: "tokens" >
+| < MATCHED_ELEMENTS_ONLY: "matched-elements-only" >
+| < SSCONTEXTUAL: "contextual" >
+| < SSOVERRIDE: "override" >
+| < SSTITLE: "title" >
+| < SSURL: "url" >
+| < PROPERTIES: "properties" >
+| < ATTRIBUTE: "attribute" >
+| < SORTING: "sorting" >
+| < DICTIONARY: "dictionary" >
+| < ASCENDING: "ascending" >
+| < DESCENDING: "descending" >
+| < UCA: "uca" >
+| < RAW: "raw" >
+| < LOWERCASE: "lowercase" >
+| < FUNCTION: "function" >
+| < LOCALE: "locale" >
+| < STRENGTH: "strength" >
+| < PRIMARY: "primary" >
+| < SECONDARY: "secondary" >
+| < TERTIARY: "tertiary" >
+| < QUATERNARY: "quaternary" >
+| < IDENTICAL: "identical" >
+| < STEMMING: "stemming" >
+| < NORMALIZING: "normalizing" >
+| < HASH: "hash" >
+| < BTREE: "btree" >
+| < CASED: "cased" >
+| < UNCASED: "uncased" >
+| < BOLDING: "bolding" >
+| < NONE: "none" >
+| < ON: "on" >
+| < OFF: "off" >
+| < TRUE: "true" >
+| < FALSE: "false" >
+| < SYMMETRIC: "symmetric" >
+| < QUERY_COMMAND: "query-command" >
+| < ALIAS: "alias" >
+| < MATCH: "match" >
+| < RANK: "rank" >
+| < LITERAL: "literal" >
+| < EXACT: "exact" >
+| < FILTER: "filter" >
+| < NORMAL: "normal" >
+| < EXACT_TERMINATOR: "exact-terminator" >
+| < IGNORE_DEFAULT_RANK_FEATURES: "ignore-default-rank-features" >
+| < ID: "id" >
+| < SOURCE: "source" >
+| < TO: "to" >
+| < DIRECT: "direct" >
+| < FROM_DISK: "from-disk" >
+| < OMIT_SUMMARY_FEATURES: "omit-summary-features" >
+| < ALWAYS: "always" >
+| < ON_DEMAND: "on-demand" >
+| < NEVER: "never" >
+| < ENABLE_BIT_VECTORS: "enable-bit-vectors" >
+| < ENABLE_ONLY_BIT_VECTOR: "enable-only-bit-vector" >
+| < FAST_ACCESS: "fast-access" >
+| < MUTABLE: "mutable" >
+| < PAGED: "paged" >
+| < FAST_RANK: "fast-rank" >
+| < FAST_SEARCH: "fast-search" >
+| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
+| < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
+| < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < COLON: ":" >
+| < DOT: "." >
+| < COMMA: "," >
+| < ARRAY: "array" >
+| < WEIGHTEDSET: "weightedset" >
+| < MAP: "map" >
+| < REFERENCE: "reference" >
+| < QUESTIONMARK: "?" >
+| < CREATE_IF_NONEXISTENT: "create-if-nonexistent" >
+| < REMOVE_IF_ZERO: "remove-if-zero" >
+| < MATCH_PHASE: "match-phase" >
+| < EVALUATION_POINT: "evaluation-point" >
+| < PRE_POST_FILTER_TIPPING_POINT: "pre-post-filter-tipping-point" >
+| < ORDER: "order" >
+| < MAX_FILTER_COVERAGE: "max-filter-coverage" >
+| < MAX_HITS: "max-hits" >
+| < FIRST_PHASE: "first-phase" >
+| < SECOND_PHASE: "second-phase" >
+| < GLOBAL_PHASE: "global-phase" >
+| < MACRO: "macro" >
+| < INLINE: "inline" >
+| < ARITY: "arity" >
+| < LOWER_BOUND: "lower-bound" >
+| < UPPER_BOUND: "upper-bound" >
+| < DENSE_POSTING_LIST_THRESHOLD: "dense-posting-list-threshold" >
+| < ENABLE_BM25: "enable-bm25" >
+| < HNSW: "hnsw" >
+| < MAX_LINKS_PER_NODE: "max-links-per-node" >
+| < DOUBLE_KEYWORD: "double" >
+| < FLOAT_KEYWORD: "float" >
+| < LONG_KEYWORD: "long" >
+| < STRING_KEYWORD: "string" >
+| < DISTANCE_METRIC: "distance-metric" >
+| < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
+| < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
+| < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
+| < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
+| < #BRACE_SL_CONTENT: (~["{","}","\n"])+ >
+| < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
+| < #BRACE_ML_CONTENT: (~["{","}"])+ >
+| < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
+| < RANK_PROPERTIES: "rank-properties" >
+| < RERANK_COUNT: "rerank-count" >
+| < NUM_THREADS_PER_SEARCH: "num-threads-per-search" >
+| < MIN_HITS_PER_THREAD: "min-hits-per-thread" >
+| < NUM_SEARCH_PARTITIONS: "num-search-partitions" >
+| < TERMWISE_LIMIT: "termwise-limit" >
+| < POST_FILTER_THRESHOLD: "post-filter-threshold" >
+| < APPROXIMATE_THRESHOLD: "approximate-threshold" >
+| < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
+| < KEEP_RANK_COUNT: "keep-rank-count" >
+| < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
+| < CONSTANTS: "constants" >
+| < FILE: "file" >
+| < URI: "uri" >
+| < IDENTIFIER:           ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])* >
+| < IDENTIFIER_WITH_DASH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
+| < DOUBLEQUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
+| < SINGLEQUOTEDSTRING: "'" ( ~["'"] )* "'" >
+| < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
+| < DOUBLE: ("-")? (["0"-"9"])+ "." (["0"-"9"])+ >
+| < INTEGER: ("-")? (["0"-"9"])+ >
+| < LONG: ("-")? (["0"-"9"])+"L" >
+| < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
+| < FILE_PATH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-", "/", "."])+ >
+| < HTTP: ["h","H"] ["t","T"] ["t","T"] ["p","P"] (["s","S"])? >
+| < URI_PATH: <HTTP> <COLON> ("//")? (["a"-"z","A"-"Z","0"-"9","_","-", "/", ".",":"])+ >
+| < LESSTHAN: "<" >
+| < GREATERTHAN: ">" >
+| < VARIABLE: "$" <IDENTIFIER> >
+| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+;
+
+
+// Declare a special skip token for comments.
+UNPARSED :
+  <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* >
+;
+
+
+// --------------------------------------------------------------------------------
+//
+// Production rules.
+//
+// --------------------------------------------------------------------------------
+
+/**
+ * The rule consumes any schema and returns the corresponding object. This is the only production that should
+ * ever consume leading newlines.
+ *
+ * @return the schema object
+ * TODO: implement rootDocument
+ */
+ParsedSchema Root :
+{
+    ParsedSchema schema;
+}
+    (<NL>)* (schema = rootSchema)
+    { return schema; }
+;
+
+/**
+ * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @return the schema definition object.
+ * TODO: implement inheritance
+ */
+ParsedSchema rootSchema :
+{
+    String name;
+    ParsedSchema schema;
+}
+    ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
+        schema = new ParsedSchema(name);
+      }
+      openLbrace (rootSchemaItem(schema) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
+    { return schema; }
+;
+
+rootSchemaItem(ParsedSchema schema) :
+    ( 
+        <STRING>
+    )
+;
+
+/**
+ * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
+ * identifiers.
+ *
+ * @return the identifier string
+ */
+String identifierStr :
+    ( <ALIAS>
+      | <ALWAYS>
+      | <ANNOTATION>
+      | <ANNOTATIONREFERENCE>
+      | <ARITY>
+      | <ARRAY>
+      | <AS>
+      | <ASCENDING>
+      | <ATTRIBUTE>
+      | <BOLDING>
+      | <BTREE>
+      | <CASED>
+      | <CONSTANT>
+      | <CONSTANTS>
+      | <CONTEXT>
+      | <DESCENDING>
+      | <DICTIONARY>
+      | <DIRECT>
+      | <DIVERSITY>
+      | <DOCUMENT>
+      | <DOUBLE_KEYWORD>
+      | <FLOAT_KEYWORD>
+      | <LONG_KEYWORD>
+      | <STRING_KEYWORD>
+      | <DYNAMIC>
+      | <EXACT>
+      | <FALSE>
+      | <FIELD>
+      | <FIELDS>
+      | <FIELDSET>
+      | <FILE>
+      | <FILTER>
+      | <FULL>
+      | <FUNCTION>
+      | <GRAM>
+      | <HASH>
+      | <HNSW>
+      | <ID>
+      | <IDENTICAL>
+      | <IDENTIFIER>
+      | <IMPORT>
+      | <INDEX>
+      | <INDEXING>
+      | <INHERITS>
+      | <INLINE>
+      | <INPUTS>
+      | <INTEGER>
+      | <LITERAL>
+      | <LOCALE>
+      | <LONG>
+      | <LOOSE>
+      | <LOWERCASE>
+      | <MACRO>
+      | <MAP>
+      | <MATCH>
+      | <MODEL>
+      | <MTOKEN>
+      | <MUTABLE>
+      | <MUTATE>
+      | <NEVER>
+      | <NONE>
+      | <NORMAL>
+      | <NORMALIZING>
+      | <OFF>
+      | <ON>
+      | <OPERATION>
+      | <ORDER>
+      | <PAGED>
+      | <PARALLEL>
+      | <PREFIX>
+      | <PRIMARY>
+      | <PROPERTIES>
+      | <QUATERNARY>
+      | <QUERY>
+      | <RANK>
+      | <RAW>
+      | <REFERENCE>
+      | <SCHEMA>
+      | <SEARCH>
+      | <SECONDARY>
+      | <SEQUENTIAL>
+      | <SORTING>
+      | <SOURCE>
+      | <SSCONTEXTUAL>
+      | <SSOVERRIDE>
+      | <SSTITLE>
+      | <SSURL>
+      | <STATIC>
+      | <STEMMING>
+      | <STRENGTH>
+      | <STRICT>
+      | <SIGNIFICANCE>
+      | <STRING>
+      | <STRUCT>
+      | <SUBSTRING>
+      | <SUFFIX>
+      | <SUMMARY>
+      | <SYMMETRIC>
+      | <TERTIARY>
+      | <TEXT>
+      | <TO>
+      | <TOKENS>
+      | <TRUE>
+      | <TYPE>
+      | <UCA>
+      | <UNCASED>
+      | <URI>
+      | <VARIABLE>
+      | <WEIGHT>
+      | <WEIGHTEDSET>
+      | <WORD>
+    ) {
+        return lastConsumedToken.toString();
+    }
+;
+
+
+openLbrace :
+    (<NL>)* <LBRACE> (<NL>)*
+;

@@ -12,14 +12,19 @@
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>
   <name>languageserver</name>
-  <dependencies>
-
-  </dependencies>
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-deprecation</arg>
+            <arg>-Xlint:-unchecked</arg>
+            <arg>-Xlint:-rawtypes</arg>
+          </compilerArgs>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -43,6 +48,49 @@
         <groupId>com.github.os72</groupId>
         <artifactId>protoc-jar-maven-plugin</artifactId>
       </plugin>
+      <plugin>
+        <groupId>org.congocc</groupId>
+        <artifactId>org.congocc.maven.plugin</artifactId>
+        <version>2.0.0-RC7</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>ccc-generate</goal>
+            </goals>
+            <configuration>
+                <grammarFile>${project.basedir}/src/main/ccc/SchemaParser.ccc</grammarFile>
+                <outputDir>${project.basedir}/target/generated-sources/ccc</outputDir>
+                <jdk>17</jdk>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+            <excludePackageNames>ai.vespa.languageserver.parser</excludePackageNames>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>target/generate-sources/ccc</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+    </plugin>
     </plugins>
   </build>
 </project>
