@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for PredicateTreeAnalyzer.
 
-#include <vespa/log/log.h>
-LOG_SETUP("PredicateTreeAnalyzer_test");
-
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/searchlib/predicate/predicate_tree_analyzer.h>
@@ -152,5 +149,3 @@ TEST("require that multilevel AND stores sizes") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

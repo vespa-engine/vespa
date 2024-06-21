@@ -8,9 +8,6 @@
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_zstar_compressed_posting_list_test");
-
 using namespace search;
 using namespace search::predicate;
 using std::vector;
@@ -93,5 +90,3 @@ TEST("require that posting list can iterate.") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

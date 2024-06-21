@@ -1,9 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_range_term_expander.
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_range_term_expander_test");
-
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -328,5 +325,3 @@ TEST("require that search close to max uneven upper bound is sensible") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

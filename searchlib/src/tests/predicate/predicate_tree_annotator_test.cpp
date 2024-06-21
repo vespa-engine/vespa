@@ -10,9 +10,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <sstream>
 
-#include <vespa/log/log.h>
-LOG_SETUP("PredicateTreeAnnotator_test");
-
 using document::Predicate;
 using std::ostringstream;
 using std::pair;
@@ -403,5 +400,3 @@ TEST("require that open range works") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }
