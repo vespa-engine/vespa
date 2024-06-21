@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
 	"time"
 
 	// Why do we use an experimental parser? This appears to be the only JSON library that satisfies the following
@@ -19,7 +18,7 @@ import (
 	// - Supports parsing from a io.Reader
 	// - Supports parsing token-by-token
 	// - Few allocations during parsing (especially for large objects)
-	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
 )
 
 type Operation int
@@ -29,11 +28,11 @@ const (
 	OperationUpdate
 	OperationRemove
 
-	jsonArrayStart  json.Kind = '['
-	jsonArrayEnd    json.Kind = ']'
-	jsonObjectStart json.Kind = '{'
-	jsonObjectEnd   json.Kind = '}'
-	jsonString      json.Kind = '"'
+	jsonArrayStart  jsontext.Kind = '['
+	jsonArrayEnd    jsontext.Kind = ']'
+	jsonObjectStart jsontext.Kind = '{'
+	jsonObjectEnd   jsontext.Kind = '}'
+	jsonString      jsontext.Kind = '"'
 )
 
 var (
@@ -153,7 +152,7 @@ func (d *Document) Reset() {
 
 // Decoder decodes documents from a JSON structure which is either an array of objects, or objects separated by newline.
 type Decoder struct {
-	dec *json.Decoder
+	dec *jsontext.Decoder
 	buf bytes.Buffer
 
 	array bool
@@ -202,13 +201,13 @@ func (d *Decoder) guessMode() error {
 	return nil
 }
 
-func (d *Decoder) readNext(kind json.Kind) (json.Token, error) {
+func (d *Decoder) readNext(kind jsontext.Kind) (jsontext.Token, error) {
 	t, err := d.dec.ReadToken()
 	if err != nil {
-		return json.Token{}, err
+		return jsontext.Token{}, err
 	}
 	if t.Kind() != kind {
-		return json.Token{}, fmt.Errorf("unexpected json kind: %q: want %q", t, kind)
+		return jsontext.Token{}, fmt.Errorf("unexpected json kind: %q: want %q", t, kind)
 	}
 	return t, nil
 }
@@ -364,7 +363,7 @@ loop:
 func NewDecoder(r io.Reader) *Decoder {
 	d := &Decoder{}
 	d.documentBuffers.New = func() any { return &bytes.Buffer{} }
-	d.dec = json.NewDecoder(io.TeeReader(r, &d.buf))
+	d.dec = jsontext.NewDecoder(io.TeeReader(r, &d.buf))
 	return d
 }
 
