@@ -5,16 +5,113 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/test/peer_policy_utils.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <gmock/gmock.h>
+#include <filesystem>
+#include <fstream>
+#include <optional>
+#include <sstream>
 
 using namespace vespalib;
 using namespace vespalib::net::tls;
+
+namespace {
+
+class ConfigWriter {
+    std::optional<std::string> _private_key;
+    std::optional<std::string> _ca_certificates;
+    std::optional<std::string> _certificates;
+    std::optional<std::string> _accepted_ciphers;
+    std::optional<std::string> _authorized_peers;
+    std::optional<std::string> _disable_hostname_validation;
+    std::optional<std::string> _flipper_the_dolphin;
+public:
+    ConfigWriter();
+    ConfigWriter(ConfigWriter&&);
+    ~ConfigWriter();
+    ConfigWriter private_key(std::optional<std::string> value) && { _private_key = value; return std::move(*this); }
+    ConfigWriter ca_certificates(std::optional<std::string> value) && { _ca_certificates = value; return std::move(*this); }
+    ConfigWriter certificates(std::optional<std::string> value) && { _certificates = value; return std::move(*this); }
+    ConfigWriter accepted_ciphers(std::optional<std::string> value) && { _accepted_ciphers = value; return std::move(*this); }
+    ConfigWriter authorized_peers(std::optional<std::string> value) && { _authorized_peers = value; return std::move(*this); }
+    ConfigWriter disable_hostname_validation(std::optional<std::string> value) && { _disable_hostname_validation = value; return std::move(*this); }
+    ConfigWriter flipper_the_dolphin(std::optional<std::string> value) && { _flipper_the_dolphin = value; return std::move(*this); }
+    void write(std::ostream& os);
+    std::string write();
+};
+
+ConfigWriter::ConfigWriter()
+    : _private_key(TEST_PATH("dummy_privkey.txt")),
+      _ca_certificates(TEST_PATH("dummy_ca_certs.txt")),
+      _certificates(TEST_PATH("dummy_certs.txt")),
+      _accepted_ciphers(),
+      _authorized_peers(),
+      _disable_hostname_validation(),
+      _flipper_the_dolphin()
+{
+}
+
+ConfigWriter::ConfigWriter(ConfigWriter&&) = default;
+
+ConfigWriter::~ConfigWriter() = default;
+
+void
+ConfigWriter::write(std::ostream& os)
+{
+    os << "{\n" <<
+        R"(  "files": {)";
+    bool had_files_entry = false;
+    if (_private_key.has_value()) {
+        os << "\n" << R"(    "private-key": ")" << _private_key.value() << R"(")";
+        had_files_entry = true;
+    }
+    if (_ca_certificates.has_value()) {
+        if (had_files_entry) {
+            os << ",";
+        }
+        os << "\n" << R"(    "ca-certificates": ")" << _ca_certificates.value() << R"(")";
+        had_files_entry = true;
+    }
+    if (_certificates.has_value()) {
+        if (had_files_entry) {
+            os << ",";
+        }
+        os << "\n" << R"(    "certificates": ")" << _certificates.value() << R"(")";
+        had_files_entry = true;
+    }
+    os << "\n  }";
+    if (_accepted_ciphers.has_value()) {
+        os << ",\n" << R"(  "accepted-ciphers" : )" << _accepted_ciphers.value();
+    }
+    if (_authorized_peers.has_value()) {
+        os << ",\n" << R"(  "authorized-peers": )" << _authorized_peers.value();
+    }
+    if (_disable_hostname_validation.has_value()) {
+        os << ",\n" << R"(  "disable-hostname-validation": )" << _disable_hostname_validation.value();
+    }
+    if (_flipper_the_dolphin.has_value()) {
+        os << ",\n" << R"(  "flipper-the-dolphin": )" << _flipper_the_dolphin.value();
+    }
+    os << "\n}" << std::endl;
+}
+
+std::string
+ConfigWriter::write()
+{
+    std::ostringstream os;
+    write(os);
+    return os.str();
+}
+
+}
 
 class TransportSecurityOptionsTest : public ::testing::Test {
 protected:
     TransportSecurityOptionsTest();
     ~TransportSecurityOptionsTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
 };
 
 TransportSecurityOptionsTest::TransportSecurityOptionsTest()
@@ -23,6 +120,20 @@ TransportSecurityOptionsTest::TransportSecurityOptionsTest()
 }
 
 TransportSecurityOptionsTest::~TransportSecurityOptionsTest() = default;
+
+void
+TransportSecurityOptionsTest::SetUpTestSuite()
+{
+    std::ofstream ok_config("ok_config.json");
+    ConfigWriter().write(ok_config);
+    ok_config.close();
+}
+
+void
+TransportSecurityOptionsTest::TearDownTestSuite()
+{
+    std::filesystem::remove("ok_config.json");
+}
 
 TEST_F(TransportSecurityOptionsTest, can_load_tls_credentials_via_config_file)
 {
@@ -66,40 +177,34 @@ TEST_F(TransportSecurityOptionsTest, missing_files_field_throws_exception)
 
 TEST_F(TransportSecurityOptionsTest, missing_private_key_field_throws_exception)
 {
-    const char* incomplete_json = R"({"files":{"certificates":"dummy_certs.txt","ca-certificates":"dummy_ca_certs.txt"}})";
+    auto incomplete_json = ConfigWriter().private_key(std::nullopt).write();
     EXPECT_THAT([incomplete_json]() { read_options_from_json_string(incomplete_json); },
                 testing::ThrowsMessage<IllegalArgumentException>(testing::HasSubstr("TLS config field 'private-key' has not been set")));
 }
 
 TEST_F(TransportSecurityOptionsTest, missing_certificates_field_throws_exception)
 {
-    const char* incomplete_json = R"({"files":{"private-key":"dummy_privkey.txt","ca-certificates":"dummy_ca_certs.txt"}})";
+    auto incomplete_json = ConfigWriter().certificates(std::nullopt).write();
     EXPECT_THAT([incomplete_json]() { read_options_from_json_string(incomplete_json); },
                 testing::ThrowsMessage<IllegalArgumentException>(testing::HasSubstr("TLS config field 'certificates' has not been set")));
 }
 
 TEST_F(TransportSecurityOptionsTest, missing_ca_certificates_field_throws_exception)
 {
-    const char* incomplete_json = R"({"files":{"private-key":"dummy_privkey.txt","certificates":"dummy_certs.txt"}})";
+    auto incomplete_json = ConfigWriter().ca_certificates(std::nullopt).write();
     EXPECT_THAT([incomplete_json]() { read_options_from_json_string(incomplete_json); },
                 testing::ThrowsMessage<IllegalArgumentException>(testing::HasSubstr("TLS config field 'ca-certificates' has not been set")));
 }
 
 TEST_F(TransportSecurityOptionsTest, missing_file_referenced_by_field_throws_exception)
 {
-    const char* incomplete_json = R"({"files":{"private-key":"missing_privkey.txt",
-                                               "certificates":"dummy_certs.txt",
-                                               "ca-certificates":"dummy_ca_certs.txt"}})";
+    auto incomplete_json = ConfigWriter().private_key("missing_privkey.txt").write();
     EXPECT_THAT([incomplete_json]() { read_options_from_json_string(incomplete_json); },
                 testing::ThrowsMessage<IllegalArgumentException>(testing::HasSubstr("File 'missing_privkey.txt' referenced by TLS config does not exist")));
 }
 
 vespalib::string json_with_policies(const vespalib::string& policies) {
-    const char* fmt = R"({"files":{"private-key":"dummy_privkey.txt",
-                                   "certificates":"dummy_certs.txt",
-                                   "ca-certificates":"dummy_ca_certs.txt"},
-                          "authorized-peers":[%s]})";
-    return vespalib::make_string(fmt, policies.c_str());
+    return ConfigWriter().authorized_peers(std::string("[") + policies + "]").write();
 }
 
 TransportSecurityOptions parse_policies(const vespalib::string& policies)
@@ -109,9 +214,7 @@ TransportSecurityOptions parse_policies(const vespalib::string& policies)
 
 TEST_F(TransportSecurityOptionsTest, config_file_without_authorized_peers_accepts_all_pre_verified_certificates)
 {
-    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
-                                    "certificates":"dummy_certs.txt",
-                                    "ca-certificates":"dummy_ca_certs.txt"}})";
+    auto json = ConfigWriter().write();
     EXPECT_TRUE(read_options_from_json_string(json)->authorized_peers().allows_all_authenticated());
 }
 
@@ -172,18 +275,13 @@ TEST_F(TransportSecurityOptionsTest, empty_required_credentials_array_throws_exc
 
 TEST_F(TransportSecurityOptionsTest, accepted_cipher_list_is_empty_if_not_specified)
 {
-    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
-                                    "certificates":"dummy_certs.txt",
-                                    "ca-certificates":"dummy_ca_certs.txt"}})";
+    auto json = ConfigWriter().write();
     EXPECT_TRUE(read_options_from_json_string(json)->accepted_ciphers().empty());
 }
 
 TEST_F(TransportSecurityOptionsTest, accepted_cipher_list_is_populated_if_specified)
 {
-    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
-                                    "certificates":"dummy_certs.txt",
-                                    "ca-certificates":"dummy_ca_certs.txt"},
-                           "accepted-ciphers":["foo", "bar"]})";
+    auto json = ConfigWriter().accepted_ciphers(R"(["foo", "bar"])").write();
     auto ciphers = read_options_from_json_string(json)->accepted_ciphers();
     ASSERT_EQ(2u, ciphers.size());
     EXPECT_EQ("foo", ciphers[0]);
@@ -193,9 +291,7 @@ TEST_F(TransportSecurityOptionsTest, accepted_cipher_list_is_populated_if_specif
 // FIXME this is temporary until we know enabling it by default won't break the world!
 TEST_F(TransportSecurityOptionsTest, hostname_validation_is_DISABLED_by_default_when_creating_options_from_config_file)
 {
-    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
-                                    "certificates":"dummy_certs.txt",
-                                    "ca-certificates":"dummy_ca_certs.txt"}})";
+    auto json = ConfigWriter().write();
     EXPECT_TRUE(read_options_from_json_string(json)->disable_hostname_validation());
 }
 
@@ -211,28 +307,19 @@ TEST_F(TransportSecurityOptionsTest, transport_security_options_builder_does_not
 
 TEST_F(TransportSecurityOptionsTest, hostname_validation_can_be_explicitly_disabled)
 {
-    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
-                                    "certificates":"dummy_certs.txt",
-                                    "ca-certificates":"dummy_ca_certs.txt"},
-                           "disable-hostname-validation": true})";
+    auto json = ConfigWriter().disable_hostname_validation("true").write();
     EXPECT_TRUE(read_options_from_json_string(json)->disable_hostname_validation());
 }
 
 TEST_F(TransportSecurityOptionsTest, hostname_validation_can_be_explicitly_enabled)
 {
-    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
-                                    "certificates":"dummy_certs.txt",
-                                    "ca-certificates":"dummy_ca_certs.txt"},
-                           "disable-hostname-validation": false})";
+    auto json = ConfigWriter().disable_hostname_validation("false").write();
     EXPECT_FALSE(read_options_from_json_string(json)->disable_hostname_validation());
 }
 
 TEST_F(TransportSecurityOptionsTest, unknown_fields_are_ignored_at_parse_time)
 {
-    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
-                                    "certificates":"dummy_certs.txt",
-                                    "ca-certificates":"dummy_ca_certs.txt"},
-                           "flipper-the-dolphin": "*weird dolphin noises*"})";
+    auto json = ConfigWriter().flipper_the_dolphin(R"("*weird dolphin noises*")").write();
     EXPECT_TRUE(read_options_from_json_string(json).get() != nullptr); // And no exception thrown.
 }
 

@@ -1,7 +1,0 @@
-{
-  "files":{
-    "private-key": "dummy_privkey.txt",
-    "ca-certificates": "dummy_ca_certs.txt",
-    "certificates": "dummy_certs.txt"
-  }
-}
