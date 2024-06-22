@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_net_tls_auto_reloading_tls_crypto_engine_test_app 
     auto_reloading_tls_crypto_engine_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_net_tls_auto_reloading_tls_crypto_engine_test_app
                COMMAND vespalib_net_tls_auto_reloading_tls_crypto_engine_test_app)
