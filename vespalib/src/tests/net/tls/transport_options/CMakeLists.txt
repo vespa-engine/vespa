@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_net_tls_transport_options_test_app TEST
     transport_options_reading_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_net_tls_transport_options_test_app
                COMMAND vespalib_net_tls_transport_options_test_app)
