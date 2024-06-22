@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/tls/auto_reloading_tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <openssl/ssl.h>
 #include <filesystem>
@@ -89,6 +89,20 @@ void write_file(vespalib::stringref path, vespalib::stringref data) {
     f.write(data.data(), data.size(), 0);
 }
 
+class AutoReloadingTlsCryptoEngineTest : public ::testing::Test
+{
+protected:
+    AutoReloadingTlsCryptoEngineTest();
+    ~AutoReloadingTlsCryptoEngineTest() override;
+};
+
+AutoReloadingTlsCryptoEngineTest::AutoReloadingTlsCryptoEngineTest()
+    : testing::Test()
+{
+}
+
+AutoReloadingTlsCryptoEngineTest::~AutoReloadingTlsCryptoEngineTest() = default;
+
 struct Fixture {
     std::unique_ptr<AutoReloadingTlsCryptoEngine> engine;
     explicit Fixture(AutoReloadingTlsCryptoEngine::TimeInterval reload_interval,
@@ -114,9 +128,13 @@ struct Fixture {
     }
 };
 
-TEST_FF("Config reloading transitively loads updated files", Fixture(50ms), TimeBomb(60)) {
+TEST_F(AutoReloadingTlsCryptoEngineTest, config_reloading_transitively_loads_updated_files)
+{
+    Fixture f1(50ms);
+    TimeBomb f2(60);
+
     auto current_certs = f1.current_cert_chain();
-    ASSERT_EQUAL(cert1_pem, current_certs);
+    ASSERT_EQ(cert1_pem, current_certs);
 
     write_file("test_cert.pem.tmp", cert2_pem);
     std::filesystem::rename(std::filesystem::path("test_cert.pem.tmp"), std::filesystem::path("test_cert.pem")); // We expect this to be an atomic rename under the hood
@@ -129,15 +147,25 @@ TEST_FF("Config reloading transitively loads updated files", Fixture(50ms), Time
     // If the config is never reloaded, test will go boom.
 }
 
-TEST_FF("Shutting down auto-reloading engine immediately stops background thread", Fixture(600s), TimeBomb(60)) {
+TEST_F(AutoReloadingTlsCryptoEngineTest, shutting_down_auto_reloading_engine_immediately_stops_background_thread)
+{
+    Fixture f1(600s);
+    TimeBomb f2(60);
     // This passes just from not having the TimeBomb blow up.
 }
 
-TEST_FF("Authorization mode is propagated to engine", Fixture(50ms, AuthorizationMode::LogOnly), TimeBomb(60)) {
-    EXPECT_EQUAL(AuthorizationMode::LogOnly, f1.current_authorization_mode());
+TEST_F(AutoReloadingTlsCryptoEngineTest, authorization_mode_is_propagated_to_engine)
+{
+    Fixture f1(50ms, AuthorizationMode::LogOnly);
+    TimeBomb f2(60);
+    EXPECT_EQ(AuthorizationMode::LogOnly, f1.current_authorization_mode());
 }
 
-TEST_FF("Config reload failure increments failure statistic", Fixture(50ms), TimeBomb(60)) {
+TEST_F(AutoReloadingTlsCryptoEngineTest, config_reload_failure_increments_failure_statistic)
+{
+    Fixture f1(50ms);
+    TimeBomb f2(60);
+
     auto before = ConfigStatistics::get().snapshot();
 
     write_file("test_cert.pem.tmp", "Broken file oh no :(");
@@ -148,4 +176,4 @@ TEST_FF("Config reload failure increments failure statistic", Fixture(50ms), Tim
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
