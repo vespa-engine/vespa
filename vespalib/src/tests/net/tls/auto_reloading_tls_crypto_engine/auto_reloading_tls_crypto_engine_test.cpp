@@ -7,9 +7,11 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <openssl/ssl.h>
 #include <filesystem>
+#include <fstream>
 
 using namespace vespalib;
 using namespace vespalib::net::tls;
@@ -94,6 +96,8 @@ class AutoReloadingTlsCryptoEngineTest : public ::testing::Test
 protected:
     AutoReloadingTlsCryptoEngineTest();
     ~AutoReloadingTlsCryptoEngineTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
 };
 
 AutoReloadingTlsCryptoEngineTest::AutoReloadingTlsCryptoEngineTest()
@@ -102,6 +106,26 @@ AutoReloadingTlsCryptoEngineTest::AutoReloadingTlsCryptoEngineTest()
 }
 
 AutoReloadingTlsCryptoEngineTest::~AutoReloadingTlsCryptoEngineTest() = default;
+
+void
+AutoReloadingTlsCryptoEngineTest::SetUpTestSuite()
+{
+    std::ofstream test_config("test_config.json");
+    test_config << "{\n" <<
+        "  \"files\":{\n" <<
+        "    \"private-key\": \"" + TEST_PATH("test_key.pem") << "\",\n" <<
+        "    \"ca-certificates\": \"" + TEST_PATH("test_ca.pem") << "\",\n" <<
+        "    \"certificates\": \"test_cert.pem\"\n" <<
+        "  }\n" <<
+        "}" << std::endl;
+    test_config.close();
+}
+
+void
+AutoReloadingTlsCryptoEngineTest::TearDownTestSuite()
+{
+    std::filesystem::remove("test_config.json");
+}
 
 struct Fixture {
     std::unique_ptr<AutoReloadingTlsCryptoEngine> engine;
