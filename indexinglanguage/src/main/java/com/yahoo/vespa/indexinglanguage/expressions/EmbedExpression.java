@@ -187,8 +187,8 @@ public class EmbedExpression extends Expression  {
         if (targetType.rank() == 2 && targetType.mappedSubtype().rank() == 2) {
             if (embedderArguments.size() != 1)
                 throw new VerificationException(this, "When the embedding target field is a 2d mapped tensor " +
-                                                "the name of the tensor dimension that corresponds to the input array elements must " +
-                                                    "be given as a second argument to embed, e.g: ... | embed splade paragraph | ...");
+                                                      "the name of the tensor dimension that corresponds to the input array elements must " +
+                                                      "be given as a second argument to embed, e.g: ... | embed splade paragraph | ...");
             if ( ! targetType.mappedSubtype().dimensionNames().contains(embedderArguments.get(0))) {
                 throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
                                                       "is not a sparse dimension of the target type " + targetType);
@@ -254,7 +254,7 @@ public class EmbedExpression extends Expression  {
         List<String> embedderIds = new ArrayList<>();
         embedders.forEach((key, value) -> embedderIds.add(key));
         embedderIds.sort(null);
-        return String.join(",", embedderIds);
+        return String.join(", ", embedderIds);
     }
 
 }
