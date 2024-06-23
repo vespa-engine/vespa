@@ -24,6 +24,7 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/config-stor-distribution.h>
 #include <future>
 
@@ -130,7 +131,7 @@ void BucketManagerTest::setupTestEnvironment()
 {
     _config = StorageConfigSet::make_storage_node_config();
     auto repo = std::make_shared<const DocumentTypeRepo>(
-                *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes", FileSpec("../config-doctypes.cfg")));
+                *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes", FileSpec(TEST_PATH("../config-doctypes.cfg"))));
     _top = std::make_unique<DummyStorageLink>();
     _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->config_uri());
     _node->setTypeRepo(repo);
