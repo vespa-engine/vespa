@@ -148,7 +148,7 @@
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
         <wiremock.vespa.version>3.7.0</wiremock.vespa.version>
-        <woodstox.vespa.version>6.7.0</woodstox.vespa.version>
+        <woodstox.vespa.version>7.0.0</woodstox.vespa.version>
         <stax2-api.vespa.version>4.2.2</stax2-api.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
