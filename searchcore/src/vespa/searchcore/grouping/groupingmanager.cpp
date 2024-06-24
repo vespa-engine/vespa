@@ -4,6 +4,7 @@
 #include "groupingcontext.h"
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -48,6 +49,7 @@ GroupingManager::init(const IAttributeContext &attrCtx)
                     an.enableEnumOptimization(true);
                 }
             }
+            aggregation::NonAttribute2DocumentAccessor nonAttributes2DocumentAccess(attrCtx);
             ConfigureStaticParams stuff(&attrCtx, nullptr);
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);

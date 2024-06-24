@@ -7,10 +7,12 @@
 #include <functional>
 
 namespace search::expression {
+    class ExpressionNode;
+    class AttributeNode;
+}
 
-class ExpressionNode;
-class AttributeNode;
-
+namespace search::attribute {
+    class IAttributeContext;
 }
 
 namespace search::aggregation {
@@ -28,8 +30,17 @@ private:
 
 class Attribute2DocumentAccessor : public AttributeNodeReplacer
 {
+protected:
+    ExpressionNodeUP getReplacementNode(const expression::AttributeNode &attributeNode) override;
+};
+
+class NonAttribute2DocumentAccessor : public Attribute2DocumentAccessor
+{
+public:
+    explicit NonAttribute2DocumentAccessor(const attribute::IAttributeContext &attrCtx) noexcept : _attrCtx(attrCtx) {}
 private:
     ExpressionNodeUP getReplacementNode(const expression::AttributeNode &attributeNode) override;
+    const attribute::IAttributeContext &_attrCtx;
 };
 
 }
