@@ -78,7 +78,6 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         logserverClusterModel.setCluster(logServerCluster);
 
         LogserverContainer container = new LogserverContainer(logServerCluster, deployState);
-        container.useDynamicPorts();
         container.setHostResource(hostResource);
         container.initService(deployState);
         logServerCluster.addContainer(container);
