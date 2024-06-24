@@ -4,7 +4,6 @@
 #include "grouping.h"
 #include <vespa/searchlib/expression/multiargfunctionnode.h>
 #include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/attribute_map_lookup_node.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/interpolated_document_field_lookup_node.h>
 #include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
@@ -20,44 +19,32 @@ AttributeNodeReplacer::check(const vespalib::Identifiable &obj) const
 }
 
 void
+AttributeNodeReplacer::replaceRecurse(ExpressionNode * exp, std::function<void(ExpressionNodeUP)> && modifier) {
+    if (exp == nullptr) return;
+    if (exp->inherits(AttributeNode::classId)) {
+        auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*exp));
+        if (replacementNode) {
+            modifier(std::move(replacementNode));
+        }
+    } else {
+        exp->select(*this, *this);
+    }
+}
+
+void
 AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
 {
     if (obj.getClass().inherits(GroupingLevel::classId)) {
-        GroupingLevel & g(static_cast<GroupingLevel &>(obj));
-        if (g.getExpression().getRoot()->inherits(AttributeNode::classId)) {
-            auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*g.getExpression().getRoot()));
-            if (replacementNode) {
-                g.setExpression(std::move(replacementNode));
-            }
-        } else {
-            g.getExpression().getRoot()->select(*this, *this);
-        }
+        auto & g(static_cast<GroupingLevel &>(obj));
+        replaceRecurse(g.getExpression().getRoot(), [&g](ExpressionNodeUP replacement) { g.setExpression(std::move(replacement)); });
         g.groupPrototype().select(*this, *this);
     } else if(obj.getClass().inherits(AggregationResult::classId)) {
-        AggregationResult & a(static_cast<AggregationResult &>(obj));
-        ExpressionNode * e(a.getExpression());
-        if (e) {
-            if (e->inherits(AttributeNode::classId)) {
-                auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*e));
-                if (replacementNode) {
-                    a.setExpression(std::move(replacementNode));
-                }
-            } else {
-                e->select(*this, *this);
-            }
-        }
+        auto & a(static_cast<AggregationResult &>(obj));
+        replaceRecurse(a.getExpression(), [&a](ExpressionNodeUP replacement) { a.setExpression(std::move(replacement)); });
     } else if(obj.getClass().inherits(MultiArgFunctionNode::classId)) {
         MultiArgFunctionNode::ExpressionNodeVector & v(static_cast<MultiArgFunctionNode &>(obj).expressionNodeVector());
-        for(size_t i(0), m(v.size()); i < m; i++) {
-            ExpressionNode::CP & e(v[i]);
-            if (e->inherits(AttributeNode::classId)) {
-                auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*e));
-                if (replacementNode) {
-                    e = std::move(replacementNode);
-                }
-            } else {
-                e->select(*this, *this);
-            }
+        for (auto & e : v) {
+            replaceRecurse(e.get(), [&e](ExpressionNodeUP replacement) noexcept { e = std::move(replacement); });
         }
     }
 }
