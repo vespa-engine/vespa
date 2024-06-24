@@ -13,6 +13,7 @@ public class LogserverContainer extends Container {
 
     public LogserverContainer(TreeConfigProducer<?> parent, DeployState deployState) {
         super(parent, "" + 0, 0, deployState);
+        useDynamicPorts();
     }
 
     @Override
