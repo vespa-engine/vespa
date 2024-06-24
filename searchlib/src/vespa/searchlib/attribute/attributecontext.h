@@ -29,7 +29,7 @@ private:
     const IAttributeVector *getAttribute(AttributeMap & map, const string & name, bool stableEnum) const;
     const IAttributeVector *getAttributeMtSafe(AttributeMap & map, const string & name, bool stableEnum) const;
 public:
-    AttributeContext(const IAttributeManager & manager);
+    explicit AttributeContext(const IAttributeManager & manager);
     ~AttributeContext() override;
 
     // Implements IAttributeContext
