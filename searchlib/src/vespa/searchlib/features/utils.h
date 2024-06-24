@@ -71,22 +71,6 @@ inline feature_t getAsFeature<vespalib::stringref>(vespalib::stringref value) {
     return vespalib::hash2d(value);
 }
 
-
-/**
- * This method inputs a value to cap to the range [capFloor, capCeil] and then normalize this
- * value to the unit range [0, 1].
- *
- * @param val      The value to unit normalize.
- * @param capFloor The minimum value of the cap range.
- * @param capCeil  The maximum value of the cap range.
- * @return The unit normalized value.
- */
-template <typename T>
-T unitNormalize(const T &val, const T &capFloor, const T &capCeil)
-{
-    return (std::max(capFloor, std::min(capCeil, val)) - capFloor) / (capCeil - capFloor);
-}
-
 /**
  * Returns the normalized strength with which the given term is connected to the previous term in the query.
  * Uses the property map of the query environment to lookup this data.
