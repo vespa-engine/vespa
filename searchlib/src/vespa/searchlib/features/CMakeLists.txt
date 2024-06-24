@@ -16,7 +16,6 @@ vespa_add_library(searchlib_features OBJECT
     distance_calculator_bundle.cpp
     distancefeature.cpp
     distancetopathfeature.cpp
-    documenttestutils.cpp
     dotproductfeature.cpp
     element_completeness_feature.cpp
     element_similarity_feature.cpp
