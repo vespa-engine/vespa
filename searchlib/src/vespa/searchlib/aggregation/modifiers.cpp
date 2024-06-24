@@ -44,7 +44,7 @@ AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
     } else if(obj.getClass().inherits(MultiArgFunctionNode::classId)) {
         MultiArgFunctionNode::ExpressionNodeVector & v(static_cast<MultiArgFunctionNode &>(obj).expressionNodeVector());
         for (auto & e : v) {
-            replaceRecurse(e.get(), [&e](ExpressionNodeUP replacement) { e = std::move(replacement); });
+            replaceRecurse(e.get(), [&e](ExpressionNodeUP replacement) noexcept { e = std::move(replacement); });
         }
     }
 }
