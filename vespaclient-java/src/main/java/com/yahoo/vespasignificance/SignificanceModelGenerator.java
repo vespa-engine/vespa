@@ -44,6 +44,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.List;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -56,7 +58,9 @@ public class SignificanceModelGenerator {
     private final Tokenizer tokenizer;
     private final TreeMap<String, Long> documentFrequency = new TreeMap<>();
 
-    private final Language language;
+    private final List<Language> languages;
+
+    private final Language languageTag;
     private final ObjectMapper objectMapper;
     private final static JsonFactory parserFactory = new JsonFactory();
 
@@ -75,10 +79,15 @@ public class SignificanceModelGenerator {
             throw new IllegalArgumentException("Output file must have .zst extension when using zst compression");
         }
 
-        language = Language.fromLanguageTag(clientParameters.language);
-        if (language == Language.UNKNOWN) {
-            throw new IllegalArgumentException("Unknown language: " + clientParameters.language);
+        if (!clientParameters.zstCompression && clientParameters.outputFile.endsWith(".zst")) {
+            throw new IllegalArgumentException("Output file must not have .zst extension when not using zst compression");
         }
+
+        this.languages = Arrays.stream(clientParameters.language.split(","))
+                .map(Language::fromLanguageTag)
+                .collect(Collectors.toList());
+
+        this.languageTag = this.languages.get(0);
 
         OpenNlpLinguistics openNlpLinguistics = new OpenNlpLinguistics();
         tokenizer = openNlpLinguistics.getTokenizer();
@@ -104,7 +113,7 @@ public class SignificanceModelGenerator {
         while (reader.ready()) {
             String line = reader.readLine();
             JsonReader jsonReader = new JsonReader(types, new ByteArrayInputStream(Utf8.toBytes(line)), parserFactory);
-            String wikimediaId = "id:wikimedia:" + language.languageCode() + "::" + i;
+            String wikimediaId = "id:wikimedia:" + languageTag.languageCode() + "::" + i;
 
             ParsedDocumentOperation operation = jsonReader.readSingleDocumentStreaming(DocumentOperationType.PUT, wikimediaId);
             DocumentPut put = (DocumentPut) operation.operation();
@@ -118,6 +127,7 @@ public class SignificanceModelGenerator {
 
         SignificanceModelFile modelFile;
         File outputFile = Paths.get(clientParameters.outputFile).toFile();
+        String languagesKey = String.join(",", this.languages.stream().map(Language::languageCode).toList());
         if (outputFile.exists()) {
 
             InputStream in = outputFile.toString().endsWith(".zst") ?
@@ -126,11 +136,11 @@ public class SignificanceModelGenerator {
 
             modelFile = objectMapper.readValue(in, SignificanceModelFile.class);
 
-            modelFile.addLanguage(clientParameters.language, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
+            modelFile.addLanguage(languagesKey, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
 
         } else {
             HashMap<String, DocumentFrequencyFile> languages = new HashMap<>() {{
-                put(clientParameters.language, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
+                put(languagesKey, new DocumentFrequencyFile(DOC_FREQ_DESCRIPTION, pageCount, getFinalDocumentFrequency()));
             }};
 
             modelFile = new SignificanceModelFile(VERSION, ID, SIGNIFICANCE_DESCRIPTION + clientParameters.inputFile, languages);
@@ -149,7 +159,7 @@ public class SignificanceModelGenerator {
     }
 
     private void handleTokenization(String field) {
-        var tokens = tokenizer.tokenize(field, language, StemMode.ALL, false);
+        var tokens = tokenizer.tokenize(field, languageTag, StemMode.ALL, false);
 
         Set<String> uniqueWords = StreamSupport.stream(tokens.spliterator(), false)
                 .filter(t -> t.getType() == TokenType.ALPHABETIC)

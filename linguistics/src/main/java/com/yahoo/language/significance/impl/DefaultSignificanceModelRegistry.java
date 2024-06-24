@@ -18,6 +18,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Default implementation of {@link SignificanceModelRegistry}.
@@ -53,10 +55,17 @@ public class DefaultSignificanceModelRegistry implements SignificanceModelRegist
 
             SignificanceModelFile file = objectMapper.readValue(in, SignificanceModelFile.class);
             for (var pair : file.languages().entrySet()) {
-                this.models.put(
-                        Language.fromLanguageTag(pair.getKey()),
-                        new DefaultSignificanceModel(pair.getValue(), file.id()));
-            }
+
+                String[] languageTags = pair.getKey().split(",");
+
+                for (var languageTag : languageTags) {
+                    this.models.put(
+                            Language.fromLanguageTag(languageTag),
+                            new DefaultSignificanceModel(pair.getValue(), file.id()));
+                    }
+                }
+
+
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to load model from " + path, e);
         }
