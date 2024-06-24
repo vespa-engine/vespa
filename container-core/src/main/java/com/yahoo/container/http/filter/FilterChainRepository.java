@@ -7,6 +7,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.ChainedComponent;
 import com.yahoo.component.chain.ChainsConfigurer;
+import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.component.chain.model.ChainsModelBuilder;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -183,6 +184,12 @@ public class FilterChainRepository extends AbstractComponent {
             super(id);
             this.filter = filter;
             this.filterType = getFilterType(filter);
+        }
+
+        @Override
+        protected Dependencies getDefaultAnnotatedDependencies() {
+            return filter instanceof ChainedComponent chainedComponent ? chainedComponent.getDependencies()
+                                                                       : super.getDefaultAnnotatedDependencies();
         }
 
         private static Class<?> getFilterType(Object filter) {
