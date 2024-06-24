@@ -73,10 +73,8 @@ public:
     void postMerge();
     void preAggregate(bool isOrdered);
     void prune(const Grouping & b);
-    void aggregate(DocId from, DocId to);
-    void aggregate(DocId docId, HitRank rank = 0);
-    void aggregate(const document::Document & doc, HitRank rank = 0);
-    void aggregate(const RankedHit * rankedHit, unsigned int len);
+    void aggregate(DocId docId, HitRank rank);
+    void aggregate(const document::Document & doc, HitRank rank);
     void convertToGlobalId(const IDocumentMetaStore &metaStore);
     void postAggregate();
     void postProcess();
@@ -84,6 +82,9 @@ public:
     void cleanTemporary();
     void configureStaticStuff(const expression::ConfigureStaticParams & params);
     void cleanupAttributeReferences();
+    // Only used by tests
+    void aggregate(DocId from, DocId to);
+    void aggregate(const RankedHit * rankedHit, unsigned int len);
 };
 
 }
