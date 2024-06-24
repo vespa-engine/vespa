@@ -27,18 +27,11 @@ GroupingSession::GroupingSession(const SessionId &sessionId,
 
 GroupingSession::~GroupingSession() = default;
 
-using search::expression::ExpressionNode;
-using search::expression::AttributeNode;
-using search::expression::ConfigureStaticParams;
-using search::aggregation::Grouping;
-using search::aggregation::GroupingLevel;
-
 void
 GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext &attrCtx)
 {
     GroupingList & sessionList(groupingContext.getGroupingList());
-    for (size_t i = 0; i < sessionList.size(); ++i) {
-        GroupingPtr g(sessionList[i]);
+    for (auto g : sessionList) {
         // Make internal copy of those we want to keep for another pass
         if (!_sessionId.empty() && g->getLastLevel() < g->levels().size()) {
             auto gp = std::make_shared<Grouping>(*g);
