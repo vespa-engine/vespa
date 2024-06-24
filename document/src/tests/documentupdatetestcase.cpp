@@ -33,6 +33,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/test/test_data.h>
 #include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -46,6 +47,7 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::nbostream;
+using vespalib::test::TestDataBase;
 
 namespace document {
 
@@ -89,54 +91,19 @@ void testRoundtripSerialize(const UpdateType& update, const DataType &type) {
     }
 }
 
-void
-writeBufferToFile(const nbostream &buf, const vespalib::string &fileName)
-{
-    auto file = std::fstream(fileName, std::ios::out | std::ios::binary);
-    file.write(buf.data(), buf.size());
-    assert(file.good());
-    file.close();
 }
 
-nbostream
-readBufferFromFile(const vespalib::string &fileName)
-{
-    auto file = std::fstream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
-    auto size = file.tellg();
-    file.seekg(0);
-    vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(size);
-    file.read(static_cast<char *>(buf.get()), size);
-    assert(file.good());
-    file.close();
-    return nbostream(std::move(buf), size);
-}
-
-bool
-equiv_buffers(const nbostream& lhs, const nbostream& rhs)
-{
-    return lhs.size() == rhs.size() && memcmp(lhs.data(), rhs.data(), lhs.size()) == 0;
-}
-
-}
-
-class DocumentUpdateTest : public ::testing::Test {
-    static std::string _source_testdata;
-    static std::string _build_testdata;
+class DocumentUpdateTest : public ::testing::Test, public vespalib::test::TestData<DocumentUpdateTest> {
 protected:
     DocumentUpdateTest();
     ~DocumentUpdateTest() override;
     static void SetUpTestSuite();
     static void TearDownTestSuite();
-    static const std::string& source_testdata() noexcept { return _source_testdata; }
-    static const std::string& build_testdata() noexcept { return _build_testdata; }
-    static void remove_unchanged_build_testdata_file_or_fail(const nbostream& buf, const std::string& file_name);
 };
 
-std::string DocumentUpdateTest::_source_testdata;
-std::string DocumentUpdateTest::_build_testdata;
-
 DocumentUpdateTest::DocumentUpdateTest()
-        : ::testing::Test()
+        : ::testing::Test(),
+          vespalib::test::TestData<DocumentUpdateTest>()
 {
 }
 
@@ -145,28 +112,14 @@ DocumentUpdateTest::~DocumentUpdateTest() = default;
 void
 DocumentUpdateTest::SetUpTestSuite()
 {
-   _source_testdata = TEST_PATH("data");
-   _build_testdata = "documentupdate-build-data";
+   setup_test_data(TEST_PATH("data"), "documentupdate-build-data");
    std::filesystem::create_directory(build_testdata());
-
 }
 
 void
 DocumentUpdateTest::TearDownTestSuite()
 {
-    std::filesystem::remove(build_testdata());
-}
-
-void
-DocumentUpdateTest::remove_unchanged_build_testdata_file_or_fail(const nbostream& buf, const std::string& file_name)
-{
-    auto act_path = build_testdata() + "/" + file_name;
-    auto exp_path = source_testdata() + "/" + file_name;
-    ASSERT_TRUE(std::filesystem::exists(exp_path)) << "Missing expected contents file " << exp_path;
-    auto exp_buf = readBufferFromFile(exp_path);
-    ASSERT_TRUE(equiv_buffers(exp_buf, buf)) << "Files " << exp_path << " and  " << act_path <<
-                                             " have diferent contents";
-    std::filesystem::remove(act_path);
+    tear_down_test_data();
 }
 
 TEST_F(DocumentUpdateTest, testSimpleUsage)
@@ -535,7 +488,7 @@ TEST_F(DocumentUpdateTest, testReadSerializedFile)
     const std::string file_name = source_testdata() + "/crossplatform-java-cpp-doctypes.cfg";
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
-    auto is = readBufferFromFile(source_testdata() + "/serializeupdatejava.dat");
+    auto is = read_buffer_from_file(source_testdata() + "/serializeupdatejava.dat");
     DocumentUpdate::UP updp(DocumentUpdate::createHEAD(repo, is));
     DocumentUpdate& upd(*updp);
 
@@ -616,7 +569,7 @@ TEST_F(DocumentUpdateTest, testGenerateSerializedFile)
                         std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Mul, 2))));
     nbostream buf(serializeHEAD(upd));
     std::string file_name("serializeupdatecpp.dat");
-    writeBufferToFile(buf, build_testdata() + "/" + file_name);
+    write_buffer_to_file(buf, build_testdata() + "/" + file_name);
     ASSERT_NO_FATAL_FAILURE(remove_unchanged_build_testdata_file_or_fail(buf, file_name));
 }
 
@@ -1269,11 +1222,11 @@ struct TensorUpdateSerializeFixture {
 
     void serializeUpdateToFile(const DocumentUpdate &update, const vespalib::string &fileName) {
         nbostream buf = serializeHEAD(update);
-        writeBufferToFile(buf, fileName);
+        TestDataBase::write_buffer_to_file(buf, fileName);
     }
 
     DocumentUpdate::UP deserializeUpdateFromFile(const vespalib::string &fileName) {
-        auto stream = readBufferFromFile(fileName);
+        auto stream = TestDataBase::read_buffer_from_file(fileName);
         return DocumentUpdate::createHEAD(*repo, stream);
     }
 
@@ -1293,7 +1246,7 @@ TEST_F(DocumentUpdateTest, generate_serialized_tensor_update_file_cpp)
     std::string file_name("serialize-tensor-update-cpp.dat");
     auto act_path = build_testdata() + "/" + file_name;
     f.serializeUpdateToFile(*update, act_path);
-    auto buf = readBufferFromFile(act_path);
+    auto buf = read_buffer_from_file(act_path);
     ASSERT_NO_FATAL_FAILURE(remove_unchanged_build_testdata_file_or_fail(buf, file_name));
 }
 
