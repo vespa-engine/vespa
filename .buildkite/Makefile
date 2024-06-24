@@ -29,7 +29,7 @@ endif
 
 .DEFAULT_GOAL := pr
 
-main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts 
+main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts upload-test-results
 pr: build-rpms cpp-test basic-search-test
 
 check:
@@ -74,6 +74,9 @@ publish-container: build-container
 publish-artifacts: java build-rpms
 	@$(TOP)/execute.sh $@
 
+upload-test-results: java cpp-test
+	@$(TOP)/execute.sh $@
+
 .PHONY: \
 	main \
 	pr \
@@ -90,4 +93,5 @@ publish-artifacts: java build-rpms
 	quick-start-guide \
 	publish-container \
 	publish-artifacts \
+	upload-test-results \
 	check
