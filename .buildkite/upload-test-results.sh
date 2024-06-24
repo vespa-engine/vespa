@@ -46,6 +46,7 @@ export -f upload_result
 # Upload all surefire TEST-*.xml reports
 cd "$WORKDIR"
 export BUILDKITE_ANALYTICS_TOKEN=$JAVA_TEST_TOKEN
+# shellcheck disable=2038
 find . -name "TEST-*.xml" -type f | xargs -n 1 -P 50 -I '{}' bash -c "upload_result {}"
 
 # Upload the cpp test report
