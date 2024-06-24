@@ -21,7 +21,6 @@
     {
       "description": "Disable automatic PRs for artifacts, e.g. fixed version required like ZK dependencies or released to frequently. PRs can still be created manually from dependency dashboard.",
       "matchPackageNames": [
-        "github.com/go-json-experiment/json",
         "javax.servlet:javax.servlet-api",
         "io.dropwizard.metrics:metrics-core",
         "org.apache.zookeeper:zookeeper"
