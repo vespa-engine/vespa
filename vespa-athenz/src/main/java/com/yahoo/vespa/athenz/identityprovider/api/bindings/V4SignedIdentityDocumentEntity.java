@@ -3,7 +3,7 @@ package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record DefaultSignedIdentityDocumentEntity(
+public record V4SignedIdentityDocumentEntity(
         @JsonProperty("signature") String signature,
         @JsonProperty("signing-key-version") int signingKeyVersion,
         @JsonProperty("document-version") int documentVersion,
