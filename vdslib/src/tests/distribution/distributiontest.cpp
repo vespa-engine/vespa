@@ -11,6 +11,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
+#include <vespa/vespalib/test/test_data.h>
 #include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
@@ -32,24 +33,17 @@ T readConfig(const config::ConfigUri & uri)
     return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
 }
 
-class DistributionTest : public ::testing::Test {
-    static std::string _source_testdata;
-    static std::string _build_testdata;
+class DistributionTest : public ::testing::Test, public vespalib::test::TestData<DistributionTest> {
 protected:
-
     DistributionTest();
     ~DistributionTest() override;
     static void SetUpTestSuite();
     static void TearDownTestSuite();
-    static const std::string& source_testdata() noexcept { return _source_testdata; }
-    static const std::string& build_testdata() noexcept { return _build_testdata; }
 };
 
-std::string DistributionTest::_source_testdata;
-std::string DistributionTest::_build_testdata;
-
 DistributionTest::DistributionTest()
-        : ::testing::Test()
+        : ::testing::Test(),
+          vespalib::test::TestData<DistributionTest>()
 {
 }
 
@@ -58,15 +52,13 @@ DistributionTest::~DistributionTest() = default;
 void
 DistributionTest::SetUpTestSuite()
 {
-    _source_testdata = TEST_PATH("distribution/testdata");
-    _build_testdata = "distribution-testdata";
-    std::filesystem::create_directory(build_testdata());
+    setup_test_data(TEST_PATH("distribution/testdata"), "distribution-testdata");
 }
 
 void
 DistributionTest::TearDownTestSuite()
 {
-    std::filesystem::remove(build_testdata());
+    tear_down_test_data();
 }
 
 TEST_F(DistributionTest, test_verify_java_distributions)
