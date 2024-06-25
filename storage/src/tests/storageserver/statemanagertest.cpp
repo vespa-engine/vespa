@@ -10,6 +10,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/config-stor-distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using storage::lib::NodeState;
@@ -38,6 +39,23 @@ struct StateManagerTest : Test, NodeStateReporter {
         return cmd;
     }
 
+    static std::shared_ptr<const lib::ClusterStateBundle> make_state_bundle_with_config(
+            vespalib::stringref state_str, uint16_t num_nodes)
+    {
+        auto state = std::make_shared<const ClusterState>(state_str);
+        auto distr = lib::DistributionConfigBundle::of(lib::Distribution::getDefaultDistributionConfig(1, num_nodes));
+        return std::make_shared<lib::ClusterStateBundle>(std::move(state),
+                                                         lib::ClusterStateBundle::BucketSpaceStateMapping{},
+                                                         std::nullopt, std::move(distr), false);
+    }
+
+
+    static std::shared_ptr<api::SetSystemStateCommand> make_set_state_cmd_with_config(
+            vespalib::stringref state_str, uint16_t num_nodes)
+    {
+        return std::make_shared<api::SetSystemStateCommand>(make_state_bundle_with_config(state_str, num_nodes));
+    }
+
     void get_single_reply(std::shared_ptr<api::StorageReply>& reply_out);
     void get_only_ok_reply(std::shared_ptr<api::StorageReply>& reply_out);
     void force_current_cluster_state_version(uint32_t version, uint16_t cc_index);
@@ -56,6 +74,10 @@ struct StateManagerTest : Test, NodeStateReporter {
     void report(vespalib::JsonStream &) const override {}
 
     void extract_cluster_state_version_from_host_info(uint32_t& version_out);
+
+    static vespalib::string to_string(const lib::Distribution::DistributionConfig& cfg) {
+        return lib::Distribution(cfg).serialized();
+    }
 };
 
 StateManagerTest::StateManagerTest()
@@ -148,26 +170,107 @@ StateManagerTest::extract_cluster_state_version_from_host_info(uint32_t& version
     version_out = clusterStateVersionCursor.asLong();
 }
 
-TEST_F(StateManagerTest, cluster_state) {
-    std::shared_ptr<api::StorageReply> reply;
-    // Verify initial state on startup
-    auto currentState = _manager->getClusterStateBundle()->getBaselineClusterState();
+TEST_F(StateManagerTest, cluster_state_and_config_has_expected_values_at_bootstrap) {
+    auto initial_bundle = _manager->getClusterStateBundle();
+    auto currentState = initial_bundle->getBaselineClusterState();
     EXPECT_EQ("cluster:d", currentState->toString(false));
     EXPECT_EQ(currentState->getVersion(), 0);
 
+    // Distribution config should be equal to the config the node is running with.
+    ASSERT_TRUE(initial_bundle->has_distribution_config());
+    EXPECT_EQ(to_string(initial_bundle->distribution_config_bundle()->config()),
+              _node->getComponentRegister().getDistribution()->serialized());
+
     auto currentNodeState = _manager->getCurrentNodeState();
     EXPECT_EQ("s:d", currentNodeState->toString(false));
+}
 
-    ClusterState sendState("storage:4 .2.s:m");
-    auto cmd = std::make_shared<api::SetSystemStateCommand>(sendState);
+TEST_F(StateManagerTest, can_receive_state_bundle_without_distribution_config) {
+    ClusterState send_state("version:2 distributor:1 storage:4 .2.s:m");
+    auto cmd = std::make_shared<api::SetSystemStateCommand>(send_state);
     _upper->sendDown(cmd);
+    std::shared_ptr<api::StorageReply> reply;
     ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
 
-    currentState = _manager->getClusterStateBundle()->getBaselineClusterState();
-    EXPECT_EQ(sendState, *currentState);
+    auto current_bundle = _manager->getClusterStateBundle();
+    EXPECT_EQ(send_state, *current_bundle->getBaselineClusterState());
+    // Distribution config should be unchanged from bootstrap.
+    ASSERT_TRUE(current_bundle->has_distribution_config());
+    EXPECT_EQ(to_string(current_bundle->distribution_config_bundle()->config()),
+              _node->getComponentRegister().getDistribution()->serialized());
 
-    currentNodeState = _manager->getCurrentNodeState();
-    EXPECT_EQ("s:m", currentNodeState->toString(false));
+    auto current_node_state = _manager->getCurrentNodeState();
+    EXPECT_EQ("s:m", current_node_state->toString(false));
+}
+
+TEST_F(StateManagerTest, can_receive_state_bundle_with_distribution_config) {
+    auto cmd = make_set_state_cmd_with_config("version:2 distributor:1 storage:4 .2.s:m", 5);
+    EXPECT_NE(to_string(cmd->getClusterStateBundle().distribution_config_bundle()->config()),
+              _node->getComponentRegister().getDistribution()->serialized());
+    _upper->sendDown(cmd);
+    std::shared_ptr<api::StorageReply> reply;
+    ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
+
+    auto current_bundle = _manager->getClusterStateBundle();
+    EXPECT_EQ(*current_bundle, cmd->getClusterStateBundle()); // also compares distribution configs
+}
+
+TEST_F(StateManagerTest, receiving_cc_bundle_with_distribution_config_disables_node_distribution_config_propagation) {
+    auto cmd = make_set_state_cmd_with_config("version:2 distributor:1 storage:4 .2.s:m", 5);
+    _upper->sendDown(cmd);
+    std::shared_ptr<api::StorageReply> reply;
+    ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
+    // Explicitly setting distribution config should not propagate to the active state bundle
+    // since we've flipped to expecting config from the cluster controllers instead.
+    auto distr = std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(2, 7));
+    _node->getComponentRegister().setDistribution(distr);
+
+    auto current_bundle = _manager->getClusterStateBundle();
+    EXPECT_EQ(*current_bundle, cmd->getClusterStateBundle()); // unchanged
+}
+
+TEST_F(StateManagerTest, internal_distribution_config_is_propagated_if_none_yet_received_from_cc) {
+    _upper->sendDown(make_set_state_cmd("version:10 distributor:1 storage:4", 0));
+    std::shared_ptr<api::StorageReply> reply;
+    ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
+
+    auto expected_bundle = make_state_bundle_with_config("version:10 distributor:1 storage:4", 7);
+    // Explicitly set internal config
+    _node->getComponentRegister().setDistribution(expected_bundle->distribution_config_bundle()->default_distribution_sp());
+    _manager->storageDistributionChanged();
+
+    auto current_bundle = _manager->getClusterStateBundle();
+    EXPECT_EQ(*current_bundle, *expected_bundle);
+}
+
+TEST_F(StateManagerTest, revert_to_internal_config_if_cc_no_longer_sends_distribution_config) {
+    // Initial state bundle _with_ distribution config
+    auto cmd = make_set_state_cmd_with_config("version:2 distributor:1 storage:4 .2.s:m", 5);
+    _upper->sendDown(cmd);
+    std::shared_ptr<api::StorageReply> reply;
+    ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
+
+    auto current_bundle = _manager->getClusterStateBundle();
+    EXPECT_EQ(to_string(current_bundle->distribution_config_bundle()->config()),
+              to_string(cmd->getClusterStateBundle().distribution_config_bundle()->config()));
+
+    // CC then sends a new bundle _without_ config
+    _upper->sendDown(make_set_state_cmd("version:3 distributor:1 storage:4", 0));
+    ASSERT_NO_FATAL_FAILURE(get_only_ok_reply(reply));
+
+    // Config implicitly reverted to the active internal config
+    current_bundle = _manager->getClusterStateBundle();
+    EXPECT_EQ(to_string(current_bundle->distribution_config_bundle()->config()),
+              _node->getComponentRegister().getDistribution()->serialized());
+
+    // Explicitly set internal config
+    auto expected_bundle = make_state_bundle_with_config("version:3 distributor:1 storage:4", 7);
+    _node->getComponentRegister().setDistribution(expected_bundle->distribution_config_bundle()->default_distribution_sp());
+    _manager->storageDistributionChanged();
+
+    // Internal config shall have taken effect, overriding that of the initial bundle
+    current_bundle = _manager->getClusterStateBundle();
+    EXPECT_EQ(*current_bundle, *expected_bundle);
 }
 
 TEST_F(StateManagerTest, accept_lower_state_versions_if_strict_requirement_disabled) {

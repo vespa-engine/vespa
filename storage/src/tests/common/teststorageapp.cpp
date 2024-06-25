@@ -6,10 +6,10 @@
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/config-stor-distribution.h>
-#include <vespa/config-fleetcontroller.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/config/subscription/configuri.h>
@@ -59,6 +59,7 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
     auto distr = std::make_shared<lib::Distribution>(
             lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
     _compReg.setDistribution(distr);
+    _nodeStateUpdater.patch_distribution(distr);
 }
 
 TestStorageApp::~TestStorageApp() = default;
@@ -69,6 +70,7 @@ TestStorageApp::setDistribution(Redundancy redundancy, NodeCount nodeCount)
     auto distr = std::make_shared<lib::Distribution>(
             lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount));
     _compReg.setDistribution(distr);
+    _nodeStateUpdater.patch_distribution(distr);
 }
 
 void
@@ -81,6 +83,12 @@ void
 TestStorageApp::setClusterState(const lib::ClusterState& c)
 {
     _nodeStateUpdater.setClusterState(std::make_shared<lib::ClusterState>(c));
+}
+
+void
+TestStorageApp::set_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle> state_bundle)
+{
+    _nodeStateUpdater.setClusterStateBundle(std::move(state_bundle));
 }
 
 namespace {

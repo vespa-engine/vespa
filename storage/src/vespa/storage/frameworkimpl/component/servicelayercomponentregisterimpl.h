@@ -34,7 +34,7 @@ public:
     }
 
     void registerServiceLayerComponent(ServiceLayerManagedComponent&) override;
-    void setDistribution(std::shared_ptr<lib::Distribution> distribution) override;
+    void setDistribution(std::shared_ptr<const lib::Distribution> distribution) override;
 };
 
 } // storage

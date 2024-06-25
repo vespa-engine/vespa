@@ -21,16 +21,16 @@ class StorageComponentRegisterImpl
 {
     using BucketspacesConfig = vespa::config::content::core::internal::InternalBucketspacesType;
 
-    std::mutex _componentLock;
-    std::vector<StorageComponent*> _components;
-    vespalib::string _clusterName;
-    const lib::NodeType* _nodeType;
-    uint16_t _index;
+    std::mutex                                        _componentLock;
+    std::vector<StorageComponent*>                    _components;
+    vespalib::string                                  _clusterName;
+    const lib::NodeType*                              _nodeType;
+    uint16_t                                          _index;
     std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;
-    document::BucketIdFactory _bucketIdFactory;
-    std::shared_ptr<lib::Distribution> _distribution;
-    NodeStateUpdater* _nodeStateUpdater;
-    BucketspacesConfig _bucketSpacesConfig;
+    document::BucketIdFactory                         _bucketIdFactory;
+    std::shared_ptr<const lib::Distribution>          _distribution;
+    NodeStateUpdater*                                 _nodeStateUpdater;
+    BucketspacesConfig                                _bucketSpacesConfig;
 
 public:
     using UP = std::unique_ptr<StorageComponentRegisterImpl>;
@@ -38,12 +38,12 @@ public:
     StorageComponentRegisterImpl();
     ~StorageComponentRegisterImpl() override;
 
-    const lib::NodeType& getNodeType() const { return *_nodeType; }
-    uint16_t getIndex() const { return _index; }
-    std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _docTypeRepo; }
-    const document::BucketIdFactory& getBucketIdFactory() { return _bucketIdFactory; }
-    std::shared_ptr<lib::Distribution> & getDistribution() { return _distribution; }
-    NodeStateUpdater& getNodeStateUpdater() { return *_nodeStateUpdater; }
+    [[nodiscard]] const lib::NodeType& getNodeType() const noexcept { return *_nodeType; }
+    [[nodiscard]] uint16_t getIndex() const noexcept { return _index; }
+    [[nodiscard]] std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() const noexcept { return _docTypeRepo; }
+    [[nodiscard]] const document::BucketIdFactory& getBucketIdFactory() const noexcept { return _bucketIdFactory; }
+    [[nodiscard]] const std::shared_ptr<const lib::Distribution>& getDistribution() const noexcept { return _distribution; }
+    [[nodiscard]] NodeStateUpdater& getNodeStateUpdater() noexcept { return *_nodeStateUpdater; }
 
     void registerStorageComponent(StorageComponent&) override;
 
@@ -51,7 +51,7 @@ public:
     virtual void setNodeStateUpdater(NodeStateUpdater& updater);
     virtual void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
     virtual void setBucketIdFactory(const document::BucketIdFactory&);
-    virtual void setDistribution(std::shared_ptr<lib::Distribution>);
+    virtual void setDistribution(std::shared_ptr<const lib::Distribution>);
     virtual void setBucketSpacesConfig(const BucketspacesConfig&);
 };
 

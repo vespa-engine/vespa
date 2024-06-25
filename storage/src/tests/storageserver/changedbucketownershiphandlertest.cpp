@@ -53,6 +53,7 @@ struct ChangedBucketOwnershipHandlerTest : Test {
 
     void applyDistribution(Redundancy, NodeCount);
     void applyClusterState(const lib::ClusterState&);
+    void apply_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle>);
 
     document::BucketId nextOwnedBucket(
             uint16_t wantedOwner,
@@ -82,6 +83,21 @@ struct ChangedBucketOwnershipHandlerTest : Test {
 
     static lib::ClusterState getStorageDownTestClusterState() {
         return lib::ClusterState("distributor:4 storage:1 .0.s:d");
+    }
+
+    static std::shared_ptr<const lib::DistributionConfigBundle> make_distr_bundle(uint16_t node_count) {
+        return lib::DistributionConfigBundle::of(lib::Distribution::getDefaultDistributionConfig(1, node_count));
+    }
+
+    static std::shared_ptr<const lib::ClusterStateBundle> make_state_bundle_with_config(
+            vespalib::stringref state_str, uint16_t node_count)
+    {
+        return std::make_shared<const lib::ClusterStateBundle>(
+                std::make_shared<const lib::ClusterState>(state_str),
+                lib::ClusterStateBundle::BucketSpaceStateMapping{},
+                std::nullopt,
+                make_distr_bundle(node_count),
+                false);
     }
 
     void SetUp() override;
@@ -194,6 +210,7 @@ hasOnlySetSystemStateCmdQueued(DummyStorageLink& link) {
 void
 ChangedBucketOwnershipHandlerTest::applyDistribution(Redundancy redundancy, NodeCount nodeCount)
 {
+    // TODO set distribution via state bundle instead
     _app->setDistribution(redundancy, nodeCount);
     _handler->storageDistributionChanged();
 }
@@ -202,6 +219,13 @@ void
 ChangedBucketOwnershipHandlerTest::applyClusterState(const lib::ClusterState& state)
 {
     _app->setClusterState(state);
+    _handler->reloadClusterState();
+}
+
+void
+ChangedBucketOwnershipHandlerTest::apply_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle> state_bundle)
+{
+    _app->set_cluster_state_bundle(std::move(state_bundle));
     _handler->reloadClusterState();
 }
 
@@ -225,7 +249,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, enumerate_buckets_belonging_on_changed
     EXPECT_TRUE(hasAbortedNoneOf(cmd, node2Buckets));
 
     // Handler must swallow abort replies
-    _bottom->sendUp(api::StorageMessage::SP(cmd->makeReply().release()));
+    _bottom->sendUp(api::StorageMessage::SP(cmd->makeReply()));
     EXPECT_EQ(size_t(0), _top->getNumReplies());
 }
 
@@ -312,7 +336,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, ownership_changed_on_distributor_up_ed
     EXPECT_TRUE(hasAbortedNoneOf(cmd, node2Buckets));
 
     // Handler must swallow abort replies
-    _bottom->sendUp(api::StorageMessage::SP(cmd->makeReply().release()));
+    _bottom->sendUp(api::StorageMessage::SP(cmd->makeReply()));
     EXPECT_EQ(0, _top->getNumReplies());
 }
 
@@ -342,6 +366,32 @@ TEST_F(ChangedBucketOwnershipHandlerTest, distribution_config_change_updates_own
     // Apply new distribution config containing only 1 distributor, meaning
     // any messages sent from >1 must be aborted.
     applyDistribution(Redundancy(1), NodeCount(1));
+    sendAndExpectAbortedCreateBucket(2);
+}
+
+TEST_F(ChangedBucketOwnershipHandlerTest, distribution_config_via_state_bundle_change_updates_ownership) {
+    apply_cluster_state_bundle(make_state_bundle_with_config("version:2 distributor:3 storage:1", 3));
+    // Apply new distribution config containing only 1 distributor, meaning
+    // any messages sent from >1 must be aborted.
+    // This test case is a bit dodgy since the CC should never send a state with more nodes in it than
+    // the distribution config allows for when _it_ is responsible for also sending the config.
+    apply_cluster_state_bundle(make_state_bundle_with_config("version:3 distributor:3 storage:1", 1));
+    sendAndExpectAbortedCreateBucket(2);
+}
+
+TEST_F(ChangedBucketOwnershipHandlerTest, ignore_internal_config_once_state_bundle_with_config_received) {
+    apply_cluster_state_bundle(make_state_bundle_with_config("version:2 distributor:3 storage:3", 1));
+    applyDistribution(Redundancy(1), NodeCount(3));
+    // Bundle config says 1 node, internal config says 3. Trust the bundle(tm).
+    sendAndExpectAbortedCreateBucket(2);
+}
+
+TEST_F(ChangedBucketOwnershipHandlerTest, revert_to_internal_config_if_distribution_no_longer_received_in_state_bundle) {
+    apply_cluster_state_bundle(make_state_bundle_with_config("version:2 distributor:1 storage:3", 3));
+
+    applyDistribution(Redundancy(1), NodeCount(1)); // not yet used
+    applyClusterState(lib::ClusterState("version:3 distributor:3 storage:3")); // no bundle config; revert to internal
+
     sendAndExpectAbortedCreateBucket(2);
 }
 

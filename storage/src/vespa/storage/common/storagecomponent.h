@@ -61,7 +61,7 @@ public:
         const std::shared_ptr<const document::FieldSetRepo> fieldSetRepo;
     };
     using UP = std::unique_ptr<StorageComponent>;
-    using DistributionSP = std::shared_ptr<lib::Distribution>;
+    using DistributionSP = std::shared_ptr<const lib::Distribution>;
 
     /**
      * Node type is supposed to be set immediately, and never be updated.

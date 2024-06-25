@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
-#include <tests/common/storage_config_set.h>
+#include <vespa/config-stor-distribution.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -25,7 +26,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_path.h>
-#include <vespa/config-stor-distribution.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -116,16 +116,17 @@ public:
 
 BucketManagerTest::~BucketManagerTest() = default;
 
-#define ASSERT_DUMMYLINK_REPLY_COUNT(link, count) \
-    if (link->getNumReplies() != count) { \
-        std::ostringstream ost; \
-        ost << "Expected there to be " << count << " replies in link, but " \
-            << "found " << link->getNumReplies() << ":\n"; \
-        for (uint32_t i=0; i<link->getNumReplies(); ++i) { \
-            ost << link->getReply(i)->getType() << "\n"; \
-        } \
-        FAIL() << ost.str(); \
+void check_dummy_link_reply_count(const DummyStorageLink& link, size_t expected_count) {
+    if (link.getNumReplies() != expected_count) {
+        std::ostringstream ost;
+        ost << "Expected there to be " << expected_count << " replies in link, but "
+            << "found " << link.getNumReplies() << ":\n";
+        for (uint32_t i = 0; i < link.getNumReplies(); ++i) {
+            ost << link.getReply(i)->getType() << "\n";
+        }
+        FAIL() << ost.str();
     }
+}
 
 void BucketManagerTest::setupTestEnvironment()
 {
@@ -313,7 +314,7 @@ TEST_F(BucketManagerTest, DISABLED_request_bucket_info_with_state) {
     {
         LOG(info, "Waiting for response from 3 request bucket info messages");
         _top->waitForMessages(3, 5);
-        ASSERT_DUMMYLINK_REPLY_COUNT(_top, 3);
+        ASSERT_NO_FATAL_FAILURE(check_dummy_link_reply_count(*_top, 3));
         std::map<uint64_t, api::RequestBucketInfoReply::SP> replies;
         for (uint32_t i=0; i<3; ++i) {
             replies[_top->getReply(i)->getMsgId()]
@@ -357,7 +358,7 @@ TEST_F(BucketManagerTest, request_bucket_info_with_list) {
 
         _top->sendDown(cmd);
         _top->waitForMessages(1, 5);
-        ASSERT_DUMMYLINK_REPLY_COUNT(_top, 1);
+        ASSERT_NO_FATAL_FAILURE(check_dummy_link_reply_count(*_top, 1));
         auto reply = std::dynamic_pointer_cast<api::RequestBucketInfoReply>(_top->getReply(0));
         _top->reset();
         ASSERT_TRUE(reply.get());
@@ -527,7 +528,7 @@ class ConcurrentOperationFixture {
 public:
     explicit ConcurrentOperationFixture(BucketManagerTest& self)
         : _self(self),
-          _state(std::make_shared<lib::ClusterState>("distributor:1 storage:1"))
+          _state(std::make_shared<lib::ClusterState>("version:2 distributor:1 storage:1"))
     {
         _self.setupTestEnvironment();
         _self._top->open();

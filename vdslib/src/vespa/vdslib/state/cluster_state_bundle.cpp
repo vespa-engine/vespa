@@ -22,13 +22,17 @@ ClusterStateBundle::FeedBlock::operator==(const FeedBlock& rhs) const noexcept
             (_description == rhs._description);
 }
 
-// TODO implement with ctor fwd
-ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState)
-    : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
+ClusterStateBundle::ClusterStateBundle(std::shared_ptr<const ClusterState> baseline_cluster_state)
+    : _baselineClusterState(std::move(baseline_cluster_state)),
       _derivedBucketSpaceStates(),
       _feed_block(),
       _distribution_bundle(),
       _deferredActivation(false)
+{
+}
+
+ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState)
+    : ClusterStateBundle(std::make_shared<const ClusterState>(baselineClusterState))
 {
 }
 
@@ -106,6 +110,14 @@ ClusterStateBundle::getDerivedClusterState(document::BucketSpace bucketSpace) co
         return itr->second;
     }
     return _baselineClusterState;
+}
+
+std::shared_ptr<const Distribution>
+ClusterStateBundle::bucket_space_distribution_or_nullptr(document::BucketSpace space) const noexcept {
+    if (!_distribution_bundle) {
+        return {};
+    }
+    return _distribution_bundle->bucket_space_distribution_or_nullptr(space);
 }
 
 uint32_t

@@ -73,6 +73,7 @@ public:
     void setDistribution(Redundancy, NodeCount);
     void setTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo);
     void setClusterState(const lib::ClusterState&);
+    void set_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle>);
 
     // Utility functions for getting a hold of currently used bits. Practical
     // to avoid adding extra components in the tests.
@@ -81,7 +82,7 @@ public:
     std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _compReg.getTypeRepo(); }
     const document::BucketIdFactory& getBucketIdFactory() { return _compReg.getBucketIdFactory(); }
     TestNodeStateUpdater& getStateUpdater() { return _nodeStateUpdater; }
-    std::shared_ptr<lib::Distribution> & getDistribution() { return _compReg.getDistribution(); }
+    std::shared_ptr<const lib::Distribution> getDistribution() { return _compReg.getDistribution(); }
     TestNodeStateUpdater& getNodeStateUpdater() { return _nodeStateUpdater; }
     uint16_t getIndex() const { return _compReg.getIndex(); }
     const NodeIdentity& node_identity() const noexcept { return _node_identity; }

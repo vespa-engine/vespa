@@ -33,6 +33,9 @@ public:
     [[nodiscard]] std::shared_ptr<const Distribution> bucket_space_distribution_or_nullptr(document::BucketSpace space) const noexcept {
         return _bucket_space_distributions.get_or_nullptr(space);
     }
+    [[nodiscard]] const Distribution* bucket_space_distribution_or_nullptr_raw(document::BucketSpace space) const noexcept {
+        return _bucket_space_distributions.get_or_nullptr_raw(space);
+    }
     [[nodiscard]] const BucketSpaceDistributionConfigs& bucket_space_distributions() const noexcept {
         return _bucket_space_distributions;
     }

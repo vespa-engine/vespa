@@ -52,6 +52,7 @@ public:
     std::shared_ptr<const DistributionConfigBundle> _distribution_bundle;
     bool                                            _deferredActivation;
 public:
+    explicit ClusterStateBundle(std::shared_ptr<const ClusterState> baseline_cluster_state);
     explicit ClusterStateBundle(const ClusterState& baselineClusterState);
     ClusterStateBundle(const ClusterState& baselineClusterState,
                        BucketSpaceStateMapping derivedBucketSpaceStates);
@@ -98,6 +99,7 @@ public:
     [[nodiscard]] const std::shared_ptr<const DistributionConfigBundle>& distribution_config_bundle() const noexcept {
         return _distribution_bundle;
     }
+    [[nodiscard]] std::shared_ptr<const Distribution> bucket_space_distribution_or_nullptr(document::BucketSpace space) const noexcept;
     [[nodiscard]] const std::optional<FeedBlock>& feed_block() const { return _feed_block; }
     [[nodiscard]] uint32_t getVersion() const;
     [[nodiscard]] bool deferredActivation() const noexcept { return _deferredActivation; }
