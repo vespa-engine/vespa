@@ -13,7 +13,7 @@ using namespace search::features::util;
 namespace search::features::util {
 
 void PrintTo(const DocumentFrequency& document_frequency, std::ostream* os) {
-    *os << "{" << document_frequency.document_frequency << "," << document_frequency.document_count << "}";
+    *os << "{" << document_frequency.frequency << "," << document_frequency.count << "}";
 }
 
 }
