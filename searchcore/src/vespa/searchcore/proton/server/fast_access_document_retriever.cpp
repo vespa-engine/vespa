@@ -4,7 +4,7 @@
 
 namespace proton {
 
-FastAccessDocumentRetriever::FastAccessDocumentRetriever(FastAccessFeedView::SP feedView, IAttributeManager::SP attrMgr)
+FastAccessDocumentRetriever::FastAccessDocumentRetriever(FastAccessFeedView::SP feedView, IAttributeManager::SP attrMgr) noexcept
     : DocumentRetriever(feedView->getPersistentParams()._docTypeName,
                         *feedView->getDocumentTypeRepo(),
                         *feedView->getSchema(),

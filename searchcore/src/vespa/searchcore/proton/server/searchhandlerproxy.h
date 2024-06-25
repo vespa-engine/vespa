@@ -15,9 +15,9 @@ private:
     std::shared_ptr<DocumentDB> _documentDB;
     vespalib::RetainGuard       _retainGuard;
 public:
-    SearchHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
-
+    explicit SearchHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
     ~SearchHandlerProxy() override;
+
     std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) override;
     std::unique_ptr<SearchReply> match(const SearchRequest &req, ThreadBundle &threadBundle) const override;
 };

@@ -202,9 +202,9 @@ fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::Po
 class PopulateVisitor : public search::IDocumentVisitor
 {
 public:
-    PopulateVisitor(const DocumentRetriever & retriever, search::IDocumentVisitor & visitor) :
-        _retriever(retriever),
-        _visitor(visitor)
+    PopulateVisitor(const DocumentRetriever & retriever, search::IDocumentVisitor & visitor) noexcept
+        : _retriever(retriever),
+          _visitor(visitor)
     { }
     void visit(uint32_t lid, document::Document::UP doc) override {
         if (doc) {
