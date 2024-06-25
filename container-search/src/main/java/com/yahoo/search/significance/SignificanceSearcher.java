@@ -22,6 +22,7 @@ import com.yahoo.search.searchchain.Execution;
 
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -69,6 +70,7 @@ public class SignificanceSearcher extends Searcher {
                         // This will result in a failure later (in a "backend searcher") anyway.
                         Optional.ofNullable(schema.rankProfiles().get(rankProfileName))
                                 .map(RankProfile::useSignificanceModel).orElse(false)));
+        log.log(Level.FINE, () -> "Significance setup per schema: " + perSchemaSetup);
         var uniqueSetups = new HashSet<>(perSchemaSetup.values());
 
         // Fail if the significance setup for the selected schemas are conflicting
@@ -95,6 +97,8 @@ public class SignificanceSearcher extends Searcher {
     private Result calculateAndSetSignificance(Query query, Execution execution) {
         Language language = query.getModel().getParsingLanguage();
         Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
+        log.log(Level.FINE, () -> "Got model for language %s: %s"
+                .formatted(language, model.map(SignificanceModel::getId).orElse("<none>")));
 
         if (model.isEmpty()) return execution.search(query);
 
@@ -106,17 +110,17 @@ public class SignificanceSearcher extends Searcher {
     private void setIDF(Item root, SignificanceModel significanceModel) {
         if (root == null || root instanceof NullItem) return;
 
-        if (root instanceof WordItem) {
-
-            var documentFrequency = significanceModel.documentFrequency(((WordItem) root).getWord());
+        if (root instanceof WordItem wi) {
+            var word = wi.getWord();
+            var documentFrequency = significanceModel.documentFrequency(word);
             long N                = documentFrequency.corpusSize();
             long nq_i             = documentFrequency.frequency();
             double idf            = calculateIDF(N, nq_i);
-
-            ((WordItem) root).setSignificance(idf);
-        } else if (root instanceof CompositeItem) {
-            for (int i = 0; i < ((CompositeItem) root).getItemCount(); i++) {
-                setIDF(((CompositeItem) root).getItem(i), significanceModel);
+            log.log(Level.FINE, () -> "Setting IDF for " + word + " to " + idf);
+            wi.setSignificance(idf);
+        } else if (root instanceof CompositeItem ci) {
+            for (int i = 0; i < ci.getItemCount(); i++) {
+                setIDF(ci.getItem(i), significanceModel);
             }
         }
     }
