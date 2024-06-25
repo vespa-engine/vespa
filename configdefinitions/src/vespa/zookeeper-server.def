@@ -24,8 +24,8 @@ autopurge.snapRetainCount int default=15
 
 # Vespa home is prepended if the file is relative
 myidFile string default="var/zookeeper/myid"
-# Change from default of 1 Mb in zookeeper to 50 Mb
-juteMaxBuffer int default=52428800
+# Change from default of 1 Mb in zookeeper to 100 Mb
+juteMaxBuffer int default=104857600
 
 myid int restart
 server[].id int
