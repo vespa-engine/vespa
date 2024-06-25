@@ -1,6 +1,8 @@
 
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.parser.*;
+
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
@@ -43,7 +45,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger);
         this.workspaceService = new SchemaWorkspaceService();
-    }
+    }    
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {

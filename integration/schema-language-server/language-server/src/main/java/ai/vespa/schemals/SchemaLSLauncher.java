@@ -1,6 +1,8 @@
 
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.parser.*;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +18,13 @@ import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageClient;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class SchemaLSLauncher {
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
@@ -25,6 +34,9 @@ public class SchemaLSLauncher {
         if (args.length > 0) {
             if (args[0].equalsIgnoreCase("-c")) {
                 logger = System.out;
+            } else if (args[0].equalsIgnoreCase("debug")) {
+                debug();
+                return;
             } else if (args[0].equalsIgnoreCase("-t")) {
 
                 String filename = (args.length >= 2) ? args[1] : "debug.log";
@@ -59,6 +71,24 @@ public class SchemaLSLauncher {
         globaLogger.setLevel(Level.OFF);
 
         startServer(System.in, System.out, logger);
+    }
+
+    static public void debug() {
+        String input;
+        try {
+            input = Files.readString(Paths.get("input.sd"));
+        } catch(IOException e) {
+            System.err.println("Could not read file");
+            return;
+        }
+        
+        CharSequence sequence = input;
+
+        SchemaParser parser = new SchemaParser(sequence);
+
+        ParsedSchema root = parser.Root();
+
+        System.out.println(root);
     }
 
     private static void startServer(InputStream in, OutputStream out, PrintStream logger) throws ExecutionException, InterruptedException {
