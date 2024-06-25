@@ -79,7 +79,7 @@ export ROOT
 
 export MALLOC_ARENA_MAX=1 #Does not need fast allocation
 exec java \
--D vespa.replace_invalid_unicode=true \
+-Dvespa.replace_invalid_unicode=true \
 -server -enableassertions \
 -XX:ThreadStackSize=512 \
 -XX:MaxJavaStackTraceDepth=1000000 \
