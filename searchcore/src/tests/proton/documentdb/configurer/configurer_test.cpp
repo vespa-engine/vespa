@@ -146,7 +146,7 @@ ViewSet::~ViewSet() = default;
 
 struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
     vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
-        return vespalib::eval::ConstantValue::UP(nullptr);
+        return {};
     }
 };
 
@@ -178,13 +178,13 @@ struct Fixture
                      const DocumentDBConfig& old_config_snapshot,
                      const ReconfigParams& reconfig_params,
                      IDocumentDBReferenceResolver& resolver,
-                     SerialNum serial_num);
+                     SerialNum serial_num) const;
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig& new_config_snapshot,
                                              const DocumentDBConfig& old_config_snapshot,
                                              const ReconfigParams& reconfig_params,
                                              IDocumentDBReferenceResolver& resolver,
                                              uint32_t docid_limit,
-                                             SerialNum serial_num);
+                                             SerialNum serial_num) const;
 };
 
 Fixture::Fixture()
@@ -255,7 +255,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      const DocumentDBConfig& old_config_snapshot,
                      const ReconfigParams& reconfig_params,
                      IDocumentDBReferenceResolver& resolver,
-                     SerialNum serial_num)
+                     SerialNum serial_num) const
 {
     EXPECT_FALSE(reconfig_params.shouldAttributeManagerChange());
     uint32_t docid_limit = 1;
@@ -271,7 +271,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      const ReconfigParams& reconfig_params,
                      IDocumentDBReferenceResolver& resolver,
                      uint32_t docid_limit,
-                     SerialNum serial_num)
+                     SerialNum serial_num) const
 {
     AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), false);
     auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
@@ -279,7 +279,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
     return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
 
-using MySummaryAdapter = test::MockSummaryAdapter;
+using MySummaryAdapter = proton::test::MockSummaryAdapter;
 
 struct MyFastAccessFeedView
 {
@@ -367,14 +367,14 @@ FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
 DocumentDBConfig::SP
 createConfig()
 {
-    return test::DocumentDBConfigBuilder(0, make_shared<Schema>(), "client", DOC_TYPE).
+    return proton::test::DocumentDBConfigBuilder(0, make_shared<Schema>(), "client", DOC_TYPE).
             repo(createRepo()).build();
 }
 
 DocumentDBConfig::SP
 createConfig(const Schema::SP &schema)
 {
-    return test::DocumentDBConfigBuilder(0, schema, "client", DOC_TYPE).
+    return proton::test::DocumentDBConfigBuilder(0, schema, "client", DOC_TYPE).
             repo(createRepo()).build();
 }
 

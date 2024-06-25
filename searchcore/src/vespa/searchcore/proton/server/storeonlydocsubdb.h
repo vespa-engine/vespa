@@ -232,7 +232,7 @@ public:
     void pruneRemovedFields(SerialNum serialNum) override;
     void setIndexSchema(const Schema::SP &schema, SerialNum serialNum) override;
     search::SearchableStats getSearchableStats() const override;
-    IDocumentRetriever::UP getDocumentRetriever() override;
+    std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
     void close() override;
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;

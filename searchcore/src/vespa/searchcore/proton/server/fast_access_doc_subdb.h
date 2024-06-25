@@ -104,7 +104,7 @@ protected:
 
 public:
     FastAccessDocSubDB(const Config &cfg, const Context &ctx);
-    ~FastAccessDocSubDB();
+    ~FastAccessDocSubDB() override;
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
@@ -121,7 +121,7 @@ public:
 
     std::shared_ptr<IAttributeWriter> get_attribute_writer() const override;
     std::shared_ptr<IAttributeManager> getAttributeManager() const override;
-    IDocumentRetriever::UP getDocumentRetriever() override;
+    std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override;
     void onReplayDone() override;
     void onReprocessDone(SerialNum serialNum) override;
     SerialNum getOldestFlushedSerial() override;
