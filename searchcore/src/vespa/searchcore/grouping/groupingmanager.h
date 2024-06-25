@@ -8,6 +8,7 @@ namespace search {
     struct RankedHit;
     class BitVector;
 }
+namespace document { class DocumentType; }
 
 namespace search::grouping {
 
@@ -21,6 +22,7 @@ class GroupingManager
 {
 private:
     GroupingContext   &_groupingContext;
+    const document::DocumentType *_documentType;
 public:
     GroupingManager(const GroupingManager &) = delete;
     GroupingManager &operator=(const GroupingManager &) = delete;
@@ -30,7 +32,8 @@ public:
      * @param groupingContext Context to use for grouping
      **/
     GroupingManager(GroupingContext & groupingContext) noexcept
-        : _groupingContext(groupingContext)
+        : _groupingContext(groupingContext),
+          _documentType(nullptr)
     {}
 
     /**
@@ -43,7 +46,7 @@ public:
      *
      * @param attrCtx attribute context
      **/
-    void init(const attribute::IAttributeContext &attrCtx);
+    void init(const attribute::IAttributeContext &attrCtx, const document::DocumentType * documentType);
 
     /**
      * Perform actual grouping on the given results.

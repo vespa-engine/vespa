@@ -16,19 +16,21 @@ using search::attribute::IAttributeContext;
 
 GroupingSession::GroupingSession(const SessionId &sessionId,
                                  GroupingContext & groupingContext,
-                                 const IAttributeContext &attrCtx)
+                                 const IAttributeContext &attrCtx,
+                                 const document::DocumentType * documentType)
     : _sessionId(sessionId),
       _mgrContext(std::make_unique<GroupingContext>(groupingContext)),
       _groupingManager(std::make_unique<GroupingManager>(*_mgrContext)),
       _timeOfDoom(groupingContext.getTimeOfDoom())
 {
-    init(groupingContext, attrCtx);
+    init(groupingContext, attrCtx, documentType);
 }
 
 GroupingSession::~GroupingSession() = default;
 
 void
-GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext &attrCtx)
+GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext &attrCtx,
+                      const document::DocumentType * documentType)
 {
     GroupingList & sessionList(groupingContext.getGroupingList());
     for (auto g : sessionList) {
@@ -41,7 +43,7 @@ GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext
         }
         _mgrContext->addGrouping(std::move(g));
     }
-    _groupingManager->init(attrCtx);
+    _groupingManager->init(attrCtx, documentType);
 }
 
 void
@@ -53,7 +55,8 @@ GroupingSession::prepareThreadContextCreation(size_t num_threads)
 }
 
 GroupingContext::UP
-GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &attrCtx)
+GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &attrCtx,
+                                     const document::DocumentType * documentType)
 {
     auto ctx = std::make_unique<GroupingContext>(*_mgrContext);
     if (thread_id == 0) {
@@ -63,7 +66,7 @@ GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &
     } else {
         ctx->deserialize(_mgrContext->getResult().peek(), _mgrContext->getResult().size());
         GroupingManager man(*ctx);
-        man.init(attrCtx);
+        man.init(attrCtx, documentType);
     }
     return ctx;
 }
