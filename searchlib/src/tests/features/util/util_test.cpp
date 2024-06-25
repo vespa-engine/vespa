@@ -76,13 +76,13 @@ TEST(UtilsTest, lookup_document_frequency)
     QueryEnvironment query_env(&index_env);
     query_env.getTerms() = std::vector<SimpleTermData>{make_term(0), make_term(5), make_term(6), make_term(10)};
     // Properties not used due to bad unique id
-    query_env.getProperties().add("vespa.term.0.document_frequency", "11");
-    query_env.getProperties().add("vespa.term.0.document_frequency", "17");
+    query_env.getProperties().add("vespa.term.0.docfreq", "11");
+    query_env.getProperties().add("vespa.term.0.docfreq", "17");
     // Incomplete properties, thus not used
-    query_env.getProperties().add("vespa.term.6.document_frequency", "5");
+    query_env.getProperties().add("vespa.term.6.docfreq", "5");
     // Complete properties
-    query_env.getProperties().add("vespa.term.10.document_frequency", "10");
-    query_env.getProperties().add("vespa.term.10.document_frequency", "15");
+    query_env.getProperties().add("vespa.term.10.docfreq", "10");
+    query_env.getProperties().add("vespa.term.10.docfreq", "15");
     EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, 0)); // bad unique id
     EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, 1)); // missing properties
     EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, 2)); // incomplete properties

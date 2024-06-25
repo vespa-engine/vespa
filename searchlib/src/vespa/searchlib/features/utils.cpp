@@ -187,7 +187,7 @@ lookup_document_frequency(const search::fef::IQueryEnvironment& env, const ITerm
     vespalib::asciistream os;
     auto unique_id = term.getUniqueId();
     if (unique_id != 0) {
-        os << "vespa.term." << unique_id << ".document_frequency";
+        os << "vespa.term." << unique_id << ".docfreq";
         Property p = env.getProperties().lookup(os.str());
         if (p.size() == 2) {
             // we have a defined document frequency
