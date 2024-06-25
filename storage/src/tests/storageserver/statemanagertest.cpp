@@ -194,7 +194,7 @@ TEST_F(StateManagerTest, can_receive_state_bundle_without_distribution_config) {
 
     auto current_bundle = _manager->getClusterStateBundle();
     EXPECT_EQ(send_state, *current_bundle->getBaselineClusterState());
-    // Distribution config should be unchanged from boostrap.
+    // Distribution config should be unchanged from bootstrap.
     ASSERT_TRUE(current_bundle->has_distribution_config());
     EXPECT_EQ(to_string(current_bundle->distribution_config_bundle()->config()),
               _node->getComponentRegister().getDistribution()->serialized());
