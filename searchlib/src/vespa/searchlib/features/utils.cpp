@@ -113,7 +113,7 @@ lookupSignificance(const search::fef::IQueryEnvironment& env, uint32_t termId, f
 static const double N = 1000000.0;
 
 feature_t
-getSignificance(double docFreq)
+calculate_legacy_significance(double docFreq)
 {
     if (docFreq < (1.0/N)) {
       docFreq = 1.0/N;
@@ -126,7 +126,7 @@ getSignificance(double docFreq)
 }
 
 feature_t
-getSignificance(const search::fef::ITermData& termData)
+calculate_legacy_significance(const search::fef::ITermData& termData)
 {
     using FRA = search::fef::ITermFieldRangeAdapter;
     double df = 0;
@@ -134,8 +134,8 @@ getSignificance(const search::fef::ITermData& termData)
         df = std::max(df, iter.get().getDocFreq());
     }
 
-    feature_t signif = getSignificance(df);
-    LOG(debug, "getSignificance %e %f [ %e %f ] = %e", df, df, df * N, df * N, signif);
+    feature_t signif = calculate_legacy_significance(df);
+    LOG(debug, "calculate_legacy_significance %e %f [ %e %f ] = %e", df, df, df * N, df * N, signif);
     return signif;
 }
 
