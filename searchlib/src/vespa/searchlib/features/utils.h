@@ -123,7 +123,7 @@ feature_t lookupSignificance(const search::fef::IQueryEnvironment & env, uint32_
  * @param docFreq The scaled number of documents containing the term.
  * @return        The significance.
  */
-feature_t getSignificance(double docFreq);
+feature_t calculate_legacy_significance(double docFreq);
 
 /**
  * Returns the significance based on max known frequency of the term
@@ -131,7 +131,7 @@ feature_t getSignificance(double docFreq);
  * @param  termData Data for the term
  * @return          The significance.
  */
-feature_t getSignificance(const search::fef::ITermData &termData);
+feature_t calculate_legacy_significance(const search::fef::ITermData& termData);
 
 /**
  * Lookups a table by using the properties and the table manager in the given index environment.
