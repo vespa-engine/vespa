@@ -12,7 +12,7 @@ export FACTORY_VESPA_VERSION := $(VESPA_VERSION)
 export VALGRIND_UNIT_TESTS ?= false
 export VESPA_USE_SANITIZER ?= null
 
-export VESPA_MAVEN_EXTRA_OPTS ?= --show-version --batch-mode --no-snapshot-updates -Dmaven.source.skip=true \
+export VESPA_MAVEN_EXTRA_OPTS ?= --show-version --batch-mode --no-snapshot-updates  \
 	-DaltDeploymentRepository=local-repo::default::file:$(WORKDIR)/artifacts/$(ARCH)/maven-repo
 
 export NUM_CPU_LIMIT ?= $(shell nproc)
@@ -25,6 +25,7 @@ ifeq ($(BUILDKITE_PULL_REQUEST),false)
 	export VESPA_MAVEN_TARGET ?= deploy
 else
 	export VESPA_MAVEN_TARGET ?= install
+	export VESPA_MAVEN_EXTRA_OPTS := $(VESPA_MAVEN_EXTRA_OPTS) -Dmaven.source.skip=true -Dmaven.javadoc.skip=true
 endif
 
 .DEFAULT_GOAL := pr
