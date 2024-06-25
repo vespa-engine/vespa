@@ -48,7 +48,7 @@ public class SignificanceModelGeneratorTest {
     void testGenerateSimpleFile() throws IOException {
         String inputPath = "no.jsonl";
         String outputPath = "output.json";
-        ClientParameters params = createParameters(inputPath, outputPath,  "text", "NB", "nb", "false").build();
+        ClientParameters params = createParameters(inputPath, outputPath,  "text", "nb", "nb", "false").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params);
         generator.generate();
 
@@ -60,9 +60,9 @@ public class SignificanceModelGeneratorTest {
         HashMap<String, DocumentFrequencyFile> languages = modelFile.languages();
         assertEquals(1, languages.size());
 
-        assertTrue(languages.containsKey("NB"));
+        assertTrue(languages.containsKey("nb"));
 
-        DocumentFrequencyFile documentFrequencyFile = languages.get("NB");
+        DocumentFrequencyFile documentFrequencyFile = languages.get("nb");
 
         assertEquals(3, documentFrequencyFile.frequencies().get("fra"));
         assertEquals(3, documentFrequencyFile.frequencies().get("skriveform"));
@@ -74,18 +74,16 @@ public class SignificanceModelGeneratorTest {
     @Test
     void testGenerateSimpleFileWithZST() throws IOException {
         String inputPath = "no.jsonl";
-        ClientParameters params1 = createParameters(inputPath, "output.json",  "text", "NB", "nb", "true").build();
+        ClientParameters params1 = createParameters(inputPath, "output.json",  "text", "nb", "nb", "true").build();
 
         // Throws exception when outputfile does not have .zst extension when using zst compression
         assertThrows(IllegalArgumentException.class, () -> createSignificanceModelGenerator(params1));
 
         String outputPath = "output.json.zst";
-        ClientParameters params = createParameters(inputPath, outputPath,  "text", "NB", "nb", "true").build();
+        ClientParameters params = createParameters(inputPath, outputPath,  "text", "nb", "nb", "true").build();
 
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params);
         generator.generate();
-
-
 
         File outputFile = new File(tempDir.resolve(outputPath ).toString());
         assertTrue(outputFile.exists());
@@ -97,9 +95,9 @@ public class SignificanceModelGeneratorTest {
         HashMap<String, DocumentFrequencyFile> languages = modelFile.languages();
         assertEquals(1, languages.size());
 
-        assertTrue(languages.containsKey("NB"));
+        assertTrue(languages.containsKey("nb"));
 
-        DocumentFrequencyFile documentFrequencyFile = languages.get("NB");
+        DocumentFrequencyFile documentFrequencyFile = languages.get("nb");
 
         assertEquals(3, documentFrequencyFile.frequencies().get("fra"));
         assertEquals(3, documentFrequencyFile.frequencies().get("skriveform"));
@@ -112,7 +110,7 @@ public class SignificanceModelGeneratorTest {
     void testGenerateFileWithMultipleLanguages() throws IOException {
         String inputPath = "no.jsonl";
         String outputPath = "output.json";
-        ClientParameters params1 = createParameters(inputPath, outputPath, "text", "NB", "nb", "false").build();
+        ClientParameters params1 = createParameters(inputPath, outputPath, "text", "nb", "nb", "false").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params1);
         generator.generate();
 
@@ -120,7 +118,7 @@ public class SignificanceModelGeneratorTest {
         assertTrue(outputFile.exists());
 
         String inputPath2 = "en.jsonl";
-        ClientParameters params2 = createParameters(inputPath2,  outputPath, "text", "EN", "en", "false").build();
+        ClientParameters params2 = createParameters(inputPath2,  outputPath, "text", "en", "en", "false").build();
         generator = createSignificanceModelGenerator(params2);
         generator.generate();
 
@@ -133,11 +131,11 @@ public class SignificanceModelGeneratorTest {
 
         assertEquals(2, languages.size());
 
-        assertTrue(languages.containsKey("NB"));
-        assertTrue(languages.containsKey("EN"));
+        assertTrue(languages.containsKey("nb"));
+        assertTrue(languages.containsKey("en"));
 
-        DocumentFrequencyFile nb = languages.get("NB");
-        DocumentFrequencyFile en = languages.get("EN");
+        DocumentFrequencyFile nb = languages.get("nb");
+        DocumentFrequencyFile en = languages.get("en");
 
         assertEquals(3, nb.documentCount());
         assertEquals(3, en.documentCount());
@@ -154,7 +152,7 @@ public class SignificanceModelGeneratorTest {
     void testOverwriteExistingDocumentFrequencyLanguage() throws IOException {
         String inputPath = "no.jsonl";
         String outputPath = "output.json";
-        ClientParameters params1 = createParameters(inputPath, outputPath,  "text", "NB", "nb", "false").build();
+        ClientParameters params1 = createParameters(inputPath, outputPath,  "text", "nb", "nb", "false").build();
         SignificanceModelGenerator generator = createSignificanceModelGenerator(params1);
         generator.generate();
 
@@ -166,16 +164,16 @@ public class SignificanceModelGeneratorTest {
         HashMap<String, DocumentFrequencyFile> oldLanguages = preUpdatedFile.languages();
         assertEquals(1, oldLanguages.size());
 
-        assertTrue(oldLanguages.containsKey("NB"));
+        assertTrue(oldLanguages.containsKey("nb"));
 
-        DocumentFrequencyFile oldDf = oldLanguages.get("NB");
+        DocumentFrequencyFile oldDf = oldLanguages.get("nb");
 
         assertEquals(3, oldDf.frequencies().get("fra"));
         assertEquals(3, oldDf.frequencies().get("skriveform"));
         assertFalse(oldDf.frequencies().containsKey("nytt"));
 
         String inputPath2 = "no_2.jsonl";
-        ClientParameters params2 = createParameters(inputPath2, outputPath, "text", "NB", "nb", "false").build();
+        ClientParameters params2 = createParameters(inputPath2, outputPath, "text", "nb", "nb", "false").build();
         SignificanceModelGenerator generator2 = createSignificanceModelGenerator(params2);
         generator2.generate();
 
@@ -188,13 +186,39 @@ public class SignificanceModelGeneratorTest {
 
         assertEquals(1, languages.size());
 
-        assertTrue(languages.containsKey("NB"));
+        assertTrue(languages.containsKey("nb"));
 
-        DocumentFrequencyFile df = languages.get("NB");
+        DocumentFrequencyFile df = languages.get("nb");
 
         assertEquals(2, df.frequencies().get("fra"));
         assertEquals(3, df.frequencies().get("skriveform"));
         assertTrue(df.frequencies().containsKey("nytt"));
         assertEquals(2, df.frequencies().get("nytt"));
+    }
+
+    @Test
+    void testGenerateFileWithMultipleLanguagesForSingleDocumentFrequency() throws IOException {
+        String inputPath = "no.jsonl";
+        String outputPath = "output.json";
+        ClientParameters params = createParameters(inputPath, outputPath,  "text", "nb,un", "nb", "false").build();
+        SignificanceModelGenerator generator = createSignificanceModelGenerator(params);
+        generator.generate();
+
+        File outputFile = new File(tempDir.resolve(outputPath).toString());
+        assertTrue(outputFile.exists());
+
+        SignificanceModelFile modelFile = objectMapper.readValue(outputFile, SignificanceModelFile.class);
+
+        HashMap<String, DocumentFrequencyFile> languages = modelFile.languages();
+        assertEquals(1, languages.size());
+
+        assertTrue(languages.containsKey("nb,un"));
+
+        DocumentFrequencyFile documentFrequencyFile = languages.get("nb,un");
+
+        assertEquals(3, documentFrequencyFile.frequencies().get("fra"));
+        assertEquals(3, documentFrequencyFile.frequencies().get("skriveform"));
+        assertEquals(3, documentFrequencyFile.frequencies().get("kategori"));
+        assertEquals(3, documentFrequencyFile.frequencies().get("eldr"));
     }
 }
