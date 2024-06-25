@@ -12,8 +12,8 @@ export FACTORY_VESPA_VERSION := $(VESPA_VERSION)
 export VALGRIND_UNIT_TESTS ?= false
 export VESPA_USE_SANITIZER ?= null
 
-export VESPA_MAVEN_EXTRA_OPTS ?= --show-version --batch-mode --no-snapshot-updates -Dmaven.javadoc.skip=true \
-	-Dmaven.source.skip=true -DaltDeploymentRepository=local-repo::default::file:$(WORKDIR)/artifacts/$(ARCH)/maven-repo
+export VESPA_MAVEN_EXTRA_OPTS ?= --show-version --batch-mode --no-snapshot-updates -Dmaven.source.skip=true \
+	-DaltDeploymentRepository=local-repo::default::file:$(WORKDIR)/artifacts/$(ARCH)/maven-repo
 
 export NUM_CPU_LIMIT ?= $(shell nproc)
 export NUM_CPP_THREADS := $(shell echo $$(( $(NUM_CPU_LIMIT)*2/3 )))
