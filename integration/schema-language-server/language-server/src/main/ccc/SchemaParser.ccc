@@ -283,15 +283,55 @@ ParsedSchema rootSchema :
     ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
         schema = new ParsedSchema(name);
       }
-      openLbrace (rootSchemaItem(schema) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
+      openLbrace (rootSchemaItem(schema)! (<NL>!)*!)*
+      <RBRACE> (<NL>)* <EOF> )
     { return schema; }
 ;
 
-rootSchemaItem(ParsedSchema schema) :
+/**
+ * Consumes an element of a schema block. This and rootSearch() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @param schema the schema object to modify.
+ */
+rootSchemaItem(ParsedSchema schema) : {}
     ( 
+        documentElm(schema)!
+    )
+;
+
+/**
+ * Consumes a document element. The name defaults to the schema's name, but may be set.
+ *
+ * @param schema the schema object to add content to.
+ */
+void documentElm(ParsedSchema schema) :
+{
+    String name = schema.getName();
+    ParsedDocument document;
+}
+
+    ( <DOCUMENT> (name = identifierStr)? (<NL>)*
+    {
+        document = new ParsedDocument(name);
+    }
+      <LBRACE> (<NL>)* (documentElmBody(document) (<NL>)*)* <RBRACE> )
+    {
+        schema.addDocument(document);
+    }
+;
+
+/**
+ * Consumes a document body block
+ *
+ * @param document the document type to modify.
+ */
+void documentElmBody(ParsedDocument document) : {}
+    (
         <STRING>
     )
 ;
+
 
 /**
  * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as

@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 public class SchemaLanguageServer implements LanguageServer, LanguageClientAware {
 
     private WorkspaceService workspaceService;
-    private TextDocumentService textDocumentService;
+    private SchemaTextDocumentService textDocumentService;
     private LanguageClient client;
 
     private PrintStream logger;
@@ -83,5 +83,6 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     @Override
     public void connect(LanguageClient languageClient) {
         this.client = languageClient;
+        this.textDocumentService.setClient(this.client);
     }
 }

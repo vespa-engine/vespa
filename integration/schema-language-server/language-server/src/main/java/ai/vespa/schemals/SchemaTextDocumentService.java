@@ -1,5 +1,7 @@
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.parser.ParserWrapper;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,13 +37,24 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
+import org.eclipse.lsp4j.services.LanguageClient;
 
 public class SchemaTextDocumentService implements TextDocumentService {
 
-    PrintStream logger;
+    private PrintStream logger;
+    private ParserWrapper parser;
+    private LanguageClient client = null;
+
+    private String currentFile = "";
+
 
     public SchemaTextDocumentService(PrintStream logger) {
         this.logger = logger;
+        this.parser = new ParserWrapper(logger);
+    }
+
+    public void setClient(LanguageClient client) {
+        this.client = client;
     }
 
     @Override
@@ -137,8 +150,14 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public void didChange(DidChangeTextDocumentParams didChangeTextDocumentParams) {
+    public void didChange(DidChangeTextDocumentParams params) {
 
+        var doc = params.getTextDocument();
+        //logger.println(doc);
+
+        for (var changes : params.getContentChanges()) {
+            parser.parse(changes.getText());
+        }
     }
 
     @Override
@@ -156,9 +175,18 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
         return CompletableFutures.computeAsync((cancelChecker) -> {
             try {
-                return new ArrayList<DocumentHighlight>() {{
-                    add(new DocumentHighlight(new Range(new Position(4, 0), new Position(4, 4))));
-                }};
+
+                if (parser.getFaulty()) {
+                    Range r = parser.getFaultyRange();
+                    logger.println(r);
+
+                    return new ArrayList<DocumentHighlight>() {{
+                        add(new DocumentHighlight(r));
+                    }};
+                }
+
+                return new ArrayList<DocumentHighlight>();
+
             } catch (CancellationException ignore) {}
 
             return new ArrayList<DocumentHighlight>(); 

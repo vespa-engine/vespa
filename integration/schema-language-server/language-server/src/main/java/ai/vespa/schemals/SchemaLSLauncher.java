@@ -1,7 +1,7 @@
 
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.ParserWrapper;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class SchemaLSLauncher {
             if (args[0].equalsIgnoreCase("-c")) {
                 logger = System.out;
             } else if (args[0].equalsIgnoreCase("debug")) {
-                debug();
+                debug(System.out);
                 return;
             } else if (args[0].equalsIgnoreCase("-t")) {
 
@@ -73,7 +73,7 @@ public class SchemaLSLauncher {
         startServer(System.in, System.out, logger);
     }
 
-    static public void debug() {
+    static public void debug(PrintStream logger) {
         String input;
         try {
             input = Files.readString(Paths.get("input.sd"));
@@ -82,13 +82,8 @@ public class SchemaLSLauncher {
             return;
         }
         
-        CharSequence sequence = input;
-
-        SchemaParser parser = new SchemaParser(sequence);
-
-        ParsedSchema root = parser.Root();
-
-        System.out.println(root);
+        ParserWrapper parser = new ParserWrapper(logger);
+        parser.debug(input);
     }
 
     private static void startServer(InputStream in, OutputStream out, PrintStream logger) throws ExecutionException, InterruptedException {
