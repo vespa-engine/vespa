@@ -110,12 +110,6 @@ lookupSignificance(const search::fef::IQueryEnvironment& env, uint32_t termId, f
     return lookupSignificance(env, *term, fallback);
 }
 
-double
-getRobertsonSparckJonesWeight(double docCount, double docsInCorpus)
-{
-    return std::log((docsInCorpus - docCount + 0.5)/(docCount + 0.5));
-}
-
 static const double N = 1000000.0;
 
 feature_t
@@ -129,14 +123,6 @@ getSignificance(double docFreq)
     }
     double d = std::log(docFreq)/std::log(1.0/N);
     return 0.5 + 0.5 * d;
-#if 0
-    double n = docFreq * N;
-    n = (n == 0) ? 1 : (n > N ? N : n);
-    double a = getRobertsonSparckJonesWeight(1, N + 1);
-    double b = getRobertsonSparckJonesWeight(N + 1, N + 1);
-    double w = getRobertsonSparckJonesWeight(n, N + 1);
-    return ((w - b)/(a - b));
-#endif
 }
 
 feature_t

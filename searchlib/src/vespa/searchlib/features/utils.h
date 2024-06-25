@@ -118,13 +118,6 @@ feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const se
 feature_t lookupSignificance(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback = 0.0f);
 
 /**
- * Returns the Robertson-Sparck-Jones weight based on the given document count
- * (number of documents containing the term) and the number of documents in the corpus.
- * This weight is a variant of inverse document frequency.
- */
-double getRobertsonSparckJonesWeight(double docCount, double docsInCorpus);
-
-/**
  * Returns the significance based on the given scaled number of documents containing the term.
  *
  * @param docFreq The scaled number of documents containing the term.
