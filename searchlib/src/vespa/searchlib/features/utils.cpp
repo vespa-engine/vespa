@@ -181,4 +181,32 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string
     return 0;
 }
 
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, const ITermData& term)
+{
+    vespalib::asciistream os;
+    auto unique_id = term.getUniqueId();
+    if (unique_id != 0) {
+        os << "vespa.term." << unique_id << ".docfreq";
+        Property p = env.getProperties().lookup(os.str());
+        if (p.size() == 2) {
+            // we have a defined document frequency
+            auto document_frequency = strToNum<uint64_t>(p.getAt(0));
+            auto document_count = strToNum<uint64_t>(p.getAt(1));
+            return DocumentFrequency(document_frequency, document_count);
+        }
+    }
+    return {};
+}
+
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, uint32_t termId)
+{
+    const ITermData* term = env.getTerm(termId);
+    if (term == nullptr) {
+        return {};
+    }
+    return lookup_document_frequency(env, *term);
+}
+
 }

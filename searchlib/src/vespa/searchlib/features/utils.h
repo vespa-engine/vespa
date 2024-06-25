@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "document_frequency.h"
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/table.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -10,6 +11,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <limits>
+#include <optional>
 
 namespace search::features::util {
 
@@ -190,5 +192,11 @@ getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, u
  **/
 const search::fef::ITermData *
 getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label);
+
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
+
+std::optional<DocumentFrequency>
+lookup_document_frequency(const search::fef::IQueryEnvironment& env, uint32_t termId);
 
 }
