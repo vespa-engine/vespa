@@ -380,7 +380,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, distribution_config_via_state_bundle_c
 }
 
 TEST_F(ChangedBucketOwnershipHandlerTest, ignore_internal_config_once_state_bundle_with_config_received) {
-    apply_cluster_state_bundle(make_state_bundle_with_config("version:2 distributor:1 storage:3", 1));
+    apply_cluster_state_bundle(make_state_bundle_with_config("version:2 distributor:3 storage:3", 1));
     applyDistribution(Redundancy(1), NodeCount(3));
     // Bundle config says 1 node, internal config says 3. Trust the bundle(tm).
     sendAndExpectAbortedCreateBucket(2);
