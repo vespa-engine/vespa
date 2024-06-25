@@ -27,6 +27,7 @@ import com.yahoo.search.searchchain.Execution;
 @Beta
 @After(WeakAndReplacementSearcher.REPLACE_OR_WITH_WEAKAND)
 public class OpportunisticWeakAndSearcher extends Searcher {
+
     private static final CompoundName OPPORTUNISTIC_AND = CompoundName.from("weakAnd.opportunistic.and");
     private static final CompoundName OPPORTUNISTIC_FACTOR = CompoundName.from("weakAnd.opportunistic.factor");
 

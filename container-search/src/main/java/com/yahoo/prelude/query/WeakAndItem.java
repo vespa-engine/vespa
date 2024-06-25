@@ -20,7 +20,7 @@ import java.util.Objects;
 public final class WeakAndItem extends NonReducibleCompositeItem {
 
     /** The default N used if none is specified: 100 */
-    public static final int defaultN = 100;  //TODO Make private
+    public static final int defaultN = 100;  // TODO Vespa 9: Make private
 
     private int n;
     private String index;
