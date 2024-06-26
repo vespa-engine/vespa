@@ -354,9 +354,10 @@ ParsedField fieldElm() :
 {
     String name;
     ParsedField field;
+    ParsedType type;
 }
 
-    <FIELD> name = identifierStr <TYPE>
+    <FIELD> name = identifierStr <TYPE> type = dataType()
     {
         // if (name != null && Schema.isReservedName(name.toLowerCase())) {
         //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
@@ -369,6 +370,36 @@ ParsedField fieldElm() :
     }
 ;
 
+/**
+ * This rule consumes a data type block from within a field element.
+ *
+ * @return the consumed data type
+ */
+ParsedType dataType() :
+{
+    String typeName = null;
+    boolean isArrayOldStyle = false;
+    ParsedType mapType = null;
+    ParsedType arrayType = null;
+    ParsedType wsetType = null;
+    ParsedType referenceType;
+}
+//    (   LOOKAHEAD(<ARRAY> <LESSTHAN>)               ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
+//      | LOOKAHEAD(<WEIGHTEDSET> <LESSTHAN>)         ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
+//      | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
+//      | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
+//      | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
+//      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
+     ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
+    {
+        ParsedType type = ParsedType.fromName(typeName);
+        if (isArrayOldStyle) {
+            //deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
+            type = ParsedType.arrayOf(type);
+        }
+        return type;
+    }
+;
 
 /**
  * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
