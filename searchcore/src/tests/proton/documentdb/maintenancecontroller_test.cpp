@@ -43,9 +43,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <thread>
 
-#include <vespa/log/log.h>
-LOG_SETUP("maintenancecontroller_test");
-
 using namespace proton;
 using namespace vespalib::slime;
 using document::BucketId;
@@ -151,40 +148,13 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
     MyDocumentSubDB &_subDB;
 
-    explicit MyDocumentRetriever(MyDocumentSubDB &subDB) noexcept
-        : _subDB(subDB)
-    {
-    }
+    explicit MyDocumentRetriever(MyDocumentSubDB &subDB) noexcept : _subDB(subDB) { }
 
-    const document::DocumentTypeRepo &
-    getDocumentTypeRepo() const override
-    {
-        LOG_ABORT("should not be reached");
-    }
-
-    void
-    getBucketMetaData(const storage::spi::Bucket &,
-                      DocumentMetaData::Vector &) const override
-    {
-        LOG_ABORT("should not be reached");
-    }
-    DocumentMetaData
-    getDocumentMetaData(const DocumentId &) const override
-    {
-        return DocumentMetaData();
-    }
-
-    Document::UP
-    getFullDocument(DocumentIdT lid) const override
-    {
-        return _subDB.getDocument(lid);
-    }
-
-    CachedSelect::SP
-    parseSelect(const vespalib::string &) const override
-    {
-        return CachedSelect::SP();
-    }
+    const document::DocumentTypeRepo & getDocumentTypeRepo() const override { abort(); }
+    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override { abort(); }
+    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return {}; }
+    Document::UP getFullDocument(DocumentIdT lid) const override { return _subDB.getDocument(lid); }
+    CachedSelect::SP parseSelect(const vespalib::string &) const override { return {}; }
 };
 
 
@@ -268,7 +238,6 @@ struct MySimpleJob : public BlockableMaintenanceJob
     { }
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
     bool run() override {
-        LOG(info, "MySimpleJob::run()");
         _latch.countDown();
         ++_runCnt;
         return true;
@@ -284,7 +253,6 @@ struct MySplitJob : public MySimpleJob
     {
     }
     bool run() override {
-        LOG(info, "MySplitJob::run()");
         _latch.countDown();
         ++_runCnt;
         return _latch.getCount() == 0;
@@ -1023,9 +991,4 @@ TEST_F("require that delay for prune removed documents is set based on interval 
 {
     assertPruneRemovedDocumentsConfig(300s, 301s, 301s, f);
     assertPruneRemovedDocumentsConfig(299s, 299s, 299s, f);
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
 }

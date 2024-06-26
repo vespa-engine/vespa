@@ -33,7 +33,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("feedview_test");
+LOG_SETUP(".feedview_test");
 
 using document::BucketId;
 using document::DataType;
@@ -1287,9 +1287,3 @@ TEST_F("require that move() notifies gid to lid change handler", SearchableFeedV
     f.forceCommitAndWait();
     TEST_DO(f.assertChangeHandler(dc2.gid(), 1u, 4u));
 }
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
-
