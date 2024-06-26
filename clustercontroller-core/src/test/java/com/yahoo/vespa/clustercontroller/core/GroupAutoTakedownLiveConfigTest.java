@@ -16,7 +16,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
 
     private static FleetControllerOptions.Builder createOptions(DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio) {
         return defaultOptions()
-                .setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder))
+                .setDistributionConfig(DistributionBuilder.configForHierarchicCluster(groupBuilder))
                 .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount())))
                 .setMinNodeRatioPerGroup(minNodeRatio)
                 .setMaxTransitionTime(NodeType.DISTRIBUTOR, 0)
@@ -37,7 +37,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
         FleetControllerOptions.Builder builder =
                 FleetControllerOptions.Builder.copy(options)
                                               .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount())))
-                                              .setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder));
+                                              .setDistributionConfig(DistributionBuilder.configForHierarchicCluster(groupBuilder));
         updateConfigLive(builder.build());
     }
 

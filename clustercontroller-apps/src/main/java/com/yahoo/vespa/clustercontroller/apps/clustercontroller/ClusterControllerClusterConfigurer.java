@@ -56,7 +56,7 @@ public class ClusterControllerClusterConfigurer extends AbstractComponent {
                                                     ZookeepersConfig zookeepersConfig) {
         Distribution distribution = new Distribution(distributionConfig);
         FleetControllerOptions.Builder builder = new FleetControllerOptions.Builder(fleetcontrollerConfig.cluster_name(), distribution.getNodes());
-        builder.setStorageDistribution(distribution);
+        builder.setDistributionConfig(distributionConfig);
         configure(builder, fleetcontrollerConfig);
         configure(builder, slobroksConfig);
         configure(builder, zookeepersConfig);
