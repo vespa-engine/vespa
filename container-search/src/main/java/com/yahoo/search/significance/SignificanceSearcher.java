@@ -14,6 +14,7 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.query.ranking.Significance;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
@@ -95,16 +96,60 @@ public class SignificanceSearcher extends Searcher {
     }
 
     private Result calculateAndSetSignificance(Query query, Execution execution) {
-        Language language = query.getModel().getParsingLanguage();
-        Optional<SignificanceModel> model = significanceModelRegistry.getModel(language);
-        log.log(Level.FINE, () -> "Got model for language %s: %s"
-                .formatted(language, model.map(SignificanceModel::getId).orElse("<none>")));
+        try {
+            var significanceModel = getSignificanceModelFromQueryLanguage(query);
+            log.log(Level.FINE, () -> "Got model for language %s: %s"
+                    .formatted(query.getModel().getParsingLanguage(), significanceModel.getId()));
 
-        if (model.isEmpty()) return execution.search(query);
+            setIDF(query.getModel().getQueryTree().getRoot(), significanceModel);
 
-        setIDF(query.getModel().getQueryTree().getRoot(), model.get());
+            return execution.search(query);
+        } catch (IllegalArgumentException e) {
+            var result = new Result(query);
+            result.hits().addError(
+                    ErrorMessage.createIllegalQuery(e.getMessage()));
+            return result;
+        }
+    }
 
-        return execution.search(query);
+    private SignificanceModel getSignificanceModelFromQueryLanguage(Query query) throws IllegalArgumentException {
+        Language explicitLanguage = query.getModel().getLanguage();
+        Language implicitLanguage = query.getModel().getParsingLanguage();
+
+        if (explicitLanguage == null && implicitLanguage == null) {
+            throw new IllegalArgumentException("No language found in query");
+        }
+
+        if (explicitLanguage != null) {
+            if (explicitLanguage == Language.UNKNOWN) {
+                return handleFallBackToUnknownLanguage();
+            }
+            var model = significanceModelRegistry.getModel(explicitLanguage);
+            if (model.isEmpty()) {
+                throw new IllegalArgumentException("No significance model available for set language " + explicitLanguage);
+            }
+            return model.get();
+        }
+
+        if (implicitLanguage == Language.UNKNOWN) {
+            return handleFallBackToUnknownLanguage();
+        }
+        var model = significanceModelRegistry.getModel(implicitLanguage);
+        if (model.isEmpty()) {
+            throw new IllegalArgumentException("No significance model available for implicit language " + implicitLanguage);
+        }
+        return model.get();
+    }
+
+    private SignificanceModel handleFallBackToUnknownLanguage() throws IllegalArgumentException {
+        var unknownModel = significanceModelRegistry.getModel(Language.UNKNOWN);
+        var englishModel = significanceModelRegistry.getModel(Language.ENGLISH);
+
+        if (unknownModel.isEmpty() && englishModel.isEmpty()) {
+            throw new IllegalArgumentException("No significance model available for unknown or english language");
+        }
+
+        return unknownModel.orElseGet(englishModel::get);
     }
 
     private void setIDF(Item root, SignificanceModel significanceModel) {
