@@ -146,7 +146,7 @@ struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
 struct MyStoreOnlyConfig
 {
     StoreOnlyConfig _cfg;
-    MyStoreOnlyConfig(SubDbType subDbType)
+    explicit MyStoreOnlyConfig(SubDbType subDbType)
         : _cfg(DocTypeName(DOCTYPE_NAME),
               SUB_NAME,
               BASE_DIR,
@@ -179,7 +179,7 @@ MyStoreOnlyContext::MyStoreOnlyContext(IThreadingService &writeService,
                                        IBucketDBHandlerInitializer &bucketDBHandlerInitializer)
     : _owner(), _syncProxy(), _getSerialNum(), _fileHeader(),
       _metrics(DOCTYPE_NAME, 1), _configMutex(), _hwInfo(),
-      _ctx(_owner, _syncProxy, _getSerialNum, _fileHeader, writeService, bucketDB,
+      _ctx(_owner, _syncProxy, _getSerialNum, _fileHeader, writeService, std::move(bucketDB),
            bucketDBHandlerInitializer, _metrics, _configMutex, _hwInfo)
 {
 }
@@ -189,7 +189,7 @@ template <bool FastAccessAttributesOnly>
 struct MyFastAccessConfig
 {
     FastAccessConfig _cfg;
-    MyFastAccessConfig(SubDbType subDbType)
+    explicit MyFastAccessConfig(SubDbType subDbType)
         : _cfg(MyStoreOnlyConfig(subDbType)._cfg, true, true, FastAccessAttributesOnly)
     {
     }
@@ -216,7 +216,7 @@ struct MyFastAccessContext
 MyFastAccessContext::MyFastAccessContext(IThreadingService &writeService,
                                          std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
-    : _storeOnlyCtx(writeService, bucketDB, bucketDBHandlerInitializer),
+    : _storeOnlyCtx(writeService, std::move(bucketDB), bucketDBHandlerInitializer),
       _attributeMetrics(nullptr),
       _wireService(),
       _ctx(_storeOnlyCtx._ctx, _attributeMetrics, _wireService, std::make_shared<search::attribute::Interlock>())
@@ -226,7 +226,7 @@ MyFastAccessContext::~MyFastAccessContext() = default;
 struct MySearchableConfig
 {
     FastAccessConfig _cfg;
-    MySearchableConfig(SubDbType subDbType)
+    explicit MySearchableConfig(SubDbType subDbType)
         : _cfg(MyFastAccessConfig<false>(subDbType)._cfg)
     {
     }
@@ -254,7 +254,7 @@ struct MySearchableContext
 MySearchableContext::MySearchableContext(IThreadingService &writeService,
                                          std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
-    : _fastUpdCtx(writeService, bucketDB, bucketDBHandlerInitializer),
+    : _fastUpdCtx(writeService, std::move(bucketDB), bucketDBHandlerInitializer),
       _queryLimiter(), _clock(),
       _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock.nowRef(), writeService.shared())
 {}
@@ -289,8 +289,8 @@ struct MyConfigSnapshot
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
     BootstrapConfig::SP  _bootstrap;
-    MyConfigSnapshot(FNET_Transport & transport, const Schema &schema, const vespalib::string &cfgDir)
-        : _schema(schema),
+    MyConfigSnapshot(FNET_Transport & transport, Schema schema, const vespalib::string &cfgDir)
+        : _schema(std::move(schema)),
           _builder(get_add_fields(_schema.getNumAttributeFields() > 1)),
           _cfg(),
           _bootstrap()
@@ -369,11 +369,11 @@ struct FixtureBase
     void basicReconfig(SerialNum serialNum) {
         runInMasterAndSync([&]() { performReconfig(serialNum, make_all_attr_schema(two_attr_schema), ConfigDir2::dir()); });
     }
-    void reconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
-        runInMasterAndSync([&]() { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
+    void reconfig(SerialNum serialNum, Schema reconfigSchema, const vespalib::string &reconfigConfigDir) {
+        runInMasterAndSync([&]() { performReconfig(serialNum, std::move(reconfigSchema), reconfigConfigDir); });
     }
-    void performReconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
-        auto newCfg = std::make_unique<MyConfigSnapshot>(_service.transport(), reconfigSchema, reconfigConfigDir);
+    void performReconfig(SerialNum serialNum, Schema reconfigSchema, const vespalib::string &reconfigConfigDir) {
+        auto newCfg = std::make_unique<MyConfigSnapshot>(_service.transport(), std::move(reconfigSchema), reconfigConfigDir);
         DocumentDBConfig::ComparisonResult cmpResult;
         cmpResult.attributesChanged = true;
         cmpResult.documenttypesChanged = true;
@@ -506,7 +506,7 @@ assertCacheCapacity(const StoreOnlyDocSubDB & db, size_t expected_cache_capacity
     const auto & summaryManager = db.getSummaryManager();
     EXPECT_TRUE(dynamic_cast<SummaryManager *>(summaryManager.get()) != nullptr);
     search::IDocumentStore & store = summaryManager->getBackingStore();
-    search::DocumentStore & docStore = dynamic_cast<search::DocumentStore &>(store);
+    auto & docStore = dynamic_cast<search::DocumentStore &>(store);
     EXPECT_EQUAL(expected_cache_capacity, docStore.getCacheCapacity());
 }
 
@@ -812,7 +812,7 @@ struct DocumentHandler
 {
     FixtureType &_f;
     DocBuilder _builder;
-    DocumentHandler(FixtureType &f) : _f(f), _builder(get_add_fields(f.has_attr2)) {}
+    explicit DocumentHandler(FixtureType &f) : _f(f), _builder(get_add_fields(f.has_attr2)) {}
     static constexpr uint32_t BUCKET_USED_BITS = 8;
     static DocumentId createDocId(uint32_t docId)
     {
@@ -997,8 +997,9 @@ assertOperation(DocumentOperation &op, uint32_t expPrevSubDbId, uint32_t expPrev
 
 TEST_F("require that lid allocation uses lowest free lid", StoreOnlyFixture)
 {
+    using Handler = DocumentHandler<StoreOnlyFixture>;
     f._subDb.onReplayDone();
-    DocumentHandler<StoreOnlyFixture> handler(f);
+    Handler handler(f);
     Document::UP doc;
     PutOperation putOp;
     RemoveOperationWithDocId rmOp;
@@ -1012,14 +1013,14 @@ TEST_F("require that lid allocation uses lowest free lid", StoreOnlyFixture)
     putOp = handler.createPut(std::move(doc), Timestamp(20), 20);
     handler.putDoc(putOp);
     EXPECT_TRUE(assertOperation(putOp, 0, 0, 0, 2));
-    rmOp = handler.createRemove(handler.createDocId(1), Timestamp(30), 30);
+    rmOp = handler.createRemove(Handler::createDocId(1), Timestamp(30), 30);
     handler.removeDoc(rmOp);
     EXPECT_TRUE(assertOperation(rmOp, 0, 1, 0, 0));
     doc = handler.createEmptyDoc(3);
     putOp = handler.createPut(std::move(doc), Timestamp(40), 40);
     handler.putDoc(putOp);
     EXPECT_TRUE(assertOperation(putOp, 0, 0, 0, 1));
-    rmOp = handler.createRemove(handler.createDocId(3), Timestamp(50), 50);
+    rmOp = handler.createRemove(Handler::createDocId(3), Timestamp(50), 50);
     handler.removeDoc(rmOp);
     EXPECT_TRUE(assertOperation(rmOp, 0, 1, 0, 0));
     doc = handler.createEmptyDoc(2);
