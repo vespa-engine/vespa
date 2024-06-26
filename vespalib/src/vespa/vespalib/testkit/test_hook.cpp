@@ -81,7 +81,7 @@ bool TestHook::runMyTest(const FixtureFactory & fixture_factory, size_t num_thre
         FixtureUP fixture_up = fixture_factory();
         fixture_up->thread_id = i;
         fixture_up->num_threads = num_threads;
-        threads.emplace_back(new TestThreadWrapper(_ignore, latch, barrier, traceStack, *fixture_up));
+        threads.emplace_back(std::make_unique<TestThreadWrapper>(_ignore, latch, barrier, traceStack, *fixture_up));
         fixtures.push_back(std::move(fixture_up));
     }
     for (size_t i = 1; i < num_threads; ++i) {
