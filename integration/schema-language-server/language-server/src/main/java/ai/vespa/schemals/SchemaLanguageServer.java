@@ -21,7 +21,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
     private WorkspaceService workspaceService;
     private SchemaTextDocumentService textDocumentService;
+    private SchemaDocumentScheduler schemaDocumentScheduler;
     private LanguageClient client;
+    private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
 
     private PrintStream logger;
     private int errorCode = 1;
@@ -41,9 +43,12 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
             this.logger = logger;
         }
 
-        this.logger.println("Hello World!");
+        this.logger.println("Starting language server...");
 
-        this.textDocumentService = new SchemaTextDocumentService(this.logger);
+        this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler(logger);
+        this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler);
+
+        this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler);
         this.workspaceService = new SchemaWorkspaceService();
     }    
 
@@ -83,6 +88,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     @Override
     public void connect(LanguageClient languageClient) {
         this.client = languageClient;
+        this.schemaDiagnosticsHandler.connectClient(languageClient);
         this.textDocumentService.setClient(this.client);
     }
 }

@@ -1,6 +1,7 @@
 package ai.vespa.schemals;
 
 import ai.vespa.schemals.parser.ParserWrapper;
+import ai.vespa.schemals.parser.SchemaDocumentScheduler;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -43,14 +44,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     private PrintStream logger;
     private ParserWrapper parser;
+    private SchemaDocumentScheduler schemaDocumentScheduler;
     private LanguageClient client = null;
 
-    private String currentFile = "";
-
-
-    public SchemaTextDocumentService(PrintStream logger) {
+    public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler) {
         this.logger = logger;
-        this.parser = new ParserWrapper(logger);
+        this.schemaDocumentScheduler = schemaDocumentScheduler;
     }
 
     public void setClient(LanguageClient client) {
@@ -66,32 +65,32 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 // Sample Completion item for sayHello
                 CompletionItem completionItem = new CompletionItem();
                 // Define the text to be inserted in to the file if the completion item is selected.
-                completionItem.setInsertText("sayHello() {\n    print(\"hello\")\n}");
+                completionItem.setInsertText("schema test {\n\n}");
                 // Set the label that shows when the completion drop down appears in the Editor.
-                completionItem.setLabel("sayHello()");
+                completionItem.setLabel("New Schema");
                 // Set the completion kind. This is a snippet.
                 // That means it replace character which trigger the completion and
                 // replace it with what defined in inserted text.
                 completionItem.setKind(CompletionItemKind.Snippet);
                 // This will set the details for the snippet code which will help user to
                 // understand what this completion item is.
-                completionItem.setDetail("sayHello()\n this will say hello to the people");
+                completionItem.setDetail("Creates a new Schema");
 
                 // Add the sample completion item to the list.
                 completionItems.add(completionItem);
 
                 CompletionItem completionItem2 = new CompletionItem();
                 // Define the text to be inserted in to the file if the completion item is selected.
-                completionItem2.setInsertText("sayGoodbye() {\n    print(\"Goodbye\")\n}");
+                completionItem2.setInsertText("document {\n\n}");
                 // Set the label that shows when the completion drop down appears in the Editor.
-                completionItem2.setLabel("sayGoodbye()");
+                completionItem2.setLabel("document");
                 // Set the completion kind. This is a snippet.
                 // That means it replace character which trigger the completion and
                 // replace it with what defined in inserted text.
                 completionItem2.setKind(CompletionItemKind.Snippet);
                 // This will set the details for the snippet code which will help user to
                 // understand what this completion item is.
-                completionItem2.setDetail("sayGoodbye()\n This is a magic function.");
+                completionItem2.setDetail("Creates a empty document");
 
                 // Add the sample completion item to the list.
                 completionItems.add(completionItem2);
@@ -152,11 +151,13 @@ public class SchemaTextDocumentService implements TextDocumentService {
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
 
-        var doc = params.getTextDocument();
-        //logger.println(doc);
+        logger.println(params);
 
-        for (var changes : params.getContentChanges()) {
-            parser.parse(changes.getText());
+        var document = params.getTextDocument();
+
+        var contentChanges = params.getContentChanges();
+        for (int i = 0; i < contentChanges.size(); i++) {
+            schemaDocumentScheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
         }
     }
 
