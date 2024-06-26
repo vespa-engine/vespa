@@ -8,6 +8,7 @@ vespa_add_library(searchcore_test STATIC
     bucketstatecalculator.cpp
     clusterstatehandler.cpp
     documentdb_config_builder.cpp
+    dummy_document_sub_db.cpp
     dummy_feed_view.cpp
     dummy_flush_target.cpp
     dummydbowner.cpp

@@ -16,12 +16,6 @@ using namespace search::docsummary;
 
 namespace proton {
 
-namespace {
-
-const vespalib::string DOCUMENT_ID_FIELD("documentid");
-
-}
-
 DocumentStoreAdapter::
 DocumentStoreAdapter(const search::IDocumentStore & docStore,
                      const DocumentTypeRepo &repo)
