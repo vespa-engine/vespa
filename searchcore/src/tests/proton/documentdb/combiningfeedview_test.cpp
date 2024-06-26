@@ -10,9 +10,6 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("combiningfeedview_test");
-
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::test::makeBucketSpace;
@@ -23,6 +20,7 @@ using namespace proton;
 
 using FeedViewVector = std::vector<IFeedView::SP>;
 
+namespace {
 struct MyFeedView : public test::DummyFeedView
 {
     using SP = std::shared_ptr<MyFeedView>;
@@ -128,18 +126,8 @@ struct Fixture
     MySubDb                         _notReady;
     test::BucketStateCalculator::SP _calc;
     CombiningFeedView               _view;
-    Fixture() :
-        _builder(),
-        _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
-        _ready(_builder.getRepo(), _bucketDB, SubDbType::READY),
-        _removed(_builder.getRepo(), _bucketDB, SubDbType::REMOVED),
-        _notReady(_builder.getRepo(), _bucketDB, SubDbType::NOTREADY),
-        _calc(new test::BucketStateCalculator()),
-        _view(getVector(_ready, _removed, _notReady), makeBucketSpace(), _calc)
-    {
-        _builder.createDoc(1, 1);
-        _builder.createDoc(2, 2);
-    }
+    Fixture()  __attribute__((noinline));
+    ~Fixture() __attribute__((noinline));
     const test::UserDocuments &userDocs() const { return _builder.getDocs(); }
     const test::BucketDocuments &userDocs(uint32_t userId) const { return userDocs().getUserDocs(userId); }
     PutOperation put(uint32_t userId) {
@@ -162,6 +150,22 @@ struct Fixture
         return retval;
     }
 };
+
+Fixture::Fixture()
+    : _builder(),
+      _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
+      _ready(_builder.getRepo(), _bucketDB, SubDbType::READY),
+      _removed(_builder.getRepo(), _bucketDB, SubDbType::REMOVED),
+      _notReady(_builder.getRepo(), _bucketDB, SubDbType::NOTREADY),
+      _calc(new test::BucketStateCalculator()),
+      _view(getVector(_ready, _removed, _notReady), makeBucketSpace(), _calc)
+{
+    _builder.createDoc(1, 1);
+    _builder.createDoc(2, 2);
+}
+Fixture::~Fixture() = default;
+
+}
 
 
 TEST_F("require that preparePut() sends to ready view", Fixture)
@@ -425,9 +429,3 @@ TEST_F("require that compactLidSpace() is sent to correct feed view", Fixture)
     EXPECT_EQUAL(99u, f._removed._view->_wantedLidLimit);
     EXPECT_EQUAL(0u, f._notReady._view->_wantedLidLimit);
 }
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
-

@@ -33,7 +33,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("feedview_test");
+LOG_SETUP(".feedview_test");
 
 using document::BucketId;
 using document::DataType;
@@ -65,6 +65,7 @@ using namespace search::index;
 using SerialNum = SearchableFeedView::SerialNum;
 using DocumentIdT = search::DocumentIdT;
 
+namespace {
 struct MyLidVector : public std::vector<DocumentIdT>
 {
     MyLidVector &add(DocumentIdT lid) { push_back(lid); return *this; }
@@ -518,9 +519,9 @@ struct FixtureBase
     test::ThreadingServiceObserver _writeService;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
-    FixtureBase();
+    FixtureBase() __attribute__((noinline));
 
-    virtual ~FixtureBase();
+    virtual ~FixtureBase() __attribute__((noinline));
 
     const test::DocumentMetaStoreObserver &metaStoreObserver() {
         return _dmsc->getObserver();
@@ -650,18 +651,7 @@ struct FixtureBase
         return EXPECT_EQUAL(exp, _tracer._os.str());
     }
 
-    DocumentContext::List
-    makeDummyDocs(uint32_t first, uint32_t count, uint64_t tsfirst) {
-        DocumentContext::List docs;
-        for (uint32_t i = 0; i < count; ++i) {
-            uint32_t id = first + i;
-            uint64_t ts = tsfirst + i;
-            vespalib::asciistream os;
-            os << "id:ns:searchdocument::" << id;
-            docs.push_back(doc(os.str(), ts));
-        }
-        return docs;
-    }
+    DocumentContext::List makeDummyDocs(uint32_t first, uint32_t count, uint64_t tsfirst) __attribute__((noinline));
 
     void performCompactLidSpace(uint32_t wantedLidLimit, IDestructorCallback::SP onDone) {
         auto &fv = getFeedView();
@@ -718,6 +708,19 @@ FixtureBase::~FixtureBase() {
     _service.shutdown();
 }
 
+DocumentContext::List
+FixtureBase::makeDummyDocs(uint32_t first, uint32_t count, uint64_t tsfirst) {
+    DocumentContext::List docs;
+    for (uint32_t i = 0; i < count; ++i) {
+        uint32_t id = first + i;
+        uint64_t ts = tsfirst + i;
+        vespalib::asciistream os;
+        os << "id:ns:searchdocument::" << id;
+        docs.push_back(doc(os.str(), ts));
+    }
+    return docs;
+}
+
 void
 FixtureBase::populateBeforeCompactLidSpace()
 {
@@ -729,44 +732,46 @@ FixtureBase::populateBeforeCompactLidSpace()
 struct SearchableFeedViewFixture : public FixtureBase
 {
     SearchableFeedView fv;
-    SearchableFeedViewFixture() :
-        FixtureBase(),
-        fv(StoreOnlyFeedView::Context(sa, sc._schema, _dmsc,
-                                      sc.getRepo(), _pendingLidsForCommit,
-                                      *_gidToLidChangeHandler, _writeService),
-           pc.getParams(),
-           FastAccessFeedView::Context(aw, _docIdLimit),
-           SearchableFeedView::Context(iw))
-    {
-    }
-    ~SearchableFeedViewFixture() override {
-        forceCommitAndWait();
-    }
+    SearchableFeedViewFixture() __attribute__((noinline));
+    ~SearchableFeedViewFixture() override __attribute__((noinline));
     IFeedView &getFeedView() override { return fv; }
 };
+
+SearchableFeedViewFixture::SearchableFeedViewFixture()
+    : FixtureBase(),
+      fv(StoreOnlyFeedView::Context(sa, sc._schema, _dmsc,
+                                    sc.getRepo(), _pendingLidsForCommit,
+                                    *_gidToLidChangeHandler, _writeService),
+      pc.getParams(),
+      FastAccessFeedView::Context(aw, _docIdLimit),
+      SearchableFeedView::Context(iw))
+{ }
+SearchableFeedViewFixture::~SearchableFeedViewFixture() {
+    forceCommitAndWait();
+}
 
 struct FastAccessFeedViewFixture : public FixtureBase
 {
     FastAccessFeedView fv;
-    FastAccessFeedViewFixture() :
-        FixtureBase(),
-        fv(StoreOnlyFeedView::Context(sa, sc._schema, _dmsc, sc.getRepo(), _pendingLidsForCommit,
-                                      *_gidToLidChangeHandler, _writeService),
-           pc.getParams(),
-           FastAccessFeedView::Context(aw, _docIdLimit))
-    {
-    }
-    ~FastAccessFeedViewFixture() override {
-        forceCommitAndWait();
-    }
+    FastAccessFeedViewFixture() __attribute__((noinline));
+    ~FastAccessFeedViewFixture() override __attribute__((noinline));
     IFeedView &getFeedView() override { return fv; }
 };
 
-void
-assertBucketInfo(const BucketId &ebid,
-                 const Timestamp &ets,
-                 uint32_t lid,
-                 const IDocumentMetaStore &metaStore)
+FastAccessFeedViewFixture::FastAccessFeedViewFixture()
+    : FixtureBase(),
+      fv(StoreOnlyFeedView::Context(sa, sc._schema, _dmsc, sc.getRepo(), _pendingLidsForCommit,
+                                    *_gidToLidChangeHandler, _writeService),
+      pc.getParams(),
+      FastAccessFeedView::Context(aw, _docIdLimit))
+{ }
+
+FastAccessFeedViewFixture::~FastAccessFeedViewFixture() {
+    forceCommitAndWait();
+}
+
+void assertBucketInfo(const BucketId &ebid, const Timestamp &ets, uint32_t lid, const IDocumentMetaStore &metaStore) __attribute__((noinline));
+void assertBucketInfo(const BucketId &ebid, const Timestamp &ets, uint32_t lid, const IDocumentMetaStore &metaStore)
 {
     document::GlobalId gid;
     EXPECT_TRUE(metaStore.getGid(lid, gid));
@@ -777,8 +782,8 @@ assertBucketInfo(const BucketId &ebid,
     EXPECT_EQUAL(ets, meta.timestamp);
 }
 
-void
-assertLidVector(const MyLidVector &exp, const MyLidVector &act)
+void assertLidVector(const MyLidVector &exp, const MyLidVector &act) __attribute__((noinline));
+void assertLidVector(const MyLidVector &exp, const MyLidVector &act)
 {
     EXPECT_EQUAL(exp.size(), act.size());
     for (size_t i = 0; i < exp.size(); ++i) {
@@ -793,6 +798,8 @@ assertAttributeUpdate(SerialNum serialNum, const document::DocumentId &docId,
     EXPECT_EQUAL(serialNum, adapter._updateSerial);
     EXPECT_EQUAL(docId, adapter._updateDocId);
     EXPECT_EQUAL(lid, adapter._updateLid);
+}
+
 }
 
 
@@ -1287,9 +1294,3 @@ TEST_F("require that move() notifies gid to lid change handler", SearchableFeedV
     f.forceCommitAndWait();
     TEST_DO(f.assertChangeHandler(dc2.gid(), 1u, 4u));
 }
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
-

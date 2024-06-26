@@ -5,9 +5,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/hw_info.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("threading_service_config_test");
-
 using namespace proton;
 using ProtonConfig = vespa::config::search::core::ProtonConfig;
 using ProtonConfigBuilder = vespa::config::search::core::ProtonConfigBuilder;
@@ -62,9 +59,4 @@ TEST_FF("require that config can be somewhat updated", Fixture(), Fixture(3000, 
     assertConfig(3000u, 1000u, cfg2);
     cfg1.update(cfg2);
     assertConfig(3000u, 1000u, cfg1);
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
 }

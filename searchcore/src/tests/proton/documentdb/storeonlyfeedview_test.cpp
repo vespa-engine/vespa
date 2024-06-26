@@ -19,9 +19,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("storeonlyfeedview_test");
-
 using document::BucketId;
 using document::DataType;
 using document::Document;
@@ -314,8 +311,7 @@ struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
         });
         // First we wait for everything propagated to MinimalFeedView
         while (ctx.use_count() > (expected + 1)) {
-            LOG(info, "use_count = %ld", ctx.use_count());
-            std::this_thread::sleep_for(1s);
+            std::this_thread::sleep_for(10ms);
         }
         // And then we must wait for everyone else to finish up too.
         feedview->waitFor(expected*2);
@@ -447,5 +443,3 @@ TEST_F("require that heartbeat propagates and commits meta store", Fixture)
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

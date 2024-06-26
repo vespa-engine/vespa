@@ -5,9 +5,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <queue>
 
-#include <vespa/log/log.h>
-LOG_SETUP("move_operation_limiter_test");
-
 using namespace proton;
 
 struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
@@ -109,9 +106,4 @@ TEST_F("require that destructor callback has reference to limiter via shared ptr
     f.clearLimiter();
     f.endOp();
     EXPECT_FALSE(f.job.blocked);
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
 }

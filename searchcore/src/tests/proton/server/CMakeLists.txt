@@ -42,3 +42,13 @@ vespa_add_executable(searchcore_memoryconfigstore_test_app TEST
     searchcore_pcommon
 )
 vespa_add_test(NAME searchcore_memoryconfigstore_test_app COMMAND searchcore_memoryconfigstore_test_app)
+
+vespa_add_executable(searchcore_proton_server_vespa_test_app TEST
+    SOURCES
+    vespa_testrunner.cpp
+    move_operation_limiter_test.cpp
+    threading_service_config_test.cpp
+    DEPENDS
+    searchcore_server
+)
+vespa_add_test(NAME searchcore_proton_server_vespa_test_app COMMAND searchcore_proton_server_vespa_test_app)

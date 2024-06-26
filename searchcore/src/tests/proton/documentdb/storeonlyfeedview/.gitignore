@@ -1,4 +1,0 @@
-Makefile
-.depend
-*_test
-searchcore_storeonlyfeedview_test_app
