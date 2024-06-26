@@ -16,7 +16,7 @@ public class ParsedSchema {
         String ret = "ParsedSchema(" + name + ")";
 
         for (ParsedDocument document : documents) {
-            ret += "\n\t" + document.toString();
+            ret += "\n\t" + document.toString().replaceAll("\n", "\n\t");
         }
         return ret;
     }

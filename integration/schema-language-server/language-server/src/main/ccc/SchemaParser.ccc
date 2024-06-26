@@ -328,8 +328,45 @@ void documentElm(ParsedSchema schema) :
  */
 void documentElmBody(ParsedDocument document) : {}
     (
-        <STRING>
+        fieldInsideDoc(document)
     )
+;
+
+/**
+ * Consumes a field block from within a document element.
+ *
+ * @param document the document type to modify
+ */
+void fieldInsideDoc(ParsedDocument document) :
+{
+    ParsedField field;
+}
+    field = fieldElm() {
+        document.addField(field);
+    }
+;
+
+/**
+ * Consumes a field block
+ * TODO: Reserved names
+ */
+ParsedField fieldElm() :
+{
+    String name;
+    ParsedField field;
+}
+
+    <FIELD> name = identifierStr <TYPE>
+    {
+        // if (name != null && Schema.isReservedName(name.toLowerCase())) {
+        //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        // }
+        field = new ParsedField(name);
+    }
+    <LBRACE> (<NL>)+ <RBRACE>
+    {
+        return field;
+    }
 ;
 
 

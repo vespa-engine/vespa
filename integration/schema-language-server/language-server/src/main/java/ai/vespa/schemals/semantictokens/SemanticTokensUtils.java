@@ -104,19 +104,18 @@ public class SemanticTokensUtils {
         }
     }
 
-    private static ArrayList<SemanticTokenMarker> traverseNode(Node node, PrintStream logger) {
+    private static ArrayList<SemanticTokenMarker> traverseNode(Node node) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
         Node.NodeType type = node.getType();
         if (type != null && tokenTypeMap.containsKey(type)) {
-            logger.println(type);
             Range range = CSTUtils.getNodeRange(node);
             ret.add(new SemanticTokenMarker(type, range));
         }
 
         if (node.hasChildNodes()) {
             for (int i = 0; i < node.size(); i++) {
-                ArrayList<SemanticTokenMarker> markers = traverseNode(node.get(i), logger);
+                ArrayList<SemanticTokenMarker> markers = traverseNode(node.get(i));
                 ret.addAll(markers);
             }
         }
@@ -124,17 +123,15 @@ public class SemanticTokensUtils {
         return ret;
     }
 
-    public static SemanticTokens getSemanticTokens(SchemaDocumentParser document, PrintStream logger) {
+    public static SemanticTokens getSemanticTokens(SchemaDocumentParser document) {
 
         Node node = document.getRootNode();
         if (node == null) {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> markers = traverseNode(node, logger);
+        ArrayList<SemanticTokenMarker> markers = traverseNode(node);
         ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(markers);
-
-        logger.println(compactMarkers);
 
         return new SemanticTokens(compactMarkers);
     }
