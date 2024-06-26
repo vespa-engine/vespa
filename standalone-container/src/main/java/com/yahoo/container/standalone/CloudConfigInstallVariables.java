@@ -52,6 +52,13 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     @Override
+    public Integer zookeeperJuteMaxBuffer() {
+        return  Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_JUTE_MAX_BUFFER"))
+                .map(Integer::parseInt)
+                .orElse(104857600);
+    }
+
+    @Override
     public Optional<Long> sessionLifeTimeSecs() {
         return getInstallVariable("session_lifetime", Long::parseLong);
     }
