@@ -20,6 +20,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/conf/default-env.txt DESTINATION conf/
 
 install(DIRECTORY DESTINATION logs/vespa)
 install(DIRECTORY DESTINATION logs/vespa/access)
+install(DIRECTORY DESTINATION secure)
 install(DIRECTORY DESTINATION var/crash)
 install(DIRECTORY DESTINATION var/db/vespa)
 install(DIRECTORY DESTINATION var/db/vespa/config_server)
