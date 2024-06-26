@@ -1232,6 +1232,19 @@ public class DeploymentSpecTest {
                                                      <allow with='gcp-service-connect' project='nine' />
                                                    </endpoint>
                                                 </endpoints>
+                                                <dev />
+                                             </instance>
+                                             <instance id='other'>
+                                               <dev />
+                                               <perf />
+                                               <endpoints>
+                                                 <endpoint container-id='pew' type='private' />
+                                               </endpoints>
+                                             </instance>
+                                             <instance id='last'>
+                                               <endpoints>
+                                                 <endpoint container-id='pew' type='private' />
+                                               </endpoints>
                                              </instance>
                                           </deployment>""");
 
@@ -1249,6 +1262,8 @@ public class DeploymentSpecTest {
 
         var zone = from(prod, RegionName.from("us-east"));
         var testZone = from(test, RegionName.from("us-east"));
+        var devZone = from(dev, RegionName.from("us-east"));
+        var perfZone = from(perf, RegionName.from("us-east"));
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.defaultEndpoint,
@@ -1260,9 +1275,29 @@ public class DeploymentSpecTest {
         assertEquals(ZoneEndpoint.privateEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), testZone, ClusterSpec.Id.from("froz")));
 
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.privateEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("froz")));
+
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), perfZone, ClusterSpec.Id.from("bax")));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), perfZone, ClusterSpec.Id.from("froz")));
+
         assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "barn"),
                                                            new AllowedUrn(AccessType.gcpServiceConnect, "nine"))),
                      spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("froz")));
+
+        assertEquals(new ZoneEndpoint(true, true, List.of()),
+                     spec.zoneEndpoint(InstanceName.from("other"), devZone, ClusterSpec.Id.from("pew")));
+        assertEquals(new ZoneEndpoint(true, true, List.of()),
+                     spec.zoneEndpoint(InstanceName.from("other"), perfZone, ClusterSpec.Id.from("pew")));
+
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("last"), devZone, ClusterSpec.Id.from("pew")));
+        assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("last"), perfZone, ClusterSpec.Id.from("pew")));
     }
 
     @Test

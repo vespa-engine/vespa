@@ -223,11 +223,16 @@ public class DeploymentSpec {
      * 5. None of the above apply, and the default of a publicly visible endpoint is used.
      */
     public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
-        // TODO: look up endpoints from <dev> tag, or so, if we're to support non-prod settings.
         if (   zone.environment().isTest()
             && instances().stream()
                           .anyMatch(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).values().stream()
                                                 .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))) return ZoneEndpoint.privateEndpoint;
+
+        if (zone.environment().isManuallyDeployed())
+            return instance(instance).filter(spec -> spec.deploysTo(zone.environment(), zone.region()))
+                                     .map(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).get(null))
+                                     .orElse(ZoneEndpoint.defaultEndpoint);
+
         if (zone.environment() != Environment.prod) return ZoneEndpoint.defaultEndpoint;
         return instance(instance).flatMap(spec -> spec.zoneEndpoint(zone, cluster))
                                  .orElse(ZoneEndpoint.defaultEndpoint);
