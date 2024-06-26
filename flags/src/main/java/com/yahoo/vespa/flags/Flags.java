@@ -51,8 +51,11 @@ public class Flags {
     public static final UnboundBooleanFlag USE_VESPA_ATHENZ = defineFeatureFlag(
             "use-vespa-athenz", false,
             List.of("hakonhall"), "2024-06-25", "2024-10-25",
-            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public systems.",
-            "Takes immediate effect wherever possible.");
+            "Whether to talk to Vespa Athenz instead of Yahoo Athenz in public systems. " +
+            "node-type is config in config server, controller in controller, and the appropriate " +
+            "host node type in host-admin.",
+            "Takes immediate effect wherever possible.",
+            NODE_TYPE);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
