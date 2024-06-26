@@ -31,7 +31,7 @@ bool GroupingManager::empty() const {
 }
 
 void
-GroupingManager::init(const IAttributeContext &attrCtx)
+GroupingManager::init(const IAttributeContext &attrCtx, const document::DocumentType * documentType)
 {
     GroupingContext::GroupingList list;
     GroupingContext::GroupingList &groupingList(_groupingContext.getGroupingList());
@@ -50,7 +50,7 @@ GroupingManager::init(const IAttributeContext &attrCtx)
                 }
             }
             aggregation::NonAttribute2DocumentAccessor nonAttributes2DocumentAccess(attrCtx);
-            ConfigureStaticParams stuff(&attrCtx, nullptr);
+            ConfigureStaticParams stuff(&attrCtx, documentType);
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception & e) {

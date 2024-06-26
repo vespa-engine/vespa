@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <iostream>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -36,57 +37,64 @@ const uint32_t NUM_DOCS = 1000;
 
 struct MyWorld {
     MockAttributeContext attributeContext;
+    document::DocumentType documentType;
     search::AllocatedBitVector bv;
 
-    MyWorld()
-        : attributeContext(),
-          bv(NUM_DOCS+1)
-    {
-        bv.setInterval(0, NUM_DOCS);
-        // attribute context
-        {
-            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr0");
-            AttributeVector::DocId docid;
-            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-                attr->addDoc(docid);
-                attr->add(i, docid); // value = docid
-            }
-            assert(docid + 1 == NUM_DOCS);
-            attributeContext.add(attr);
-        }
-        {
-            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr1");
-            AttributeVector::DocId docid;
-            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-                attr->addDoc(docid);
-                attr->add(i * 2, docid); // value = docid * 2
-            }
-            assert(docid + 1 == NUM_DOCS);
-            attributeContext.add(attr);
-        }
-        {
-            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr2");
-            AttributeVector::DocId docid;
-            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-                attr->addDoc(docid);
-                attr->add(i * 3, docid); // value = docid * 3
-            }
-            assert(docid + 1 == NUM_DOCS);
-            attributeContext.add(attr);
-        }
-        {
-            auto attr = std::make_shared<SingleInt32ExtAttribute>("attr3");
-            AttributeVector::DocId docid;
-            for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-                attr->addDoc(docid);
-                attr->add(i * 4, docid); // value = docid * 4
-            }
-            assert(docid + 1 == NUM_DOCS);
-            attributeContext.add(attr);
-        }
-
-    }
+    MyWorld();
+    ~MyWorld();
 };
+
+MyWorld::~MyWorld() = default;
+
+MyWorld::MyWorld()
+    : attributeContext(),
+      documentType("test"),
+      bv(NUM_DOCS+1)
+{
+    bv.setInterval(0, NUM_DOCS);
+    // attribute context
+    {
+        auto attr = std::make_shared<SingleInt32ExtAttribute>("attr0");
+        AttributeVector::DocId docid;
+        for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+            attr->addDoc(docid);
+            attr->add(i, docid); // value = docid
+        }
+        assert(docid + 1 == NUM_DOCS);
+        attributeContext.add(attr);
+    }
+    {
+        auto attr = std::make_shared<SingleInt32ExtAttribute>("attr1");
+        AttributeVector::DocId docid;
+        for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+            attr->addDoc(docid);
+            attr->add(i * 2, docid); // value = docid * 2
+        }
+        assert(docid + 1 == NUM_DOCS);
+        attributeContext.add(attr);
+    }
+    {
+        auto attr = std::make_shared<SingleInt32ExtAttribute>("attr2");
+        AttributeVector::DocId docid;
+        for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+            attr->addDoc(docid);
+            attr->add(i * 3, docid); // value = docid * 3
+        }
+        assert(docid + 1 == NUM_DOCS);
+        attributeContext.add(attr);
+    }
+    {
+        auto attr = std::make_shared<SingleInt32ExtAttribute>("attr3");
+        AttributeVector::DocId docid;
+        for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+            attr->addDoc(docid);
+            attr->add(i * 4, docid); // value = docid * 4
+        }
+        assert(docid + 1 == NUM_DOCS);
+        attributeContext.add(attr);
+    }
+
+}
 
 //-----------------------------------------------------------------------------
 
@@ -291,7 +299,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     SessionId id("foo");
 
     // Test initialization phase
-    GroupingSession session(id, initContext, world.attributeContext);
+    GroupingSession session(id, initContext, world.attributeContext, &world.documentType);
     CheckAttributeReferences attrCheck2;
     EXPECT_EQUAL(2u, initContext.getGroupingList().size());
     for (const auto & g : initContext.getGroupingList()) {
@@ -356,7 +364,7 @@ TEST_F("testEmptySessionId", DoomFixture()) {
     SessionId id;
 
     // Test initialization phase
-    GroupingSession session(id, initContext, world.attributeContext);
+    GroupingSession session(id, initContext, world.attributeContext, &world.documentType);
     RankedHit hit;
     hit._docId = 0;
     GroupingManager &manager(session.getGroupingManager());
@@ -390,9 +398,9 @@ TEST_F("testSessionManager", DoomFixture()) {
     SessionId id1("foo");
     SessionId id2("bar");
     SessionId id3("baz");
-    auto s1 = std::make_unique<GroupingSession>(id1, initContext, world.attributeContext);
-    auto s2 = std::make_unique<GroupingSession>(id2, initContext, world.attributeContext);
-    auto s3 = std::make_unique<GroupingSession>(id3, initContext, world.attributeContext);
+    auto s1 = std::make_unique<GroupingSession>(id1, initContext, world.attributeContext, &world.documentType);
+    auto s2 = std::make_unique<GroupingSession>(id2, initContext, world.attributeContext, &world.documentType);
+    auto s3 = std::make_unique<GroupingSession>(id3, initContext, world.attributeContext, &world.documentType);
 
     ASSERT_EQUAL(f1.timeOfDoom, s1->getTimeOfDoom());
     mgr.insert(std::move(s1));
@@ -442,13 +450,12 @@ TEST_F("test grouping fork/join", DoomFixture()) {
     auto g1 = std::make_shared<Grouping>(request);
     GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
     context.addGrouping(g1);
-    GroupingSession session(SessionId(), context, world.attributeContext);
+    GroupingSession session(SessionId(), context, world.attributeContext, &world.documentType);
     session.prepareThreadContextCreation(4);
-
-    GroupingContext::UP ctx0 = session.createThreadContext(0, world.attributeContext);
-    GroupingContext::UP ctx1 = session.createThreadContext(1, world.attributeContext);
-    GroupingContext::UP ctx2 = session.createThreadContext(2, world.attributeContext);
-    GroupingContext::UP ctx3 = session.createThreadContext(3, world.attributeContext);
+    GroupingContext::UP ctx0 = session.createThreadContext(0, world.attributeContext, &world.documentType);
+    GroupingContext::UP ctx1 = session.createThreadContext(1, world.attributeContext, &world.documentType);
+    GroupingContext::UP ctx2 = session.createThreadContext(2, world.attributeContext, &world.documentType);
+    GroupingContext::UP ctx3 = session.createThreadContext(3, world.attributeContext, &world.documentType);
     doGrouping(*ctx0, 12, 30.0, 11, 20.0, 10, 10.0);
     doGrouping(*ctx1, 22, 150.0, 21, 40.0, 20, 25.0);
     doGrouping(*ctx2, 32, 100.0, 31, 15.0, 30, 5.0);
@@ -483,8 +490,8 @@ TEST_F("test session timeout", DoomFixture()) {
 
     GroupingContext initContext1(world.bv, f1.clock.nowRef(), steady_time(duration(10)));
     GroupingContext initContext2(world.bv, f1.clock.nowRef(), steady_time(duration(20)));
-    auto s1 = std::make_unique<GroupingSession>(id1, initContext1, world.attributeContext);
-    auto s2 = std::make_unique<GroupingSession>(id2, initContext2, world.attributeContext);
+    auto s1 = std::make_unique<GroupingSession>(id1, initContext1, world.attributeContext, &world.documentType);
+    auto s2 = std::make_unique<GroupingSession>(id2, initContext2, world.attributeContext, &world.documentType);
     mgr.insert(std::move(s1));
     mgr.insert(std::move(s2));
     mgr.pruneTimedOutSessions(steady_time(5ns));
