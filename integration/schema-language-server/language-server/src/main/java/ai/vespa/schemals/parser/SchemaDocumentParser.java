@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.tree.CSTUtils;
 
 public class SchemaDocumentParser {
 
@@ -57,6 +58,8 @@ public class SchemaDocumentParser {
 
             Node node = parser.rootNode();
             buildCST(node);
+            
+            CSTUtils.printTree(logger, node);
 
         } catch (ParseException e) {
             Node.TerminalNode node = e.getToken();

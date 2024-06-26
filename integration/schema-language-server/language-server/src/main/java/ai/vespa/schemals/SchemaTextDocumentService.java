@@ -188,7 +188,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 String fileURI = params.getTextDocument().getUri();
                 SchemaDocumentParser documnet = schemaDocumentScheduler.getDocument(fileURI);
 
-                return SemanticTokensUtils.getSemanticTokens(documnet);
+                return SemanticTokensUtils.getSemanticTokens(documnet, logger);
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
             } catch (Throwable e) {

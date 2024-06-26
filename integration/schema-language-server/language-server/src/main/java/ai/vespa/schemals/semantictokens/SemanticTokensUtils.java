@@ -17,34 +17,58 @@ import ai.vespa.schemals.parser.*;
 
 public class SemanticTokensUtils {
 
-    private static final Map<Token.TokenType, String> tokenTypeLSPnameMap = new HashMap<Token.TokenType, String>() {{
-        put(Token.TokenType.DOCUMENT, "class");
-        put(Token.TokenType.SCHEMA, "namespace");
-        put(Token.TokenType.FUNCTION, "function");
-        put(Token.TokenType.TYPE, "type");
+    private static final ArrayList<Token.TokenType> keywordTokens = new ArrayList<Token.TokenType>() {{
+        add(Token.TokenType.DOCUMENT);
+        add(Token.TokenType.SCHEMA);
+        add(Token.TokenType.FIELD);
+        add(Token.TokenType.TYPE);
+    }};
+
+    private static final Map<Token.TokenType, String> tokenTypeLSPNameMap = new HashMap<Token.TokenType, String>() {{
         put(Token.TokenType.DOUBLE, "number");
         put(Token.TokenType.INTEGER, "number");
         put(Token.TokenType.LONG, "number");
     }};
+    
+    private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
+        put("ai.vespa.schemals.parser.ast.rootSchema", "namespace");
+        put("ai.vespa.schemals.parser.ast.documentElm", "class");
+        put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
+    }};
 
     private static ArrayList<String> tokenTypes;
     private static Map<Token.TokenType, Integer> tokenTypeMap;
+    private static Map<String, Integer> identifierTypeMap;
 
+    private static Integer addTokenType(String name) {
+        Integer index = tokenTypes.indexOf(name);
+        if (index == -1) {
+            index = tokenTypes.size();
+            tokenTypes.add(name);
+        }
+        return index;
+    }
 
     static {
-        tokenTypeMap = new HashMap<Token.TokenType, Integer>();
         tokenTypes = new ArrayList<String>();
+        tokenTypeMap = new HashMap<Token.TokenType, Integer>();
+        identifierTypeMap = new HashMap<String, Integer>();
 
-        int i = 0;
-        for (Map.Entry<Token.TokenType, String> set : tokenTypeLSPnameMap.entrySet()) {
-            Integer index = tokenTypes.indexOf(set.getValue());
-            if (index == -1) {
-                tokenTypes.add(set.getValue());
-                index = i;
-                i++;
-            }
+        for (Map.Entry<Token.TokenType, String> set : tokenTypeLSPNameMap.entrySet()) {
+            Integer index = addTokenType(set.getValue());
             tokenTypeMap.put(set.getKey(), index);
         }
+
+        Integer keywordIndex = addTokenType("keyword");
+        for (Token.TokenType type : keywordTokens) {
+            tokenTypeMap.put(type, keywordIndex);
+        }
+
+        for (Map.Entry<String, String> set : identifierTypeLSPNameMap.entrySet()) {
+            Integer index = addTokenType(set.getValue());
+            identifierTypeMap.put(set.getKey(), index);
+        }
+
     }
 
 
@@ -63,10 +87,10 @@ public class SemanticTokensUtils {
 
         private int tokenType;
         private Range range;
-
-        SemanticTokenMarker(Node.NodeType tokenType, Range range) {
-            this.tokenType = tokenTypeMap.get(tokenType);
-            this.range = range;
+        
+        SemanticTokenMarker(Integer tokenType, Node node) {
+            this.tokenType = tokenType;
+            this.range = CSTUtils.getNodeRange(node);
         }
 
         private ArrayList<Integer> compactForm() {
@@ -104,18 +128,31 @@ public class SemanticTokensUtils {
         }
     }
 
-    private static ArrayList<SemanticTokenMarker> traverseNode(Node node) {
+    private static ArrayList<SemanticTokenMarker> traverseNode(Node node, PrintStream logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
         Node.NodeType type = node.getType();
-        if (type != null && tokenTypeMap.containsKey(type)) {
-            Range range = CSTUtils.getNodeRange(node);
-            ret.add(new SemanticTokenMarker(type, range));
+        if (type != null) {
+            if (type == Token.TokenType.IDENTIFIER) {
+                Node parent = node.getParent();
+                String parnetClassName = parent.getClass().getName();
+                Integer tokenType = identifierTypeMap.get(parnetClassName);
+                
+                if (tokenType != null) {
+                    ret.add(new SemanticTokenMarker(tokenType, node));
+                }
+
+            } else {
+                Integer tokenType = tokenTypeMap.get(type);
+                if (tokenType != null) {
+                    ret.add(new SemanticTokenMarker(tokenType, node));
+                }
+            }
         }
 
         if (node.hasChildNodes()) {
             for (int i = 0; i < node.size(); i++) {
-                ArrayList<SemanticTokenMarker> markers = traverseNode(node.get(i));
+                ArrayList<SemanticTokenMarker> markers = traverseNode(node.get(i), logger);
                 ret.addAll(markers);
             }
         }
@@ -123,14 +160,14 @@ public class SemanticTokensUtils {
         return ret;
     }
 
-    public static SemanticTokens getSemanticTokens(SchemaDocumentParser document) {
+    public static SemanticTokens getSemanticTokens(SchemaDocumentParser document, PrintStream logger) {
 
         Node node = document.getRootNode();
         if (node == null) {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> markers = traverseNode(node);
+        ArrayList<SemanticTokenMarker> markers = traverseNode(node, logger);
         ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(markers);
 
         return new SemanticTokens(compactMarkers);
