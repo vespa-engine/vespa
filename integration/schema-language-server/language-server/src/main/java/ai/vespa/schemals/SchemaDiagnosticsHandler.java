@@ -21,13 +21,24 @@ public class SchemaDiagnosticsHandler {
         this.client = client;
     }
 
+    public void clearDiagnostics(String fileURI) {
+        publishDiagnostics(fileURI, new ArrayList<Diagnostic>());
+    }
+
     public void publishDiagnostics(String fileURI, Range range, String message) {
+        publishDiagnostics(
+            fileURI,
+            new ArrayList<Diagnostic>() {{
+                add(new Diagnostic(range, message));
+            }}
+        );
+    }
+
+    public void publishDiagnostics(String fileURI, ArrayList<Diagnostic> diagnostics) {
         client.publishDiagnostics(
             new PublishDiagnosticsParams(
                 fileURI,
-                new ArrayList<Diagnostic>() {{
-                    add(new Diagnostic(range, message));
-                }}
+                diagnostics
             )
         );
     }

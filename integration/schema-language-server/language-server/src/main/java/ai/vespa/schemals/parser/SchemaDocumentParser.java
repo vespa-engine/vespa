@@ -47,31 +47,25 @@ public class SchemaDocumentParser {
 
         SchemaParser parser = new SchemaParser(sequence);
 
-        for (int i = 0; i < 5; i++) {
-            logger.println(parser.lastConsumedToken.isDirty() + " | " + parser.lastConsumedToken.getSource());
+        try {
 
-            try {
-    
-                ParsedSchema root = parser.Root();
-                
-                logger.println(root);
-                i = 4;
-            } catch (ParseException e) {
-                logger.println(e);
-                Node.TerminalNode node = e.getToken();
-                logger.println(node.getBeginOffset());
+            ParsedSchema root = parser.Root();
+            
+            logger.println(root);
+            diagnosticsHandler.clearDiagnostics(fileURI);
+        } catch (ParseException e) {
+            Node.TerminalNode node = e.getToken();
 
 
-                Position beginPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() - 3);
-                Position endPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn());
+            Position beginPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() - 2);
+            Position endPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() + 1);
 
-                Range range = new Range(beginPosition, endPosition);
+            Range range = new Range(beginPosition, endPosition);
 
-                publishDiagnostics(range, "Parser error");
+            publishDiagnostics(range, e.getMessage());
 
-                //parser.lastConsumedToken = parser.lastConsumedToken.getNext();
+            //parser.lastConsumedToken = parser.lastConsumedToken.getNext();
 
-            }
         }
     }
 }

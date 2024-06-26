@@ -1,8 +1,6 @@
 
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.parser.ParserWrapper;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,9 +32,6 @@ public class SchemaLSLauncher {
         if (args.length > 0) {
             if (args[0].equalsIgnoreCase("-c")) {
                 logger = System.out;
-            } else if (args[0].equalsIgnoreCase("debug")) {
-                debug(System.out);
-                return;
             } else if (args[0].equalsIgnoreCase("-t")) {
 
                 String filename = (args.length >= 2) ? args[1] : "debug.log";
@@ -71,19 +66,6 @@ public class SchemaLSLauncher {
         globaLogger.setLevel(Level.OFF);
 
         startServer(System.in, System.out, logger);
-    }
-
-    static public void debug(PrintStream logger) {
-        String input;
-        try {
-            input = Files.readString(Paths.get("input.sd"));
-        } catch(IOException e) {
-            System.err.println("Could not read file");
-            return;
-        }
-        
-        ParserWrapper parser = new ParserWrapper(logger);
-        parser.debug(input);
     }
 
     private static void startServer(InputStream in, OutputStream out, PrintStream logger) throws ExecutionException, InterruptedException {

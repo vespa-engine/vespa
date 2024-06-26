@@ -1,12 +1,11 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.parser.ParserWrapper;
+
 import ai.vespa.schemals.parser.SchemaDocumentScheduler;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.CodeLens;
@@ -25,8 +24,6 @@ import org.eclipse.lsp4j.DocumentHighlightParams;
 import org.eclipse.lsp4j.DocumentOnTypeFormattingParams;
 import org.eclipse.lsp4j.DocumentRangeFormattingParams;
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SemanticTokens;
@@ -43,7 +40,6 @@ import org.eclipse.lsp4j.services.LanguageClient;
 public class SchemaTextDocumentService implements TextDocumentService {
 
     private PrintStream logger;
-    private ParserWrapper parser;
     private SchemaDocumentScheduler schemaDocumentScheduler;
     private LanguageClient client = null;
 
@@ -150,9 +146,6 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
-
-        logger.println(params);
-
         var document = params.getTextDocument();
 
         var contentChanges = params.getContentChanges();
@@ -175,22 +168,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<List<? extends DocumentHighlight>> documentHighlight(DocumentHighlightParams params) {
 
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            try {
-
-                if (parser.getFaulty()) {
-                    Range r = parser.getFaultyRange();
-                    logger.println(r);
-
-                    return new ArrayList<DocumentHighlight>() {{
-                        add(new DocumentHighlight(r));
-                    }};
-                }
-
-                return new ArrayList<DocumentHighlight>();
-
-            } catch (CancellationException ignore) {}
-
-            return new ArrayList<DocumentHighlight>(); 
+            return new ArrayList<DocumentHighlight>();
         });
     }
 
