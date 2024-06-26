@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static java.util.logging.Level.INFO;
 
 public class Configurator {
 
@@ -47,6 +48,7 @@ public class Configurator {
         // Doc says that it is max size of data in a zookeeper node, but it goes for everything that
         // needs to be serialized, see https://issues.apache.org/jira/browse/ZOOKEEPER-1162 for details
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
+        log.log(INFO, "Using juteMaxBuffer=" + zookeeperServerConfig.juteMaxBuffer());
         // Need to set this as a system properties instead of config, config does not work
         System.setProperty("zookeeper.authProvider.x509", "com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider");
         // Need to set this as a system property, otherwise it will be parsed for _every_ packet and an exception will be thrown (and handled)
