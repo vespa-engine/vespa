@@ -74,9 +74,7 @@ vespa_define_module(
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
     src/tests/proton/documentdb
-    src/tests/proton/documentdb/buckethandler
     src/tests/proton/documentdb/clusterstatehandler
-    src/tests/proton/documentdb/combiningfeedview
     src/tests/proton/documentdb/configurer
     src/tests/proton/documentdb/document_scan_iterator
     src/tests/proton/documentdb/document_subdbs

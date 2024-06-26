@@ -9,9 +9,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("buckethandler_test");
-
 using namespace proton;
 using document::BucketId;
 using document::GlobalId;
@@ -22,6 +19,7 @@ using storage::spi::test::makeSpiBucket;
 using vespalib::ThreadStackExecutor;
 using proton::test::BucketStateCalculator;
 
+namespace {
 const GlobalId GID_1("111111111111");
 const BucketId BUCKET_1(8, GID_1.convertToBucketId().getRawId());
 const Timestamp TIME_1(1u);
@@ -95,41 +93,8 @@ struct Fixture
     test::BucketIdListResultHandler _bucketList;
     test::BucketInfoResultHandler   _bucketInfo;
     std::shared_ptr<test::GenericResultHandler>      _genResult;
-    Fixture()
-        : _builder(),
-          _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
-          _ready(_bucketDB, SubDbType::READY),
-          _removed(_bucketDB, SubDbType::REMOVED),
-          _notReady(_bucketDB, SubDbType::NOTREADY),
-          _exec(1),
-          _handler(_exec),
-          _changedHandler(),
-          _calc(new BucketStateCalculator()),
-          _bucketList(), _bucketInfo(),
-          _genResult(std::make_shared<test::GenericResultHandler>())
-    {
-        // bucket 2 & 3 & 4 & 7 in ready
-        _ready.insertDocs(_builder.createDocs(2, 1, 3).  // 2 docs
-                                   createDocs(3, 3, 6).  // 3 docs
-                                   createDocs(4, 6, 10). // 4 docs
-                                   createDocs(7, 10, 11). // 1 doc
-                                   getDocs());
-        // bucket 2 in removed
-        _removed.insertDocs(_builder.clearDocs().
-                                     createDocs(2, 16, 20). // 4 docs
-                                     getDocs());
-        // bucket 4 in not ready
-        _notReady.insertDocs(_builder.clearDocs().
-                                      createDocs(4, 22, 24). // 2 docs
-                                      getDocs());
-        _handler.setReadyBucketHandler(_ready._metaStore);
-        _handler.addBucketStateChangedHandler(&_changedHandler);
-        _handler.notifyClusterStateChanged(_calc);
-    }
-    ~Fixture()
-    {
-        _handler.removeBucketStateChangedHandler(&_changedHandler);
-    }
+    Fixture() __attribute__((noinline));
+    ~Fixture() __attribute__((noinline));
     void sync() { _exec.sync(); }
     void handleGetBucketInfo(const BucketId &bucket) {
         _handler.handleGetBucketInfo(makeSpiBucket(bucket), _bucketInfo);
@@ -146,6 +111,44 @@ struct Fixture
         _handler.notifyClusterStateChanged(_calc);
     }
 };
+
+Fixture::Fixture()
+    : _builder(),
+      _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
+      _ready(_bucketDB, SubDbType::READY),
+      _removed(_bucketDB, SubDbType::REMOVED),
+      _notReady(_bucketDB, SubDbType::NOTREADY),
+      _exec(1),
+      _handler(_exec),
+      _changedHandler(),
+      _calc(std::make_shared<BucketStateCalculator>()),
+      _bucketList(), _bucketInfo(),
+      _genResult(std::make_shared<test::GenericResultHandler>())
+{
+    // bucket 2 & 3 & 4 & 7 in ready
+    _ready.insertDocs(_builder.createDocs(2, 1, 3).  // 2 docs
+                               createDocs(3, 3, 6).  // 3 docs
+                               createDocs(4, 6, 10). // 4 docs
+                               createDocs(7, 10, 11). // 1 doc
+                               getDocs());
+    // bucket 2 in removed
+    _removed.insertDocs(_builder.clearDocs().
+                                 createDocs(2, 16, 20). // 4 docs
+                                 getDocs());
+    // bucket 4 in not ready
+    _notReady.insertDocs(_builder.clearDocs().
+                                  createDocs(4, 22, 24). // 2 docs
+                                  getDocs());
+    _handler.setReadyBucketHandler(_ready._metaStore);
+    _handler.addBucketStateChangedHandler(&_changedHandler);
+    _handler.notifyClusterStateChanged(_calc);
+}
+Fixture::~Fixture()
+{
+    _handler.removeBucketStateChangedHandler(&_changedHandler);
+}
+
+}
 
 
 TEST_F("require that handleListBuckets() returns buckets from all sub dbs", Fixture)
@@ -291,9 +294,3 @@ TEST_F("node going from maintenance to down state deactivates all buckets", Fixt
     f.handleGetBucketInfo(f._ready.bucket(2));
     EXPECT_FALSE(f._bucketInfo.getInfo().isActive());
 }
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
-

@@ -25,6 +25,8 @@ vespa_add_test(NAME searchcore_documentdb_test_app COMMAND searchcore_documentdb
 vespa_add_executable(searchcore_proton_documentdb_vespa_test_app TEST
     SOURCES
     vespa_testrunner.cpp
+    buckethandler_test.cpp
+    combiningfeedview_test.cpp
     feedview_test.cpp
     maintenancecontroller_test.cpp
     storeonlyfeedview_test.cpp
