@@ -41,7 +41,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <unistd.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -74,6 +73,7 @@ using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 using BucketIdVector = BucketId::List;
 
 constexpr vespalib::duration TIMEOUT = 60s;
+constexpr vespalib::duration DELAY = 10ms;
 
 namespace {
 
@@ -304,7 +304,7 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
     bool run() override {
         _firstRun.countDown();
-        usleep(10000);
+	std::this_thread::sleep_for(1ms);
         return false;
     }
 };
@@ -885,9 +885,9 @@ TEST_F("require that document pruner is active", MaintenanceControllerFixture)
     ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
     EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    f.setPruneConfig(DocumentDBPruneConfig(200ms, 900s));
-    for (uint32_t i = 0; i < 600; ++i) {
-        std::this_thread::sleep_for(100ms);
+    f.setPruneConfig(DocumentDBPruneConfig(DELAY, 900s));
+    for (uint32_t i = 0; i < 60000; ++i) {
+        std::this_thread::sleep_for(1ms);
         ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
         if (f._removed.getNumUsedLids() != 10u)
             break;
@@ -902,9 +902,9 @@ TEST_F("require that heartbeats are scheduled", MaintenanceControllerFixture)
 {
     f.notifyClusterStateChanged();
     f.startMaintenance();
-    f.setHeartBeatConfig(DocumentDBHeartBeatConfig(200ms));
-    for (uint32_t i = 0; i < 600; ++i) {
-        std::this_thread::sleep_for(100ms);
+    f.setHeartBeatConfig(DocumentDBHeartBeatConfig(DELAY));
+    for (uint32_t i = 0; i < 60000; ++i) {
+        std::this_thread::sleep_for(1ms);
         if (f._fh.getHeartBeats() != 0u)
             break;
     }
@@ -913,7 +913,7 @@ TEST_F("require that heartbeats are scheduled", MaintenanceControllerFixture)
 
 TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)
 {
-    auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 3);
+    auto job = std::make_unique<MySimpleJob>(DELAY, DELAY, 3);
     MySimpleJob &myJob = *job;
     f._mc.registerJob(std::move(job));
     f._injectDefaultJobs = false;
@@ -925,7 +925,7 @@ TEST_F("require that a simple maintenance job is executed", MaintenanceControlle
 
 TEST_F("require that a split maintenance job is executed", MaintenanceControllerFixture)
 {
-    auto job = std::make_unique<MySplitJob>(200ms, TIMEOUT * 2, 3);
+    auto job = std::make_unique<MySplitJob>(DELAY, TIMEOUT * 2, 3);
     MySplitJob &myJob = *job;
     f._mc.registerJob(std::move(job));
     f._injectDefaultJobs = false;
@@ -937,13 +937,15 @@ TEST_F("require that a split maintenance job is executed", MaintenanceController
 
 TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixture)
 {
-    auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 0);
+    auto job = std::make_unique<MySimpleJob>(DELAY, DELAY, 0);
     MySimpleJob &myJob = *job;
     myJob.block();
     f._mc.registerJob(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
-    std::this_thread::sleep_for(2s);
+    for (uint32_t napCount = 0; (myJob._runCnt != 0) && (napCount < 200); napCount++) {
+        std::this_thread::sleep_for(10ms);
+    }
     EXPECT_EQUAL(0u, myJob._runCnt);
 }
 
@@ -951,7 +953,7 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
 {
     {
         auto job1 = std::make_unique<MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 0);
-        auto job2 = std::make_unique<MyLongRunningJob>(200ms, 200ms);
+        auto job2 = std::make_unique<MyLongRunningJob>(DELAY, DELAY);
         auto &longRunningJob = dynamic_cast<MyLongRunningJob &>(*job2);
         f._mc.registerJob(std::move(job1));
         f._mc.registerJob(std::move(job2));
