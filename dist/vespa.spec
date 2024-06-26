@@ -522,7 +522,7 @@ fi
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/search
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/tmp
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/jdisc_container
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/proxy
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/secure
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/run
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/tmp
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/tmp/vespa
