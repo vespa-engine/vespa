@@ -1,11 +1,14 @@
 package ai.vespa.schemals;
 
 
+import ai.vespa.schemals.parser.SchemaDocumentParser;
 import ai.vespa.schemals.parser.SchemaDocumentScheduler;
+import ai.vespa.schemals.semantictokens.SemanticTokensUtils;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.CodeLens;
@@ -179,8 +182,21 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
 
-        return null;
+            try {
+                String fileURI = params.getTextDocument().getUri();
+                SchemaDocumentParser documnet = schemaDocumentScheduler.getDocument(fileURI);
+
+                return SemanticTokensUtils.getSemanticTokens(documnet, logger);
+            } catch (CancellationException ignore) {
+                // Ignore cancellation exception
+            } catch (Throwable e) {
+                logger.println(e);
+            }
+
+            return new SemanticTokens(new ArrayList<>());
+        });
     }
 
     public CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>> semanticTokensFullDelta(SemanticTokensDeltaParams params) {

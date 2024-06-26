@@ -36,4 +36,8 @@ public class SchemaDocumentScheduler {
         logger.println("Closing document: " + fileURI);
         openDocuments.remove(fileURI);
     }
+
+    public SchemaDocumentParser getDocument(String fileURI) {
+        return openDocuments.get(fileURI);
+    }
 }

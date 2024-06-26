@@ -74,19 +74,6 @@ public class SchemaDocumentParser {
         }
     }
 
-    private Position getPositionFromOffset(Node node, int offset) {
-        TokenSource token = node.getTokenSource();
-        int line = token.getLineFromOffset(offset);
-        int startOfLineOffset = token.getLineStartOffset(line);
-        return new Position(line, offset - startOfLineOffset);
-    }
-
-    public Range getNodeRange(Node node) {
-        Position start = getPositionFromOffset(node, node.getBeginOffset());
-        Position end = getPositionFromOffset(node, node.getEndOffset());
-        return new Range(start, end);
-    }
-
     private void buildCST(Node node) {
         CST = node;
         // logger.println(node.getType());
@@ -101,5 +88,9 @@ public class SchemaDocumentParser {
         //         buildCST(node.get(i));
         //     }
         // }
+    }
+
+    public Node getRootNode() {
+        return CST;
     }
 }
