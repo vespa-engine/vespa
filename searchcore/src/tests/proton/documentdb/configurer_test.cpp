@@ -69,6 +69,7 @@ using Configurer = SearchableDocSubDBConfigurer;
 using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
 using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
 
+namespace {
 const vespalib::string BASE_DIR("baseDir");
 const vespalib::string DOC_TYPE("invalid");
 
@@ -204,7 +205,9 @@ Fixture::Fixture()
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
                                                _constantValueFactory, _clock.nowRef(), "test", 0);
 }
-Fixture::~Fixture() = default;
+Fixture::~Fixture() {
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+}
 
 void
 Fixture::initViewSet(ViewSet &views)
@@ -293,56 +296,51 @@ struct MyFastAccessFeedView
     std::shared_ptr<PendingLidTrackerBase> _pendingLidsForCommit;
     VarHolder<FastAccessFeedView::SP> _feedView;
 
-    explicit MyFastAccessFeedView(IThreadingService &writeService)
-        : _fileHeaderContext(),
-          _docIdLimit(0),
-          _writeService(writeService),
-          _hwInfo(),
-          _dmsc(),
-          _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
-          _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
-          _feedView()
-    {
-        init();
-    }
-
+    explicit MyFastAccessFeedView(IThreadingService &writeService) __attribute__((noinline));
     ~MyFastAccessFeedView();
 
-    void init() {
-        MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
-        Schema::SP schema = std::make_shared<Schema>();
-        _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
-        std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
-        StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
-                                                _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);
-        StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
-        auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
-                                                 _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
-                                                 _writeService.field_writer(), _writeService.shared(), _hwInfo);
-        auto writer = std::make_shared<AttributeWriter>(mgr);
-        FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
-        _feedView.set(std::make_shared<FastAccessFeedView>(std::move(storeOnlyCtx), params, fastUpdateCtx));
-    }
+    void init() __attribute__((noinline));
 };
 
+MyFastAccessFeedView::MyFastAccessFeedView(IThreadingService &writeService)
+    : _fileHeaderContext(),
+      _docIdLimit(0),
+      _writeService(writeService),
+      _hwInfo(),
+      _dmsc(),
+      _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
+      _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
+      _feedView()
+{
+    init();
+}
+
 MyFastAccessFeedView::~MyFastAccessFeedView() = default;
+
+void
+MyFastAccessFeedView::init() {
+    MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
+    Schema::SP schema = std::make_shared<Schema>();
+    _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
+    std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
+    StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
+                                            _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);
+    StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
+    auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
+                                             _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
+                                             _writeService.field_writer(), _writeService.shared(), _hwInfo);
+    auto writer = std::make_shared<AttributeWriter>(mgr);
+    FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
+    _feedView.set(std::make_shared<FastAccessFeedView>(std::move(storeOnlyCtx), params, fastUpdateCtx));
+}
 
 struct FastAccessFixture
 {
     TransportAndExecutorService  _service;
     MyFastAccessFeedView          _view;
     FastAccessDocSubDBConfigurer _configurer;
-    FastAccessFixture()
-        : _service(1),
-          _view(_service.write()),
-          _configurer(_view._feedView, "test")
-    {
-        std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
-        std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
-    }
-    ~FastAccessFixture() {
-        _service.shutdown();
-    }
+    FastAccessFixture() __attribute__((noinline));
+    ~FastAccessFixture() __attribute__((noinline));
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig& new_config_snapshot,
@@ -350,6 +348,19 @@ struct FastAccessFixture
                 uint32_t docid_limit,
                 SerialNum serial_num);
 };
+
+FastAccessFixture::FastAccessFixture()
+    : _service(1),
+      _view(_service.write()),
+      _configurer(_view._feedView, "test")
+{
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+    std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
+}
+FastAccessFixture::~FastAccessFixture() {
+    _service.shutdown();
+}
+
 
 IReprocessingInitializer::UP
 FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
@@ -490,6 +501,8 @@ FastAccessFeedViewComparer::FastAccessFeedViewComparer(FastAccessFeedView::SP ol
       _new(std::move(new_))
 {}
 FastAccessFeedViewComparer::~FastAccessFeedViewComparer() = default;
+
+}
 
 TEST_F("require that we can reconfigure index searchable", Fixture)
 {
@@ -781,10 +794,4 @@ TEST("require that summary manager should change if relevant config changed")
     TEST_DO(assertSummaryManagerShouldChange(CCR().setDocumentTypeRepoChanged(true)));
     TEST_DO(assertSummaryManagerShouldChange(CCR().setStoreChanged(true)));
     TEST_DO(assertSummaryManagerShouldChange(CCR().setSchemaChanged(true)));
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
 }
