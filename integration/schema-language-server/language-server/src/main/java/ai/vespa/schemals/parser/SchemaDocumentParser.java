@@ -15,6 +15,8 @@ public class SchemaDocumentParser {
 
     private String fileURI = "";
     private String content = "";
+    
+    private Node CST;
 
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, String fileURI) {
         this(logger, diagnosticsHandler, fileURI, null);
@@ -24,7 +26,10 @@ public class SchemaDocumentParser {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.fileURI = fileURI;
-        if (content != null) this.content = content;
+        if (content != null) {
+            this.content = content;
+            parseContent();
+        };
     }
 
     public void updateFileContent(String content) {
@@ -34,10 +39,6 @@ public class SchemaDocumentParser {
 
     public String getFileURI() {
         return fileURI;
-    }
-
-    private void publishDiagnostics(Range range, String message) {
-        diagnosticsHandler.publishDiagnostics(fileURI, range, message);
     }
 
     private void parseContent() {
@@ -53,6 +54,10 @@ public class SchemaDocumentParser {
             
             logger.println(root);
             diagnosticsHandler.clearDiagnostics(fileURI);
+
+            Node node = parser.rootNode();
+            buildCST(node);
+
         } catch (ParseException e) {
             Node.TerminalNode node = e.getToken();
 
@@ -62,10 +67,39 @@ public class SchemaDocumentParser {
 
             Range range = new Range(beginPosition, endPosition);
 
-            publishDiagnostics(range, e.getMessage());
+            diagnosticsHandler.publishDiagnostics(fileURI, range, e.getMessage());
 
             //parser.lastConsumedToken = parser.lastConsumedToken.getNext();
 
         }
+    }
+
+    private Position getPositionFromOffset(Node node, int offset) {
+        TokenSource token = node.getTokenSource();
+        int line = token.getLineFromOffset(offset);
+        int startOfLineOffset = token.getLineStartOffset(line);
+        return new Position(line, offset - startOfLineOffset);
+    }
+
+    public Range getNodeRange(Node node) {
+        Position start = getPositionFromOffset(node, node.getBeginOffset());
+        Position end = getPositionFromOffset(node, node.getEndOffset());
+        return new Range(start, end);
+    }
+
+    private void buildCST(Node node) {
+        CST = node;
+        // logger.println(node.getType());
+        // //logger.println(node.getSource());
+        // logger.println(node.getBeginLine() + " | " + node.getBeginColumn());
+        // logger.println(node.getBeginOffset() + " : " + node.getEndOffset());
+        // Range range = getNodeRange(node);
+        // logger.println(range);
+
+        // if (node.hasChildNodes()) {
+        //     for (int i = 0; i < node.size(); i++) {
+        //         buildCST(node.get(i));
+        //     }
+        // }
     }
 }

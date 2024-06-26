@@ -3,6 +3,8 @@ package ai.vespa.schemals.parser;
 import java.io.PrintStream;
 import java.util.HashMap;
 
+import org.eclipse.lsp4j.TextDocumentItem;
+
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 
 public class SchemaDocumentScheduler {
@@ -24,5 +26,14 @@ public class SchemaDocumentScheduler {
         }
 
         openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, fileURI, content));
+    }
+
+    public void openDocument(TextDocumentItem document) {
+        updateFile(document.getUri(), document.getText());
+    }
+
+    public void closeDocument(String fileURI) {
+        logger.println("Closing document: " + fileURI);
+        openDocuments.remove(fileURI);
     }
 }

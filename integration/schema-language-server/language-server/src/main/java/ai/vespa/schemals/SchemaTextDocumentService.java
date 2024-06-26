@@ -30,6 +30,8 @@ import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensDelta;
 import org.eclipse.lsp4j.SemanticTokensDeltaParams;
 import org.eclipse.lsp4j.SemanticTokensParams;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
@@ -140,8 +142,10 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public void didOpen(DidOpenTextDocumentParams didOpenTextDocumentParams) {
+    public void didOpen(DidOpenTextDocumentParams params) {
+        TextDocumentItem document = params.getTextDocument();
 
+        schemaDocumentScheduler.openDocument(document);
     }
 
     @Override
@@ -155,8 +159,9 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public void didClose(DidCloseTextDocumentParams didCloseTextDocumentParams) {
-
+    public void didClose(DidCloseTextDocumentParams params) {
+        TextDocumentIdentifier documentIdentifier = params.getTextDocument();
+        schemaDocumentScheduler.closeDocument(documentIdentifier.getUri());
     }
 
     @Override
