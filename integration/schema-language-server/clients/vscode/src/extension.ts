@@ -54,6 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
 			},
 			provideDocumentSemanticTokens: async (document, token, next) => {
 				const r = await next(document, token)
+				console.log(r?.data)
 				return r
 			}
 		}

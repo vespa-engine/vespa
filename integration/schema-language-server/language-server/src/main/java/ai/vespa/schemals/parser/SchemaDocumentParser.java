@@ -18,6 +18,7 @@ public class SchemaDocumentParser {
     private String content = "";
     
     private Node CST;
+    private boolean faultySchema = true;
 
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, String fileURI) {
         this(logger, diagnosticsHandler, fileURI, null);
@@ -48,37 +49,41 @@ public class SchemaDocumentParser {
         logger.println("Parsing document: " + fileURI);
 
         SchemaParser parser = new SchemaParser(sequence);
+        parser.setParserTolerant(false);
 
         try {
 
             ParsedSchema root = parser.Root();
-            
-            logger.println(root);
             diagnosticsHandler.clearDiagnostics(fileURI);
-
-            Node node = parser.rootNode();
-            buildCST(node);
+            faultySchema = false;
             
-            CSTUtils.printTree(logger, node);
-
+            logger.println("VALID");
         } catch (ParseException e) {
+            faultySchema = true;
+
             Node.TerminalNode node = e.getToken();
 
 
-            Position beginPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() - 2);
-            Position endPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() + 1);
+            // Position beginPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() - 1);
+            // Position endPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() + 1);
 
-            Range range = new Range(beginPosition, endPosition);
+            // Range range = new Range(beginPosition, endPosition);
+            Range range = CSTUtils.getNodeRange(node);
 
             diagnosticsHandler.publishDiagnostics(fileURI, range, e.getMessage());
-
-            //parser.lastConsumedToken = parser.lastConsumedToken.getNext();
-
         }
+
+        parser.setParserTolerant(true);
+
+        Node node = parser.rootNode();
+        buildCST(node);
+
     }
 
     private void buildCST(Node node) {
         CST = node;
+        logger.println("Trying to print tree");
+        CSTUtils.printTree(logger, node);
         // logger.println(node.getType());
         // //logger.println(node.getSource());
         // logger.println(node.getBeginLine() + " | " + node.getBeginColumn());
@@ -91,6 +96,10 @@ public class SchemaDocumentParser {
         //         buildCST(node.get(i));
         //     }
         // }
+    }
+
+    public boolean isFaulty() {
+        return faultySchema;
     }
 
     public Node getRootNode() {
