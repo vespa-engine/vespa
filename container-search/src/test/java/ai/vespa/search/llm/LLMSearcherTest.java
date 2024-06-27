@@ -14,7 +14,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.EventStream;
 import com.yahoo.search.searchchain.Execution;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -139,7 +138,6 @@ public class LLMSearcherTest {
     }
 
     @Test
-    @Disabled
     public void testAsyncGeneration() {
         var executor = Executors.newFixedThreadPool(2);
         var sb = new StringBuilder();
@@ -156,17 +154,13 @@ public class LLMSearcherTest {
             assertEquals(1, result.getHitCount());
             assertTrue(result.hits().get(0) instanceof EventStream);
             EventStream eventStream = (EventStream) result.hits().get(0);
-
             var incoming = eventStream.incoming();
-            incoming.addNewDataListener(() -> {
-                incoming.drain().forEach(event -> sb.append(event.toString()));
-            }, executor);
 
             incoming.completedFuture().join();
             assertTrue(incoming.isComplete());
 
-            // Ensure incoming has been fully drained to avoid race condition in this test
-            incoming.drain().forEach(event -> sb.append(event.toString()));
+            incoming.drain().forEach(event -> eventStream.add(event));
+            eventStream.asList().forEach(event -> sb.append(event.toString()));
 
         } finally {
             executor.shutdownNow();
