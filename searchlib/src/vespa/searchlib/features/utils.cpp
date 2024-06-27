@@ -127,7 +127,10 @@ calculate_legacy_significance(DocumentFrequency doc_freq)
     count = N;
     double logcount = std::log(count);
     double logfrequency = std::log(frequency);
+    // Using traditional formula for inverse document frequency, see
+    // https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Inverse_document_frequency
     double idf = logcount - logfrequency;
+    // We normalize against document frequency 1 in corpus of N documents.
     double normalized_idf = idf / logcount; // normalized to range [0;1]
     double renormalized_idf = 0.5 + 0.5 * normalized_idf; // normalized to range [0.5;1]
     return renormalized_idf;
