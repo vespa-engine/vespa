@@ -103,28 +103,29 @@ public class SchemaDocumentParser {
         put(Token.TokenType.FIELDSET, "ai.vespa.schemals.parser.ast.fieldSetElm");
     }};
 
-    private void improveCST(Node node) {
+    private void improveCST(SchemaNode node) {
         
-        Node parent = node.getParent();
+        SchemaNode parent = node.getParent();
         Node.NodeType nodeType = node.getType();
         String parentCNComp = tokenParentClassPairs.get(nodeType);
         if (
             parent != null &&
             parent.get(0) == node &&
-            parent.getClass().getName() == parentCNComp &&
+            parent.getIdentifierString() == parentCNComp &&
             parent.get(1) != null
         ) {
-            Node child = parent.get(1);
-            logger.println(child);
+            SchemaNode child = parent.get(1);
+            child.setUserDefinedIdentifier();
         }
 
-        for (Node child : node) {
-            improveCST(child);
+        for (int i = 0; i < node.size(); i++) {
+            improveCST(node.get(i));
         }
     }
 
     private void createCST(Node node) {
         CST = new SchemaNode(node);
+        improveCST(CST);
         CSTUtils.printTree(logger, CST);
     }
 

@@ -139,7 +139,7 @@ public class SchemaSemanticTokens implements Visitor {
 
         Node.NodeType type = node.getType();
         if (type != null) {
-            if (type == Token.TokenType.IDENTIFIER) {
+            if (node.isUserDefinedIdentifier()) {
                 SchemaNode parent = node.getParent();
                 String parnetClassName = parent.getIdentifierString();
                 Integer tokenType = identifierTypeMap.get(parnetClassName);
