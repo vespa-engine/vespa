@@ -30,7 +30,7 @@ endif
 
 .DEFAULT_GOAL := pr
 
-main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts upload-test-results
+main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts
 pr: build-rpms cpp-test basic-search-test
 
 check:
