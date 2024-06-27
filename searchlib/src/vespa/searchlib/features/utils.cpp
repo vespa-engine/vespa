@@ -6,6 +6,8 @@
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/issue.h>
+#include <algorithm>
+#include <cassert>
 #include <charconv>
 #include <cmath>
 #include <ostream>
@@ -113,29 +115,44 @@ lookupSignificance(const search::fef::IQueryEnvironment& env, uint32_t termId, f
 static const double N = 1000000.0;
 
 feature_t
-calculate_legacy_significance(double docFreq)
+calculate_legacy_significance(DocumentFrequency doc_freq)
 {
-    if (docFreq < (1.0/N)) {
-      docFreq = 1.0/N;
+    if (doc_freq.count == 0) {
+        return 0.5; // Corner case, no documents
     }
-    if (docFreq > 1.0) {
-      docFreq = 1.0;
-    }
-    double d = std::log(docFreq)/std::log(1.0/N);
-    return 0.5 + 0.5 * d;
+    double frequency = doc_freq.frequency;
+    double count = doc_freq.count;
+    // Rescale frequency and count to corpus of N documents.
+    frequency = std::min(std::max(1.0, frequency * N / count), N);
+    count = N;
+    double logcount = std::log(count);
+    double logfrequency = std::log(frequency);
+    // Using traditional formula for inverse document frequency, see
+    // https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Inverse_document_frequency
+    double idf = logcount - logfrequency;
+    // We normalize against document frequency 1 in corpus of N documents.
+    double normalized_idf = idf / logcount; // normalized to range [0;1]
+    double renormalized_idf = 0.5 + 0.5 * normalized_idf; // normalized to range [0.5;1]
+    return renormalized_idf;
+}
+
+DocumentFrequency
+aggregate_max(DocumentFrequency lhs, DocumentFrequency rhs)
+{
+    return { std::max(lhs.frequency, rhs.frequency), std::max(lhs.count, rhs.count)};
 }
 
 feature_t
 calculate_legacy_significance(const search::fef::ITermData& termData)
 {
     using FRA = search::fef::ITermFieldRangeAdapter;
-    double df = 0;
+    DocumentFrequency df(0, 0);
     for (FRA iter(termData); iter.valid(); iter.next()) {
-        df = std::max(df, iter.get().getDocFreq());
+        df = aggregate_max(df, iter.get().get_doc_freq());
     }
 
     feature_t signif = calculate_legacy_significance(df);
-    LOG(debug, "calculate_legacy_significance %e %f [ %e %f ] = %e", df, df, df * N, df * N, signif);
+    LOG(debug, "calculate_legacy_significance %" PRIu64 " %" PRIu64 " = %e", df.frequency, df.count, signif);
     return signif;
 }
 

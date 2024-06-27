@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace search::features::util {
+namespace search::fef {
 
 /*
  * Struct containing the raw data used to calculate significance.

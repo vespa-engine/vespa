@@ -2121,10 +2121,10 @@ TEST_F(ProdFeaturesTest, test_term)
         ASSERT_TRUE(ft.setup());
 
         RankResult exp;
-        exp.addScore("term(1).significance",  util::calculate_legacy_significance(0.50)).
+        exp.addScore("term(1).significance",  util::calculate_legacy_significance({50, 100})).
             addScore("term(1).weight",        200.0f).
             addScore("term(1).connectedness", 0.7f).
-            addScore("term(2).significance",  util::calculate_legacy_significance(0.25)).
+            addScore("term(2).significance",  util::calculate_legacy_significance({25, 100})).
             addScore("term(2).weight",        400.0f).
             addScore("term(2).connectedness", 0.1f). // default connectedness
             setEpsilon(10e-6);
@@ -2215,21 +2215,22 @@ Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
 
 TEST_F(ProdFeaturesTest, test_utils)
 {
-    { // getSignificance
-        EXPECT_NEAR(util::calculate_legacy_significance(0.0), 1, EPS);
-        EXPECT_NEAR(util::calculate_legacy_significance(0.0 + 1.0e-7), 1, EPS);
-        EXPECT_NEAR(util::calculate_legacy_significance(1.0), 0.5, EPS);
-        EXPECT_NEAR(util::calculate_legacy_significance(1.0 + 1.0e-7), 0.5, EPS);
+    { // calculate_legacy_significance
+        constexpr uint64_t N = 1000000; // The "normal" corpus size for legacy significance
+        EXPECT_NEAR(util::calculate_legacy_significance({0, N}), 1, EPS);
+        EXPECT_NEAR(util::calculate_legacy_significance({1, N}), 1, EPS);
+        EXPECT_NEAR(util::calculate_legacy_significance({ N, N}), 0.5, EPS);
+        EXPECT_NEAR(util::calculate_legacy_significance({ N + 1, N}), 0.5, EPS);
         feature_t last = 1;
         for (uint32_t i = 2; i <= 100; i = i + 1) {
-            feature_t s = util::calculate_legacy_significance(i * 1.0e-6);
+            feature_t s = util::calculate_legacy_significance({i, N});
             EXPECT_GT(s, 0);
             EXPECT_LT(s, 1);
             EXPECT_LT(s, last);
             last = s;
         }
         for (uint32_t i = 999900; i <= 1000000; i = i + 1) {
-            feature_t s = util::calculate_legacy_significance(i * 1.0e-6);
+            feature_t s = util::calculate_legacy_significance({i, N});
             EXPECT_GT(s, 0);
             EXPECT_LT(s, 1);
             EXPECT_LT(s, last);

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "document_frequency.h"
 #include "handle.h"
 #include "match_data_details.h"
 
@@ -40,13 +41,12 @@ public:
     uint32_t get_total_doc_count() const noexcept { return _total_doc_count; }
 
     /**
-     * Obtain the document frequency. This is a value between 0 and 1
-     * indicating the ratio of the matching documents to the corpus.
+     * Obtain the document frequency.
      *
      * @return document frequency
     **/
-    double getDocFreq() const noexcept {
-        return (double)get_matching_doc_count() / (double)get_total_doc_count();
+    DocumentFrequency get_doc_freq() const noexcept {
+        return { get_matching_doc_count(), get_total_doc_count() };
     }
 
     /**
