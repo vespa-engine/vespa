@@ -268,6 +268,237 @@ ParsedSchema Root :
     { return schema; }
 ;
 
+
+
+/**
+ * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @return the schema definition object.
+ * TODO: implement inheritance
+ */
+ParsedSchema rootSchema :
+{
+    String name;
+    ParsedSchema schema;
+}
+    ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
+        schema = new ParsedSchema(name);
+      }
+      openLbrace (rootSchemaItem(schema) (<NL>)*)*
+      <RBRACE> (<NL>)* <EOF> )
+    { return schema; }
+;
+
+/**
+ * Consumes an element of a schema block. This and rootSearch() are the only rules that should ever consume
+ * trailing newline tokens.
+ *
+ * @param schema the schema object to modify.
+ */
+rootSchemaItem(ParsedSchema schema) : {}
+    ( 
+        documentElm(schema)
+        | fieldSetElm(schema)
+    )
+;
+
+/**
+ * Consumes a document element. The name defaults to the schema's name, but may be set.
+ *
+ * @param schema the schema object to add content to.
+ */
+void documentElm(ParsedSchema schema) :
+{
+    String name = schema.name();
+    ParsedDocument document;
+}
+
+    ( <DOCUMENT> (name = identifierStr)? (<NL>)*
+    {
+        document = new ParsedDocument(name);
+    }
+      openLbrace(documentElmBody(document) (<NL>)*)* <RBRACE> )
+    {
+        schema.addDocument(document);
+    }
+;
+
+/**
+ * Consumes a document body block
+ *
+ * @param document the document type to modify.
+ */
+void documentElmBody(ParsedDocument document) : {}
+    (
+        fieldInsideDoc(document)
+    )
+;
+
+/**
+ * Consumes a field block from within a document element.
+ *
+ * @param document the document type to modify
+ */
+void fieldInsideDoc(ParsedDocument document) :
+{
+    ParsedField field;
+}
+    field = fieldElm() {
+        document.addField(field);
+    }
+;
+
+/**
+ * Consumes a field block
+ * TODO: Reserved names
+ */
+ParsedField fieldElm() :
+{
+    String name;
+    ParsedField field;
+    ParsedType type;
+}
+
+    <FIELD> name = identifierStr <TYPE> type = dataType()
+    {
+        // if (name != null && Schema.isReservedName(name.toLowerCase())) {
+        //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        // }
+        field = new ParsedField(name);
+    }
+    openLbrace() <RBRACE>
+    {
+        return field;
+    }
+;
+
+/** Consumes a fieldset block */
+void fieldSetElm(ParsedSchema schema) :
+{
+  String name;
+  String queryCommand;
+  ParsedFieldSet fieldSet;
+}
+
+  <FIELDSET> name = identifierStr openLbrace() { fieldSet = new ParsedFieldSet(name); }
+    ((
+      ( <FIELDS><COLON> name = identifierStr { fieldSet.addField(name); }
+              ( <COMMA> name = identifierStr { fieldSet.addField(name); } )* )
+    | ( <QUERY_COMMAND> <COLON> (queryCommand = identifierWithDashStr | queryCommand = quotedString)) { fieldSet.addQueryCommand(queryCommand); }
+    ) (<NL>)* )+
+  <RBRACE>
+  {
+     schema.addFieldSet(fieldSet);
+  }
+;
+
+/**
+ * This rule consumes a data type block from within a field element.
+ *
+ * @return the consumed data type
+ */
+ParsedType dataType() :
+{
+    String typeName = null;
+    boolean isArrayOldStyle = false;
+    ParsedType mapType = null;
+    ParsedType arrayType = null;
+    ParsedType wsetType = null;
+    ParsedType referenceType;
+}
+//    (   LOOKAHEAD(<ARRAY> <LESSTHAN>)               ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
+//      | LOOKAHEAD(<WEIGHTEDSET> <LESSTHAN>)         ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
+//      | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
+//      | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
+//      | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
+//      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
+     ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
+    {
+        ParsedType type = ParsedType.fromName(typeName);
+        if (isArrayOldStyle) {
+            //deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
+            type = ParsedType.arrayOf(type);
+        }
+        return type;
+    }
+;
+
+String identifierWithDashStr :
+{
+    String identifier;
+}
+
+    ( identifier = identifierStr { return identifier; } )
+    |
+    ( <IDENTIFIER_WITH_DASH>
+    | <APPROXIMATE_THRESHOLD>
+    | <CREATE_IF_NONEXISTENT>
+    | <CUTOFF_FACTOR>
+    | <CUTOFF_STRATEGY>
+    | <DENSE_POSTING_LIST_THRESHOLD>
+    | <DISTANCE_METRIC>
+    | <DOCUMENT_SUMMARY>
+    | <ENABLE_BIT_VECTORS>
+    | <ENABLE_BM25>
+    | <ENABLE_ONLY_BIT_VECTOR>
+    | <EVALUATION_POINT>
+    | <EXACT_TERMINATOR>
+    | <EXECUTION_MODE>
+    | <FAST_ACCESS>
+    | <FAST_RANK>
+    | <FAST_SEARCH>
+    | <FIRST_PHASE>
+    | <FROM_DISK>
+    | <GLOBAL_PHASE>
+    | <GPU_DEVICE>
+    | <GRAM_SIZE>
+    | <IGNORE_DEFAULT_RANK_FEATURES>
+    | <INTEROP_THREADS>
+    | <INTRAOP_THREADS>
+    | <KEEP_RANK_COUNT>
+    | <LOWER_BOUND>
+    | <MATCHED_ELEMENTS_ONLY>
+    | <MATCH_PHASE>
+    | <MAX_FILTER_COVERAGE>
+    | <MAX_HITS>
+    | <MAX_LENGTH>
+    | <MAX_LINKS_PER_NODE>
+    | <MIN_GROUPS>
+    | <MIN_HITS_PER_THREAD>
+    | <MULTI_THREADED_INDEXING>
+    | <NEIGHBORS_TO_EXPLORE_AT_INSERT>
+    | <NUM_SEARCH_PARTITIONS>
+    | <NUM_THREADS_PER_SEARCH>
+    | <OMIT_SUMMARY_FEATURES>
+    | <ON_DEMAND>
+    | <ON_FIRST_PHASE>
+    | <ON_MATCH>
+    | <ONNX_MODEL>
+    | <ON_SECOND_PHASE>
+    | <ON_SUMMARY>
+    | <POST_FILTER_THRESHOLD>
+    | <PRE_POST_FILTER_TIPPING_POINT>
+    | <QUERY_COMMAND>
+    | <RANK_PROFILE>
+    | <RANK_PROPERTIES>
+    | <RANK_SCORE_DROP_LIMIT>
+    | <RANK_TYPE>
+    | <RAW_AS_BASE64_IN_SUMMARY>
+    | <REMOVE_IF_ZERO>
+    | <RERANK_COUNT>
+    | <SECOND_PHASE>
+    | <STRUCT_FIELD>
+    | <SUMMARY_TO>
+    | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
+    | <TERMWISE_LIMIT>
+    | <UPPER_BOUND>
+    | <USE_MODEL>
+    ) {
+        return lastConsumedToken.toString();
+    }
+;
+
 /**
  * Consumes an identifier. This must be kept in sync with all word tokens that should be parseable as
  * identifiers.
@@ -392,139 +623,53 @@ String identifierStr :
 ;
 
 /**
- * This rule consumes a proper schema block. This and rootDocument() are the only rules that should ever consume
- * trailing newline tokens.
+ * Consumes a quoted string token and returns the token image minus the quotes. This does not perform
+ * unescaping of the content, it simply removes the first and last character of the image. However, the token itself can
+ * contain anything but a double quote.
  *
- * @return the schema definition object.
- * TODO: implement inheritance
+ * @return the unquoted token image
  */
-ParsedSchema rootSchema :
-{
-    String name;
-    ParsedSchema schema;
-}
-    ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
-        schema = new ParsedSchema(name);
-      }
-      openLbrace (rootSchemaItem(schema) (<NL>)*)*
-      <RBRACE> (<NL>)* <EOF> )
-    { return schema; }
+String quotedString() : { }
+
+    ( <DOUBLEQUOTEDSTRING> | <SINGLEQUOTEDSTRING> )
+    { return lastConsumedToken.toString().substring(1, lastConsumedToken.toString().length() - 1); }
 ;
 
-/**
- * Consumes an element of a schema block. This and rootSearch() are the only rules that should ever consume
- * trailing newline tokens.
- *
- * @param schema the schema object to modify.
- */
-rootSchemaItem(ParsedSchema schema) : {}
-    ( 
-        documentElm(schema)
+/** A boolean value. */
+Boolean bool() :
+
+    ( ( <ON>  | <TRUE> )  { return true; } |
+      ( <OFF> | <FALSE> ) { return false; } )
+;
+
+/** Consumes an integer token and returns its numeric value. */
+int integerElm() : { }
+
+    <INTEGER> { return Integer.parseInt(lastConsumedToken.toString()); }
+;
+
+/** Consumes a long or integer token and returns its numeric value. */
+long longValue() : { }
+
+    ( <INTEGER> { return Long.parseLong(lastConsumedToken.toString()); } |
+      <LONG>    { return Long.parseLong(lastConsumedToken.toString().substring(0, lastConsumedToken.toString().length() - 1)); }
     )
 ;
 
-/**
- * Consumes a document element. The name defaults to the schema's name, but may be set.
- *
- * @param schema the schema object to add content to.
- */
-void documentElm(ParsedSchema schema) :
-{
-    String name = schema.getName();
-    ParsedDocument document;
-}
+/** Consumes a floating-point token and returns its numeric value. */
+double floatValue() : { }
 
-    ( <DOCUMENT> (name = identifierStr)? (<NL>)*
-    {
-        document = new ParsedDocument(name);
-    }
-      openLbrace(documentElmBody(document) (<NL>)*)* <RBRACE> )
-    {
-        schema.addDocument(document);
-    }
+    <DOUBLE> { return Double.valueOf(lastConsumedToken.toString()); }
 ;
 
-/**
- * Consumes a document body block
- *
- * @param document the document type to modify.
- */
-void documentElmBody(ParsedDocument document) : {}
-    (
-        fieldInsideDoc(document)
-    )
-;
-
-/**
- * Consumes a field block from within a document element.
- *
- * @param document the document type to modify
- */
-void fieldInsideDoc(ParsedDocument document) :
+Number number() :
 {
-    ParsedField field;
-}
-    field = fieldElm() {
-        document.addField(field);
-    }
-;
-
-/**
- * Consumes a field block
- * TODO: Reserved names
- */
-ParsedField fieldElm() :
-{
-    String name;
-    ParsedField field;
-    ParsedType type;
+    Number num;
 }
 
-    <FIELD> name = identifierStr <TYPE> type = dataType()
-    {
-        // if (name != null && Schema.isReservedName(name.toLowerCase())) {
-        //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
-        // }
-        field = new ParsedField(name);
-    }
-    openLbrace() <RBRACE>
-    {
-        return field;
-    }
-;
-
-/**
- * This rule consumes a data type block from within a field element.
- *
- * @return the consumed data type
- */
-ParsedType dataType() :
-{
-    String typeName = null;
-    boolean isArrayOldStyle = false;
-    ParsedType mapType = null;
-    ParsedType arrayType = null;
-    ParsedType wsetType = null;
-    ParsedType referenceType;
-}
-//    (   LOOKAHEAD(<ARRAY> <LESSTHAN>)               ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
-//      | LOOKAHEAD(<WEIGHTEDSET> <LESSTHAN>)         ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
-//      | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
-//      | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
-//      | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
-//      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
-     ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
-    {
-        ParsedType type = ParsedType.fromName(typeName);
-        if (isArrayOldStyle) {
-            //deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
-            type = ParsedType.arrayOf(type);
-        }
-        return type;
-    }
+    ( num = floatValue | num = longValue ) { return num; }
 ;
 
 openLbrace :
     (<NL>)* <LBRACE> (<NL>)*
 ;
-
