@@ -192,7 +192,7 @@ public class FilterChainRepository extends AbstractComponent {
 
         @Override
         public Dependencies getAnnotatedDependencies() {
-            return filter.getAnnotatedDependencies();
+            return filter == null ? super.getAnnotatedDependencies() : filter.getAnnotatedDependencies();
         }
 
         private static Class<? extends Chainable> getFilterType(Object filter) {
