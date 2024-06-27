@@ -1,6 +1,7 @@
 
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.parser.*;
 import ai.vespa.schemals.semantictokens.SemanticTokensUtils;
 

@@ -1,4 +1,4 @@
-package ai.vespa.schemals.parser;
+package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 import java.util.HashMap;
@@ -6,6 +6,8 @@ import java.util.HashMap;
 import org.eclipse.lsp4j.TextDocumentItem;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+
+import ai.vespa.schemals.parser.*;
 
 public class SchemaDocumentScheduler {
 

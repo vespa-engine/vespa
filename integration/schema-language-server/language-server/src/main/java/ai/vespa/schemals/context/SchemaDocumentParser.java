@@ -1,4 +1,4 @@
-package ai.vespa.schemals.parser;
+package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 

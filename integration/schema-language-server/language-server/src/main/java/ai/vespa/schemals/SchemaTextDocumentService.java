@@ -1,8 +1,8 @@
 package ai.vespa.schemals;
 
 
-import ai.vespa.schemals.parser.SchemaDocumentParser;
-import ai.vespa.schemals.parser.SchemaDocumentScheduler;
+import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.semantictokens.SemanticTokensUtils;
 
 import java.io.PrintStream;

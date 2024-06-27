@@ -11,8 +11,8 @@ import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
-import ai.vespa.schemals.parser.SchemaDocumentParser;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.parser.*;
 
 public class SemanticTokensUtils {
