@@ -229,8 +229,7 @@ public class DeploymentSpec {
                                                 .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))) return ZoneEndpoint.privateEndpoint;
 
         if (zone.environment().isManuallyDeployed())
-            return instance(instance).filter(spec -> spec.deploysTo(zone.environment(), zone.region()))
-                                     .map(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).get(null))
+            return instance(instance).map(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).get(null))
                                      .orElse(ZoneEndpoint.defaultEndpoint);
 
         if (zone.environment() != Environment.prod) return ZoneEndpoint.defaultEndpoint;
