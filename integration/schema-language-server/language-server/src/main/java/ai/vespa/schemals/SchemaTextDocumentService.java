@@ -40,21 +40,15 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
-import org.eclipse.lsp4j.services.LanguageClient;
 
 public class SchemaTextDocumentService implements TextDocumentService {
 
     private PrintStream logger;
     private SchemaDocumentScheduler schemaDocumentScheduler;
-    private LanguageClient client = null;
 
     public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler) {
         this.logger = logger;
         this.schemaDocumentScheduler = schemaDocumentScheduler;
-    }
-
-    public void setClient(LanguageClient client) {
-        this.client = client;
     }
 
     @Override

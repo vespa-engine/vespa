@@ -7,8 +7,6 @@ import org.eclipse.lsp4j.TextDocumentItem;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 
-import ai.vespa.schemals.parser.*;
-
 public class SchemaDocumentScheduler {
 
     private PrintStream logger;
