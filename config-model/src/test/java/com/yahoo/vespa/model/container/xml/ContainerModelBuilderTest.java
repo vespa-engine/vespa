@@ -303,7 +303,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                           "us",
                           ZoneEndpoint.defaultEndpoint);
 
-        // Various settings, but wrong environment
+        // Various settings, but wrong environment for private services
         verifyAllowedUrns("""
                           <endpoint type='zone' container-id='default' enabled='false' />
                           <endpoint type='private' container-id='default'>
@@ -314,7 +314,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                           """,
                           Environment.dev,
                           "eu",
-                          ZoneEndpoint.defaultEndpoint);
+                          ZoneEndpoint.privateEndpoint);
     }
 
     private void verifyAllowedUrns(String endpointsTag, Environment environment, String region, ZoneEndpoint expected) throws IOException, SAXException {
