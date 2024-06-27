@@ -85,7 +85,7 @@ dist-win64: GOOS=windows
 dist-win64: GOARCH=amd64
 
 $(DIST_TARGETS): DIST_NAME=vespa-cli_$(VERSION)_$(GOOS)_$(GOARCH)
-$(DIST_TARGETS): dist-version ci manpages
+$(DIST_TARGETS): dist-version setenv manpages
 $(DIST_TARGETS):
 	mkdir -p $(DIST)/$(DIST_NAME)/bin
 	env CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(DIST)/$(DIST_NAME)/bin $(GO_FLAGS) \
