@@ -285,7 +285,7 @@ ParsedSchema rootSchema :
     ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
         schema = new ParsedSchema(name);
       }
-      openLbrace (rootSchemaItem(schema) (<NL>)*)*
+      openLbrace (rootSchemaItem(schema)! (<NL>)*)*
       <RBRACE> (<NL>)* <EOF> )
     { return schema; }
 ;
@@ -318,7 +318,7 @@ void documentElm(ParsedSchema schema) :
     {
         document = new ParsedDocument(name);
     }
-      openLbrace(documentElmBody(document) (<NL>)*)* <RBRACE> )
+      openLbrace (documentElmBody(document) (<NL>)*)* <RBRACE> )
     {
         schema.addDocument(document);
     }
@@ -377,20 +377,27 @@ ParsedField fieldElm() :
 void fieldSetElm(ParsedSchema schema) :
 {
   String name;
-  String queryCommand;
   ParsedFieldSet fieldSet;
 }
 
   <FIELDSET> name = identifierStr openLbrace() { fieldSet = new ParsedFieldSet(name); }
-    ((
-      ( <FIELDS><COLON> name = identifierStr { fieldSet.addField(name); }
-              ( <COMMA> name = identifierStr { fieldSet.addField(name); } )* )
-    | ( <QUERY_COMMAND> <COLON> (queryCommand = identifierWithDashStr | queryCommand = quotedString)) { fieldSet.addQueryCommand(queryCommand); }
-    ) (<NL>)* )+
+  fieldSetBody(fieldSet)
   <RBRACE>
   {
      schema.addFieldSet(fieldSet);
   }
+;
+
+void fieldSetBody(ParsedFieldSet fieldSet) :
+{
+    String name;
+    String queryCommand;
+}
+  ((
+    ( <FIELDS><COLON> name = identifierStr { fieldSet.addField(name); }
+            ( <COMMA> name = identifierStr { fieldSet.addField(name); } )* )
+  | ( <QUERY_COMMAND> <COLON> (queryCommand = identifierWithDashStr | queryCommand = quotedString)) { fieldSet.addQueryCommand(queryCommand); }
+  ) (<NL>)* )+
 ;
 
 /**

@@ -2,7 +2,7 @@
 package ai.vespa.schemals;
 
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
-import ai.vespa.schemals.semantictokens.SemanticTokensUtils;
+import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
 
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
@@ -61,8 +61,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         CompletionOptions completionOptions = new CompletionOptions();
         initializeResult.getCapabilities().setCompletionProvider(completionOptions);
-        // initializeResult.getCapabilities().setDocumentHighlightProvider(true);
-        initializeResult.getCapabilities().setSemanticTokensProvider(SemanticTokensUtils.getSemanticTokensRegistrationOptions());
+        initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
         return CompletableFuture.supplyAsync(()->initializeResult);
     }
 

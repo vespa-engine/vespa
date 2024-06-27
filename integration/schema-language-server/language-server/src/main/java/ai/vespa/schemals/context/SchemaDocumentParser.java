@@ -86,7 +86,7 @@ public class SchemaDocumentParser {
         }
 
         Node node = parserFaultTolerant.rootNode();
-        buildCST(node);
+        createCST(node);
 
         errors.addAll(findDirtyNode(node));
 
@@ -94,9 +94,8 @@ public class SchemaDocumentParser {
 
     }
 
-    private void buildCST(Node node) {
+    private void createCST(Node node) {
         CST = node;
-        logger.println("Trying to print tree");
         CSTUtils.printTree(logger, node);
     }
 

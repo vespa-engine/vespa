@@ -12,28 +12,33 @@ import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.parser.*;
 
-public class SemanticTokensUtils {
+public class SchemaSemanticTokens implements Visitor {
 
     private static final ArrayList<Token.TokenType> keywordTokens = new ArrayList<Token.TokenType>() {{
         add(Token.TokenType.DOCUMENT);
         add(Token.TokenType.SCHEMA);
         add(Token.TokenType.FIELD);
         add(Token.TokenType.TYPE);
+        add(Token.TokenType.FIELDSET);
     }};
 
     private static final Map<Token.TokenType, String> tokenTypeLSPNameMap = new HashMap<Token.TokenType, String>() {{
         put(Token.TokenType.DOUBLE, "number");
         put(Token.TokenType.INTEGER, "number");
         put(Token.TokenType.LONG, "number");
+        put(Token.TokenType.DOUBLEQUOTEDSTRING, "string");
+        put(Token.TokenType.SINGLEQUOTEDSTRING, "string");
     }};
     
     private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
         put("ai.vespa.schemals.parser.ast.rootSchema", "namespace");
         put("ai.vespa.schemals.parser.ast.documentElm", "class");
         put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
+        put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
     }};
 
     private static ArrayList<String> tokenTypes;
@@ -128,7 +133,7 @@ public class SemanticTokensUtils {
         }
     }
 
-    private static ArrayList<SemanticTokenMarker> traverseNode(Node node, PrintStream logger) {
+    private static ArrayList<SemanticTokenMarker> traverseCST(Node node, PrintStream logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
         Node.NodeType type = node.getType();
@@ -152,7 +157,7 @@ public class SemanticTokensUtils {
 
         if (node.hasChildNodes()) {
             for (int i = 0; i < node.size(); i++) {
-                ArrayList<SemanticTokenMarker> markers = traverseNode(node.get(i), logger);
+                ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
                 ret.addAll(markers);
             }
         }
@@ -167,7 +172,7 @@ public class SemanticTokensUtils {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> markers = traverseNode(node, logger);
+        ArrayList<SemanticTokenMarker> markers = traverseCST(node, logger);
         ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(markers);
 
         return new SemanticTokens(compactMarkers);

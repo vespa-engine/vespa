@@ -3,7 +3,7 @@ package ai.vespa.schemals;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
-import ai.vespa.schemals.semantictokens.SemanticTokensUtils;
+import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -182,7 +182,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 String fileURI = params.getTextDocument().getUri();
                 SchemaDocumentParser documnet = schemaDocumentScheduler.getDocument(fileURI);
 
-                return SemanticTokensUtils.getSemanticTokens(documnet, logger);
+                return SchemaSemanticTokens.getSemanticTokens(documnet, logger);
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
             } catch (Throwable e) {
