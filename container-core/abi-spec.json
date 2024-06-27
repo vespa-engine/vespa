@@ -23,9 +23,7 @@
   },
   "com.yahoo.component.chain.ChainedComponent" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
-    "interfaces" : [
-      "com.yahoo.component.chain.model.Chainable"
-    ],
+    "interfaces" : [ ],
     "attributes" : [
       "public",
       "abstract"
@@ -34,7 +32,9 @@
       "public void <init>(com.yahoo.component.ComponentId)",
       "protected void <init>()",
       "public void initDependencies(com.yahoo.component.chain.dependencies.Dependencies)",
-      "public com.yahoo.component.chain.dependencies.Dependencies getDependencies()"
+      "public com.yahoo.component.chain.dependencies.Dependencies getDependencies()",
+      "protected com.yahoo.component.chain.dependencies.Dependencies getDefaultAnnotatedDependencies()",
+      "protected com.yahoo.component.chain.dependencies.Dependencies getAnnotatedDependencies(java.lang.Class, java.lang.Class, java.lang.Class)"
     ],
     "fields" : [ ]
   },
@@ -2356,8 +2356,7 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.jdisc.SharedResource",
-      "com.yahoo.jdisc.http.filter.RequestFilterBase",
-      "com.yahoo.component.chain.model.Chainable"
+      "com.yahoo.jdisc.http.filter.RequestFilterBase"
     ],
     "attributes" : [
       "public",
@@ -2401,8 +2400,7 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.jdisc.SharedResource",
-      "com.yahoo.jdisc.http.filter.ResponseFilterBase",
-      "com.yahoo.component.chain.model.Chainable"
+      "com.yahoo.jdisc.http.filter.ResponseFilterBase"
     ],
     "attributes" : [
       "public",
@@ -2428,8 +2426,7 @@
   "com.yahoo.jdisc.http.filter.SecurityRequestFilter" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
-      "com.yahoo.jdisc.http.filter.RequestFilterBase",
-      "com.yahoo.component.chain.model.Chainable"
+      "com.yahoo.jdisc.http.filter.RequestFilterBase"
     ],
     "attributes" : [
       "public",
@@ -2462,8 +2459,7 @@
   "com.yahoo.jdisc.http.filter.SecurityResponseFilter" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
-      "com.yahoo.jdisc.http.filter.ResponseFilterBase",
-      "com.yahoo.component.chain.model.Chainable"
+      "com.yahoo.jdisc.http.filter.ResponseFilterBase"
     ],
     "attributes" : [
       "public",
