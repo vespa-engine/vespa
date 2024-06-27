@@ -20,24 +20,13 @@ TestMaster::compare(const char *file, uint32_t line,
                     const char *opText,
                     const A &a, const B &b, const OP &op, bool fatal)
 {
-    if (op(a,b)) {
+    if (op(a,b)) [[likely]]{
         ++threadState().passCnt;
         return true;
     }
-    std::string str;
-    str += aName;
-    str += opText;
-    str += bName;
-    std::ostringstream lhs;
-    std::ostringstream rhs;
-    lhs << a;
-    rhs << b;
-    {
-        lock_guard guard(_lock);
-        checkFailed(guard, file, line, str.c_str());
-        printDiff(guard, str, file, line, lhs.str(), rhs.str());
-        handleFailure(guard, fatal);
-    }
+    report_compare(file, line, aName, bName, opText, fatal,
+                   [&](std::ostream & os) { os << a;},
+                   [&](std::ostream & os) { os << b;});
     return false;
 }
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <functional>
 
 namespace vespalib {
 
@@ -32,7 +33,7 @@ public:
         std::string file;
         uint32_t    line;
         std::string msg;
-        TraceItem(const std::string &file_in, uint32_t line_in, const std::string &msg_in);
+        TraceItem(std::string file_in, uint32_t line_in, std::string msg_in);
         TraceItem(TraceItem &&) noexcept;
         TraceItem & operator=(TraceItem &&) noexcept;
         TraceItem(const TraceItem &);
@@ -51,7 +52,7 @@ private:
         std::vector<TraceItem> traceStack;
         Barrier               *barrier;
         ~ThreadState();
-        ThreadState(const std::string &n);
+        ThreadState(std::string n);
         ThreadState(ThreadState &&) noexcept = default;
         ThreadState & operator=(ThreadState &&) noexcept = default;
     };
@@ -89,6 +90,9 @@ private:
     bool reportConclusion(const lock_guard &);
 
 
+    void report_compare(const char *file, uint32_t line, const char *aName, const char *bName, const char *opText, bool fatal,
+                        const std::function<void(std::ostream &)> & printLhs,
+                        const std::function<void(std::ostream &)> & printRhs);
 public:
     ~TestMaster();
     TestMaster(const TestMaster &) = delete;
@@ -109,8 +113,7 @@ public:
     void close_debug_files();
     void pushState(const char *file, uint32_t line, const char *msg);
     void popState();
-    bool check(bool rc, const char *file, uint32_t line,
-               const char *str, bool fatal);
+    bool check(bool rc, const char *file, uint32_t line, const char *str, bool fatal);
     template<class A, class B, class OP>
     bool compare(const char *file, uint32_t line,
                  const char *aName, const char *bName, const char *opText,
