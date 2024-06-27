@@ -7,6 +7,8 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.ChainedComponent;
 import com.yahoo.component.chain.ChainsConfigurer;
+import com.yahoo.component.chain.dependencies.Dependencies;
+import com.yahoo.component.chain.model.Chainable;
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.component.chain.model.ChainsModelBuilder;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -65,16 +67,18 @@ public class FilterChainRepository extends AbstractComponent {
         }
     }
 
+    @SafeVarargs
     private static void addAllChains(ComponentRegistry<Object> destination,
                                      ChainsConfig chainsConfig,
-                                     ComponentRegistry<?>... filters) {
+                                     ComponentRegistry<? extends Chainable>... filters) {
         ChainRegistry<FilterWrapper> chainRegistry = buildChainRegistry(chainsConfig, filters);
         chainRegistry.allComponents()
                 .forEach(chain -> destination.register(chain.getId(), toJDiscChain(chain)));
     }
 
+    @SafeVarargs
     private static ChainRegistry<FilterWrapper> buildChainRegistry(ChainsConfig chainsConfig,
-                                                                   ComponentRegistry<?>... filters) {
+                                                                   ComponentRegistry<? extends Chainable>... filters) {
         ChainRegistry<FilterWrapper> chainRegistry = new ChainRegistry<>();
         ChainsModel chainsModel = ChainsModelBuilder.buildFromConfig(chainsConfig);
         ChainsConfigurer.prepareChainRegistry(chainRegistry, chainsModel, allFiltersWrapped(filters));
@@ -146,9 +150,10 @@ public class FilterChainRepository extends AbstractComponent {
         }
     }
 
-    private static ComponentRegistry<FilterWrapper> allFiltersWrapped(ComponentRegistry<?>... registries) {
+    @SafeVarargs
+    private static ComponentRegistry<FilterWrapper> allFiltersWrapped(ComponentRegistry<? extends Chainable>... registries) {
         ComponentRegistry<FilterWrapper> wrappedFilters = new ComponentRegistry<>();
-        for (ComponentRegistry<?> registry : registries) {
+        for (ComponentRegistry<? extends Chainable> registry : registries) {
             registry.allComponentsById()
                     .forEach((id, filter) -> wrappedFilters.register(id, new FilterWrapper(id, filter)));
         }
@@ -176,16 +181,21 @@ public class FilterChainRepository extends AbstractComponent {
     }
 
     private static class FilterWrapper extends ChainedComponent {
-        public final Object filter;
-        public final Class<?> filterType;
+        public final Chainable filter;
+        public final Class<? extends Chainable> filterType;
 
-        public FilterWrapper(ComponentId id, Object filter) {
+        public FilterWrapper(ComponentId id, Chainable filter) {
             super(id);
             this.filter = filter;
             this.filterType = getFilterType(filter);
         }
 
-        private static Class<?> getFilterType(Object filter) {
+        @Override
+        public Dependencies getAnnotatedDependencies() {
+            return filter == null ? super.getAnnotatedDependencies() : filter.getAnnotatedDependencies();
+        }
+
+        private static Class<? extends Chainable> getFilterType(Object filter) {
             if (filter instanceof RequestFilter)
                 return RequestFilter.class;
             else if (filter instanceof ResponseFilter)
