@@ -11,12 +11,13 @@ public class SchemaDocumentScheduler {
 
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
-    private HashMap<String, SchemaDocumentParser> openDocuments;
+    private SchemaIndex schemaIndex;
+    private HashMap<String, SchemaDocumentParser> openDocuments = new HashMap<String, SchemaDocumentParser>();
 
-    public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler) {
+    public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
-        openDocuments = new HashMap<String, SchemaDocumentParser>();
+        this.schemaIndex = schemaIndex;
     }
 
     public void updateFile(String fileURI, String content) {
@@ -25,7 +26,7 @@ public class SchemaDocumentScheduler {
             return;
         }
 
-        openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, fileURI, content));
+        openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content));
     }
 
     public void openDocument(TextDocumentItem document) {

@@ -19,6 +19,7 @@ public class SchemaDocumentParser {
 
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
+    private SchemaIndex schemaIndex;
 
     private String fileURI = "";
     private String content = "";
@@ -26,13 +27,14 @@ public class SchemaDocumentParser {
     private SchemaNode CST;
     private boolean faultySchema = true;
 
-    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, String fileURI) {
-        this(logger, diagnosticsHandler, fileURI, null);
+    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
+        this(logger, diagnosticsHandler, schemaIndex, fileURI, null);
     }
     
-    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, String fileURI, String content) {
+    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
+        this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
         if (content != null) {
             this.content = content;
@@ -106,7 +108,7 @@ public class SchemaDocumentParser {
     private void improveCST(SchemaNode node) {
         
         SchemaNode parent = node.getParent();
-        Node.NodeType nodeType = node.getType();
+        Token.TokenType nodeType = node.getType();
         String parentCNComp = tokenParentClassPairs.get(nodeType);
         if (
             parent != null &&
@@ -116,6 +118,7 @@ public class SchemaDocumentParser {
         ) {
             SchemaNode child = parent.get(1);
             child.setUserDefinedIdentifier();
+            schemaIndex.insert(fileURI, nodeType, child.getText(), child);
         }
 
         for (int i = 0; i < node.size(); i++) {
@@ -124,6 +127,7 @@ public class SchemaDocumentParser {
     }
 
     private void createCST(Node node) {
+        schemaIndex.clearDocument(fileURI);
         CST = new SchemaNode(node);
         improveCST(CST);
         CSTUtils.printTree(logger, CST);

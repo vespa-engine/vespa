@@ -2,6 +2,7 @@
 package ai.vespa.schemals;
 
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
+import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
 
 import org.eclipse.lsp4j.services.LanguageServer;
@@ -23,6 +24,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     private WorkspaceService workspaceService;
     private SchemaTextDocumentService textDocumentService;
     private SchemaDocumentScheduler schemaDocumentScheduler;
+    private SchemaIndex schemaIndex;
     //private LanguageClient client;
     private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
 
@@ -46,8 +48,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.logger.println("Starting language server...");
 
+        this.schemaIndex = new SchemaIndex(logger);
         this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler(logger);
-        this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler);
+        this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex);
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler);
         this.workspaceService = new SchemaWorkspaceService();
