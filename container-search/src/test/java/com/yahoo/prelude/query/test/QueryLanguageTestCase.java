@@ -105,11 +105,6 @@ public class QueryLanguageTestCase {
         Model model = query.getModel();
         Model model2 = query2.getModel();
 
-        Language language1_0 = model.getParsingLanguage();
-        Language language1_1 = model.getLanguage();
-        Language language2_0 = model2.getParsingLanguage();
-        Language language2_1 = model2.getLanguage();
-
         assertEquals(expectedLanguage, query.getModel().getParsingLanguage());
 
         /*
