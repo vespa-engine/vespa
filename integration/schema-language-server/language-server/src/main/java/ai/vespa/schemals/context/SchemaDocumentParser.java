@@ -1,12 +1,15 @@
 package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.ast.*;
 import ai.vespa.schemals.tree.CSTUtils;
 
 public class SchemaDocumentParser {
@@ -43,18 +46,24 @@ public class SchemaDocumentParser {
         return fileURI;
     }
 
+    public String getFileName() {
+        Integer splitPos = fileURI.lastIndexOf('/');
+        return fileURI.substring(splitPos + 1);
+    }
+
     private void parseContent() {
         CharSequence sequence = content;
 
         logger.println("Parsing document: " + fileURI);
 
-        SchemaParser parser = new SchemaParser(sequence);
-        parser.setParserTolerant(false);
+        SchemaParser parser = new SchemaParser(getFileName(), sequence);
+        //parser.setParserTolerant(false);
+
+        ArrayList<Diagnostic> errors = new ArrayList<Diagnostic>();
 
         try {
 
             ParsedSchema root = parser.Root();
-            diagnosticsHandler.clearDiagnostics(fileURI);
             faultySchema = false;
             
             logger.println("VALID");
@@ -70,13 +79,15 @@ public class SchemaDocumentParser {
             // Range range = new Range(beginPosition, endPosition);
             Range range = CSTUtils.getNodeRange(node);
 
-            diagnosticsHandler.publishDiagnostics(fileURI, range, e.getMessage());
+            errors.add(new Diagnostic(range, e.getMessage()));
         }
-
-        parser.setParserTolerant(true);
 
         Node node = parser.rootNode();
         buildCST(node);
+
+        errors.addAll(findDirtyNode(node));
+
+        diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
     }
 
@@ -84,18 +95,21 @@ public class SchemaDocumentParser {
         CST = node;
         logger.println("Trying to print tree");
         CSTUtils.printTree(logger, node);
-        // logger.println(node.getType());
-        // //logger.println(node.getSource());
-        // logger.println(node.getBeginLine() + " | " + node.getBeginColumn());
-        // logger.println(node.getBeginOffset() + " : " + node.getEndOffset());
-        // Range range = getNodeRange(node);
-        // logger.println(range);
+    }
 
-        // if (node.hasChildNodes()) {
-        //     for (int i = 0; i < node.size(); i++) {
-        //         buildCST(node.get(i));
-        //     }
-        // }
+    private ArrayList<Diagnostic> findDirtyNode(Node node) {
+        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
+
+        if (node.isDirty()) {
+            Range range = CSTUtils.getNodeRange(node);
+            ret.add(new Diagnostic(range, "Dirty node"));
+        }
+
+        for (Node child : node) {
+            ret.addAll(findDirtyNode(child));
+        }
+
+        return ret;
     }
 
     public boolean isFaulty() {
