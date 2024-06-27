@@ -57,6 +57,14 @@ public class Flags {
             "Takes immediate effect wherever possible.",
             NODE_TYPE);
 
+    public static final UnboundBooleanFlag USE_SYSTEM_DOMAIN_FOR_AWS_CREDS = defineFeatureFlag(
+            "use-system-domain-for-aws-creds", false,
+            List.of("freva"), "2024-06-27", "2024-09-01",
+            "Whether to use system athenz domain (instead of sys.auth) when assuming role for AWS" +
+                    "temp credentials against Vespa Athenz",
+            "Takes immediate effect wherever possible.",
+            NODE_TYPE);
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
