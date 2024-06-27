@@ -12,6 +12,7 @@ import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.parser.*;
@@ -93,9 +94,9 @@ public class SchemaSemanticTokens implements Visitor {
         private int tokenType;
         private Range range;
         
-        SemanticTokenMarker(Integer tokenType, Node node) {
+        SemanticTokenMarker(Integer tokenType, SchemaNode node) {
             this.tokenType = tokenType;
-            this.range = CSTUtils.getNodeRange(node);
+            this.range = node.getRange();
         }
 
         private ArrayList<Integer> compactForm() {
@@ -133,14 +134,14 @@ public class SchemaSemanticTokens implements Visitor {
         }
     }
 
-    private static ArrayList<SemanticTokenMarker> traverseCST(Node node, PrintStream logger) {
+    private static ArrayList<SemanticTokenMarker> traverseCST(SchemaNode node, PrintStream logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
         Node.NodeType type = node.getType();
         if (type != null) {
             if (type == Token.TokenType.IDENTIFIER) {
-                Node parent = node.getParent();
-                String parnetClassName = parent.getClass().getName();
+                SchemaNode parent = node.getParent();
+                String parnetClassName = parent.getIdentifierString();
                 Integer tokenType = identifierTypeMap.get(parnetClassName);
                 
                 if (tokenType != null) {
@@ -155,11 +156,9 @@ public class SchemaSemanticTokens implements Visitor {
             }
         }
 
-        if (node.hasChildNodes()) {
-            for (int i = 0; i < node.size(); i++) {
-                ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
-                ret.addAll(markers);
-            }
+        for (int i = 0; i < node.size(); i++) {
+            ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
+            ret.addAll(markers);
         }
 
         return ret;
@@ -167,7 +166,7 @@ public class SchemaSemanticTokens implements Visitor {
 
     public static SemanticTokens getSemanticTokens(SchemaDocumentParser document, PrintStream logger) {
 
-        Node node = document.getRootNode();
+        SchemaNode node = document.getRootNode();
         if (node == null) {
             return new SemanticTokens(new ArrayList<>());
         }

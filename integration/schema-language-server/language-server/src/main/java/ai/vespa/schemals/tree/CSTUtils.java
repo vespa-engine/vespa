@@ -34,4 +34,16 @@ public class CSTUtils {
             printTree(logger, child, indent + 1);
         }
     }
+
+    public static void printTree(PrintStream logger, SchemaNode node) {
+        printTree(logger, node, 0);
+    }
+
+    public static void printTree(PrintStream logger, SchemaNode node, Integer indent) {
+        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getIdentifierString());
+
+        for (int i = 0; i < node.size(); i++) {
+            printTree(logger, node.get(i), indent + 1);
+        }
+    }
 }

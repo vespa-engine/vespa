@@ -3,6 +3,7 @@ package ai.vespa.schemals.context;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
@@ -12,6 +13,7 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.parser.*;
 
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaDocumentParser {
 
@@ -21,7 +23,7 @@ public class SchemaDocumentParser {
     private String fileURI = "";
     private String content = "";
     
-    private Node CST;
+    private SchemaNode CST;
     private boolean faultySchema = true;
 
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, String fileURI) {
@@ -94,9 +96,36 @@ public class SchemaDocumentParser {
 
     }
 
+    private static final HashMap<Token.TokenType, String> tokenParentClassPairs = new HashMap<Token.TokenType, String>() {{
+        put(Token.TokenType.SCHEMA, "ai.vespa.schemals.parser.ast.rootSchema");
+        put(Token.TokenType.DOCUMENT, "ai.vespa.schemals.parser.ast.documentElm");
+        put(Token.TokenType.FIELD, "ai.vespa.schemals.parser.ast.fieldElm");
+        put(Token.TokenType.FIELDSET, "ai.vespa.schemals.parser.ast.fieldSetElm");
+    }};
+
+    private void improveCST(Node node) {
+        
+        Node parent = node.getParent();
+        Node.NodeType nodeType = node.getType();
+        String parentCNComp = tokenParentClassPairs.get(nodeType);
+        if (
+            parent != null &&
+            parent.get(0) == node &&
+            parent.getClass().getName() == parentCNComp &&
+            parent.get(1) != null
+        ) {
+            Node child = parent.get(1);
+            logger.println(child);
+        }
+
+        for (Node child : node) {
+            improveCST(child);
+        }
+    }
+
     private void createCST(Node node) {
-        CST = node;
-        CSTUtils.printTree(logger, node);
+        CST = new SchemaNode(node);
+        CSTUtils.printTree(logger, CST);
     }
 
     private ArrayList<Diagnostic> findDirtyNode(Node node) {
@@ -120,7 +149,7 @@ public class SchemaDocumentParser {
         return faultySchema;
     }
 
-    public Node getRootNode() {
+    public SchemaNode getRootNode() {
         return CST;
     }
 }
