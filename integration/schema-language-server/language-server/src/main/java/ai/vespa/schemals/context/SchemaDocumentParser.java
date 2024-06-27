@@ -1,5 +1,6 @@
 package ai.vespa.schemals.context;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
@@ -9,7 +10,7 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.parser.*;
-import ai.vespa.schemals.parser.ast.*;
+
 import ai.vespa.schemals.tree.CSTUtils;
 
 public class SchemaDocumentParser {
@@ -56,14 +57,14 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing document: " + fileURI);
 
-        SchemaParser parser = new SchemaParser(getFileName(), sequence);
-        //parser.setParserTolerant(false);
+        SchemaParser parserStrict = new SchemaParser(getFileName(), sequence);
+        parserStrict.setParserTolerant(false);
 
         ArrayList<Diagnostic> errors = new ArrayList<Diagnostic>();
 
         try {
 
-            ParsedSchema root = parser.Root();
+            ParsedSchema root = parserStrict.Root();
             faultySchema = false;
             
             logger.println("VALID");
@@ -72,17 +73,19 @@ public class SchemaDocumentParser {
 
             Node.TerminalNode node = e.getToken();
 
-
-            // Position beginPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() - 1);
-            // Position endPosition = new Position(node.getBeginLine() - 1, node.getBeginColumn() + 1);
-
-            // Range range = new Range(beginPosition, endPosition);
             Range range = CSTUtils.getNodeRange(node);
 
             errors.add(new Diagnostic(range, e.getMessage()));
         }
 
-        Node node = parser.rootNode();
+        SchemaParser parserFaultTolerant = new SchemaParser(getFileName(), sequence);
+        try {
+            parserFaultTolerant.Root();
+        } catch (ParseException e) {
+            // Ignore
+        }
+
+        Node node = parserFaultTolerant.rootNode();
         buildCST(node);
 
         errors.addAll(findDirtyNode(node));
@@ -100,14 +103,16 @@ public class SchemaDocumentParser {
     private ArrayList<Diagnostic> findDirtyNode(Node node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
-        if (node.isDirty()) {
-            Range range = CSTUtils.getNodeRange(node);
-            ret.add(new Diagnostic(range, "Dirty node"));
-        }
-
         for (Node child : node) {
             ret.addAll(findDirtyNode(child));
         }
+
+        if (node.isDirty() && ret.size() == 0) {
+            Range range = CSTUtils.getNodeRange(node);
+
+            ret.add(new Diagnostic(range, "Dirty Node"));
+        }
+
 
         return ret;
     }
