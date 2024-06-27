@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "document_frequency.h"
+#include <vespa/searchlib/fef/document_frequency.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/table.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -120,12 +120,12 @@ feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const se
 feature_t lookupSignificance(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback = 0.0f);
 
 /**
- * Returns the significance based on the given scaled number of documents containing the term.
+ * Returns the significance based on the given document frequency
  *
- * @param docFreq The scaled number of documents containing the term.
- * @return        The significance.
+ * @param doc_freq The document frequency
+ * @return         The significance.
  */
-feature_t calculate_legacy_significance(double docFreq);
+feature_t calculate_legacy_significance(search::fef::DocumentFrequency doc_freq);
 
 /**
  * Returns the significance based on max known frequency of the term
@@ -193,10 +193,10 @@ getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, u
 const search::fef::ITermData *
 getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label);
 
-std::optional<DocumentFrequency>
+std::optional<search::fef::DocumentFrequency>
 lookup_document_frequency(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
 
-std::optional<DocumentFrequency>
+std::optional<search::fef::DocumentFrequency>
 lookup_document_frequency(const search::fef::IQueryEnvironment& env, uint32_t termId);
 
 }
