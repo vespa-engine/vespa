@@ -157,4 +157,39 @@ public class SchemaDocumentParser {
     public SchemaNode getRootNode() {
         return CST;
     }
+
+    private SchemaNode getLeafNodeAtPositon(SchemaNode node, Position pos) {
+        if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
+            return node;
+        }
+
+        Integer lowerLimit = 0;
+        Integer upperLimit = node.size();
+
+        Integer currentSearch = (upperLimit + lowerLimit) / 2;
+
+        while (lowerLimit <= upperLimit) {
+            SchemaNode search = node.get(currentSearch);
+
+            if (CSTUtils.positionLT(pos, search.getRange().getEnd())) {
+
+                if (CSTUtils.positionInRange(search.getRange(), pos)) {
+                    return getLeafNodeAtPositon(search, pos);
+                }
+
+                upperLimit = currentSearch - 1;
+            } else {
+                lowerLimit = currentSearch + 1;
+            }
+
+            currentSearch = (upperLimit + lowerLimit) / 2;
+        }
+
+        return null;
+    }
+
+    public SchemaNode getLeafNodeAtPosition(Position pos) {
+        return getLeafNodeAtPositon(CST, pos);
+    }
+
 }

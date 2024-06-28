@@ -2,6 +2,7 @@ package ai.vespa.schemals.tree;
 
 import java.util.ArrayList;
 
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.*;
@@ -15,6 +16,7 @@ public class SchemaNode {
     private SchemaNode refersTo = null;
     private Node originalNode;
 
+    // This array has to be in order, without overlapping elements
     private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
 
     private Range range;
@@ -87,5 +89,9 @@ public class SchemaNode {
 
     public String getText() {
         return originalNode.getSource();
+    }
+
+    public boolean isLeaf() {
+        return children.size() == 0;
     }
 }

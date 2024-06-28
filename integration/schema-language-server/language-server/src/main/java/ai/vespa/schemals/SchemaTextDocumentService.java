@@ -3,6 +3,7 @@ package ai.vespa.schemals;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
+import ai.vespa.schemals.hover.SchemaHover;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
 
 import java.io.PrintStream;
@@ -26,7 +27,10 @@ import org.eclipse.lsp4j.DocumentHighlight;
 import org.eclipse.lsp4j.DocumentHighlightParams;
 import org.eclipse.lsp4j.DocumentOnTypeFormattingParams;
 import org.eclipse.lsp4j.DocumentRangeFormattingParams;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SemanticTokens;
@@ -195,5 +199,25 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     public CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>> semanticTokensFullDelta(SemanticTokensDeltaParams params) {
         return null;
+    }
+
+    @Override
+    public CompletableFuture<Hover> hover(HoverParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+
+            try {
+                String fileURI = params.getTextDocument().getUri();
+                SchemaDocumentParser document = schemaDocumentScheduler.getDocument(fileURI);
+
+                return SchemaHover.getHover(document, params.getPosition());
+
+            } catch (CancellationException ignore) {
+                // Ignore
+            } catch (Throwable e) {
+                logger.println(e);
+            }
+
+            return null; 
+        });
     }
 }

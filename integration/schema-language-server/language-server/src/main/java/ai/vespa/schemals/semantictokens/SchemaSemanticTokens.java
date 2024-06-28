@@ -137,7 +137,7 @@ public class SchemaSemanticTokens implements Visitor {
     private static ArrayList<SemanticTokenMarker> traverseCST(SchemaNode node, PrintStream logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
-        Node.NodeType type = node.getType();
+        Token.TokenType type = node.getType();
         if (type != null) {
             if (node.isUserDefinedIdentifier()) {
                 SchemaNode parent = node.getParent();

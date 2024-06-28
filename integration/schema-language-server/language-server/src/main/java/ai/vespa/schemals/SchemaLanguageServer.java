@@ -64,6 +64,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         CompletionOptions completionOptions = new CompletionOptions();
         initializeResult.getCapabilities().setCompletionProvider(completionOptions);
+        initializeResult.getCapabilities().setHoverProvider(true);
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
         return CompletableFuture.supplyAsync(()->initializeResult);
     }

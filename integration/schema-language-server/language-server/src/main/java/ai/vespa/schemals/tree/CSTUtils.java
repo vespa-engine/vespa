@@ -46,4 +46,22 @@ public class CSTUtils {
             printTree(logger, node.get(i), indent + 1);
         }
     }
+
+    public static Boolean positionLT(Position lhs, Position rhs) {
+        return (
+            lhs.getLine() < rhs.getLine() || (
+                lhs.getLine() == rhs.getLine() && 
+                lhs.getCharacter() < rhs.getCharacter()
+            )
+        );
+    }
+
+    public static Boolean positionInRange(Range range, Position pos) {
+        return (
+            positionLT(pos, range.getEnd()) && (
+                positionLT(range.getStart(), pos) ||
+                range.getStart().equals(pos)
+            )
+        );
+    }
 }
