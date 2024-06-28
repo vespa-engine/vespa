@@ -247,6 +247,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 4,10,16,22 * * 1,2,3,4
 
     secrets:
+      - BUILDKITE_TRIGGER_TOKEN
       - COPR_WEBHOOK
       - OSSRH_USER
       - OSSRH_TOKEN
