@@ -13,6 +13,7 @@
 #include <variant>
 #include <vector>
 #include <map>
+#include <unistd.h>
 
 using namespace vespalib::slime::convenience;
 using vespalib::make_string_short::fmt;
