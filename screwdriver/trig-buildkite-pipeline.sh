@@ -20,7 +20,7 @@ curl  -X POST "https://api.buildkite.com/v2/organizations/vespaai/pipelines/$PIP
     \"message\": \"Vespa $VERSION release trigged from Screwdriver :vespa:\",
     \"ignore_pipeline_branch_filters\": true,
     \"env\": {
-      \"VESPA_VERSION\": \"$VERSION\"
+      \"VESPA_VERSION\": \"$VERSION\",
       \"VESPA_REF\": \"$GITREF\"
     }
   }"
