@@ -67,6 +67,11 @@ public class DistributionConfigBundle {
     public int redundancy() { return config.redundancy(); }
     public int searchableCopies() { return config.ready_copies(); }
 
+    public String highLevelDescription() {
+        return "%d nodes; %d groups; redundancy %d; searchable-copies %d".formatted(
+                totalNodeCount(), totalLeafGroupCount(), redundancy(), searchableCopies());
+    }
+
     // Note: since all fields are deterministically derived from the original config,
     // we use the canonical string representation for equals, hashCode and toString.
     @Override
