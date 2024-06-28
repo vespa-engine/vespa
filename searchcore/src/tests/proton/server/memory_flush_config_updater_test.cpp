@@ -236,5 +236,3 @@ TEST_F("require that more disk bloat is allowed while node state is retired or m
     f.notifyDiskMemUsage(belowLimit(), belowLimit());
     TEST_DO(f.assertStrategyDiskConfig(DEFAULT_DISK_BLOAT, DEFAULT_DISK_BLOAT));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

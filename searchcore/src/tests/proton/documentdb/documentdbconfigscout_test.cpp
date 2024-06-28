@@ -38,8 +38,7 @@ std::ostream& operator<<(std::ostream& os, const AttributesConfig::Attribute::Di
 
 }
 
-namespace
-{
+namespace {
 
 DDBCSP
 getConfig(int64_t generation, const Schema::SP &schema,
@@ -396,5 +395,3 @@ TEST("Test that DocumentDBConfigScout::scout looks ahead")
     EXPECT_TRUE(assertScoutedAttributes(scoutedCfg->getAttributesConfig().
                                         attribute));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

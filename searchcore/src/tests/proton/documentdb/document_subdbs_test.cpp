@@ -85,15 +85,16 @@ using FastAccessContext = FastAccessDocSubDB::Context;
 using SearchableContext = SearchableDocSubDB::Context;
 using AttributeGuardList = std::vector<AttributeGuard>;
 
+namespace {
 const std::string DOCTYPE_NAME = "searchdocument";
 const std::string SUB_NAME = "subdb";
 const std::string BASE_DIR = "basedir";
 const SerialNum CFG_SERIAL = 5;
 
-struct ConfigDir1 { static vespalib::string dir() { return TEST_PATH("cfg1"); } };
-struct ConfigDir2 { static vespalib::string dir() { return TEST_PATH("cfg2"); } };
-struct ConfigDir3 { static vespalib::string dir() { return TEST_PATH("cfg3"); } };
-struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4"); } };
+struct ConfigDir1 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg1"); } };
+struct ConfigDir2 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg2"); } };
+struct ConfigDir3 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg3"); } };
+struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("document_subdbs/cfg4"); } };
 
 struct MySubDBOwner : public IDocumentSubDBOwner
 {
@@ -290,28 +291,35 @@ struct MyConfigSnapshot
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
     BootstrapConfig::SP  _bootstrap;
-    MyConfigSnapshot(FNET_Transport & transport, Schema schema, const vespalib::string &cfgDir)
-        : _schema(std::move(schema)),
-          _builder(get_add_fields(_schema.getNumAttributeFields() > 1)),
-          _cfg(),
-          _bootstrap()
-    {
-        auto documenttypesConfig = std::make_shared<DocumenttypesConfig>(_builder.get_documenttypes_config());
-        auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
-        _bootstrap = std::make_shared<BootstrapConfig>(1,
-                                 documenttypesConfig,
-                                 _builder.get_repo_sp(),
-                                 std::make_shared<ProtonConfig>(),
-                                 std::make_shared<FiledistributorrpcConfig>(),
-                                 std::make_shared<BucketspacesConfig>(),
-                                 tuneFileDocumentDB, HwInfo(HwInfo::Disk(128_Gi,false,false), HwInfo::Memory(16_Gi), HwInfo::Cpu(8)));
-        ::config::DirSpec spec(cfgDir);
-        DocumentDBConfigHelper mgr(spec, "searchdocument");
-        mgr.forwardConfig(_bootstrap);
-        mgr.nextGeneration(transport, 1ms);
-        _cfg = mgr.getConfig();
-    }
+    MyConfigSnapshot(FNET_Transport & transport, Schema schema, const vespalib::string &cfgDir);
+    MyConfigSnapshot(const MyConfigSnapshot &) = delete;
+    MyConfigSnapshot & operator = (const MyConfigSnapshot &) = delete;
+    ~MyConfigSnapshot();
 };
+
+MyConfigSnapshot::~MyConfigSnapshot() = default;
+
+MyConfigSnapshot::MyConfigSnapshot(FNET_Transport & transport, Schema schema, const vespalib::string &cfgDir)
+    : _schema(std::move(schema)),
+      _builder(get_add_fields(_schema.getNumAttributeFields() > 1)),
+      _cfg(),
+      _bootstrap()
+{
+    auto documenttypesConfig = std::make_shared<DocumenttypesConfig>(_builder.get_documenttypes_config());
+    auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
+    _bootstrap = std::make_shared<BootstrapConfig>(1,
+                             documenttypesConfig,
+                             _builder.get_repo_sp(),
+                             std::make_shared<ProtonConfig>(),
+                             std::make_shared<FiledistributorrpcConfig>(),
+                             std::make_shared<BucketspacesConfig>(),
+                             tuneFileDocumentDB, HwInfo(HwInfo::Disk(128_Gi,false,false), HwInfo::Memory(16_Gi), HwInfo::Cpu(8)));
+    ::config::DirSpec spec(cfgDir);
+    DocumentDBConfigHelper mgr(spec, "searchdocument");
+    mgr.forwardConfig(_bootstrap);
+    mgr.nextGeneration(transport, 1ms);
+    _cfg = mgr.getConfig();
+}
 
 template <typename Traits>
 struct FixtureBase
@@ -523,6 +531,8 @@ assertStoreOnly(StoreOnlyDocSubDB & db) {
     EXPECT_TRUE(dynamic_cast<StoreOnlyFeedView *>(db.getFeedView().get()) != nullptr);
     EXPECT_TRUE(dynamic_cast<EmptySearchView *>(db.getSearchView().get()) != nullptr);
     EXPECT_TRUE(dynamic_cast<MinimalDocumentRetriever *>(db.getDocumentRetriever().get()) != nullptr);
+}
+
 }
 
 TEST_F("require that managers and components are instantiated", StoreOnlyFixture)
@@ -1084,9 +1094,4 @@ TEST_F("require that underlying components are explorable", SearchableExplorerFi
     EXPECT_TRUE(f._explorer.get_child("attribute").get() != nullptr);
     EXPECT_TRUE(f._explorer.get_child("attributewriter").get() != nullptr);
     EXPECT_TRUE(f._explorer.get_child("index").get() != nullptr);
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
 }

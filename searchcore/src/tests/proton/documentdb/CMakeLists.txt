@@ -28,7 +28,12 @@ vespa_add_executable(searchcore_proton_documentdb_vespa_test_app TEST
     buckethandler_test.cpp
     combiningfeedview_test.cpp
     configurer_test.cpp
+    document_scan_iterator_test.cpp
+    document_subdbs_test.cpp
+    documentdbconfig_test.cpp
+    documentdbconfigscout_test.cpp
     feedview_test.cpp
+    job_tracked_maintenance_job_test.cpp
     maintenancecontroller_test.cpp
     storeonlyfeedview_test.cpp
     DEPENDS

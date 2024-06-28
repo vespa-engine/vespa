@@ -220,5 +220,3 @@ TEST_F("require that makeDelayedAttributeAspectConfig works, field removed with 
     auto removed = DocumentDBConfig::makeDelayedAttributeAspectConfig(f.noAttrCfg, *f.attrCfg);
     TEST_DO(f.assertNotDelayedConfig(*removed));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

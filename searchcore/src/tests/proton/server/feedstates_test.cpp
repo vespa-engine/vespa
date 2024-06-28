@@ -20,9 +20,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP("feedstates_test");
-
 using document::BucketId;
 using document::DocumentId;
 using document::DocumentTypeRepo;
@@ -155,5 +152,3 @@ TEST_F("require that replay progress is tracked", Fixture)
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

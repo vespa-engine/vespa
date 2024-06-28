@@ -82,8 +82,3 @@ TEST_F("require that only lids > lid limit are returned", Fixture)
     f.add({1,2,3,4,5,6,7,8});
     assertLidSet({5,6,7,8}, f.scan(4, 4));
 }
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}

@@ -75,15 +75,10 @@ vespa_define_module(
     src/tests/proton/document_iterator
     src/tests/proton/documentdb
     src/tests/proton/documentdb/clusterstatehandler
-    src/tests/proton/documentdb/document_scan_iterator
-    src/tests/proton/documentdb/document_subdbs
     src/tests/proton/documentdb/documentbucketmover
-    src/tests/proton/documentdb/documentdbconfig
-    src/tests/proton/documentdb/documentdbconfigscout
     src/tests/proton/documentdb/executor_threading_service
     src/tests/proton/documentdb/feedhandler
     src/tests/proton/documentdb/fileconfigmanager
-    src/tests/proton/documentdb/job_tracked_maintenance_job
     src/tests/proton/documentdb/lid_space_compaction
     src/tests/proton/documentmetastore
     src/tests/proton/documentmetastore/lidreusedelayer
@@ -132,9 +127,7 @@ vespa_define_module(
     src/tests/proton/server/disk_mem_usage_filter
     src/tests/proton/server/disk_mem_usage_metrics
     src/tests/proton/server/disk_mem_usage_sampler
-    src/tests/proton/server/health_adapter
     src/tests/proton/server/initialize_threads_calculator
-    src/tests/proton/server/memory_flush_config_updater
     src/tests/proton/server/memoryflush
     src/tests/proton/server/shared_threading_service
     src/tests/proton/summaryengine

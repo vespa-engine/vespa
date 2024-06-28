@@ -51,9 +51,6 @@
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 
-#include <vespa/log/log.h>
-LOG_SETUP("document_retriever_test");
-
 using document::ArrayFieldValue;
 using document::FieldValue;
 using document::BucketId;
@@ -670,5 +667,3 @@ TEST("require that fieldset can figure out their attributeness and rember it") {
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

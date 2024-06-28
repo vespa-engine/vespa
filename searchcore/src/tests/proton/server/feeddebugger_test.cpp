@@ -6,9 +6,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP("feeddebugger_test");
-
 using document::DocumentId;
 using std::string;
 using namespace proton;
@@ -47,8 +44,7 @@ TEST("require that when environment variable is not set, debugging is off") {
     EXPECT_FALSE(debugger.isDebugging());
 }
 
-TEST("require that setting an environment variable turns on lid-specific"
-     " debugging.") {
+TEST("require that setting an environment variable turns on lid-specific debugging.") {
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
     setenv(lid_env_name, "1,3,5", true);
@@ -62,8 +58,7 @@ TEST("require that setting an environment variable turns on lid-specific"
     EXPECT_EQUAL(ns_log::Logger::info, debugger.getDebugLevel(5, 0));
 }
 
-TEST("require that setting an environment variable turns on docid-specific"
-     " debugging.") {
+TEST("require that setting an environment variable turns on docid-specific debugging.") {
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
     setenv(docid_env_name, "id:ns:type::test:foo,id:ns:type::test:bar,id:ns:type::test:baz", true);
@@ -81,5 +76,3 @@ TEST("require that setting an environment variable turns on docid-specific"
 }
 
 }  // namespace
-
-TEST_MAIN() { TEST_RUN_ALL(); }

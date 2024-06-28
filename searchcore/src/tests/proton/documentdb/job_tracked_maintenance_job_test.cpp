@@ -9,9 +9,6 @@
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("job_tracked_maintenance_test");
-
 using namespace proton;
 using namespace vespalib;
 using test::SimpleJobTracker;
@@ -146,5 +143,3 @@ TEST_F("require that stop calls are sent to underlying jobs", Fixture)
     f._trackedJob->stop();
     EXPECT_TRUE(f._myJob->stopped());
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }
