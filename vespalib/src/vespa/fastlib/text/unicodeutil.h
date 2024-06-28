@@ -41,8 +41,7 @@ private:
         _wordcharProp = 2,
         _ideographicProp = 4,
         _decimalDigitCharProp = 8,
-        _ignorableControlCharProp = 16,
-        _terminalPunctuationCharProp = 32
+        _ignorableControlCharProp = 16
     };
 
 public:
@@ -210,18 +209,6 @@ public:
      * NB Only used in local test
      */
     static int utf8cmp(const char *s1, const ucs4_t *s2) noexcept;
-
-    /**
-     * Test for terminal punctuation.
-     * @param testchar the UCS4 character to test.
-     * @return true if testchar is a terminal punctuation character,
-     *    i.e. if it has the terminal punctuation char property.
-     */
-    static bool IsTerminalPunctuationChar(ucs4_t testchar) noexcept {
-        return (testchar < 65536 &&
-                (_compCharProps[testchar >> 8][testchar & 255] &
-                 _terminalPunctuationCharProp) != 0);
-    }
 
     /**
      * Get the next UCS4 character from an UTF-8 string buffer.

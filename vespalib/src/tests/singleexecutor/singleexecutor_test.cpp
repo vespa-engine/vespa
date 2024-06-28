@@ -82,7 +82,7 @@ void verifyResizeTaskLimit(bool up) {
     EXPECT_EQUAL(1u, started);
     executor.setTaskLimit(targetTaskLimit);
     EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
-    EXPECT_EQUAL(INITIAL_2inN*waterMarkRatio, executor.get_watermark());
+    EXPECT_EQUAL(INITIAL_2inN*waterMarkRatio, static_cast<double>(executor.get_watermark()));
     allowed = 5;
     while (started < 6);
     EXPECT_EQUAL(6u, started);
@@ -101,7 +101,7 @@ void verifyResizeTaskLimit(bool up) {
     while (started < INITIAL + 1);
     EXPECT_EQUAL(INITIAL + 1, started);
     EXPECT_EQUAL(roundedTaskLimit, executor.getTaskLimit());
-    EXPECT_EQUAL(roundedTaskLimit*waterMarkRatio, executor.get_watermark());
+    EXPECT_EQUAL(roundedTaskLimit*waterMarkRatio, static_cast<double>(executor.get_watermark()));
     allowed = INITIAL + 1;
 }
 

@@ -5,12 +5,12 @@
 #include <vespa/searchlib/docstore/writeablefilechunk.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <iomanip>
-#include <iostream>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 

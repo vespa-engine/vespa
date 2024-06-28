@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mysearch.h"
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
@@ -8,6 +7,8 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <algorithm>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("blueprint_test");

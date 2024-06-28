@@ -1,7 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-
 #include <vespa/config-summary.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -42,6 +40,8 @@
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <filesystem>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace config;
 using namespace document;

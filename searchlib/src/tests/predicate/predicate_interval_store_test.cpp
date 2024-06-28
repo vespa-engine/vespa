@@ -2,10 +2,10 @@
 // Unit tests for predicate_interval_store.
 
 #include <vespa/searchlib/predicate/predicate_interval_store.h>
-
 #include <vespa/searchlib/predicate/predicate_index.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vector>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search;
 using namespace search::predicate;

@@ -16,8 +16,9 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedstates_test");

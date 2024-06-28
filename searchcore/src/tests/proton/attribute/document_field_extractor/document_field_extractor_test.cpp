@@ -15,6 +15,7 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchcore/proton/attribute/document_field_extractor.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using document::Field;
 using document::DataType;

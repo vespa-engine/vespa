@@ -30,8 +30,9 @@
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("query_test");

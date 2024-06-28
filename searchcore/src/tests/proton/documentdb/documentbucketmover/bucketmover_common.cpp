@@ -3,7 +3,7 @@
 #include "bucketmover_common.h"
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/vespalib/testkit/test_macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::IDestructorCallback;
 
@@ -70,7 +70,7 @@ MySubDb::insertDocs(const UserDocuments &docs_) {
             _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
                            testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
             _realRetriever->_docs.push_back(testDoc.getDoc());
-            ASSERT_EQUAL(testDoc.getLid() + 1, _realRetriever->_docs.size());
+            ASSERT_EQ(testDoc.getLid() + 1, _realRetriever->_docs.size());
         }
     }
     _docs.merge(docs_);
@@ -83,16 +83,22 @@ MySubDb::remove(uint32_t subDbId, uint32_t lid) {
     return _metaStore.remove(lid, 0u);
 }
 
+template<typename A, typename B>
+bool expect_eq(const A & a, const B & b) {
+    EXPECT_EQ(a, b);
+    return (a == b);
+}
+
 bool
 assertEqual(const document::BucketId &bucket, const proton::test::Document &doc,
             uint32_t sourceSubDbId, uint32_t targetSubDbId, const MoveOperation &op) {
-    if (!EXPECT_EQUAL(bucket, op.getBucketId())) return false;
-    if (!EXPECT_EQUAL(doc.getTimestamp(), op.getTimestamp())) return false;
-    if (!EXPECT_EQUAL(doc.getDocId(), op.getDocument()->getId())) return false;
-    if (!EXPECT_EQUAL(doc.getLid(), op.getSourceDbdId().getLid())) return false;
-    if (!EXPECT_EQUAL(sourceSubDbId, op.getSourceDbdId().getSubDbId())) return false;
-    if (!EXPECT_EQUAL(0u, op.getTargetDbdId().getLid())) return false;
-    if (!EXPECT_EQUAL(targetSubDbId, op.getTargetDbdId().getSubDbId())) return false;
+    if (!expect_eq(bucket, op.getBucketId())) return false;
+    if (!expect_eq(doc.getTimestamp(), op.getTimestamp())) return false;
+    if (!expect_eq(doc.getDocId(), op.getDocument()->getId())) return false;
+    if (!expect_eq(doc.getLid(), op.getSourceDbdId().getLid())) return false;
+    if (!expect_eq(sourceSubDbId, op.getSourceDbdId().getSubDbId())) return false;
+    if (!expect_eq(0u, op.getTargetDbdId().getLid())) return false;
+    if (!expect_eq(targetSubDbId, op.getTargetDbdId().getSubDbId())) return false;
     return true;
 }
 

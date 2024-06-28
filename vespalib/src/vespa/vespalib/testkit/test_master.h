@@ -12,7 +12,6 @@ namespace vespalib {
 
 class Barrier;
 
-#ifndef IAM_DOXYGEN
 /**
  * The master of testing.
  **/
@@ -123,9 +122,5 @@ public:
     bool discardFailedChecks(size_t failCnt);
     bool fini();
 };
-#endif
 
 } // namespace vespalib
-
-#include "test_master.hpp"
-

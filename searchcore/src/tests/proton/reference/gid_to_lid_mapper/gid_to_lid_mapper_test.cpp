@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -9,6 +8,9 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_mapper.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_mapper_factory.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_mapper_test");
 

@@ -24,10 +24,11 @@
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/varholder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config.h>
 #include <map>
 #include <thread>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace config;
 using namespace proton;

@@ -65,13 +65,14 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-summary.h>
 #include <filesystem>
 #include <regex>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
@@ -590,7 +591,7 @@ TEST("requireThatSummariesTimeout")
     const auto & root = rep->root();
     const auto & field = root["errors"];
     EXPECT_TRUE(field.valid());
-    EXPECT_EQUAL(field[0]["type"].asString(), "timeout");
+    EXPECT_EQUAL(field[0]["type"].asString(), vespalib::Memory("timeout"));
     auto bufstring = field[0]["message"].asString();
     EXPECT_TRUE(std::regex_search(bufstring.data, bufstring.data + bufstring.size, std::regex("Timed out 1 summaries with -[0-9]+us left.")));
 }
