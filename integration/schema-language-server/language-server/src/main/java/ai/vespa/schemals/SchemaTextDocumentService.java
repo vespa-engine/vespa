@@ -209,7 +209,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 String fileURI = params.getTextDocument().getUri();
                 SchemaDocumentParser document = schemaDocumentScheduler.getDocument(fileURI);
 
-                return SchemaHover.getHover(document, params.getPosition());
+                return SchemaHover.getHover(document, params.getPosition(), logger);
 
             } catch (CancellationException ignore) {
                 // Ignore

@@ -71,6 +71,11 @@ public class SchemaNode {
         return identifierString;
     }
 
+    public String getClassLeafIdentifierString() {
+        int lastIndex = identifierString.lastIndexOf('.');
+        return identifierString.substring(lastIndex + 1);
+    }
+
     public Range getRange() {
         return range;
     }
