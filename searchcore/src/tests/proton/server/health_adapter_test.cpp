@@ -57,5 +57,3 @@ TEST_FF("require that multiple failure messages are concatenated", MyStatusProdu
     EXPECT_FALSE(f2.getHealth().ok);
     EXPECT_EQUAL(std::string("c1: xxx, c3: zzz"), f2.getHealth().msg);
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

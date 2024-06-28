@@ -127,9 +127,7 @@ vespa_define_module(
     src/tests/proton/server/disk_mem_usage_filter
     src/tests/proton/server/disk_mem_usage_metrics
     src/tests/proton/server/disk_mem_usage_sampler
-    src/tests/proton/server/health_adapter
     src/tests/proton/server/initialize_threads_calculator
-    src/tests/proton/server/memory_flush_config_updater
     src/tests/proton/server/memoryflush
     src/tests/proton/server/shared_threading_service
     src/tests/proton/summaryengine
