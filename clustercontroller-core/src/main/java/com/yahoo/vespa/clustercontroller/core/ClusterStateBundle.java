@@ -322,9 +322,7 @@ public class ClusterStateBundle {
                 ? String.format(", feed blocked: '%s'", feedBlock.description)
                 : "";
         String distributionConfigStr = (distributionConfig != null)
-                ? ", distribution config: %d nodes; %d groups; redundancy %d; searchable-copies %d".formatted(
-                    distributionConfig.totalNodeCount(), distributionConfig.totalLeafGroupCount(),
-                    distributionConfig.redundancy(), distributionConfig.searchableCopies())
+                ? ", distribution config: %s".formatted(distributionConfig.highLevelDescription())
                 : "";
         if (derivedBucketSpaceStates.isEmpty()) {
             return String.format("ClusterStateBundle('%s'%s%s%s)", baselineState,
