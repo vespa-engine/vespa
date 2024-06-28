@@ -90,9 +90,11 @@ public class SchemaDocumentParser {
         }
 
         Node node = parserFaultTolerant.rootNode();
-        createCST(node);
+        errors.addAll(parseCST(node));
 
         errors.addAll(findDirtyNode(node));
+
+        CSTUtils.printTree(logger, CST);
 
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
@@ -105,8 +107,11 @@ public class SchemaDocumentParser {
         put(Token.TokenType.FIELDSET, "ai.vespa.schemals.parser.ast.fieldSetElm");
     }};
 
-    private void improveCST(SchemaNode node) {
+    private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
+
+        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
         
+        // Override if we think there will be an identifier next token
         SchemaNode parent = node.getParent();
         Token.TokenType nodeType = node.getType();
         String parentCNComp = tokenParentClassPairs.get(nodeType);
@@ -118,19 +123,28 @@ public class SchemaDocumentParser {
         ) {
             SchemaNode child = parent.get(1);
             child.setUserDefinedIdentifier();
-            schemaIndex.insert(fileURI, nodeType, child.getText(), child);
+            if (schemaIndex.findSymbol(fileURI, nodeType, child.getText()) == null) {
+                schemaIndex.insert(fileURI, nodeType, child.getText(), child);
+            } else {
+                ret.add(new Diagnostic(child.getRange(), "Duplicate identifier"));
+            }
+
         }
+
+        // Check for symbol references
+        
 
         for (int i = 0; i < node.size(); i++) {
-            improveCST(node.get(i));
+            ret.addAll(traverseCST(node.get(i)));
         }
+
+        return ret;
     }
 
-    private void createCST(Node node) {
+    private ArrayList<Diagnostic> parseCST(Node node) {
         schemaIndex.clearDocument(fileURI);
         CST = new SchemaNode(node);
-        improveCST(CST);
-        CSTUtils.printTree(logger, CST);
+        return traverseCST(CST);
     }
 
     private ArrayList<Diagnostic> findDirtyNode(Node node) {

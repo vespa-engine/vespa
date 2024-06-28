@@ -40,7 +40,7 @@ public class CSTUtils {
     }
 
     public static void printTree(PrintStream logger, SchemaNode node, Integer indent) {
-        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getIdentifierString());
+        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClassLeafIdentifierString());
 
         for (int i = 0; i < node.size(); i++) {
             printTree(logger, node.get(i), indent + 1);
