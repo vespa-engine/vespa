@@ -8,10 +8,11 @@
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <filesystem>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 using search::index::DummyFileHeaderContext;
 using search::transactionlog::client::TransLogClient;

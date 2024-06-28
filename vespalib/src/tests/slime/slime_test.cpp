@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/object_value.h>
 #include <vespa/vespalib/data/slime/array_value.h>
@@ -9,6 +8,8 @@
 #include <vespa/vespalib/data/slime/symbol_table.h>
 #include <vespa/vespalib/data/slime/basic_value.h>
 #include <type_traits>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("slime_test");

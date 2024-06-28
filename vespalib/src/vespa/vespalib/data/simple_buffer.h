@@ -25,8 +25,8 @@ private:
     size_t            _used;
 
 public:
-    SimpleBuffer();
-    ~SimpleBuffer();
+    SimpleBuffer() noexcept : _data(), _used(0) {}
+    ~SimpleBuffer() override;
     Memory obtain() override;
     Input &evict(size_t bytes) override;
     WritableMemory reserve(size_t bytes) override;
@@ -36,8 +36,8 @@ public:
         ++_used;
         return *this;
     }
-    Memory get() const { return Memory(_data.data(), _used); }
-    bool operator==(const SimpleBuffer &rhs) const { return (get() == rhs.get()); }
+    Memory get() const noexcept { return Memory(_data.data(), _used); }
+    bool operator==(const SimpleBuffer &rhs) const noexcept { return (get() == rhs.get()); }
 };
 
 std::ostream &operator<<(std::ostream &os, const SimpleBuffer &buf);

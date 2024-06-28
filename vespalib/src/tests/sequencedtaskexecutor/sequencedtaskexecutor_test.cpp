@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/singleexecutor.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <condition_variable>
 #include <unistd.h>

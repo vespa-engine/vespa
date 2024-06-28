@@ -1,7 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <iostream>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
@@ -13,6 +11,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using search::feature_t;
 using namespace search::fef;
@@ -28,8 +28,7 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::make_string_short::fmt;
 
-namespace
-{
+namespace {
 
 Value::UP make_tensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);

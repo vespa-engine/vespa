@@ -7,7 +7,6 @@
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -17,6 +16,8 @@
 #include <cmath>
 #include <iostream>
 #include <list>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("per_doc_expr_test");

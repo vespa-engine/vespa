@@ -3,6 +3,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -37,7 +38,7 @@ using AllocStats = MyMemoryAllocator::Stats;
 class Clever {
 public:
     Clever() : _counter(&_global) { (*_counter)++; }
-    Clever(std::atomic<size_t> * counter) :
+    explicit Clever(std::atomic<size_t> * counter) :
         _counter(counter)
     {
         (*_counter)++;
@@ -224,7 +225,7 @@ testBeginEnd(T & v)
     EXPECT_EQUAL(1u, *(v.begin()));
     EXPECT_EQUAL(3u, *(v.end() - 1));
 
-    typename T::iterator i(v.begin());
+    auto i(v.begin());
     EXPECT_EQUAL(1u, *i);
     EXPECT_EQUAL(2u, *(i+1));
     EXPECT_EQUAL(1u, *i++);
@@ -249,7 +250,7 @@ testBeginEnd(T & v)
     EXPECT_EQUAL(3u, *(v.rbegin()));
     EXPECT_EQUAL(1u, *(v.rend() - 1));
 
-    typename T::reverse_iterator r(v.rbegin());
+    auto r(v.rbegin());
     EXPECT_EQUAL(3u, *r);
     EXPECT_EQUAL(2u, *(r+1));
     EXPECT_EQUAL(3u, *r++);

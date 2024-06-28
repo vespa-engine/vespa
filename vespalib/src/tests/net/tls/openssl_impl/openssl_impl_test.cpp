@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/crypto/private_key.h>
 #include <vespa/vespalib/crypto/x509_certificate.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/net/tls/authorization_mode.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
@@ -14,7 +13,8 @@
 #include <vespa/vespalib/test/peer_policy_utils.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <stdexcept>
-#include <stdlib.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 using namespace vespalib::crypto;

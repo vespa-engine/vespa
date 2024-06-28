@@ -210,7 +210,7 @@ void StorageApiRpcService::encode_rpc_v1_response(FRT_RPCRequest& request, api::
     // TODO skip encoding header altogether if no relevant fields set?
     protobuf::ResponseHeader hdr;
     if (reply.getTrace().getLevel() > 0) {
-        hdr.set_trace_payload(reply.getTrace().encode());
+        hdr.set_trace_payload(static_cast<std::string_view>(reply.getTrace().encode()));
     }
     // TODO consistent naming...
     encode_header_into_rpc_params(hdr, *ret);

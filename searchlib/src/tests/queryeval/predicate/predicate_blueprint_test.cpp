@@ -126,7 +126,7 @@ TEST_F("require that blueprint with zstar-compressed estimates non-empty.", Fixt
 }
 
 void
-runQuery(Fixture & f, std::vector<uint32_t> expected, bool expectCachedSize, uint32_t expectedKV) {
+runQuery(Fixture & f, std::vector<uint32_t> expected, uint32_t expectCachedSize, uint32_t expectedKV) {
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
     blueprint.basic_plan(true, 100);
     blueprint.fetchPostings(ExecuteInfo::FULL);

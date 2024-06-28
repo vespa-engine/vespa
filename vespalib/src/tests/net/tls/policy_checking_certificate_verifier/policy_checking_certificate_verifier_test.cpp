@@ -3,6 +3,7 @@
 #include <vespa/vespalib/net/tls/policy_checking_certificate_verifier.h>
 #include <vespa/vespalib/test/peer_policy_utils.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 using namespace vespalib::net::tls;

@@ -38,8 +38,6 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -47,6 +45,9 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace cloud::config::filedistribution;
 using namespace document;

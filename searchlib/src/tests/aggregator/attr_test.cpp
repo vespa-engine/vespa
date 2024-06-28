@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
-
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/searchlib/expression/arrayatlookupfunctionnode.h>
 #include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
+
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attr_test");
@@ -147,7 +147,7 @@ TEST_F("testArrayAtInt", IntAttrFixture()) {
         EXPECT_TRUE(et.execute(0, HitRank(0.0)));
         EXPECT_EQUAL(et.getResult()->getInteger(), f1.doc0attr[i]);
         EXPECT_TRUE(et.execute(1, HitRank(0.0)));
-        EXPECT_EQUAL(et.getResult()->getInteger(), f1.doc1attr[i]);
+        EXPECT_EQUAL(static_cast<double>(et.getResult()->getInteger()), f1.doc1attr[i]);
     }
 }
 

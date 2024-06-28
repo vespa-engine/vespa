@@ -4,9 +4,9 @@
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
+#include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/document/base/globalid.h>
 
 namespace proton::test {
 
@@ -28,28 +28,15 @@ public:
     MockGidToLidChangeHandler() noexcept;
     ~MockGidToLidChangeHandler() override;
 
-    void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override {
-        _adds.emplace_back(listener->getDocTypeName(), listener->getName());
-        _listeners.push_back(std::move(listener));
-    }
-
-    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override {
-        _removes.emplace_back(docTypeName, keepNames);
-    }
+    void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
+    void removeListeners(const vespalib::string &docTypeName, const std::set<vespalib::string> &keepNames) override;
 
     void notifyPut(IDestructorCallbackSP, document::GlobalId, uint32_t, SerialNum)  override { }
     void notifyRemoves(IDestructorCallbackSP, const std::vector<document::GlobalId> &, SerialNum)  override { }
     std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override { return {}; }
 
-    void assertAdds(const std::vector<AddEntry> &expAdds)
-    {
-        EXPECT_EQUAL(expAdds, _adds);
-    }
-
-    void assertRemoves(const std::vector<RemoveEntry> &expRemoves)
-    {
-        EXPECT_EQUAL(expRemoves, _removes);
-    }
+    void assertAdds(const std::vector<AddEntry> &expAdds) const;
+    void assertRemoves(const std::vector<RemoveEntry> &expRemoves) const;
 
     const std::vector<std::unique_ptr<IGidToLidChangeListener>> &getListeners() const { return _listeners; }
 };

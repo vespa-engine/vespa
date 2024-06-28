@@ -669,7 +669,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::visitor_info_message_fact
     return make_codec<VisitorInfoMessage, protobuf::VisitorInfoRequest>(
         [](const VisitorInfoMessage& src, protobuf::VisitorInfoRequest& dest) {
             set_bucket_id_vector(*dest.mutable_finished_buckets(), src.getFinishedBuckets());
-            dest.set_error_message(src.getErrorMessage());
+            dest.set_error_message(static_cast<std::string_view>(src.getErrorMessage()));
         },
         [](const protobuf::VisitorInfoRequest& src) {
             auto msg = std::make_unique<VisitorInfoMessage>();
@@ -878,7 +878,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::stat_bucket_message_facto
 std::shared_ptr<IRoutableFactory> RoutableFactories80::stat_bucket_reply_factory() {
     return make_codec<StatBucketReply, protobuf::StatBucketResponse>(
         [](const StatBucketReply& src, protobuf::StatBucketResponse& dest) {
-            dest.set_results(src.getResults());
+            dest.set_results(static_cast<std::string_view>(src.getResults()));
         },
         [](const protobuf::StatBucketResponse& src) {
             auto reply = std::make_unique<StatBucketReply>();
@@ -895,7 +895,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::stat_bucket_reply_factory
 std::shared_ptr<IRoutableFactory> RoutableFactories80::wrong_distribution_reply_factory() {
     return make_codec<WrongDistributionReply, protobuf::WrongDistributionResponse>(
         [](const WrongDistributionReply& src, protobuf::WrongDistributionResponse& dest) {
-            dest.mutable_cluster_state()->set_state_string(src.getSystemState());
+            dest.mutable_cluster_state()->set_state_string(static_cast<std::string_view>(src.getSystemState()));
         },
         [](const protobuf::WrongDistributionResponse& src) {
             auto reply = std::make_unique<WrongDistributionReply>();
