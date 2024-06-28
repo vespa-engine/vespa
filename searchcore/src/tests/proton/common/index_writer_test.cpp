@@ -7,9 +7,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("index_writer_test");
-
 using namespace proton;
 using namespace search;
 using namespace search::index;
@@ -19,6 +16,7 @@ using vespalib::IDestructorCallback;
 
 using document::Document;
 
+namespace {
 std::string
 toString(const std::vector<SerialNum> &vec)
 {
@@ -106,6 +104,8 @@ struct Fixture
     }
 };
 
+}
+
 TEST_F("require that index writer ignores old operations", Fixture)
 {
     f.mim.flushed = 10;
@@ -134,9 +134,4 @@ TEST_F("require that old compactLidSpace is not forwarded to index manager", Fix
     f.iw.compactLidSpace(4, 2);
     EXPECT_EQUAL(0u, f.mim.wantedLidLimit);
     EXPECT_EQUAL(0u, f.mim.compactSerial);
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
 }

@@ -5,10 +5,9 @@
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("metrics_engine_test");
-
 using namespace proton;
+
+namespace {
 
 struct DummyMetricSet : public metrics::MetricSet {
     DummyMetricSet(const vespalib::string &name) : metrics::MetricSet(name, {}, "", nullptr) {}
@@ -43,6 +42,8 @@ struct AttributeMetricsFixture {
     }
 };
 
+}
+
 TEST_F("require that attribute metrics can be added", AttributeMetricsFixture)
 {
     TEST_DO(f.assertRegisteredMetrics(0));
@@ -74,5 +75,3 @@ TEST_F("require that all attribute metrics can be cleaned", AttributeMetricsFixt
     TEST_DO(f.assertMetricsNotExists("foo"));
     TEST_DO(f.assertMetricsNotExists("bar"));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

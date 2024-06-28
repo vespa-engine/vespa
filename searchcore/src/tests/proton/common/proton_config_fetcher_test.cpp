@@ -49,6 +49,7 @@ using search::GrowStrategy;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::HwInfo;
 
+namespace {
 constexpr int proton_rpc_port = 9010; // Not used for listening in this test
 
 struct DoctypeFixture {
@@ -228,6 +229,8 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
 };
 
 ProtonConfigOwner::~ProtonConfigOwner() = default;
+
+}
 
 TEST_F("require that bootstrap config manager creats correct key set", BootstrapConfigManager("foo")) {
     const ConfigKeySet set(f1.createConfigKeySet());
@@ -499,5 +502,3 @@ TEST("test HwInfo equality") {
     EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(1, false,false), 2ul, 1ul));
     EXPECT_FALSE(HwInfo(HwInfo::Disk(1, false, false), 1ul, 1ul) == HwInfo(HwInfo::Disk(2, false,false), 1ul, 1ul));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }
