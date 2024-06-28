@@ -22,7 +22,6 @@ class GroupingManager
 {
 private:
     GroupingContext   &_groupingContext;
-    const document::DocumentType *_documentType;
 public:
     GroupingManager(const GroupingManager &) = delete;
     GroupingManager &operator=(const GroupingManager &) = delete;
@@ -32,8 +31,7 @@ public:
      * @param groupingContext Context to use for grouping
      **/
     GroupingManager(GroupingContext & groupingContext) noexcept
-        : _groupingContext(groupingContext),
-          _documentType(nullptr)
+        : _groupingContext(groupingContext)
     {}
 
     /**
