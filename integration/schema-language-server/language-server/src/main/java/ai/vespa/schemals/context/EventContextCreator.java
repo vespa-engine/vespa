@@ -20,16 +20,18 @@ public class EventContextCreator {
         this.schemaIndex = schemaIndex;
     }
 
-    public EventContext createContext(TextDocumentPositionParams params) {
-        return createContext(params.getTextDocument().getUri());
+    public EventPositionContext createContext(TextDocumentPositionParams params) {
+        return new EventPositionContext(
+            logger,
+            scheduler,
+            schemaIndex,
+            params.getTextDocument().getUri(),
+            params.getPosition()
+        );
     }
 
     public EventContext createContext(SemanticTokensParams params) {
-        return createContext(params.getTextDocument().getUri());
+        return new EventContext(logger, scheduler, schemaIndex, params.getTextDocument().getUri());
     }
 
-    public EventContext createContext(String fileURI) {
-        SchemaDocumentParser document = scheduler.getDocument(fileURI);
-        return new EventContext(logger, scheduler, schemaIndex, document);
-    }
 }

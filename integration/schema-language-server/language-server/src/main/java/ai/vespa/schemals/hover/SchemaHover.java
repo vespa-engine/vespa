@@ -9,15 +9,15 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.context.EventContext;
+import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
 
-    public static Hover getHover(EventContext context, Position position) {
+    public static Hover getHover(EventPositionContext context) {
 
-        SchemaNode node = context.document.getLeafNodeAtPosition(position);
+        SchemaNode node = context.document.getLeafNodeAtPosition(context.position);
 
         if (node == null) {
             return null;

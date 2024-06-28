@@ -2,8 +2,6 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 
-import org.eclipse.lsp4j.TextDocumentPositionParams;
-
 public class EventContext {
 
     public final PrintStream logger;
@@ -15,12 +13,12 @@ public class EventContext {
         PrintStream logger,
         SchemaDocumentScheduler scheduler,
         SchemaIndex schemaIndex,
-        SchemaDocumentParser document
+        String fileURI
     ) {
         this.logger = logger;
         this.scheduler = scheduler;
         this.schemaIndex = schemaIndex;
-        this.document = document;
+        this.document = scheduler.getDocument(fileURI);
     }
 
 }

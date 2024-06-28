@@ -217,7 +217,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
             try {
 
-                return SchemaHover.getHover(eventContextCreator.createContext(params), params.getPosition());
+                return SchemaHover.getHover(eventContextCreator.createContext(params));
 
             } catch (CancellationException ignore) {
                 // Ignore
@@ -235,7 +235,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
     
             try {
     
-                return Either.forLeft(SchemaDefinition.getDefinition(eventContextCreator.createContext(params), params.getPosition()));
+                return Either.forLeft(SchemaDefinition.getDefinition(eventContextCreator.createContext(params)));
     
             } catch (CancellationException ignore) {
                 // Ignore
