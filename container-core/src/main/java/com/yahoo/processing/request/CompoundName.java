@@ -334,7 +334,7 @@ public final class CompoundName {
     /**
      *  Creates a CompoundName from a string, possibly reusing from cache.
      *  Prefer over constructing on the fly.
-     **/
+     */
     public static CompoundName from(String name) {
         CompoundName found = cache.get(name);
         if (found != null) return found;
