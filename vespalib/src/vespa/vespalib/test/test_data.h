@@ -4,6 +4,7 @@
 
 #include "test_data_base.h"
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <filesystem>
 
 namespace vespalib::test {
