@@ -2356,8 +2356,7 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.jdisc.SharedResource",
-      "com.yahoo.jdisc.http.filter.RequestFilterBase",
-      "com.yahoo.component.chain.model.Chainable"
+      "com.yahoo.jdisc.http.filter.RequestFilterBase"
     ],
     "attributes" : [
       "public",
@@ -2371,7 +2370,9 @@
   },
   "com.yahoo.jdisc.http.filter.RequestFilterBase" : {
     "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.component.chain.model.Chainable"
+    ],
     "attributes" : [
       "public",
       "interface",
@@ -2401,8 +2402,7 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [
       "com.yahoo.jdisc.SharedResource",
-      "com.yahoo.jdisc.http.filter.ResponseFilterBase",
-      "com.yahoo.component.chain.model.Chainable"
+      "com.yahoo.jdisc.http.filter.ResponseFilterBase"
     ],
     "attributes" : [
       "public",
@@ -2416,7 +2416,9 @@
   },
   "com.yahoo.jdisc.http.filter.ResponseFilterBase" : {
     "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.component.chain.model.Chainable"
+    ],
     "attributes" : [
       "public",
       "interface",
