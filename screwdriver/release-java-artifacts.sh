@@ -3,18 +3,17 @@
 
 set -euo pipefail
 
-if [[ $# -ne 2 ]]; then
-    echo "Usage: $0 <Vespa version> <Git reference>"
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <Vespa release version>"
     exit 1
 fi
 
-if [[ -z $OSSRH_USER ]] || [[ -z $OSSRH_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE ]] || [[ -z $GPG_ENCPHRASE ]]; then
-    echo -e "The follwing env variables must be set:\n OSSRH_USER\n OSSRH_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE\n GPG_ENCPHRASE"
+if [[ -z $OSSRH_USER ]] || [[ -z $OSSRH_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE_TOKEN ]] || [[ -z $GPG_ENCPHRASE_TOKEN ]]; then
+    echo -e "The follwing env variables must be set:\n OSSRH_USER\n OSSRH_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
     exit 1
 fi
 
 readonly VESPA_RELEASE="$1"
-readonly VESPA_REF="$2"
 
 QUERY_VERSION_HTTP_CODE=$(curl --write-out %{http_code} --silent --location --output /dev/null https://oss.sonatype.org/content/repositories/releases/com/yahoo/vespa/parent/${VESPA_RELEASE}/parent-${VESPA_RELEASE}.pom)
 if [[ "200" == $QUERY_VERSION_HTTP_CODE ]]; then
@@ -22,63 +21,93 @@ if [[ "200" == $QUERY_VERSION_HTTP_CODE ]]; then
   exit 0
 fi
 
-export JAVA_HOME=$(dirname $(dirname $(readlink -f /usr/bin/java)))
+export SOURCE_DIR=$(pwd)
 
-VESPA_DIR=vespa-clean
-git clone https://github.com/vespa-engine/vespa.git $VESPA_DIR
-
-cd $VESPA_DIR
-git checkout $VESPA_REF
-
-mkdir -p $SD_SOURCE_DIR/screwdriver/deploy
+mkdir -p $SOURCE_DIR/screwdriver/deploy
 # gpg-agent in RHEL 8 runs out of memory if we use Maven and sign in parallel. Add option to overcome this.
-echo "auto-expand-secmem" >> $SD_SOURCE_DIR/screwdriver/deploy/gpg-agent.conf
-openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE -in $SD_SOURCE_DIR/screwdriver/pubring.gpg.enc -out $SD_SOURCE_DIR/screwdriver/deploy/pubring.gpg -d
-openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE -in $SD_SOURCE_DIR/screwdriver/secring.gpg.enc -out $SD_SOURCE_DIR/screwdriver/deploy/secring.gpg -d
-chmod 700 $SD_SOURCE_DIR/screwdriver/deploy
-chmod 600 $SD_SOURCE_DIR/screwdriver/deploy/*
+echo "auto-expand-secmem" >> $SOURCE_DIR/screwdriver/deploy/gpg-agent.conf
+openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/screwdriver/pubring.gpg.enc -out $SOURCE_DIR/screwdriver/deploy/pubring.gpg -d
+openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/screwdriver/secring.gpg.enc -out $SOURCE_DIR/screwdriver/deploy/secring.gpg -d
+chmod 700 $SOURCE_DIR/screwdriver/deploy
+chmod 600 $SOURCE_DIR/screwdriver/deploy/*
+trap "rm -rf $SOURCE_DIR/screwdriver/deploy" EXIT
 
-# Build the Java code with the correct version set
-$SD_SOURCE_DIR/screwdriver/replace-vespa-version-in-poms.sh $VESPA_RELEASE .
+# Number of parallel uploads
+NUM_PROC=10
 
-# We disable javadoc for all modules not marked as public API
-for MODULE in $(comm -2 -3 \
-                <(find . -name "*.java" | awk -F/ '{print $2}' | sort -u)
-                <(find . -name "package-info.java" -exec grep -HnE "@(com.yahoo.api.annotations.)?PublicApi.*" {} \; | awk -F/ '{print $2}' | sort -u)); do
-    mkdir -p $MODULE/src/main/javadoc
-    echo "No javadoc available for module" > $MODULE/src/main/javadoc/README
-done
+export MVN=${MVN:-mvn}
+export MVN_OPTS=${MVN_OPTS:-}
+export MAVEN_GPG_PASSPHRASE=$GPG_PASSPHRASE_TOKEN
 
-# Workaround new module without java code and no javadoc
-mkdir -p container-spifly/src/main/javadoc
-echo "No javadoc available for module" > container-spifly/src/main/javadoc/README
+export TMP_STAGING=$(mktemp -d)
+mkdir -p $TMP_STAGING
+trap "rm -rf $TMP_STAGING" EXIT
 
-# Workaround for broken nexus-staging-maven-plugin instead of swapping JDK
-export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
-export VESPA_MAVEN_EXTRA_OPTS="--show-version --batch-mode"
-export FACTORY_VESPA_VERSION=$VESPA_RELEASE
-./bootstrap.sh
+sign_module() {
+    ECHO=""
 
-COMMON_MAVEN_OPTS="$VESPA_MAVEN_EXTRA_OPTS --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
-TMPFILE=$(mktemp)
-mvn $COMMON_MAVEN_OPTS  -pl :dependency-versions -DskipStagingRepositoryClose=true deploy 2>&1 | tee $TMPFILE
+    P=$1
+    V=$(basename $P)
+    A=$(basename $(dirname $P))
+    G=$(dirname $(dirname $P) | sed 's,/,.,g')
+    POM="$P/$A-$V.pom"
+    JAR="$P/$A-$V.jar"
+    if [[ -f $JAR ]]; then
+        FILE_OPTS="-Dfile=$JAR -Dpackaging=jar"
+    else
+        FILE_OPTS="-Dfile=$POM -Dpackaging=pom"
+    fi
 
-# Find the stage repo name
-STG_REPO=$(cat $TMPFILE | grep 'Staging repository at http' | head -1 | awk -F/ '{print $NF}')
-rm -f $TMPFILE
+    AFILES=()
+    ATYPES=()
+    ACLASSIFIERS=()
+    for EX in $(find $P -name "$A-$V-*.jar"); do
+        AFILES+=($EX)
+        EXB=$(basename $EX)
+        EXT=${EXB##*.}
+        ATYPES+=($EXT)
+        EXF=${EXB%.*}
+        EXC=$(echo $EXF|sed "s,$A-$V-,,")
+        ACLASSIFIERS+=($EXC)
+    done
 
-# Deploy plugins
-mvn $COMMON_MAVEN_OPTS --file ./maven-plugins/pom.xml -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
+    if (( ${#AFILES[@]} > 0 )); then
+        EXTRA_FILES_OPTS="-Dfiles=$(echo ${AFILES[@]} | sed 's/\ /,/g') -Dtypes=$(echo ${ATYPES[@]} | sed 's/\ /,/g') -Dclassifiers=$(echo ${ACLASSIFIERS[@]} | sed 's/\ /,/g')"
+    fi
 
-# Deploy the rest of the artifacts
-mvn $COMMON_MAVEN_OPTS --threads 8 -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
+    $ECHO $MVN --settings=$SOURCE_DIR/screwdriver/settings-publish.xml \
+          $MVN_OPTS gpg:sign-and-deploy-file \
+          -Durl=file://$TMP_STAGING \
+          -DrepositoryId=maven-central \
+          -DgroupId=$G \
+          -DartifactId=$A \
+          -Dversion=$V \
+          -DpomFile=$POM \
+          -DgeneratePom=false \
+          $FILE_OPTS \
+          $EXTRA_FILES_OPTS
 
-# Close with checks
-mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12:rc-close -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
+}
+export -f sign_module
 
-# Release if ok
-mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12:rc-release -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
+aws s3 cp  s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar .
+aws s3 cp  s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar.pem .
+aws s3 cp  s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar.sig .
+cosign verify-blob --certificate-identity https://buildkite.com/vespaai/vespa-engine-vespa --certificate-oidc-issuer https://agent.buildkite.com --signature maven-repo.tar.sig --certificate maven-repo.tar.pem maven-repo.tar
+rm -rf maven-repo
+tar xvf maven-repo.tar
+REPO_ROOT=$(pwd)/maven-repo
 
-# Delete the GPG rings
-rm -rf $SD_SOURCE_DIR/screwdriver/deploy
+cd $REPO_ROOT
+find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
+
+$MVN --settings=$SOURCE_DIR/screwdriver/settings-publish.xml \
+    org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:deploy-staged-repository \
+    -DrepositoryDirectory=$TMP_STAGING \
+    -DnexusUrl=https://oss.sonatype.org \
+    -DserverId=ossrh \
+    -DautoReleaseAfterClose=true \
+    -DstagingProfileId=407c0c3e1a197
+
+
 

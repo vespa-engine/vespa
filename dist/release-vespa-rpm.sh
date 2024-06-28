@@ -8,11 +8,6 @@ if [[ $# -ne 2 ]]; then
   exit 1
 fi
 
-if [[ -z $COPR_WEBHOOK ]]; then
-    echo "This script requires the COPR_WEBHOOK environment variable to be set."
-    exit 1
-fi
-
 readonly VERSION=$1
 readonly GITREF=$2
 readonly RELEASE_TAG="v$VERSION"

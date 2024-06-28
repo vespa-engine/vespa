@@ -276,20 +276,12 @@ jobs:
             return 1
           fi
           meta set vespa.version $VESPA_VERSION
-      - install-dependencies: |
-          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf install -y docker-ce docker-ce-cli containerd.io python3 python3-pip
-          docker system info
-      - release-java-artifacts: |
-          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
-      - release-rpms: |
-          screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
-      - release-container-image: |
-          screwdriver/release-container-image-docker.sh $VESPA_VERSION
-      - release-ann-benchmark: |
-          screwdriver/release-ann-benchmark.sh $VESPA_VERSION
-      - update-sample-apps: |
-          screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
+      - trig-buildkite: |
+          BUILDKITE_JSON=$(screwdriver/trig-buildkite-pipeline.sh vespa-engine-vespa-release master $VESPA_VERSION $VESPA_REF)
+      - wait-for-buildkite: |
+          BUILDKITE_URL=$(jq -re '.url' <<< "$BUILDKITE_JSON")
+          BUILDKITE_WEB_URL=$(jq -re '.web_url' <<< "$BUILDKITE_JSON")
+          screwdriver/wait-for-buildkite-build.sh $BUILDKITE_URL $BUILDKITE_WEB_URL 1800
       - update-released-time: |
           screwdriver/factory-command.sh update-released-time $VESPA_VERSION
 
