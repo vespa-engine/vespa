@@ -144,8 +144,6 @@ public class SchemaSemanticTokens implements Visitor {
                 SchemaNode parent = node.getParent();
                 String parnetClassName = parent.getIdentifierString();
                 Integer tokenType = identifierTypeMap.get(parnetClassName);
-
-                logger.println(parnetClassName);
                 
                 if (tokenType != null) {
                     ret.add(new SemanticTokenMarker(tokenType, node));

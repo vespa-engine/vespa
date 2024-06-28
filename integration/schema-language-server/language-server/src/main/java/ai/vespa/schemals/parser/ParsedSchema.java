@@ -5,26 +5,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ParsedSchema extends ParsedBlock {
-    private ArrayList<ParsedDocument> documents = new ArrayList<ParsedDocument>();
+    private ParsedDocument myDocument = null;
     private final Map<String, ParsedFieldSet> fieldSets = new LinkedHashMap<>();
 
     public ParsedSchema(String name) {
         super(name, "schema");
     }
 
-
-    public String toString() {
-        String ret = "ParsedSchema(" + name() + ")";
-
-        for (ParsedDocument document : documents) {
-            ret += "\n\t" + document.toString().replaceAll("\n", "\n\t");
-        }
-        return ret;
-    }
-
     public void addDocument(ParsedDocument document) {
-        documents.add(document);
-        // TODO: Refactor. Seems like only one document is allowed in a schema
+        verifyThat(myDocument == null,
+                   "already has", myDocument, "so cannot add", document);
+        // TODO - disallow?
+        // verifyThat(name().equals(document.name()),
+        // "schema " + name() + " can only contain document named " + name() + ", was: "+ document.name());
+        this.myDocument = document;
     }
 
     void addFieldSet(ParsedFieldSet fieldSet) {

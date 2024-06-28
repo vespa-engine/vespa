@@ -70,8 +70,6 @@ public class SchemaDocumentParser {
 
             ParsedSchema root = parserStrict.Root();
             faultySchema = false;
-            
-            logger.println("VALID");
         } catch (ParseException e) {
             faultySchema = true;
 
@@ -80,12 +78,29 @@ public class SchemaDocumentParser {
             Range range = CSTUtils.getNodeRange(node);
 
             errors.add(new Diagnostic(range, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            // Complex error, invalidate the whole document
+
+            errors.add(
+                new Diagnostic(
+                    new Range(
+                        new Position(0, 0),
+                        new Position((int)content.lines().count() - 1, 0)
+                    ),
+                    e.getMessage())
+                );
+
+            diagnosticsHandler.publishDiagnostics(fileURI, errors);
+            
+            return;
         }
 
         SchemaParser parserFaultTolerant = new SchemaParser(getFileName(), sequence);
         try {
             parserFaultTolerant.Root();
         } catch (ParseException e) {
+            // Ignore
+        } catch (IllegalArgumentException e) {
             // Ignore
         }
 
@@ -172,6 +187,9 @@ public class SchemaDocumentParser {
     private ArrayList<Diagnostic> parseCST(Node node) {
         schemaIndex.clearDocument(fileURI);
         CST = new SchemaNode(node);
+        if (node == null) {
+            return new ArrayList<Diagnostic>();
+        }
         return traverseCST(CST);
     }
 
