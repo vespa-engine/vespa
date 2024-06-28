@@ -1,6 +1,8 @@
 package ai.vespa.schemals;
 
 
+import ai.vespa.schemals.context.EventContext;
+import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.context.SchemaIndex;
@@ -34,7 +36,6 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
-import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SemanticTokens;
@@ -52,13 +53,11 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 public class SchemaTextDocumentService implements TextDocumentService {
 
     private PrintStream logger;
-    private SchemaDocumentScheduler schemaDocumentScheduler;
-    private SchemaIndex schemaIndex;
+    private EventContextCreator eventContextCreator;
 
     public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler, SchemaIndex schemaIndex) {
         this.logger = logger;
-        this.schemaDocumentScheduler = schemaDocumentScheduler;
-        this.schemaIndex = schemaIndex;
+        eventContextCreator = new EventContextCreator(logger, schemaDocumentScheduler, schemaIndex);
     }
 
     @Override
@@ -152,23 +151,29 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public void didOpen(DidOpenTextDocumentParams params) {
         TextDocumentItem document = params.getTextDocument();
 
-        schemaDocumentScheduler.openDocument(document);
+        SchemaDocumentScheduler scheduler = eventContextCreator.scheduler;
+
+        scheduler.openDocument(document);
     }
 
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
         var document = params.getTextDocument();
 
+        SchemaDocumentScheduler scheduler = eventContextCreator.scheduler;
+
         var contentChanges = params.getContentChanges();
         for (int i = 0; i < contentChanges.size(); i++) {
-            schemaDocumentScheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
+            scheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
         }
     }
 
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
         TextDocumentIdentifier documentIdentifier = params.getTextDocument();
-        schemaDocumentScheduler.closeDocument(documentIdentifier.getUri());
+        SchemaDocumentScheduler scheduler = eventContextCreator.scheduler;
+
+        scheduler.closeDocument(documentIdentifier.getUri());
     }
 
     @Override
@@ -189,10 +194,9 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
 
             try {
-                String fileURI = params.getTextDocument().getUri();
-                SchemaDocumentParser documnet = schemaDocumentScheduler.getDocument(fileURI);
 
-                return SchemaSemanticTokens.getSemanticTokens(documnet, logger);
+                return SchemaSemanticTokens.getSemanticTokens(eventContextCreator.createContext(params));
+                 
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
             } catch (Throwable e) {
@@ -212,10 +216,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
 
             try {
-                String fileURI = params.getTextDocument().getUri();
-                SchemaDocumentParser document = schemaDocumentScheduler.getDocument(fileURI);
 
-                return SchemaHover.getHover(document, params.getPosition(), logger);
+                return SchemaHover.getHover(eventContextCreator.createContext(params), params.getPosition());
 
             } catch (CancellationException ignore) {
                 // Ignore
@@ -232,10 +234,8 @@ public class SchemaTextDocumentService implements TextDocumentService {
         return CompletableFutures.computeAsync((cancelChecker) -> {
     
             try {
-                String fileURI = params.getTextDocument().getUri();
-                SchemaDocumentParser document = schemaDocumentScheduler.getDocument(fileURI);
     
-                return Either.forLeft(SchemaDefinition.getDefinition(document, params.getPosition(), schemaIndex, logger));
+                return Either.forLeft(SchemaDefinition.getDefinition(eventContextCreator.createContext(params), params.getPosition()));
     
             } catch (CancellationException ignore) {
                 // Ignore

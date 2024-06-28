@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 
+import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -15,15 +16,15 @@ import ai.vespa.schemals.parser.*;
 public class SchemaDefinition {
 
     public static ArrayList<Location> getDefinition(
-        SchemaDocumentParser document,
-        Position position,
-        SchemaIndex schemaIndex,
-        PrintStream logger
+        EventContext context,
+        Position position
     ) {
+
+        SchemaDocumentParser document = context.document;
 
         SchemaNode node = document.getLeafNodeAtPosition(position);
 
-        SchemaNode refersTo = schemaIndex.findSymbol(document.getFileURI(), Token.TokenType.FIELD, node.getText());
+        SchemaNode refersTo = context.schemaIndex.findSymbol(document.getFileURI(), Token.TokenType.FIELD, node.getText());
         
         if (refersTo == null) {
             return new ArrayList<Location>();

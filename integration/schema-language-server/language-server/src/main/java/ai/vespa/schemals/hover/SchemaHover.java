@@ -1,25 +1,23 @@
 package ai.vespa.schemals.hover;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
 
-    public static Hover getHover(SchemaDocumentParser document, Position position, PrintStream logger) {
+    public static Hover getHover(EventContext context, Position position) {
 
-        SchemaNode node = document.getLeafNodeAtPosition(position);
+        SchemaNode node = context.document.getLeafNodeAtPosition(position);
 
         if (node == null) {
             return null;

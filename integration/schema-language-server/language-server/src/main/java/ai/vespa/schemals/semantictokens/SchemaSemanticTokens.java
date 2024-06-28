@@ -14,6 +14,7 @@ import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
+import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.parser.*;
 
@@ -165,14 +166,14 @@ public class SchemaSemanticTokens implements Visitor {
         return ret;
     }
 
-    public static SemanticTokens getSemanticTokens(SchemaDocumentParser document, PrintStream logger) {
+    public static SemanticTokens getSemanticTokens(EventContext context) {
 
-        SchemaNode node = document.getRootNode();
+        SchemaNode node = context.document.getRootNode();
         if (node == null) {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> markers = traverseCST(node, logger);
+        ArrayList<SemanticTokenMarker> markers = traverseCST(node, context.logger);
         ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(markers);
 
         return new SemanticTokens(compactMarkers);
