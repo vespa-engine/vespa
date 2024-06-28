@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mysearch.h"
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow.h>
@@ -22,6 +21,8 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/normalize_class_name.h>
 #include <filesystem>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("blueprint_test");
@@ -999,9 +1000,9 @@ TEST("test WeakAnd Blueprint") {
                 auto &s = dynamic_cast<WeakAndSearch&>(*search);
                 EXPECT_EQUAL(456u, s.getN());
                 ASSERT_EQUAL(3u, s.getTerms().size());
-                EXPECT_GREATER(s.get_max_score(0), 0.0);
-                EXPECT_GREATER(s.get_max_score(1), 0.0);
-                EXPECT_GREATER(s.get_max_score(2), 0.0);
+                EXPECT_GREATER(s.get_max_score(0), 0l);
+                EXPECT_GREATER(s.get_max_score(1), 0l);
+                EXPECT_GREATER(s.get_max_score(2), 0l);
                 wand::Terms terms = s.getTerms();
                 std::sort(terms.begin(), terms.end(), WeightOrder());
                 EXPECT_EQUAL(120, terms[0].weight);
