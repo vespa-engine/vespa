@@ -23,13 +23,14 @@ fi
 
 export SOURCE_DIR=$(pwd)
 
-mkdir -p screwdriver/deploy
+mkdir -p $SOURCE_DIR/screwdriver/deploy
 # gpg-agent in RHEL 8 runs out of memory if we use Maven and sign in parallel. Add option to overcome this.
 echo "auto-expand-secmem" >> $SOURCE_DIR/screwdriver/deploy/gpg-agent.conf
 openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/screwdriver/pubring.gpg.enc -out $SOURCE_DIR/screwdriver/deploy/pubring.gpg -d
 openssl aes-256-cbc -md md5 -pass pass:$GPG_ENCPHRASE_TOKEN -in $SOURCE_DIR/screwdriver/secring.gpg.enc -out $SOURCE_DIR/screwdriver/deploy/secring.gpg -d
 chmod 700 $SOURCE_DIR/screwdriver/deploy
 chmod 600 $SOURCE_DIR/screwdriver/deploy/*
+trap "rm -rf $SOURCE_DIR/screwdriver/deploy" EXIT
 
 # Number of parallel uploads
 NUM_PROC=10
@@ -108,6 +109,5 @@ $MVN --settings=$SOURCE_DIR/screwdriver/settings-publish.xml \
     -DautoReleaseAfterClose=true \
     -DstagingProfileId=407c0c3e1a197
 
-# Delete the GPG rings
-rm -rf $SD_SOURCE_DIR/screwdriver/deploy
+
 
