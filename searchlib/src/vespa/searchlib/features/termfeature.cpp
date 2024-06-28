@@ -21,8 +21,7 @@ TermExecutor::TermExecutor(const search::fef::IQueryEnvironment &env,
     _significance(0)
 {
     if (_termData != nullptr) {
-        feature_t fallback = util::calculate_legacy_significance(*_termData);
-        _significance = util::lookupSignificance(env, termId, fallback);
+        _significance = util::get_legacy_significance(env, *_termData);
     }
 }
 

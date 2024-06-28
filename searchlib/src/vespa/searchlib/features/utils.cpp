@@ -102,16 +102,6 @@ lookupSignificance(const search::fef::IQueryEnvironment& env, const ITermData& t
     return fallback;
 }
 
-feature_t
-lookupSignificance(const search::fef::IQueryEnvironment& env, uint32_t termId, feature_t fallback)
-{
-    const ITermData* term = env.getTerm(termId);
-    if (term == nullptr) {
-        return fallback;
-    }
-    return lookupSignificance(env, *term, fallback);
-}
-
 static const double N = 1000000.0;
 
 feature_t
@@ -143,7 +133,7 @@ aggregate_max(DocumentFrequency lhs, DocumentFrequency rhs)
 }
 
 feature_t
-calculate_legacy_significance(const search::fef::ITermData& termData)
+calculate_legacy_significance(const ITermData& termData)
 {
     using FRA = search::fef::ITermFieldRangeAdapter;
     DocumentFrequency df(0, 0);
@@ -170,7 +160,7 @@ lookupTable(const search::fef::IIndexEnvironment & env, const vespalib::string &
     return retval;
 }
 
-const search::fef::ITermData *
+const ITermData *
 getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label)
 {
     // Labeling the query item with unique id '5' with the label 'foo'
@@ -216,14 +206,15 @@ lookup_document_frequency(const search::fef::IQueryEnvironment& env, const ITerm
     return {};
 }
 
-std::optional<DocumentFrequency>
-lookup_document_frequency(const search::fef::IQueryEnvironment& env, uint32_t termId)
+feature_t
+get_legacy_significance(const IQueryEnvironment& env, const ITermData& term)
 {
-    const ITermData* term = env.getTerm(termId);
-    if (term == nullptr) {
-        return {};
+    auto docfreq = lookup_document_frequency(env, term);
+    if (docfreq.has_value()) {
+        return calculate_legacy_significance(docfreq.value());
     }
-    return lookup_document_frequency(env, *term);
+    feature_t fallback = calculate_legacy_significance(term);
+    return lookupSignificance(env, term, fallback);
 }
 
 }

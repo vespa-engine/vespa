@@ -83,11 +83,12 @@ TEST(UtilsTest, lookup_document_frequency)
     // Complete properties
     query_env.getProperties().add("vespa.term.10.docfreq", "10");
     query_env.getProperties().add("vespa.term.10.docfreq", "15");
-    EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, 0)); // bad unique id
-    EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, 1)); // missing properties
-    EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, 2)); // incomplete properties
-    EXPECT_EQ(OptDF({10, 15}), lookup_document_frequency(query_env, 3));
-    EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, 4)); // term not found
+    auto& terms = query_env.getTerms();
+    EXPECT_EQ(4, terms.size());
+    EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, terms[0])); // bad unique id
+    EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, terms[1])); // missing properties
+    EXPECT_EQ(OptDF(), lookup_document_frequency(query_env, terms[2])); // incomplete properties
+    EXPECT_EQ(OptDF({10, 15}), lookup_document_frequency(query_env, terms[3]));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
