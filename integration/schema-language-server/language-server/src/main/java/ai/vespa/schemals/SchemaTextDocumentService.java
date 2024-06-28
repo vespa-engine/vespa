@@ -1,9 +1,7 @@
 package ai.vespa.schemals;
 
-
-import ai.vespa.schemals.context.EventContext;
+import ai.vespa.schemals.completion.SchemaCompletion;
 import ai.vespa.schemals.context.EventContextCreator;
-import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.definition.SchemaDefinition;
@@ -63,47 +61,19 @@ public class SchemaTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
         // Provide completion item.
-        return CompletableFuture.supplyAsync(() -> {
-            List<CompletionItem> completionItems = new ArrayList<>();
+        return CompletableFutures.computeAsync((canelChecker) -> {
             try {
-                // Sample Completion item for sayHello
-                CompletionItem completionItem = new CompletionItem();
-                // Define the text to be inserted in to the file if the completion item is selected.
-                completionItem.setInsertText("schema test {\n\n}");
-                // Set the label that shows when the completion drop down appears in the Editor.
-                completionItem.setLabel("New Schema");
-                // Set the completion kind. This is a snippet.
-                // That means it replace character which trigger the completion and
-                // replace it with what defined in inserted text.
-                completionItem.setKind(CompletionItemKind.Snippet);
-                // This will set the details for the snippet code which will help user to
-                // understand what this completion item is.
-                completionItem.setDetail("Creates a new Schema");
 
-                // Add the sample completion item to the list.
-                completionItems.add(completionItem);
+                return Either.forLeft(SchemaCompletion.getCompletionItems(eventContextCreator.createContext(completionParams)));
 
-                CompletionItem completionItem2 = new CompletionItem();
-                // Define the text to be inserted in to the file if the completion item is selected.
-                completionItem2.setInsertText("document {\n\n}");
-                // Set the label that shows when the completion drop down appears in the Editor.
-                completionItem2.setLabel("document");
-                // Set the completion kind. This is a snippet.
-                // That means it replace character which trigger the completion and
-                // replace it with what defined in inserted text.
-                completionItem2.setKind(CompletionItemKind.Snippet);
-                // This will set the details for the snippet code which will help user to
-                // understand what this completion item is.
-                completionItem2.setDetail("Creates a empty document");
-
-                // Add the sample completion item to the list.
-                completionItems.add(completionItem2);
-            } catch (Exception e) {
-                //TODO: Handle the exception.
+            } catch(CancellationException ignore) {
+                // Ignore
+            } catch (Throwable e) {
+                logger.println(e);
             }
 
             // Return the list of completion items.
-            return Either.forLeft(completionItems);
+            return Either.forLeft(new ArrayList<>());
         });
     }
 

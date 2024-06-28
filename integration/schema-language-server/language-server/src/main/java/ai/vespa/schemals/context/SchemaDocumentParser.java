@@ -218,7 +218,7 @@ public class SchemaDocumentParser {
         return CST;
     }
 
-    private SchemaNode getLeafNodeAtPositon(SchemaNode node, Position pos) {
+    private SchemaNode getNodeAtPositon(SchemaNode node, Position pos, boolean onlyLeaf) {
         if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
             return node;
         }
@@ -234,7 +234,7 @@ public class SchemaDocumentParser {
             if (CSTUtils.positionLT(pos, search.getRange().getEnd())) {
 
                 if (CSTUtils.positionInRange(search.getRange(), pos)) {
-                    return getLeafNodeAtPositon(search, pos);
+                    return getNodeAtPositon(search, pos, onlyLeaf);
                 }
 
                 upperLimit = currentSearch - 1;
@@ -245,11 +245,19 @@ public class SchemaDocumentParser {
             currentSearch = (upperLimit + lowerLimit) / 2;
         }
 
+        if (CSTUtils.positionInRange(node.getRange(), pos) && !onlyLeaf) {
+            return node;
+        }
+
         return null;
     }
 
     public SchemaNode getLeafNodeAtPosition(Position pos) {
-        return getLeafNodeAtPositon(CST, pos);
+        return getNodeAtPositon(CST, pos, true);
+    }
+
+    public SchemaNode getNodeAtPosition(Position pos) {
+        return getNodeAtPositon(CST, pos, false);
     }
 
 }

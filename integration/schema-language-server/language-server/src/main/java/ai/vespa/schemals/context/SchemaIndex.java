@@ -1,6 +1,7 @@
 package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -54,11 +55,24 @@ public class SchemaIndex {
         );
     }
 
-    public SchemaNode findSymbol(String FileURI, Token.TokenType type, String identifier) {
-        SchemaIndexItem results = database.get(createDBKey(FileURI, type, identifier));
+    public SchemaNode findSymbol(String fileURI, Token.TokenType type, String identifier) {
+        SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
         if (results == null) {
             return null;
         }
         return results.node;
+    }
+
+    public ArrayList<SchemaNode> findSymbols(String fileURI, Token.TokenType type) {
+        ArrayList<SchemaNode> ret = new ArrayList<SchemaNode>(); 
+
+        for (Map.Entry<String, SchemaIndexItem> set : database.entrySet()) {
+            SchemaIndexItem item = set.getValue();
+            if (item.fileURI == fileURI && item.type == type) {
+                ret.add(item.node);
+            }
+        }
+
+        return ret;
     }
 }
