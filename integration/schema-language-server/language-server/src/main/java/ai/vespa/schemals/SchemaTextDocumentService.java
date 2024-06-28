@@ -3,6 +3,8 @@ package ai.vespa.schemals;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
+import ai.vespa.schemals.context.SchemaIndex;
+import ai.vespa.schemals.definition.SchemaDefinition;
 import ai.vespa.schemals.hover.SchemaHover;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
 
@@ -18,6 +20,7 @@ import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
@@ -30,6 +33,7 @@ import org.eclipse.lsp4j.DocumentRangeFormattingParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
@@ -49,10 +53,12 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
     private PrintStream logger;
     private SchemaDocumentScheduler schemaDocumentScheduler;
+    private SchemaIndex schemaIndex;
 
-    public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler) {
+    public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler, SchemaIndex schemaIndex) {
         this.logger = logger;
         this.schemaDocumentScheduler = schemaDocumentScheduler;
+        this.schemaIndex = schemaIndex;
     }
 
     @Override
@@ -218,6 +224,26 @@ public class SchemaTextDocumentService implements TextDocumentService {
             }
 
             return null; 
+        });
+    }
+
+    @Override
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(DefinitionParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+    
+            try {
+                String fileURI = params.getTextDocument().getUri();
+                SchemaDocumentParser document = schemaDocumentScheduler.getDocument(fileURI);
+    
+                return Either.forLeft(SchemaDefinition.getDefinition(document, params.getPosition(), schemaIndex, logger));
+    
+            } catch (CancellationException ignore) {
+                // Ignore
+            } catch (Throwable e) {
+                logger.println(e);
+            }
+    
+            return Either.forLeft(new ArrayList<Location>());
         });
     }
 }

@@ -13,7 +13,6 @@ public class SchemaNode {
     private String identifierString;
     private SchemaNode parent;
     private boolean isUserDefinedIdentifier = false;
-    private SchemaNode refersTo = null;
     private Node originalNode;
 
     // This array has to be in order, without overlapping elements
@@ -56,15 +55,6 @@ public class SchemaNode {
 
     public boolean isUserDefinedIdentifier() {
         return isUserDefinedIdentifier;
-    }
-
-    public SchemaNode getRefersTo() {
-        return refersTo;
-    }
-
-    public SchemaNode setRefersTo(SchemaNode node) {
-        refersTo = node;
-        return node;
     }
 
     public String getIdentifierString() {
