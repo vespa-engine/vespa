@@ -12,8 +12,7 @@ QueryTerm
 QueryTermFactory::create(const IQueryEnvironment & env, uint32_t termIdx, bool lookupConnectedness)
 {
     const ITermData *termData = env.getTerm(termIdx);
-    feature_t fallback = util::calculate_legacy_significance(*termData);
-    feature_t significance = features::util::lookupSignificance(env, termIdx, fallback);
+    feature_t significance = util::get_legacy_significance(env, *termData);
     feature_t connectedness = 0;
     if (lookupConnectedness) {
         connectedness = util::lookupConnectedness(env, termIdx);
