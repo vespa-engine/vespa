@@ -148,14 +148,7 @@ public class ChainBuilder<T extends ChainedComponent> {
     }
 
     private NameProvider getNameProvider(String name) {
-        NameProvider nameProvider = nameProviders.get(name);
-        if (nameProvider != null)
-            return nameProvider;
-        else {
-            nameProvider = new ComponentNameProvider(name);
-            nameProviders.put(name, nameProvider);
-            return nameProvider;
-        }
+        return nameProviders.computeIfAbsent(name, ComponentNameProvider::new);
     }
 
     private OrderedReadyNodes getReadyNodes() {

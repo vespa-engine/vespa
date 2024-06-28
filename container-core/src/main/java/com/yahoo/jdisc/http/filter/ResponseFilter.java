@@ -6,7 +6,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.SharedResource;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public interface ResponseFilter extends SharedResource, ResponseFilterBase {
 
