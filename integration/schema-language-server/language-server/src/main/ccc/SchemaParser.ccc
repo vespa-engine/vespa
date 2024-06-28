@@ -381,23 +381,30 @@ void fieldSetElm(ParsedSchema schema) :
 }
 
   <FIELDSET> name = identifierStr openLbrace() { fieldSet = new ParsedFieldSet(name); }
-  fieldSetBody(fieldSet)
+    ((fieldsElm(fieldSet) | queryCommandElm(fieldSet)) (<NL>)*)+
   <RBRACE>
   {
      schema.addFieldSet(fieldSet);
   }
 ;
 
-void fieldSetBody(ParsedFieldSet fieldSet) :
+void fieldsElm(ParsedFieldSet fieldSet) :
 {
     String name;
+}
+    (
+        <FIELDS><COLON> name = identifierStr { fieldSet.addField(name); }
+        ( <COMMA> name = identifierStr { fieldSet.addField(name); })*
+    )
+;
+
+void queryCommandElm(ParsedFieldSet fieldSet) :
+{
     String queryCommand;
 }
-  ((
-    ( <FIELDS><COLON> name = identifierStr { fieldSet.addField(name); }
-            ( <COMMA> name = identifierStr { fieldSet.addField(name); } )* )
-  | ( <QUERY_COMMAND> <COLON> (queryCommand = identifierWithDashStr | queryCommand = quotedString)) { fieldSet.addQueryCommand(queryCommand); }
-  ) (<NL>)* )+
+    (
+        <QUERY_COMMAND><COLON> (queryCommand = identifierWithDashStr | queryCommand = quotedString) { fieldSet.addQueryCommand(queryCommand); }
+    )
 ;
 
 /**

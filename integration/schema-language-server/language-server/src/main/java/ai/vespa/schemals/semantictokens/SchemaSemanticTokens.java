@@ -40,6 +40,7 @@ public class SchemaSemanticTokens implements Visitor {
         put("ai.vespa.schemals.parser.ast.documentElm", "class");
         put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
+        put("ai.vespa.schemals.parser.ast.fieldsElm", "variable");
     }};
 
     private static ArrayList<String> tokenTypes;
@@ -143,6 +144,8 @@ public class SchemaSemanticTokens implements Visitor {
                 SchemaNode parent = node.getParent();
                 String parnetClassName = parent.getIdentifierString();
                 Integer tokenType = identifierTypeMap.get(parnetClassName);
+
+                logger.println(parnetClassName);
                 
                 if (tokenType != null) {
                     ret.add(new SemanticTokenMarker(tokenType, node));

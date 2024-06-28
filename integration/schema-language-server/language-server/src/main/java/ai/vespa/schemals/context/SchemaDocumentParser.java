@@ -132,7 +132,35 @@ public class SchemaDocumentParser {
         }
 
         // Check for symbol references
-        
+        if (
+            node.getType() == Token.TokenType.FIELDS &&
+            parent != null &&
+            parent.getIdentifierString() == "ai.vespa.schemals.parser.ast.fieldsElm"
+        ) {
+            for (int i = 2; i < parent.size(); i += 2) {
+                SchemaNode child = parent.get(i);
+
+                if (child.getType() == Token.TokenType.COMMA) {
+                    ret.add(new Diagnostic(child.getRange(), "Unexcpeted ',', expected an identifier."));
+                    break;
+                }
+
+                if (child.getText() != "") {
+                    if (schemaIndex.findSymbol(fileURI, Token.TokenType.FIELD, child.getText()) == null) {
+                        ret.add(new Diagnostic(child.getRange(), "Cannot find symbol: " + child.getText()));
+                    } else {
+                        child.setUserDefinedIdentifier();
+                    }
+                }
+
+                if (i + 1 < parent.size()) {
+                    if (parent.get(i + 1).getType() != Token.TokenType.COMMA) {
+                        ret.add(new Diagnostic(parent.get(i + 1).getRange(), "Unexpected token, expected ','"));
+                        break;
+                    }
+                }
+            }
+        }
 
         for (int i = 0; i < node.size(); i++) {
             ret.addAll(traverseCST(node.get(i)));
