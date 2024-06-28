@@ -27,6 +27,7 @@ public:
     stringref(const char * s) noexcept : _s(s), _sz(strlen(s)) { }
     constexpr stringref(const char * s, size_type sz) noexcept : _s(s), _sz(sz) { }
     stringref(const std::string & s) noexcept : _s(s.c_str()), _sz(s.size()) { }
+    stringref(const std::string_view & s) noexcept : _s(s.data()), _sz(s.size()) { }
     stringref(const stringref &) noexcept = default;
     stringref & operator =(const stringref &) noexcept = default;
     stringref(stringref &&) noexcept = default;
@@ -135,11 +136,14 @@ public:
 
     const char & operator [] (size_t i) const noexcept { return _s[i]; }
     operator std::string () const { return {_s, _sz}; }
+    operator std::string_view () const { return {_s, _sz}; }
     std::strong_ordering operator <=>(const char * s) const noexcept { return strong_compare(s, strlen(s)); }
     std::strong_ordering operator <=>(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(std::string_view s) const noexcept { return strong_compare(s.data(), s.size()); }
     std::strong_ordering operator <=>(stringref s) const noexcept { return strong_compare(s.data(), s.size()); }
     bool operator ==(const char * s) const noexcept { return strong_compare(s, strlen(s)) == std::strong_ordering::equal; }
     bool operator ==(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(std::string_view s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
     bool operator ==(stringref s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
     friend std::ostream & operator << (std::ostream & os, stringref v);
 private:
@@ -187,6 +191,7 @@ public:
     small_string(const void * s, size_type sz) noexcept : _buf(_stack), _sz(sz) { init(s); }
     small_string(stringref s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(const std::string & s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
+    small_string(std::string_view s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(small_string && rhs) noexcept
         : _sz(rhs.size()), _bufferSize(rhs._bufferSize)
     {
@@ -235,10 +240,14 @@ public:
     small_string& operator= (const std::string &rhs) noexcept {
         return operator= (stringref(rhs));
     }
+    small_string& operator= (std::string_view rhs) noexcept {
+        return operator= (stringref(rhs));
+    }
     void swap(small_string & rhs) noexcept {
         std::swap(*this, rhs);
     }
-    operator std::string () const { return std::string(c_str(), size()); }
+    operator std::string () const { return {c_str(), size()}; }
+    operator std::string_view () const { return {c_str(), size()}; }
     operator stringref () const noexcept { return stringref(c_str(), size()); }
     [[nodiscard]] char at(size_t i) const noexcept { return buffer()[i]; }
     char & at(size_t i) noexcept { return buffer()[i]; }
