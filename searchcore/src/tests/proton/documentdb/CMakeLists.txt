@@ -22,9 +22,9 @@ vespa_add_executable(searchcore_documentdb_test_app TEST
 )
 vespa_add_test(NAME searchcore_documentdb_test_app COMMAND searchcore_documentdb_test_app)
 
-vespa_add_executable(searchcore_proton_documentdb_vespa_test_app TEST
+vespa_add_executable(searchcore_proton_documentdb_vespatest_test_app TEST
     SOURCES
-    vespa_testrunner.cpp
+    vespatest_runner.cpp
     buckethandler_test.cpp
     combiningfeedview_test.cpp
     configurer_test.cpp
@@ -41,4 +41,24 @@ vespa_add_executable(searchcore_proton_documentdb_vespa_test_app TEST
     searchcore_feedoperation
     searchcore_test
 )
-vespa_add_test(NAME searchcore_proton_documentdb_vespa_test_app COMMAND searchcore_proton_documentdb_vespa_test_app)
+vespa_add_test(NAME searchcore_proton_documentdb_vespatest_test_app COMMAND searchcore_proton_documentdb_vespatest_test_app)
+
+vespa_add_executable(searchcore_proton_documentdb_gtest_test_app TEST
+    SOURCES
+    gtest_runner.cpp
+    clusterstatehandler_test.cpp
+    bucketmover_common.cpp
+    documentbucketmover_test.cpp
+    documentmover_test.cpp
+    executor_threading_service_test.cpp
+    lid_space_common.cpp
+    lid_space_compaction_test.cpp
+    lid_space_handler_test.cpp
+    lid_space_jobtest.cpp
+    DEPENDS
+    searchcore_server
+    searchcore_feedoperation
+    searchcore_test
+    GTest::GTest
+)
+vespa_add_test(NAME searchcore_proton_documentdb_gtest_test_app COMMAND searchcore_proton_documentdb_gtest_test_app)

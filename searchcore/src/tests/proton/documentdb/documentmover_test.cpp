@@ -6,13 +6,11 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("document_bucket_mover_test");
-
 using namespace proton;
 using namespace proton::move::test;
 using document::BucketId;
 
+namespace {
 struct MySubDbTwoBuckets : public MySubDb
 {
     MySubDbTwoBuckets(test::UserDocumentsBuilder &builder,
@@ -67,6 +65,8 @@ struct DocumentMoverTest : ::testing::Test
         return _mover.moveDocuments(maxDocsToMove);
     }
 };
+
+}
 
 TEST_F(DocumentMoverTest, require_that_initial_bucket_mover_is_done)
 {
@@ -151,5 +151,3 @@ TEST_F(DocumentMoverTest, require_that_cancel_signal_rescheduling_need) {
     EXPECT_TRUE(_mover.bucketDone());
     EXPECT_TRUE(_mover.needReschedule());
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

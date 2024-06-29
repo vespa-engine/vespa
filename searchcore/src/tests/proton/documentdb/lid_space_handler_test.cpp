@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+namespace {
 struct HandlerTest : public ::testing::Test {
     DocBuilder _docBuilder;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
@@ -25,6 +26,8 @@ HandlerTest::HandlerTest()
 }
 
 HandlerTest::~HandlerTest() = default;
+
+}
 
 TEST_F(HandlerTest, handler_uses_doctype_and_subdb_name)
 {
@@ -58,4 +61,3 @@ TEST_F(HandlerTest, createMoveOperation_works_as_expected)
     EXPECT_EQ(timestamp, op->getTimestamp());
 }
 
-GTEST_MAIN_RUN_ALL_TESTS()
