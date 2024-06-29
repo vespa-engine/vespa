@@ -8,9 +8,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("cluster_state_handler_test");
-
 using namespace proton;
 using document::BucketId;
 using storage::lib::Distribution;
@@ -18,6 +15,7 @@ using storage::spi::BucketIdListResult;
 using storage::spi::ClusterState;
 using storage::spi::Result;
 
+namespace {
 struct MyClusterStateChangedHandler : public IClusterStateChangedHandler {
     std::shared_ptr<IBucketStateCalculator> _calc;
     void
@@ -64,6 +62,8 @@ struct ClusterStateHandlerTest : testing::Test {
         return *_changedHandler._calc;
     }
 };
+
+}
 
 TEST_F(ClusterStateHandlerTest, cluster_state_change_is_notified)
 {
@@ -114,6 +114,3 @@ TEST_F(ClusterStateHandlerTest, modified_buckets_are_returned)
     EXPECT_EQ(1u, _bucketListHandler.getList().size());
     EXPECT_EQ(bucket3, _bucketListHandler.getList()[0]);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
-

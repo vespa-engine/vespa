@@ -73,12 +73,8 @@ vespa_define_module(
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
     src/tests/proton/documentdb
-    src/tests/proton/documentdb/clusterstatehandler
-    src/tests/proton/documentdb/documentbucketmover
-    src/tests/proton/documentdb/executor_threading_service
     src/tests/proton/documentdb/feedhandler
     src/tests/proton/documentdb/fileconfigmanager
-    src/tests/proton/documentdb/lid_space_compaction
     src/tests/proton/documentmetastore
     src/tests/proton/documentmetastore/lidreusedelayer
     src/tests/proton/documentmetastore/lid_allocator

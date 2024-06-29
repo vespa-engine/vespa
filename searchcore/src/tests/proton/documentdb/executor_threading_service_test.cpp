@@ -59,6 +59,3 @@ TEST_F(ExecutorThreadingServiceTest, tasks_limits_can_be_updated)
     EXPECT_EQ(11, service->summary().getTaskLimit());
     EXPECT_EQ(7, field_writer()->first_executor()->getTaskLimit());
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
-

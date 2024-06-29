@@ -8,12 +8,8 @@
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/gtest/gtest.h>
-
-#include <vespa/log/log.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
-
-LOG_SETUP("document_bucket_mover_test");
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton;
 using namespace proton::move::test;
@@ -28,6 +24,7 @@ using vespalib::MonitoredRefCount;
 using vespalib::RetainGuard;
 using vespalib::ThreadStackExecutor;
 
+namespace {
 struct ControllerFixtureBase : public ::testing::Test
 {
     test::UserDocumentsBuilder  _builder;
@@ -169,6 +166,8 @@ struct OnlyReadyControllerFixture : public ControllerFixtureBase
         _ready.insertDocs(_builder.getDocs());
     }
 };
+
+}
 
 TEST_F(ControllerFixture, require_that_nothing_is_moved_if_bucket_state_says_so)
 {
@@ -760,5 +759,3 @@ TEST_F(MaxOutstandingMoveOpsFixture_2, require_that_bucket_move_job_is_blocked_i
     sync();
     assertDocsMoved(3, 1);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

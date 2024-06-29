@@ -271,5 +271,3 @@ TEST_F(MaxOutstandingJobTest, job_is_blocked_if_it_has_too_many_outstanding_move
     assertJobContext(4, 7, 3, 7, 1);
     sync();
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
