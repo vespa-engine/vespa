@@ -9,9 +9,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP("bucketdb_test");
-
 using namespace document;
 using namespace proton;
 using namespace proton::bucketdb;
@@ -20,6 +17,8 @@ using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
 using vespalib::Slime;
+
+namespace {
 
 constexpr uint32_t MIN_NUM_BITS = 8u;
 const GlobalId GID_1("111111111111");
@@ -33,7 +32,6 @@ constexpr uint32_t DOCSIZE_2(10000u);
 using RS = BucketInfo::ReadyState;
 using SDT = SubDbType;
 
-namespace {
 
 constexpr uint32_t bucket_bits = 16;
 
@@ -49,7 +47,6 @@ GlobalId make_gid(uint32_t n, uint32_t i)
     return id.getGlobalId();
 }
 
-}
 
 void
 assertDocCount(uint32_t ready,
@@ -140,6 +137,8 @@ struct Fixture
         return getChecksum(timestamp, DOCSIZE_1, subDbType);
     }
 };
+
+}
 
 TEST_F("require that bucket db tracks doc counts per sub db type", Fixture)
 {
@@ -405,5 +404,3 @@ TEST_F("test BucketDB active document tracking", Fixture) {
     f._db.unloadBucket(make_bucket_id(5), bs);
     EXPECT_EQUAL(0u, f._db.getNumActiveDocs());
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

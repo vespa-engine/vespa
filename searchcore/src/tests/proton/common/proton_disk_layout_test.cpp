@@ -21,10 +21,11 @@ using proton::DocTypeName;
 using proton::ProtonDiskLayout;
 using proton::Transport;
 
-static constexpr unsigned int tlsPort = proton::test::port_numbers::proton_disk_layout_tls_port;
+namespace {
+constexpr unsigned int tlsPort = proton::test::port_numbers::proton_disk_layout_tls_port;
 
-static const vespalib::string baseDir("testdb");
-static const vespalib::string documentsDir(baseDir + "/documents");
+const vespalib::string baseDir("testdb");
+const vespalib::string documentsDir(baseDir + "/documents");
 
 struct FixtureBase
 {
@@ -115,6 +116,8 @@ struct Fixture : public FixtureBase, public DiskLayoutFixture
     }
 };
 
+}
+
 TEST_F("require that empty config is ok", Fixture) {
     TEST_DO(f.assertDirs({}));
     TEST_DO(f.assertDomains({}));
@@ -181,5 +184,3 @@ TEST_F("require that live document db dir remove works", Fixture)
     TEST_DO(f.assertDirs({}));
     TEST_DO(f.assertDomains({}));
 }
-
-TEST_MAIN() { TEST_RUN_ALL(); }

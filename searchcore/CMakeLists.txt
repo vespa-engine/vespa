@@ -65,7 +65,6 @@ vespa_define_module(
     src/tests/proton/attribute/document_field_populator
     src/tests/proton/attribute/imported_attributes_context
     src/tests/proton/attribute/imported_attributes_repo
-    src/tests/proton/bucketdb/bucketdb
     src/tests/proton/common
     src/tests/proton/common/alloc_config
     src/tests/proton/common/hw_info_sampler
@@ -90,7 +89,6 @@ vespa_define_module(
     src/tests/proton/flushengine/prepare_restart_flush_strategy
     src/tests/proton/flushengine/shrink_lid_space_flush_target
     src/tests/proton/index
-    src/tests/proton/index/index_writer
     src/tests/proton/initializer
     src/tests/proton/matchengine
     src/tests/proton/matching
@@ -104,15 +102,12 @@ vespa_define_module(
     src/tests/proton/matching/request_context
     src/tests/proton/matching/same_element_builder
     src/tests/proton/matching/unpacking_iterators_optimizer
-    src/tests/proton/metrics/metrics_engine
     src/tests/proton/persistenceconformance
     src/tests/proton/persistenceengine
     src/tests/proton/persistenceengine/resource_usage_tracker
     src/tests/proton/persistenceengine/persistence_handler_map
     src/tests/proton/proton
-    src/tests/proton/proton_config_fetcher
     src/tests/proton/proton_configurer
-    src/tests/proton/proton_disk_layout
     src/tests/proton/reference/gid_to_lid_change_handler
     src/tests/proton/reference/gid_to_lid_change_listener
     src/tests/proton/reference/gid_to_lid_change_registrator
