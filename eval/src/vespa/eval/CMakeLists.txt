@@ -14,6 +14,7 @@ vespa_add_library(vespaeval
     vespa_hwaccelerated
     onnxruntime
     ${VESPA_LLVM_LIB}
+    EXTERNAL_DEPENDS
     dl
 )
 
