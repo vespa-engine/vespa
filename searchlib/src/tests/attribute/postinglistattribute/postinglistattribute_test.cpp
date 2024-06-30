@@ -33,12 +33,6 @@ vespalib::string tmp_dir("tmp");
 
 using std::shared_ptr;
 
-bool
-FastOS_UNIX_File::Sync()
-{
-    return true;
-}
-
 namespace search {
 
 using attribute::CollectionType;
