@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/fef/fef.h>
 
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -8,13 +7,15 @@
 #include <vespa/searchlib/fef/test/plugin/sum.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
-#include <vespa/searchlib/fef/test/test_features.h>
+#include <vespa/searchlib/test/test_features.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/issue.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <optional>
 
 
 using namespace search::features;
@@ -36,6 +37,7 @@ struct Fixture
     std::vector<FeatureExecutor *> executors;
     MatchData::UP md;
     Fixture() : mdl(), stash(), executors(), md() {}
+    ~Fixture();
     Fixture &add(FeatureExecutor *executor, size_t outCnt) {
         executor->bind_outputs(stash.create_array<NumberOrObject>(outCnt));
         executors.push_back(executor);
@@ -58,53 +60,59 @@ struct Fixture
     }
 };
 
-TEST_F("test decorator - single override", Fixture)
+Fixture::~Fixture() = default;
+
+TEST(FeatureOverriderTest, decorator_single_override)
 {
+    Fixture f;
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
     fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0, nullptr);
     f.add(fe, 3).run();
-    EXPECT_EQUAL(fe->outputs().size(), 3u);
+    EXPECT_EQ(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
-    EXPECT_EQUAL(fe->outputs().get_number(1), 50.0);
-    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
+    EXPECT_EQ(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQ(fe->outputs().get_number(1), 50.0);
+    EXPECT_EQ(fe->outputs().get_number(2), 3.0);
 }
 
-TEST_F("test decorator - multiple overrides", Fixture)
+TEST(FeatureOverriderTest, decorator_multiple_overrides)
 {
+    Fixture f;
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
     fe = &stash.create<FeatureOverrider>(*fe, 0, 50.0, nullptr);
     fe = &stash.create<FeatureOverrider>(*fe, 2, 100.0, nullptr);
     f.add(fe, 3).run();
-    EXPECT_EQUAL(fe->outputs().size(), 3u);
+    EXPECT_EQ(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(fe->outputs().get_number(0), 50.0);
-    EXPECT_EQUAL(fe->outputs().get_number(1), 2.0);
-    EXPECT_EQUAL(fe->outputs().get_number(2), 100.0);
+    EXPECT_EQ(fe->outputs().get_number(0), 50.0);
+    EXPECT_EQ(fe->outputs().get_number(1), 2.0);
+    EXPECT_EQ(fe->outputs().get_number(2), 100.0);
 }
 
-TEST_F("test decorator - non-existing override", Fixture)
+TEST(FeatureOverriderTest, decorator_non_existing_override)
 {
+    Fixture f;
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
     fe = &stash.create<FeatureOverrider>(*fe, 1000, 50.0, nullptr);
     f.add(fe, 3).run();
-    EXPECT_EQUAL(fe->outputs().size(), 3u);
+    EXPECT_EQ(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
-    EXPECT_EQUAL(fe->outputs().get_number(1), 2.0);
-    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
+    EXPECT_EQ(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQ(fe->outputs().get_number(1), 2.0);
+    EXPECT_EQ(fe->outputs().get_number(2), 3.0);
 }
 
-TEST_F("test decorator - transitive override", Fixture)
+TEST(FeatureOverriderTest, decorator_transitive_override)
 {
+    Fixture f;
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
     fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0, nullptr);
     f.add(fe, 3);
-    EXPECT_EQUAL(fe->outputs().size(), 3u);
+    EXPECT_EQ(fe->outputs().size(), 3u);
 
     FeatureExecutor *fe2 = &stash.create<DoubleExecutor>(3);
     fe2 = &stash.create<FeatureOverrider>(*fe2, 2, 10.0, nullptr);
@@ -114,17 +122,17 @@ TEST_F("test decorator - transitive override", Fixture)
     inputs[2] = LazyValue(fe->outputs().get_raw(2), fe);
     fe2->bind_inputs(inputs);
     f.add(fe2, 3).run();
-    EXPECT_EQUAL(fe2->outputs().size(), 3u);
+    EXPECT_EQ(fe2->outputs().size(), 3u);
 
-    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
-    EXPECT_EQUAL(fe->outputs().get_number(1), 50.0);
-    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
-    EXPECT_EQUAL(fe2->outputs().get_number(0), 2.0);
-    EXPECT_EQUAL(fe2->outputs().get_number(1), 100.0);
-    EXPECT_EQUAL(fe2->outputs().get_number(2), 10.0);
+    EXPECT_EQ(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQ(fe->outputs().get_number(1), 50.0);
+    EXPECT_EQ(fe->outputs().get_number(2), 3.0);
+    EXPECT_EQ(fe2->outputs().get_number(0), 2.0);
+    EXPECT_EQ(fe2->outputs().get_number(1), 100.0);
+    EXPECT_EQ(fe2->outputs().get_number(2), 10.0);
 }
 
-TEST("test overrides")
+TEST(FeatureOverriderTest, overrides)
 {
     BlueprintFactory bf;
     bf.addPrototype(BPSP(new ValueBlueprint()));
@@ -158,27 +166,27 @@ TEST("test overrides")
 
     std::map<vespalib::string, feature_t> res = Utils::getAllFeatures(*rankProgram, 2);
 
-    EXPECT_EQUAL(res.size(), 20u);
-    EXPECT_APPROX(res["value(1)"],                               1.0, 1e-6);
-    EXPECT_APPROX(res["value(1).0"],                             1.0, 1e-6);
-    EXPECT_APPROX(res["value(2)"],                              20.0, 1e-6);
-    EXPECT_APPROX(res["value(2).0"],                            20.0, 1e-6);
-    EXPECT_APPROX(res["value(3)"],                               3.0, 1e-6);
-    EXPECT_APPROX(res["value(3).0"],                             3.0, 1e-6);
-    EXPECT_APPROX(res["value(1,2,3)"],                           1.0, 1e-6);
-    EXPECT_APPROX(res["value(1,2,3).0"],                         1.0, 1e-6);
-    EXPECT_APPROX(res["value(1,2,3).1"],                         4.0, 1e-6);
-    EXPECT_APPROX(res["value(1,2,3).2"],                         6.0, 1e-6);
-    EXPECT_APPROX(res["mysum(value(2),value(2))"],              40.0, 1e-6);
-    EXPECT_APPROX(res["mysum(value(2),value(2)).out"],          40.0, 1e-6);
-    EXPECT_APPROX(res["mysum(value(1),value(2),value(3))"],     24.0, 1e-6);
-    EXPECT_APPROX(res["mysum(value(1),value(2),value(3)).out"], 24.0, 1e-6);
-    EXPECT_APPROX(res["double(value(1))"],                       2.0, 1e-6);
-    EXPECT_APPROX(res["double(value(1)).0"],                     2.0, 1e-6);
-    EXPECT_APPROX(res["double(value(2))"],                      40.0, 1e-6);
-    EXPECT_APPROX(res["double(value(2)).0"],                    40.0, 1e-6);
-    EXPECT_APPROX(res["double(value(3))"],                       6.0, 1e-6);
-    EXPECT_APPROX(res["double(value(3)).0"],                     6.0, 1e-6);
+    EXPECT_EQ(res.size(), 20u);
+    EXPECT_NEAR(res["value(1)"],                               1.0, 1e-6);
+    EXPECT_NEAR(res["value(1).0"],                             1.0, 1e-6);
+    EXPECT_NEAR(res["value(2)"],                              20.0, 1e-6);
+    EXPECT_NEAR(res["value(2).0"],                            20.0, 1e-6);
+    EXPECT_NEAR(res["value(3)"],                               3.0, 1e-6);
+    EXPECT_NEAR(res["value(3).0"],                             3.0, 1e-6);
+    EXPECT_NEAR(res["value(1,2,3)"],                           1.0, 1e-6);
+    EXPECT_NEAR(res["value(1,2,3).0"],                         1.0, 1e-6);
+    EXPECT_NEAR(res["value(1,2,3).1"],                         4.0, 1e-6);
+    EXPECT_NEAR(res["value(1,2,3).2"],                         6.0, 1e-6);
+    EXPECT_NEAR(res["mysum(value(2),value(2))"],              40.0, 1e-6);
+    EXPECT_NEAR(res["mysum(value(2),value(2)).out"],          40.0, 1e-6);
+    EXPECT_NEAR(res["mysum(value(1),value(2),value(3))"],     24.0, 1e-6);
+    EXPECT_NEAR(res["mysum(value(1),value(2),value(3)).out"], 24.0, 1e-6);
+    EXPECT_NEAR(res["double(value(1))"],                       2.0, 1e-6);
+    EXPECT_NEAR(res["double(value(1)).0"],                     2.0, 1e-6);
+    EXPECT_NEAR(res["double(value(2))"],                      40.0, 1e-6);
+    EXPECT_NEAR(res["double(value(2)).0"],                    40.0, 1e-6);
+    EXPECT_NEAR(res["double(value(3))"],                       6.0, 1e-6);
+    EXPECT_NEAR(res["double(value(3)).0"],                     6.0, 1e-6);
 }
 
 //-----------------------------------------------------------------------------
@@ -229,18 +237,16 @@ struct SimpleRankFixture {
     void compile(const vespalib::string &seed) {
         ASSERT_TRUE(try_compile(seed));
     }
-    TensorSpec get(uint32_t docid) {
+    void get(uint32_t docid, std::optional<TensorSpec>& spec) {
         auto result = program.get_seeds(false);
-        ASSERT_EQUAL(1u, result.num_features());
-        return TensorSpec::from_value(result.resolve(0).as_object(docid));
+        ASSERT_EQ(1u, result.num_features());
+        spec = TensorSpec::from_value(result.resolve(0).as_object(docid));
     }
 };
 SimpleRankFixture::~SimpleRankFixture() = default;
 
-TensorSpec from_expr(const vespalib::string &expr) {
-    auto result = TensorSpec::from_expr(expr);
-    ASSERT_TRUE(result.type() != "error");
-    return result;
+bool spec_is_error(const TensorSpec& spec) {
+    return spec.type() == "error";
 }
 
 struct MyIssues : Issue::Handler {
@@ -255,52 +261,77 @@ MyIssues::~MyIssues() = default;
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require expression without override works", SimpleRankFixture) {
-    auto expect = from_expr("tensor<float>(x[3]):[1,2,3]");
+TEST(FeatureOverriderTest, expression_without_override)
+{
+    SimpleRankFixture f1;
+    auto expect = TensorSpec::from_expr("tensor<float>(x[3]):[1,2,3]");
+    ASSERT_FALSE(spec_is_error(expect));
     f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
     f1.compile(f1.expr_feature("foo"));
-    EXPECT_EQUAL(f1.get(1), expect);
+    std::optional<TensorSpec> act;
+    ASSERT_NO_FATAL_FAILURE(f1.get(1, act));
+    ASSERT_TRUE(act.has_value());
+    EXPECT_EQ(expect, act.value());
 }
 
-TEST_F("require that const binary override works", SimpleRankFixture) {
-    auto expect = from_expr("tensor<float>(x[3]):[5,6,7]");
+TEST(FeatureOverriderTest, const_binary_override)
+{
+    SimpleRankFixture f1;
+    auto expect = TensorSpec::from_expr("tensor<float>(x[3]):[5,6,7]");
+    ASSERT_FALSE(spec_is_error(expect));
     f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
     f1.add_override(f1.expr_feature("foo"), expect);
     f1.compile(f1.expr_feature("foo"));
-    EXPECT_EQUAL(f1.get(1), expect);
+    std::optional<TensorSpec> act;
+    ASSERT_NO_FATAL_FAILURE(f1.get(1, act));
+    ASSERT_TRUE(act.has_value());
+    EXPECT_EQ(expect, act.value());
 }
 
-TEST_F("require that non-const binary override works", SimpleRankFixture) {
-    auto expect = from_expr("tensor<float>(x[3]):[5,6,7]");
+TEST(FeatureOverriderTest, non_const_binary_override)
+{
+    SimpleRankFixture f1;
+    auto expect = TensorSpec::from_expr("tensor<float>(x[3]):[5,6,7]");
+    ASSERT_FALSE(spec_is_error(expect));
     f1.add_expr("foo", "tensor<float>(x[3]):[docid,2,3]");
     f1.add_override(f1.expr_feature("foo"), expect);
     f1.compile(f1.expr_feature("foo"));
-    EXPECT_EQUAL(f1.get(1), expect);
+    std::optional<TensorSpec> act;
+    ASSERT_NO_FATAL_FAILURE(f1.get(1, act));
+    ASSERT_TRUE(act.has_value());
+    EXPECT_EQ(expect, act.value());
 }
 
-TEST_F("require that wrong type binary override is ignored", SimpleRankFixture) {
+TEST(FeatureOverriderTest, wrong_type_binary_override_is_ignored)
+{
+    SimpleRankFixture f1;
     MyIssues issues;
-    auto expect = from_expr("tensor<float>(x[3]):[1,2,3]");
-    auto other = from_expr("tensor(x[3]):[5,6,7]");
+    auto expect = TensorSpec::from_expr("tensor<float>(x[3]):[1,2,3]");
+    ASSERT_FALSE(spec_is_error(expect));
+    auto other = TensorSpec::from_expr("tensor(x[3]):[5,6,7]");
+    ASSERT_FALSE(spec_is_error(other));
     f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
     f1.add_override(f1.expr_feature("foo"), other);
     f1.compile(f1.expr_feature("foo"));
-    ASSERT_EQUAL(issues.list.size(), 1u);
-    EXPECT_LESS(issues.list[0].find("has invalid type"), issues.list[0].size());
+    ASSERT_EQ(issues.list.size(), 1u);
+    EXPECT_LT(issues.list[0].find("has invalid type"), issues.list[0].size());
     fprintf(stderr, "issue: %s\n", issues.list[0].c_str());
 }
 
-TEST_F("require that bad format binary override is ignored", SimpleRankFixture) {
+TEST(FeatureOverriderTest, bad_format_binary_override_is_ignored)
+{
+    SimpleRankFixture f1;
     MyIssues issues;
-    auto expect = from_expr("tensor<float>(x[3]):[1,2,3]");
+    auto expect = TensorSpec::from_expr("tensor<float>(x[3]):[1,2,3]");
+    ASSERT_FALSE(spec_is_error(expect));
     f1.add_expr("foo", "tensor<float>(x[3]):[1,2,3]");
     f1.add_override(f1.expr_feature("foo"), vespalib::string("bad format"));
     f1.compile(f1.expr_feature("foo"));
-    ASSERT_EQUAL(issues.list.size(), 1u);
-    EXPECT_LESS(issues.list[0].find("has invalid format"), issues.list[0].size());
+    ASSERT_EQ(issues.list.size(), 1u);
+    EXPECT_LT(issues.list[0].find("has invalid format"), issues.list[0].size());
     fprintf(stderr, "issue: %s\n", issues.list[0].c_str());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

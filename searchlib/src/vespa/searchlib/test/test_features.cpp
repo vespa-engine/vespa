@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "test_features.h"
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -22,7 +22,11 @@ struct ImpureValueExecutor : FeatureExecutor {
 bool
 ImpureValueBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
 {
-    ASSERT_EQUAL(1u, params.size());
+    bool failed = false;
+    EXPECT_EQ(1u, params.size()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     value = vespalib::locale::c::strtod(params[0].c_str(), nullptr);
     describeOutput("out", "the impure value");
     return true;
@@ -68,7 +72,11 @@ struct BoxingExecutor : FeatureExecutor {
 bool
 BoxingBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
 {
-    ASSERT_EQUAL(1u, params.size());
+    bool failed = false;
+    EXPECT_EQ(1u, params.size()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     defineInput(params[0]);
     describeOutput("out", "boxed value", FeatureType::object(ValueType::double_type()));
     return true;
@@ -95,7 +103,11 @@ struct TrackingExecutor : FeatureExecutor {
 bool
 TrackingBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
 {
-    ASSERT_EQUAL(1u, params.size());
+    bool failed = false;
+    EXPECT_EQ(1u, params.size()) << (failed = true, "");
+    if (failed) {
+        return false;
+    }
     defineInput(params[0]);
     describeOutput("out", "tracked value");
     return true;
