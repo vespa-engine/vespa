@@ -1287,12 +1287,6 @@ std::ostream &operator<<(std::ostream &os, const EntryCheck &entry)
 
 namespace api {
 
-std::ostream &operator<<(std::ostream &os, const MergeBucketCommand::Node &node)
-{
-    os << "Node(" << node.index << "," << (node.sourceOnly ? "true" : "false") << ")";
-    return os;
-}
-
 std::ostream &operator<<(std::ostream &os, const GetBucketDiffCommand::Entry &entry)
 {
     os << "Entry(timestamp=" << entry._timestamp << ", hasMask=" << entry._hasMask << ")";
