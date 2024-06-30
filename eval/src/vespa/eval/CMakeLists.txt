@@ -14,6 +14,7 @@ vespa_add_library(vespaeval
     vespa_hwaccelerated
     onnxruntime
     ${VESPA_LLVM_LIB}
+    dl
 )
 
 set(BLA_VENDOR OpenBLAS)
