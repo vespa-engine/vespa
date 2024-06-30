@@ -10,10 +10,8 @@
 #include "file.h"
 #include <sstream>
 #include <cassert>
-#include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #ifdef __linux__
@@ -179,7 +177,6 @@ constexpr int ALWAYS_SUPPORTED_MMAP_FLAGS = ~0;
 bool
 FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
 {
-    bool rc = false;
     assert(_filedes == -1);
 
     if (filename != nullptr) {
@@ -189,7 +186,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
 
     _filedes = open(_filename.c_str(), accessFlags, 0664);
 
-    rc = (_filedes != -1);
+    bool rc = (_filedes != -1);
 
     if (rc) {
         _openFlags = openFlags;
@@ -292,7 +289,9 @@ FastOS_UNIX_File::Sync()
 {
     assert(IsOpened());
 
-    return (fsync(_filedes) == 0);
+    return _fsyncEnabled
+        ? (fsync(_filedes) == 0)
+        : true;
 }
 
 

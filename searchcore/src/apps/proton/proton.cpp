@@ -327,6 +327,7 @@ App::main(int argc, char **argv)
     try {
         setupSignals();
         setup_fadvise();
+        FastOS_FileInterface::enableFSync();
         Transport transport(buildTransportConfig());
         startAndRun(transport.transport(), argc, argv);
     } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
