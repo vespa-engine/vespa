@@ -368,7 +368,7 @@ ParsedField fieldElm() :
         // }
         field = new ParsedField(name, type);
     }
-    openLbrace() <RBRACE>
+    openLbrace() ( fieldBodyElm(field) (<NL>)*)* <RBRACE>
     {
         return field;
     }
@@ -492,6 +492,51 @@ void structFieldDefinition(ParsedStruct struct) :
     // openLbrace (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE>
     {
         struct.addField(field);
+    }
+;
+
+/**
+ * This rule consumes a single element of a field body block.
+ *
+ * @param field    the field being built
+ */
+void fieldBodyElm(ParsedField field) : { }
+
+    // ( alias(field) |
+    //   attribute(field) |
+    //   bolding(field) |
+    //   dictionary(field) |
+    //   fieldStemming(field) |
+    //   id(field) |
+    //   summaryInField(field) |
+    //   indexInsideField(field) |
+    //   indexing(field) |
+    //   matchSettings(field.matchSettings()) |
+    //   normalizing(field) |
+    //   queryCommand(field) |
+    //   rank(field) |
+    //   rankType(field) |
+    //   fieldSorting(field) |
+    //   structField(field) |
+    //   summaryTo(field) |
+    //   weight(field) |
+    //   weightedset(field.getType()) )
+    ( idElm(field) )
+;
+
+/**
+ * Consumes an id statement of a field body block.
+ *
+ * @param field    The field to modify.
+ */
+void idElm(ParsedField field) :
+{
+    int fieldId;
+}
+
+    <ID> <COLON> fieldId = integerElm
+    {
+        field.setId(fieldId);
     }
 ;
 
