@@ -680,7 +680,7 @@ const string &empty_string() noexcept;
  * Utility function to format an unsigned integer into a new
  * string instance.
  **/
-static inline string stringify(uint64_t number)
+static inline string stringify(uint64_t number) noexcept
 {
     char digits[64];
     int numdigits = 0;
@@ -697,3 +697,10 @@ static inline string stringify(uint64_t number)
 
 } // namespace vespalib
 
+namespace std {
+
+vespalib::string operator+(std::string_view a, std::string_view b) noexcept;
+vespalib::string operator+(const char *a, std::string_view b) noexcept;
+vespalib::string operator+(std::string_view a, const char *b) noexcept;
+
+}

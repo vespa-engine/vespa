@@ -104,3 +104,30 @@ const string &empty_string() noexcept {
 }
 
 }
+
+namespace std {
+
+vespalib::string
+operator + (std::string_view a, const char * b) noexcept
+{
+    vespalib::string t(a);
+    t += b;
+    return t;
+}
+
+vespalib::string
+operator + (const char * a, std::string_view b) noexcept
+{
+    vespalib::string t(a);
+    t += b;
+    return t;
+}
+
+vespalib::string
+operator + (std::string_view a, std::string_view b) noexcept {
+    vespalib::string t(a);
+    t += b;
+    return t;
+}
+
+}
