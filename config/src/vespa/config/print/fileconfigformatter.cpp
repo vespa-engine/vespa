@@ -33,12 +33,12 @@ struct ConfigEncoder : public ArrayTraverser,
     bool head;
     std::vector<std::string> prefixList;
 
-    ConfigEncoder(OutputWriter &out_in)
+    explicit ConfigEncoder(OutputWriter &out_in)
         : out(out_in), level(0), head(true) {}
 
     void printPrefix() {
-        for (size_t i = 0; i < prefixList.size(); i++) {
-            out.printf("%s", prefixList[i].c_str());
+        for (const auto & i : prefixList) {
+            out.printf("%s", i.c_str());
         }
     }
 
@@ -97,7 +97,7 @@ struct ConfigEncoder : public ArrayTraverser,
             const Inspector & child(inspector[i]);
             vespalib::asciistream ss;
             ss << "{\"" << child["key"].asString().make_string() << "\"}";
-            prefixList.push_back(ss.str());
+            prefixList.emplace_back(ss.str());
             encodeMAPEntry(child);
             prefixList.pop_back();
         }
@@ -106,7 +106,7 @@ struct ConfigEncoder : public ArrayTraverser,
         if (inspector["type"].valid()) {
             std::string type(inspector["type"].asString().make_string());
             if (type.compare("struct") == 0) {
-                prefixList.push_back(".");
+                prefixList.emplace_back(".");
                 encodeOBJECT(inspector["value"]);
                 prefixList.pop_back();
             } else {
@@ -151,13 +151,13 @@ ConfigEncoder::entry(size_t index, const Inspector &inspector)
         if (type.compare("array") == 0) {
             vespalib::asciistream ss;
             ss << "[" << index << "]";
-            prefixList.push_back(ss.str());
+            prefixList.emplace_back(ss.str());
             encodeARRAY(inspector["value"]);
             prefixList.pop_back();
         } else if (type.compare("struct") == 0) {
             vespalib::asciistream ss;
             ss << "[" << index << "].";
-            prefixList.push_back(ss.str());
+            prefixList.emplace_back(ss.str());
             encodeOBJECT(inspector["value"]);
             prefixList.pop_back();
         } else {
