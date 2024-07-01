@@ -1330,7 +1330,8 @@
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public boolean symmetricPutAndActivateReplicaSelection()",
-      "public boolean enforceStrictlyIncreasingClusterStateVersions()"
+      "public boolean enforceStrictlyIncreasingClusterStateVersions()",
+      "public boolean distributionConfigFromClusterController()"
     ],
     "fields" : [ ]
   },

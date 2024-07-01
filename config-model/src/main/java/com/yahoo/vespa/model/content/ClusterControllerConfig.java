@@ -54,7 +54,8 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
             return new ClusterControllerConfig(ancestor,
                                                clusterName,
                                                tuningConfig,
-                                               resourceLimits);
+                                               resourceLimits,
+                                               deployState.featureFlags().distributionConfigFromClusterController());
         }
 
     }
@@ -62,15 +63,18 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
     private final String clusterName;
     private final ClusterControllerTuning tuning;
     private final ResourceLimits resourceLimits;
+    private final boolean distributionConfigFromClusterController;
 
     private ClusterControllerConfig(TreeConfigProducer<?> parent,
                                     String clusterName,
                                     ClusterControllerTuning tuning,
-                                    ResourceLimits resourceLimits) {
+                                    ResourceLimits resourceLimits,
+                                    boolean distributionConfigFromClusterController) {
         super(parent, "fleetcontroller");
         this.clusterName = clusterName;
         this.tuning = tuning;
         this.resourceLimits = resourceLimits;
+        this.distributionConfigFromClusterController = distributionConfigFromClusterController;
     }
 
     @Override
@@ -86,6 +90,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         builder.index(0);
         builder.cluster_name(clusterName);
         builder.fleet_controller_count(getChildren().size());
+        builder.include_distribution_config_in_cluster_state_bundle(distributionConfigFromClusterController);
 
         tuning.initProgressTime.ifPresent(i -> builder.init_progress_time((int) i.getMilliSeconds()));
         tuning.transitionTime.ifPresent(t -> builder.storage_transition_time((int) t.getMilliSeconds()));

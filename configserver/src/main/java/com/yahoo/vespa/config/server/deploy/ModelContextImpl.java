@@ -215,6 +215,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean symmetricPutAndActivateReplicaSelection;
         private final boolean enforceStrictlyIncreasingClusterStateVersions;
         private final boolean launchApplicationAthenzService;
+        private final boolean distributionConfigFromClusterController;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -263,6 +264,7 @@ public class ModelContextImpl implements ModelContext {
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
             this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
             this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(source).with(appId).with(version).value();
+            this.distributionConfigFromClusterController = Flags.DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -316,6 +318,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
         @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
+        @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
     }
 
     public static class Properties implements ModelContext.Properties {
