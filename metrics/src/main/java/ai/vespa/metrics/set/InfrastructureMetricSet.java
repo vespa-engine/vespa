@@ -202,6 +202,9 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.MAIL_FAILED.count());
         addMetric(metrics, ControllerMetrics.MAIL_THROTTLED.count());
 
+        addMetric(metrics, ControllerMetrics.HUBSPOT_EXCEPTIONS.count());
+        addMetric(metrics, ControllerMetrics.HUBSPOT_LAST_SUCCESS.last());
+
         return metrics;
     }
 
