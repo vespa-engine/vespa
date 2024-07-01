@@ -61,6 +61,8 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing document: " + fileURI);
 
+        ParsedBlock.setCanIgnore(true);
+
         SchemaParser parserStrict = new SchemaParser(getFileName(), sequence);
         parserStrict.setParserTolerant(false);
 

@@ -18,7 +18,7 @@ class ParsedDocument extends ParsedBlock {
 
     void addStruct(ParsedStruct struct) {
         String sName = struct.name();
-        verifyThat(! docStructs.containsKey(sName), "already has struct", sName);
+        verifyThat(! docStructs.containsKey(sName), true, "already has struct", sName);
         docStructs.put(sName, struct);
         struct.tagOwner(this);
     }
