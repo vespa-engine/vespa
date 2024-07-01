@@ -204,7 +204,7 @@ bool QueryVisitor::VisitOther(const QueryItem*, int arity)
 }
 
 
-std::string QueryVisitor::get_index(const QueryItem* item)
+std::string_view QueryVisitor::get_index(const QueryItem* item)
 {
     return item->get_index();
 }
@@ -227,8 +227,8 @@ QueryVisitor::visitKeyword(const QueryItem* item, vespalib::stringref keyword, b
         /** Keep track of eliminated children to have correct arity in rep. */
         insert(nullptr);
         if (LOG_WOULD_LOG(debug)) {
-            std::string s = keyword;
-            std::string ind = get_index(item);
+            std::string s(keyword);
+            std::string ind(get_index(item));
             LOG(debug, "juniper: VisitKeyword(%s:%s) - skip - unwanted creator %s",
                 ind.c_str(), s.c_str(), juniper::creator_text(creator));
         }
@@ -237,16 +237,16 @@ QueryVisitor::visitKeyword(const QueryItem* item, vespalib::stringref keyword, b
 
     if (!_fquery->UsefulIndex(item)) {
         if (LOG_WOULD_LOG(debug)) {
-            std::string s = keyword;
-            std::string ind = get_index(item);
+            std::string s(keyword);
+            std::string ind(get_index(item));
             LOG(debug, "juniper: VisitKeyword(%s:%s) - not applicable index", ind.c_str(), s.c_str());
         }
         insert(nullptr); // keep arity of parent in sync!
         return;
     }
     if (LOG_WOULD_LOG(debug)) {
-        std::string s = keyword;
-        std::string ind = get_index(item);
+        std::string s(keyword);
+        std::string ind(get_index(item));
         LOG(debug, "juniper: VisitKeyword(%s%s%s)",
             ind.c_str(), (!ind.empty() ? ":" : ""), s.c_str());
     }

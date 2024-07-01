@@ -5,7 +5,6 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
@@ -54,8 +53,8 @@ class MySearchHandler : public ISearchHandler {
     std::string _name;
     stringref _reply;
 public:
-    MySearchHandler(const std::string &name = "my", stringref reply = MYREPLY)
-        : _name(name), _reply(reply)
+    explicit MySearchHandler(std::string name = "my", stringref reply = MYREPLY) noexcept
+        : _name(std::move(name)), _reply(reply)
     {}
 
     DocsumReply::UP getDocsums(const DocsumRequest &request) override {
@@ -128,7 +127,7 @@ createRequest(size_t num = 1) {
     return r;
 }
 
-void assertSlime(const std::string &exp, const DocsumReply &reply) {
+void assertSlime(const std::string_view &exp, const DocsumReply &reply) {
     vespalib::Slime expSlime;
     size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);

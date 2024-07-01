@@ -180,15 +180,15 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i)
 }
 
 
-SimpleStringTerm makeTerm(const std::string &term) {
+SimpleStringTerm makeTerm(std::string_view term) {
     return SimpleStringTerm(term, "field", 0, search::query::Weight(0));
 }
 
 Node::UP makePhrase(const std::string &term1, const std::string &term2) {
     SimplePhrase * phrase = new SimplePhrase("field", 0, search::query::Weight(0));
     Node::UP node(phrase);
-    phrase->append(Node::UP(new SimpleStringTerm(makeTerm(term1))));
-    phrase->append(Node::UP(new SimpleStringTerm(makeTerm(term2))));
+    phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term1)));
+    phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term2)));
     return node;
 }
 

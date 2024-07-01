@@ -44,7 +44,7 @@ struct MergeHandlerTest : PersistenceTestUtils {
 
     // @TODO Add test to test that buildBucketInfo and mergeLists create minimal list (wrong sorting screws this up)
 
-    void fillDummyApplyDiff(std::vector<api::ApplyBucketDiffCommand::Entry>& diff);
+    void fillDummyApplyDiff(std::vector<api::ApplyBucketDiffCommand::Entry>& diff) const;
     std::shared_ptr<api::ApplyBucketDiffCommand> createDummyApplyDiff(
             int timestampOffset,
             uint16_t hasMask = 0x1,
@@ -73,7 +73,6 @@ struct MergeHandlerTest : PersistenceTestUtils {
         virtual void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) = 0;
         virtual std::string afterInvoke(MergeHandlerTest&, MergeHandler&) = 0;
     };
-    friend class HandlerInvoker;
 
     class NoReplyHandlerInvoker
         : public HandlerInvoker
@@ -86,13 +85,6 @@ struct MergeHandlerTest : PersistenceTestUtils {
     std::string checkMessage(api::ReturnCode::Result expectedResult);
 
     class HandleMergeBucketInvoker
-        : public NoReplyHandlerInvoker
-    {
-    public:
-        void invoke(MergeHandlerTest&, MergeHandler&, spi::Context&) override;
-    };
-
-    class HandleMergeBucketReplyInvoker
         : public NoReplyHandlerInvoker
     {
     public:
@@ -168,13 +160,13 @@ struct MergeHandlerTest : PersistenceTestUtils {
                        HandlerInvoker& invoker,
                        const ExpectedExceptionSpec& spec);
 
-    MergeHandler createHandler(size_t maxChunkSize = 0x400000) {
-        return MergeHandler(getEnv(), getPersistenceProvider(),
-                            getEnv()._component.cluster_context(), getEnv()._component.getClock(), *_sequenceTaskExecutor, maxChunkSize);
+    MergeHandler createHandler(uint32_t maxChunkSize = 0x400000) {
+        return {getEnv(), getPersistenceProvider(), getEnv()._component.cluster_context(),
+                getEnv()._component.getClock(), *_sequenceTaskExecutor, maxChunkSize};
     }
     MergeHandler createHandler(spi::PersistenceProvider & spi) {
-        return MergeHandler(getEnv(), spi,
-                            getEnv()._component.cluster_context(), getEnv()._component.getClock(), *_sequenceTaskExecutor, 4190208);
+        return {getEnv(), spi, getEnv()._component.cluster_context(),
+                getEnv()._component.getClock(), *_sequenceTaskExecutor, 4190208};
     }
 
     std::shared_ptr<api::StorageMessage> get_queued_reply() {
@@ -425,8 +417,8 @@ size_t
 getFilledCount(const std::vector<api::ApplyBucketDiffCommand::Entry>& diff)
 {
     size_t filledCount = 0;
-    for (size_t i=0; i<diff.size(); ++i) {
-        if (diff[i].filled()) {
+    for (const auto & i : diff) {
+        if (i.filled()) {
             ++filledCount;
         }
     }
@@ -437,9 +429,9 @@ size_t
 getFilledDataSize(const std::vector<api::ApplyBucketDiffCommand::Entry>& diff)
 {
     size_t filledSize = 0;
-    for (size_t i=0; i<diff.size(); ++i) {
-        filledSize += diff[i]._headerBlob.size();
-        filledSize += diff[i]._bodyBlob.size();
+    for (const auto & i : diff) {
+        filledSize += i._headerBlob.size();
+        filledSize += i._bodyBlob.size();
     }
     return filledSize;
 }
@@ -480,14 +472,14 @@ TEST_F(MergeHandlerTest, chunked_apply_bucket_diff) {
         // Include node 1 in hasmask for all diffs to indicate it's done
         // Also remember the diffs we've seen thus far to ensure chunking
         // does not send duplicates.
-        for (size_t i = 0; i < diff.size(); ++i) {
-            if (!diff[i].filled()) {
+        for (auto & i : diff) {
+            if (!i.filled()) {
                 continue;
             }
-            diff[i]._entry._hasMask |= 2u;
-            auto inserted = seen.emplace(spi::Timestamp(diff[i]._entry._timestamp));
+            i._entry._hasMask |= 2u;
+            auto inserted = seen.emplace(i._entry._timestamp);
             if (!inserted.second) {
-                FAIL() << "Diff for " << diff[i]
+                FAIL() << "Diff for " << i
                        << " has already been seen in another ApplyBucketDiff";
             }
         }
@@ -561,8 +553,7 @@ TEST_F(MergeHandlerTest, max_timestamp) {
 }
 
 void
-MergeHandlerTest::fillDummyApplyDiff(
-        std::vector<api::ApplyBucketDiffCommand::Entry>& diff)
+MergeHandlerTest::fillDummyApplyDiff(std::vector<api::ApplyBucketDiffCommand::Entry>& diff) const
 {
     document::TestDocMan docMan;
     document::Document::SP doc(docMan.createRandomDocumentAtLocation(_location));
@@ -776,7 +767,7 @@ MergeHandlerTest::convert_delayed_error_to_exception(MergeHandler& handler)
             getEnv()._fileStorHandler.clearMergeStatus(_bucket, return_code);
             fetchSingleMessage<api::ApplyBucketDiffReply>();
             fetchSingleMessage<api::ApplyBucketDiffCommand>();
-            throw std::runtime_error(return_code.getMessage());
+            throw std::runtime_error(std::string(return_code.getMessage()));
         }
     }
 }
@@ -1052,7 +1043,7 @@ MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::convert_delayed_error_to_ex
         auto chained_reply = _stub.replies.back();
         _stub.replies.pop_back();
         test.messageKeeper().sendReply(chained_reply);
-        throw std::runtime_error(chained_reply->getResult().getMessage());
+        throw std::runtime_error(std::string(chained_reply->getResult().getMessage()));
     }
 }
 
@@ -1221,8 +1212,7 @@ TEST_F(MergeHandlerTest, remove_put_on_existing_timestamp) {
 
     // Timestamp should now be a regular remove
     bool foundTimestamp = false;
-    for (size_t i = 0; i < getBucketDiffCmd->getDiff().size(); ++i) {
-        const api::GetBucketDiffCommand::Entry& e(getBucketDiffCmd->getDiff()[i]);
+    for (const auto & e : getBucketDiffCmd->getDiff()) {
         if (e._timestamp == ts) {
             EXPECT_EQ(
                     uint16_t(MergeHandler::IN_USE | MergeHandler::DELETED),

@@ -6,6 +6,7 @@
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <utility>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
@@ -18,11 +19,11 @@ RecoveryVisitor::RecoveryVisitor(StorageComponent& component,
     : Visitor(component)
 {
     if (params.hasValue("requestfields")) {
-        std::string fields = params.get("requestfields");
+        std::string_view fields = params.get("requestfields");
 
         vespalib::StringTokenizer tokenizer(fields);
-        for (uint32_t i = 0; i < tokenizer.size(); i++) {
-            _requestedFields.insert(tokenizer[i]);
+        for (auto field : tokenizer) {
+            _requestedFields.emplace(field);
         }
     }
 
@@ -42,7 +43,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
     documentapi::DocumentListMessage* cmd = nullptr;
 
     {
-        CommandMap::iterator iter = _activeCommands.find(bid);
+        auto iter = _activeCommands.find(bid);
 
         if (iter == _activeCommands.end()) {
             CommandPtr ptr(new documentapi::DocumentListMessage(bid));
@@ -54,9 +55,9 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
     }
 
     // Remove all fields from the document that are not listed in requestedFields.
-    for (size_t i = 0; i < entries.size(); ++i) {
-        const spi::DocEntry& entry(*entries[i]);
-        std::unique_ptr<document::Document> doc(entry.getDocument()->clone());
+    for (const auto & entrie : entries) {
+        const spi::DocEntry& entry(*entrie);
+        std::shared_ptr<document::Document> doc(entry.getDocument()->clone());
         if (_requestedFields.empty()) {
             doc->clear();
         } else {
@@ -74,10 +75,7 @@ RecoveryVisitor::handleDocuments(const document::BucketId& bid,
         hitCounter.addHit(doc->getId(), doc->serialize().size());
 
         int64_t timestamp = doc->getLastModified();
-        cmd->getDocuments().push_back(documentapi::DocumentListMessage::Entry(
-                                                 timestamp,
-                                                 document::Document::SP(doc.release()),
-                                                 entry.isRemove()));
+        cmd->getDocuments().emplace_back(timestamp, std::move(doc), entry.isRemove());
     }
 }
 
@@ -90,15 +88,15 @@ void RecoveryVisitor::completedBucket(const document::BucketId& bid, HitCounter&
     {
         std::lock_guard guard(_mutex);
 
-        CommandMap::iterator iter = _activeCommands.find(bid);
+        auto iter = _activeCommands.find(bid);
 
         if (iter != _activeCommands.end()) {
-            _msgToSend.reset(iter->second.release());
+            _msgToSend = std::move(iter->second);
             _activeCommands.erase(iter);
         }
     }
 
-    if (_msgToSend.get()) {
+    if (_msgToSend) {
         sendMessage(std::move(_msgToSend));
     }
 }

@@ -181,7 +181,7 @@ TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
     stream << End();
     stream.finalize();
 
-    std::string jsonString = json.str();
+    std::string_view jsonString = json.str();
 
     std::string path = TEST_PATH("../../../../protocols/getnodestate/distributor.json");
     std::string goldenString = File::readAll(path);

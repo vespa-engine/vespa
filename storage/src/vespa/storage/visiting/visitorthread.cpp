@@ -569,7 +569,7 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
             auto& rsp = dynamic_cast<RequestStatusPage&>(*cmd);
             vespalib::asciistream ost;
             getStatus(ost, rsp.getPath());
-            _messageSender.send(std::make_shared<RequestStatusPageReply>(rsp, ost.str()));
+            _messageSender.send(std::make_shared<RequestStatusPageReply>(rsp, std::string(ost.str())));
             break;
         }
     default:

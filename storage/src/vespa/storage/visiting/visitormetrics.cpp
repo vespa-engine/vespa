@@ -2,7 +2,7 @@
 
 #include "visitormetrics.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <sstream>
 
 namespace storage {
 
@@ -41,7 +41,7 @@ VisitorMetrics::initThreads(uint16_t threadCount) {
     threads.clear();
     threads.resize(threadCount);
     for (uint32_t i=0; i<threads.size(); ++i) {
-        vespalib::asciistream ost;
+        std::ostringstream ost;
         ost << "visitor_thread_" << i;
         threads[i] = std::make_shared<VisitorThreadMetrics>( ost.str(), ost.str());
         registerMetric(*threads[i]);

@@ -46,7 +46,7 @@ struct TestData<StringAttribute> {
         } else {
             s << combined;
         }
-        return s.str();
+        return std::string(s.str());
     }
     static const char *as_add(const std::string &value) { return value.c_str(); }
     static std::string make_undefined_value() { return std::string(); }

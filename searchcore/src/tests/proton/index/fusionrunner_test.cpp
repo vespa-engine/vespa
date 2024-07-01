@@ -81,7 +81,7 @@ protected:
     void TearDown() override;
 
     void createIndex(const string &dir, uint32_t id, bool fusion = false);
-    void checkResults(uint32_t fusion_id, const uint32_t *ids, size_t size);
+    static void checkResults(uint32_t fusion_id, const uint32_t *ids, size_t size);
 
     void requireThatNoDiskIndexesGiveId0();
     void requireThatOneDiskIndexCausesCopy();
@@ -169,7 +169,7 @@ FusionRunnerTest::createIndex(const string &dir, uint32_t id, bool fusion)
         ost << dir << "/index.flush." << id;
         _fusion_spec.flush_ids.push_back(id);
     }
-    const string index_dir = ost.str();
+    std::string_view index_dir = ost.str();
     _selector->setDefaultSource(id - _selector->getBaseId());
 
     DocBuilder doc_builder(add_fields);

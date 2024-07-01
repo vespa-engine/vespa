@@ -80,7 +80,7 @@ SplitBucketStateChecker::generateMinimumBucketSplitOperation(const Context& c)
                                                c.distributorConfig.getMinimalBucketSplit(), 0, 0);
 
     so->setPriority(c.distributorConfig.getMaintenancePriorities().splitDistributionBits);
-    so->setDetailedReason("[Splitting bucket because the current system size requires a higher minimum split bit]");
+    so->setDetailedReason(std::string("[Splitting bucket because the current system size requires a higher minimum split bit]"));
     return Result::createStoredResult(std::move(so), MaintenancePriority::MEDIUM);
 }
 
@@ -498,7 +498,7 @@ SplitInconsistentStateChecker::check(const Context &c) const
                                                getHighestUsedBits(c.entries), 0, 0);
 
     op->setPriority(c.distributorConfig.getMaintenancePriorities().splitInconsistentBucket);
-    op->setDetailedReason(getReason(c.getBucketId(), c.entries));
+    op->setDetailedReason(std::string(getReason(c.getBucketId(), c.entries)));
     return Result::createStoredResult(std::move(op), MaintenancePriority::HIGH);
 }
 
@@ -591,7 +591,7 @@ public:
 
     const std::vector<uint16_t>& nodes() const noexcept { return _nodes; }
     uint8_t priority() const noexcept { return _priority; }
-    std::string reason() const { return _reason.str(); }
+    std::string_view reason() const { return _reason.str(); }
 
 private:
     void updatePriority(uint8_t pri) noexcept {
@@ -1097,7 +1097,7 @@ GarbageCollectionStateChecker::check(const Context &c) const
                << vespalib::to_s(c.distributorConfig.getGarbageCollectionInterval()) << "]";
 
         op->setPriority(c.distributorConfig.getMaintenancePriorities().garbageCollection);
-        op->setDetailedReason(reason.c_str());
+        op->setDetailedReason(reason.str());
         return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_LOW);
     } else {
         return Result::noMaintenanceNeeded();
