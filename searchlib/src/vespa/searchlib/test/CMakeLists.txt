@@ -13,6 +13,7 @@ vespa_add_library(searchlib_test
     searchiteratorverifier.cpp
     schema_builder.cpp
     string_field_builder.cpp
+    test_features.cpp
     vector_buffer_writer.cpp
     weightedchildrenverifiers.cpp
     $<TARGET_OBJECTS:searchlib_test_fakedata>

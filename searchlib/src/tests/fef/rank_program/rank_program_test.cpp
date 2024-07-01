@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/features/valuefeature.h>
@@ -12,7 +11,8 @@
 #include <vespa/searchlib/fef/test/plugin/sum.h>
 #include <vespa/searchlib/fef/test/plugin/double.h>
 #include <vespa/searchlib/fef/rank_program.h>
-#include <vespa/searchlib/fef/test/test_features.h>
+#include <vespa/searchlib/test/test_features.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -89,6 +89,7 @@ struct Fixture {
         factory.addPrototype(Blueprint::SP(new TrackingBlueprint(track_cnt)));        
         factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
     }
+    ~Fixture();
     Fixture &lazy_expressions(bool value) {
         indexEnv.getProperties().add(indexproperties::eval::LazyExpressions::NAME,
                                      value ? "true" : "false");
@@ -113,22 +114,22 @@ struct Fixture {
         overrides.add(feature, vespalib::make_string("%g", value));
         return *this;
     }
-    Fixture &compile(ExecutionProfiler *profiler = nullptr) {
+    void compile(ExecutionProfiler *profiler = nullptr) {
         ASSERT_TRUE(resolver->compile());
         MatchDataLayout mdl;
         QueryEnvironment queryEnv(&indexEnv);
         match_data = mdl.createMatchData();
         program.setup(*match_data, queryEnv, overrides, profiler);
-        return *this;
     }
     vespalib::string final_executor_name() const {
         size_t n = program.num_executors();
-        ASSERT_TRUE(n > 0);
-        return program.get_executor(n-1).getClassName();
+        bool failed = false;
+        EXPECT_TRUE(n > 0) << (failed = true, "");
+        return failed ? "" : program.get_executor(n-1).getClassName();
     }
     double get(uint32_t docid = default_docid) {
         auto result = program.get_seeds();
-        EXPECT_EQUAL(1u, result.num_features());
+        EXPECT_EQ(1u, result.num_features());
         return result.resolve(0).as_number(docid);
     }
     double get(const vespalib::string &feature, uint32_t docid = default_docid) {
@@ -150,276 +151,330 @@ struct Fixture {
     }
 };
 
-TEST_F("require that simple program works", Fixture()) {
-    EXPECT_EQUAL(15.0, f1.add("mysum(value(10),ivalue(5))").compile().get());
-    EXPECT_EQUAL(3u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(1u, count_const_features(f1.program));
+Fixture::~Fixture() = default;
+
+TEST(RankProgramTest, simple_program)
+{
+    Fixture f1;
+    f1.add("mysum(value(10),ivalue(5))").compile();
+    EXPECT_EQ(15.0, f1.get());
+    EXPECT_EQ(3u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(1u, count_const_features(f1.program));
 }
 
-TEST_F("require that const features work", Fixture()) {
+TEST(RankProgramTest, const_features)
+{
+    Fixture f1;
     f1.add("mysum(value(10),value(5))").compile();
-    EXPECT_EQUAL(15.0, f1.get());
-    EXPECT_EQUAL(3u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(3u, count_const_features(f1.program));
+    EXPECT_EQ(15.0, f1.get());
+    EXPECT_EQ(3u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(3u, count_const_features(f1.program));
 }
 
-TEST_F("require that non-const features work", Fixture()) {
+TEST(RankProgramTest, non_const_features)
+{
+    Fixture f1;
     f1.add("mysum(ivalue(10),ivalue(5))").compile();
-    EXPECT_EQUAL(15.0, f1.get());
-    EXPECT_EQUAL(3u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQ(15.0, f1.get());
+    EXPECT_EQ(3u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
 }
 
-TEST_F("require that a single program can calculate multiple output features", Fixture()) {
+TEST(RankProgramTest, single_program_can_calculate_multiple_output_features)
+{
+    Fixture f1;
     f1.add("value(1)").add("ivalue(2)").add("ivalue(3)");
     f1.add("mysum(value(1),value(2),ivalue(3))");
     f1.compile();
-    EXPECT_EQUAL(5u, f1.program.num_executors());
-    EXPECT_EQUAL(5u, count_features(f1.program));
-    EXPECT_EQUAL(2u, count_const_features(f1.program));
+    EXPECT_EQ(5u, f1.program.num_executors());
+    EXPECT_EQ(5u, count_features(f1.program));
+    EXPECT_EQ(2u, count_const_features(f1.program));
     auto result = f1.all();
-    EXPECT_EQUAL(4u, result.size());
-    EXPECT_EQUAL(1.0, result["value(1)"]);
-    EXPECT_EQUAL(2.0, result["ivalue(2)"]);
-    EXPECT_EQUAL(3.0, result["ivalue(3)"]);
-    EXPECT_EQUAL(6.0, result["mysum(value(1),value(2),ivalue(3))"]);
+    EXPECT_EQ(4u, result.size());
+    EXPECT_EQ(1.0, result["value(1)"]);
+    EXPECT_EQ(2.0, result["ivalue(2)"]);
+    EXPECT_EQ(3.0, result["ivalue(3)"]);
+    EXPECT_EQ(6.0, result["mysum(value(1),value(2),ivalue(3))"]);
 }
 
-TEST_F("require that a single executor can produce multiple features", Fixture()) {
+TEST(RankProgramTest, single_executor_can_produce_multiple_features)
+{
+    Fixture f1;
     f1.add("mysum(value(1,2,3).0,value(1,2,3).1,value(1,2,3).2)");
-    EXPECT_EQUAL(6.0, f1.compile().get());
-    EXPECT_EQUAL(2u, f1.program.num_executors());
-    EXPECT_EQUAL(4u, count_features(f1.program));
-    EXPECT_EQUAL(4u, count_const_features(f1.program));
+    f1.compile();
+    EXPECT_EQ(6.0, f1.get());
+    EXPECT_EQ(2u, f1.program.num_executors());
+    EXPECT_EQ(4u, count_features(f1.program));
+    EXPECT_EQ(4u, count_const_features(f1.program));
 }
 
-TEST_F("require that feature values can be overridden", Fixture()) {
+TEST(RankProgramTest, feature_values_can_be_overridden)
+{
+    Fixture f1;
     f1.add("value(1)").add("ivalue(2)").add("ivalue(3)");
     f1.add("mysum(value(1),value(2),ivalue(3))");
     f1.override("value(2)", 20.0).override("ivalue(3)", 30.0);
     f1.compile();
-    EXPECT_EQUAL(5u, f1.program.num_executors());
-    EXPECT_EQUAL(5u, count_features(f1.program));
-    EXPECT_EQUAL(2u, count_const_features(f1.program));
+    EXPECT_EQ(5u, f1.program.num_executors());
+    EXPECT_EQ(5u, count_features(f1.program));
+    EXPECT_EQ(2u, count_const_features(f1.program));
     auto result = f1.all();
-    EXPECT_EQUAL(4u, result.size());
-    EXPECT_EQUAL(1.0, result["value(1)"]);
-    EXPECT_EQUAL(2.0, result["ivalue(2)"]);
-    EXPECT_EQUAL(30.0, result["ivalue(3)"]);
-    EXPECT_EQUAL(51.0, result["mysum(value(1),value(2),ivalue(3))"]);    
+    EXPECT_EQ(4u, result.size());
+    EXPECT_EQ(1.0, result["value(1)"]);
+    EXPECT_EQ(2.0, result["ivalue(2)"]);
+    EXPECT_EQ(30.0, result["ivalue(3)"]);
+    EXPECT_EQ(51.0, result["mysum(value(1),value(2),ivalue(3))"]);
 }
 
-TEST_F("require that the rank program can calculate scores for multiple documents", Fixture()) {
+TEST(RankProgramTest, rank_program_can_calculate_scores_for_multiple_documents)
+{
+    Fixture f1;
     f1.add("mysum(value(10),docid)").compile();
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(1u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.get(1), 11.0);
-    EXPECT_EQUAL(f1.get(2), 12.0);
-    EXPECT_EQUAL(f1.get(3), 13.0);
-    EXPECT_EQUAL(f1.get(1), 11.0);
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(1u, count_const_features(f1.program));
+    EXPECT_EQ(f1.get(1), 11.0);
+    EXPECT_EQ(f1.get(2), 12.0);
+    EXPECT_EQ(f1.get(3), 13.0);
+    EXPECT_EQ(f1.get(1), 11.0);
 }
 
-TEST_F("require that only non-const features are calculated per document", Fixture()) {
+TEST(RankProgramTest, only_non_const_features_are_calculated_per_document)
+{
+    Fixture f1;
     f1.add("track(mysum(track(value(10)),track(ivalue(5))))").compile();
-    EXPECT_EQUAL(6u, f1.program.num_executors());
-    EXPECT_EQUAL(6u, count_features(f1.program));
-    EXPECT_EQUAL(2u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.track_cnt, 1u);
-    EXPECT_EQUAL(15.0, f1.get(1));
-    EXPECT_EQUAL(f1.track_cnt, 3u);
-    EXPECT_EQUAL(15.0, f1.get(2));
-    EXPECT_EQUAL(f1.track_cnt, 5u);
+    EXPECT_EQ(6u, f1.program.num_executors());
+    EXPECT_EQ(6u, count_features(f1.program));
+    EXPECT_EQ(2u, count_const_features(f1.program));
+    EXPECT_EQ(f1.track_cnt, 1u);
+    EXPECT_EQ(15.0, f1.get(1));
+    EXPECT_EQ(f1.track_cnt, 3u);
+    EXPECT_EQ(15.0, f1.get(2));
+    EXPECT_EQ(f1.track_cnt, 5u);
 }
 
-TEST_F("require that unused features are not calculated", Fixture()) {
+TEST(RankProgramTest, unused_features_are_not_calculated)
+{
+    Fixture f1;
     f1.add("track(ivalue(1))");
     f1.add("track(ivalue(2))");
     f1.compile();
-    EXPECT_EQUAL(4u, f1.program.num_executors());
-    EXPECT_EQUAL(4u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.track_cnt, 0u);
-    EXPECT_EQUAL(f1.get("track(ivalue(1))", 1), 1.0);
-    EXPECT_EQUAL(f1.track_cnt, 1u);
-    EXPECT_EQUAL(f1.get("track(ivalue(2))", 2), 2.0);
-    EXPECT_EQUAL(f1.track_cnt, 2u);
-    EXPECT_EQUAL(f1.get("track(ivalue(1))", 3), 1.0);
-    EXPECT_EQUAL(f1.get("track(ivalue(2))", 3), 2.0);
-    EXPECT_EQUAL(f1.track_cnt, 4u);
+    EXPECT_EQ(4u, f1.program.num_executors());
+    EXPECT_EQ(4u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
+    EXPECT_EQ(f1.track_cnt, 0u);
+    EXPECT_EQ(f1.get("track(ivalue(1))", 1), 1.0);
+    EXPECT_EQ(f1.track_cnt, 1u);
+    EXPECT_EQ(f1.get("track(ivalue(2))", 2), 2.0);
+    EXPECT_EQ(f1.track_cnt, 2u);
+    EXPECT_EQ(f1.get("track(ivalue(1))", 3), 1.0);
+    EXPECT_EQ(f1.get("track(ivalue(2))", 3), 2.0);
+    EXPECT_EQ(f1.track_cnt, 4u);
 }
 
-TEST_F("require that re-used features are only calculated once", Fixture()) {
+TEST(RankProgramTest, re_used_features_are_only_calculated_once)
+{
+    Fixture f1;
     f1.add("track(mysum(track(ivalue(1)),track(ivalue(1))))").compile();
-    EXPECT_EQUAL(4u, f1.program.num_executors());
-    EXPECT_EQUAL(4u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.track_cnt, 0u);
-    EXPECT_EQUAL(f1.get(1), 2.0);
-    EXPECT_EQUAL(f1.track_cnt, 2u);
+    EXPECT_EQ(4u, f1.program.num_executors());
+    EXPECT_EQ(4u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
+    EXPECT_EQ(f1.track_cnt, 0u);
+    EXPECT_EQ(f1.get(1), 2.0);
+    EXPECT_EQ(f1.track_cnt, 2u);
 }
 
-TEST_F("require that overrides of const features work for multiple documents", Fixture()) {
+TEST(RankProgramTest, overrides_of_const_features_for_multiple_documents)
+{
+    Fixture f1;
     f1.add("mysum(value(1),docid)").override("value(1)", 10.0).compile();
-    EXPECT_EQUAL(3u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(1u, count_const_features(f1.program));
-    EXPECT_EQUAL(11.0, f1.get(1));
-    EXPECT_EQUAL(12.0, f1.get(2));
-    EXPECT_EQUAL(13.0, f1.get(3));
+    EXPECT_EQ(3u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(1u, count_const_features(f1.program));
+    EXPECT_EQ(11.0, f1.get(1));
+    EXPECT_EQ(12.0, f1.get(2));
+    EXPECT_EQ(13.0, f1.get(3));
 }
 
-TEST_F("require that overrides of non-const features work for multiple documents", Fixture()) {
+TEST(RankProgramTest, overrides_of_non_const_features_for_multiple_documents)
+{
+    Fixture f1;
     f1.add("mysum(docid,ivalue(1))").override("ivalue(1)", 10.0).compile();
-    EXPECT_EQUAL(3u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
-    EXPECT_EQUAL(11.0, f1.get(1));
-    EXPECT_EQUAL(12.0, f1.get(2));
-    EXPECT_EQUAL(13.0, f1.get(3));
+    EXPECT_EQ(3u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
+    EXPECT_EQ(11.0, f1.get(1));
+    EXPECT_EQ(12.0, f1.get(2));
+    EXPECT_EQ(13.0, f1.get(3));
 }
 
-TEST_F("require that partial multi-override works for multiple documents", Fixture()) {
+TEST(RankProgramTest, partial_multi_override_for_multiple_documents)
+{
+    Fixture f1;
     f1.add("mysum(double(docid,docid,docid).0,double(docid,docid,docid).1,double(docid,docid,docid).2)");
     f1.override("double(docid,docid,docid).0", 10.0);
     f1.override("double(docid,docid,docid).1", 20.0);
     f1.compile();
-    EXPECT_EQUAL(3u, f1.program.num_executors());
-    EXPECT_EQUAL(5u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.get(1), 32.0);
-    EXPECT_EQUAL(f1.get(2), 34.0);
-    EXPECT_EQUAL(f1.get(3), 36.0);
+    EXPECT_EQ(3u, f1.program.num_executors());
+    EXPECT_EQ(5u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
+    EXPECT_EQ(f1.get(1), 32.0);
+    EXPECT_EQ(f1.get(2), 34.0);
+    EXPECT_EQ(f1.get(3), 36.0);
 }
 
-TEST_F("require that auto-unboxing of const object values work", Fixture()) {
+TEST(RankProgramTest, auto_unboxing_of_const_object_values)
+{
+    Fixture f1;
     f1.add("box(value(10))").compile();
-    EXPECT_EQUAL(10.0, f1.get());
-    EXPECT_EQUAL(2u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(3u, count_const_features(f1.program));
+    EXPECT_EQ(10.0, f1.get());
+    EXPECT_EQ(2u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(3u, count_const_features(f1.program));
 }
 
-TEST_F("require that auto-unboxing of non-const object values work", Fixture()) {
+TEST(RankProgramTest, auto_unboxing_of_non_const_object_values)
+{
+    Fixture f1;
     f1.add("box(ivalue(10))").compile();
-    EXPECT_EQUAL(10.0, f1.get());
-    EXPECT_EQUAL(2u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
+    EXPECT_EQ(10.0, f1.get());
+    EXPECT_EQ(2u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
 }
 
-TEST_F("require that non-lazy ranking expression always calculates all inputs", Fixture()) {
+TEST(RankProgramTest, non_lazy_ranking_expression_always_calculates_all_inputs)
+{
+    Fixture f1;
     f1.lazy_expressions(false);
     f1.add_expr("rank", "if(docid<10,track(ivalue(1)),track(ivalue(2)))");
     f1.compile();
-    EXPECT_EQUAL(6u, f1.program.num_executors());
-    EXPECT_EQUAL(6u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.track_cnt, 0u);
-    EXPECT_EQUAL(f1.get(expr_feature("rank"), 5), 1.0);
-    EXPECT_EQUAL(f1.track_cnt, 2u);
-    EXPECT_EQUAL(f1.get(expr_feature("rank"), 15), 2.0);
-    EXPECT_EQUAL(f1.track_cnt, 4u);
+    EXPECT_EQ(6u, f1.program.num_executors());
+    EXPECT_EQ(6u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
+    EXPECT_EQ(f1.track_cnt, 0u);
+    EXPECT_EQ(f1.get(expr_feature("rank"), 5), 1.0);
+    EXPECT_EQ(f1.track_cnt, 2u);
+    EXPECT_EQ(f1.get(expr_feature("rank"), 15), 2.0);
+    EXPECT_EQ(f1.track_cnt, 4u);
 }
 
-TEST_F("require that lazy ranking expression only calculates needed inputs", Fixture()) {
+TEST(RankProgramTest, lazy_ranking_expression_only_calculates_needed_inputs)
+{
+    Fixture f1;
     f1.lazy_expressions(true);
     f1.add_expr("rank", "if(docid<10,track(ivalue(1)),track(ivalue(2)))");
     f1.compile();
-    EXPECT_EQUAL(6u, f1.program.num_executors());
-    EXPECT_EQUAL(6u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.track_cnt, 0u);
-    EXPECT_EQUAL(f1.get(expr_feature("rank"),  5), 1.0);
-    EXPECT_EQUAL(f1.track_cnt, 1u);
-    EXPECT_EQUAL(f1.get(expr_feature("rank"), 15), 2.0);
-    EXPECT_EQUAL(f1.track_cnt, 2u);
+    EXPECT_EQ(6u, f1.program.num_executors());
+    EXPECT_EQ(6u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
+    EXPECT_EQ(f1.track_cnt, 0u);
+    EXPECT_EQ(f1.get(expr_feature("rank"),  5), 1.0);
+    EXPECT_EQ(f1.track_cnt, 1u);
+    EXPECT_EQ(f1.get(expr_feature("rank"), 15), 2.0);
+    EXPECT_EQ(f1.track_cnt, 2u);
 }
 
-TEST_F("require that interpreted ranking expressions are always lazy", Fixture()) {
+TEST(RankProgramTest, interpreted_ranking_expressions_are_always_lazy)
+{
+    Fixture f1;
     f1.lazy_expressions(false);
     f1.add_expr("rank", "if(docid<10,box(track(ivalue(1))),track(ivalue(2)))");
     f1.compile();
-    EXPECT_EQUAL(7u, f1.program.num_executors());
-    EXPECT_EQUAL(7u, count_features(f1.program));
-    EXPECT_EQUAL(0u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.track_cnt, 0u);
-    EXPECT_EQUAL(f1.get(expr_feature("rank"),  5), 1.0);
-    EXPECT_EQUAL(f1.track_cnt, 1u);
-    EXPECT_EQUAL(f1.get(expr_feature("rank"), 15), 2.0);
-    EXPECT_EQUAL(f1.track_cnt, 2u);
+    EXPECT_EQ(7u, f1.program.num_executors());
+    EXPECT_EQ(7u, count_features(f1.program));
+    EXPECT_EQ(0u, count_const_features(f1.program));
+    EXPECT_EQ(f1.track_cnt, 0u);
+    EXPECT_EQ(f1.get(expr_feature("rank"),  5), 1.0);
+    EXPECT_EQ(f1.track_cnt, 1u);
+    EXPECT_EQ(f1.get(expr_feature("rank"), 15), 2.0);
+    EXPECT_EQ(f1.track_cnt, 2u);
 }
 
-TEST_F("require that compiled ranking expressions are pure", Fixture()) {
+TEST(RankProgramTest, compiled_ranking_expressions_are_pure)
+{
+    Fixture f1;
     f1.lazy_expressions(false).add_expr("rank", "value(7)").compile();
-    EXPECT_EQUAL(2u, count_features(f1.program));
-    EXPECT_EQUAL(2u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.get(), 7.0);
+    EXPECT_EQ(2u, count_features(f1.program));
+    EXPECT_EQ(2u, count_const_features(f1.program));
+    EXPECT_EQ(f1.get(), 7.0);
 }
 
-TEST_F("require that lazy compiled ranking expressions are pure", Fixture()) {
+TEST(RankProgramTest, lazy_compiled_ranking_expressions_are_pure)
+{
+    Fixture f1;
     f1.lazy_expressions(true).add_expr("rank", "value(7)").compile();
-    EXPECT_EQUAL(2u, count_features(f1.program));
-    EXPECT_EQUAL(2u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.get(), 7.0);
+    EXPECT_EQ(2u, count_features(f1.program));
+    EXPECT_EQ(2u, count_const_features(f1.program));
+    EXPECT_EQ(f1.get(), 7.0);
 }
 
-TEST_F("require that interpreted ranking expressions are pure", Fixture()) {
+TEST(RankProgramTest, interpreted_ranking_expressions_are_pure)
+{
+    Fixture f1;
     f1.add_expr("rank", "box(value(7))").compile();
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(3u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.get(), 7.0);
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(3u, count_const_features(f1.program));
+    EXPECT_EQ(f1.get(), 7.0);
 }
 
 const vespalib::string tree_expr = "if(value(1)<2,1,2)+if(value(2)<1,10,20)";
 
-TEST_F("require that fast-forest gbdt evaluation can be enabled", Fixture()) {
+TEST(RankProgramTest, fast_forest_gbdt_evaluation_can_be_enabled)
+{
+    Fixture f1;
     f1.use_fast_forest().add_expr("rank", tree_expr).compile();
-    EXPECT_EQUAL(f1.get(), 21.0);
-    EXPECT_EQUAL(f1.final_executor_name(), "search::features::FastForestExecutor");
+    EXPECT_EQ(f1.get(), 21.0);
+    EXPECT_EQ(f1.final_executor_name(), "search::features::FastForestExecutor");
 }
 
-TEST_F("require that fast-forest gbdt evaluation is disabled by default", Fixture()) {
+TEST(RankProgramTest, fast_forest_gbdt_evaluation_is_disabled_by_default)
+{
+    Fixture f1;
     f1.add_expr("rank", tree_expr).compile();
-    EXPECT_EQUAL(f1.get(), 21.0);
-    EXPECT_EQUAL(f1.final_executor_name(), "search::features::CompiledRankingExpressionExecutor");
+    EXPECT_EQ(f1.get(), 21.0);
+    EXPECT_EQ(f1.final_executor_name(), "search::features::CompiledRankingExpressionExecutor");
 }
 
-TEST_F("require that fast-forest gbdt evaluation is pure", Fixture()) {
+TEST(RankProgramTest, fast_forest_gbdt_evaluation_is_pure)
+{
+    Fixture f1;
     f1.use_fast_forest().add_expr("rank", tree_expr).compile();
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(3u, count_const_features(f1.program));
-    EXPECT_EQUAL(f1.get(), 21.0);
-    EXPECT_EQUAL(f1.final_executor_name(), "search::features::FastForestExecutor");
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(3u, count_const_features(f1.program));
+    EXPECT_EQ(f1.get(), 21.0);
+    EXPECT_EQ(f1.final_executor_name(), "search::features::FastForestExecutor");
 }
 
-TEST_F("require that rank program can be profiled", Fixture()) {
+TEST(RankProgramTest, rank_program_can_be_profiled)
+{
+    Fixture f1;
     ExecutionProfiler profiler(64);
     f1.add("mysum(value(10),ivalue(5))").compile(&profiler);
-    EXPECT_EQUAL(3u, f1.program.num_executors());
-    EXPECT_EQUAL(3u, count_features(f1.program));
-    EXPECT_EQUAL(1u, count_const_features(f1.program));
-    EXPECT_EQUAL(15.0, f1.get(1));
-    EXPECT_EQUAL(15.0, f1.get(2));
-    EXPECT_EQUAL(15.0, f1.get(3));
+    EXPECT_EQ(3u, f1.program.num_executors());
+    EXPECT_EQ(3u, count_features(f1.program));
+    EXPECT_EQ(1u, count_const_features(f1.program));
+    EXPECT_EQ(15.0, f1.get(1));
+    EXPECT_EQ(15.0, f1.get(2));
+    EXPECT_EQ(15.0, f1.get(3));
     Slime slime;
     profiler.report(slime.setObject());
     fprintf(stderr, "%s", slime.toString().c_str());
-    EXPECT_EQUAL(slime["roots"].entries(), 2u);
+    EXPECT_EQ(slime["roots"].entries(), 2u);
     auto *a = &slime["roots"][0];
     auto *b = &slime["roots"][1];
     if ((*b)["count"].asLong() > (*a)["count"].asLong()) {
         std::swap(a, b);
     }
-    EXPECT_EQUAL((*a)["name"].asString().make_string(), vespalib::string("mysum(value(10),ivalue(5))"));
-    EXPECT_EQUAL((*a)["count"].asLong(), 3);
-    EXPECT_EQUAL((*a)["children"].entries(), 1u);
-    EXPECT_EQUAL((*a)["children"][0]["name"].asString().make_string(), vespalib::string("ivalue(5)"));
-    EXPECT_EQUAL((*a)["children"][0]["count"].asLong(), 3);
-    EXPECT_EQUAL((*b)["name"].asString().make_string(), vespalib::string("value(10)"));
-    EXPECT_EQUAL((*b)["count"].asLong(), 1);
+    EXPECT_EQ((*a)["name"].asString().make_string(), vespalib::string("mysum(value(10),ivalue(5))"));
+    EXPECT_EQ((*a)["count"].asLong(), 3);
+    EXPECT_EQ((*a)["children"].entries(), 1u);
+    EXPECT_EQ((*a)["children"][0]["name"].asString().make_string(), vespalib::string("ivalue(5)"));
+    EXPECT_EQ((*a)["children"][0]["count"].asLong(), 3);
+    EXPECT_EQ((*b)["name"].asString().make_string(), vespalib::string("value(10)"));
+    EXPECT_EQ((*b)["count"].asLong(), 1);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
