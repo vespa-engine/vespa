@@ -209,8 +209,14 @@ public class SchemaDocumentParser {
                 child.size() > 2 &&
                 child.get(1).getType() == Token.TokenType.LESSTHAN
             ) {
-                for (int i = 2; i < child.size(); i += 2) {
-                    ret.addAll(validateType(child.get(i)));
+                Token.TokenType firstChildType = child.get(0).getType();
+                if (
+                    firstChildType != Token.TokenType.ANNOTATIONREFERENCE &&
+                    firstChildType != Token.TokenType.REFERENCE
+                ) {
+                    for (int i = 2; i < child.size(); i += 2) {
+                        ret.addAll(validateType(child.get(i)));
+                    }
                 }
             } else {
                 ret.addAll(validateType(child));

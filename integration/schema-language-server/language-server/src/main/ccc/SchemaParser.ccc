@@ -459,9 +459,9 @@ ParsedType dataType() :
     (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
         | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
         | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() { return mapType; } )
-        // | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
+        | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType() { return mapType; } )
         // | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
-        // | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
+        | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
         | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
     )
     {
@@ -471,6 +471,29 @@ ParsedType dataType() :
             type = ParsedType.arrayOf(type);
         }
         return type;
+    }
+;
+
+ParsedType referenceType() :
+{
+    String documentName;
+}
+
+    ( documentName = identifierStr )
+    {
+        return ParsedType.documentType(documentName);
+    }
+;
+
+ParsedType annotationRefDataType() :
+{
+    ParsedType dataType;
+    String targetName;
+}
+
+    ( <ANNOTATIONREFERENCE> <LESSTHAN> targetName = identifierStr <GREATERTHAN> )
+    {
+        return ParsedType.annotationRef(targetName);
     }
 ;
 
