@@ -941,8 +941,8 @@ FileStorManager::updateState()
         }
         contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(node_up_in_space);
         contentBucketSpace.setNodeMaintenanceInLastNodeStateSeenByProvider(in_maintenance);
-        spi::ClusterState spiState(state_and_distr->cluster_state(), _component.getIndex(),
-                                   state_and_distr->distribution(), in_maintenance);
+        spi::ClusterState spiState(state_and_distr->cluster_state_sp(), state_and_distr->distribution_sp(),
+                                   _component.getIndex(), in_maintenance);
         _provider->setClusterState(bucketSpace, spiState);
     }
 }
