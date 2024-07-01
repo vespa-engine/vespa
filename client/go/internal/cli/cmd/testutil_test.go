@@ -40,6 +40,7 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 	cli.ztsFactory = func(httpClient httputil.Client, domain, url string) (vespa.Authenticator, error) {
 		return &mockAuthenticator{}, nil
 	}
+	cli.retryInterval = time.Hour // Disable waiting in tests. Waiting is short-circuited if --wait < retryInterval
 	return cli, &stdout, &stderr
 }
 

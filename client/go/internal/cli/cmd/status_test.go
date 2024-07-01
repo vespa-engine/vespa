@@ -154,7 +154,7 @@ func TestStatusCloudDeployment(t *testing.T) {
 	})
 	assert.NotNil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, `Timed out waiting for deployment to converge. See https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
-Warning: deployment run 1337 not yet complete after waiting up to 2s: wait deadline reached
+Warning: deployment run 1337 not yet complete after waiting up to 3s: wait deadline reached
 Hint: Consider using the --wait flag to wait for completion
 `, stderr.String())
 	assert.Equal(t, "", stdout.String())

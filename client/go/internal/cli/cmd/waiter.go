@@ -97,7 +97,7 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 	} else if fastWait {
 		// If --wait is not explicitly given, we always wait a few seconds in Cloud to catch fast failures, e.g.
 		// invalid application package
-		timeout = 2 * time.Second
+		timeout = 3 * time.Second
 	}
 	return target.AwaitDeployment(wantedID, timeout)
 }
