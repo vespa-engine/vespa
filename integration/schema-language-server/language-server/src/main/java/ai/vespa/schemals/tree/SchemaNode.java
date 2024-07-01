@@ -2,6 +2,8 @@ package ai.vespa.schemals.tree;
 
 import java.util.ArrayList;
 
+import javax.xml.validation.Schema;
+
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
@@ -72,6 +74,21 @@ public class SchemaNode {
 
     public SchemaNode getParent() {
         return parent;
+    }
+
+    public SchemaNode getPrevious() {
+        if (parent == null)return null;
+
+        int parentIndex = parent.indexOf(this);
+
+        if (parentIndex == -1)return null; // invalid setup
+
+        if (parentIndex == 0)return parent;
+        return parent.get(parentIndex - 1);
+    }
+
+    public int indexOf(SchemaNode child) {
+        return this.children.indexOf(child);
     }
 
     public int size() {

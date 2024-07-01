@@ -82,30 +82,26 @@ public class SchemaDocumentParser {
         return CST;
     }
 
+    public SchemaNode getNodeAtOrBeforePosition(Position pos) {
+        return getNodeAtPosition(CST, pos, false, true);
+    }
+
     public SchemaNode getLeafNodeAtPosition(Position pos) {
-        return getNodeAtPosition(CST, pos, true);
+        return getNodeAtPosition(CST, pos, true, false);
     }
 
     public SchemaNode getNodeAtPosition(Position pos) {
-        return getNodeAtPosition(CST, pos, false);
-    }
-
-    /**
-     * Return the last non-dirty node before a given position
-     * @param pos the position
-     * @return a non-dirty node or null if no such node exists
-     */
-    public SchemaNode getCleanNodeBeforePosition(Position pos) {
-        return getCleanNodeBeforePosition(CST, pos);
+        return getNodeAtPosition(CST, pos, false, false);
     }
 
 
-    private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf) {
+    private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
         if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
             return node;
         }
 
         if (!CSTUtils.positionInRange(node.getRange(), pos)) {
+            if (findNearest && !onlyLeaf)return node;
             return null;
         }
 
@@ -113,7 +109,7 @@ public class SchemaDocumentParser {
             SchemaNode child = node.get(i);
 
             if (CSTUtils.positionInRange(child.getRange(), pos)) {
-                return getNodeAtPosition(child, pos, onlyLeaf);
+                return getNodeAtPosition(child, pos, onlyLeaf, findNearest);
             }
         }
 
@@ -123,7 +119,7 @@ public class SchemaDocumentParser {
 
         /*
         Integer lowerLimit = 0;
-        Integer upperLimit = node.size();
+        Integer upperLimit = node.size() - 1;
 
         Integer currentSearch = (upperLimit + lowerLimit) / 2;
 
@@ -133,7 +129,7 @@ public class SchemaDocumentParser {
             if (CSTUtils.positionLT(pos, search.getRange().getEnd())) {
 
                 if (CSTUtils.positionInRange(search.getRange(), pos)) {
-                    return getNodeAtPositon(search, pos, onlyLeaf);
+                    return getNodeAtPosition(search, pos, onlyLeaf);
                 }
 
                 upperLimit = currentSearch - 1;
@@ -150,11 +146,6 @@ public class SchemaDocumentParser {
 
         return null;
         */
-    }
-
-    private SchemaNode getCleanNodeBeforePosition(SchemaNode node, Position pos) {
-        // TODO: implement
-        return null;
     }
 
     private void parseContent() {
