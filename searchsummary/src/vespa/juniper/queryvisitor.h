@@ -47,7 +47,7 @@ public:
     QueryExpr* GetQuery();
 
 protected:
-    std::string get_index(const QueryItem* item);
+    std::string_view get_index(const QueryItem* item);
 private:
     // Helper functions/members for use during construction only.
     void insert(QueryExpr* expr);
