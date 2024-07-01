@@ -335,7 +335,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     int deployableHashCode() {
         List<DeploymentSpec.DeclaredZone> zones = zones().stream().filter(zone -> zone.concerns(prod)).toList();
-        Object[] toHash = new Object[zones.size() + 7];
+        Object[] toHash = new Object[zones.size() + 8];
         int i = 0;
         toHash[i++] = name;
         toHash[i++] = endpoints;
@@ -343,8 +343,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         toHash[i++] = tags;
         toHash[i++] = bcp;
         toHash[i++] = cloudAccounts;
+        toHash[i++] = athenzService;
         for (DeploymentSpec.DeclaredZone zone : zones)
-            toHash[i++] = Objects.hash(zone, zone.athenzService(), zone.cloudAccounts());
+            toHash[i++] = Objects.hash(zone, zone.athenzService(), zone.cloudAccounts(), zone.testerNodes());
 
         return Arrays.hashCode(toHash);
     }
