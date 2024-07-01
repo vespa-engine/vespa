@@ -107,4 +107,8 @@ public class SchemaNode {
         }
         return null;
     }
+
+    public String toString() {
+        return getText() + " [" + isSchemaType + "]";
+    }
 }

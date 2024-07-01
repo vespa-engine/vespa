@@ -177,13 +177,19 @@ public class SchemaDocumentParser {
             SchemaNode child = parent.get(parent.indexOf(node) + 1);
 
             // Check if it uses deprecated array
-            if (child.getClassLeafIdentifierString().equals("dataType")) {
+            if (
+                child.getClassLeafIdentifierString().equals("dataType") &&
+                child.get(1) != null &&
+                child.get(1).getText().equals("[]")
+            ) {
                 Range range = child.getRange();
 
                 child = child.get(0);
 
                 ret.add(new Diagnostic(range, "Data type syntax '" + child.getText() + "[]' is deprecated, use 'array<" + child.getText() + ">' instead.", DiagnosticSeverity.Warning,""));
             }
+
+            child.setType(null);
 
             ParsedType type = ParsedType.fromName(child.getText());
             if (type.getVariant() == Variant.UNKNOWN) {

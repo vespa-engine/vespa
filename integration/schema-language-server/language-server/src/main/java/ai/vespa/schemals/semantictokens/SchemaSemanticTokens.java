@@ -149,7 +149,14 @@ public class SchemaSemanticTokens implements Visitor {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
         Token.TokenType type = node.getType();
-        if (type != null) {
+
+        if (node.isSchemaType()) {
+            Integer tokenType = tokenTypes.indexOf("type");
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+            
+        } else if (type != null) {
             if (node.isUserDefinedIdentifier()) {
                 SchemaNode parent = node.getParent();
                 String parnetClassName = parent.getIdentifierString();
@@ -159,11 +166,6 @@ public class SchemaSemanticTokens implements Visitor {
                     ret.add(new SemanticTokenMarker(tokenType, node));
                 }
 
-            } else if (node.isSchemaType()) {
-                Integer tokenType = tokenTypes.indexOf("type");
-                if (tokenType != null) {
-                    ret.add(new SemanticTokenMarker(tokenType, node));
-                }
             } else {
                 Integer tokenType = tokenTypeMap.get(type);
                 if (tokenType != null) {
