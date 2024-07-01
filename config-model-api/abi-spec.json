@@ -511,6 +511,7 @@
       "public java.util.Map cloudAccounts()",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id)",
+      "public com.yahoo.config.application.api.Bcp bcp()",
       "public java.lang.String xmlForm()",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
