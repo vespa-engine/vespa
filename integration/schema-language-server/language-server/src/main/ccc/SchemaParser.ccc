@@ -506,7 +506,7 @@ void structFieldDefinition(ParsedStruct struct) :
 void fieldBodyElm(ParsedField field) : { }
 
      ( aliasElm(field) |
-    //   attribute(field) |
+       attributeElm(field) |
     //   bolding(field) |
     //   dictionary(field) |
     //   fieldStemming(field) |
@@ -539,6 +539,72 @@ void weightElm(ParsedField field) :
 }
 
     <WEIGHT> <COLON> num = integerElm { field.setWeight(num); }
+;
+
+/**
+ * This rule consumes an attribute statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void attributeElm(ParsedField field) :
+{
+    String name = field.name();
+}
+
+    <ATTRIBUTE> [name = identifierStr]
+    {
+        // TODO: Remove support for attribute with different name than field name in Vespa 9
+        // if ( ! name.equals(field.name()))
+        //         deployLogger.logApplicationPackage(Level.WARNING, "Creating an attribute for field '" + field.name() +
+        //         "' with a different name '" + name + "' than the field name" +
+        //         " is deprecated, and support will be removed in Vespa 9. Define a field with the wanted name outside the document instead.");
+        ParsedAttribute attr = field.attributeFor(name);
+    }
+         ( (<COLON> attributeSetting(attr))
+           | (openLbrace() (attributeSetting(attr) (<NL>)*)* <RBRACE>) )
+;
+
+/* pick up sorting in field block */
+void attributeSorting(ParsedAttribute attribute) : { }
+
+    sortingElm(attribute.sortInfo())
+;
+
+/* pick up sorting in field block */
+void sortingElm(ParsedSorting sort) : { }
+
+    <SORTING>
+        //  ( (<COLON> sortingSetting(sort))
+        //    | (openLbrace() (sortingSetting(sort) (<NL>)*)* <RBRACE>) )
+;
+
+/**
+ * This rule consumes a single attribute setting statement of an attribute element.
+ *
+ * @param attribute The attribute to change.
+ */
+void attributeSetting(ParsedAttribute attribute) :
+{
+    String str;
+}
+
+    (
+        <FAST_RANK>             { attribute.setFastRank(true); }
+      | <FAST_SEARCH>           { attribute.setFastSearch(true); }
+      | <FAST_ACCESS>           { attribute.setFastAccess(true); }
+      | <MUTABLE>               { attribute.setMutable(true); }
+      | <PAGED>                 { attribute.setPaged(true); }
+    //   | <ENABLE_BIT_VECTORS>      { deployLogger.logApplicationPackage(Level.WARNING, "'enable-bit-vectors' is deprecated and void -> remove it. Will be removed in vespa-9"); }
+      | <ENABLE_ONLY_BIT_VECTOR>  { attribute.setEnableOnlyBitVector(true); }
+      | attributeSorting(attribute)
+      | <ALIAS> {
+            String alias;
+            String aliasedName=attribute.name();
+        } [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr {
+          attribute.addAlias(aliasedName, alias);
+      }
+      | <DISTANCE_METRIC> <COLON> str = identifierWithDashStr { attribute.setDistanceMetric(str); }
+    )
 ;
 
 /**
