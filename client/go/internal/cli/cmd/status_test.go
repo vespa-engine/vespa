@@ -122,13 +122,13 @@ func TestStatusLocalDeployment(t *testing.T) {
 	resp.Body = []byte(`{"currentGeneration": 42, "converged": false}`)
 	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment"))
-	assert.Equal(t, "Warning: deployment not converged on latest generation: wait deadline reached\nHint: Consider using the --wait flag to wait for completion\n", stderr.String())
+	assert.Equal(t, "Warning: deployment not converged on latest generation: wait deadline reached\nHint: Consider using the --wait flag to increase the wait period\nHint: --wait 120 will make this command wait for completion up to 2 minutes\n", stderr.String())
 
 	// Explicit generation
 	stderr.Reset()
 	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment", "41"))
-	assert.Equal(t, "Warning: deployment not converged on generation 41: wait deadline reached\nHint: Consider using the --wait flag to wait for completion\n", stderr.String())
+	assert.Equal(t, "Warning: deployment not converged on generation 41: wait deadline reached\nHint: Consider using the --wait flag to increase the wait period\nHint: --wait 120 will make this command wait for completion up to 2 minutes\n", stderr.String())
 }
 
 func TestStatusCloudDeployment(t *testing.T) {
@@ -155,7 +155,8 @@ func TestStatusCloudDeployment(t *testing.T) {
 	assert.NotNil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, `Timed out waiting for deployment to converge. See https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
 Warning: deployment run 1337 not yet complete after waiting up to 3s: wait deadline reached
-Hint: Consider using the --wait flag to wait for completion
+Hint: Consider using the --wait flag to increase the wait period
+Hint: --wait 120 will make this command wait for completion up to 2 minutes
 `, stderr.String())
 	assert.Equal(t, "", stdout.String())
 	// Latest run
