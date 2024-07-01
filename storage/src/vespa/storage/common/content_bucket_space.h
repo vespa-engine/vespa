@@ -25,7 +25,9 @@ struct ClusterStateAndDistribution {
 
     // Precondition: valid() == true
     [[nodiscard]] const lib::ClusterState& cluster_state() const noexcept { return *_cluster_state; }
+    [[nodiscard]] const std::shared_ptr<const lib::ClusterState>& cluster_state_sp() const noexcept { return _cluster_state; }
     [[nodiscard]] const lib::Distribution& distribution() const noexcept { return  *_distribution; }
+    [[nodiscard]] const std::shared_ptr<const lib::Distribution>& distribution_sp() const noexcept { return  _distribution; }
 
     [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> with_new_state(
             std::shared_ptr<const lib::ClusterState> cluster_state) const;

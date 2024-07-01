@@ -21,6 +21,12 @@ class ClusterState {
 public:
     using SP = std::shared_ptr<ClusterState>;
 
+    ClusterState(std::shared_ptr<const lib::ClusterState> state,
+                 std::shared_ptr<const lib::Distribution> distribution,
+                 uint16_t node_index,
+                 bool maintenance_in_all_spaces);
+
+    // Constructor used by a bunch of unit tests. Prefer the constructor taking in shared_ptrs to avoid copying.
     ClusterState(const lib::ClusterState& state,
                  uint16_t nodeIndex,
                  const lib::Distribution& distribution,
@@ -72,18 +78,12 @@ public:
      */
     [[nodiscard]] bool nodeMaintenance() const noexcept;
 
-    /**
-     * Returns a serialized form of this object.
-     */
-    void serialize(vespalib::nbostream& o) const;
-
 private:
-    std::unique_ptr<lib::ClusterState> _state;
-    std::unique_ptr<lib::Distribution> _distribution;
-    uint16_t _nodeIndex;
-    bool _maintenanceInAllSpaces;
+    std::shared_ptr<const lib::ClusterState> _state;
+    std::shared_ptr<const lib::Distribution> _distribution;
+    uint16_t                                 _nodeIndex;
+    bool                                     _maintenanceInAllSpaces;
 
-    void deserialize(vespalib::nbostream&);
     bool nodeHasStateOneOf(const char* states) const noexcept;
 };
 
