@@ -331,7 +331,8 @@ void documentElm(ParsedSchema schema) :
  */
 void documentElmBody(ParsedDocument document) : {}
     (
-        fieldInsideDoc(document)
+        structInsideDoc(document)
+        | fieldInsideDoc(document)
     )
 ;
 
@@ -365,7 +366,7 @@ ParsedField fieldElm() :
         // if (name != null && Schema.isReservedName(name.toLowerCase())) {
         //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         // }
-        field = new ParsedField(name);
+        field = new ParsedField(name, type);
     }
     openLbrace() <RBRACE>
     {
@@ -408,6 +409,36 @@ void queryCommandElm(ParsedFieldSet fieldSet) :
 ;
 
 /**
+ * This rule consumes a struct block from within a document element.
+ * @param document the document object to add content to
+ */
+void structInsideDoc(ParsedDocument document) :
+{
+    ParsedStruct struct;
+}
+
+    struct = structDefinitionElm() { document.addStruct(struct); }
+;
+
+/**
+ * This rule consumes a struct declaration block
+ */
+ParsedStruct structDefinitionElm() :
+{
+    String name;
+//    String inherited;
+    ParsedStruct struct;
+}
+
+    ( <STRUCT> name = identifierStr (<NL>)* { struct = new ParsedStruct(name); }
+//    [ inheritsStruct(struct) (<NL>)* ]
+    openLbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE> )
+    {
+        return struct;
+    }
+;
+
+/**
  * This rule consumes a data type block from within a field element.
  *
  * @return the consumed data type
@@ -435,6 +466,32 @@ ParsedType dataType() :
             type = ParsedType.arrayOf(type);
         }
         return type;
+    }
+;
+
+/**
+ * This rule consumes a field block of a struct body.
+ *
+ * @param struct The struct to modify.
+ */
+void structFieldDefinition(ParsedStruct struct) :
+{
+    String name;
+    ParsedType type;
+    ParsedField field;
+    int fieldId;
+}
+
+    <FIELD> name = identifierStr <TYPE> type = dataType() {
+//        if (name != null && Schema.isReservedName(name.toLowerCase())) {
+        if (name != null) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        field = new ParsedField(name, type);
+    }
+    // openLbrace (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE>
+    {
+        struct.addField(field);
     }
 ;
 

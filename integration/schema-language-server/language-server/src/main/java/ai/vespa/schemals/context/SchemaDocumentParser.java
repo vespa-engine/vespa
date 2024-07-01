@@ -120,6 +120,7 @@ public class SchemaDocumentParser {
         put(Token.TokenType.DOCUMENT, "ai.vespa.schemals.parser.ast.documentElm");
         put(Token.TokenType.FIELD, "ai.vespa.schemals.parser.ast.fieldElm");
         put(Token.TokenType.FIELDSET, "ai.vespa.schemals.parser.ast.fieldSetElm");
+        put(Token.TokenType.STRUCT, "ai.vespa.schemals.parser.ast.structDefinitionElm");
     }};
 
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {

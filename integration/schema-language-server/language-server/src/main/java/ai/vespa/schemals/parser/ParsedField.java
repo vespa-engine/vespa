@@ -1,13 +1,13 @@
 package ai.vespa.schemals.parser;
 
-public class ParsedField {
-    private String name;
 
-    ParsedField(String name) {
-        this.name = name;
+public class ParsedField extends ParsedBlock {
+
+    private ParsedType type;
+
+    ParsedField(String name, ParsedType type) {
+        super(name, "field");
+        this.type = type;
     }
 
-    public String toString() {
-        return "ParsedField(" + name + ")";
-    }
 }

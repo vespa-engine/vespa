@@ -25,7 +25,8 @@ public class SchemaSemanticTokens implements Visitor {
         add(Token.TokenType.SCHEMA);
         add(Token.TokenType.FIELD);
         add(Token.TokenType.TYPE);
-        add(Token.TokenType.FIELDSET);
+        add(Token.TokenType.FIELDSET); 
+        add(Token.TokenType.STRUCT);
     }};
 
     private static final Map<Token.TokenType, String> tokenTypeLSPNameMap = new HashMap<Token.TokenType, String>() {{
@@ -42,6 +43,7 @@ public class SchemaSemanticTokens implements Visitor {
         put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldsElm", "variable");
+        put("ai.vespa.schemals.parser.ast.structDefinitionElm", "variable");
     }};
 
     private static ArrayList<String> tokenTypes;
