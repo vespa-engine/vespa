@@ -239,10 +239,6 @@ public class DeploymentSpec {
                                  .orElse(ZoneEndpoint.defaultEndpoint);
     }
 
-    /** @deprecated returns Bcp.empty(). */
-    @Deprecated // Remove after June 2023
-    public Bcp bcp() { return Bcp.empty(); }
-
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
@@ -440,18 +436,16 @@ public class DeploymentSpec {
         private final Environment environment;
         private final Optional<RegionName> region;
         private final Optional<AthenzService> athenzService;
-        private final Optional<String> testerFlavor;
         private final Optional<String> testerNodes;
         private final Map<CloudName, CloudAccount> cloudAccounts;
         private final Optional<Duration> hostTTL;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
+            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, Optional<AthenzService> athenzService,
-                            Optional<String> testerFlavor, Optional<String> testerNodes,
-                            Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL) {
+                            Optional<String> testerNodes, Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL) {
             if (environment != Environment.prod && region.isPresent())
                 illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
@@ -460,7 +454,6 @@ public class DeploymentSpec {
             this.environment = Objects.requireNonNull(environment);
             this.region = Objects.requireNonNull(region);
             this.athenzService = Objects.requireNonNull(athenzService);
-            this.testerFlavor = Objects.requireNonNull(testerFlavor);
             this.testerNodes = Objects.requireNonNull(testerNodes);
             this.cloudAccounts = Map.copyOf(cloudAccounts);
             this.hostTTL = Objects.requireNonNull(hostTTL);
@@ -470,9 +463,6 @@ public class DeploymentSpec {
 
         /** The region name, or empty if not declared */
         public Optional<RegionName> region() { return region; }
-
-        // TODO jonmv: remove after 8.350.
-        public Optional<String> testerFlavor() { return testerFlavor; }
 
         /** The XML &lt;nodes&gt; tag of the tester application for this zone, if specified. */
         public Optional<String> testerNodes() { return testerNodes; }
