@@ -13,6 +13,7 @@ public class SchemaNode {
     private String identifierString;
     private SchemaNode parent;
     private boolean isUserDefinedIdentifier = false;
+    private boolean isSchemaType = false;
     private Node originalNode;
 
     // This array has to be in order, without overlapping elements
@@ -57,6 +58,14 @@ public class SchemaNode {
         return isUserDefinedIdentifier;
     }
 
+    public void setSchemaType() {
+        this.isSchemaType = true;
+    }
+
+    public boolean isSchemaType() {
+        return isSchemaType;
+    }
+
     public String getIdentifierString() {
         return identifierString;
     }
@@ -88,5 +97,14 @@ public class SchemaNode {
 
     public boolean isLeaf() {
         return children.size() == 0;
+    }
+
+    public Integer indexOf(SchemaNode child) {
+        for (int i = 0; i < size(); i++) {
+            if (child == get(i)) {
+                return i;
+            }
+        }
+        return null;
     }
 }

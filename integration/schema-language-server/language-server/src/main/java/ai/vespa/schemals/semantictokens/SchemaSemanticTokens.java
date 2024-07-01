@@ -29,6 +29,10 @@ public class SchemaSemanticTokens implements Visitor {
         add(Token.TokenType.STRUCT);
     }};
 
+    private static final ArrayList<String> manualyRegisteredLSPNames = new ArrayList<String>() {{
+        add("type");
+    }};
+
     private static final Map<Token.TokenType, String> tokenTypeLSPNameMap = new HashMap<Token.TokenType, String>() {{
         put(Token.TokenType.DOUBLE, "number");
         put(Token.TokenType.INTEGER, "number");
@@ -64,6 +68,8 @@ public class SchemaSemanticTokens implements Visitor {
         tokenTypes = new ArrayList<String>();
         tokenTypeMap = new HashMap<Token.TokenType, Integer>();
         identifierTypeMap = new HashMap<String, Integer>();
+
+        tokenTypes.addAll(manualyRegisteredLSPNames);
 
         for (Map.Entry<Token.TokenType, String> set : tokenTypeLSPNameMap.entrySet()) {
             Integer index = addTokenType(set.getValue());
@@ -153,6 +159,11 @@ public class SchemaSemanticTokens implements Visitor {
                     ret.add(new SemanticTokenMarker(tokenType, node));
                 }
 
+            } else if (node.isSchemaType()) {
+                Integer tokenType = tokenTypes.indexOf("type");
+                if (tokenType != null) {
+                    ret.add(new SemanticTokenMarker(tokenType, node));
+                }
             } else {
                 Integer tokenType = tokenTypeMap.get(type);
                 if (tokenType != null) {

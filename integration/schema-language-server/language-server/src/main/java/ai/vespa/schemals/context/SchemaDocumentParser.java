@@ -16,6 +16,8 @@ import ai.vespa.schemals.parser.*;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.parser.ParsedType;
+import ai.vespa.schemals.parser.ParsedType.Variant;
 
 public class SchemaDocumentParser {
 
@@ -163,6 +165,31 @@ public class SchemaDocumentParser {
                 schemaIndex.insert(fileURI, nodeType, child.getText(), child);
             } else {
                 ret.add(new Diagnostic(child.getRange(), "Duplicate identifier"));
+            }
+
+        }
+
+        if (
+            node.getType() == Token.TokenType.TYPE &&
+            parent != null &&
+            parent.get(parent.indexOf(node) + 1) != null
+        ) {
+            SchemaNode child = parent.get(parent.indexOf(node) + 1);
+
+            // Check if it uses deprecated array
+            if (child.getClassLeafIdentifierString().equals("dataType")) {
+                Range range = child.getRange();
+
+                child = child.get(0);
+
+                ret.add(new Diagnostic(range, "Data type syntax '" + child.getText() + "[]' is deprecated, use 'array<" + child.getText() + ">' instead.", DiagnosticSeverity.Warning,""));
+            }
+
+            ParsedType type = ParsedType.fromName(child.getText());
+            if (type.getVariant() == Variant.UNKNOWN) {
+                ret.add(new Diagnostic(child.getRange(), "Invalid type"));
+            } else {
+                child.setSchemaType();
             }
 
         }

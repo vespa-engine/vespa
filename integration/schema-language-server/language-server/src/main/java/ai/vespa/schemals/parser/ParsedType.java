@@ -8,7 +8,7 @@ package ai.vespa.schemals.parser;
  * is somewhat complicated.
  * @author arnej27959
  **/
-class ParsedType {
+public class ParsedType {
     public enum Variant {
         NONE,
         BUILTIN,
@@ -174,7 +174,7 @@ class ParsedType {
     static ParsedType annotationRef(String name) {
         return new ParsedType("annotationreference<" + name + ">", Variant.ANN_REFERENCE);
     }
-    static ParsedType fromName(String name) {
+    public static ParsedType fromName(String name) {
         return new ParsedType(name, guessVariant(name));
     }
     static ParsedType documentType(String name) {
