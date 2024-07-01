@@ -44,6 +44,7 @@ public class SchemaSemanticTokens implements Visitor {
         put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldsElm", "variable");
         put("ai.vespa.schemals.parser.ast.structDefinitionElm", "variable");
+        put("ai.vespa.schemals.parser.ast.structFieldDefinition", "variable");
     }};
 
     private static ArrayList<String> tokenTypes;

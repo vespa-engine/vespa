@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
@@ -117,12 +118,23 @@ public class SchemaDocumentParser {
 
     }
 
-    private static final HashMap<Token.TokenType, String> tokenParentClassPairs = new HashMap<Token.TokenType, String>() {{
-        put(Token.TokenType.SCHEMA, "ai.vespa.schemals.parser.ast.rootSchema");
-        put(Token.TokenType.DOCUMENT, "ai.vespa.schemals.parser.ast.documentElm");
-        put(Token.TokenType.FIELD, "ai.vespa.schemals.parser.ast.fieldElm");
-        put(Token.TokenType.FIELDSET, "ai.vespa.schemals.parser.ast.fieldSetElm");
-        put(Token.TokenType.STRUCT, "ai.vespa.schemals.parser.ast.structDefinitionElm");
+    private static final HashMap<Token.TokenType, HashSet<String>> tokenParentClassPairs = new HashMap<Token.TokenType, HashSet<String>>() {{
+        put(Token.TokenType.SCHEMA, new HashSet<String>() {{
+            add("ai.vespa.schemals.parser.ast.rootSchema");
+        }});
+        put(Token.TokenType.DOCUMENT, new HashSet<String>() {{
+            add("ai.vespa.schemals.parser.ast.documentElm");
+        }});
+        put(Token.TokenType.FIELD, new HashSet<String>() {{
+            add("ai.vespa.schemals.parser.ast.fieldElm");
+            add("ai.vespa.schemals.parser.ast.structFieldDefinition");
+        }});
+        put(Token.TokenType.FIELDSET, new HashSet<String>() {{
+            add("ai.vespa.schemals.parser.ast.fieldSetElm");
+        }});
+        put(Token.TokenType.STRUCT, new HashSet<String>() {{
+            add("ai.vespa.schemals.parser.ast.structDefinitionElm");
+        }});
     }};
 
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
@@ -132,11 +144,12 @@ public class SchemaDocumentParser {
         // Override if we think there will be an identifier next token
         SchemaNode parent = node.getParent();
         Token.TokenType nodeType = node.getType();
-        String parentCNComp = tokenParentClassPairs.get(nodeType);
+        HashSet<String> parentCNComp = tokenParentClassPairs.get(nodeType);
         if (
             parent != null &&
             parent.get(0) == node &&
-            parent.getIdentifierString() == parentCNComp &&
+            parentCNComp != null &&
+            parentCNComp.contains(parent.getIdentifierString()) &&
             parent.get(1) != null
         ) {
             SchemaNode child = parent.get(1);

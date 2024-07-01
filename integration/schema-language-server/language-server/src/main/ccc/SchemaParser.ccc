@@ -484,7 +484,7 @@ void structFieldDefinition(ParsedStruct struct) :
 
     <FIELD> name = identifierStr <TYPE> type = dataType() {
 //        if (name != null && Schema.isReservedName(name.toLowerCase())) {
-        if (name != null) {
+        if (name != null && false) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
         field = new ParsedField(name, type);
