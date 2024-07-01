@@ -278,7 +278,7 @@ jobs:
           fi
           meta set vespa.version $VESPA_VERSION
       - trig-buildkite: |
-          BUILDKITE_JSON=$(screwdriver/trig-buildkite-pipeline.sh vespa-engine-vespa-release master $VESPA_VERSION $VESPA_REF)
+          BUILDKITE_JSON=$(screwdriver/trig-buildkite-pipeline.sh vespa-engine-vespa-release master $VESPA_VERSION $VESPA_REF "Releasing open-source Vespa version $VESPA_VERSION :rocket:")
       - wait-for-buildkite: |
           BUILDKITE_URL=$(jq -re '.url' <<< "$BUILDKITE_JSON")
           BUILDKITE_WEB_URL=$(jq -re '.web_url' <<< "$BUILDKITE_JSON")
