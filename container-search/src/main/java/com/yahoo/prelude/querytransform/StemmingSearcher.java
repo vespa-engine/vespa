@@ -29,6 +29,7 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TaggableItem;
@@ -242,7 +243,7 @@ public class StemmingSearcher extends Searcher {
         setConnectivity(current, reverseConnectivity, replacement);
     }
 
-    private void andSegmentConnectivity(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, 
+    private void andSegmentConnectivity(BlockItem current, Map<Item, TaggableItem> reverseConnectivity,
                                         CompositeItem composite) {
         // if the original has connectivity to something, add to last word
         Connectivity connectivity = getConnectivity(current);
@@ -364,12 +365,19 @@ public class StemmingSearcher extends Searcher {
     }
 
     private AndSegmentItem createAndSegment(BlockItem current) {
-        return new AndSegmentItem(current.stringValue(), true, true);
+        var composite = new AndSegmentItem(current.stringValue(), true, true);
+        if (current instanceof SegmentItem segment) {
+            composite.shouldFoldIntoWand(segment.shouldFoldIntoWand());
+        }
+        return composite;
     }
 
     private CompositeItem createPhraseSegment(BlockItem current, String indexName) {
-        CompositeItem composite = new PhraseSegmentItem(current.getRawWord(), current.stringValue(), true, true);
+        var composite = new PhraseSegmentItem(current.getRawWord(), current.stringValue(), true, true);
         composite.setIndexName(indexName);
+        if (current instanceof SegmentItem segment) {
+            composite.shouldFoldIntoWand(segment.shouldFoldIntoWand());
+        }
         return composite;
     }
 
