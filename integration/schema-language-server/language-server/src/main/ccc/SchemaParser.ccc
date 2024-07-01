@@ -502,7 +502,7 @@ void structFieldDefinition(ParsedStruct struct) :
  */
 void fieldBodyElm(ParsedField field) : { }
 
-    // ( alias(field) |
+     ( aliasElm(field) |
     //   attribute(field) |
     //   bolding(field) |
     //   dictionary(field) |
@@ -521,7 +521,21 @@ void fieldBodyElm(ParsedField field) : { }
     //   summaryTo(field) |
     //   weight(field) |
     //   weightedset(field.getType()) )
-    ( idElm(field) )
+      idElm(field) |
+      weightElm(field) )
+;
+
+/**
+ * This rule consumes a weight statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void weightElm(ParsedField field) :
+{
+    int num;
+}
+
+    <WEIGHT> <COLON> num = integerElm { field.setWeight(num); }
 ;
 
 /**
@@ -537,6 +551,18 @@ void idElm(ParsedField field) :
     <ID> <COLON> fieldId = integerElm
     {
         field.setId(fieldId);
+    }
+;
+
+void aliasElm(ParsedField field) :
+{
+    String aliasedName = field.name();
+    String alias;
+}
+
+    <ALIAS> [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr
+    {
+       field.addAlias(aliasedName, alias);
     }
 ;
 
