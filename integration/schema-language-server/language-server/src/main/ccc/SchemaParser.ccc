@@ -517,7 +517,7 @@ void fieldBodyElm(ParsedField field) : { }
        matchSettingsElm(field.matchSettings()) |
     //   normalizing(field) |
     //   queryCommand(field) |
-    //   rank(field) |
+       rankElm(field) |
     //   rankType(field) |
     //   fieldSorting(field) |
     //   structField(field) |
@@ -540,6 +540,30 @@ void weightElm(ParsedField field) :
 
     <WEIGHT> <COLON> num = integerElm { field.setWeight(num); }
 ;
+
+/**
+ * Consumes a rank statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void rankElm(ParsedField field) : { }
+
+    <RANK> ( (<COLON> rankSettingElm(field))
+             | (openLbrace() (rankSettingElm(field) (<NL>)*)* <RBRACE>) )
+;
+
+/**
+ * Consumes a single rank setting of a rank statement.
+ *
+ * @param field The field to modify.
+ */
+void rankSettingElm(ParsedField field) : { }
+
+    ( <LITERAL>   { field.setLiteral(true); }
+      | <NORMAL>  { field.setNormal(true); }
+      | <FILTER>  { field.setFilter(true); } )
+;
+
 
 /**
  * Consumes an id statement of a field body block.
