@@ -2,9 +2,12 @@ PARSER_CLASS=SchemaParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser;
 FAULT_TOLERANT=true;
 
-INJECT :
+INJECT SchemaParser:
 {
-    package ai.vespa.schemals.parser;
+
+    import com.yahoo.schema.document.Case;
+    import com.yahoo.schema.document.MatchType;
+    import com.yahoo.schema.document.MatchAlgorithm;
 }
 
 // --------------------------------------------------------------------------------
@@ -507,11 +510,11 @@ void fieldBodyElm(ParsedField field) : { }
     //   bolding(field) |
     //   dictionary(field) |
     //   fieldStemming(field) |
-    //   id(field) |
+       idElm(field) |
     //   summaryInField(field) |
     //   indexInsideField(field) |
     //   indexing(field) |
-    //   matchSettings(field.matchSettings()) |
+       matchSettingsElm(field.matchSettings()) |
     //   normalizing(field) |
     //   queryCommand(field) |
     //   rank(field) |
@@ -521,8 +524,8 @@ void fieldBodyElm(ParsedField field) : { }
     //   summaryTo(field) |
     //   weight(field) |
     //   weightedset(field.getType()) )
-      idElm(field) |
-      weightElm(field) )
+      weightElm(field)
+    )
 ;
 
 /**
@@ -564,6 +567,27 @@ void aliasElm(ParsedField field) :
     {
        field.addAlias(aliasedName, alias);
     }
+;
+
+void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
+
+    <MATCH> ( (<COLON> matchType(matchInfo))
+            //   | (openLbrace() (matchItem(matchInfo) (<NL>)*)* <RBRACE>) )
+    )
+;
+
+void matchType(ParsedMatchSettings matchInfo) : { }
+
+    (   <MTOKEN>    { matchInfo.setType(MatchType.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchInfo.setType(MatchType.TEXT); }
+      | <WORD>      { matchInfo.setType(MatchType.WORD); }
+      | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
+      | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
+      | <CASED>     { matchInfo.setCase(Case.CASED); }
+      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
+      | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
+      | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
 ;
 
 String identifierWithDashStr :

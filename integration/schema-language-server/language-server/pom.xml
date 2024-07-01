@@ -18,6 +18,11 @@
       <artifactId>org.eclipse.lsp4j</artifactId>
       <version>0.23.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>config-model</artifactId>
+      <version>8-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

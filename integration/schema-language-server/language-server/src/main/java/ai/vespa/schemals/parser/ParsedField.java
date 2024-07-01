@@ -17,6 +17,7 @@ public class ParsedField extends ParsedBlock {
     private boolean isNormal = false;
     private Integer weight;
     private String normalizing = null;
+    private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
     private final Map<String, String> aliases = new LinkedHashMap<>();
     private final Map<String, String> rankTypes = new LinkedHashMap<>();
     private final Map<String, ParsedField> structFields = new LinkedHashMap<>();
@@ -38,6 +39,7 @@ public class ParsedField extends ParsedBlock {
     List<String> getAliases() { return List.copyOf(aliases.keySet()); }
     List<String> getQueryCommands() { return List.copyOf(queryCommands); }
     String lookupAliasedFrom(String alias) { return aliases.get(alias); }
+    ParsedMatchSettings matchSettings() { return this.matchInfo; }
     Optional<Integer> getWeight() { return Optional.ofNullable(weight); }
     Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
     Map<String, String> getRankTypes() { return Collections.unmodifiableMap(rankTypes); }
