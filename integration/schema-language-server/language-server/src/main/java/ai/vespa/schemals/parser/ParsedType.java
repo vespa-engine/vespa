@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.schemals.parser;
 
+import com.yahoo.tensor.TensorType;
+
 /**
  * This class holds the extracted information after parsing a type
  * declaration (typically for a field).  Since types can be complex,
@@ -25,6 +27,7 @@ public class ParsedType {
     private final String name;
     private final ParsedType keyType;
     private final ParsedType valType;
+    private final TensorType tensorType;
     private Variant variant;
     private boolean createIfNonExistent = false;
     private boolean removeIfZero = false;
@@ -40,6 +43,9 @@ public class ParsedType {
             break;
         case POSITION:
             buf.append(name);
+            break;
+        case TENSOR:
+            buf.append(tensorType.toString());
             break;
         case ARRAY: buf
                 .append(" array<")
@@ -108,6 +114,7 @@ public class ParsedType {
     public boolean getCreateIfNonExistent() { assert(variant == Variant.WSET); return this.createIfNonExistent; }
     public boolean getRemoveIfZero() { assert(variant == Variant.WSET); return this.removeIfZero; }
     public ParsedType getReferencedDocumentType() { assert(variant == Variant.DOC_REFERENCE); return valType; }
+    public TensorType getTensorType() { assert(variant == Variant.TENSOR); return tensorType; }
 
     public String getNameOfReferencedAnnotation() {
         assert(variant == Variant.ANN_REFERENCE);
@@ -118,16 +125,20 @@ public class ParsedType {
     }
 
     private ParsedType(String name, Variant variant) {
-        this(name, variant, null, null);
+        this(name, variant, null, null, null);
     }
     private ParsedType(String name, Variant variant, ParsedType vt) {
-        this(name, variant, null, vt);
+        this(name, variant, null, vt, null);
     }
     private ParsedType(String name, Variant variant, ParsedType kt, ParsedType vt) {
+        this(name, variant, kt, vt, null);
+    }
+    private ParsedType(String name, Variant variant, ParsedType kt, ParsedType vt, TensorType tType) {
         this.name = name;
         this.variant = variant;
         this.keyType = kt;
         this.valType = vt;
+        this.tensorType = tType;
     }
 
     static ParsedType mapType(ParsedType kt, ParsedType vt) {
@@ -173,6 +184,10 @@ public class ParsedType {
     }
     static ParsedType annotationRef(String name) {
         return new ParsedType("annotationreference<" + name + ">", Variant.ANN_REFERENCE);
+    }
+    static ParsedType tensorType(TensorType tType) {
+        assert(tType != null);
+        return new ParsedType(tType.toString(), Variant.TENSOR, null, null, tType);
     }
     public static ParsedType fromName(String name) {
         return new ParsedType(name, guessVariant(name));

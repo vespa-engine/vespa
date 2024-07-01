@@ -147,7 +147,6 @@ public class SchemaDocumentParser {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
         ParsedType type = ParsedType.fromName(node.getText());
-        logger.println(node.getText());
         if (type.getVariant() == Variant.UNKNOWN) {
             ret.add(new Diagnostic(node.getRange(), "Invalid type"));
         } else {
@@ -189,7 +188,6 @@ public class SchemaDocumentParser {
             parent.size() > parent.indexOf(node)
         ) {
             SchemaNode child = parent.get(parent.indexOf(node) + 1);
-            child.setType(null);
 
             // Check if it uses deprecated array
             if (
@@ -218,9 +216,11 @@ public class SchemaDocumentParser {
                         ret.addAll(validateType(child.get(i)));
                     }
                 }
-            } else {
+            } else if (child.getType() != Token.TokenType.TENSOR_TYPE) {
                 ret.addAll(validateType(child));
+                child.setType(null);
             }
+
         }
 
         // Check for symbol references

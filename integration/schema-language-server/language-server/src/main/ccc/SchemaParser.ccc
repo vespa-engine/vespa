@@ -9,6 +9,7 @@ INJECT SchemaParser:
     import com.yahoo.schema.document.Case;
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;
+    import com.yahoo.tensor.TensorType;
 }
 
 // --------------------------------------------------------------------------------
@@ -454,13 +455,14 @@ ParsedType dataType() :
     ParsedType mapType = null;
     ParsedType arrayType = null;
     ParsedType wsetType = null;
+    TensorType tensorType;
     ParsedType referenceType;
 }
     (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
         | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
         | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() { return mapType; } )
         | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType() { return mapType; } )
-        // | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
+        | SCAN(<TENSOR_TYPE>)                    => ( tensorType = tensorTypeElm("Field type") { return ParsedType.tensorType(tensorType); } )
         | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
         | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
     )
@@ -714,6 +716,23 @@ void matchType(ParsedMatchSettings matchInfo) : { }
       | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
       | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
       | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
+;
+
+TensorType tensorTypeElm(String errorMessage) :
+{
+    String tensorTypeString;
+}
+
+    <TENSOR_TYPE> { tensorTypeString = lastConsumedToken.toString(); }
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+        }
+        return tensorType;
+    }
 ;
 
 String identifierWithDashStr :

@@ -44,6 +44,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(Token.TokenType.MAP, "type");
         put(Token.TokenType.ANNOTATIONREFERENCE, "type");
         put(Token.TokenType.REFERENCE, "type");
+        put(Token.TokenType.TENSOR_TYPE, "type");
     }};
     
     private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
