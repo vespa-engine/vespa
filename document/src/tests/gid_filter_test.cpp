@@ -16,7 +16,7 @@ protected:
         BucketIdFactory _id_factory;
         std::unique_ptr<Node> _root;
         
-        Fixture(vespalib::stringref selection);
+        explicit Fixture(vespalib::stringref selection);
         ~Fixture();
 
         Fixture(const Fixture&) = delete;
@@ -45,9 +45,9 @@ protected:
 GidFilterTest::Fixture::Fixture(vespalib::stringref selection)
     : _repo(),
       _id_factory(),
-      _root(Parser(_repo.getTypeRepo(), _id_factory).parse(selection))
+      _root(Parser(_repo.getTypeRepo(), _id_factory).parse(std::string(selection)))
 { }
-GidFilterTest::Fixture::~Fixture() { }
+GidFilterTest::Fixture::~Fixture() = default;
 
 TEST_F(GidFilterTest, same_user_for_selection_and_gid_returns_match)
 {

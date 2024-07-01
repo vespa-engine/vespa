@@ -29,7 +29,7 @@ parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
     BucketIdFactory factory;
     try {
         select::Parser parser(repo, factory);
-        return parser.parse(query);
+        return parser.parse(std::string(query));
     } catch (const ParsingFailedException &e) {
         LOG(warning, "Failed to parse selection for field path update: %s", e.getMessage().c_str());
         return std::make_unique<select::Constant>(false);
