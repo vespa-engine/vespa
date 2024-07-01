@@ -376,6 +376,7 @@ public:
     small_string & append(char c)                 noexcept { return append(&c, 1); }
     small_string & append(const char * s)         noexcept { return append(s, strlen(s)); }
     small_string & append(stringref s)            noexcept { return append(s.data(), s.size()); }
+    small_string & append(std::string_view s)    noexcept { return append(s.data(), s.size()); }
     small_string & append(const std::string & s)  noexcept { return append(s.data(), s.size()); }
     small_string & append(const small_string & s) noexcept { return append(s.data(), s.size()); }
     small_string & append(const void * s, size_type sz) noexcept;
@@ -383,6 +384,7 @@ public:
     small_string & operator += (const char * s)         noexcept { return append(s); }
     small_string & operator += (stringref s)            noexcept { return append(s); }
     small_string & operator += (const std::string & s)  noexcept { return append(s); }
+    small_string & operator += (std::string_view s)     noexcept { return append(s); }
     small_string & operator += (const small_string & s) noexcept { return append(s); }
 
     /**
