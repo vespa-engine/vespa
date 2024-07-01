@@ -107,7 +107,7 @@ func TestDeployCloudFastWait(t *testing.T) {
 	httpClient.NextResponseString(200, `ok`)
 	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
 	require.NotNil(t, cli.Run("deploy", pkgDir))
-	assert.Equal(t, stderr.String(), "Error: deployment run 0 not yet complete after waiting up to 2s: aborting wait: deployment failed: run 0 ended with unsuccessful status: unsuccesful\n")
+	assert.Equal(t, stderr.String(), "Error: deployment run 0 not yet complete after waiting up to 3s: aborting wait: deployment failed: run 0 ended with unsuccessful status: unsuccesful\n")
 	assert.True(t, httpClient.Consumed())
 
 	// Deployment which is running does not return error
