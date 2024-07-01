@@ -315,6 +315,7 @@ public class ItemEncodingTestCase {
         assertWord(buffer, "b");
         assertWord(buffer, "c");
         assertWord(buffer, "d");
+        assertEquals(0, buffer.remaining());
         bc.shouldFoldIntoWand(false);
         buffer = ByteBuffer.allocate(128);
         count = wand.encode(buffer);

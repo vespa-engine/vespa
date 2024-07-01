@@ -101,16 +101,24 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         return result;
     }
 
-    @Override
-    public int encode(ByteBuffer buffer) {
+    private boolean needsFolding() {
         for (var subItem : items()) {
             if (subItem instanceof SegmentItem segment) {
                 if (segment.shouldFoldIntoWand()) {
-                    return foldSegments().encode(buffer);
+                    return true;
                 }
             }
         }
-        return super.encode(buffer);
+        return false;
+    }
+
+    @Override
+    public int encode(ByteBuffer buffer) {
+        if (needsFolding()) {
+            return foldSegments().encode(buffer);
+        } else {
+            return super.encode(buffer);
+        }
     }
 
     @Override
