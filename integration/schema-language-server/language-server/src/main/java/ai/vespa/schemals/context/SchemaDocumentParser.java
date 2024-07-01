@@ -3,11 +3,15 @@ package ai.vespa.schemals.context;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.parser.*;
@@ -54,6 +58,103 @@ public class SchemaDocumentParser {
     public String getFileName() {
         Integer splitPos = fileURI.lastIndexOf('/');
         return fileURI.substring(splitPos + 1);
+    }
+
+
+    public boolean isFaulty() {
+        return faultySchema;
+    }
+
+    public Position getPreviousStartOfWord(Position pos) {
+        int offset = positionToOffset(pos);
+
+        // Skip whitespace
+        while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
+
+        for (int i = offset; i >= 0; i--) {
+            if (Character.isWhitespace(content.charAt(i)))return offsetToPosition(i + 1);
+        }
+
+        return null;
+    }
+
+    public SchemaNode getRootNode() {
+        return CST;
+    }
+
+    public SchemaNode getLeafNodeAtPosition(Position pos) {
+        return getNodeAtPosition(CST, pos, true);
+    }
+
+    public SchemaNode getNodeAtPosition(Position pos) {
+        return getNodeAtPosition(CST, pos, false);
+    }
+
+    /**
+     * Return the last non-dirty node before a given position
+     * @param pos the position
+     * @return a non-dirty node or null if no such node exists
+     */
+    public SchemaNode getCleanNodeBeforePosition(Position pos) {
+        return getCleanNodeBeforePosition(CST, pos);
+    }
+
+
+    private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf) {
+        if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
+            return node;
+        }
+
+        if (!CSTUtils.positionInRange(node.getRange(), pos)) {
+            return null;
+        }
+
+        for (int i = 0; i < node.size(); i++) {
+            SchemaNode child = node.get(i);
+
+            if (CSTUtils.positionInRange(child.getRange(), pos)) {
+                return getNodeAtPosition(child, pos, onlyLeaf);
+            }
+        }
+
+        if (onlyLeaf)return null;
+
+        return node;
+
+        /*
+        Integer lowerLimit = 0;
+        Integer upperLimit = node.size();
+
+        Integer currentSearch = (upperLimit + lowerLimit) / 2;
+
+        while (lowerLimit <= upperLimit) {
+            SchemaNode search = node.get(currentSearch);
+
+            if (CSTUtils.positionLT(pos, search.getRange().getEnd())) {
+
+                if (CSTUtils.positionInRange(search.getRange(), pos)) {
+                    return getNodeAtPositon(search, pos, onlyLeaf);
+                }
+
+                upperLimit = currentSearch - 1;
+            } else {
+                lowerLimit = currentSearch + 1;
+            }
+
+            currentSearch = (upperLimit + lowerLimit) / 2;
+        }
+
+        if (CSTUtils.positionInRange(node.getRange(), pos) && !onlyLeaf) {
+            return node;
+        }
+
+        return null;
+        */
+    }
+
+    private SchemaNode getCleanNodeBeforePosition(SchemaNode node, Position pos) {
+        // TODO: implement
+        return null;
     }
 
     private void parseContent() {
@@ -109,7 +210,7 @@ public class SchemaDocumentParser {
 
         errors.addAll(findDirtyNode(node));
 
-        CSTUtils.printTree(logger, CST);
+        //CSTUtils.printTree(logger, CST);
 
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
@@ -210,54 +311,40 @@ public class SchemaDocumentParser {
         return ret;
     }
 
-    public boolean isFaulty() {
-        return faultySchema;
-    }
+    /*
+     * If necessary, the following methods can be sped up by
+     * selecting an appropriate data structure.
+     * */
+    private int positionToOffset(Position pos) {
+        List<String> lines = content.lines().toList();
+        if (pos.getLine() >= lines.size())throw new IllegalArgumentException("Line " + pos.getLine() + " out of range for document " + fileURI);
 
-    public SchemaNode getRootNode() {
-        return CST;
-    }
-
-    private SchemaNode getNodeAtPositon(SchemaNode node, Position pos, boolean onlyLeaf) {
-        if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
-            return node;
+        int lineCounter = 0;
+        int offset = 0;
+        for (String line : lines) {
+            if (lineCounter == pos.getLine())break;
+            offset += line.length() + 1; // +1 for line terminator
+            lineCounter += 1;
         }
 
-        Integer lowerLimit = 0;
-        Integer upperLimit = node.size();
+        if (pos.getCharacter() > lines.get(pos.getLine()).length())throw new IllegalArgumentException("Character " + pos.getCharacter() + " out of range for line " + pos.getLine());
 
-        Integer currentSearch = (upperLimit + lowerLimit) / 2;
+        offset += pos.getCharacter();
 
-        while (lowerLimit <= upperLimit) {
-            SchemaNode search = node.get(currentSearch);
+        return offset;
+    }
 
-            if (CSTUtils.positionLT(pos, search.getRange().getEnd())) {
-
-                if (CSTUtils.positionInRange(search.getRange(), pos)) {
-                    return getNodeAtPositon(search, pos, onlyLeaf);
-                }
-
-                upperLimit = currentSearch - 1;
-            } else {
-                lowerLimit = currentSearch + 1;
+    private Position offsetToPosition(int offset) {
+        List<String> lines = content.lines().toList();
+        int lineCounter = 0;
+        for (String line : lines) {
+            int lengthIncludingTerminator = line.length() + 1;
+            if (offset < lengthIncludingTerminator) {
+                return new Position(lineCounter, offset);
             }
-
-            currentSearch = (upperLimit + lowerLimit) / 2;
+            offset -= lengthIncludingTerminator;
+            lineCounter += 1;
         }
-
-        if (CSTUtils.positionInRange(node.getRange(), pos) && !onlyLeaf) {
-            return node;
-        }
-
         return null;
     }
-
-    public SchemaNode getLeafNodeAtPosition(Position pos) {
-        return getNodeAtPositon(CST, pos, true);
-    }
-
-    public SchemaNode getNodeAtPosition(Position pos) {
-        return getNodeAtPositon(CST, pos, false);
-    }
-
 }

@@ -89,4 +89,8 @@ public class SchemaNode {
     public boolean isLeaf() {
         return children.size() == 0;
     }
+
+    public boolean isDirty() {
+        return originalNode.isDirty();
+    }
 }

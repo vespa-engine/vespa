@@ -28,7 +28,10 @@ public class CSTUtils {
     }
 
     public static void printTree(PrintStream logger, Node node, Integer indent) {
-        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClass().getName());
+        Range range = getNodeRange(node);
+        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClass().getName()
+            + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
+        );
 
         for (Node child : node) {
             printTree(logger, child, indent + 1);
@@ -40,10 +43,52 @@ public class CSTUtils {
     }
 
     public static void printTree(PrintStream logger, SchemaNode node, Integer indent) {
-        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClassLeafIdentifierString());
+        Range range = node.getRange();
+        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClassLeafIdentifierString()
+            + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
+                );
 
         for (int i = 0; i < node.size(); i++) {
             printTree(logger, node.get(i), indent + 1);
+        }
+    }
+
+    public static void printTreeUpToPosition(PrintStream logger, Node node, Position pos) {
+        printTreeUpToPosition(logger, node, pos, 0);
+    }
+
+    public static void printTreeUpToPosition(PrintStream logger, SchemaNode node, Position pos) {
+        printTreeUpToPosition(logger, node, pos, 0);
+    }
+
+    public static void printTreeUpToPosition(PrintStream logger, Node node, Position pos, Integer indent) {
+        Range range = getNodeRange(node);
+
+        if (!positionLT(pos, range.getStart())) {
+            boolean dirty = node.isDirty();
+            logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClass().getName() + (dirty ? " [DIRTY]" : "")
+            + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
+                    );
+        }
+
+        for (Node child : node) {
+            printTreeUpToPosition(logger, child, pos, indent + 1);
+        }
+    }
+
+    public static void printTreeUpToPosition(PrintStream logger, SchemaNode node, Position pos, Integer indent) {
+
+        Range range = node.getRange();
+        if (!positionLT(pos, range.getStart())) {
+            boolean dirty = node.isDirty();
+            logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClassLeafIdentifierString() + (dirty ? " [DIRTY]" : "")
+            + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
+                    );
+        }
+
+
+        for (int i = 0; i < node.size(); i++) {
+            printTreeUpToPosition(logger, node.get(i), pos, indent + 1);
         }
     }
 
