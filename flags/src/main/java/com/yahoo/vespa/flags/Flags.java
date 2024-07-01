@@ -509,6 +509,15 @@ public class Flags {
             "Whether to delete remote and local config sessions at the same time",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
+            "distribution-config-from-cluster-controller", false,
+            List.of("vekterli"), "2024-07-01", "2024-09-01",
+            "Iff true, the cluster controller will be the authoritative source of distribution " +
+            "config changes in a content cluster, and distribution changes will be part of explicitly " +
+            "versioned cluster states.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

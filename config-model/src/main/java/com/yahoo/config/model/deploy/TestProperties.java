@@ -86,6 +86,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean symmetricPutAndActivateReplicaSelection = false;
     private boolean enforceStrictlyIncreasingClusterStateVersions = false;
     private boolean launchApplicationAthenzService = false;
+    private boolean distributionConfigFromClusterController = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -146,6 +147,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
     @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
     @Override public boolean launchApplicationAthenzService() { return launchApplicationAthenzService; }
+    @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -393,6 +395,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setLaunchApplicationAthenzService(boolean launch) {
         this.launchApplicationAthenzService = launch;
+        return this;
+    }
+
+    public TestProperties setDistributionConfigFromClusterController(boolean configFromCc) {
+        this.distributionConfigFromClusterController = configFromCc;
         return this;
     }
 
