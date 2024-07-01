@@ -598,7 +598,7 @@ TEST_F(MetricManagerTest, test_json_output)
         mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
     }
     jsonStream.finalize();
-    std::string jsonData = as.str();
+    std::string jsonData(as.str());
     // Parse it back
     using namespace vespalib::slime;
     vespalib::Slime slime;
@@ -687,7 +687,7 @@ struct MetricSnapshotTestFixture
             manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
         jsonStream.finalize();
-        return as.str();
+        return std::string(as.str());
     }
 
     std::string renderLastSnapshotAsText(const std::string& matchPattern = ".*") const
@@ -708,7 +708,7 @@ struct MetricSnapshotTestFixture
             MetricLockGuard lockGuard(manager.getMetricLock());
             manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
-        return os.str();
+        return std::string(os.str());
     }
 };
 
