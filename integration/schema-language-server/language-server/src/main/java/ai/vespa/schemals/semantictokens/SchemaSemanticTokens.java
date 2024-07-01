@@ -39,6 +39,8 @@ public class SchemaSemanticTokens implements Visitor {
         put(Token.TokenType.LONG, "number");
         put(Token.TokenType.DOUBLEQUOTEDSTRING, "string");
         put(Token.TokenType.SINGLEQUOTEDSTRING, "string");
+        put(Token.TokenType.ARRAY, "type");
+        put(Token.TokenType.WEIGHTEDSET, "type");
     }};
     
     private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
@@ -155,7 +157,7 @@ public class SchemaSemanticTokens implements Visitor {
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
-            
+
         } else if (type != null) {
             if (node.isUserDefinedIdentifier()) {
                 SchemaNode parent = node.getParent();

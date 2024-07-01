@@ -1,5 +1,6 @@
 PARSER_CLASS=SchemaParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser;
+LEGACY_GLITCHY_LOOKAHEAD=false;
 FAULT_TOLERANT=true;
 
 INJECT SchemaParser:
@@ -455,13 +456,14 @@ ParsedType dataType() :
     ParsedType wsetType = null;
     ParsedType referenceType;
 }
-//    (   LOOKAHEAD(<ARRAY> <LESSTHAN>)               ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
-//      | LOOKAHEAD(<WEIGHTEDSET> <LESSTHAN>)         ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
-//      | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
-//      | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
-//      | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
-//      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
-     ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
+    (   ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
+      | ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
+    //   | (( SCAN 2 <MAP> <LESSTHAN> )                 ( mapType = mapDataType() { return mapType; } ))
+    //   | (( SCAN 2 <ANNOTATIONREFERENCE> <LESSTHAN> ) ( mapType = annotationRefDataType() { return mapType; } ))
+    //   | (( SCAN 1 <TENSOR_TYPE> )                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } ))
+    //   | (( SCAN 1 <REFERENCE> )                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } ))
+        | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
+    )
     {
         ParsedType type = ParsedType.fromName(typeName);
         if (isArrayOldStyle) {

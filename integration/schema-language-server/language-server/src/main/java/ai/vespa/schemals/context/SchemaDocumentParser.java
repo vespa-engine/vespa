@@ -16,7 +16,6 @@ import ai.vespa.schemals.parser.*;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.parser.ParsedType;
 import ai.vespa.schemals.parser.ParsedType.Variant;
 
 public class SchemaDocumentParser {
@@ -172,9 +171,10 @@ public class SchemaDocumentParser {
         if (
             node.getType() == Token.TokenType.TYPE &&
             parent != null &&
-            parent.get(parent.indexOf(node) + 1) != null
+            parent.size() > parent.indexOf(node)
         ) {
             SchemaNode child = parent.get(parent.indexOf(node) + 1);
+            child.setType(null);
 
             // Check if it uses deprecated array
             if (
@@ -189,7 +189,13 @@ public class SchemaDocumentParser {
                 ret.add(new Diagnostic(range, "Data type syntax '" + child.getText() + "[]' is deprecated, use 'array<" + child.getText() + ">' instead.", DiagnosticSeverity.Warning,""));
             }
 
-            child.setType(null);
+            if (
+                child.getClassLeafIdentifierString().equals("dataType") &&
+                child.size() > 2
+            ) {
+                child = child.get(2);
+            }
+
 
             ParsedType type = ParsedType.fromName(child.getText());
             if (type.getVariant() == Variant.UNKNOWN) {
