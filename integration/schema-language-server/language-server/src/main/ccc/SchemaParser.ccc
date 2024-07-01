@@ -1,6 +1,6 @@
 PARSER_CLASS=SchemaParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser;
-LEGACY_GLITCHY_LOOKAHEAD=false;
+LEGACY_GLITCHY_LOOKAHEAD=true;
 FAULT_TOLERANT=true;
 
 INJECT SchemaParser:
@@ -456,12 +456,12 @@ ParsedType dataType() :
     ParsedType wsetType = null;
     ParsedType referenceType;
 }
-    (   ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
-      | ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
-    //   | (( SCAN 2 <MAP> <LESSTHAN> )                 ( mapType = mapDataType() { return mapType; } ))
-    //   | (( SCAN 2 <ANNOTATIONREFERENCE> <LESSTHAN> ) ( mapType = annotationRefDataType() { return mapType; } ))
-    //   | (( SCAN 1 <TENSOR_TYPE> )                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } ))
-    //   | (( SCAN 1 <REFERENCE> )                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } ))
+    (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
+        | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
+        | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() { return mapType; } )
+        // | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
+        // | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
+        // | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
         | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
     )
     {
@@ -472,6 +472,17 @@ ParsedType dataType() :
         }
         return type;
     }
+;
+
+ParsedType mapDataType() :
+{
+    ParsedType keyType;
+    ParsedType valType;
+}
+  ( <MAP> <LESSTHAN> keyType = dataType() <COMMA> valType = dataType() <GREATERTHAN> )
+  {
+    return ParsedType.mapType(keyType, valType);
+  }
 ;
 
 /**

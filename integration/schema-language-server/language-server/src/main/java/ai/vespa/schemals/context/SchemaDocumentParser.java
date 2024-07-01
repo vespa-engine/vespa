@@ -143,6 +143,20 @@ public class SchemaDocumentParser {
         add(Token.TokenType.ENABLE_BIT_VECTORS);
     }};
 
+    private ArrayList<Diagnostic> validateType(SchemaNode node) {
+        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
+
+        ParsedType type = ParsedType.fromName(node.getText());
+        logger.println(node.getText());
+        if (type.getVariant() == Variant.UNKNOWN) {
+            ret.add(new Diagnostic(node.getRange(), "Invalid type"));
+        } else {
+            node.setSchemaType();
+        }
+
+        return ret;
+    }
+
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
 
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
@@ -156,7 +170,7 @@ public class SchemaDocumentParser {
             parent.get(0) == node &&
             parentCNComp != null &&
             parentCNComp.contains(parent.getIdentifierString()) &&
-            parent.get(1) != null
+            parent.size() > 1
         ) {
             SchemaNode child = parent.get(1);
             child.setUserDefinedIdentifier();
@@ -168,6 +182,7 @@ public class SchemaDocumentParser {
 
         }
 
+        // Check if we will parse a type
         if (
             node.getType() == Token.TokenType.TYPE &&
             parent != null &&
@@ -179,7 +194,7 @@ public class SchemaDocumentParser {
             // Check if it uses deprecated array
             if (
                 child.getClassLeafIdentifierString().equals("dataType") &&
-                child.get(1) != null &&
+                child.size() > 1 &&
                 child.get(1).getText().equals("[]")
             ) {
                 Range range = child.getRange();
@@ -189,21 +204,17 @@ public class SchemaDocumentParser {
                 ret.add(new Diagnostic(range, "Data type syntax '" + child.getText() + "[]' is deprecated, use 'array<" + child.getText() + ">' instead.", DiagnosticSeverity.Warning,""));
             }
 
+            // Check if type is valid
             if (
-                child.getClassLeafIdentifierString().equals("dataType") &&
-                child.size() > 2
+                child.size() > 2 &&
+                child.get(1).getType() == Token.TokenType.LESSTHAN
             ) {
-                child = child.get(2);
-            }
-
-
-            ParsedType type = ParsedType.fromName(child.getText());
-            if (type.getVariant() == Variant.UNKNOWN) {
-                ret.add(new Diagnostic(child.getRange(), "Invalid type"));
+                for (int i = 2; i < child.size(); i += 2) {
+                    ret.addAll(validateType(child.get(i)));
+                }
             } else {
-                child.setSchemaType();
+                ret.addAll(validateType(child));
             }
-
         }
 
         // Check for symbol references
