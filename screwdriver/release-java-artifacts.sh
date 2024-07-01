@@ -101,13 +101,22 @@ REPO_ROOT=$(pwd)/maven-repo
 cd $REPO_ROOT
 find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
 
+LOGFILE=$(mktemp)
 $MVN --settings=$SOURCE_DIR/screwdriver/settings-publish.xml \
     org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:deploy-staged-repository \
     -DrepositoryDirectory=$TMP_STAGING \
     -DnexusUrl=https://oss.sonatype.org \
     -DserverId=ossrh \
-    -DautoReleaseAfterClose=true \
-    -DstagingProfileId=407c0c3e1a197
+    -DautoReleaseAfterClose=false \
+    -DstagingProfileId=407c0c3e1a197 | tee $LOGFILE
+
+STG_REPO=$(cat $LOGFILE | grep 'Staging repository at http' | head -1 | awk -F/ '{print $NF}')
+$MVN --settings=$SOURCE_DIR/screwdriver/settings-publish.xml -N \
+    org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:rc-release \
+    -DnexusUrl=https://oss.sonatype.org/ \
+    -DserverId=ossrh \
+    -DstagingRepositoryId=$STG_REPO
+
 
 
 
