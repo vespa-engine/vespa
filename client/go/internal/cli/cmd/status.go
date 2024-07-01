@@ -178,7 +178,7 @@ $ vespa status deployment -t local [session-id] --wait 600
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
 				if errors.Is(err, vespa.ErrWaitTimeout) && t.IsCloud() {
-					cli.printInfo("Timed out waiting for deployment to converge. See ", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)), " for more details")
+					cli.printInfo("Deployment is still running. See ", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)), " for more details")
 				}
 				var hints []string
 				if waiter.Timeout == 0 && !errors.Is(err, vespa.ErrDeployment) {
