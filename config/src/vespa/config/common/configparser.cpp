@@ -79,7 +79,7 @@ ConfigParser::deQuote(const vespalib::string & source)
         }
     }
     *d = 0;
-    return vespalib::string(&dst[0], d - &dst[0]);
+    return vespalib::string(dst.data(), d - dst.data());
 }
 
 namespace {
