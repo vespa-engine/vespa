@@ -141,6 +141,23 @@ func TestStatusCloudDeployment(t *testing.T) {
 	stdout.Reset()
 	client := &mock.HTTPClient{}
 	cli.httpClient = client
+	// Deployment in progress, with implicit fast wait
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1?limit=1",
+		Status: 200,
+		Body:   []byte(`{"runs": [{"id": 1337}]}`),
+	})
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/1337?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": true, "status": "running"}`),
+	})
+	assert.NotNil(t, cli.Run("status", "deployment"))
+	assert.Equal(t, `Timed out waiting for deployment to converge. See https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
+Warning: deployment run 1337 not yet complete after waiting up to 2s: wait deadline reached
+Hint: Consider using the --wait flag to wait for completion
+`, stderr.String())
+	assert.Equal(t, "", stdout.String())
 	// Latest run
 	client.NextResponse(mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1?limit=1",
@@ -152,12 +169,14 @@ func TestStatusCloudDeployment(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"active": false, "status": "success"}`),
 	})
+	stderr.Reset()
+	stdout.Reset()
 	assert.Nil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t,
 		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
 		stdout.String())
-	// Explicit run with waiting
+	// Explicit run ID and wait period
 	client.NextResponse(mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1",
 		Status: 200,

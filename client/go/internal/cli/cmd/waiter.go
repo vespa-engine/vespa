@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -100,14 +99,5 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 		// invalid application package
 		timeout = 2 * time.Second
 	}
-	id, err := target.AwaitDeployment(wantedID, timeout)
-	if errors.Is(err, vespa.ErrWaitTimeout) {
-		if fastWait {
-			return id, nil // Do not report fast wait timeout as an error
-		}
-		if target.IsCloud() {
-			w.cli.printInfo("Timed out waiting for deployment to converge. See ", color.CyanString(target.Deployment().System.ConsoleRunURL(target.Deployment(), wantedID)), " for more details")
-		}
-	}
-	return id, err
+	return target.AwaitDeployment(wantedID, timeout)
 }

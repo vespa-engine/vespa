@@ -190,6 +190,9 @@ func waitForVespaReady(target vespa.Target, sessionOrRunID int64, waiter *Waiter
 	if fastWait || hasTimeout {
 		// Wait for deployment convergence
 		if _, err := waiter.Deployment(target, sessionOrRunID); err != nil {
+			if fastWait && errors.Is(err, vespa.ErrWaitTimeout) {
+				return nil // // Do not report fast wait timeout as an error
+			}
 			return err
 		}
 		// Wait for healthy services where we expect them to be reachable (cloud and local). When using a custom target,
