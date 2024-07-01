@@ -6,6 +6,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.search.query.parser.ParserEnvironment.LegacyQueryParsing;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -43,13 +44,29 @@ public class SchemaInfo {
 
     private final Map<String, Cluster> clusters;
 
+    private final LegacyQueryParsing legacyQueryParsing;
+
+    private static LegacyQueryParsing extractLQP(QrSearchersConfig qrSearchersConfig) {
+        var cfg = qrSearchersConfig.legacyQueryParsing();
+        return new LegacyQueryParsing(cfg.keepImplicitAnds(),
+                                      cfg.markSegmentAnds(),
+                                      cfg.keepSegmentAnds(),
+                                      cfg.keepImplicitPhrases());
+    }
+
     @Inject
     public SchemaInfo(SchemaInfoConfig schemaInfoConfig,
                       QrSearchersConfig qrSearchersConfig) {
-        this(SchemaInfoConfigurer.toSchemas(schemaInfoConfig), SchemaInfoConfigurer.toClusters(qrSearchersConfig));
+        this(SchemaInfoConfigurer.toSchemas(schemaInfoConfig),
+             SchemaInfoConfigurer.toClusters(qrSearchersConfig),
+             extractLQP(qrSearchersConfig));
     }
 
     public SchemaInfo(List<Schema> schemas, List<Cluster> clusters) {
+        this(schemas, clusters, new LegacyQueryParsing());
+    }
+
+    private SchemaInfo(List<Schema> schemas, List<Cluster> clusters, LegacyQueryParsing lqp) {
         Map<String, Schema> schemaMap = new LinkedHashMap<>();
         schemas.forEach(schema -> schemaMap.put(schema.name(), schema));
         this.schemas = Collections.unmodifiableMap(schemaMap);
@@ -57,6 +74,8 @@ public class SchemaInfo {
         Map<String, Cluster> clusterMap = new LinkedHashMap<>();
         clusters.forEach(cluster -> clusterMap.put(cluster.name(), cluster));
         this.clusters = Collections.unmodifiableMap(clusterMap);
+
+        this.legacyQueryParsing = lqp;
     }
 
     /** Returns all schemas configured in this application, indexed by schema name. */
@@ -64,6 +83,8 @@ public class SchemaInfo {
 
     /** Returns information about all clusters available for searching in this application, indexed by cluster name. */
     public Map<String, Cluster> clusters() { return clusters; }
+
+    public LegacyQueryParsing legacyQueryParsingFlags() { return legacyQueryParsing; }
 
     public Session newSession(Query query) {
         return new Session(query.getModel().getSources(), query.getModel().getRestrict(), clusters, schemas);

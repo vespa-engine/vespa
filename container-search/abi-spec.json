@@ -5939,6 +5939,27 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.query.parser.ParserEnvironment$LegacyQueryParsing" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(boolean, boolean, boolean, boolean)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public boolean keepImplicitAnds()",
+      "public boolean markSegmentAnds()",
+      "public boolean keepSegmentAnds()",
+      "public boolean keepImplicitPhrases()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.query.parser.ParserEnvironment" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -5948,6 +5969,8 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public com.yahoo.search.query.parser.ParserEnvironment$LegacyQueryParsing getLegacyQueryParsing()",
+      "public com.yahoo.search.query.parser.ParserEnvironment setLegacyQueryParsing(com.yahoo.search.query.parser.ParserEnvironment$LegacyQueryParsing)",
       "public com.yahoo.prelude.IndexFacts getIndexFacts()",
       "public com.yahoo.search.query.parser.ParserEnvironment setIndexFacts(com.yahoo.prelude.IndexFacts)",
       "public com.yahoo.language.Linguistics getLinguistics()",
@@ -8729,6 +8752,7 @@
       "public void <init>(java.util.List, java.util.List)",
       "public java.util.Map schemas()",
       "public java.util.Map clusters()",
+      "public com.yahoo.search.query.parser.ParserEnvironment$LegacyQueryParsing legacyQueryParsingFlags()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",
