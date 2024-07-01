@@ -239,10 +239,6 @@ public class DeploymentSpec {
                                  .orElse(ZoneEndpoint.defaultEndpoint);
     }
 
-    /** @deprecated returns Bcp.empty(). */
-    @Deprecated // Remove after June 2023
-    public Bcp bcp() { return Bcp.empty(); }
-
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
