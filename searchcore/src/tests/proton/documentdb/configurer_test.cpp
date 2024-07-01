@@ -359,6 +359,7 @@ FastAccessFixture::FastAccessFixture()
 }
 FastAccessFixture::~FastAccessFixture() {
     _service.shutdown();
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
 }
 
 
