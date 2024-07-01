@@ -16,7 +16,7 @@
       {
         "id": "vespaSchema",
         "aliases": [
-          "vespaSchema"
+          "Vespa Schema"
         ],
         "extensions": [
           ".sd"

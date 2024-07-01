@@ -1,0 +1,13 @@
+
+
+schema testSchema {
+    document testDoc {
+
+    }
+
+    asd
+
+    document {
+        
+    }
+}

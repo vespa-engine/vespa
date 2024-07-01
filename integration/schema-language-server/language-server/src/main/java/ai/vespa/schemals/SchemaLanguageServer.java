@@ -1,10 +1,15 @@
 
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.context.SchemaDocumentScheduler;
+import ai.vespa.schemals.context.SchemaIndex;
+import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
+
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 import org.eclipse.lsp4j.CompletionOptions;
+import org.eclipse.lsp4j.DefinitionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.ServerCapabilities;
@@ -18,8 +23,11 @@ import java.util.concurrent.CompletableFuture;
 public class SchemaLanguageServer implements LanguageServer, LanguageClientAware {
 
     private WorkspaceService workspaceService;
-    private TextDocumentService textDocumentService;
-    private LanguageClient client;
+    private SchemaTextDocumentService textDocumentService;
+    private SchemaDocumentScheduler schemaDocumentScheduler;
+    private SchemaIndex schemaIndex;
+    //private LanguageClient client;
+    private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
 
     private PrintStream logger;
     private int errorCode = 1;
@@ -39,11 +47,15 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
             this.logger = logger;
         }
 
-        this.logger.println("Hello World!");
+        this.logger.println("Starting language server...");
 
-        this.textDocumentService = new SchemaTextDocumentService(this.logger);
+        this.schemaIndex = new SchemaIndex(logger);
+        this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler(logger);
+        this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex);
+
+        this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex);
         this.workspaceService = new SchemaWorkspaceService();
-    }
+    }    
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {
@@ -53,7 +65,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         CompletionOptions completionOptions = new CompletionOptions();
         initializeResult.getCapabilities().setCompletionProvider(completionOptions);
-        initializeResult.getCapabilities().setDocumentHighlightProvider(true);
+        initializeResult.getCapabilities().setHoverProvider(true);
+        initializeResult.getCapabilities().setDefinitionProvider(true);
+        initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
         return CompletableFuture.supplyAsync(()->initializeResult);
     }
 
@@ -80,6 +94,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
     @Override
     public void connect(LanguageClient languageClient) {
-        this.client = languageClient;
+        //this.client = languageClient;
+        this.schemaDiagnosticsHandler.connectClient(languageClient);
     }
 }
