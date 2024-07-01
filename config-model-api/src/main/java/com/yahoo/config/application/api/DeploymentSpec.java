@@ -230,7 +230,8 @@ public class DeploymentSpec {
 
         if (zone.environment().isManuallyDeployed())
             return instance(instance).filter(spec -> spec.deploysTo(zone.environment(), zone.region()))
-                                     .map(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).get(null))
+                                     .map(spec -> spec.zoneEndpoints().get(cluster))
+                                     .map(endpoints -> endpoints.get(null))
                                      .orElse(ZoneEndpoint.defaultEndpoint);
 
         if (zone.environment() != Environment.prod) return ZoneEndpoint.defaultEndpoint;

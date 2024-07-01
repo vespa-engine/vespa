@@ -1276,6 +1276,9 @@ public class DeploymentSpecTest {
                      spec.zoneEndpoint(InstanceName.from("default"), testZone, ClusterSpec.Id.from("froz")));
 
         assertEquals(ZoneEndpoint.defaultEndpoint,
+                     spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("nope-not-this-one")));
+
+        assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.privateEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("froz")));
