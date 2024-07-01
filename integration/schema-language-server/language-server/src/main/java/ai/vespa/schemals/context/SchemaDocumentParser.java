@@ -14,6 +14,7 @@ import org.eclipse.lsp4j.Range;
 
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+import ai.vespa.schemals.context.SchemaDocumentLexer;
 import ai.vespa.schemals.parser.*;
 
 import ai.vespa.schemals.tree.CSTUtils;
@@ -30,6 +31,8 @@ public class SchemaDocumentParser {
     
     private SchemaNode CST;
     private boolean faultySchema = true;
+
+    private SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
         this(logger, diagnosticsHandler, schemaIndex, fileURI, null);
@@ -80,6 +83,10 @@ public class SchemaDocumentParser {
 
     public SchemaNode getRootNode() {
         return CST;
+    }
+
+    public SchemaDocumentLexer tokens() {
+        return lexer;
     }
 
     public SchemaNode getNodeAtOrBeforePosition(Position pos) {
@@ -205,6 +212,7 @@ public class SchemaDocumentParser {
 
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
+        lexer.setCST(CST);
     }
 
     private static final HashMap<Token.TokenType, String> tokenParentClassPairs = new HashMap<Token.TokenType, String>() {{
@@ -284,6 +292,7 @@ public class SchemaDocumentParser {
         }
         return traverseCST(CST);
     }
+
 
     private ArrayList<Diagnostic> findDirtyNode(Node node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();

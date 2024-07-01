@@ -45,6 +45,13 @@ public class SchemaNode {
         return type;
     }
 
+    // Return token type (if the node is a token), even if the node is dirty
+    public Token.TokenType getDirtyType() {
+        Node.NodeType originalType = originalNode.getType();
+        if (originalType instanceof Token.TokenType)return (Token.TokenType)originalType;
+        return null;
+    }
+
     public Token.TokenType setType(Token.TokenType type) {
         this.type = type;
         return type;

@@ -89,6 +89,9 @@ public class SchemaCompletion {
         
         EventPositionContext.EnclosingBody enclosingBody = context.findEnclosingBody();
 
+        var lastToken = context.document.tokens().tokenBeforePosition(context.position);
+        context.logger.println(lastToken.toString());
+
         if (bodyKeywordSnippets.containsKey(enclosingBody)) {
             ret.addAll(Arrays.asList(bodyKeywordSnippets.get(enclosingBody)));
         }
