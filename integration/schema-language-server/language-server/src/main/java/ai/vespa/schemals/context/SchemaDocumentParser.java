@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
@@ -137,6 +138,10 @@ public class SchemaDocumentParser {
         }});
     }};
 
+    private static final HashSet<Token.TokenType> depricatedTokens = new HashSet<Token.TokenType>() {{
+        add(Token.TokenType.ENABLE_BIT_VECTORS);
+    }};
+
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
 
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
@@ -191,6 +196,13 @@ public class SchemaDocumentParser {
                     }
                 }
             }
+        }
+
+        // Check if token is depricated
+        if (depricatedTokens.contains(node.getType())) {
+            ret.add(
+                new Diagnostic(node.getRange(), "Depricated", DiagnosticSeverity.Warning, "")
+            );
         }
 
         for (int i = 0; i < node.size(); i++) {
