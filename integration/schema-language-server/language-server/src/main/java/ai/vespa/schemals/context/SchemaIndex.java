@@ -1,10 +1,13 @@
 package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.Token;
 
 public class SchemaIndex {
@@ -60,6 +63,18 @@ public class SchemaIndex {
             return null;
         }
         return results.symbol;
+    }
+
+    public List<Symbol> findSymbolsWithType(String fileURI, TokenType type) {
+        List<Symbol> result = new ArrayList<>();
+        for (var entry : database.entrySet()) {
+            SchemaIndexItem item = entry.getValue();
+            if (!item.fileURI.equals(fileURI)) continue;
+            if (item.symbol.getType() != type) continue;
+            result.add(item.symbol);
+        }
+
+        return result;
     }
 
 }

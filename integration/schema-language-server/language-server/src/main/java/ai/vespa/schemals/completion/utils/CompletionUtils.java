@@ -25,4 +25,10 @@ public class CompletionUtils {
         item.setKind(CompletionItemKind.TypeParameter);
         return item;
     }
+
+    public static CompletionItem constructBasic(String label) {
+        CompletionItem item = new CompletionItem();
+        item.setLabel(label);
+        return item;
+    }
 }
