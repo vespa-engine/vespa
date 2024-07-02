@@ -22,8 +22,6 @@ struct Memory
         : data(str.data()), size(str.size()) {}
     Memory(const vespalib::string &str) noexcept
         : data(str.data()), size(str.size()) {}
-    Memory(vespalib::stringref str_ref) noexcept
-        : data(str_ref.data()), size(str_ref.size()) {}
     Memory(std::string_view str_ref) noexcept
         : data(str_ref.data()), size(str_ref.size()) {}
     vespalib::string make_string() const;

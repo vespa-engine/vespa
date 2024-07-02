@@ -25,12 +25,11 @@ public:
     constexpr std::string_view view() const noexcept { return _view; }
     constexpr operator std::string_view() const noexcept { return _view; }
     vespalib::stringref ref() const noexcept { return {_view.data(), _view.size()}; }
-    operator vespalib::stringref() const noexcept { return ref(); }
 };
 
 namespace literals {
 constexpr StaticStringView operator "" _ssv(const char *literal, size_t size) {
-    return vespalib::StaticStringView(literal, size);
+    return {literal, size};
 }
 } // literals
 
