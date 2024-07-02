@@ -10,17 +10,19 @@ namespace document::select::simple {
 
 class Parser {
 public:
-    virtual ~Parser() { }
+    virtual ~Parser() = default;
     virtual bool parse(vespalib::stringref s) = 0;
     vespalib::stringref getRemaining() const { return _remaining; }
 protected:
     void setRemaining(vespalib::stringref s) { _remaining = s; }
+    void setRemaining(vespalib::stringref s, size_t fromPos);
 private:
     vespalib::stringref _remaining;
 };
 
 class NodeResult {
 public:
+    //TODO Dirty, should force use of std::move
     Node::UP getNode() { return std::move(_node); }
 protected:
     void setNode(Node::UP node) { _node = std::move(node); }
@@ -30,6 +32,7 @@ private:
 
 class ValueResult {
 public:
+    //TODO Dirty, should force use of std::move
     ValueNode::UP stealValue() { return std::move(_value); }
     const ValueNode & getValue() const { return *_value; }
 protected:
@@ -41,8 +44,8 @@ private:
 class IdSpecParser : public Parser, public ValueResult
 {
 public:
-    IdSpecParser(const BucketIdFactory& bucketIdFactory) :
-        _bucketIdFactory(bucketIdFactory)
+    explicit IdSpecParser(const BucketIdFactory& bucketIdFactory) noexcept
+        : _bucketIdFactory(bucketIdFactory)
     {}
     bool parse(vespalib::stringref s) override;
     const IdValueNode & getId() const { return static_cast<const IdValueNode &>(getValue()); }
@@ -75,8 +78,8 @@ public:
 class SelectionParser : public Parser, public NodeResult
 {
 public:
-    SelectionParser(const BucketIdFactory& bucketIdFactory) :
-        _bucketIdFactory(bucketIdFactory)
+    explicit SelectionParser(const BucketIdFactory& bucketIdFactory) noexcept
+        : _bucketIdFactory(bucketIdFactory)
     {}
     bool parse(vespalib::stringref s) override;
 private:
