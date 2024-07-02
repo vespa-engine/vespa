@@ -304,8 +304,19 @@ ParsedSchema rootSchema :
 rootSchemaItem(ParsedSchema schema) : {}
     ( 
         documentElm(schema)
+    //   | rawAsBase64(schema)
+    //   | searchStemming(schema)
+    //   | importField(schema)
+    //   | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+    //   | rankProfile(schema)
+    //   | documentSummary(schema)
+        | fieldOutsideDoc(schema)
+    //   | indexOutsideDoc(schema)
+    //   | structOutside(schema)
+    //   | annotationOutside(schema)
         | fieldSetElm(schema)
-    )
+    //   | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+ )
 ;
 
 /**
@@ -353,6 +364,19 @@ void fieldInsideDoc(ParsedDocument document) :
     field = fieldElm() {
         document.addField(field);
     }
+;
+
+/**
+ * Consumes a field block from outside a document element.
+ *
+ * @param schema the schema to modify
+ */
+void fieldOutsideDoc(ParsedSchema schema) :
+{
+    ParsedField field;
+}
+
+    field = fieldElm() { schema.addField(field); }
 ;
 
 /**
