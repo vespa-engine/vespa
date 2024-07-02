@@ -11,10 +11,12 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.query.parser.ParserEnvironment.LegacyQueryParsing;
 
 import java.util.Iterator;
 
@@ -30,6 +32,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 public class AllParser extends SimpleParser {
 
     private final boolean weakAnd;
+    private final LegacyQueryParsing legacyQueryParsing;
 
     /**
      * Creates an all/weakAnd parser
@@ -39,6 +42,7 @@ public class AllParser extends SimpleParser {
     public AllParser(ParserEnvironment environment, boolean weakAnd) {
         super(environment);
         this.weakAnd = weakAnd;
+        this.legacyQueryParsing = environment.getLegacyQueryParsing();
     }
 
     @Override
@@ -98,10 +102,37 @@ public class AllParser extends SimpleParser {
         return root.getRoot() instanceof NullItem ? null : root.getRoot();
     }
 
+    private boolean foldIntoAnd(CompositeItem other) {
+        if (other instanceof AndItem) {
+            return ! legacyQueryParsing.keepImplicitAnds();
+        }
+        if (weakAnd && other instanceof SegmentItem sand) {
+            if (legacyQueryParsing.keepSegmentAnds()) {
+                return false;
+            } else if (legacyQueryParsing.markSegmentAnds()) {
+                sand.shouldFoldIntoWand(weakAnd);
+                return false;
+            }
+            return true;
+        }
+        if (weakAnd && other instanceof PhraseItem phrase) {
+            if (phrase.isExplicit()) return false;
+            if (legacyQueryParsing.keepImplicitPhrases()) return false;
+            return true;
+        }
+        return false;
+    }
+
     protected CompositeItem addAnd(Item item, CompositeItem and) {
         if (and == null)
             and = createAnd();
-        and.addItem(item);
+        if (item instanceof CompositeItem composite && foldIntoAnd(composite)) {
+            for (var subItem : composite.items()) {
+                addAnd(subItem, and);
+            }
+        } else {
+            and.addItem(item);
+        }
         return and;
     }
 
