@@ -10,8 +10,8 @@ fi
 
 readonly VESPA_VERSION=$1
 
-if [[ -z "$ANN_BENCHMARK_DEPLOY_KEY" ]]; then
-    echo "Environment variable ANN_BENCHMARK_DEPLOY_KEY must be set, but is empty."
+if [[ -z "$ANN_BENCHMARK_DEPLOY_TOKEN" ]]; then
+    echo "Environment variable ANN_BENCHMARK_DEPLOY_TOKEN must be set, but is empty."
     exit 1
 fi
 
@@ -20,7 +20,7 @@ trap "rm -rf $BUILD_DIR" EXIT
 cd $BUILD_DIR
 
 ssh-add -D
-ssh-add <(echo $ANN_BENCHMARK_DEPLOY_KEY | base64 -d)
+ssh-add <(echo $ANN_BENCHMARK_DEPLOY_TOKEN | base64 -d)
 git clone git@github.com:vespa-engine/vespa-ann-benchmark
 cd vespa-ann-benchmark
 
