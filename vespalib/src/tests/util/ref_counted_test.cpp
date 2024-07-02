@@ -264,5 +264,3 @@ TEST(RefCountedTest, with_threads) {
     gate.countDown();
     pool.join();
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

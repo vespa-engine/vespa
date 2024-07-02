@@ -83,5 +83,3 @@ TEST(IssueTest, alternative_report_functions) {
     }
     EXPECT_EQ(my_handler.list, make_list({"str", "fmt_msg_7", "exception"}));
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

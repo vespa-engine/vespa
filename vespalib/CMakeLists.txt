@@ -102,7 +102,6 @@ vespa_define_module(
     src/tests/invokeservice
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
-    src/tests/issue
     src/tests/json
     src/tests/latch
     src/tests/left_right_heap
@@ -141,7 +140,6 @@ vespa_define_module(
     src/tests/process
     src/tests/programoptions
     src/tests/random
-    src/tests/ref_counted
     src/tests/regex
     src/tests/rendezvous
     src/tests/require
