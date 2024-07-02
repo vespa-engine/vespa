@@ -2,7 +2,6 @@ package ai.vespa.schemals.completion.provider;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import org.eclipse.lsp4j.CompletionItem;
@@ -12,7 +11,6 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.completion.provider.CompletionProvider;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
 
 public class BodyKeywordCompletionProvider implements CompletionProvider {

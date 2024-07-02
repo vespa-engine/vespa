@@ -1,11 +1,8 @@
 package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
-import java.util.HashMap;
 
 import org.eclipse.lsp4j.Position;
-
-import ai.vespa.schemals.tree.SchemaNode;
 
 public class EventPositionContext extends EventContext {
     public final Position position;

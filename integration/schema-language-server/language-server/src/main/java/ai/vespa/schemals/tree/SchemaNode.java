@@ -2,9 +2,6 @@ package ai.vespa.schemals.tree;
 
 import java.util.ArrayList;
 
-import javax.xml.validation.Schema;
-
-import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.*;

@@ -1,12 +1,9 @@
 package ai.vespa.schemals.context;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
@@ -14,7 +11,6 @@ import org.eclipse.lsp4j.Range;
 
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
-import ai.vespa.schemals.context.SchemaDocumentLexer;
 import ai.vespa.schemals.parser.*;
 
 import ai.vespa.schemals.tree.CSTUtils;
