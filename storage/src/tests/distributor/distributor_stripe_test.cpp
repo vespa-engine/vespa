@@ -1071,10 +1071,23 @@ TEST_F(DistributorStripeTest, bucket_ownership_change_does_not_cancel_pending_op
     do_test_not_cancelled_pending_op_without_bucket_ownership_change(true);
 }
 
-// TODO we do not have good handling of bucket ownership changes combined with
-//   distribution config changes... Hard to remove all such edge cases unless we
-//   make state+config change an atomic operation initiated by the cluster controller
-//   (hint: we should do this).
+TEST_F(DistributorStripeTest, maintenance_operation_cancellation_does_not_invoke_recheck_with_invalid_bucket) {
+    setup_stripe(Redundancy(1), NodeCount(2), "version:1 distributor:1 storage:2");
+    configure_enable_operation_cancellation(true);
+    addNodesToBucketDB(BucketId(16, 1), "0=3/4/5/t/u/r,1=4/5/6/t/u/r");
 
+    tickDistributorNTimes(10); // ==> Activation sent to node 1 (largest ready replica)
+    ASSERT_EQ(_sender.getCommands(true), "SetBucketState => 1");
+
+    // Node 1 takes a nosedive; the pending SetBucketState operation is cancelled internally.
+    simulate_cluster_state_transition("version:2 distributor:1 storage:2 .1.s:d", true);
+
+    auto reply = std::make_shared<api::SetBucketStateReply>(dynamic_cast<api::SetBucketStateCommand&>(*_sender.command(0)));
+    _stripe->handleReply(reply);
+    // If we have gotten this far without exploding with an invariant check failure, all is well.
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0x3,docs=4/4,bytes=5/5,trusted=true,active=false,ready=true)", // no node 1
+              dumpBucket(BucketId(16, 1)));
+}
 
 }

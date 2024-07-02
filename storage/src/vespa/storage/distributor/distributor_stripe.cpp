@@ -233,7 +233,14 @@ DistributorStripe::handleReply(const std::shared_ptr<api::StorageReply>& reply)
     }
 
     if (_maintenanceOperationOwner.handleReply(reply)) {
-        _scanner->prioritizeBucket(bucket);
+        // If a maintenance operation reply comes from a node that went down after its original
+        // request was sent _and_ cancelling is enabled, the operation will be present in
+        // _maintenanceOperationOwner but _not_ in _pendingMessageTracker. The latter returns
+        // the zero bucket (including an invalid bucket space) if no mapping could be found,
+        // which is not accepted by prioritizeBucket().
+        if (bucket.getBucketId() != document::BucketId(0)) {
+            _scanner->prioritizeBucket(bucket);
+        }
         return true;
     }
 
