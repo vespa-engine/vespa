@@ -7,8 +7,8 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.parser.ParsedType;
-import ai.vespa.schemals.parser.ParsedType.Variant;
+import com.yahoo.schema.parser.ParsedType;
+import com.yahoo.schema.parser.ParsedType.Variant;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.SchemaNode;
 

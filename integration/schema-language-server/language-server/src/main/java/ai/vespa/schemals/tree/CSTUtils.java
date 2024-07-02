@@ -5,7 +5,8 @@ import java.io.PrintStream;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.TokenSource;
 
 public class CSTUtils {
 

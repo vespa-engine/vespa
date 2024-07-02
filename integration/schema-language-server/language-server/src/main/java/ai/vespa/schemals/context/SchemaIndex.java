@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.Token;
 
 public class SchemaIndex {
 

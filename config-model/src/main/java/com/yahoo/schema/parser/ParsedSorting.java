@@ -13,7 +13,7 @@ import java.util.Optional;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedSorting extends ParsedBlock {
+public class ParsedSorting extends ParsedBlock {
 
     private boolean ascending = true;
     private Function sortFunction = null;

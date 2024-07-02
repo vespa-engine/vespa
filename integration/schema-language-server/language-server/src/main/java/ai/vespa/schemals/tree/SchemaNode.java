@@ -4,7 +4,8 @@ import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Node;
 
 public class SchemaNode {
 

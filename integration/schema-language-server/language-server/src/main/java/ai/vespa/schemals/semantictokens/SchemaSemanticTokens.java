@@ -11,12 +11,10 @@ import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
-import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
-import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.Token;
 
 public class SchemaSemanticTokens implements Visitor {
 

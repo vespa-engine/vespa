@@ -35,9 +35,9 @@ public class ParsedMatchSettings {
     Optional<Integer> getMaxTokenLength() { return Optional.ofNullable(maxTokenLength); }
 
     // TODO - consider allowing each set only once:
-    void setType(MatchType value) { this.matchType = value; }
-    void setCase(Case value) { this.matchCase = value; }
-    void setAlgorithm(MatchAlgorithm value) { this.matchAlgorithm = value; }
+    public void setType(MatchType value) { this.matchType = value; }
+    public void setCase(Case value) { this.matchCase = value; }
+    public void setAlgorithm(MatchAlgorithm value) { this.matchAlgorithm = value; }
     void setExactTerminator(String value) { this.exactTerminator = value; }
     void setGramSize(int value) { this.gramSize = value; }
     void setMaxLength(int value) { this.maxLength = value; }

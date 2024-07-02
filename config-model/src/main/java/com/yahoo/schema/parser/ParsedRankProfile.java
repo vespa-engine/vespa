@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * @author arnej27959
  */
-class ParsedRankProfile extends ParsedBlock {
+public class ParsedRankProfile extends ParsedBlock {
 
     private boolean ignoreDefaultRankFeatures = false;
     private Double rankScoreDropLimit = null;
@@ -61,7 +61,7 @@ class ParsedRankProfile extends ParsedBlock {
     private Integer globalPhaseRerankCount = null;
     private String globalPhaseExpression = null;
 
-    ParsedRankProfile(String name) {
+    public ParsedRankProfile(String name) {
         super(name, "rank-profile");
     }
 
@@ -108,7 +108,7 @@ class ParsedRankProfile extends ParsedBlock {
     void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
     void addRankFeatures(FeatureList features) { this.rankFeatures.add(features); }
 
-    void inherit(String other) { inherited.add(other); }
+    public void inherit(String other) { inherited.add(other); }
 
     void setInheritedSummaryFeatures(String other) {
         verifyThat(inheritedSummaryFeatures == null, "already inherits summary-features");
@@ -158,7 +158,7 @@ class ParsedRankProfile extends ParsedBlock {
         values.add(value);
     }
 
-    void setFirstPhaseRanking(String expression) {
+    public void setFirstPhaseRanking(String expression) {
         verifyThat(firstPhaseExpression == null, "already has first-phase expression");
         this.firstPhaseExpression = expression;
     }
@@ -171,7 +171,7 @@ class ParsedRankProfile extends ParsedBlock {
         this.inheritedMatchFeatures = other;
     }
 
-    void setKeepRankCount(int count) {
+    public void setKeepRankCount(int count) {
         verifyThat(keepRankCount == null, "already has rerank-count");
         this.keepRankCount = count;
     }
@@ -200,7 +200,7 @@ class ParsedRankProfile extends ParsedBlock {
         this.numThreadsPerSearch = threads;
     }
 
-    void setRankScoreDropLimit(double limit) {
+    public void setRankScoreDropLimit(double limit) {
         verifyThat(rankScoreDropLimit == null, "already has rank-score-drop-limit");
         this.rankScoreDropLimit = limit;
     }

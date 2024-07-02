@@ -6,6 +6,8 @@ FAULT_TOLERANT=true;
 INJECT SchemaParser:
 {
 
+    import com.yahoo.schema.parser.*;
+
     import com.yahoo.schema.document.Case;
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;

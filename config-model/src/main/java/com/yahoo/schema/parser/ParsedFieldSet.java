@@ -11,13 +11,13 @@ import java.util.Optional;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedFieldSet extends ParsedBlock {
+public class ParsedFieldSet extends ParsedBlock {
 
     private final List<String> fields = new ArrayList<>();
     private final List<String> queryCommands = new ArrayList<>();
     private ParsedMatchSettings matchInfo = null;
 
-    ParsedFieldSet(String name) {
+    public ParsedFieldSet(String name) {
         super(name, "fieldset");
     }
 
@@ -32,6 +32,6 @@ class ParsedFieldSet extends ParsedBlock {
         return Optional.ofNullable(this.matchInfo);
     }
 
-    void addField(String field) { fields.add(field); }
-    void addQueryCommand(String command) { queryCommands.add(command); }
+    public void addField(String field) { fields.add(field); }
+    public void addQueryCommand(String command) { queryCommands.add(command); }
 }
