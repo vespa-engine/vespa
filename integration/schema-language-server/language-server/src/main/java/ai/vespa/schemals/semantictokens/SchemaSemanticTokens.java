@@ -25,7 +25,12 @@ public class SchemaSemanticTokens implements Visitor {
         add(Token.TokenType.SCHEMA);
         add(Token.TokenType.FIELD);
         add(Token.TokenType.TYPE);
-        add(Token.TokenType.FIELDSET);
+        add(Token.TokenType.FIELDSET); 
+        add(Token.TokenType.STRUCT);
+    }};
+
+    private static final ArrayList<String> manualyRegisteredLSPNames = new ArrayList<String>() {{
+        add("type");
     }};
 
     private static final Map<Token.TokenType, String> tokenTypeLSPNameMap = new HashMap<Token.TokenType, String>() {{
@@ -34,6 +39,12 @@ public class SchemaSemanticTokens implements Visitor {
         put(Token.TokenType.LONG, "number");
         put(Token.TokenType.DOUBLEQUOTEDSTRING, "string");
         put(Token.TokenType.SINGLEQUOTEDSTRING, "string");
+        put(Token.TokenType.ARRAY, "type");
+        put(Token.TokenType.WEIGHTEDSET, "type");
+        put(Token.TokenType.MAP, "type");
+        put(Token.TokenType.ANNOTATIONREFERENCE, "type");
+        put(Token.TokenType.REFERENCE, "type");
+        put(Token.TokenType.TENSOR_TYPE, "type");
     }};
     
     private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
@@ -42,6 +53,8 @@ public class SchemaSemanticTokens implements Visitor {
         put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldsElm", "variable");
+        put("ai.vespa.schemals.parser.ast.structDefinitionElm", "variable");
+        put("ai.vespa.schemals.parser.ast.structFieldDefinition", "variable");
     }};
 
     private static ArrayList<String> tokenTypes;
@@ -61,6 +74,8 @@ public class SchemaSemanticTokens implements Visitor {
         tokenTypes = new ArrayList<String>();
         tokenTypeMap = new HashMap<Token.TokenType, Integer>();
         identifierTypeMap = new HashMap<String, Integer>();
+
+        tokenTypes.addAll(manualyRegisteredLSPNames);
 
         for (Map.Entry<Token.TokenType, String> set : tokenTypeLSPNameMap.entrySet()) {
             Integer index = addTokenType(set.getValue());
@@ -140,7 +155,14 @@ public class SchemaSemanticTokens implements Visitor {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
         Token.TokenType type = node.getType();
-        if (type != null) {
+
+        if (node.isSchemaType()) {
+            Integer tokenType = tokenTypes.indexOf("type");
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
+        } else if (type != null) {
             if (node.isUserDefinedIdentifier()) {
                 SchemaNode parent = node.getParent();
                 String parnetClassName = parent.getIdentifierString();

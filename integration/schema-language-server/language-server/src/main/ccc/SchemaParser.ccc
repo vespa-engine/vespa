@@ -1,10 +1,15 @@
 PARSER_CLASS=SchemaParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser;
+LEGACY_GLITCHY_LOOKAHEAD=true;
 FAULT_TOLERANT=true;
 
-INJECT :
+INJECT SchemaParser:
 {
-    package ai.vespa.schemals.parser;
+
+    import com.yahoo.schema.document.Case;
+    import com.yahoo.schema.document.MatchType;
+    import com.yahoo.schema.document.MatchAlgorithm;
+    import com.yahoo.tensor.TensorType;
 }
 
 // --------------------------------------------------------------------------------
@@ -331,7 +336,8 @@ void documentElm(ParsedSchema schema) :
  */
 void documentElmBody(ParsedDocument document) : {}
     (
-        fieldInsideDoc(document)
+        structInsideDoc(document)
+        | fieldInsideDoc(document)
     )
 ;
 
@@ -365,9 +371,9 @@ ParsedField fieldElm() :
         // if (name != null && Schema.isReservedName(name.toLowerCase())) {
         //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         // }
-        field = new ParsedField(name);
+        field = new ParsedField(name, type);
     }
-    openLbrace() <RBRACE>
+    openLbrace() ( fieldBodyElm(field) (<NL>)*)* <RBRACE>
     {
         return field;
     }
@@ -408,6 +414,36 @@ void queryCommandElm(ParsedFieldSet fieldSet) :
 ;
 
 /**
+ * This rule consumes a struct block from within a document element.
+ * @param document the document object to add content to
+ */
+void structInsideDoc(ParsedDocument document) :
+{
+    ParsedStruct struct;
+}
+
+    struct = structDefinitionElm() { document.addStruct(struct); }
+;
+
+/**
+ * This rule consumes a struct declaration block
+ */
+ParsedStruct structDefinitionElm() :
+{
+    String name;
+//    String inherited;
+    ParsedStruct struct;
+}
+
+    ( <STRUCT> name = identifierStr (<NL>)* { struct = new ParsedStruct(name); }
+//    [ inheritsStruct(struct) (<NL>)* ]
+    openLbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE> )
+    {
+        return struct;
+    }
+;
+
+/**
  * This rule consumes a data type block from within a field element.
  *
  * @return the consumed data type
@@ -419,15 +455,17 @@ ParsedType dataType() :
     ParsedType mapType = null;
     ParsedType arrayType = null;
     ParsedType wsetType = null;
+    TensorType tensorType;
     ParsedType referenceType;
 }
-//    (   LOOKAHEAD(<ARRAY> <LESSTHAN>)               ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
-//      | LOOKAHEAD(<WEIGHTEDSET> <LESSTHAN>)         ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
-//      | LOOKAHEAD(<MAP> <LESSTHAN>)                 ( mapType = mapDataType() { return mapType; } )
-//      | LOOKAHEAD(<ANNOTATIONREFERENCE> <LESSTHAN>) ( mapType = annotationRefDataType() { return mapType; } )
-//      | LOOKAHEAD(<TENSOR_TYPE>)                    ( tensorType = tensorType("Field type") { return ParsedType.tensorType(tensorType); } )
-//      | LOOKAHEAD(<REFERENCE>)                      ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
-     ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
+    (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
+        | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
+        | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() { return mapType; } )
+        | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType() { return mapType; } )
+        | SCAN(<TENSOR_TYPE>)                    => ( tensorType = tensorTypeElm("Field type") { return ParsedType.tensorType(tensorType); } )
+        | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
+        | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
+    )
     {
         ParsedType type = ParsedType.fromName(typeName);
         if (isArrayOldStyle) {
@@ -435,6 +473,265 @@ ParsedType dataType() :
             type = ParsedType.arrayOf(type);
         }
         return type;
+    }
+;
+
+ParsedType referenceType() :
+{
+    String documentName;
+}
+
+    ( documentName = identifierStr )
+    {
+        return ParsedType.documentType(documentName);
+    }
+;
+
+ParsedType annotationRefDataType() :
+{
+    ParsedType dataType;
+    String targetName;
+}
+
+    ( <ANNOTATIONREFERENCE> <LESSTHAN> targetName = identifierStr <GREATERTHAN> )
+    {
+        return ParsedType.annotationRef(targetName);
+    }
+;
+
+ParsedType mapDataType() :
+{
+    ParsedType keyType;
+    ParsedType valType;
+}
+  ( <MAP> <LESSTHAN> keyType = dataType() <COMMA> valType = dataType() <GREATERTHAN> )
+  {
+    return ParsedType.mapType(keyType, valType);
+  }
+;
+
+/**
+ * This rule consumes a field block of a struct body.
+ *
+ * @param struct The struct to modify.
+ */
+void structFieldDefinition(ParsedStruct struct) :
+{
+    String name;
+    ParsedType type;
+    ParsedField field;
+    int fieldId;
+}
+
+    <FIELD> name = identifierStr <TYPE> type = dataType() {
+//        if (name != null && Schema.isReservedName(name.toLowerCase())) {
+        if (name != null && false) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        field = new ParsedField(name, type);
+    }
+    // openLbrace (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE>
+    {
+        struct.addField(field);
+    }
+;
+
+/**
+ * This rule consumes a single element of a field body block.
+ *
+ * @param field    the field being built
+ */
+void fieldBodyElm(ParsedField field) : { }
+
+     ( aliasElm(field) |
+       attributeElm(field) |
+    //   bolding(field) |
+    //   dictionary(field) |
+    //   fieldStemming(field) |
+       idElm(field) |
+    //   summaryInField(field) |
+    //   indexInsideField(field) |
+    //   indexing(field) |
+       matchSettingsElm(field.matchSettings()) |
+    //   normalizing(field) |
+    //   queryCommand(field) |
+       rankElm(field) |
+    //   rankType(field) |
+    //   fieldSorting(field) |
+    //   structField(field) |
+    //   summaryTo(field) |
+    //   weight(field) |
+    //   weightedset(field.getType()) )
+      weightElm(field)
+    )
+;
+
+/**
+ * This rule consumes a weight statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void weightElm(ParsedField field) :
+{
+    int num;
+}
+
+    <WEIGHT> <COLON> num = integerElm { field.setWeight(num); }
+;
+
+/**
+ * This rule consumes an attribute statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void attributeElm(ParsedField field) :
+{
+    String name = field.name();
+}
+
+    <ATTRIBUTE> [name = identifierStr]
+    {
+        // TODO: Remove support for attribute with different name than field name in Vespa 9
+        // if ( ! name.equals(field.name()))
+        //         deployLogger.logApplicationPackage(Level.WARNING, "Creating an attribute for field '" + field.name() +
+        //         "' with a different name '" + name + "' than the field name" +
+        //         " is deprecated, and support will be removed in Vespa 9. Define a field with the wanted name outside the document instead.");
+        ParsedAttribute attr = field.attributeFor(name);
+    }
+         ( (<COLON> attributeSetting(attr))
+           | (openLbrace() (attributeSetting(attr) (<NL>)*)* <RBRACE>) )
+;
+
+/* pick up sorting in field block */
+void attributeSorting(ParsedAttribute attribute) : { }
+
+    sortingElm(attribute.sortInfo())
+;
+
+/* pick up sorting in field block */
+void sortingElm(ParsedSorting sort) : { }
+
+    <SORTING>
+        //  ( (<COLON> sortingSetting(sort))
+        //    | (openLbrace() (sortingSetting(sort) (<NL>)*)* <RBRACE>) )
+;
+
+/**
+ * This rule consumes a single attribute setting statement of an attribute element.
+ *
+ * @param attribute The attribute to change.
+ */
+void attributeSetting(ParsedAttribute attribute) :
+{
+    String str;
+}
+
+    (
+        <FAST_RANK>             { attribute.setFastRank(true); }
+      | <FAST_SEARCH>           { attribute.setFastSearch(true); }
+      | <FAST_ACCESS>           { attribute.setFastAccess(true); }
+      | <MUTABLE>               { attribute.setMutable(true); }
+      | <PAGED>                 { attribute.setPaged(true); }
+      | <ENABLE_BIT_VECTORS>      //{ deployLogger.logApplicationPackage(Level.WARNING, "'enable-bit-vectors' is deprecated and void -> remove it. Will be removed in vespa-9"); }
+      | <ENABLE_ONLY_BIT_VECTOR>  { attribute.setEnableOnlyBitVector(true); }
+      | attributeSorting(attribute)
+      | <ALIAS> {
+            String alias;
+            String aliasedName=attribute.name();
+        } [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr {
+          attribute.addAlias(aliasedName, alias);
+      }
+      | <DISTANCE_METRIC> <COLON> str = identifierWithDashStr { attribute.setDistanceMetric(str); }
+    )
+;
+
+/**
+ * Consumes a rank statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void rankElm(ParsedField field) : { }
+
+    <RANK> ( (<COLON> rankSettingElm(field))
+             | (openLbrace() (rankSettingElm(field) (<NL>)*)* <RBRACE>) )
+;
+
+/**
+ * Consumes a single rank setting of a rank statement.
+ *
+ * @param field The field to modify.
+ */
+void rankSettingElm(ParsedField field) : { }
+
+    ( <LITERAL>   { field.setLiteral(true); }
+      | <NORMAL>  { field.setNormal(true); }
+      | <FILTER>  { field.setFilter(true); } )
+;
+
+
+/**
+ * Consumes an id statement of a field body block.
+ *
+ * @param field    The field to modify.
+ */
+void idElm(ParsedField field) :
+{
+    int fieldId;
+}
+
+    <ID> <COLON> fieldId = integerElm
+    {
+        field.setId(fieldId);
+    }
+;
+
+void aliasElm(ParsedField field) :
+{
+    String aliasedName = field.name();
+    String alias;
+}
+
+    <ALIAS> [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr
+    {
+       field.addAlias(aliasedName, alias);
+    }
+;
+
+void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
+
+    <MATCH> ( (<COLON> matchType(matchInfo))
+            //   | (openLbrace() (matchItem(matchInfo) (<NL>)*)* <RBRACE>) )
+    )
+;
+
+void matchType(ParsedMatchSettings matchInfo) : { }
+
+    (   <MTOKEN>    { matchInfo.setType(MatchType.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchInfo.setType(MatchType.TEXT); }
+      | <WORD>      { matchInfo.setType(MatchType.WORD); }
+      | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
+      | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
+      | <CASED>     { matchInfo.setCase(Case.CASED); }
+      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
+      | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
+      | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
+;
+
+TensorType tensorTypeElm(String errorMessage) :
+{
+    String tensorTypeString;
+}
+
+    <TENSOR_TYPE> { tensorTypeString = lastConsumedToken.toString(); }
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+        }
+        return tensorType;
     }
 ;
 
