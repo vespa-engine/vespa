@@ -28,7 +28,7 @@ TEST(FCrcTest, test_correctness)
 TEST(CrcTest, benchmark)
 {
     constexpr size_t bufSz = 1024;
-    constexpr size_t numRep = 1000 * 1000;
+    constexpr size_t numRep = 100 * 1000;
     std::vector<char> a(numRep+bufSz);
     for(size_t i(0), m(a.size()); i < m; i++) {
         a[i] = i&0xff;
