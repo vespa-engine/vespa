@@ -18,4 +18,11 @@ public class CompletionUtils {
     public static CompletionItem constructSnippet(String label, String snippet) {
         return constructSnippet(label, snippet, "");
     }
+
+    public static CompletionItem constructType(String label) {
+        CompletionItem item = new CompletionItem();
+        item.setLabel(label);
+        item.setKind(CompletionItemKind.TypeParameter);
+        return item;
+    }
 }

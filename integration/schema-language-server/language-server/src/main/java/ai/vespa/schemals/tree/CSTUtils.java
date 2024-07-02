@@ -23,6 +23,44 @@ public class CSTUtils {
         return new Range(start, end);
     }
 
+
+    public static boolean positionLT(Position lhs, Position rhs) {
+        return (
+            lhs.getLine() < rhs.getLine() || (
+                lhs.getLine() == rhs.getLine() && 
+                lhs.getCharacter() < rhs.getCharacter()
+            )
+        );
+    }
+
+    public static boolean positionInRange(Range range, Position pos) {
+        return (
+            positionLT(pos, range.getEnd()) && (
+                positionLT(range.getStart(), pos) ||
+                range.getStart().equals(pos)
+            )
+        );
+    }
+
+    /* Returns the last non-dirty node before the supplied position */
+    public static SchemaNode getLastCleanNode(SchemaNode node, Position pos) {
+        for (int i = node.size() - 1; i >= 0; i--) {
+            SchemaNode result = getLastCleanNode(node.get(i), pos);
+            if (result != null)return result;
+        }
+
+        Range range = node.getRange();
+        if (!positionLT(pos, range.getStart()) && !node.isDirty()) {
+            return node;
+        }
+
+        return null;
+    }
+
+    /*
+     * Logger utils
+     * */
+
     public static void printTree(PrintStream logger, Node node) {
         printTree(logger, node, 0);
     }
@@ -90,23 +128,5 @@ public class CSTUtils {
         for (int i = 0; i < node.size(); i++) {
             printTreeUpToPosition(logger, node.get(i), pos, indent + 1);
         }
-    }
-
-    public static boolean positionLT(Position lhs, Position rhs) {
-        return (
-            lhs.getLine() < rhs.getLine() || (
-                lhs.getLine() == rhs.getLine() && 
-                lhs.getCharacter() < rhs.getCharacter()
-            )
-        );
-    }
-
-    public static boolean positionInRange(Range range, Position pos) {
-        return (
-            positionLT(pos, range.getEnd()) && (
-                positionLT(range.getStart(), pos) ||
-                range.getStart().equals(pos)
-            )
-        );
     }
 }

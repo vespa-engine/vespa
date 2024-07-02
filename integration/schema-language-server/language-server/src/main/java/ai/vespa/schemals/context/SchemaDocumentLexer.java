@@ -42,15 +42,58 @@ public class SchemaDocumentLexer {
     }
 
     public LexicalToken tokenBeforePosition(Position pos, boolean skipNL) {
-        LexicalToken lastToken = null;
-        for (LexicalToken token : tokens) {
-            if (skipNL && token.type() == Token.TokenType.NL) continue;
-            Position tokenStart = token.range().getStart();
-            if (CSTUtils.positionLT(pos, tokenStart) || pos.equals(tokenStart)) return lastToken;
+        int index = indexOfPosition(pos, skipNL);
+        if (index == -1)return null;
 
-            lastToken = token;
+        if (pos.equals(tokens.get(index).range().getStart())) index--;
+
+        if (index == -1)return null;
+
+        return tokens.get(index);
+    }
+
+    /*
+     * Returns true iff the sequence of token types supplied by 'pattern' is found
+     * up to 'allowSkip' places before the supplied position
+     *
+     * TODO: The ideal pattern whould be some kind of regular expression
+     * */
+    public boolean matchBackwards(Position pos, int allowSkip, boolean allowDirty, Token.TokenType... pattern) {
+        if (pattern.length == 0)return true;
+
+        int index = indexOfPosition(pos, false);
+        int skipped = 0;
+
+        for (int patternStart = index - pattern.length + 1; patternStart >= 0 && skipped <= allowSkip; patternStart--, skipped++) {
+            boolean matched = true;
+            for (int i = 0; i < pattern.length; i++) {
+                if (pattern[i] != tokens.get(patternStart + i).type()) {
+                    matched = false;
+                }
+
+                if (tokens.get(patternStart + i).isDirty() && !allowDirty) {
+                    matched = false;
+                }
+            }
+
+            if (matched) return true;
         }
-        return lastToken;
+
+        return false;
+    }
+
+    /*
+     * Returns the index of the last token at or before the supplied position
+     * -1 if no such token exists
+     * */
+    private int indexOfPosition(Position pos, boolean skipNL) {
+        int lastIndex = -1;
+        for (int i = 0; i < tokens.size(); i++) {
+            if (skipNL && tokens.get(i).type() == Token.TokenType.NL) continue;
+            if (CSTUtils.positionLT(pos, tokens.get(i).range().getStart())) break;
+            lastIndex = i;
+        }
+        return lastIndex;
     }
 
     private void collectAllTokens(SchemaNode node) {

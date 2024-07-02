@@ -6,15 +6,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.completion.provider.CompletionProvider;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
 
 public class BodyKeywordCompletionProvider implements CompletionProvider {
     // TODO: make compatible with parser
-    private static HashMap<EventPositionContext.EnclosingBody, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
-        put(EventPositionContext.EnclosingBody.SCHEMA, new CompletionItem[]{
+    private static HashMap<String, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
+        put("rootSchema", new CompletionItem[]{
             CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"), // TODO: figure out client tab format
             CompletionUtils.constructSnippet("index", "index ${1:index-name}: ${2:property}", "index:"),
             CompletionUtils.constructSnippet("index", "index ${1:index-name} {\n\t$0\n}", "index {}"),
@@ -30,14 +34,14 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("raw-as-base64-in-summary", "raw-as-base64-in-summary")
         });
 
-        put(EventPositionContext.EnclosingBody.DOCUMENT, new CompletionItem[]{
+        put("documentElm", new CompletionItem[]{
             CompletionUtils.constructSnippet("struct", "struct ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {\n\t$0\n}"),
             CompletionUtils.constructSnippet("compression", "compression {\n\t$0\n}"),
 
         });
 
-        put(EventPositionContext.EnclosingBody.FIELD, new CompletionItem[]{
+        put("fieldElm", new CompletionItem[]{
             CompletionUtils.constructSnippet("alias", "alias: $1"),
             CompletionUtils.constructSnippet("attribute", "attribute ${1:name}: ${2:property}", "attribute:"),
             CompletionUtils.constructSnippet("attribute", "attribute ${1:name} {\n\t$0\n}", "attribute {}"),
@@ -65,18 +69,57 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
         });
     }};
 
+    private String getEnclosingBodyKey(EventPositionContext context) {
+        Position searchPos = context.startOfWord();
+        if (searchPos == null)searchPos = context.position;
+
+        CSTUtils.printTreeUpToPosition(context.logger, context.document.getRootNode(), searchPos);
+        SchemaNode last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
+
+        if (last == null) {
+            return null;
+        }
+
+        SchemaNode searchNode = last;
+
+        if (searchNode.getType() == TokenType.RBRACE) {
+            if (searchNode.getParent() == null || searchNode.getParent().getParent() == null)return null;
+            searchNode = searchNode.getParent().getParent();
+        }
+
+        if (searchNode.getType() == TokenType.NL) {
+            if (searchNode.getParent() == null)return null;
+            searchNode = searchNode.getParent();
+        }
+
+        if (searchNode.getType() == TokenType.LBRACE) {
+            if (searchNode.getParent() == null || searchNode.getParent().getParent() == null)return null;
+            searchNode = searchNode.getParent().getParent();
+        }
+
+        if (searchNode.getClassLeafIdentifierString().equals("openLbrace")) {
+            if (searchNode.getParent() == null)return null;
+            searchNode = searchNode.getParent();
+        }
+
+        String identifier = searchNode.getClassLeafIdentifierString();
+
+        if (bodyKeywordSnippets.containsKey(identifier)) {
+            return identifier;
+        }
+
+        return null;
+    }
+
     @Override
     public boolean match(EventPositionContext context) {
-        EventPositionContext.EnclosingBody enclosingBody = context.findEnclosingBody();
-        return bodyKeywordSnippets.containsKey(enclosingBody);
+        return getEnclosingBodyKey(context) != null;
     }
 
     @Override
     public List<CompletionItem> getCompletionItems(EventPositionContext context) {
-        EventPositionContext.EnclosingBody enclosingBody = context.findEnclosingBody();
-        if (bodyKeywordSnippets.containsKey(enclosingBody)) {
-            return Arrays.asList(bodyKeywordSnippets.get(enclosingBody));
-        }
-        return new ArrayList<>();
+        String key = getEnclosingBodyKey(context);
+        if (key == null)return new ArrayList<>();
+        return List.of(bodyKeywordSnippets.get(key));
     }
 }

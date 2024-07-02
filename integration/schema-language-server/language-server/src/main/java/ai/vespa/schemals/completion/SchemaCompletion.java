@@ -24,25 +24,11 @@ public class SchemaCompletion {
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
-
-        var lexer = context.document.lexer;
-
-        //if (lexer.matchBackwards(context.position, 1, Token.TokenType.FIELD, Token.TokenType.IDENTIFIER, Token.TokenType.TYPE)) {
-        //    return getTypeCompletion(context);
-        //} else {
-        //    return getBodyKeywordCompletion(context);
-        //}
-
-        var lastToken = context.document.lexer.tokenBeforePosition(context.position, true);
-        context.document.lexer.dumpTokens(context.logger);
-
-        context.logger.println(context.toString());
-        context.logger.println(lastToken.toString());
-
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
         for (CompletionProvider provider : providers) {
             if (provider.match(context)) {
+                context.logger.println("Match with: " + provider.getClass().toString());
                 ret.addAll(provider.getCompletionItems(context));
             }
         }

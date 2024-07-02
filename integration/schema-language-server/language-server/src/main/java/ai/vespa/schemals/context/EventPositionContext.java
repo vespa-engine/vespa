@@ -17,12 +17,6 @@ public class EventPositionContext extends EventContext {
         FIELD
     }
 
-    // TODO: I want this in a type checkable way
-    private static HashMap<String, EnclosingBody> enclosingBodyIdentifier = new HashMap<>() {{
-        put("fieldElm", EnclosingBody.FIELD);
-        put("documentElm", EnclosingBody.DOCUMENT);
-        put("rootSchema", EnclosingBody.SCHEMA);
-    }};
 
     public EventPositionContext(
         PrintStream logger,
@@ -37,29 +31,5 @@ public class EventPositionContext extends EventContext {
 
     public Position startOfWord() {
         return document.getPreviousStartOfWord(position);
-    }
-
-    public EnclosingBody findEnclosingBody() {
-        SchemaNode node = document.getNodeAtPosition(startOfWord());
-
-        if (node == null) {
-            /* TODO: For now assume we are inside a schema body
-             * This happens when trying to write something in a schema, because 
-             * the fault tolerant parser closes the body before our current position
-             */
-            return EnclosingBody.SCHEMA;
-        }
-
-        while (node != null) {
-            String identifier = node.getClassLeafIdentifierString();
-
-            this.logger.println(identifier);
-
-            EnclosingBody body = enclosingBodyIdentifier.get(identifier);
-            if (body != null)return body;
-
-            node = node.getParent();
-        }
-        return EnclosingBody.ROOT;
     }
 }
