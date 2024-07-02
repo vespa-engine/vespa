@@ -6,7 +6,23 @@ FAULT_TOLERANT=true;
 INJECT SchemaParser:
 {
 
-    import com.yahoo.schema.parser.*;
+    import com.yahoo.schema.Schema;
+    import com.yahoo.schema.parser.ParsedAnnotation;
+    import com.yahoo.schema.parser.ParsedAttribute;
+    import com.yahoo.schema.parser.ParsedDocument;
+    import com.yahoo.schema.parser.ParsedDocumentSummary;
+    import com.yahoo.schema.parser.ParsedField;
+    import com.yahoo.schema.parser.ParsedFieldSet;
+    import com.yahoo.schema.parser.ParsedIndex;
+    import com.yahoo.schema.parser.ParsedIndexingOp;
+    import com.yahoo.schema.parser.ParsedMatchSettings;
+    import com.yahoo.schema.parser.ParsedRankFunction;
+    import com.yahoo.schema.parser.ParsedRankProfile;
+    import com.yahoo.schema.parser.ParsedSchema;
+    import com.yahoo.schema.parser.ParsedSorting;
+    import com.yahoo.schema.parser.ParsedStruct;
+    import com.yahoo.schema.parser.ParsedSummaryField;
+    import com.yahoo.schema.parser.ParsedType;
 
     import com.yahoo.schema.document.Case;
     import com.yahoo.schema.document.MatchType;
@@ -562,8 +578,7 @@ void structFieldDefinition(ParsedStruct struct) :
 }
 
     <FIELD> name = identifierStr <TYPE> type = dataType() {
-//        if (name != null && Schema.isReservedName(name.toLowerCase())) {
-        if (name != null && false) {
+        if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
         field = new ParsedField(name, type);
