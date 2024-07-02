@@ -1,12 +1,9 @@
 package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.parser.*;
 
@@ -17,14 +14,12 @@ public class SchemaIndex {
     private HashMap<String, SchemaIndexItem> database = new HashMap<String, SchemaIndexItem>();
 
     public class SchemaIndexItem {
-        Token.TokenType type;
         String fileURI;
-        SchemaNode node;
+        Symbol symbol;
         
-        public SchemaIndexItem(Token.TokenType type, String fileURI, SchemaNode node) {
-            this.type = type;
+        public SchemaIndexItem(String fileURI, Symbol symbol) {
             this.fileURI = fileURI;
-            this.node = node;
+            this.symbol = symbol;
         }
     }
     
@@ -44,35 +39,27 @@ public class SchemaIndex {
         }
     }
 
+    private String createDBKey(String fileURI, Symbol symbol) {
+        return createDBKey(fileURI, symbol.getType(), symbol.getShortIdentifier());
+    }
+
     private String createDBKey(String fileURI, Token.TokenType type, String identifier) {
         return fileURI + ":" + type.name() + ":" + identifier;
     }
 
-    public void insert(String fileURI, Token.TokenType type, String identifier, SchemaNode node) {
+    public void insert(String fileURI, Symbol symbol) {
         database.put(
-            createDBKey(fileURI, type, identifier),
-            new SchemaIndexItem(type, fileURI, node)
+            createDBKey(fileURI, symbol),
+            new SchemaIndexItem(fileURI, symbol)
         );
     }
 
-    public SchemaNode findSymbol(String fileURI, Token.TokenType type, String identifier) {
+    public Symbol findSymbol(String fileURI, Token.TokenType type, String identifier) {
         SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
         if (results == null) {
             return null;
         }
-        return results.node;
+        return results.symbol;
     }
 
-    public ArrayList<SchemaNode> findSymbols(String fileURI, Token.TokenType type) {
-        ArrayList<SchemaNode> ret = new ArrayList<SchemaNode>(); 
-
-        for (Map.Entry<String, SchemaIndexItem> set : database.entrySet()) {
-            SchemaIndexItem item = set.getValue();
-            if (item.fileURI == fileURI && item.type == type) {
-                ret.add(item.node);
-            }
-        }
-
-        return ret;
-    }
 }
