@@ -36,6 +36,8 @@ ssh-add -D
 set +x
 ssh-add <(echo $VESPA_DEPLOY_TOKEN | base64 -d)
 set -x
+git config --global user.email "builder@vespa.ai"
+git config --global user.name "Vespa Builder"
 git clone git@github.com:vespa-engine/vespa
 
 cd vespa
