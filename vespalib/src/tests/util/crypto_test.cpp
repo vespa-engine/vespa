@@ -33,5 +33,3 @@ TEST(CryptoTest, generated_x509_certificate_can_be_exported_to_pem_format) {
 }
 
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

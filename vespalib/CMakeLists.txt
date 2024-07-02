@@ -52,7 +52,6 @@ vespa_define_module(
     src/tests/coro/received
     src/tests/coro/waiting_for
     src/tests/cpu_usage
-    src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader
     src/tests/data/lz4_encode_decode
@@ -79,7 +78,6 @@ vespa_define_module(
     src/tests/drop-file-from-cache
     src/tests/dual_merge_director
     src/tests/encoding/base64
-    src/tests/eventbarrier
     src/tests/exception_classes
     src/tests/execution_profiler
     src/tests/executor

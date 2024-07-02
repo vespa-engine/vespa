@@ -171,5 +171,3 @@ TEST(EventBarriarTest, test_reorder)
     EXPECT_EQ(eb.countEvents(), 0u);
     EXPECT_EQ(eb.countBarriers(), 0u);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
