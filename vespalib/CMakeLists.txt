@@ -196,21 +196,10 @@ vespa_define_module(
     src/tests/tutorial/threads
     src/tests/typify
     src/tests/unwind_message
-    src/tests/util/bfloat16
-    src/tests/util/cgroup_resource_limits
-    src/tests/util/file_area_freelist
-    src/tests/util/generation_hold_list
-    src/tests/util/generationhandler
+    src/tests/util
     src/tests/util/generationhandler_stress
     src/tests/util/hamming
     src/tests/util/md5
-    src/tests/util/memory_trap
-    src/tests/util/mmap_file_allocator
-    src/tests/util/mmap_file_allocator_factory
-    src/tests/util/rcuvector
-    src/tests/util/size_literals
-    src/tests/util/static_string
-    src/tests/util/string_escape
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/wakeup

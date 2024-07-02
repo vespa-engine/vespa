@@ -219,5 +219,3 @@ TEST(OnnxBFloat16Test, has_same_encoding) {
     printf("floats that are NaN in both vespalib and onnx: %d (0x%04x)\n", nan_count, nan_count);
     printf("total count (OK + NaN): %d (0x%04x)\n", ok_count + nan_count, ok_count + nan_count);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

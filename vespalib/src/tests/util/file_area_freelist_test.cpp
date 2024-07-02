@@ -97,6 +97,3 @@ TEST_F(FileAreaFreeListTest, can_use_part_of_free_area)
     EXPECT_EQ(5, _freelist.alloc(1));
     EXPECT_EQ(bad_offset, _freelist.alloc(1));
 }
-
-
-GTEST_MAIN_RUN_ALL_TESTS()

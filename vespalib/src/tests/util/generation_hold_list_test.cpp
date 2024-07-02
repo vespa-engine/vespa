@@ -91,5 +91,3 @@ TEST_F(IntHoldListTest, reclaim_all_calls_callback_for_all_elements)
     assert_reclaim_all({3, 5});
     assert_reclaim_all({});
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

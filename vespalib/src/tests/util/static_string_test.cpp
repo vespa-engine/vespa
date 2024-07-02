@@ -30,5 +30,3 @@ TEST(StaticStringViewTest, with_null_byte) {
     std::string expect("foo\0bar", 7);
     EXPECT_EQ(value.view(), expect);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

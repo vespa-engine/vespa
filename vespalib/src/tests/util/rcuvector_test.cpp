@@ -516,5 +516,3 @@ TEST(RcuVectorTest, single_writer_four_readers)
     StressFixture f;
     f.run_test(20000, 4);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
