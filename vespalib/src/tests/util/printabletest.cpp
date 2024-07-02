@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 struct Foo : public vespalib::Printable {
     int val;
@@ -130,5 +130,3 @@ TEST(PrintableTest, test_ascii_variant)
         EXPECT_EQ("3", ost.str());
     }
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

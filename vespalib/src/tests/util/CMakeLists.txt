@@ -13,6 +13,8 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     memory_trap_test.cpp
     mmap_file_allocator_factory_test.cpp
     mmap_file_allocator_test.cpp
+    printabletest.cpp
+    ptrholder.cpp
     rcuvector_test.cpp
     size_literals_test.cpp
     static_string_test.cpp

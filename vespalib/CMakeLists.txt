@@ -139,7 +139,6 @@ vespa_define_module(
     src/tests/portal/handle_manager
     src/tests/portal/http_request
     src/tests/portal/reactor
-    src/tests/printable
     src/tests/priority_queue
     src/tests/process
     src/tests/programoptions
@@ -155,7 +154,6 @@ vespa_define_module(
     src/tests/sha1
     src/tests/shared_operation_throttler
     src/tests/shared_string_repo
-    src/tests/sharedptr
     src/tests/shutdownguard
     src/tests/signalhandler
     src/tests/simple_thread_bundle
