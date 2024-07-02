@@ -11,7 +11,8 @@ public class SchemaCompletion {
 
     private static CompletionProvider[] providers = {
         new BodyKeywordCompletionProvider(),
-        new TypeCompletionProvider()
+        new TypeCompletionProvider(),
+        new FieldsCompletionProvider()
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {

@@ -15,6 +15,7 @@ import ai.vespa.schemals.completion.utils.CompletionUtils;
 
 public class BodyKeywordCompletionProvider implements CompletionProvider {
     // TODO: make compatible with parser
+    // Currently key is the classLeafIdentifierString of a node with a body
     private static HashMap<String, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
         put("rootSchema", new CompletionItem[]{
             CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"), // TODO: figure out client tab format
@@ -36,7 +37,7 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
         put("documentElm", new CompletionItem[]{
             CompletionUtils.constructSnippet("struct", "struct ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("field", "field ${1:name} type $0", "field"),
-            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {\n\t$0\n}", "field {}"),
             CompletionUtils.constructSnippet("compression", "compression {\n\t$0\n}"),
 
         });
@@ -104,13 +105,19 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("rank", "rank {\n\t$0\n}", "rank {}"),
             CompletionUtils.constructSnippet("rank-type", "rank-type ${1:field-name}: $0"),
         });
+
+        put("firstPhase", new CompletionItem[]{
+            CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
+            CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
+            CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
+            CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0"),
+        });
     }};
 
     private String getEnclosingBodyKey(EventPositionContext context) {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
 
-        CSTUtils.printTreeUpToPosition(context.logger, context.document.getRootNode(), searchPos);
         SchemaNode last = CSTUtils.getLastCleanNode(context.document.getRootNode(), searchPos);
 
         if (last == null) {
