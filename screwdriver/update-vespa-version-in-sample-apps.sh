@@ -46,7 +46,7 @@ function wait_until_published {
 
 ssh-add -D
 set +x
-ssh-add <(echo $SAMPLE_APPS_DEPLOY_KEY | base64 -d)
+ssh-add <(echo $SAMPLE_APPS_DEPLOY_TOKEN | base64 -d)
 set -x
 
 git clone git@github.com:vespa-engine/sample-apps.git
