@@ -25,6 +25,11 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>config-model-api</artifactId>
+      <version>8-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>8-SNAPSHOT</version>
     </dependency>

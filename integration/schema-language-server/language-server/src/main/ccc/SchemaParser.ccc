@@ -399,7 +399,6 @@ void fieldOutsideDoc(ParsedSchema schema) :
 
 /**
  * Consumes a field block
- * TODO: Reserved names
  */
 ParsedField fieldElm() :
 {
@@ -410,9 +409,6 @@ ParsedField fieldElm() :
 
     <FIELD> name = identifierStr <TYPE> type = dataType()
     {
-        // if (name != null && Schema.isReservedName(name.toLowerCase())) {
-        //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
-        // }
         field = new ParsedField(name, type);
     }
     openLbrace() ( fieldBodyElm(field) (<NL>)*)* <RBRACE>
@@ -578,9 +574,6 @@ void structFieldDefinition(ParsedStruct struct) :
 }
 
     <FIELD> name = identifierStr <TYPE> type = dataType() {
-        if (name != null && Schema.isReservedName(name.toLowerCase())) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
-        }
         field = new ParsedField(name, type);
     }
     // openLbrace (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE>
