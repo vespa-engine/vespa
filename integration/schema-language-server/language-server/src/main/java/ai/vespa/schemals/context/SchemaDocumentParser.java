@@ -131,36 +131,6 @@ public class SchemaDocumentParser {
         if (onlyLeaf)return null;
 
         return node;
-
-        /*
-        Integer lowerLimit = 0;
-        Integer upperLimit = node.size() - 1;
-
-        Integer currentSearch = (upperLimit + lowerLimit) / 2;
-
-        while (lowerLimit <= upperLimit) {
-            SchemaNode search = node.get(currentSearch);
-
-            if (CSTUtils.positionLT(pos, search.getRange().getEnd())) {
-
-                if (CSTUtils.positionInRange(search.getRange(), pos)) {
-                    return getNodeAtPosition(search, pos, onlyLeaf);
-                }
-
-                upperLimit = currentSearch - 1;
-            } else {
-                lowerLimit = currentSearch + 1;
-            }
-
-            currentSearch = (upperLimit + lowerLimit) / 2;
-        }
-
-        if (CSTUtils.positionInRange(node.getRange(), pos) && !onlyLeaf) {
-            return node;
-        }
-
-        return null;
-        */
     }
 
     private void parseContent() {

@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Position;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.Symbol;
+import ai.vespa.schemals.context.SchemaDocumentLexer.LexicalToken;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -36,9 +37,11 @@ public class FieldsCompletionProvider implements CompletionProvider {
 
         searchPos = last.getRange().getStart();
 
-        boolean match = context.document.lexer.matchBackwards(searchPos, 0, false, TokenType.FIELDS, TokenType.COLON, TokenType.IDENTIFIER);
+        LexicalToken match = context.document.lexer.matchBackwards(searchPos, 0, false, TokenType.FIELDS, TokenType.COLON, TokenType.IDENTIFIER);
 
-        return (last != null && last.getType() == TokenType.FIELDS) || match;
+        // Has to be on the same line
+        if (match != null && match.range().getStart().getLine() == context.position.getLine())return true;
+        return (last != null && last.getType() == TokenType.FIELDS && last.getRange().getStart().getLine() == context.position.getLine());
 	}
 
 	@Override
@@ -49,6 +52,4 @@ public class FieldsCompletionProvider implements CompletionProvider {
                            .map(symbol -> CompletionUtils.constructBasic(symbol.getShortIdentifier()))
                            .collect(Collectors.toList());
 	}
-
-    
 }

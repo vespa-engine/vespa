@@ -14,7 +14,7 @@ public class TypeCompletionProvider implements CompletionProvider {
     public boolean match(EventPositionContext context) {
         var lexer = context.document.lexer;
 
-        return lexer.matchBackwards(context.position, 1, false, Token.TokenType.FIELD, Token.TokenType.IDENTIFIER, Token.TokenType.TYPE);
+        return lexer.matchBackwards(context.position, 1, false, Token.TokenType.FIELD, Token.TokenType.IDENTIFIER, Token.TokenType.TYPE) != null;
     }
 
     @Override

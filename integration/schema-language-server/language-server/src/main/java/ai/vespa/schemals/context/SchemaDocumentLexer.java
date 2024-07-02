@@ -53,15 +53,16 @@ public class SchemaDocumentLexer {
     }
 
     /*
-     * Returns true iff the sequence of token types supplied by 'pattern' is found
+     * Finds the sequence of token types supplied by 'pattern' by searching backwards
      * up to 'allowSkip' places before the supplied position
+     * Returns a reference to the LexicalToken at the position if found
+     * null otherwise
      *
      * TODO: The ideal pattern whould be some kind of regular expression
      * */
-    public boolean matchBackwards(Position pos, int allowSkip, boolean allowDirty, Token.TokenType... pattern) {
-        if (pattern.length == 0)return true;
-
+    public LexicalToken matchBackwards(Position pos, int allowSkip, boolean allowDirty, Token.TokenType... pattern) {
         int index = indexOfPosition(pos, false);
+        if (index == -1)return null;
         int skipped = 0;
 
         for (int patternStart = index - pattern.length + 1; patternStart >= 0 && skipped <= allowSkip; patternStart--, skipped++) {
@@ -76,10 +77,10 @@ public class SchemaDocumentLexer {
                 }
             }
 
-            if (matched) return true;
+            if (matched) return tokens.get(patternStart);
         }
 
-        return false;
+        return null;
     }
 
     /*
