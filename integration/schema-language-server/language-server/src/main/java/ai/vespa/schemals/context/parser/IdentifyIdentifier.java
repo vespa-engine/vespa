@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
+import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -61,7 +62,8 @@ public class IdentifyIdentifier extends Identifier {
             SchemaNode child = parent.get(1);
             child.setUserDefinedIdentifier();
             if (schemaIndex.findSymbol(document.getFileURI(), nodeType, child.getText()) == null) {
-                schemaIndex.insert(document.getFileURI(), nodeType, child.getText(), child);
+                Symbol symbol = new Symbol(nodeType, child);
+                schemaIndex.insert(document.getFileURI(), symbol);
             } else {
                 ret.add(new Diagnostic(child.getRange(), "Duplicate identifier"));
             }

@@ -1,16 +1,13 @@
 package ai.vespa.schemals.definition;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.context.SchemaIndex;
+import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.parser.*;
@@ -45,13 +42,13 @@ public class SchemaDefinition {
             return ret;
         }
 
-        SchemaNode refersTo = context.schemaIndex.findSymbol(document.getFileURI(), tokenType, node.getText());
+        Symbol refersTo = context.schemaIndex.findSymbol(document.getFileURI(), tokenType, node.getText());
         
         if (refersTo == null) {
             return ret;
         }
 
-        ret.add(new Location(document.getFileURI(), refersTo.getRange()));
+        ret.add(new Location(document.getFileURI(), refersTo.getNode().getRange()));
         return ret;
     }
 }
