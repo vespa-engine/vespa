@@ -3,10 +3,12 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -26,7 +28,10 @@ import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static com.yahoo.config.provision.CloudName.AWS;
+import static com.yahoo.config.provision.Environment.dev;
+import static com.yahoo.config.provision.Environment.perf;
 import static com.yahoo.config.provision.Environment.prod;
+import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.config.provision.zone.ZoneId.defaultId;
 import static com.yahoo.config.provision.zone.ZoneId.from;
@@ -582,6 +587,27 @@ public class DeploymentSpecWithoutInstanceTest {
     }
 
     @Test
+    public void specWithTags() {
+        StringReader r = new StringReader(
+                """
+                <deployment version='1.0'>
+                    <prod>
+                       <region>us-east1</region>
+                       <region>us-west1</region>
+                    </prod>
+                   <dev tags='tag4' />
+                </deployment>
+                """
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Tags.empty(), spec.tags(InstanceName.from("a"), prod));
+        assertEquals(Tags.empty(), spec.tags(InstanceName.from("a"), test));
+        assertEquals(Tags.empty(), spec.tags(InstanceName.from("a"), staging));
+        assertEquals(Tags.fromString("tag4"), spec.tags(InstanceName.from("a"), dev));
+        assertEquals(Tags.fromString("tag4"), spec.tags(InstanceName.from("a"), perf));
+    }
+
+    @Test
     public void emptyEndpoints() {
         var spec = DeploymentSpec.fromXml("<deployment><endpoints/></deployment>");
         assertEquals(List.of(), spec.requireInstance("default").endpoints());
@@ -660,12 +686,14 @@ public class DeploymentSpecWithoutInstanceTest {
     @Test
     public void productionSpecWithCloudAccount() {
         StringReader r = new StringReader(
-                "<deployment version='1.0' cloud-account='012345678912'>" +
-                "    <prod>" +
-                "        <region cloud-account='219876543210'>us-east-1</region>" +
-                "        <region>us-west-1</region>" +
-                "    </prod>" +
-                "</deployment>"
+                """
+                <deployment version='1.0' cloud-account='012345678912'>
+                    <prod>
+                        <region cloud-account='219876543210'>us-east-1</region>
+                        <region>us-west-1</region>
+                    </prod>
+                </deployment>
+                """
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         DeploymentInstanceSpec instance = spec.requireInstance("default");
@@ -673,19 +701,26 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(Map.of(AWS, CloudAccount.from("219876543210")), instance.cloudAccounts(prod, RegionName.from("us-east-1")));
         assertEquals(Map.of(AWS, CloudAccount.from("012345678912")), instance.cloudAccounts(prod, RegionName.from("us-west-1")));
         assertEquals(Map.of(AWS, CloudAccount.from("012345678912")), instance.cloudAccounts(Environment.staging, RegionName.defaultName()));
+        assertEquals(CloudAccount.from("012345678912"), spec.cloudAccount(AWS, InstanceName.defaultName(), com.yahoo.config.provision.zone.ZoneId.from("dev.foo")));
+        assertEquals(CloudAccount.from("012345678912"), spec.cloudAccount(AWS, InstanceName.defaultName(), com.yahoo.config.provision.zone.ZoneId.from("perf.bar")));
 
         r = new StringReader(
-                "<deployment version='1.0'>" +
-                "    <prod>" +
-                "        <region cloud-account='219876543210'>us-east-1</region>" +
-                "        <region>us-west-1</region>" +
-                "    </prod>" +
-                "</deployment>"
+                """
+                <deployment version='1.0'>
+                    <prod>
+                        <region cloud-account='219876543210'>us-east-1</region>
+                        <region>us-west-1</region>
+                    </prod>
+                    <dev cloud-account='101010101010' />
+                </deployment>
+                """
         );
         spec = DeploymentSpec.fromXml(r);
         assertEquals(Map.of(), spec.cloudAccounts());
         assertEquals(Map.of(AWS, CloudAccount.from("219876543210")), spec.requireInstance("default").cloudAccounts(prod, RegionName.from("us-east-1")));
         assertEquals(Map.of(), spec.requireInstance("default").cloudAccounts(prod, RegionName.from("us-west-1")));
+        assertEquals(CloudAccount.from("101010101010"), spec.cloudAccount(AWS, InstanceName.defaultName(), com.yahoo.config.provision.zone.ZoneId.from("dev.foo")));
+        assertEquals(CloudAccount.from("101010101010"), spec.cloudAccount(AWS, InstanceName.defaultName(), com.yahoo.config.provision.zone.ZoneId.from("perf.bar")));
     }
 
     @Test

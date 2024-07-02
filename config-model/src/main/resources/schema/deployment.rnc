@@ -99,7 +99,6 @@ Email = element email {
 
 Test = element test {
    attribute athenz-service { xsd:string }? &
-   attribute tester-flavor { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
    Tester?
@@ -107,7 +106,6 @@ Test = element test {
 
 Staging = element staging {
    attribute athenz-service { xsd:string }? &
-   attribute tester-flavor { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
    Tester?
@@ -115,17 +113,14 @@ Staging = element staging {
 
 Dev = element dev {
    attribute cloud-account { xsd:string }? &
-   attribute empty-host-ttl { xsd:string }?
-}
-
-Perf = element perf {
-   attribute cloud-account { xsd:string }? &
-   attribute empty-host-ttl { xsd:string }?
+   attribute empty-host-ttl { xsd:string }? &
+   attribute athenz-service { xsd:string }? &
+   attribute tags { xsd:string }? &
+   Endpoints?
 }
 
 Prod = element prod {
    attribute athenz-service { xsd:string }? &
-   attribute tester-flavor { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
    Region* &

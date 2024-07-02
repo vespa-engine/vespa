@@ -115,6 +115,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     public InstanceName name() { return name; }
 
+    // TODO: make package private after 8.370 is gone.
     public Tags tags() { return tags; }
 
     /**
