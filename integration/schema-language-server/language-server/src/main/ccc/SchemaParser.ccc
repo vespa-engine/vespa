@@ -312,7 +312,7 @@ rootSchemaItem(ParsedSchema schema) : {}
     //   | documentSummary(schema)
         | fieldOutsideDoc(schema)
     //   | indexOutsideDoc(schema)
-    //   | structOutside(schema)
+        | structOutsideDoc(schema)
     //   | annotationOutside(schema)
         | fieldSetElm(schema)
     //   | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
@@ -447,6 +447,18 @@ void structInsideDoc(ParsedDocument document) :
 }
 
     struct = structDefinitionElm() { document.addStruct(struct); }
+;
+
+/**
+ * This rule consumes a struct block from within a schema element.
+ * @param schema the schema object to add content to
+ */
+void structOutsideDoc(ParsedSchema schema) :
+{
+    ParsedStruct struct;
+}
+
+    struct = structDefinitionElm() { schema.addStruct(struct); }
 ;
 
 /**
