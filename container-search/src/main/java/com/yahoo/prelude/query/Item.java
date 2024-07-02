@@ -124,6 +124,8 @@ public abstract class Item implements Cloneable {
     protected double significance = 0;
     protected boolean explicitSignificance = false;
 
+    protected DocumentFrequency documentFrequency = null;
+
     /** Whether this item is eligible for change by query rewriters (false) or should be kept as-is (true) */
     private boolean isProtected;
 
@@ -495,6 +497,8 @@ public abstract class Item implements Cloneable {
             discloser.addProperty("usePositionData", usePositionData);
         if (explicitSignificance)
             discloser.addProperty("significance", significance);
+        if (documentFrequency != null)
+            discloser.addProperty("documentFrequency", documentFrequency);
         if (weight != 100)
             discloser.addProperty("weight", weight);
         if (label != null)

@@ -99,7 +99,7 @@ public class TaggableItemsTestCase {
                 .getDeclaredMethods();
         final Method[] simple = SimpleTaggableItem.class.getDeclaredMethods();
         final Method[] segment = TaggableSegmentItem.class.getDeclaredMethods();
-        final int numberOfMethods = 10;
+        final int numberOfMethods = 12;
         assertEquals(numberOfMethods, composite.length);
         assertEquals(numberOfMethods, simple.length);
         assertEquals(numberOfMethods, segment.length);
@@ -150,6 +150,15 @@ public class TaggableItemsTestCase {
         assertFalse(p.hasExplicitSignificance());
         p.setSignificance(500.0d);
         assertTrue(p.hasExplicitSignificance());
+    }
+
+    @Test
+    final void testSetDocumentFrequency() {
+        final PhraseSegmentItem p = new PhraseSegmentItem("farmyards", false, false);
+        assertFalse(p.getDocumentFrequency().isPresent());
+        p.setDocumentFrequency(new DocumentFrequency(13, 100));
+        assertTrue(p.getDocumentFrequency().isPresent());
+        assertEquals(new DocumentFrequency(13, 100), p.getDocumentFrequency().get());
     }
 
 }

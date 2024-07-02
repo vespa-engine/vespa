@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import java.util.Optional;
+
 /**
  * An interface used for anything which may be addressed using an external,
  * unique ID in the query tree in the backend.
@@ -44,4 +46,6 @@ public interface TaggableItem {
     void setExplicitSignificance(boolean significance);
     double getSignificance();
 
+    void setDocumentFrequency(DocumentFrequency documentFrequency);
+    Optional<DocumentFrequency> getDocumentFrequency();
 }
