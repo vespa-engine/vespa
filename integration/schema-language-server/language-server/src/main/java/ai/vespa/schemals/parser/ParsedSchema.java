@@ -50,7 +50,7 @@ public class ParsedSchema extends ParsedBlock {
     private final Map<String, ParsedField> extraFields = new LinkedHashMap<>();
     private final Map<String, ParsedFieldSet> fieldSets = new LinkedHashMap<>();
     // private final Map<String, ParsedIndex> extraIndexes = new LinkedHashMap<>();
-    // private final Map<String, ParsedRankProfile> rankProfiles = new LinkedHashMap<>();
+    private final Map<String, ParsedRankProfile> rankProfiles = new LinkedHashMap<>();
     private final Map<String, ParsedStruct> extraStructs = new LinkedHashMap<>();
 
     public ParsedSchema(String name) {
@@ -73,7 +73,7 @@ public class ParsedSchema extends ParsedBlock {
     List<ParsedStruct> getStructs() { return List.copyOf(extraStructs.values()); }
     List<String> getInherited() { return List.copyOf(inherited); }
     List<String> getInheritedByDocument() { return List.copyOf(inheritedByDocument); }
-    // List<ParsedRankProfile> getRankProfiles() { return List.copyOf(rankProfiles.values()); }
+    List<ParsedRankProfile> getRankProfiles() { return List.copyOf(rankProfiles.values()); }
     List<ParsedSchema> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
     List<ParsedSchema> getAllResolvedInherits() { return List.copyOf(allResolvedInherits.values()); }
     // List<RankProfile.Constant> getConstants() { return List.copyOf(constants.values()); }
@@ -127,11 +127,11 @@ public class ParsedSchema extends ParsedBlock {
         onnxModels.add(model);
     }
 
-    // void addRankProfile(ParsedRankProfile profile) {
-    //     String rpName = profile.name();
-    //     verifyThat(! rankProfiles.containsKey(rpName), "already has rank-profile", rpName);
-    //     rankProfiles.put(rpName, profile);
-    // }
+    void addRankProfile(ParsedRankProfile profile) {
+        String rpName = profile.name();
+        verifyThat(! rankProfiles.containsKey(rpName), "already has rank-profile", rpName);
+        rankProfiles.put(rpName, profile);
+    }
 
     // void add(RankProfile.Constant constant) {
     //     constants.put(constant.name(), constant);

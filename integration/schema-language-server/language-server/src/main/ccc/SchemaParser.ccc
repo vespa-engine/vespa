@@ -308,7 +308,7 @@ rootSchemaItem(ParsedSchema schema) : {}
     //   | searchStemming(schema)
     //   | importField(schema)
     //   | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
-    //   | rankProfile(schema)
+        | rankProfile(schema)
     //   | documentSummary(schema)
         | fieldOutsideDoc(schema)
     //   | indexOutsideDoc(schema)
@@ -742,6 +742,105 @@ void matchType(ParsedMatchSettings matchInfo) : { }
       | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
 ;
 
+/**
+ * Consumes a rank-profile block of a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void rankProfile(ParsedSchema schema) :
+{
+    String name;
+    ParsedRankProfile profile;
+}
+
+    ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDashStr
+    { profile = new ParsedRankProfile(name); }
+    [inheritsRankProfile(profile)]
+    openLbrace() (rankProfileItem(schema, profile) (<NL>)*)* <RBRACE>
+    {
+        schema.addRankProfile(profile);
+    }
+;
+
+/**
+ * This rule consumes a single statement for a rank-profile block.
+ *
+ * @param profile The rank profile to modify.
+ */
+void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
+
+    (
+        firstPhase(profile)
+    //   fieldRankType(profile)
+    //   | fieldWeight(profile)
+    //   | fieldRankFilter(profile)
+    //   | firstPhase(profile)
+    //   | matchPhase(profile)
+    //   | diversity(profile)
+    //   | function(profile)
+    //   | mutate(profile)
+    //   | ignoreRankFeatures(profile)
+    //   | numThreadsPerSearch(profile)
+    //   | minHitsPerThread(profile)
+    //   | numSearchPartitions(profile)
+    //   | termwiseLimit(profile)
+    //   | postFilterThreshold(profile)
+    //   | approximateThreshold(profile)
+    //   | targetHitsMaxAdjustmentFactor(profile)
+    //   | rankFeatures(profile)
+    //   | rankProperties(profile)
+    //   | secondPhase(profile)
+    //   | globalPhase(profile)
+    //   | inputs(profile)
+    //   | constants(schema, profile)
+    //   | matchFeatures(profile)
+    //   | summaryFeatures(profile)
+    //   | onnxModelInProfile(profile)
+    //   | strict(profile)
+    //   | significance(profile)
+    )
+;
+
+/**
+ * Consumes an inherits statement of a rank-profile.
+ *
+ * @param profile the profile to modify
+ */
+void inheritsRankProfile(ParsedRankProfile profile) :
+{
+    String name;
+}
+
+    <INHERITS> name = identifierWithDashStr { profile.inherit(name); }
+    ( <COMMA>  name = identifierWithDashStr { profile.inherit(name); } )*
+;
+
+/**
+ * Consumes the first-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void firstPhase(ParsedRankProfile profile) :
+{
+    String exp;
+}
+
+    <FIRST_PHASE> openLbrace() (firstPhaseItem(profile) (<NL>)*)* <RBRACE>
+;
+
+void firstPhaseItem(ParsedRankProfile profile) :
+{
+    String expression;
+    int keepRankCount;
+    double dropLimit;
+}
+
+    ( expression = expression()                               { profile.setFirstPhaseRanking(expression); }
+    | (<KEEP_RANK_COUNT> <COLON> keepRankCount = integerElm())     { profile.setKeepRankCount(keepRankCount); }
+    | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
+    )
+;
+
 TensorType tensorTypeElm(String errorMessage) :
 {
     String tensorTypeString;
@@ -757,6 +856,22 @@ TensorType tensorTypeElm(String errorMessage) :
         }
         return tensorType;
     }
+;
+
+/**
+ * This rule consumes an expression token and returns its image.
+ *
+ * @return The consumed token image.
+ */
+String expression() :
+{
+    String exp;
+}
+
+    ( <EXPRESSION_SL> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1); } |
+      <EXPRESSION_ML> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                                     lastConsumedToken.toString().lastIndexOf("}")); } )
+    { return exp.trim(); }
 ;
 
 String identifierWithDashStr :
