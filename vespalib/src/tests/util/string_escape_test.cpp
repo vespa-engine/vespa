@@ -40,5 +40,3 @@ TEST(StringEscapeTest, control_characters_are_escaped_in_content) {
     EXPECT_EQ(xml_content_escaped(stringref("\x00", 1)), "&#0;");
     EXPECT_EQ(xml_content_escaped("\x1f"), "&#31;");
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

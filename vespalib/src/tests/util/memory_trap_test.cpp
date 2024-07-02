@@ -57,5 +57,3 @@ TEST_F(MemoryTrapTest, read_from_hw_backed_trap_crashes_process) {
         do_not_optimize_away(dummy); // never reached
     },"");
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

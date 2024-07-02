@@ -46,5 +46,3 @@ TEST(MmapFileAllocatorFactoryTest, nonempty_dir_gives_allocator)
     MmapFileAllocatorFactory::instance().setup("");
     std::filesystem::remove_all(std::filesystem::path(basedir));
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

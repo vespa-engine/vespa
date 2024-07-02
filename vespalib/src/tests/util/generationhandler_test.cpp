@@ -133,5 +133,3 @@ TEST_F(GenerationHandlerTest, require_that_generation_can_grow_large)
 }
 
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

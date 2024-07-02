@@ -129,5 +129,3 @@ TEST_P(MmapFileAllocatorTest, reuse_file_offset_works)
         EXPECT_EQ(0, memcmp(buf.data, world.c_str(), world.size() + 1));
     }
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

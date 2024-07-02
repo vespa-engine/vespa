@@ -37,5 +37,3 @@ TEST(SizeLiteralsTest, simple_usage)
     EXPECT_TRUE(is_size_t(v42g));
     EXPECT_TRUE(is_size_t(v42t));
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
