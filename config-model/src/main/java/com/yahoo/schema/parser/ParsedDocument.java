@@ -61,7 +61,7 @@ public class ParsedDocument extends ParsedBlock {
 
     public void addField(ParsedField field) {
         String fieldName = field.name().toLowerCase();
-        verifyThat(! docFields.containsKey(fieldName),
+        verifyThatIgnoreable(! docFields.containsKey(fieldName),
                    "Duplicate (case insensitively) " + field + " in document type '" + this.name() + "'");
         docFields.put(fieldName, field);
     }
