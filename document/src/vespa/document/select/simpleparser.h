@@ -10,7 +10,7 @@ namespace document::select::simple {
 
 class Parser {
 public:
-    virtual ~Parser() { }
+    virtual ~Parser() = default;
     virtual bool parse(vespalib::stringref s) = 0;
     vespalib::stringref getRemaining() const { return _remaining; }
 protected:
@@ -41,8 +41,8 @@ private:
 class IdSpecParser : public Parser, public ValueResult
 {
 public:
-    IdSpecParser(const BucketIdFactory& bucketIdFactory) :
-        _bucketIdFactory(bucketIdFactory)
+    explicit IdSpecParser(const BucketIdFactory& bucketIdFactory) noexcept
+        : _bucketIdFactory(bucketIdFactory)
     {}
     bool parse(vespalib::stringref s) override;
     const IdValueNode & getId() const { return static_cast<const IdValueNode &>(getValue()); }
@@ -75,8 +75,8 @@ public:
 class SelectionParser : public Parser, public NodeResult
 {
 public:
-    SelectionParser(const BucketIdFactory& bucketIdFactory) :
-        _bucketIdFactory(bucketIdFactory)
+    explicit SelectionParser(const BucketIdFactory& bucketIdFactory) noexcept
+        : _bucketIdFactory(bucketIdFactory)
     {}
     bool parse(vespalib::stringref s) override;
 private:
