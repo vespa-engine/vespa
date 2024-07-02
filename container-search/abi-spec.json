@@ -480,7 +480,27 @@
       "public void setExplicitSignificance(boolean)",
       "public boolean hasExplicitSignificance()",
       "public double getSignificance()",
+      "public void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public java.util.Optional getDocumentFrequency()",
       "public boolean hasUniqueID()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.DocumentFrequency" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(long, long)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public long frequency()",
+      "public long count()"
     ],
     "fields" : [ ]
   },
@@ -874,7 +894,8 @@
       "protected com.yahoo.prelude.query.Item connectedBacklink",
       "protected double connectivity",
       "protected double significance",
-      "protected boolean explicitSignificance"
+      "protected boolean explicitSignificance",
+      "protected com.yahoo.prelude.query.DocumentFrequency documentFrequency"
     ]
   },
   "com.yahoo.prelude.query.ItemHelper" : {
@@ -1578,6 +1599,8 @@
       "public void setExplicitSignificance(boolean)",
       "public boolean hasExplicitSignificance()",
       "public double getSignificance()",
+      "public void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public java.util.Optional getDocumentFrequency()",
       "public boolean hasUniqueID()"
     ],
     "fields" : [ ]
@@ -1679,7 +1702,9 @@
       "public abstract void setSignificance(double)",
       "public abstract boolean hasExplicitSignificance()",
       "public abstract void setExplicitSignificance(boolean)",
-      "public abstract double getSignificance()"
+      "public abstract double getSignificance()",
+      "public abstract void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public abstract java.util.Optional getDocumentFrequency()"
     ],
     "fields" : [ ]
   },
@@ -1703,6 +1728,8 @@
       "public void setExplicitSignificance(boolean)",
       "public boolean hasExplicitSignificance()",
       "public double getSignificance()",
+      "public void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
+      "public java.util.Optional getDocumentFrequency()",
       "public boolean hasUniqueID()"
     ],
     "fields" : [ ]
