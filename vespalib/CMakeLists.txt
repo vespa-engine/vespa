@@ -120,7 +120,6 @@ vespa_define_module(
     src/tests/net/tls/policy_checking_certificate_verifier
     src/tests/net/tls/protocol_snooping
     src/tests/net/tls/transport_options
-    src/tests/nexus
     src/tests/nice
     src/tests/objects/identifiable
     src/tests/objects/nbostream
@@ -183,7 +182,6 @@ vespa_define_module(
     src/tests/tutorial/minimal
     src/tests/tutorial/simple
     src/tests/tutorial/threads
-    src/tests/typify
     src/tests/unwind_message
     src/tests/util
     src/tests/util/generationhandler_stress

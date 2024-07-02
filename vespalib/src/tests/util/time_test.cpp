@@ -104,5 +104,3 @@ TEST(TimeTest, saturated_add_with_overflow) {
     EXPECT_EQ(saturated_add(future, duration::max()), steady_time::max());
     EXPECT_EQ(saturated_add(past, duration::min()), steady_time::min());
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

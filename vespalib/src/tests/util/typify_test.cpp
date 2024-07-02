@@ -120,5 +120,3 @@ TEST(TypifyTest, typify_invoke_can_return_object_reference) {
     EXPECT_NE(&s1, &s2);
     EXPECT_EQ(&s2, &s3);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

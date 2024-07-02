@@ -19,6 +19,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     memory_trap_test.cpp
     mmap_file_allocator_factory_test.cpp
     mmap_file_allocator_test.cpp
+    nexus_test.cpp
     printabletest.cpp
     ptrholder.cpp
     random_test.cpp
@@ -29,6 +30,8 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     small_vector_test.cpp
     static_string_test.cpp
     string_escape_test.cpp
+    time_test.cpp
+    typify_test.cpp
     xmlserializabletest.cpp
     DEPENDS
     vespalib
