@@ -102,7 +102,7 @@
             </goals>
             <configuration>
               <sources>
-                <source>target/generate-sources/ccc</source>
+                <source>${project.basedir}/target/generated-sources/ccc</source>
               </sources>
             </configuration>
           </execution>

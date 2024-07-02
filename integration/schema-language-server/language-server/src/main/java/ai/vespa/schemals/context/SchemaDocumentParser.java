@@ -12,6 +12,9 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+import ai.vespa.schemals.context.parser.Identifier;
+import ai.vespa.schemals.context.parser.IdentifyIdentifier;
+import ai.vespa.schemals.context.parser.IdentifyType;
 import ai.vespa.schemals.parser.*;
 
 import ai.vespa.schemals.tree.CSTUtils;
@@ -23,6 +26,8 @@ public class SchemaDocumentParser {
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
+
+    private ArrayList<Identifier> parseIdentifiers;
 
     private String fileURI = "";
     private String content = "";
@@ -39,6 +44,14 @@ public class SchemaDocumentParser {
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
+
+        SchemaDocumentParser self = this;
+
+        this.parseIdentifiers = new ArrayList<Identifier>() {{
+            add(new IdentifyIdentifier(logger, self, schemaIndex));
+            add(new IdentifyType(logger));
+        }};
+
         if (content != null) {
             this.content = content;
             parseContent();
@@ -120,113 +133,21 @@ public class SchemaDocumentParser {
 
     }
 
-    private static final HashMap<Token.TokenType, HashSet<String>> tokenParentClassPairs = new HashMap<Token.TokenType, HashSet<String>>() {{
-        put(Token.TokenType.SCHEMA, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.rootSchema");
-        }});
-        put(Token.TokenType.DOCUMENT, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.documentElm");
-        }});
-        put(Token.TokenType.FIELD, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.fieldElm");
-            add("ai.vespa.schemals.parser.ast.structFieldDefinition");
-        }});
-        put(Token.TokenType.FIELDSET, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.fieldSetElm");
-        }});
-        put(Token.TokenType.STRUCT, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.structDefinitionElm");
-        }});
-        put(Token.TokenType.RANK_PROFILE, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.rankProfile");
-        }});
-    }};
-
     private static final HashSet<Token.TokenType> depricatedTokens = new HashSet<Token.TokenType>() {{
         add(Token.TokenType.ENABLE_BIT_VECTORS);
     }};
-
-    private ArrayList<Diagnostic> validateType(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
-
-        ParsedType type = ParsedType.fromName(node.getText());
-        if (type.getVariant() == Variant.UNKNOWN) {
-            ret.add(new Diagnostic(node.getRange(), "Invalid type"));
-        } else {
-            node.setSchemaType();
-        }
-
-        return ret;
-    }
 
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
 
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
         
-        // Override if we think there will be an identifier next token
-        SchemaNode parent = node.getParent();
-        Token.TokenType nodeType = node.getType();
-        HashSet<String> parentCNComp = tokenParentClassPairs.get(nodeType);
-        if (
-            parent != null &&
-            parent.get(0) == node &&
-            parentCNComp != null &&
-            parentCNComp.contains(parent.getIdentifierString()) &&
-            parent.size() > 1
-        ) {
-            SchemaNode child = parent.get(1);
-            child.setUserDefinedIdentifier();
-            if (schemaIndex.findSymbol(fileURI, nodeType, child.getText()) == null) {
-                schemaIndex.insert(fileURI, nodeType, child.getText(), child);
-            } else {
-                ret.add(new Diagnostic(child.getRange(), "Duplicate identifier"));
-            }
-
+        for (Identifier identifier : parseIdentifiers) {
+            ret.addAll(identifier.identify(node));
         }
-
-        // Check if we will parse a type
-        if (
-            node.getType() == Token.TokenType.TYPE &&
-            parent != null &&
-            parent.size() > parent.indexOf(node)
-        ) {
-            SchemaNode child = parent.get(parent.indexOf(node) + 1);
-
-            // Check if it uses deprecated array
-            if (
-                child.getClassLeafIdentifierString().equals("dataType") &&
-                child.size() > 1 &&
-                child.get(1).getText().equals("[]")
-            ) {
-                Range range = child.getRange();
-
-                child = child.get(0);
-
-                ret.add(new Diagnostic(range, "Data type syntax '" + child.getText() + "[]' is deprecated, use 'array<" + child.getText() + ">' instead.", DiagnosticSeverity.Warning,""));
-            }
-
-            // Check if type is valid
-            if (
-                child.size() > 2 &&
-                child.get(1).getType() == Token.TokenType.LESSTHAN
-            ) {
-                Token.TokenType firstChildType = child.get(0).getType();
-                if (
-                    firstChildType != Token.TokenType.ANNOTATIONREFERENCE &&
-                    firstChildType != Token.TokenType.REFERENCE
-                ) {
-                    for (int i = 2; i < child.size(); i += 2) {
-                        ret.addAll(validateType(child.get(i)));
-                    }
-                }
-            } else if (child.getType() != Token.TokenType.TENSOR_TYPE) {
-                ret.addAll(validateType(child));
-                child.setType(null);
-            }
-
-        }
+        
 
         // Check for symbol references
+        SchemaNode parent = node.getParent();
         if (
             node.getType() == Token.TokenType.FIELDS &&
             parent != null &&
