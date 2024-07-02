@@ -6,7 +6,6 @@ import java.util.HashMap;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.parser.Token;
 
 public class EventPositionContext extends EventContext {
     public final Position position;
@@ -36,9 +35,12 @@ public class EventPositionContext extends EventContext {
         this.position = position;
     }
 
+    public Position startOfWord() {
+        return document.getPreviousStartOfWord(position);
+    }
+
     public EnclosingBody findEnclosingBody() {
-        Position startOfWord = document.getPreviousStartOfWord(position);
-        SchemaNode node = document.getNodeAtPosition(startOfWord);
+        SchemaNode node = document.getNodeAtPosition(startOfWord());
 
         if (node == null) {
             /* TODO: For now assume we are inside a schema body

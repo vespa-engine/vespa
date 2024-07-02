@@ -41,11 +41,16 @@ public class SchemaDocumentLexer {
         }
     }
 
-    public LexicalToken tokenBeforePosition(Position pos) {
-        for (int i = 1; i < tokens.size(); i++) {
-            if (CSTUtils.positionLT(pos, tokens.get(i).range().getStart()))return tokens.get(i-1);
+    public LexicalToken tokenBeforePosition(Position pos, boolean skipNL) {
+        LexicalToken lastToken = null;
+        for (LexicalToken token : tokens) {
+            if (skipNL && token.type() == Token.TokenType.NL) continue;
+            Position tokenStart = token.range().getStart();
+            if (CSTUtils.positionLT(pos, tokenStart) || pos.equals(tokenStart)) return lastToken;
+
+            lastToken = token;
         }
-        return null;
+        return lastToken;
     }
 
     private void collectAllTokens(SchemaNode node) {

@@ -32,7 +32,7 @@ public class SchemaDocumentParser {
     private SchemaNode CST;
     private boolean faultySchema = true;
 
-    private SchemaDocumentLexer lexer = new SchemaDocumentLexer();
+    public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
         this(logger, diagnosticsHandler, schemaIndex, fileURI, null);
@@ -83,10 +83,6 @@ public class SchemaDocumentParser {
 
     public SchemaNode getRootNode() {
         return CST;
-    }
-
-    public SchemaDocumentLexer tokens() {
-        return lexer;
     }
 
     public SchemaNode getNodeAtOrBeforePosition(Position pos) {

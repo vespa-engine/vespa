@@ -92,7 +92,7 @@ public class CSTUtils {
         }
     }
 
-    public static Boolean positionLT(Position lhs, Position rhs) {
+    public static boolean positionLT(Position lhs, Position rhs) {
         return (
             lhs.getLine() < rhs.getLine() || (
                 lhs.getLine() == rhs.getLine() && 
@@ -101,7 +101,7 @@ public class CSTUtils {
         );
     }
 
-    public static Boolean positionInRange(Range range, Position pos) {
+    public static boolean positionInRange(Range range, Position pos) {
         return (
             positionLT(pos, range.getEnd()) && (
                 positionLT(range.getStart(), pos) ||
