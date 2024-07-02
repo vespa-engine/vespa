@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace vespalib {
 
@@ -132,5 +132,3 @@ TEST(XmlSerializableTest, test_indent)
 }
 
 } // vespalib
-
-GTEST_MAIN_RUN_ALL_TESTS()

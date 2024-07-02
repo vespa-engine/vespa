@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/small_vector.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 #include <map>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
@@ -288,5 +288,3 @@ TEST(SmallVectorTest, pop_back) {
     }
     EXPECT_EQ(my_cnt, 0);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

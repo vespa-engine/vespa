@@ -162,7 +162,6 @@ vespa_define_module(
     src/tests/slime/are_equal
     src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
-    src/tests/small_vector
     src/tests/spin_lock
     src/tests/stash
     src/tests/state_server
@@ -201,7 +200,6 @@ vespa_define_module(
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/wakeup
-    src/tests/xmlserializable
     src/tests/zcurve
 
     LIBS
