@@ -6,17 +6,21 @@ import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.completion.provider.*;
 import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.tree.CSTUtils;
 
 public class SchemaCompletion {
 
     private static CompletionProvider[] providers = {
         new BodyKeywordCompletionProvider(),
         new TypeCompletionProvider(),
-        new FieldsCompletionProvider()
+        new FieldsCompletionProvider(),
+        new MatchCompletionProvider(),
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
+
+        CSTUtils.printTreeUpToPosition(context.logger, context.document.getRootNode(), context.position);
 
         for (CompletionProvider provider : providers) {
             if (provider.match(context)) {

@@ -41,13 +41,14 @@ public class SchemaDocumentLexer {
         }
     }
 
-    public LexicalToken tokenBeforePosition(Position pos, boolean skipNL) {
+
+    public LexicalToken tokenAtOrBeforePosition(Position pos, boolean skipNL) {
         int index = indexOfPosition(pos, skipNL);
         if (index == -1)return null;
 
-        if (pos.equals(tokens.get(index).range().getStart())) index--;
+        //if (pos.equals(tokens.get(index).range().getStart())) index--;
 
-        if (index == -1)return null;
+        //if (index == -1)return null;
 
         return tokens.get(index);
     }

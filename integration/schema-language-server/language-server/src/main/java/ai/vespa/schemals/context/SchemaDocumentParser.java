@@ -84,6 +84,7 @@ public class SchemaDocumentParser {
         int offset = positionToOffset(pos);
 
         // Skip whitespace
+        // But not newline because newline is a token
         while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
 
         for (int i = offset; i >= 0; i--) {

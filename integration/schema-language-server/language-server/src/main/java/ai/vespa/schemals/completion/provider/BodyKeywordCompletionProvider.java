@@ -14,7 +14,6 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
 
 public class BodyKeywordCompletionProvider implements CompletionProvider {
-    // TODO: make compatible with parser
     // Currently key is the classLeafIdentifierString of a node with a body
     private static HashMap<String, CompletionItem[]> bodyKeywordSnippets = new HashMap<>() {{
         put("rootSchema", new CompletionItem[]{
@@ -112,6 +111,19 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
             CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0"),
         });
+
+        put("fieldSetElm", new CompletionItem[]{
+            CompletionUtils.constructSnippet("match", "match: ", "match:"),
+            CompletionUtils.constructSnippet("match", "match {\n\t$0\n}", "match {}"),
+            CompletionUtils.constructSnippet("query-command", "query-command: ")
+        });
+
+        put("rankElm", new CompletionItem[]{
+            CompletionUtils.constructBasic("filter"),
+            CompletionUtils.constructBasic("literal"),
+            CompletionUtils.constructBasic("normal"),
+        });
+
     }};
 
     private String getEnclosingBodyKey(EventPositionContext context) {

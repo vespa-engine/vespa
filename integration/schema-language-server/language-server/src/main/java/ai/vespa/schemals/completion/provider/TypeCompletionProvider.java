@@ -6,15 +6,40 @@ import org.eclipse.lsp4j.CompletionItem;
 
 
 import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.SchemaDocumentLexer;
+import ai.vespa.schemals.context.SchemaDocumentLexer.LexicalToken;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
 import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Token.TokenType;
 
 public class TypeCompletionProvider implements CompletionProvider {
+
+    private TokenType[] compoundTypes = {
+        TokenType.MAP,
+        TokenType.ARRAY,
+        TokenType.WEIGHTEDSET
+    };
+
     @Override
     public boolean match(EventPositionContext context) {
-        var lexer = context.document.lexer;
+        SchemaDocumentLexer lexer = context.document.lexer;
 
-        return lexer.matchBackwards(context.position, 1, false, Token.TokenType.FIELD, Token.TokenType.IDENTIFIER, Token.TokenType.TYPE) != null;
+        if (lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE) != null) {
+            return true;
+        }
+
+        context.logger.println(lexer.tokenAtOrBeforePosition(context.position, false).toString());
+        for (TokenType tokenType : compoundTypes) {
+            LexicalToken match = lexer.matchBackwards(context.position, 3, true, tokenType, TokenType.LESSTHAN);
+            if (match != null && match.range().getStart().getLine() == context.position.getLine())return true;
+
+            // Dirty gt symbols are inserted when incomplete type is written
+            match = lexer.tokenAtOrBeforePosition(context.position, false);
+            if (match != null && match.type() == TokenType.GREATERTHAN && match.isDirty())return true;
+        }
+
+
+        return false;
     }
 
     @Override
