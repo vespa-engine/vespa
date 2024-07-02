@@ -319,7 +319,8 @@ TEST("testString") {
     // Test std::string conversion of empty string
     stringref sref;
     std::string stdString(sref);
-    EXPECT_TRUE(strcmp("", sref.data()) == 0);
+    EXPECT_EQUAL(nullptr, sref.data());
+    EXPECT_TRUE(strcmp("", stdString.data()) == 0);
     stdString = "abc";
     stringref sref2(stdString);
     EXPECT_TRUE(stdString.c_str() == sref2.data());
