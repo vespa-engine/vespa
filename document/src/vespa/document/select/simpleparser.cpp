@@ -20,11 +20,7 @@ namespace {
 
 void
 Parser::setRemaining(vespalib::stringref s, size_t fromPos) {
-    if ((fromPos + 1) < s.size()) {
-        _remaining = s.substr(fromPos);
-    } else {
-        _remaining = "";
-    }
+    _remaining = s.substr(std::min(fromPos, s.size()));
 }
 
 bool IdSpecParser::parse(vespalib::stringref s)
