@@ -1,25 +1,22 @@
 package ai.vespa.schemals.context;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
+import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
 import ai.vespa.schemals.context.parser.IdentifyIdentifier;
+import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.context.parser.IdentifyType;
 import ai.vespa.schemals.parser.*;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.parser.ParsedType.Variant;
 
 public class SchemaDocumentParser {
 
@@ -50,6 +47,8 @@ public class SchemaDocumentParser {
         this.parseIdentifiers = new ArrayList<Identifier>() {{
             add(new IdentifyIdentifier(logger, self, schemaIndex));
             add(new IdentifyType(logger));
+            add(new IdentifySymbolReferences(logger, self, schemaIndex));
+            add(new IdentifyDeprecatedToken(logger));
         }};
 
         if (content != null) {
@@ -133,56 +132,12 @@ public class SchemaDocumentParser {
 
     }
 
-    private static final HashSet<Token.TokenType> depricatedTokens = new HashSet<Token.TokenType>() {{
-        add(Token.TokenType.ENABLE_BIT_VECTORS);
-    }};
-
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
 
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
         
         for (Identifier identifier : parseIdentifiers) {
             ret.addAll(identifier.identify(node));
-        }
-        
-
-        // Check for symbol references
-        SchemaNode parent = node.getParent();
-        if (
-            node.getType() == Token.TokenType.FIELDS &&
-            parent != null &&
-            parent.getIdentifierString() == "ai.vespa.schemals.parser.ast.fieldsElm"
-        ) {
-            for (int i = 2; i < parent.size(); i += 2) {
-                SchemaNode child = parent.get(i);
-
-                if (child.getType() == Token.TokenType.COMMA) {
-                    ret.add(new Diagnostic(child.getRange(), "Unexcpeted ',', expected an identifier."));
-                    break;
-                }
-
-                if (child.getText() != "") {
-                    if (schemaIndex.findSymbol(fileURI, Token.TokenType.FIELD, child.getText()) == null) {
-                        ret.add(new Diagnostic(child.getRange(), "Cannot find symbol: " + child.getText()));
-                    } else {
-                        child.setUserDefinedIdentifier();
-                    }
-                }
-
-                if (i + 1 < parent.size()) {
-                    if (parent.get(i + 1).getType() != Token.TokenType.COMMA) {
-                        ret.add(new Diagnostic(parent.get(i + 1).getRange(), "Unexpected token, expected ','"));
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Check if token is depricated
-        if (depricatedTokens.contains(node.getType())) {
-            ret.add(
-                new Diagnostic(node.getRange(), "Depricated", DiagnosticSeverity.Warning, "")
-            );
         }
 
         for (int i = 0; i < node.size(); i++) {
