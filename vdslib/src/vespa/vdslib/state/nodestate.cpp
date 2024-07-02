@@ -67,8 +67,8 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
         if (index == std::string::npos) {
             throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);
         }
-        std::string key = token.substr(0, index);
-        std::string value = token.substr(index + 1);
+        std::string_view key = token.substr(0, index);
+        std::string_view value = token.substr(index + 1);
         if (!key.empty()) switch (key[0]) {
             case 'b':
                 if (_type != nullptr && *type != NodeType::STORAGE) break;
@@ -121,7 +121,7 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
         }
         LOG(debug, "Unknown key %s in nodestate. Ignoring it, assuming it's a "
                    "new feature from a newer version than ourself: %s",
-            key.c_str(), vespalib::string(serialized).c_str());
+            std::string(key).c_str(), vespalib::string(serialized).c_str());
     }
 }
 
