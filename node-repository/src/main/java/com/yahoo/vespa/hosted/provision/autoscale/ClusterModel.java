@@ -92,7 +92,7 @@ public class ClusterModel {
         this.nodes = clusterNodes;
         this.current = current;
         this.clock = clock;
-        this.scalingDuration = cluster.scalingDuration(clusterSpec);
+        this.scalingDuration = cluster.scalingDuration();
         this.allocationDuration = cluster.allocationDuration(clusterSpec);
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
@@ -209,7 +209,7 @@ public class ClusterModel {
         return true;
     }
 
-    public static Duration minScalingDuration(ClusterSpec clusterSpec) {
+    public static Duration minScalingDuration() {
         return Duration.ofMinutes(5);
     }
 
