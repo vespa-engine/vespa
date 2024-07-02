@@ -139,7 +139,7 @@ struct FeedOperationBatchingTest : FileStorTestFixture {
         auto id = as_cmd->getDocumentId();
         ASSERT_TRUE(id.getScheme().hasNumber());
         EXPECT_EQ(id.getScheme().getNumber(), expected_bucket_idx) << id;
-        std::string actual_id_part = id.getScheme().getNamespaceSpecific();
+        std::string actual_id_part(id.getScheme().getNamespaceSpecific());
         std::string expected_id_part = std::to_string(expected_doc_idx);
         EXPECT_EQ(actual_id_part, expected_id_part) << id;
     }

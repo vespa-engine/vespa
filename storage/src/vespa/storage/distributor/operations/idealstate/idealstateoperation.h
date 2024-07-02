@@ -195,11 +195,11 @@ public:
     */
     api::StorageMessage::Priority getPriority() const noexcept { return _priority; }
 
-    void setDetailedReason(const std::string& detailedReason) {
-        _detailedReason = detailedReason;
-    }
-    void setDetailedReason(std::string&& detailedReason) {
+    void setDetailedReason(std::string detailedReason) {
         _detailedReason = std::move(detailedReason);
+    }
+    void setDetailedReason(vespalib::stringref detailedReason) {
+        _detailedReason = std::string(detailedReason);
     }
 
     const std::string& getDetailedReason() const override {

@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "util.h"
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/hostreporter/hostreporter.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -38,7 +37,7 @@ TEST(HostInfoReporterTest, host_info_reporter) {
     hostinfo.printReport(stream);
     stream << End();
 
-    std::string jsonData = json.str();
+    std::string_view jsonData = json.str();
     vespalib::Slime slime;
     JsonFormat::decode(Memory(jsonData), slime);
     EXPECT_EQ(slime.get()["dummy"]["foo"].asString(), "bar");
