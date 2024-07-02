@@ -87,6 +87,40 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         putString(index, buffer);
     }
 
+    private WeakAndItem foldSegments() {
+        var result = new WeakAndItem(this.index, this.n);
+        for (var child : items()) {
+            if (child instanceof SegmentItem segment && segment.shouldFoldIntoWand()) {
+                for (var subItem : segment.items()) {
+                    result.addItem(subItem);
+                }
+            } else {
+                result.addItem(child);
+            }
+        }
+        return result;
+    }
+
+    private boolean needsFolding() {
+        for (var subItem : items()) {
+            if (subItem instanceof SegmentItem segment) {
+                if (segment.shouldFoldIntoWand()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int encode(ByteBuffer buffer) {
+        if (needsFolding()) {
+            return foldSegments().encode(buffer);
+        } else {
+            return super.encode(buffer);
+        }
+    }
+
     @Override
     public void disclose(Discloser discloser) {
         super.disclose(discloser);

@@ -1510,6 +1510,8 @@
       "public void setSegmentingRule(com.yahoo.prelude.query.SegmentingRule)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
+      "public boolean shouldFoldIntoWand()",
+      "public void shouldFoldIntoWand(boolean)",
       "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -1877,6 +1879,7 @@
       "public int getN()",
       "public boolean nIsExplicit()",
       "public void setN(int)",
+      "public int encode(java.nio.ByteBuffer)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
