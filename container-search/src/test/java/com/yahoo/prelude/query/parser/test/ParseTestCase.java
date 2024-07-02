@@ -2578,6 +2578,13 @@ public class ParseTestCase {
     }
 
     @Test
+    void testIdeographicComma() {
+        tester.assertParsed("WEAKAND(100) foo bar", "foo bar", Query.Type.WEAKAND);
+        tester.assertParsed("WEAKAND(100) foo bar", "foo、bar", Query.Type.WEAKAND);
+        tester.assertParsed("WEAKAND(100) foo bar", "foo。bar", Query.Type.WEAKAND);
+    }
+
+    @Test
     void testNoGrammar1() {
         tester.assertParsed("WEAKAND(100) foobar", "foobar", Query.Type.TOKENIZE);
     }
