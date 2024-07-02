@@ -137,6 +137,9 @@ public class SchemaDocumentParser {
         put(Token.TokenType.STRUCT, new HashSet<String>() {{
             add("ai.vespa.schemals.parser.ast.structDefinitionElm");
         }});
+        put(Token.TokenType.RANK_PROFILE, new HashSet<String>() {{
+            add("ai.vespa.schemals.parser.ast.rankProfile");
+        }});
     }};
 
     private static final HashSet<Token.TokenType> depricatedTokens = new HashSet<Token.TokenType>() {{
