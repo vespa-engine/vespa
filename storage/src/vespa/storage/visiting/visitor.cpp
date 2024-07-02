@@ -458,7 +458,7 @@ Visitor::reportProblem(const api::ReturnCode& problemCode)
     os << "[From content node " << _ownNodeIndex << "] ";
     os << api::ReturnCode::getResultString(problemCode.getResult())
        << ": " << problemCode.getMessage();
-    reportProblem(os.str());
+    reportProblem(std::string(os.str()));
 }
 
 void

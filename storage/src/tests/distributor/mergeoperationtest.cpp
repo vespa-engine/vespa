@@ -148,13 +148,12 @@ TEST_F(MergeOperationTest, fail_if_delete_bucket_fails) {
 
 namespace {
 std::string getNodeList(std::string state, uint32_t redundancy, std::string existing) {
-    lib::Distribution distribution(
-            lib::Distribution::getDefaultDistributionConfig(redundancy));
+    lib::Distribution distribution(lib::Distribution::getDefaultDistributionConfig(redundancy));
     lib::ClusterState clusterState(state);
     vespalib::StringTokenizer st(existing, ",");
     std::vector<BucketCopy> bucketDB(st.size());
     for (uint32_t i = 0; i < st.size(); i++) {
-        std::string num = st[i];
+        std::string num(st[i]);
         size_t pos = num.find('t');
         bool trusted = false;
 

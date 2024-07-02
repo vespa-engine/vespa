@@ -65,12 +65,13 @@ GeoLocationParser::correctDimensionalitySkip(const char * &p) {
 }
 
 bool
-GeoLocationParser::parseOldFormat(const std::string &locStr)
+GeoLocationParser::parseOldFormat(std::string_view locStr)
 {
     bool foundBoundingBox = false;
     bool foundLoc = false;
-    const char *p = locStr.c_str();
-    while (*p != '\0') {
+    const char *p = locStr.data();
+    const char * end = p + locStr.size();
+    while (p != end) {
         if (*p == '[') {
             p++;
             if (foundBoundingBox) {
@@ -174,7 +175,7 @@ GeoLocationParser::parseOldFormat(const std::string &locStr)
 }
 
 bool
-GeoLocationParser::parseWithField(const std::string &str)
+GeoLocationParser::parseWithField(std::string_view str)
 {
      auto sep = str.find(':');
      if (sep == std::string::npos) {
@@ -182,12 +183,11 @@ GeoLocationParser::parseWithField(const std::string &str)
          return false;
      }
      _field_name = str.substr(0, sep);
-     std::string only_loc = str.substr(sep + 1);
-     return parseNoField(only_loc);
+     return parseNoField(str.substr(sep + 1));
 }
 
 bool
-GeoLocationParser::parseNoField(const std::string &str)
+GeoLocationParser::parseNoField(std::string_view str)
 {
     if (str.empty()) {
         _parseError = "Location string is empty";
@@ -204,14 +204,14 @@ GeoLocationParser::parseNoField(const std::string &str)
 }
 
 bool
-GeoLocationParser::parseJsonFormat(const std::string &str)
+GeoLocationParser::parseJsonFormat(std::string_view str)
 {
     vespalib::Slime slime;
     size_t decoded = vespalib::slime::JsonFormat::decode(str, slime);
     if (decoded == 0) {
         Issue::report("GeoLocationParser: bad location JSON: %s\n>> %s <<",
                       slime.get()["error_message"].asString().make_string().c_str(),
-                      str.c_str());
+                      std::string(str).c_str());
         _parseError = "Failed decoding JSON format location";
         return false;
     }
@@ -252,7 +252,7 @@ GeoLocation
 GeoLocationParser::getGeoLocation() const
 {
     if (! _valid) {
-        return GeoLocation();
+        return {};
     }
     GeoLocation::Aspect aspect(_x_aspect);
     if (_has_bounding_box) {
@@ -262,20 +262,20 @@ GeoLocationParser::getGeoLocation() const
         if (_has_point) {
             GeoLocation::Point point{_x, _y};
             if (_radius == GeoLocation::radius_inf) {
-                return GeoLocation(bounding_box, point, aspect);
+                return {bounding_box, point, aspect};
             }
-            return GeoLocation(bounding_box, point, _radius, aspect);
+            return {bounding_box, point, _radius, aspect};
         }
-        return GeoLocation(bounding_box);
+        return {bounding_box};
     }
     if (_has_point) {
         GeoLocation::Point point{_x, _y};
         if (_radius == GeoLocation::radius_inf) {
-            return GeoLocation(point, aspect);
+            return {point, aspect};
         }
-        return GeoLocation(point, _radius, aspect);
+        return {point, _radius, aspect};
     }
-    return GeoLocation();
+    return {};
 }
 
 } // namespace

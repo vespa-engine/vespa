@@ -56,7 +56,6 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     // added type safety.
     using NodeCount = int;
     using Redundancy = int;
-    using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
 
     std::string resolve_stripe_operation_routing(const std::shared_ptr<api::StorageMessage> & msg) {
         handle_top_level_message(msg);
@@ -70,7 +69,7 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
             }
             stripes[i]->_messageQueue.clear();
         }
-        return posted_msgs.str();
+        return std::string(posted_msgs.str());
     }
 
     StatusReporterDelegate& distributor_status_delegate() {

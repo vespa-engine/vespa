@@ -59,8 +59,7 @@ protected:
     parseFieldValue(const std::string& expression);
 
     template <typename ContainsType>
-    select::ResultList doParse(vespalib::stringref expr,
-                               const ContainsType& t);
+    select::ResultList doParse(vespalib::stringref expr, const ContainsType& t);
 
     std::string parse_to_tree(const std::string& str);
 
@@ -495,13 +494,13 @@ select::ResultList
 DocumentSelectParserTest::doParse(vespalib::stringref expr,
                                   const ContainsType& t)
 {
-    std::unique_ptr<select::Node> root(_parser->parse(expr));
+    std::unique_ptr<select::Node> root(_parser->parse(std::string(expr)));
     select::ResultList result(root->contains(t));
 
     std::unique_ptr<select::Node> cloned(root->clone());
     select::ResultList clonedResult(cloned->contains(t));
 
-    std::unique_ptr<select::Node> traced(_parser->parse(expr));
+    std::unique_ptr<select::Node> traced(_parser->parse(std::string(expr)));
     std::ostringstream oss;
     oss << "for expr: " << expr << "\n";
     select::ResultList tracedResult(root->trace(t, oss));
