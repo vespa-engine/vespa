@@ -29,8 +29,8 @@ cosign verify \
     $SRC_IMAGE@$SRC_IMAGE_DIGEST
 
 # Copy to Docker Hub
-if curl -fsSL https://hub.docker.com/v2/repositories/vespaengine/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
-    echo "Container image docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION already exists."
+if curl -fsSL https://hub.docker.com/v2/repositories/vespaengine/vespa/tags/$VESPA_VERSION &> /dev/null; then
+    echo "Container image docker.io/vespaengine/vespa:$VESPA_VERSION already exists."
 else
   DST_IMAGE=docker.io/vespaengine/vespa:$VESPA_VERSION
   crane auth login -u aressem -p $DOCKER_HUB_DEPLOY_TOKEN docker.io
