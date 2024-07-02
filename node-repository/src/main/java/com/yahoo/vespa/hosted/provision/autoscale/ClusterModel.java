@@ -423,7 +423,7 @@ public class ClusterModel {
 
         public String toString() {
             return "cpu model idealLoad: " + idealLoad() + ", queryFraction: " + queryFraction() +
-                   ", growthRateHeadroom: " + growthRateHeadroom() + ", trafficShiftHeadroom:" + trafficShiftHeadroom();
+                   ", growthRateHeadroom: " + growthRateHeadroom() + ", trafficShiftHeadroom: " + trafficShiftHeadroom();
         }
 
     }
