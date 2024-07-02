@@ -6,16 +6,25 @@
 
 namespace document::select::simple {
 
-size_t eatWhite(const char * s, size_t len)
-{
-    size_t pos(0);
-    for (;(pos < len) && isspace(s[pos]); pos++);
-    return pos;
+namespace {
+    size_t eatWhite(const char *s, size_t len) {
+        size_t pos(0);
+        for (; (pos < len) && isspace(s[pos]); pos++);
+        return pos;
+    }
+
+    bool icmp(char c, char l) {
+        return tolower(c) == l;
+    }
 }
 
-bool icmp(char c, char l)
-{
-    return tolower(c) == l;
+void
+Parser::setRemaining(vespalib::stringref s, size_t fromPos) {
+    if ((fromPos + 1) < s.size()) {
+        _remaining = s.substr(fromPos);
+    } else {
+        _remaining = "";
+    }
 }
 
 bool IdSpecParser::parse(vespalib::stringref s)
@@ -67,7 +76,7 @@ bool IdSpecParser::parse(vespalib::stringref s)
             }
         }
     }
-    setRemaining(s.substr(pos));
+    setRemaining(s, pos);
     return retval;
 }
 
@@ -111,7 +120,7 @@ bool OperatorParser::parse(vespalib::stringref s)
             retval = false;
         }
     }
-    setRemaining(s.substr(pos));
+    setRemaining(s, pos);
     return retval;
 }
 
@@ -135,7 +144,7 @@ bool StringParser::parse(vespalib::stringref s)
                 setValue(std::make_unique<StringValueNode>(str));
             }
         }
-        setRemaining(s.substr(pos+1));
+        setRemaining(s, pos+1);
     }
     return retval;
 }
@@ -158,7 +167,7 @@ bool IntegerParser::parse(vespalib::stringref s)
             setValue(std::make_unique<IntegerValueNode>(v, false));
         }
     }
-    setRemaining(s.substr(pos));
+    setRemaining(s, pos);
     return retval;
 }
 

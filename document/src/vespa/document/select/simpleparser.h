@@ -15,12 +15,14 @@ public:
     vespalib::stringref getRemaining() const { return _remaining; }
 protected:
     void setRemaining(vespalib::stringref s) { _remaining = s; }
+    void setRemaining(vespalib::stringref s, size_t fromPos);
 private:
     vespalib::stringref _remaining;
 };
 
 class NodeResult {
 public:
+    //TODO Dirty, should force use of std::move
     Node::UP getNode() { return std::move(_node); }
 protected:
     void setNode(Node::UP node) { _node = std::move(node); }
@@ -30,6 +32,7 @@ private:
 
 class ValueResult {
 public:
+    //TODO Dirty, should force use of std::move
     ValueNode::UP stealValue() { return std::move(_value); }
     const ValueNode & getValue() const { return *_value; }
 protected:
