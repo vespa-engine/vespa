@@ -84,7 +84,7 @@ public class ParsedSchema extends ParsedBlock {
         extraAnnotations.put(annName, annotation);
     }
 
-    void addDocument(ParsedDocument document) {
+    public void addDocument(ParsedDocument document) {
         verifyThat(myDocument == null,
                    "already has", myDocument, "so cannot add", document);
         // TODO - disallow?
@@ -101,13 +101,13 @@ public class ParsedSchema extends ParsedBlock {
         docSums.put(dsName, docsum);
     }
 
-    void addField(ParsedField field) {
+    public void addField(ParsedField field) {
         String fieldName = field.name();
         verifyThat(! extraFields.containsKey(fieldName), "already has field", fieldName);
         extraFields.put(fieldName, field);
     }
 
-    void addFieldSet(ParsedFieldSet fieldSet) {
+    public void addFieldSet(ParsedFieldSet fieldSet) {
         String fsName = fieldSet.name();
         verifyThat(! fieldSets.containsKey(fsName), "already has fieldset", fsName);
         fieldSets.put(fsName, fieldSet);
@@ -127,7 +127,7 @@ public class ParsedSchema extends ParsedBlock {
         onnxModels.add(model);
     }
 
-    void addRankProfile(ParsedRankProfile profile) {
+    public void addRankProfile(ParsedRankProfile profile) {
         String rpName = profile.name();
         verifyThat(! rankProfiles.containsKey(rpName), "already has rank-profile", rpName);
         rankProfiles.put(rpName, profile);
@@ -137,7 +137,7 @@ public class ParsedSchema extends ParsedBlock {
         constants.put(constant.name(), constant);
     }
 
-    void addStruct(ParsedStruct struct) {
+    public void addStruct(ParsedStruct struct) {
         String sName = struct.name();
         verifyThat(! extraStructs.containsKey(sName), "already has struct", sName);
         extraStructs.put(sName, struct);

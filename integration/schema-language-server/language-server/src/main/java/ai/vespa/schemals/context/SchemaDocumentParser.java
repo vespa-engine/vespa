@@ -15,7 +15,11 @@ import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
 import ai.vespa.schemals.context.parser.IdentifyIdentifier;
 import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.context.parser.IdentifyType;
-import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.SchemaParser;
+import ai.vespa.schemals.parser.ParseException;
+import ai.vespa.schemals.parser.Node;
+import com.yahoo.schema.parser.ParsedSchema;
+// import com.yahoo.schema.parser.ParsedBlock;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -168,7 +172,7 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing document: " + fileURI);
 
-        ParsedBlock.setCanIgnore(true);
+        //ParsedBlock.setCanIgnore(true);
 
         SchemaParser parserStrict = new SchemaParser(getFileName(), sequence);
         parserStrict.setParserTolerant(false);

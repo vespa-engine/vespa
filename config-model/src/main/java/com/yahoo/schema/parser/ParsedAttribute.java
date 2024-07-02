@@ -12,7 +12,7 @@ import java.util.Optional;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedAttribute extends ParsedBlock {
+public class ParsedAttribute extends ParsedBlock {
 
     private boolean enableOnlyBitVector = false;
     private boolean enableFastAccess = false;
@@ -24,7 +24,7 @@ class ParsedAttribute extends ParsedBlock {
     private ParsedSorting sortSettings = null;
     private String distanceMetric = null;
 
-    ParsedAttribute(String name) {
+    public ParsedAttribute(String name) {
         super(name, "attribute");
     }
 
@@ -39,25 +39,25 @@ class ParsedAttribute extends ParsedBlock {
     boolean getPaged() { return this.enablePaged; }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
 
-    void addAlias(String from, String to) {
+    public void addAlias(String from, String to) {
         verifyThat(! aliases.containsKey(to), "already has alias", to);
         aliases.put(to, from);
     }
 
-    void setDistanceMetric(String value) {
+    public void setDistanceMetric(String value) {
         verifyThat(distanceMetric == null, "already has distance-metric", distanceMetric);
         this.distanceMetric = value;
     }
 
-    ParsedSorting sortInfo() {
+    public ParsedSorting sortInfo() {
         if (sortSettings == null) sortSettings = new ParsedSorting(name(), "attribute.sorting");
         return this.sortSettings;
     }
 
-    void setEnableOnlyBitVector(boolean value) { this.enableOnlyBitVector = value; }
-    void setFastAccess(boolean value) { this.enableFastAccess = true; }
-    void setFastRank(boolean value) { this.enableFastRank = true; }
-    void setFastSearch(boolean value) { this.enableFastSearch = true; }
-    void setMutable(boolean value) { this.enableMutable = true; }
-    void setPaged(boolean value) { this.enablePaged = true; }
+    public void setEnableOnlyBitVector(boolean value) { this.enableOnlyBitVector = value; }
+    public void setFastAccess(boolean value) { this.enableFastAccess = true; }
+    public void setFastRank(boolean value) { this.enableFastRank = true; }
+    public void setFastSearch(boolean value) { this.enableFastSearch = true; }
+    public void setMutable(boolean value) { this.enableMutable = true; }
+    public void setPaged(boolean value) { this.enablePaged = true; }
 }
