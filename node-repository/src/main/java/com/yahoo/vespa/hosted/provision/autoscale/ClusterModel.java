@@ -92,7 +92,7 @@ public class ClusterModel {
         this.nodes = clusterNodes;
         this.current = current;
         this.clock = clock;
-        this.scalingDuration = cluster.scalingDuration(clusterSpec);
+        this.scalingDuration = cluster.scalingDuration();
         this.allocationDuration = cluster.allocationDuration(clusterSpec);
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
@@ -209,7 +209,7 @@ public class ClusterModel {
         return true;
     }
 
-    public static Duration minScalingDuration(ClusterSpec clusterSpec) {
+    public static Duration minScalingDuration() {
         return Duration.ofMinutes(5);
     }
 
@@ -266,6 +266,10 @@ public class ClusterModel {
             ideal = ideal.multiply(localInformationWeight).add(bcpGroupIdeal.multiply(1 - localInformationWeight));
         }
         return ideal;
+    }
+
+    public CpuModel cpu() {
+        return cpu;
     }
 
     private boolean canRescaleWithinBcpDeadline() {
@@ -384,7 +388,7 @@ public class ClusterModel {
         return ( (headroom -1 ) * Math.min(1, averageQueryRate().orElse(0) / queryRateGivingFullConfidence) ) + 1;
     }
 
-    private class CpuModel {
+    public class CpuModel {
 
         /** Ideal cpu load must take the application traffic fraction into account. */
         double idealLoad() {
@@ -415,6 +419,11 @@ public class ClusterModel {
             double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
             double writeFraction = 1 - queryRateFraction;
             return queryRateFraction * relativeQueryCost / (queryRateFraction * relativeQueryCost + writeFraction);
+        }
+
+        public String toString() {
+            return "cpu model idealLoad: " + idealLoad() + ", queryFraction: " + queryFraction() +
+                   ", growthRateHeadroom: " + growthRateHeadroom() + ", trafficShiftHeadroom: " + trafficShiftHeadroom();
         }
 
     }

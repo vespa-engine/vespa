@@ -69,8 +69,10 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
         var loadAdjustment = model.loadAdjustment();
-        if (enableDetailedLogging)
-            log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " + loadAdjustment.toString());
+        if (enableDetailedLogging) {
+            log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " +
+                     loadAdjustment.toString() + ", ideal " + model.idealLoad() + ", " + model.cpu());
+        }
 
         var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, enableDetailedLogging);
 
