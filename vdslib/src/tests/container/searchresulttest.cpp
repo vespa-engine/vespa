@@ -9,7 +9,7 @@
 
 using vespalib::FeatureValues;
 using FeatureValue = vespalib::FeatureSet::Value;
-using ConvertedValue = std::variant<double, std::string>;
+using ConvertedValue = std::variant<double, vespalib::string>;
 
 namespace vdslib {
 
@@ -50,8 +50,8 @@ void populate(SearchResult& sr, FeatureValues& mf)
 {
     sr.addHit(7, "doc1", 5);
     sr.addHit(8, "doc2", 7);
-    mf.names.push_back("foo");
-    mf.names.push_back("bar");
+    mf.names.emplace_back("foo");
+    mf.names.emplace_back("bar");
     mf.values.resize(4);
     mf.values[0].set_double(1.0);
     mf.values[1].set_data({doc1_mf_data.data(), doc1_mf_data.size()});
@@ -67,7 +67,7 @@ void check_match_features(SearchResult& sr, const vespalib::string& label, bool 
     EXPECT_EQ((std::vector<ConvertedValue>{12.0, "There"}), convert(sr.get_match_feature_values(sort_remap ? 0 : 1)));
 }
 
-void check_match_features(std::vector<char> buf, const vespalib::string& label, bool sort_remap)
+void check_match_features(const std::vector<char> & buf, const vespalib::string& label, bool sort_remap)
 {
     SearchResult sr;
     deserialize(sr, buf);
