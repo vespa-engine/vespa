@@ -169,7 +169,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
             } catch (Throwable e) {
-                logger.println(e);
+                handleThrowableException(e);
             }
 
             return new SemanticTokens(new ArrayList<>());
@@ -214,5 +214,11 @@ public class SchemaTextDocumentService implements TextDocumentService {
     
             return Either.forLeft(new ArrayList<Location>());
         });
+    }
+
+
+    private void handleThrowableException(Throwable e) {
+        logger.println(e.getCause());
+        e.printStackTrace(logger);
     }
 }

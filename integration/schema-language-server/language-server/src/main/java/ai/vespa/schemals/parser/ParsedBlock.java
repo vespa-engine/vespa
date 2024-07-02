@@ -6,6 +6,8 @@ package ai.vespa.schemals.parser;
  * @author arnej27959
  **/
 public class ParsedBlock {
+    static private boolean canIgnore = false;
+
     private final String name;
     private final String blockType;
 
@@ -18,7 +20,11 @@ public class ParsedBlock {
     public final String blockType() { return blockType; }
 
     protected void verifyThat(boolean check, String msg, Object ... msgDetails) {
-        if (check) return;
+        verifyThat(check, false, msg, msgDetails);
+    }
+
+    protected void verifyThat(boolean check, boolean ignoreable, String msg, Object ... msgDetails) {
+        if (check || (ignoreable && canIgnore)) return;
         var buf = new StringBuilder();
         buf.append(blockType).append(" '").append(name).append("' error: ");
         buf.append(msg);
@@ -26,11 +32,16 @@ public class ParsedBlock {
             buf.append(" ");
             buf.append(detail.toString());
         }
+
         throw new IllegalArgumentException(buf.toString());
     }
 
     public String toString() {
         return blockType + " '" + name + "'";
+    }
+
+    public static void setCanIgnore(boolean ignore) {
+        canIgnore = ignore;
     }
 }
 
