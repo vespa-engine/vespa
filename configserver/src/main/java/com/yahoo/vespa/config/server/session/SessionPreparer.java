@@ -283,9 +283,7 @@ public class SessionPreparer {
             // Validate after doing our own preprocessing on these two files
             ApplicationMetaData meta = applicationPackage.getMetaData();
             InstanceName instance = meta.getApplicationId().instance();
-            Tags tags = applicationPackage.getDeploymentSpec().instance(instance)
-                                          .map(DeploymentInstanceSpec::tags)
-                                          .orElse(Tags.empty());
+            Tags tags = applicationPackage.getDeploymentSpec().tags(instance, zone.environment());
             if (servicesXml.exists()) {
                 vespaPreprocess(applicationPackageDir.getAbsoluteFile(), servicesXml, meta, tags);
             }
