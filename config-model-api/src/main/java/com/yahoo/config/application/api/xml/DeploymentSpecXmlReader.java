@@ -266,7 +266,6 @@ public class DeploymentSpecXmlReader {
     @SuppressWarnings("fallthrough")
     private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag, Bcp defaultBcp) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
-        Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
         Optional<String> testerNodes = mostSpecificSibling(stepTag, testerTag).map(tester -> XML.getChild(tester, nodesTag)).map(XML::toString);
 
         switch (stepTag.getTagName()) {
@@ -276,7 +275,7 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerFlavor, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag)));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -294,7 +293,7 @@ public class DeploymentSpecXmlReader {
                                             .flatMap(child -> readSteps(child, prodAttributes, parentTag, defaultBcp).stream())
                                             .toList()));
             case regionTag:
-                return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, testerNodes, stepTag));
+                return List.of(readDeclaredZone(Environment.prod, athenzService, testerNodes, stepTag));
             default:
                 return List.of();
         }
@@ -683,9 +682,9 @@ public class DeploymentSpecXmlReader {
     }
 
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
-                                          Optional<String> testerFlavor, Optional<String> testerNodes, Element regionTag) {
+                                          Optional<String> testerNodes, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                athenzService, testerFlavor, testerNodes,
+                                athenzService, testerNodes,
                                 readCloudAccounts(regionTag), readHostTTL(regionTag));
     }
 

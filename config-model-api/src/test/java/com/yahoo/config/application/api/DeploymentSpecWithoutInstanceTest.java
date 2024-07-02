@@ -582,20 +582,6 @@ public class DeploymentSpecWithoutInstanceTest {
     }
 
     @Test
-    public void customTesterFlavor() {
-        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
-                                                     "  <test tester-flavor=\"d-1-4-20\" />\n" +
-                                                     "  <staging />\n" +
-                                                     "  <prod tester-flavor=\"d-2-8-50\">\n" +
-                                                     "    <region active=\"false\">us-north-7</region>\n" +
-                                                     "  </prod>\n" +
-                                                     "</deployment>");
-        assertEquals(Optional.of("d-1-4-20"), spec.requireInstance("default").steps().get(0).zones().get(0).testerFlavor());
-        assertEquals(Optional.empty(), spec.requireInstance("default").steps().get(1).zones().get(0).testerFlavor());
-        assertEquals(Optional.of("d-2-8-50"), spec.requireInstance("default").steps().get(2).zones().get(0).testerFlavor());
-    }
-
-    @Test
     public void emptyEndpoints() {
         var spec = DeploymentSpec.fromXml("<deployment><endpoints/></deployment>");
         assertEquals(List.of(), spec.requireInstance("default").endpoints());
