@@ -7,10 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.lsp4j.SymbolInformation;
-
-import ai.vespa.schemals.parser.*;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.Token;
 
 public class SchemaIndex {
 

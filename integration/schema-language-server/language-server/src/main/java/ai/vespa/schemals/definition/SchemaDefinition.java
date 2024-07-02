@@ -10,7 +10,7 @@ import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.tree.SchemaNode;
 
-import ai.vespa.schemals.parser.*;
+import ai.vespa.schemals.parser.Token;
 
 public class SchemaDefinition {
 
