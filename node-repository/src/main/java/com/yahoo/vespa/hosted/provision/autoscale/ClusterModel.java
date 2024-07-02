@@ -268,6 +268,10 @@ public class ClusterModel {
         return ideal;
     }
 
+    public CpuModel cpu() {
+        return cpu;
+    }
+
     private boolean canRescaleWithinBcpDeadline() {
         return scalingDuration().minus(cluster.clusterInfo().bcpDeadline()).isNegative();
     }
@@ -384,7 +388,7 @@ public class ClusterModel {
         return ( (headroom -1 ) * Math.min(1, averageQueryRate().orElse(0) / queryRateGivingFullConfidence) ) + 1;
     }
 
-    private class CpuModel {
+    public class CpuModel {
 
         /** Ideal cpu load must take the application traffic fraction into account. */
         double idealLoad() {
@@ -415,6 +419,11 @@ public class ClusterModel {
             double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
             double writeFraction = 1 - queryRateFraction;
             return queryRateFraction * relativeQueryCost / (queryRateFraction * relativeQueryCost + writeFraction);
+        }
+
+        public String toString() {
+            return "cpu model idealLoad: " + idealLoad() + ", queryFraction: " + queryFraction() +
+                   ", growthRateHeadroom: " + growthRateHeadroom() + ", trafficShiftHeadroom:" + trafficShiftHeadroom();
         }
 
     }
