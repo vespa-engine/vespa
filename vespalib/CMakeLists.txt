@@ -36,7 +36,6 @@ vespa_define_module(
     src/tests/barrier
     src/tests/benchmark
     src/tests/benchmark_timer
-    src/tests/bits
     src/tests/box
     src/tests/btree
     src/tests/btree/btree-scan-speed
@@ -53,7 +52,6 @@ vespa_define_module(
     src/tests/coro/received
     src/tests/coro/waiting_for
     src/tests/cpu_usage
-    src/tests/crc
     src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader

@@ -6,7 +6,9 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     SOURCES
     gtest_runner.cpp
     bfloat16_test.cpp
+    bits_test.cpp
     cgroup_resource_limits_test.cpp
+    crc_test.cpp
     file_area_freelist_test.cpp
     generation_hold_list_test.cpp
     generationhandler_test.cpp

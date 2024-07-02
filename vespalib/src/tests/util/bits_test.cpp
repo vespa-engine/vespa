@@ -56,5 +56,3 @@ void BitsTest::testBuffer()
     Bits::reverse(&a, sizeof(a));
     EXPECT_EQ(a, b);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

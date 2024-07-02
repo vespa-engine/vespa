@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
@@ -42,5 +42,3 @@ TEST(CrcTest, benchmark)
     }
     printf("sum = %x\n", sum);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
