@@ -500,7 +500,7 @@
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public long frequency()",
-      "public long corpusSize()"
+      "public long count()"
     ],
     "fields" : [ ]
   },
