@@ -168,7 +168,3 @@ TEST(RequireTest, explicit_require_failure) {
             }
         }, E);
 }
-
-//-----------------------------------------------------------------------------
-
-GTEST_MAIN_RUN_ALL_TESTS()

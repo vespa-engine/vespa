@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
@@ -133,5 +133,3 @@ TEST(RandoMTest, test_normal_distribution)
     EXPECT_TRUE(buckets[10] > buckets[0]);
     EXPECT_TRUE(buckets[90] > buckets[100]);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

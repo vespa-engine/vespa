@@ -100,7 +100,6 @@ vespa_define_module(
     src/tests/invokeservice
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
-    src/tests/json
     src/tests/latch
     src/tests/left_right_heap
     src/tests/make_fixture_macros
@@ -140,7 +139,6 @@ vespa_define_module(
     src/tests/random
     src/tests/regex
     src/tests/rendezvous
-    src/tests/require
     src/tests/runnable_pair
     src/tests/rusage
     src/tests/rw_spin_lock
