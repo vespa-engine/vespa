@@ -7,6 +7,14 @@ import org.eclipse.lsp4j.Position;
 public class EventPositionContext extends EventContext {
     public final Position position;
 
+    public enum EnclosingBody {
+        ROOT,
+        SCHEMA,
+        DOCUMENT,
+        FIELD
+    }
+
+
     public EventPositionContext(
         PrintStream logger,
         SchemaDocumentScheduler scheduler,
@@ -18,4 +26,7 @@ public class EventPositionContext extends EventContext {
         this.position = position;
     }
 
+    public Position startOfWord() {
+        return document.getPreviousStartOfWord(position);
+    }
 }
