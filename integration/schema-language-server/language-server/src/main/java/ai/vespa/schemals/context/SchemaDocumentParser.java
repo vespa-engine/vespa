@@ -220,8 +220,8 @@ public class SchemaDocumentParser {
                 cause instanceof com.yahoo.searchlib.rankingexpression.parser.ParseException &&
                 node instanceof Token
             ) {
-                com.yahoo.searchlib.rankingexpression.parser.ParseException parseCause = (com.yahoo.searchlib.rankingexpression.parser.ParseException) cause;
-                com.yahoo.searchlib.rankingexpression.parser.Token tok = parseCause.currentToken.next;
+                var parseCause = (com.yahoo.searchlib.rankingexpression.parser.ParseException) cause;
+                var tok = parseCause.currentToken.next;
 
                 Position relativeStartPosition = new Position(
                     tok.beginLine - 1,
