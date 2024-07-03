@@ -76,7 +76,7 @@ public:
     enum Flag { READONLY = 1, CREATE = 2, TRUNC = 8 };
 
     /** Create a file instance, without opening the file. */
-    File(stringref filename);
+    File(std::string_view filename);
 
     /** Closes the file if not instructed to do otherwise. */
     ~File();
@@ -154,7 +154,7 @@ public:
      * @throw   IoException If we failed to read from file.
      * @return  The content of the file.
      */
-    static string readAll(stringref path);
+    static string readAll(std::string_view path);
 
     /**
      * Sync file or directory.
@@ -164,7 +164,7 @@ public:
      *
      * @throw IoException If we failed to sync the file.
      */
-    static void sync(stringref path);
+    static void sync(std::string_view path);
 
     bool close();
     bool unlink();
@@ -175,7 +175,7 @@ public:
  */
 using DirectoryList = std::vector<string>;
 extern DirectoryList listDirectory(const string & path);
-string dirname(stringref name);
-string getOpenErrorString(const int osError, stringref name);
+string dirname(std::string_view name);
+string getOpenErrorString(const int osError, std::string_view name);
 
 } // vespalib

@@ -50,14 +50,14 @@ public:
     JSONWriter & beginArray();
     JSONWriter & endArray();
     JSONWriter & appendNull();
-    JSONWriter & appendKey(stringref str);
+    JSONWriter & appendKey(std::string_view str);
     JSONWriter & appendBool(bool v);
     JSONWriter & appendDouble(double v);
     JSONWriter & appendFloat(float v);
     JSONWriter & appendInt64(int64_t v);
     JSONWriter & appendUInt64(uint64_t v);
-    JSONWriter & appendString(stringref str);
-    JSONWriter & appendJSON(stringref json);
+    JSONWriter & appendString(std::string_view str);
+    JSONWriter & appendJSON(std::string_view json);
 
     void setPretty() { _pretty = true; };
 };
@@ -72,7 +72,7 @@ public:
     JSONStringer & operator = (JSONStringer &&) = default;
     ~JSONStringer();
     JSONStringer & clear();
-    stringref toString() const;
+    std::string_view toString() const;
 };
 
 }

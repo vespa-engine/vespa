@@ -46,7 +46,7 @@ class JsonStream : public JsonStreamTypes {
 
         StateEntry() noexcept;
         StateEntry(State s) noexcept;
-        StateEntry(State s, stringref key) noexcept;
+        StateEntry(State s, std::string_view key) noexcept;
         StateEntry(const StateEntry &) noexcept;
         StateEntry & operator =(const StateEntry &) noexcept;
         ~StateEntry();
@@ -65,7 +65,7 @@ public:
     JsonStream& operator=(JsonStream &&) = default;
     ~JsonStream();
 
-    JsonStream& operator<<(stringref);
+    JsonStream& operator<<(std::string_view);
     JsonStream& operator<<(bool);
     JsonStream& operator<<(double);
     JsonStream& operator<<(float); // Less precision that double
@@ -86,7 +86,7 @@ public:
     JsonStream& operator<<(int v)
         { return operator<<(static_cast<long long>(v)); }
     JsonStream& operator<<(const char* c)
-        { return operator<<(stringref(c)); }
+        { return operator<<(std::string_view(c)); }
 
     JsonStream& finalize();
 
@@ -94,7 +94,7 @@ public:
 
 private:
     string getStateString() const;
-    void fail(stringref error) const;
+    void fail(std::string_view error) const;
 };
 
 } // vespalib

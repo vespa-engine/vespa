@@ -8,7 +8,7 @@
 namespace vespalib::net::tls {
 
 using std::string_view;
-using CipherMapType = std::unordered_map<stringref, stringref, vespalib::hash<stringref>>;
+using CipherMapType = std::unordered_map<std::string_view, std::string_view, vespalib::hash<std::string_view>>;
 
 namespace {
 

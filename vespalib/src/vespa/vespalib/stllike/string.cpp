@@ -27,8 +27,8 @@ template std::istream & operator >> (std::istream & is, string & v);
 template class small_string<48>;
 
 template string operator + (const string & a, const string & b) noexcept;
-template string operator + (const string & a, stringref b) noexcept;
-template string operator + (stringref a, const string & b) noexcept;
+template string operator + (const string & a, std::string_view b) noexcept;
+template string operator + (std::string_view a, const string & b) noexcept;
 template string operator + (const string & a, const char * b) noexcept;
 template string operator + (const  char * a, const string & b) noexcept;
 

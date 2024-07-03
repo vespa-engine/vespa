@@ -63,7 +63,7 @@ asciistream::asciistream() :
     _precision(6)
 { }
 
-asciistream::asciistream(stringref buf) :
+asciistream::asciistream(std::string_view buf) :
     _rPos(0),
     _wbuf(),
     _rbuf(buf),
@@ -629,7 +629,7 @@ asciistream::getline(char delim)
 }
 
 asciistream
-asciistream::createFromFile(stringref fileName)
+asciistream::createFromFile(std::string_view fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
@@ -648,13 +648,13 @@ asciistream::createFromFile(stringref fileName)
             e << "Failed reading " << sz << " bytes from file " << fileName;
             throw IoException(e.str() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
-        is << stringref(static_cast<const char *>(buf.get()), sz);
+        is << std::string_view(static_cast<const char *>(buf.get()), sz);
     }
     return is;
 }
 
 asciistream
-asciistream::createFromDevice(stringref fileName)
+asciistream::createFromDevice(std::string_view fileName)
 {
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
@@ -662,7 +662,7 @@ asciistream::createFromDevice(stringref fileName)
         constexpr size_t SZ = 64_Ki;
         auto buf = std::make_unique<char []>(SZ);
         for (ssize_t actual = file.Read(buf.get(), SZ); actual > 0; actual = file.Read(buf.get(), SZ)) {
-            is << stringref(buf.get(), actual);
+            is << std::string_view(buf.get(), actual);
         }
     }
     return is;

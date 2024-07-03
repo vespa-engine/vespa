@@ -230,7 +230,7 @@ TEST(AsciistreamTest, test_integer_manip)
     std_istr >> i;
     EXPECT_EQ(1234, i);
 
-    stringref firstfour(digits, 4);
+    std::string_view firstfour(digits, 4);
     asciistream istr(firstfour);
     istr >> i;
     EXPECT_EQ(1234, i);

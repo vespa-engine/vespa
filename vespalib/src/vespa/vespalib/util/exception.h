@@ -195,7 +195,7 @@ public:
      *                  should send (skipStack + 1) to the parent constructor (see
      *                  \ref VESPA_DEFINE_EXCEPTION for subclass implementation).
      **/
-    explicit Exception(stringref msg, stringref location = "", int skipStack = 0);
+    explicit Exception(std::string_view msg, std::string_view location = "", int skipStack = 0);
     /**
      * @brief Construct an exception with a message, a causing exception, and a source code location.
      * @param msg A user-readable message describing the problem
@@ -207,8 +207,8 @@ public:
      *                  should send (skipStack + 1) to the parent constructor (see
      *                  \ref VESPA_DEFINE_EXCEPTION for subclass implementation).
      **/
-    Exception(stringref msg, const Exception &cause,
-              stringref location = "", int skipStack = 0);
+    Exception(std::string_view msg, const Exception &cause,
+              std::string_view location = "", int skipStack = 0);
     Exception(const Exception &);
     Exception & operator = (const Exception &);
     Exception(Exception &&) noexcept;

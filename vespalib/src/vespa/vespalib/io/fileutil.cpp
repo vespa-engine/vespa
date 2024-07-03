@@ -22,7 +22,7 @@ namespace vespalib {
 namespace {
 
 FileInfo::UP
-processStat(struct stat& filestats, bool result, stringref path) {
+processStat(struct stat& filestats, bool result, std::string_view path) {
     FileInfo::UP resval;
     if (result) {
         resval = std::make_unique<FileInfo>();
@@ -52,7 +52,7 @@ safeStrerror(int errnum)
 
 }
 
-File::File(stringref filename)
+File::File(std::string_view filename)
     : _fd(-1),
       _filename(filename)
 { }
@@ -298,7 +298,7 @@ listDirectory(const string & path)
     return result;
 }
 
-string dirname(stringref name)
+string dirname(std::string_view name)
 {
     size_t found = name.rfind('/');
     if (found == string::npos) {
@@ -336,7 +336,7 @@ void addStat(asciistream &os, const string & name)
 }
 
 string
-getOpenErrorString(const int osError, stringref filename)
+getOpenErrorString(const int osError, std::string_view filename)
 {
     asciistream os;
     string dirName(dirname(filename));

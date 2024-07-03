@@ -106,15 +106,15 @@ PortListenException::~PortListenException() = default;
 
 //-----------------------------------------------------------------------------
 
-IoException::IoException(stringref msg, Type type,
-                         stringref location, int skipStack)
+IoException::IoException(std::string_view msg, Type type,
+                         std::string_view location, int skipStack)
     : Exception(createMessage(msg, type), location, skipStack+1),
       _type(type)
 {
 }
 
-IoException::IoException(stringref msg, Type type,
-                         const Exception& cause, stringref location,
+IoException::IoException(std::string_view msg, Type type,
+                         const Exception& cause, std::string_view location,
                          int skipStack)
     : Exception(createMessage(msg, type), cause, location, skipStack+1),
       _type(type)
@@ -127,7 +127,7 @@ IoException & IoException::operator =(IoException &&) noexcept = default;
 IoException::~IoException() = default;
 
 string
-IoException::createMessage(stringref msg, Type type)
+IoException::createMessage(std::string_view msg, Type type)
 {
     vespalib::asciistream ost;
     switch (type) {

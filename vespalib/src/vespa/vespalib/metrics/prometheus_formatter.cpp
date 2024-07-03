@@ -13,7 +13,7 @@ namespace {
     return ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_');
 }
 
-void emit_prometheus_name(asciistream& out, stringref name) {
+void emit_prometheus_name(asciistream& out, std::string_view name) {
     for (char ch : name) {
         if (valid_prometheus_char(ch)) [[likely]] {
             out << ch;
@@ -23,7 +23,7 @@ void emit_prometheus_name(asciistream& out, stringref name) {
     }
 }
 
-void emit_label_value(asciistream& out, stringref value) {
+void emit_label_value(asciistream& out, std::string_view value) {
     for (char ch : value) {
         if (ch == '\\') {
             out << "\\\\";

@@ -291,7 +291,7 @@ TEST("testString") {
         EXPECT_EQUAL(3u, s.rfind("ab"));
     }
     {
-        stringref s("abcabca");
+        std::string_view s("abcabca");
         EXPECT_EQUAL(string::npos, s.find('g'));
         EXPECT_EQUAL(string::npos, s.rfind('g'));
         EXPECT_EQUAL(0u, s.find('a'));
@@ -302,27 +302,27 @@ TEST("testString") {
         EXPECT_EQUAL(5u, s.rfind("ca"));
         EXPECT_EQUAL(0u, s.find("ab"));
         EXPECT_EQUAL(3u, s.rfind("ab"));
-        stringref s2("abc");
+        std::string_view s2("abc");
         EXPECT_EQUAL(2u, s2.rfind('c'));
         EXPECT_EQUAL(1u, s2.rfind('b'));
         EXPECT_EQUAL(0u, s2.rfind('a'));
         EXPECT_EQUAL(string::npos, s2.rfind('d'));
     }
 
-    EXPECT_EQUAL("a" + stringref("b"), string("ab"));
+    EXPECT_EQUAL("a" + std::string_view("b"), string("ab"));
     EXPECT_EQUAL("a" + string("b"), string("ab"));
     EXPECT_EQUAL(string("a") + string("b"), string("ab"));
-    EXPECT_EQUAL(string("a") + stringref("b"), string("ab"));
+    EXPECT_EQUAL(string("a") + std::string_view("b"), string("ab"));
     EXPECT_EQUAL(string("a") + "b", string("ab"));
-    EXPECT_EQUAL(stringref("a") + stringref("b"), string("ab"));
+    EXPECT_EQUAL(std::string_view("a") + std::string_view("b"), string("ab"));
 
     // Test std::string conversion of empty string
-    stringref sref;
+    std::string_view sref;
     std::string stdString(sref);
     EXPECT_EQUAL(nullptr, sref.data());
     EXPECT_TRUE(strcmp("", stdString.data()) == 0);
     stdString = "abc";
-    stringref sref2(stdString);
+    std::string_view sref2(stdString);
     EXPECT_TRUE(stdString.c_str() == sref2.data());
     EXPECT_TRUE(stdString == sref2);
     EXPECT_TRUE(sref2 == stdString);
@@ -339,7 +339,7 @@ TEST("testString") {
     }
     {
         EXPECT_EQUAL(string("abc"), string("abcd", 3));
-        EXPECT_EQUAL(string("abc"), string(stringref("abc")));
+        EXPECT_EQUAL(string("abc"), string(std::string_view("abc")));
     }
     {
         string s("abc");
@@ -351,7 +351,7 @@ TEST("testString") {
         EXPECT_EQUAL(string("c"), s.substr(2));
     }
     {
-        stringref s("abc");
+        std::string_view s("abc");
         EXPECT_EQUAL(string("a"), s.substr(0,1));
         EXPECT_EQUAL(string("b"), s.substr(1,1));
         EXPECT_EQUAL(string("c"), s.substr(2,1));
@@ -462,7 +462,7 @@ TEST("test that small_string::pop_back works") {
 }
 
 
-TEST("test that operator<() works with stringref versus string") {
+TEST("test that operator<() works with std::string_view versus string") {
     std::string_view sra("a");
     vespalib::string sa("a");
     std::string_view srb("b");
@@ -499,7 +499,7 @@ TEST("starts_with has expected semantics for small_string") {
     EXPECT_FALSE(a.starts_with("oobar"));
 }
 
-TEST("starts_with has expected semantics for stringref") {
+TEST("starts_with has expected semantics for std::string_view") {
     vespalib::string a("foobar");
     std::string_view ar(a);
     EXPECT_TRUE(ar.starts_with(""));
