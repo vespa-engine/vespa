@@ -62,6 +62,7 @@ public class TypeCompletionProvider implements CompletionProvider {
             CompletionUtils.constructType("raw"),
             CompletionUtils.constructSnippet("reference", "reference<$1>"),
             //CompletionUtils.constructType("struct"), TODO: find defined structs
+            CompletionUtils.constructType("string"),
             CompletionUtils.constructSnippet("tensor", "tensor<$1>($0)"),
             CompletionUtils.constructType("uri"),
             CompletionUtils.constructSnippet("weightedset", "weightedset<$1>")
