@@ -151,7 +151,7 @@ public class ParsedSchema extends ParsedBlock {
 
     void inheritByDocument(String other) { inheritedByDocument.add(other); }
 
-    void setStemming(Stemming value) {
+    public void setStemming(Stemming value) {
         verifyThat((defaultStemming == null) || (defaultStemming == value),
                    "already has stemming", defaultStemming, "cannot also set", value);
         defaultStemming = value;

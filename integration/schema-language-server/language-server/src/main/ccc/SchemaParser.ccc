@@ -1,12 +1,13 @@
 PARSER_CLASS=SchemaParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser;
-LEGACY_GLITCHY_LOOKAHEAD=true;
 FAULT_TOLERANT=true;
 
 INJECT SchemaParser:
 {
 
     import com.yahoo.schema.Schema;
+
+    import com.yahoo.schema.parser.DictionaryOption;
     import com.yahoo.schema.parser.ParsedAnnotation;
     import com.yahoo.schema.parser.ParsedAttribute;
     import com.yahoo.schema.parser.ParsedDocument;
@@ -28,6 +29,7 @@ INJECT SchemaParser:
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;
     import com.yahoo.schema.document.Sorting;
+    import com.yahoo.schema.document.Stemming;
     import com.yahoo.tensor.TensorType;
 }
 
@@ -309,7 +311,7 @@ ParsedSchema rootSchema :
     ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
         schema = new ParsedSchema(name);
       }
-      openLbrace (rootSchemaItem(schema)! (<NL>)*)*
+      openLbrace (rootSchemaItem(schema) | <NL>)*
       <RBRACE> (<NL>)* <EOF> )
     { return schema; }
 ;
@@ -324,7 +326,7 @@ rootSchemaItem(ParsedSchema schema) : {}
     ( 
         documentElm(schema)
     //   | rawAsBase64(schema)
-    //   | searchStemming(schema)
+       | searchStemming(schema)
     //   | importField(schema)
     //   | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
         | rankProfile(schema)
@@ -353,7 +355,7 @@ void documentElm(ParsedSchema schema) :
     {
         document = new ParsedDocument(name);
     }
-      openLbrace (documentElmBody(document) (<NL>)*)* <RBRACE> )
+      openLbrace (documentElmBody(document) | <NL>)* <RBRACE> )
     {
         schema.addDocument(document);
     }
@@ -412,7 +414,7 @@ ParsedField fieldElm() :
     {
         field = new ParsedField(name, type);
     }
-    openLbrace() ( fieldBodyElm(field) (<NL>)*)* <RBRACE>
+    openLbrace() ( fieldBodyElm(field) | <NL>)* <RBRACE>
     {
         return field;
     }
@@ -488,7 +490,7 @@ ParsedStruct structDefinitionElm() :
 
     ( <STRUCT> name = identifierStr (<NL>)* { struct = new ParsedStruct(name); }
 //    [ inheritsStruct(struct) (<NL>)* ]
-    openLbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE> )
+    openLbrace() (structFieldDefinition(struct) | <NL>)* <RBRACE> )
     {
         return struct;
     }
@@ -577,7 +579,7 @@ void structFieldDefinition(ParsedStruct struct) :
     <FIELD> name = identifierStr <TYPE> type = dataType() {
         field = new ParsedField(name, type);
     }
-    openLbrace (idElm(field) (<NL>)*)? (matchSettingsElm(field.matchSettings()) (<NL>)*)* <RBRACE>
+    openLbrace (idElm(field) (<NL>)*)? (matchSettingsElm(field.matchSettings()) | <NL>)* <RBRACE>
     {
         struct.addField(field);
     }
@@ -600,7 +602,7 @@ void structFieldElm(ParsedField field) :
         }
         structField = new ParsedField(name, null);
     }
-    openLbrace() (structFieldBodyElm(structField) (<NL>)*)* <RBRACE>
+    openLbrace() (structFieldBodyElm(structField) | <NL>)* <RBRACE>
     { 
         field.addStructField(structField); 
     }
@@ -615,15 +617,15 @@ void fieldBodyElm(ParsedField field) : { }
 
      ( aliasElm(field) |
        attributeElm(field) |
-    //   bolding(field) |
-    //   dictionary(field) |
-    //   fieldStemming(field) |
+       boldingElm(field) |
+       dictionaryElm(field) |
+       fieldStemming(field) |
        idElm(field) |
-    //   summaryInField(field) |
+       summaryInField(field) |
     //   indexInsideField(field) |
     //   indexing(field) |
        matchSettingsElm(field.matchSettings()) |
-    //   normalizing(field) |
+       normalizingElm(field) |
     //   queryCommand(field) |
        rankElm(field) |
        rankTypeElm(field) |
@@ -642,7 +644,7 @@ void fieldBodyElm(ParsedField field) : { }
  * @param field    the field being built
  */
 void structFieldBodyElm(ParsedField field) : { }
-    ( /* summaryInField(field) | */
+    (  summaryInField(field) |
      // indexing(field) |
       attributeElm(field) |
       matchSettingsElm(field.matchSettings()) |
@@ -692,7 +694,7 @@ void weightElm(ParsedField field) :
  */
 void weightedsetElm(ParsedType fieldType) : { }
     <WEIGHTEDSET> ( (<COLON> weightedsetBody(fieldType))
-                | (openLbrace() (weightedsetBody(fieldType) (<NL>)*)* <RBRACE>) )
+                | (openLbrace() (weightedsetBody(fieldType) | <NL>)* <RBRACE>) )
 ;
 
 /**
@@ -741,7 +743,7 @@ void attributeElm(ParsedField field) :
         ParsedAttribute attr = field.attributeFor(name);
     }
          ( (<COLON> attributeSetting(attr))
-           | (openLbrace() (attributeSetting(attr) (<NL>)*)* <RBRACE>) )
+           | (openLbrace() (attributeSetting(attr) | <NL>)* <RBRACE>) )
 ;
 
 /* pick up sorting in field block */
@@ -762,7 +764,7 @@ void sortingElm(ParsedSorting sort) : { }
 
     <SORTING>
           ( (<COLON> sortingSetting(sort))
-            | (openLbrace() (sortingSetting(sort) (<NL>)*)* <RBRACE>) )
+            | (openLbrace() (sortingSetting(sort) | <NL>)* <RBRACE>) )
 ;
 
 
@@ -821,6 +823,241 @@ void attributeSetting(ParsedAttribute attribute) :
 ;
 
 /**
+ * This rule consumes a summary statement defined inside a document-summary block.
+ *
+ * @param docsum The document summary to modify.
+ */
+void summaryInDocument(ParsedDocumentSummary docsum) :
+{
+    String name;
+    ParsedType type = null;
+    ParsedSummaryField psf;
+}
+
+    <SUMMARY> name = identifierWithDashStr() { }
+    (<TYPE>   type = dataType())?
+    openLbrace() {
+        psf = new ParsedSummaryField(name, type);
+	if (type != null) {
+	    psf.setHasExplicitType();
+	}
+    }
+    (summaryItem(psf) | <NL>)* <RBRACE>
+    {
+        var old = docsum.addField(psf);
+        if (old != null) {
+            // deployLogger.logApplicationPackage(Level.WARNING, "Summary field '" + psf.name()
+            //                                   + "' is defined twice in document-summary '"
+            //                                   + docsum.name() + "'");
+        }
+    }
+;
+
+/**
+ * The rule consumes a summary statement defined inside a field.
+ *
+ * @param field The field to modify.
+ */
+void summaryInField(ParsedField field) : { }
+ 
+    <SUMMARY> ( SCAN([identifierStr] <COLON>) => summaryInFieldShort(field)
+              | summaryInFieldLong(field) )
+;
+
+/**
+ * This rule consumes a single-line summary field.
+ */
+void summaryInFieldShort(ParsedField field) :
+{
+    String name = field.name();
+    ParsedSummaryField psf;
+}
+ 
+    [ name = identifierStr() ]
+    {
+        psf = field.summaryFieldFor(name);
+    }
+    <COLON> ( <DYNAMIC> { psf.setDynamic(); }
+              | <MATCHED_ELEMENTS_ONLY> { psf.setMatchedElementsOnly(); }
+              | (<FULL> | <STATIC>) { psf.setFull(); }
+              | <TOKENS> { psf.setTokens(); }
+            )
+;
+
+/**
+ * This rule consumes a multi-line summary field.
+ */
+void summaryInFieldLong(ParsedField field) :
+{
+    String name = field.name();
+    ParsedType type = field.getType();
+    boolean explicitType = false;
+    ParsedSummaryField psf;
+}
+ 
+    ( [ name = identifierStr() [ <TYPE> { type = dataType(); explicitType = true; } ] ]
+      openLbrace()
+      {
+          psf = field.summaryFieldFor(name, type);
+	  if (explicitType) {
+              psf.setHasExplicitType();
+          }
+      }
+      (summaryItem(psf) | <NL>)* <RBRACE> )
+;
+
+/**
+ * This rule consumes an item of a summary field block.
+ *
+ * @param field The field to modify.
+ */
+void summaryItem(ParsedSummaryField field) : { }
+ 
+    ( summaryTransform(field)
+      | summaryBolding(field)
+      | summarySourceList(field)
+      | summaryDestinationList(field)
+    )
+;
+
+/**
+ * This rule consumes a transform statement for a summary field element.
+ *
+ * @param field            The field to modify.
+ */
+void summaryTransform(ParsedSummaryField field) : { }
+ 
+    ( <DYNAMIC>              { field.setDynamic(); }
+     | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
+     | (<FULL> | <STATIC>)   { field.setFull(); }
+     | <TOKENS> { field.setTokens(); }
+    )
+;
+
+/**
+ * This rule consumes a bolding statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryBolding(ParsedSummaryField field) :
+{
+    boolean bold;
+}
+ 
+    <BOLDING> <COLON> bold = bool()
+    { field.setBold(bold); }
+;
+
+/**
+ * This rule consumes a source-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summarySourceList(ParsedSummaryField field) :
+{
+    String str;
+}
+ 
+    ( <SOURCE> <COLON> str = identifierStr() { field.addSource(str); }
+      (        <COMMA> str = identifierStr() { field.addSource(str); } )* ) +
+;
+
+/**
+ * This rule consumes a destination-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryDestinationList(ParsedSummaryField field) :
+{
+    String str;
+}
+ 
+    <TO> <COLON> str = identifierStr() { field.addDestination(str); }
+    (    <COMMA> str = identifierStr() { field.addDestination(str); } )*
+;
+
+/**
+ * This rule consumes a stemming block of a field element.
+ *
+ * @param field The field to modify.
+ */
+void fieldStemming(ParsedField field) :
+{
+    String setting;
+}
+ 
+    <STEMMING> <COLON> setting = identifierWithDashStr
+    {
+        field.setStemming(Stemming.get(setting));
+    }
+;
+
+/**
+ * This rule consumes a stemming statement for a schema element.
+ *
+ * @param schema the schema to modify
+ */
+void searchStemming(ParsedSchema schema) :
+{
+    String setting;
+}
+ 
+    <STEMMING> <COLON> setting = identifierWithDashStr
+    { schema.setStemming(Stemming.get(setting)); }
+;
+
+/**
+ * This rule consumes a normalizing statement of a field element.
+ * At the moment, this can only be used to turn off normalizing.
+ *
+ * @param field The field to modify.
+ */
+void normalizingElm(ParsedField field) :
+{
+    String setting;
+}
+ 
+    <NORMALIZING> <COLON> setting = identifierWithDashStr
+    {
+        field.setNormalizing(setting);
+    }
+;
+
+/**
+ * This rule consumes a bolding statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void boldingElm(ParsedField field) :
+{
+    boolean bold;
+}
+ 
+    <BOLDING> <COLON> bold = bool() { field.setBolding(bold); }
+;
+
+/**
+ * This rule consumes a dictionary statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void dictionaryElm(ParsedField field) : { }
+ 
+    <DICTIONARY>
+    ( (<COLON> dictionarySetting(field))
+    | (openLbrace() (dictionarySetting(field) | <NL>)* <RBRACE>))
+;
+
+void dictionarySetting(ParsedField field) : { }
+ 
+    (   <HASH>            { field.dictionary(DictionaryOption.HASH); }
+      | <BTREE>           { field.dictionary(DictionaryOption.BTREE); }
+      | <CASED>           { field.dictionary(DictionaryOption.CASED); }
+      | <UNCASED>         { field.dictionary(DictionaryOption.UNCASED); } )
+    {}
+;
+
+/**
  * Consumes a rank statement of a field element.
  *
  * @param field The field to modify.
@@ -828,7 +1065,7 @@ void attributeSetting(ParsedAttribute attribute) :
 void rankElm(ParsedField field) : { }
 
     <RANK> ( (<COLON> rankSettingElm(field))
-             | (openLbrace() (rankSettingElm(field) (<NL>)*)* <RBRACE>) )
+             | (openLbrace() (rankSettingElm(field) | <NL>)* <RBRACE>) )
 ;
 
 /**
@@ -875,7 +1112,7 @@ void aliasElm(ParsedField field) :
 void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
 
     <MATCH> ( (<COLON> matchType(matchInfo))
-            //   | (openLbrace() (matchItem(matchInfo) (<NL>)*)* <RBRACE>) )
+            //   | (openLbrace() (matchItem(matchInfo) | <NL>)* <RBRACE>) )
     )
 ;
 
@@ -907,7 +1144,7 @@ void rankProfile(ParsedSchema schema) :
     ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDashStr
     { profile = new ParsedRankProfile(name); }
     [inheritsRankProfile(profile)]
-    openLbrace() (rankProfileItem(schema, profile) (<NL>)*)* <RBRACE>
+    openLbrace() (rankProfileItem(schema, profile) | <NL>)* <RBRACE>
     {
         schema.addRankProfile(profile);
     }
@@ -976,7 +1213,7 @@ void firstPhase(ParsedRankProfile profile) :
     String exp;
 }
 
-    <FIRST_PHASE> openLbrace() (firstPhaseItem(profile) (<NL>)*)* <RBRACE>
+    <FIRST_PHASE> openLbrace() (firstPhaseItem(profile) | <NL>)* <RBRACE>
 ;
 
 void firstPhaseItem(ParsedRankProfile profile) :
@@ -1271,6 +1508,6 @@ Number number() :
     ( num = floatValue | num = longValue ) { return num; }
 ;
 
-openLbrace :
-    (<NL>)* <LBRACE> (<NL>)*
+void openLbrace() : { }
+    ((<NL>)* <LBRACE> (<NL>)*)
 ;

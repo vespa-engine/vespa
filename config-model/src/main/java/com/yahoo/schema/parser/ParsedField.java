@@ -111,7 +111,7 @@ public class ParsedField extends ParsedBlock {
         rankTypes.put(index, rankType);
     }
 
-    void dictionary(DictionaryOption option) {
+    public void dictionary(DictionaryOption option) {
         dictionaryOptions.add(option);
     }
 

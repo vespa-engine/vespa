@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * @author arnej27959
  */
-class ParsedDocumentSummary extends ParsedBlock {
+public class ParsedDocumentSummary extends ParsedBlock {
 
     private boolean omitSummaryFeatures;
     private boolean fromDisk;
@@ -30,7 +30,7 @@ class ParsedDocumentSummary extends ParsedBlock {
     List<ParsedSummaryField> getSummaryFields() { return List.copyOf(fields.values()); }
     List<String> getInherited() { return List.copyOf(inherited); }
 
-    ParsedSummaryField addField(ParsedSummaryField field) {
+    public ParsedSummaryField addField(ParsedSummaryField field) {
         String fieldName = field.name();
         verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
         return fields.put(fieldName, field);
