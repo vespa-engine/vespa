@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
 
@@ -19,7 +20,8 @@ import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequ
  * @author bratseth
  */
 public class AllocationOptimizer {
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(AllocationOptimizer.class.getName());
+
+    private static final Logger log = Logger.getLogger(AllocationOptimizer.class.getName());
 
     // The min and max nodes to consider when not using application supplied limits
     private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
@@ -38,8 +40,8 @@ public class AllocationOptimizer {
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits
      */
-    public Optional<AllocatableResources> findBestAllocation(Load loadAdjustment, ClusterModel model, Limits limits, boolean enableDetailedLogging) {
-        return findBestAllocations(loadAdjustment, model, limits, enableDetailedLogging).stream().findFirst();
+    public Optional<AllocatableResources> findBestAllocation(Load loadAdjustment, ClusterModel model, Limits limits, boolean logDetails) {
+        return findBestAllocations(loadAdjustment, model, limits, logDetails).stream().findFirst();
     }
 
     /**
@@ -49,7 +51,7 @@ public class AllocationOptimizer {
      * @return the best allocations, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits. The list contains the three best allocations, sorted from most to least preferred.
      */
-    public List<AllocatableResources> findBestAllocations(Load loadAdjustment, ClusterModel model, Limits limits, boolean enableDetailedLogging) {
+    public List<AllocatableResources> findBestAllocations(Load loadAdjustment, ClusterModel model, Limits limits, boolean logDetails) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
@@ -79,13 +81,13 @@ public class AllocationOptimizer {
                                                                      nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 bestAllocations.add(allocatableResources.get());
-                if (enableDetailedLogging) {
+                if (logDetails) {
                     log.info("Adding allocatableResources to list for " + model.application().id() + " in " + model.current().clusterSpec().id() + ": "
-                            + "\n\t" + allocatableResources.get().toString());
+                             + "\n\t" + allocatableResources.get());
                 }
             }
         }
-        if (enableDetailedLogging) {
+        if (logDetails) {
             log.info("Found " + bestAllocations.size() + " legal allocations for " + model.application().id() + " in " + model.current().clusterSpec().id());
         }
         return bestAllocations.stream()

@@ -58,10 +58,10 @@ public class Autoscaler {
      *
      * @param clusterNodes          the list of all the active nodes in a cluster
      * @param enabled               Whether autoscaling is enabled
-     * @param enableDetailedLogging Whether to log autoscaling decision data
+     * @param logDetails            Whether to log decision details
      * @return scaling advice for this cluster
      */
-    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, boolean enabled, boolean enableDetailedLogging) {
+    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, boolean enabled, boolean logDetails) {
         var limits = Limits.of(cluster);
         var model = model(application, cluster, clusterNodes);
         if (model.isEmpty()) return Autoscaling.empty();
@@ -73,12 +73,12 @@ public class Autoscaler {
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
         var loadAdjustment = model.loadAdjustment();
-        if (enableDetailedLogging) {
+        if (logDetails) {
             log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " +
                      loadAdjustment.toString() + ", ideal " + model.idealLoad() + ", " + model.cpu());
         }
 
-        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, enableDetailedLogging);
+        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, logDetails);
 
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);
