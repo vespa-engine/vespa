@@ -5,6 +5,11 @@ FAULT_TOLERANT=true;
 INJECT SchemaParser:
 {
 
+    import com.yahoo.schema.DistributableResource;
+    import com.yahoo.schema.OnnxModel;
+    import com.yahoo.schema.RankProfile.DiversitySettings;
+    import com.yahoo.schema.RankProfile.MatchSettings;
+    import com.yahoo.schema.RankProfile;
     import com.yahoo.schema.Schema;
 
     import com.yahoo.schema.parser.DictionaryOption;
@@ -31,6 +36,9 @@ INJECT SchemaParser:
     import com.yahoo.schema.document.MatchAlgorithm;
     import com.yahoo.schema.document.Sorting;
     import com.yahoo.schema.document.Stemming;
+
+    import com.yahoo.searchlib.rankingexpression.Reference;
+
     import com.yahoo.tensor.TensorType;
 }
 
@@ -329,7 +337,7 @@ rootSchemaItem(ParsedSchema schema) : {}
     //   | rawAsBase64(schema)
        | searchStemming(schema)
     //   | importField(schema)
-    //   | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+       | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
         | rankProfile(schema)
        | documentSummary(schema)
         | fieldOutsideDoc(schema)
@@ -337,7 +345,7 @@ rootSchemaItem(ParsedSchema schema) : {}
         | structOutsideDoc(schema)
     //   | annotationOutside(schema)
         | fieldSetElm(schema)
-    //   | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+       | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
  )
 ;
 
@@ -1342,8 +1350,6 @@ void hnswIndex(ParsedIndex index) :
     }
 ;
 
-//void multiLineHnswIndex(HnswIndexParams.Builder params) : {}
-    
 
 void hnswIndexBody(HnswIndexParams.Builder params) :
 {
@@ -1355,6 +1361,117 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
       | <NEIGHBORS_TO_EXPLORE_AT_INSERT> <COLON> num = integerElm() { params.setNeighborsToExploreAtInsert(num); }
       | <MULTI_THREADED_INDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
 ;
+
+void onnxModelInSchema(ParsedSchema schema) :
+{
+    OnnxModel onnxModel;
+}
+ 
+    onnxModel = onnxModel() { schema.add(onnxModel); }
+;
+
+void onnxModelInProfile(ParsedRankProfile profile) :
+{
+    OnnxModel onnxModel;
+}
+ 
+    onnxModel = onnxModel() { profile.add(onnxModel); }
+;
+
+/** Consumes an onnx-model block. */
+OnnxModel onnxModel() :
+{
+    String name;
+    OnnxModel onnxModel;
+}
+ 
+    ( <ONNX_MODEL> name = identifierStr() { onnxModel = new OnnxModel(name); }
+      openLbrace() (onnxModelItem(onnxModel) (<NL>)*)+ <RBRACE> )
+    { return onnxModel; }
+;
+
+/**
+ * Consumes an onnx-model block.
+ *
+ * @param onnxModel the onnxModel to modify
+ */
+void onnxModelItem(OnnxModel onnxModel) :
+{
+    String path = null;
+    int num;
+}
+ 
+    (
+        (path = fileItem()) { onnxModel.setFileName(path); } |
+        (path = uriItem()) { onnxModel.setUri(path); } |
+        <GPU_DEVICE> <COLON> num = integerElm() { onnxModel.setGpuDevice(num, false); } |
+        <INTRAOP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessIntraOpThreads(num); } |
+        <INTEROP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessInterOpThreads(num); } |
+        <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
+                                  | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
+        (<ONNX_INPUT_SL>) {
+            String name = lastConsumedToken.toString().substring(5, lastConsumedToken.toString().lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String source = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
+            onnxModel.addInputNameMapping(name, source);
+        } |
+        (<ONNX_OUTPUT_SL>) {
+            String name = lastConsumedToken.toString().substring(6, lastConsumedToken.toString().lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String as = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
+            onnxModel.addOutputNameMapping(name, as);
+        }
+    )
+;
+
+/**
+ * Consumes a constant block of a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void rankingConstant(ParsedSchema schema) :
+{
+    String name;
+    String path = null;
+    DistributableResource.PathType pathType = DistributableResource.PathType.FILE;
+    TensorType type = null;
+}
+ 
+    ( <CONSTANT> name = identifierStr() openLbrace()
+      (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. Remove?
+       | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
+      )+
+      <RBRACE>
+    )
+    {
+        if (type == null) throw new IllegalArgumentException("constant '" + name + "' must have a type");
+        if (path == null) throw new IllegalArgumentException("constant '" + name + "' must have a file");
+        schema.add(new RankProfile.Constant(FeatureNames.asConstantFeature(name), type, path, pathType));
+    }
+;
+
+String fileItem() :
+{
+   String path;
+}
+ 
+  (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = com.yahoo.path.Path.fromString(lastConsumedToken.toString()).getRelative(); } { } (<NL>)*) { return path; }
+;
+
+String uriItem() :
+{
+   String path;
+}
+ 
+  (<URI> <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*) { return path; }
+;
+
+String rankingConstantErrorMessage(String name) : {}
+ 
+    { return "For ranking constant ' " + name + "'"; }
+;
+
 
 /**
  * Consumes a rank-profile block of a schema element.
@@ -1409,7 +1526,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
     //   | constants(schema, profile)
     //   | matchFeatures(profile)
     //   | summaryFeatures(profile)
-    //   | onnxModelInProfile(profile)
+       | onnxModelInProfile(profile)
     //   | strict(profile)
     //   | significance(profile)
     )
@@ -1454,6 +1571,14 @@ void firstPhaseItem(ParsedRankProfile profile) :
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 ;
+
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{ TensorType type; }
+ 
+    <TYPE> <COLON> type = tensorTypeElm(errorMessage)
+    { return type; }
+;
+
 
 TensorType tensorTypeElm(String errorMessage) :
 {

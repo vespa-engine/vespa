@@ -123,7 +123,7 @@ public class ParsedSchema extends ParsedBlock {
         extraIndexes.put(idxName, index);
     }
 
-    void add(OnnxModel model) {
+    public void add(OnnxModel model) {
         onnxModels.add(model);
     }
 
@@ -133,7 +133,7 @@ public class ParsedSchema extends ParsedBlock {
         rankProfiles.put(rpName, profile);
     }
 
-    void add(RankProfile.Constant constant) {
+    public void add(RankProfile.Constant constant) {
         constants.put(constant.name(), constant);
     }
 
