@@ -34,14 +34,14 @@ Field::Field()
     : Field("", 0, *DataType::INT)
 { }
 
-Field::Field(vespalib::stringref name, int fieldId, const DataType& dataType)
+Field::Field(std::string_view name, int fieldId, const DataType& dataType)
     : FieldSet(),
       _name(name),
       _dataType(&dataType),
       _fieldId(fieldId)
 { }
 
-Field::Field(vespalib::stringref name, const DataType& dataType)
+Field::Field(std::string_view name, const DataType& dataType)
     : FieldSet(),
       _name(name),
       _dataType(&dataType),

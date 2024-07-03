@@ -16,7 +16,7 @@ namespace storage {
 namespace {
 
 std::shared_ptr<api::CreateVisitorCommand> getCommand(
-        vespalib::stringref name, vespalib::duration timeout,
+        std::string_view name, vespalib::duration timeout,
         uint8_t priority = 0)
 {
     vespalib::asciistream ost;

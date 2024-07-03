@@ -41,7 +41,7 @@ TEST("requireThatTooLargeNumTermIsTreatedAsFloat") {
     RawBuf buf(1024);
     appendNumTerm(buf, term_string);
 
-    SimpleQueryStackDumpIterator query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
+    SimpleQueryStackDumpIterator query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
     Node::UP node = StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
     auto *term = dynamic_cast<NumberTerm *>(node.get());
@@ -55,7 +55,7 @@ TEST("requireThatTooLargeFloatNumTermIsTreatedAsFloat") {
     appendNumTerm(buf, term_string);
 
     SimpleQueryStackDumpIterator
-        query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
+        query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
     Node::UP node =
         StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
@@ -87,7 +87,7 @@ TEST("require that PredicateQueryItem stack dump item can be read") {
     buf.Put64ToInet(0xffffUL);
 
     SimpleQueryStackDumpIterator
-        query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
+        query_stack(std::string_view(buf.GetDrainPos(), buf.GetUsedLen()));
     Node::UP node =
         StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());

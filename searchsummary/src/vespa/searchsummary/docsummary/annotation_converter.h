@@ -21,7 +21,7 @@ class IJuniperConverter;
 class AnnotationConverter : public IStringFieldConverter
 {
     IJuniperConverter&     _juniper_converter;
-    vespalib::stringref    _text;
+    std::string_view    _text;
     vespalib::asciistream  _out;
 
     template <typename ForwardIt>

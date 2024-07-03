@@ -15,7 +15,7 @@ namespace {
 vespalib::string extract_data(vespalib::Input &input) {
     vespalib::string result;
     for (auto chunk = input.obtain(); chunk.size > 0; chunk = input.obtain()) {
-        result.append(vespalib::stringref(chunk.data, chunk.size));
+        result.append(std::string_view(chunk.data, chunk.size));
         input.evict(chunk.size);
     }
     return result;

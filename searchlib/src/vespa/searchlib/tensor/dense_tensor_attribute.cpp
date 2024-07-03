@@ -5,7 +5,7 @@
 
 namespace search::tensor {
 
-DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
+DenseTensorAttribute::DenseTensorAttribute(std::string_view baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore, index_factory),
       _denseTensorStore(cfg.tensorType(), get_memory_allocator())

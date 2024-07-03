@@ -20,7 +20,7 @@ private:
     const Onnx *_model;
     Onnx::WireInfo _wire_info;
 public:
-    OnnxBlueprint(vespalib::stringref baseName);
+    OnnxBlueprint(std::string_view baseName);
     ~OnnxBlueprint() override;
     void visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const override {}
     fef::Blueprint::UP createInstance() const override {

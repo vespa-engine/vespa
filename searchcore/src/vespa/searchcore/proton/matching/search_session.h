@@ -65,7 +65,7 @@ public:
     vespalib::steady_time getTimeOfDoom() const { return _time_of_doom; }
 
     MatchToolsFactory &getMatchToolsFactory() { return *_match_tools_factory; }
-    vespalib::stringref getStackDump() const noexcept {
+    std::string_view getStackDump() const noexcept {
         return {_owned_objects.stackDump.data(), _owned_objects.stackDump.size()};
     }
 };

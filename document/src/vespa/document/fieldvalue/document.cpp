@@ -24,15 +24,15 @@ using namespace vespalib::xml;
 namespace document {
 namespace {
 
-void documentTypeError(vespalib::stringref name) __attribute__((noinline));
-void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) __attribute__((noinline));
+void documentTypeError(std::string_view name) __attribute__((noinline));
+void throwTypeMismatch(std::string_view type, std::string_view docidType) __attribute__((noinline));
 
-void documentTypeError(vespalib::stringref name) {
+void documentTypeError(std::string_view name) {
     throw IllegalArgumentException(make_string("Cannot generate a document with non-document type %s.",
                                                vespalib::string(name).c_str()), VESPA_STRLOC);
 }
 
-void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) {
+void throwTypeMismatch(std::string_view type, std::string_view docidType) {
     throw IllegalArgumentException(make_string("Trying to create a document with type %s that don't match the id (type %s).",
                                                vespalib::string(type).c_str(), vespalib::string(docidType).c_str()),
                                    VESPA_STRLOC);

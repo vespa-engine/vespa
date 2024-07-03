@@ -33,7 +33,7 @@ requireFold(TermType type, Normalizing normalizing) {
 }
 
 vespalib::string
-fold(vespalib::stringref s) {
+fold(std::string_view s) {
     const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
     const unsigned char * end = curr + s.size();
     vespalib::string folded;
@@ -59,7 +59,7 @@ fold(vespalib::stringref s) {
 }
 
 vespalib::string
-lowercase(vespalib::stringref s) {
+lowercase(std::string_view s) {
     const auto * curr = reinterpret_cast<const unsigned char *>(s.data());
     const unsigned char * end = curr + s.size();
     vespalib::string folded;
@@ -86,7 +86,7 @@ operator<<(std::ostream &os, Normalizing n) {
 }
 
 vespalib::string
-QueryNormalization::optional_fold(vespalib::stringref s, TermType type, Normalizing normalizing) {
+QueryNormalization::optional_fold(std::string_view s, TermType type, Normalizing normalizing) {
     switch ( requireFold(type, normalizing)) {
         case Normalizing::NONE: return s;
         case Normalizing::LOWERCASE: return lowercase(s);

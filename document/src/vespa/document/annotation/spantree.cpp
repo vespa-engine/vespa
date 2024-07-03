@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 
 using std::unique_ptr;
-using vespalib::stringref;
+using std::string_view;
 
 namespace document {
 

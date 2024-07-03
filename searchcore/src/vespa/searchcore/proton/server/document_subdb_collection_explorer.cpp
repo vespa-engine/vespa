@@ -41,7 +41,7 @@ DocumentSubDBCollectionExplorer::get_children_names() const
 }
 
 std::unique_ptr<vespalib::StateExplorer>
-DocumentSubDBCollectionExplorer::get_child(vespalib::stringref name) const
+DocumentSubDBCollectionExplorer::get_child(std::string_view name) const
 {
     if (name == READY) {
         return createExplorer(*_subDbs.getReadySubDB());

@@ -32,8 +32,8 @@ namespace storage::distributor {
 struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     document::TestDocMan _testDocMan;
 
-    document::BucketId findNonOwnedUserBucketInState(vespalib::stringref state);
-    document::BucketId findOwned1stNotOwned2ndInStates(vespalib::stringref state1, vespalib::stringref state2);
+    document::BucketId findNonOwnedUserBucketInState(std::string_view state);
+    document::BucketId findOwned1stNotOwned2ndInStates(std::string_view state1, std::string_view state2);
 
     std::shared_ptr<api::GetCommand> makeGetCommandForUser(uint64_t id) const;
     std::shared_ptr<api::GetCommand> makeGetCommand(const vespalib::string& id) const;
@@ -130,7 +130,7 @@ TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
 
 document::BucketId
 ExternalOperationHandlerTest::findNonOwnedUserBucketInState(
-        vespalib::stringref statestr)
+        std::string_view statestr)
 {
     lib::ClusterState state(statestr);
     for (uint64_t i = 1; i < 1000; ++i) {
@@ -144,8 +144,8 @@ ExternalOperationHandlerTest::findNonOwnedUserBucketInState(
 
 document::BucketId
 ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
-        vespalib::stringref statestr1,
-        vespalib::stringref statestr2)
+        std::string_view statestr1,
+        std::string_view statestr2)
 {
     lib::ClusterState state1(statestr1);
     lib::ClusterState state2(statestr2);

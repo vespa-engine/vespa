@@ -51,7 +51,7 @@ InterpolatedDocumentFieldLookupNode::InterpolatedDocumentFieldLookupNode() noexc
 {
 }
 
-InterpolatedDocumentFieldLookupNode::InterpolatedDocumentFieldLookupNode(vespalib::stringref name, std::unique_ptr<ExpressionNode> arg)
+InterpolatedDocumentFieldLookupNode::InterpolatedDocumentFieldLookupNode(std::string_view name, std::unique_ptr<ExpressionNode> arg)
     : DocumentFieldNode(name),
       _lookup_expression(std::move(arg)),
       _values(),

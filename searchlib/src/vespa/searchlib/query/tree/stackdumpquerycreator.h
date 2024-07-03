@@ -32,7 +32,7 @@ public:
         // Make sure that the life time of what pureTermView refers to exceeds that of pureTermView.
         // Especially make sure that do not create any stack local objects like vespalib::string
         // with smaller scope, that you refer with pureTermView.
-        vespalib::stringref pureTermView;
+        std::string_view pureTermView;
         while (!builder.hasError() && queryStack.next()) {
             Term *t = createQueryTerm(queryStack, builder, pureTermView);
             if (!builder.hasError() && t) {
@@ -58,7 +58,7 @@ private:
         StackDumpQueryCreatorHelper::populateMultiTerm(queryStack, builder, mt);
     }
     static Term *
-    createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
+    createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, std::string_view & pureTermView) {
         uint32_t arity = queryStack.getArity();
         ParseItem::ItemType type = queryStack.getType();
         Node::UP node;
@@ -70,13 +70,13 @@ private:
         } else if (type == ParseItem::ITEM_OR) {
             builder.addOr(arity);
         } else if (type == ParseItem::ITEM_WORD_ALTERNATIVES) {
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             builder.addEquiv(arity, id, weight);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEAK_AND) {
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view view = queryStack.getIndexName();
             uint32_t targetNumHits = queryStack.getTargetHits();
             builder.addWeakAnd(arity, targetNumHits, view);
             pureTermView = view;
@@ -91,49 +91,49 @@ private:
             uint32_t nearDistance = queryStack.getNearDistance();
             builder.addONear(arity, nearDistance);
         } else if (type == ParseItem::ITEM_PHRASE) {
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             t = &builder.addPhrase(arity, view, id, weight);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_SAME_ELEMENT) {
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             builder.addSameElement(arity, view, id, weight);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
            auto & ws = builder.addWeightedSetTerm(arity, view, id, weight);
-            pureTermView = vespalib::stringref();
+            pureTermView = std::string_view();
             populateMultiTerm(queryStack, builder, ws);
             t = &ws;
         } else if (type == ParseItem::ITEM_DOT_PRODUCT) {
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             auto & dotProduct = builder.addDotProduct(arity, view, id, weight);
-            pureTermView = vespalib::stringref();
+            pureTermView = std::string_view();
             populateMultiTerm(queryStack, builder, dotProduct);
             t = &dotProduct;
         } else if (type == ParseItem::ITEM_WAND) {
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             uint32_t targetNumHits = queryStack.getTargetHits();
             double scoreThreshold = queryStack.getScoreThreshold();
             double thresholdBoostFactor = queryStack.getThresholdBoostFactor();
             auto & wand = builder.addWandTerm(arity, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
-            pureTermView = vespalib::stringref();
+            pureTermView = std::string_view();
             populateMultiTerm(queryStack, builder, wand);
             t = & wand;
         } else if (type == ParseItem::ITEM_NOT) {
             builder.addAndNot(arity);
         } else if (type == ParseItem::ITEM_NEAREST_NEIGHBOR) {
-            vespalib::stringref query_tensor_name = queryStack.getTerm();
-            vespalib::stringref field_name = queryStack.getIndexName();
+            std::string_view query_tensor_name = queryStack.getTerm();
+            std::string_view field_name = queryStack.getIndexName();
             uint32_t target_num_hits = queryStack.getTargetHits();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
@@ -148,8 +148,8 @@ private:
         } else if (type == ParseItem::ITEM_FALSE) {
             builder.add_false_node();
         } else {
-            vespalib::stringref term = queryStack.getTerm();
-            vespalib::stringref view = queryStack.getIndexName();
+            std::string_view term = queryStack.getTerm();
+            std::string_view view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
 
@@ -160,7 +160,7 @@ private:
             } else if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
                 char buf[24];
                 auto res = std::to_chars(buf, buf + sizeof(buf), queryStack.getIntegerTerm(), 10);
-                t = &builder.addNumberTerm(vespalib::stringref(buf, res.ptr - buf), pureTermView, id, weight);
+                t = &builder.addNumberTerm(std::string_view(buf, res.ptr - buf), pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PREFIXTERM) {
                 t = &builder.addPrefixTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUBSTRINGTERM) {

@@ -143,7 +143,7 @@ SpiBmFeedHandler::remove(const document::Bucket& bucket, const DocumentId& docum
 }
 
 void
-SpiBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
+SpiBmFeedHandler::get(const document::Bucket& bucket, std::string_view field_set_string, const document::DocumentId& document_id, PendingTracker& tracker)
 {
     get_bucket_info_loop(tracker);
     auto provider = get_provider(bucket);

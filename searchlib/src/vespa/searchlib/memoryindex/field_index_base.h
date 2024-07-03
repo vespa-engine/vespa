@@ -44,7 +44,7 @@ public:
     class KeyComp {
     private:
         const WordStore& _wordStore;
-        const vespalib::stringref _word;
+        const std::string_view _word;
 
         const char* getWord(vespalib::datastore::EntryRef wordRef) const {
             if (wordRef.valid()) {
@@ -54,7 +54,7 @@ public:
         }
 
     public:
-        KeyComp(const WordStore& wordStore, const vespalib::stringref word)
+        KeyComp(const WordStore& wordStore, const std::string_view word)
             : _wordStore(wordStore),
               _word(word)
         { }
@@ -88,7 +88,7 @@ protected:
     }
 
 public:
-    vespalib::datastore::EntryRef addWord(const vespalib::stringref word) {
+    vespalib::datastore::EntryRef addWord(const std::string_view word) {
         _numUniqueWords++;
         return _wordStore.addWord(word);
     }

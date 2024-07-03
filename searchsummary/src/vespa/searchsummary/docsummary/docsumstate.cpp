@@ -30,7 +30,7 @@ GetDocsumsState::DynTeaserState::DynTeaserState()
 GetDocsumsState::DynTeaserState::~DynTeaserState() = default;
 
 std::unique_ptr<juniper::QueryHandle>&
-GetDocsumsState::DynTeaserState::get_query(vespalib::stringref field)
+GetDocsumsState::DynTeaserState::get_query(std::string_view field)
 {
     return _queries[field];
 }

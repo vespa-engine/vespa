@@ -98,7 +98,7 @@ TEST(SimpleValueTest, simple_value_can_be_built_and_inspected) {
     float seq = 0.0;
     for (vespalib::string x: {"a", "b", "c"}) {
         for (vespalib::string y: {"aa", "bb"}) {
-            std::vector<vespalib::stringref> addr = {x, y};
+            std::vector<std::string_view> addr = {x, y};
             auto subspace = builder->add_subspace(addr);
             EXPECT_EQ(subspace.size(), 2);
             subspace[0] = seq + 1.0;

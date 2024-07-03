@@ -109,7 +109,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
         ArrayParser::parse(prop.get(), vector);
         auto factory = FastValueBuilderFactory::get();
         auto builder = factory.create_value_builder<double>(valueType, 1, 1, vector.size());
-        std::vector<vespalib::stringref> addr_ref;
+        std::vector<std::string_view> addr_ref;
         for (const auto &elem : vector) {
             addr_ref.clear();
             addr_ref.push_back(elem);

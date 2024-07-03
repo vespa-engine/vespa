@@ -116,7 +116,7 @@ AttributeNode::AttributeNode() :
 
 AttributeNode::~AttributeNode() = default;
 
-AttributeNode::AttributeNode(vespalib::stringref name)
+AttributeNode::AttributeNode(std::string_view name)
     : FunctionNode(),
       _scratchResult(std::make_unique<AttributeResult>()),
       _index(nullptr),

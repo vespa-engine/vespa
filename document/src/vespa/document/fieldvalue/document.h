@@ -87,8 +87,8 @@ public:
     const StructFieldValue& getFields() const { return _fields; }
     StructFieldValue& getFields() { return _fields; }
 
-    const Field& getField(vespalib::stringref name) const override { return _fields.getField(name); }
-    bool hasField(vespalib::stringref name) const override { return _fields.hasField(name); }
+    const Field& getField(std::string_view name) const override { return _fields.getField(name); }
+    bool hasField(std::string_view name) const override { return _fields.hasField(name); }
 
     void clear() override;
 

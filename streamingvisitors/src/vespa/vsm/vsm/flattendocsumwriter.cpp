@@ -20,7 +20,7 @@ FlattenDocsumWriter::onPrimitive(uint32_t, const Content & c)
     const document::FieldValue & fv = c.getValue();
     if (fv.isLiteral()) {
         const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(fv);
-        vespalib::stringref value = lfv.getValueRef();
+        std::string_view value = lfv.getValueRef();
         _output.put(value.data(), value.size());
     } else if (fv.isNumeric() ||
                fv.isA(document::FieldValue::Type::BOOL))

@@ -145,7 +145,7 @@ PredicateAttribute::before_inc_generation(generation_t current_gen)
 }
 
 std::unique_ptr<AttributeSaver>
-PredicateAttribute::onInitSave(vespalib::stringref fileName)
+PredicateAttribute::onInitSave(std::string_view fileName)
 {
     auto guard(getGenerationHandler().takeGuard());
     auto header = this->createAttributeHeader(fileName);

@@ -50,7 +50,7 @@ private:
     static const bool should_reclaim;
 
     struct AltKey {
-        vespalib::stringref str;
+        std::string_view str;
         uint32_t hash;
     };
 
@@ -132,7 +132,7 @@ private:
     SharedStringRepo();
     ~SharedStringRepo();
 
-    string_id resolve(vespalib::stringref str);
+    string_id resolve(std::string_view str);
     vespalib::string as_string(string_id id);
     string_id copy(string_id id);
     void reclaim(string_id id);
@@ -150,7 +150,7 @@ public:
         static Handle handle_from_number_slow(int64_t value);
     public:
         Handle() noexcept : _id() {}
-        explicit Handle(vespalib::stringref str) : _id(_repo.resolve(str)) {}
+        explicit Handle(std::string_view str) : _id(_repo.resolve(str)) {}
         Handle(const Handle &rhs) : _id(_repo.copy(rhs._id)) {}
         Handle &operator=(const Handle &rhs) {
             string_id copy = _repo.copy(rhs._id);
@@ -196,7 +196,7 @@ public:
         Handles &operator=(const Handles &) = delete;
         Handles &operator=(Handles &&) = delete;
         ~Handles();
-        string_id add(vespalib::stringref str) {
+        string_id add(std::string_view str) {
             string_id id = _repo.resolve(str);
             _handles.push_back(id);
             return id;

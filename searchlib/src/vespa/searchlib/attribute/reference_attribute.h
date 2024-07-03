@@ -54,7 +54,7 @@ private:
     void before_inc_generation(generation_t current_gen) override;
     void onCommit() override;
     void onUpdateStat() override;
-    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     bool onLoad(vespalib::Executor *executor) override;
     uint64_t getUniqueValueCount() const override;
 
@@ -68,8 +68,8 @@ private:
 
 public:
     using SP = std::shared_ptr<ReferenceAttribute>;
-    ReferenceAttribute(const vespalib::stringref baseFileName);
-    ReferenceAttribute(const vespalib::stringref baseFileName, const Config & cfg);
+    ReferenceAttribute(const std::string_view baseFileName);
+    ReferenceAttribute(const std::string_view baseFileName, const Config & cfg);
     ~ReferenceAttribute() override;
     bool addDoc(DocId &doc) override;
     uint32_t clearDoc(DocId doc) override;

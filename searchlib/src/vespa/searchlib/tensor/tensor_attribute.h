@@ -45,11 +45,11 @@ protected:
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
     bool onLoad(vespalib::Executor *executor) override;
-    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     bool tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const;
 
 public:
-    TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory);
+    TensorAttribute(std::string_view name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory);
     ~TensorAttribute() override;
     const ITensorAttribute *asTensorAttribute() const override;
 

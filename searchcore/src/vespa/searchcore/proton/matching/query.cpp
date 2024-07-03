@@ -147,7 +147,7 @@ Query::Query() = default;
 Query::~Query() = default;
 
 bool
-Query::buildTree(vespalib::stringref stack, const string &location,
+Query::buildTree(std::string_view stack, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv,
                  bool always_mark_phrase_expensive)
 {

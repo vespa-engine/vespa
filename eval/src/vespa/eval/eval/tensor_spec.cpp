@@ -176,8 +176,8 @@ struct NormalizeTensorSpec {
         size_t dense_size = type.dense_subspace_size();
         size_t num_mapped_dims = type.count_mapped_dimensions();
         size_t max_subspaces = std::max(spec.cells().size() / dense_size, size_t(1));
-        ArrayArrayMap<vespalib::stringref,T> map(num_mapped_dims, dense_size, max_subspaces);
-        std::vector<vespalib::stringref> sparse_key;
+        ArrayArrayMap<std::string_view,T> map(num_mapped_dims, dense_size, max_subspaces);
+        std::vector<std::string_view> sparse_key;
         for (const auto &entry: spec.cells()) {
             sparse_key.clear();
             size_t dense_key = 0;
@@ -196,12 +196,12 @@ struct NormalizeTensorSpec {
             }
             REQUIRE(binding == entry.first.end());
             REQUIRE(dense_key < map.values_per_entry());
-            auto [tag, ignore] = map.lookup_or_add_entry(ConstArrayRef<vespalib::stringref>(sparse_key));
+            auto [tag, ignore] = map.lookup_or_add_entry(ConstArrayRef<std::string_view>(sparse_key));
             map.get_values(tag)[dense_key] = entry.second;
         }
         // if spec is missing the required dense space, add it here:
         if ((map.keys_per_entry() == 0) && (map.size() == 0)) {
-            map.add_entry(ConstArrayRef<vespalib::stringref>());
+            map.add_entry(ConstArrayRef<std::string_view>());
         }
         TensorSpec result(type.to_spec());
         map.each_entry([&](const auto &keys, const auto &values)

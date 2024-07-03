@@ -11,11 +11,10 @@
 #include <cassert>
 #include <cmath>
 
-VESPALIB_HASH_SET_INSTANTIATE(vespalib::stringref);
+VESPALIB_HASH_SET_INSTANTIATE(std::string_view);
 
 using vespalib::ArrayRef;
 using vespalib::ConstArrayRef;
-using vespalib::stringref;
 using vespalib::asciistream;
 
 namespace metrics {
@@ -38,7 +37,7 @@ namespace {
     return ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_');
 }
 
-[[nodiscard]] bool valid_prometheus_name(stringref name) noexcept {
+[[nodiscard]] bool valid_prometheus_name(std::string_view name) noexcept {
     return std::ranges::all_of(name, [](char ch) noexcept { return valid_prometheus_char(ch); });
 }
 
@@ -46,11 +45,11 @@ namespace {
     return (ch == '\\' || ch == '\n' || ch == '"');
 }
 
-[[nodiscard]] bool label_value_needs_escaping(stringref value) noexcept {
+[[nodiscard]] bool label_value_needs_escaping(std::string_view value) noexcept {
     return std::ranges::any_of(value, [](char ch) noexcept { return label_char_needs_escaping(ch); });
 }
 
-[[nodiscard]] vespalib::string prometheus_escaped_name(stringref str) {
+[[nodiscard]] vespalib::string prometheus_escaped_name(std::string_view str) {
     asciistream os;
     for (char ch : str) {
         if (valid_prometheus_char(ch)) [[likely]] {
@@ -62,11 +61,11 @@ namespace {
     return os.str();
 }
 
-[[nodiscard]] bool arrays_eq(ConstArrayRef<stringref> lhs, ConstArrayRef<stringref> rhs) noexcept {
+[[nodiscard]] bool arrays_eq(ConstArrayRef<std::string_view> lhs, ConstArrayRef<std::string_view> rhs) noexcept {
     return std::ranges::equal(lhs, rhs);
 }
 
-[[nodiscard]] bool arrays_lt(ConstArrayRef<stringref> lhs, ConstArrayRef<stringref> rhs) noexcept {
+[[nodiscard]] bool arrays_lt(ConstArrayRef<std::string_view> lhs, ConstArrayRef<std::string_view> rhs) noexcept {
     return std::ranges::lexicographical_compare(lhs, rhs);
 }
 
@@ -96,19 +95,19 @@ bool PrometheusWriter::TimeSeriesSample::operator<(const TimeSeriesSample& rhs) 
     return arrays_lt(labels, rhs.labels);
 }
 
-stringref PrometheusWriter::arena_stable_string_ref(stringref str) {
+std::string_view PrometheusWriter::arena_stable_string_ref(std::string_view str) {
     auto maybe_iter = _unique_str_refs.find(str);
     if (maybe_iter != _unique_str_refs.end()) {
         return *maybe_iter;
     }
     auto buf = _arena.create_uninitialized_array<char>(str.size());
     memcpy(buf.data(), str.data(), buf.size());
-    stringref ref(buf.data(), buf.size());
+    std::string_view ref(buf.data(), buf.size());
     _unique_str_refs.insert(ref);
     return ref;
 }
 
-stringref PrometheusWriter::stable_name_string_ref(stringref raw_name) {
+std::string_view PrometheusWriter::stable_name_string_ref(std::string_view raw_name) {
     if (valid_prometheus_name(raw_name)) [[likely]] {
         return arena_stable_string_ref(raw_name);
     } else {
@@ -116,17 +115,17 @@ stringref PrometheusWriter::stable_name_string_ref(stringref raw_name) {
     }
 }
 
-ConstArrayRef<stringref> PrometheusWriter::metric_to_path_ref(stringref leaf_metric_name) {
-    vespalib::SmallVector<stringref, 16> path_refs;
+ConstArrayRef<std::string_view> PrometheusWriter::metric_to_path_ref(std::string_view leaf_metric_name) {
+    vespalib::SmallVector<std::string_view, 16> path_refs;
     // _path strings are already in canonical (sanitized) form and arena-allocated
     for (const auto& p :_path) {
         path_refs.emplace_back(p);
     }
     path_refs.emplace_back(stable_name_string_ref(leaf_metric_name));
-    return _arena.copy_array<stringref>({path_refs.data(), path_refs.size()});
+    return _arena.copy_array<std::string_view>({path_refs.data(), path_refs.size()});
 }
 
-vespalib::string PrometheusWriter::escaped_label_value(stringref value) {
+vespalib::string PrometheusWriter::escaped_label_value(std::string_view value) {
     asciistream out;
     for (char ch : value) {
         if (ch == '\\') {
@@ -142,7 +141,7 @@ vespalib::string PrometheusWriter::escaped_label_value(stringref value) {
     return out.str();
 }
 
-stringref PrometheusWriter::stable_label_value_string_ref(stringref raw_label_value) {
+std::string_view PrometheusWriter::stable_label_value_string_ref(std::string_view raw_label_value) {
     if (!label_value_needs_escaping(raw_label_value)) [[likely]] {
         return arena_stable_string_ref(raw_label_value);
     } else {
@@ -150,7 +149,7 @@ stringref PrometheusWriter::stable_label_value_string_ref(stringref raw_label_va
     }
 }
 
-void PrometheusWriter::build_labels_upto_root(vespalib::SmallVector<stringref, 16>& out, const Metric& m) {
+void PrometheusWriter::build_labels_upto_root(vespalib::SmallVector<std::string_view, 16>& out, const Metric& m) {
     const Metric* current = &m;
     do {
         for (const auto& tag : current->getTags()) {
@@ -164,13 +163,13 @@ void PrometheusWriter::build_labels_upto_root(vespalib::SmallVector<stringref, 1
     } while (current != nullptr);
 }
 
-ConstArrayRef<stringref> PrometheusWriter::as_prometheus_labels(const Metric& m) {
+ConstArrayRef<std::string_view> PrometheusWriter::as_prometheus_labels(const Metric& m) {
     if (!any_metric_in_path_has_nonempty_tag(m)) {
         return {};
     }
-    vespalib::SmallVector<stringref, 16> kv_refs;
+    vespalib::SmallVector<std::string_view, 16> kv_refs;
     build_labels_upto_root(kv_refs, m);
-    return _arena.copy_array<stringref>(kv_refs);
+    return _arena.copy_array<std::string_view>(kv_refs);
 }
 
 bool PrometheusWriter::visitSnapshot(const MetricSnapshot& ms) {
@@ -220,13 +219,13 @@ bool PrometheusWriter::visitValueMetric(const AbstractValueMetric& m, bool) {
     return true;
 }
 
-void PrometheusWriter::render_path_as_metric_name_prefix(asciistream& out, ConstArrayRef<stringref> path) {
+void PrometheusWriter::render_path_as_metric_name_prefix(asciistream& out, ConstArrayRef<std::string_view> path) {
     for (const auto& p : path) {
         out << p << '_';
     }
 }
 
-void PrometheusWriter::render_label_pairs(asciistream& out, ConstArrayRef<stringref> labels) {
+void PrometheusWriter::render_label_pairs(asciistream& out, ConstArrayRef<std::string_view> labels) {
     if (!labels.empty()) {
         assert((labels.size() % 2) == 0);
         out << '{';
@@ -265,8 +264,8 @@ void PrometheusWriter::doneVisiting() {
     _out << "# NOTE: THIS API IS NOT INTENDED FOR PUBLIC USE\n";
     // Sort and implicitly group all related metrics together, ordered by name -> aggregation -> dimensions
     std::sort(_samples.begin(), _samples.end());
-    ConstArrayRef<stringref> last_metric;
-    stringref last_aggr;
+    ConstArrayRef<std::string_view> last_metric;
+    std::string_view last_aggr;
     for (const auto& s : _samples) {
         if ((s.aggr != last_aggr) || !arrays_eq(s.metric_path, last_metric)) {
             _out << "# TYPE ";

@@ -91,7 +91,7 @@ public:
     void setVisitRemoves(bool val) { _visitRemoves = val; }
 
     const string & getFieldSet() const { return _fieldSet; }
-    void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
+    void setFieldSet(std::string_view fieldSet) { _fieldSet = fieldSet; }
 
     bool visitInconsistentBuckets() const { return _visitInconsistentBuckets; }
     void setVisitInconsistentBuckets(bool val) { _visitInconsistentBuckets = val; }

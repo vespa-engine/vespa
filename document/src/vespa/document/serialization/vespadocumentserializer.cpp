@@ -36,7 +36,7 @@ using std::make_pair;
 using std::pair;
 using std::vector;
 using vespalib::nbostream;
-using vespalib::stringref;
+using std::string_view;
 using vespalib::string;
 using vespalib::slime::BinaryFormat;
 using vespalib::compression::CompressionConfig;

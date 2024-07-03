@@ -4,7 +4,7 @@
 
 namespace search::attribute {
 
-BaseName::BaseName(vespalib::stringref base, vespalib::stringref name)
+BaseName::BaseName(std::string_view base, std::string_view name)
     : string(base),
       _name(name)
 {
@@ -14,12 +14,12 @@ BaseName::BaseName(vespalib::stringref base, vespalib::stringref name)
     append(name);
 }
 
-BaseName::BaseName(vespalib::stringref s)
+BaseName::BaseName(std::string_view s)
     : string(s),
       _name(createAttributeName(s))
 { }
 BaseName &
-BaseName::operator = (vespalib::stringref s) {
+BaseName::operator = (std::string_view s) {
         BaseName n(s);
         std::swap(*this, n);
         return *this;
@@ -28,7 +28,7 @@ BaseName::operator = (vespalib::stringref s) {
 BaseName::~BaseName() = default;
 
 vespalib::string
-BaseName::createAttributeName(vespalib::stringref s)
+BaseName::createAttributeName(std::string_view s)
 {
     size_t p(s.rfind('/'));
     if (p == string::npos) {

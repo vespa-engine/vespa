@@ -144,7 +144,7 @@ PageDict4RandRead::readPHeader()
 
 
 bool
-PageDict4RandRead::lookup(vespalib::stringref word,
+PageDict4RandRead::lookup(std::string_view word,
                           uint64_t &wordNum,
                           PostingListOffsetAndCounts &offsetAndCounts)
 {

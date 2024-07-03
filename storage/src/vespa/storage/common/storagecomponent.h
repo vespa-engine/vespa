@@ -67,7 +67,7 @@ public:
      * Node type is supposed to be set immediately, and never be updated.
      * Thus it does not need to be threadsafe. Should never be used before set.
      */
-    void setNodeInfo(vespalib::stringref clusterName, const lib::NodeType& nodeType, uint16_t index);
+    void setNodeInfo(std::string_view clusterName, const lib::NodeType& nodeType, uint16_t index);
 
     /**
      * Node state updater is supposed to be set immediately, and never be
@@ -79,7 +79,7 @@ public:
     void setBucketIdFactory(const document::BucketIdFactory&);
     void setDistribution(DistributionSP);
 
-    StorageComponent(StorageComponentRegister&, vespalib::stringref name);
+    StorageComponent(StorageComponentRegister&, std::string_view name);
     ~StorageComponent() override;
 
     const ClusterContext & cluster_context() const noexcept { return _cluster_ctx; }

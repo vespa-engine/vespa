@@ -48,7 +48,7 @@ AttributeManagerExplorer::get_children_names() const
 }
 
 std::unique_ptr<vespalib::StateExplorer>
-AttributeManagerExplorer::get_child(vespalib::stringref name) const
+AttributeManagerExplorer::get_child(std::string_view name) const
 {
     auto guard = _mgr->getAttribute(name);
     if (!guard || !guard->getSP()) {

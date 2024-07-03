@@ -190,7 +190,7 @@ MetricSet::unregisterMetric(Metric& metric)
 }
 
 namespace {
-    using TmpString = vespalib::stringref;
+    using TmpString = std::string_view;
     class StringMetric {
     public:
         StringMetric(const TmpString & s, Metric * m) : first(s), second(m) { }

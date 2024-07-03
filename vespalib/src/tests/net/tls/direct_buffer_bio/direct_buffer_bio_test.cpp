@@ -43,7 +43,7 @@ TEST_F("Mutable BIO_write writes to associated buffer", Fixture) {
     vespalib::string to_write = "hello world!";
     int ret = ::BIO_write(f.mutable_bio.get(), to_write.data(), static_cast<int>(to_write.size()));
     EXPECT_EQUAL(static_cast<int>(to_write.size()), ret);
-    EXPECT_EQUAL(to_write, vespalib::stringref(f.tmp_buf.data(), to_write.size()));
+    EXPECT_EQUAL(to_write, std::string_view(f.tmp_buf.data(), to_write.size()));
     EXPECT_EQUAL(static_cast<int>(to_write.size()), BIO_pending(f.mutable_bio.get()));
 }
 
@@ -61,7 +61,7 @@ TEST_F("Mutable BIO_write moves write cursor per invocation", Fixture) {
     ASSERT_EQUAL(4, ret);
     EXPECT_EQUAL(12, BIO_pending(f.mutable_bio.get()));
 
-    EXPECT_EQUAL(to_write, vespalib::stringref(f.tmp_buf.data(), to_write.size()));
+    EXPECT_EQUAL(to_write, std::string_view(f.tmp_buf.data(), to_write.size()));
 }
 
 TEST_F("Const BIO_read reads from associated buffer", Fixture) {
@@ -72,7 +72,7 @@ TEST_F("Const BIO_read reads from associated buffer", Fixture) {
     EXPECT_EQUAL(static_cast<int>(to_read.size()), ret);
     EXPECT_EQUAL(ret, static_cast<int>(to_read.size()));
 
-    EXPECT_EQUAL(to_read, vespalib::stringref(f.tmp_buf.data(), to_read.size()));
+    EXPECT_EQUAL(to_read, std::string_view(f.tmp_buf.data(), to_read.size()));
 }
 
 TEST_F("Const BIO_read moves read cursor per invocation", Fixture) {
@@ -90,7 +90,7 @@ TEST_F("Const BIO_read moves read cursor per invocation", Fixture) {
     ASSERT_EQUAL(6, ret);
     EXPECT_EQUAL(0, BIO_pending(f.const_bio.get()));
 
-    EXPECT_EQUAL(to_read, vespalib::stringref(f.tmp_buf.data(), to_read.size()));
+    EXPECT_EQUAL(to_read, std::string_view(f.tmp_buf.data(), to_read.size()));
 }
 
 TEST_F("Const BIO read EOF returns -1 by default and sets BIO retry flag", Fixture) {

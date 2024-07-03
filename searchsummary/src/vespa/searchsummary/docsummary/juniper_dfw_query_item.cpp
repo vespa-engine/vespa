@@ -6,7 +6,7 @@
 
 namespace search::docsummary {
 
-vespalib::stringref
+std::string_view
 JuniperDFWQueryItem::get_index() const
 {
     return _si != nullptr ? _si->getIndexName() : _data->_index;

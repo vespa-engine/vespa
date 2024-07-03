@@ -25,7 +25,7 @@ QueryTermFilterFactory::QueryTermFilterFactory(const search::index::Schema& sche
 QueryTermFilterFactory::~QueryTermFilterFactory() = default;
 
 std::shared_ptr<const IQueryTermFilter>
-QueryTermFilterFactory::make(vespalib::stringref input_field) const
+QueryTermFilterFactory::make(std::string_view input_field) const
 {
     vespalib::hash_set<vespalib::string> views;
     views.insert(input_field);

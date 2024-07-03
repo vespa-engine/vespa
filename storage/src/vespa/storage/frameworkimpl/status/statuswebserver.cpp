@@ -183,7 +183,7 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Por
     vespalib::string link(urlpath.getPath());
 
     // We allow a fixed path prefix that aliases down to whatever is provided after the prefix.
-    vespalib::stringref optional_status_path_prefix = "/contentnode-status/v1/";
+    std::string_view optional_status_path_prefix = "/contentnode-status/v1/";
     if (link.starts_with(optional_status_path_prefix)) {
         link = link.substr(optional_status_path_prefix.size());
     }

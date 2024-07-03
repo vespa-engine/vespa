@@ -400,7 +400,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, DocumentMetaEnum flags,
-                const GlobalId &gid, vespalib::stringref doc_type_name)
+                const GlobalId &gid, std::string_view doc_type_name)
 {
     ASSERT_LESS(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, flags, doc_type_name, gid);
@@ -426,7 +426,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
     EXPECT_GREATER(getSize(doc), 0u);
 }
 
-GlobalId gid_of(vespalib::stringref id_str) {
+GlobalId gid_of(std::string_view id_str) {
     return DocumentId(id_str).getGlobalId();
 }
 

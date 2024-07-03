@@ -100,7 +100,7 @@ public:
     }
 };
 
-OnnxBlueprint::OnnxBlueprint(vespalib::stringref baseName)
+OnnxBlueprint::OnnxBlueprint(std::string_view baseName)
     : Blueprint(baseName),
       _cache_token(),
       _debug_model(),

@@ -42,7 +42,7 @@ using vespalib::Slime;
 using vespalib::asciistream;
 using vespalib::nbostream;
 using vespalib::Memory;
-using vespalib::stringref;
+using std::string_view;
 using vespalib::compression::CompressionConfig;
 using vespalib::ConstBufferRef;
 using vespalib::make_string_short::fmt;
@@ -104,7 +104,7 @@ VespaDocumentDeserializer::read(FieldValue &value) {
 const DocumentType*
 VespaDocumentDeserializer::readDocType(const DocumentType &guess)
 {
-    stringref type_name(_stream.peek());
+    string_view type_name(_stream.peek());
 
     _stream.adjustReadPos(type_name.size() + 1);
     readValue<uint16_t>(_stream);  // skip version
@@ -122,7 +122,7 @@ VespaDocumentDeserializer::readDocType(const DocumentType &guess)
 
 void
 VespaDocumentDeserializer::read(DocumentId &value) {
-    stringref s(_stream.peek());
+    string_view s(_stream.peek());
     value.set(s);
     _stream.adjustReadPos(s.size() + 1);
 }
@@ -249,7 +249,7 @@ VespaDocumentDeserializer::read(PredicateFieldValue &value) {
 
 namespace {
 template <typename FV>
-void setValue(FV &field_value, stringref val, bool use_ref) {
+void setValue(FV &field_value, string_view val, bool use_ref) {
     if (use_ref) {
         field_value.setValueRef(val);
     } else {
@@ -261,7 +261,7 @@ void setValue(FV &field_value, stringref val, bool use_ref) {
 void
 VespaDocumentDeserializer::read(RawFieldValue &value) {
     uint32_t size = readValue<uint32_t>(_stream);
-    stringref val(_stream.peek(), size);
+    string_view val(_stream.peek(), size);
     setValue(value, val, _stream.isLongLivedBuffer());
     _stream.adjustReadPos(size);
 }
@@ -278,7 +278,7 @@ VespaDocumentDeserializer::read(StringFieldValue &value) {
     if (size == 0) {
         throw DeserializeException("invalid zero string length", VESPA_STRLOC);
     }
-    stringref val(_stream.peek(), size - 1);
+    string_view val(_stream.peek(), size - 1);
     _stream.adjustReadPos(size);
     setValue(value, val, _stream.isLongLivedBuffer());
     if (coding & 0x40) {

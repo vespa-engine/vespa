@@ -38,7 +38,6 @@ using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
-using vespalib::stringref;
 using vespalib::string;
 namespace fs = std::filesystem;
 
@@ -139,7 +138,7 @@ baseFileName(const string &attrName)
 }
 
 AttributeVector::SP
-createAttribute(stringref attrName, const search::attribute::Config &cfg)
+createAttribute(std::string_view attrName, const search::attribute::Config &cfg)
 {
     return search::AttributeFactory::createAttribute(baseFileName(attrName), cfg);
 }

@@ -19,7 +19,7 @@ using search::feature_t;
 //---------------------------------------------------------------------------------------------------------------------
 class StringList : public std::vector<vespalib::string> {
 public:
-    StringList &add(vespalib::stringref str) { push_back(str); return *this; }
+    StringList &add(std::string_view str) { push_back(str); return *this; }
     StringList &clear()  { std::vector<vespalib::string>::clear(); return *this; }
 };
 

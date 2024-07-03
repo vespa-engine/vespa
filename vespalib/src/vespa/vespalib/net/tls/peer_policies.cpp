@@ -34,7 +34,7 @@ is_regex_special_char(char c) noexcept {
 // Important: `delimiter` MUST NOT be a character that needs escaping within a regex [charset]
 template <bool SupportSingleCharMatch>
 std::string
-char_delimited_glob_to_regex(vespalib::stringref glob, char delimiter) {
+char_delimited_glob_to_regex(std::string_view glob, char delimiter) {
     std::string ret = "^";
     ret.reserve(glob.size() + 2);
     // Note: we explicitly stop matching at a delimiter boundary.
@@ -70,15 +70,15 @@ public:
 
     RegexHostMatchPattern& operator=(RegexHostMatchPattern&&) noexcept = default;
 
-    [[nodiscard]] static RegexHostMatchPattern from_dns_glob_pattern(vespalib::stringref glob_pattern) {
+    [[nodiscard]] static RegexHostMatchPattern from_dns_glob_pattern(std::string_view glob_pattern) {
         return RegexHostMatchPattern(char_delimited_glob_to_regex<true>(glob_pattern, '.'));
     }
 
-    [[nodiscard]] static RegexHostMatchPattern from_uri_glob_pattern(vespalib::stringref glob_pattern) {
+    [[nodiscard]] static RegexHostMatchPattern from_uri_glob_pattern(std::string_view glob_pattern) {
         return RegexHostMatchPattern(char_delimited_glob_to_regex<false>(glob_pattern, '/'));
     }
 
-    [[nodiscard]] bool matches(vespalib::stringref str) const noexcept override {
+    [[nodiscard]] bool matches(std::string_view str) const noexcept override {
         return _pattern_as_regex.full_match(std::string_view(str.data(), str.size()));
     }
 };
@@ -86,13 +86,13 @@ public:
 class ExactMatchPattern : public CredentialMatchPattern {
     vespalib::string _must_match_exactly;
 public:
-    explicit ExactMatchPattern(vespalib::stringref str_to_match) noexcept // vespalib::string ctors marked noexcept
+    explicit ExactMatchPattern(std::string_view str_to_match) noexcept // vespalib::string ctors marked noexcept
         : _must_match_exactly(str_to_match)
     {
     }
     ~ExactMatchPattern() override = default;
 
-    [[nodiscard]] bool matches(vespalib::stringref str) const noexcept override {
+    [[nodiscard]] bool matches(std::string_view str) const noexcept override {
         return (str == _must_match_exactly);
     }
 };
@@ -100,17 +100,17 @@ public:
 } // anon ns
 
 std::shared_ptr<const CredentialMatchPattern>
-CredentialMatchPattern::create_from_dns_glob(vespalib::stringref glob_pattern) {
+CredentialMatchPattern::create_from_dns_glob(std::string_view glob_pattern) {
     return std::make_shared<const RegexHostMatchPattern>(RegexHostMatchPattern::from_dns_glob_pattern(glob_pattern));
 }
 
 std::shared_ptr<const CredentialMatchPattern>
-    CredentialMatchPattern::create_from_uri_glob(vespalib::stringref glob_pattern) {
+    CredentialMatchPattern::create_from_uri_glob(std::string_view glob_pattern) {
     return std::make_shared<const RegexHostMatchPattern>(RegexHostMatchPattern::from_uri_glob_pattern(glob_pattern));
 }
 
 std::shared_ptr<const CredentialMatchPattern>
-CredentialMatchPattern::create_exact_match(vespalib::stringref str) {
+CredentialMatchPattern::create_exact_match(std::string_view str) {
     return std::make_shared<const ExactMatchPattern>(str);
 }
 

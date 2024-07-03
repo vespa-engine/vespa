@@ -72,7 +72,7 @@ public:
      * @param type The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(vespalib::stringref name, int fieldId, const DataType &type);
+    Field(std::string_view name, int fieldId, const DataType &type);
 
     Field();
 
@@ -84,7 +84,7 @@ public:
      * @param dataType The datatype of the field.
      * @param headerField Whether or not this is a "header" field.
      */
-    Field(vespalib::stringref name, const DataType &dataType);
+    Field(std::string_view name, const DataType &dataType);
 
     ~Field() override;
 

@@ -36,7 +36,7 @@ public:
      * @param m error message
      * @param s error service
      **/
-    Error(uint32_t c, vespalib::stringref m, vespalib::stringref s = "");
+    Error(uint32_t c, std::string_view m, std::string_view s = "");
 
     /**
      * Obtain the error code of this error.

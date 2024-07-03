@@ -21,7 +21,7 @@ class FieldPathUpdate
 {
 public:
     using nbostream = vespalib::nbostream;
-    using stringref = vespalib::stringref;
+    using stringref = std::string_view;
 
     enum FieldPathUpdateType {
         Add    = IDENTIFIABLE_CLASSID(AddFieldPathUpdate),

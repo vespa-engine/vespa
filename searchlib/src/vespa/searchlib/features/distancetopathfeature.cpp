@@ -129,7 +129,7 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     std::vector<Vector2> path;
     search::fef::Property pro = env.getProperties().lookup(getName(), "path");
     if (pro.found()) {
-        vespalib::stringref str = pro.getAt(0);
+        std::string_view str = pro.getAt(0);
         uint32_t len = str.size();
         if ((len > 1) && (str[0] == '(') && (str[len - 1] == ')')) {
             str = str.substr(1, len - 1); // remove braces

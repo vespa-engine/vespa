@@ -34,7 +34,7 @@ private:
         vespalib::string path_prefix;
         const JsonGetHandler *handler;
         Hook(size_t seq_in,
-             vespalib::stringref prefix_in,
+             std::string_view prefix_in,
              const JsonGetHandler &handler_in) noexcept
             : seq(seq_in), path_prefix(prefix_in), handler(&handler_in) {}
         bool operator <(const Hook &rhs) const {
@@ -48,7 +48,7 @@ private:
     struct Resource {
         size_t seq;
         vespalib::string path;
-        Resource(size_t seq_in, vespalib::stringref path_in) noexcept
+        Resource(size_t seq_in, std::string_view path_in) noexcept
             : seq(seq_in), path(path_in) {}
     };
 
@@ -59,9 +59,9 @@ private:
         std::vector<Hook> hooks;
         std::vector<Resource> root_resources;
         State() noexcept : lock(), seq(0), hooks(), root_resources() {}
-        size_t bind(vespalib::stringref path_prefix,
+        size_t bind(std::string_view path_prefix,
                     const JsonGetHandler &get_handler);
-        size_t add_root_resource(vespalib::stringref path);
+        size_t add_root_resource(std::string_view path);
         void unbind(size_t my_seq);
     };
 
@@ -80,8 +80,8 @@ private:
 public:
     JsonHandlerRepo();
     ~JsonHandlerRepo() override;
-    Token::UP bind(vespalib::stringref path_prefix, const JsonGetHandler &get_handler);
-    Token::UP add_root_resource(vespalib::stringref path);
+    Token::UP bind(std::string_view path_prefix, const JsonGetHandler &get_handler);
+    Token::UP add_root_resource(std::string_view path);
     [[nodiscard]] std::vector<vespalib::string> get_root_resources() const;
     [[nodiscard]] Response get(const vespalib::string &host, const vespalib::string &path,
                                const std::map<vespalib::string,vespalib::string> &params,

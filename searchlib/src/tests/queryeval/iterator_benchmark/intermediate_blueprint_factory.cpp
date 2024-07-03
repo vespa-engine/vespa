@@ -18,7 +18,7 @@ IntermediateBlueprintFactory::child_name(void* blueprint) const
     return '?';
 }
 
-IntermediateBlueprintFactory::IntermediateBlueprintFactory(vespalib::stringref name)
+IntermediateBlueprintFactory::IntermediateBlueprintFactory(std::string_view name)
     : _name(name),
       _children(),
       _child_names()

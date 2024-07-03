@@ -127,7 +127,7 @@ const vespalib::string & StringUtil::escape(const vespalib::string & source, ves
     return source;
 }
 
-vespalib::string StringUtil::unescape(vespalib::stringref source)
+vespalib::string StringUtil::unescape(std::string_view source)
 {
     vespalib::asciistream ost;
     for (unsigned int i=0; i<source.size(); ++i) {

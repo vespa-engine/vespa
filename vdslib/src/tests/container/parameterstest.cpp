@@ -24,8 +24,8 @@ TEST(ParametersTest, test_parameters)
     ByteBuffer bBuf(buffer.getBuffer(), buffer.position());
     Parameters par2(bBuf);
 
-    EXPECT_EQ(vespalib::stringref("overture"), par2.get("fast"));
-    EXPECT_EQ(vespalib::stringref("yahoo"), par2.get("overture"));
+    EXPECT_EQ(std::string_view("overture"), par2.get("fast"));
+    EXPECT_EQ(std::string_view("yahoo"), par2.get("overture"));
     std::string stringDefault = "wayne corp";
     int numberDefault = 123;
     int64_t int64Default = 456;

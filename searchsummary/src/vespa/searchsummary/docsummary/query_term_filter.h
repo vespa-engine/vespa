@@ -18,7 +18,7 @@ class QueryTermFilter : public IQueryTermFilter
 public:
     QueryTermFilter(StringSet views);
     ~QueryTermFilter() override;
-    bool use_view(vespalib::stringref view) const override;
+    bool use_view(std::string_view view) const override;
 };
 
 }

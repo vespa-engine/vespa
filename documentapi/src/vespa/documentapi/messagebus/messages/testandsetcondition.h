@@ -15,7 +15,7 @@ public:
         : _selection()
     {}
     
-    explicit TestAndSetCondition(vespalib::stringref selection)
+    explicit TestAndSetCondition(std::string_view selection)
         : _selection(selection)
     {}
 

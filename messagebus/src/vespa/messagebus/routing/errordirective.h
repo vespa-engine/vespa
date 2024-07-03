@@ -22,7 +22,7 @@ public:
      *
      * @param msg The error message.
      */
-    ErrorDirective(vespalib::stringref msg);
+    ErrorDirective(std::string_view msg);
     ~ErrorDirective() override;
 
     /**

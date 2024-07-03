@@ -17,7 +17,7 @@ QueryTermFilter::QueryTermFilter(StringSet views)
 QueryTermFilter::~QueryTermFilter() = default;
 
 bool
-QueryTermFilter::use_view(vespalib::stringref view) const
+QueryTermFilter::use_view(std::string_view view) const
 {
     return _views.contains(view);
 }

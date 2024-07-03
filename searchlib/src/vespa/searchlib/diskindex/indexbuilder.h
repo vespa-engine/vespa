@@ -22,13 +22,13 @@ class BitVectorCandidate;
 class IndexBuilder : public index::IndexBuilder {
 public:
     // Schema argument must live until IndexBuilder has been deleted.
-    IndexBuilder(const index::Schema &schema, vespalib::stringref prefix, uint32_t docIdLimit,
+    IndexBuilder(const index::Schema &schema, std::string_view prefix, uint32_t docIdLimit,
                  uint64_t numWordIds, const index::IFieldLengthInspector &field_length_inspector,
                  const TuneFileIndexing &tuneFileIndexing, const search::common::FileHeaderContext &fileHeaderContext);
     ~IndexBuilder() override;
 
     std::unique_ptr<index::FieldIndexBuilder> startField(uint32_t fieldId) override;
-    vespalib::string appendToPrefix(vespalib::stringref name) const;
+    vespalib::string appendToPrefix(std::string_view name) const;
 private:
     std::vector<int>          _fields;
     const vespalib::string    _prefix;

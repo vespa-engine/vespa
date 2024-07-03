@@ -7,7 +7,7 @@
 
 namespace vespalib::slime {
 
-using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
+using Path = std::vector<std::variant<size_t,std::string_view>>;
 using Hook = std::function<bool(const Path &, const Inspector &, const Inspector &)>;
 
 namespace {

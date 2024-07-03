@@ -10,7 +10,7 @@ static_assert(BucketSpace::placeHolder() != BucketSpace::invalid());
 static_assert(FixedBucketSpaces::default_space() == BucketSpace::placeHolder());
 static_assert(FixedBucketSpaces::global_space() != FixedBucketSpaces::default_space());
 
-BucketSpace FixedBucketSpaces::from_string(vespalib::stringref name) {
+BucketSpace FixedBucketSpaces::from_string(std::string_view name) {
     if (name == "default") {
         return default_space();
     } else if (name == "global") {
@@ -20,7 +20,7 @@ BucketSpace FixedBucketSpaces::from_string(vespalib::stringref name) {
     }
 }
 
-vespalib::stringref FixedBucketSpaces::to_string(BucketSpace space) {
+std::string_view FixedBucketSpaces::to_string(BucketSpace space) {
     if (space == default_space()) {
         return "default";
     } else if (space == global_space()) {

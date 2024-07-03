@@ -15,7 +15,6 @@ LOG_SETUP("summaryengine_test");
 using namespace search::engine;
 using namespace document;
 using namespace vespalib::slime;
-using vespalib::stringref;
 using vespalib::ConstBufferRef;
 using vespalib::DataBuffer;
 using vespalib::Memory;
@@ -44,16 +43,16 @@ getAnswer(size_t num, const char * reply = "myreply") {
 namespace proton {
 
 namespace {
-stringref MYREPLY("myreply");
+std::string_view MYREPLY("myreply");
 Memory DOCSUMS("docsums");
 Memory DOCSUM("docsum");
 }
 
 class MySearchHandler : public ISearchHandler {
     std::string _name;
-    stringref _reply;
+    std::string_view _reply;
 public:
-    explicit MySearchHandler(std::string name = "my", stringref reply = MYREPLY) noexcept
+    explicit MySearchHandler(std::string name = "my", std::string_view reply = MYREPLY) noexcept
         : _name(std::move(name)), _reply(reply)
     {}
 
@@ -185,7 +184,7 @@ TEST("requireThatHandlersAreStored") {
 }
 
 bool
-assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, stringref expReply) {
+assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, std::string_view expReply) {
     DocsumRequest::UP request(createRequest());
     request->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", searchDocType);
     MyDocsumClient client;

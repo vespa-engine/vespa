@@ -32,7 +32,7 @@ public:
      * @param route The string to parse.
      * @return A route that corresponds to the string.
      */
-    static Route parse(vespalib::stringref route);
+    static Route parse(std::string_view route);
 
     /**
      * Create a Route that contains no hops

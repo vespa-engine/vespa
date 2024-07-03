@@ -27,7 +27,7 @@ public:
     JuniperDFWQueryItem(const QueryItem&) = delete;
     JuniperDFWQueryItem& operator= (const QueryItem&) = delete;
 
-    vespalib::stringref get_index() const override;
+    std::string_view get_index() const override;
     int get_weight() const override;
     juniper::ItemCreator get_creator() const override;
 };

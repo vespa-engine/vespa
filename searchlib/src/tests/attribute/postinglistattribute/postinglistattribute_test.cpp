@@ -331,7 +331,7 @@ PostingListAttributeTest::getSearch(const V &vec, const T &term, bool prefix, co
     ss << term;
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
-    return (static_cast<const AttributeVector &>(vec)).getSearch(vespalib::stringref(&query[0], query.size()), params);
+    return (static_cast<const AttributeVector &>(vec)).getSearch(std::string_view(&query[0], query.size()), params);
 }
 
 
@@ -525,7 +525,7 @@ PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool 
 
 
 AttributePtr
-create_attribute(const vespalib::stringref name, const Config& cfg)
+create_attribute(const std::string_view name, const Config& cfg)
 {
     return AttributeFactory::createAttribute(tmp_dir + "/" + name, cfg);
 }

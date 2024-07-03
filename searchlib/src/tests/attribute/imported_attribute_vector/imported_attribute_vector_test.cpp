@@ -278,9 +278,9 @@ SingleStringAttrFixture::~SingleStringAttrFixture() = default;
 TEST_F("Single-valued string attribute values can be retrieved via reference", SingleStringAttrFixture)
 {
     auto buf = f.get_imported_attr()->get_raw(DocId(2));
-    EXPECT_EQUAL(vespalib::stringref("foo"), vespalib::stringref(buf.data(), buf.size()));
+    EXPECT_EQUAL(std::string_view("foo"), std::string_view(buf.data(), buf.size()));
     buf = f.get_imported_attr()->get_raw(DocId(4));
-    EXPECT_EQUAL(vespalib::stringref("bar"), vespalib::stringref(buf.data(), buf.size()));
+    EXPECT_EQUAL(std::string_view("bar"), std::string_view(buf.data(), buf.size()));
 }
 
 TEST_F("getEnum() returns target vector enum via reference", SingleStringAttrFixture)

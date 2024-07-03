@@ -74,7 +74,7 @@ using NumericVectorBaseT = VectorBase<T, T, feature_t>;
 template<typename T>
 class IntegerVectorT : public NumericVectorBaseT<T> {
 public:
-    void insert(vespalib::stringref label, vespalib::stringref value) {
+    void insert(std::string_view label, std::string_view value) {
         this->_vector.emplace_back(util::strToNum<T>(label), util::strToNum<feature_t>(value));
     }
 };
@@ -96,7 +96,7 @@ public:
     StringVector(StringVector &&) = default;
     StringVector & operator = (StringVector &&) = default;
     ~StringVector();
-    void insert(vespalib::stringref label, vespalib::stringref value) {
+    void insert(std::string_view label, std::string_view value) {
         _vector.emplace_back(label, util::strToNum<feature_t>(value));
     }
 };
@@ -109,7 +109,7 @@ private:
     const attribute::IAttributeVector * _attribute;
 public:
     EnumVector(const attribute::IAttributeVector * attribute) : _attribute(attribute) {}
-    void insert(vespalib::stringref label, vespalib::stringref value) {
+    void insert(std::string_view label, std::string_view value) {
         attribute::EnumHandle e;
         if (_attribute->findEnum(label.data(), e)) {
             _vector.emplace_back(e, util::strToNum<feature_t>(value));

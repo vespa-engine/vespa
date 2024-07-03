@@ -125,7 +125,7 @@ private:
     void replyDroppedOperation(api::StorageMessage& msg,
                                const document::Bucket& bucket,
                                api::ReturnCode::Result returnCode,
-                               vespalib::stringref reason);
+                               std::string_view reason);
 
     StorBucketDatabase::WrappedEntry ensureConsistentBucket(
             const document::Bucket& bucket,

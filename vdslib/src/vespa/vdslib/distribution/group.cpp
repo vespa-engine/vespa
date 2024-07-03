@@ -11,7 +11,7 @@
 
 namespace storage::lib {
 
-Group::Group(uint16_t index, vespalib::stringref name) noexcept
+Group::Group(uint16_t index, std::string_view name) noexcept
     : _name(name),
       _index(index),
       _distributionHash(0),
@@ -21,7 +21,7 @@ Group::Group(uint16_t index, vespalib::stringref name) noexcept
 {
 }
 
-Group::Group(uint16_t index, vespalib::stringref name,
+Group::Group(uint16_t index, std::string_view name,
              const Distribution& d, uint16_t redundancy)
     : _name(name),
       _index(index),

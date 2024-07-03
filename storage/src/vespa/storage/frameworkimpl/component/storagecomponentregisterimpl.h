@@ -47,7 +47,7 @@ public:
 
     void registerStorageComponent(StorageComponent&) override;
 
-    void setNodeInfo(vespalib::stringref clusterName, const lib::NodeType& nodeType, uint16_t index);
+    void setNodeInfo(std::string_view clusterName, const lib::NodeType& nodeType, uint16_t index);
     virtual void setNodeStateUpdater(NodeStateUpdater& updater);
     virtual void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
     virtual void setBucketIdFactory(const document::BucketIdFactory&);

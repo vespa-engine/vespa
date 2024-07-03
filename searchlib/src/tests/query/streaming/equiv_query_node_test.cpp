@@ -33,7 +33,7 @@ using search::streaming::QueryTermList;
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
-    bool allow_float_terms_rewrite(vespalib::stringref) const noexcept override { return true; }
+    bool allow_float_terms_rewrite(std::string_view) const noexcept override { return true; }
 };
 
 class EquivQueryNodeTest : public ::testing::Test

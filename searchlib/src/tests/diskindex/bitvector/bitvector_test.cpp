@@ -17,8 +17,8 @@ struct FieldWriterWrapper
 {
     FieldWriter _writer;
 
-    FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref path);
-    FieldWriterWrapper & newWord(vespalib::stringref word);
+    FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds, std::string_view path);
+    FieldWriterWrapper & newWord(std::string_view word);
     FieldWriterWrapper & add(uint32_t docId);
 
     bool open(const Schema &schema, const uint32_t indexId,
@@ -26,7 +26,7 @@ struct FieldWriterWrapper
 };
 
 
-FieldWriterWrapper::FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds, vespalib::stringref path)
+FieldWriterWrapper::FieldWriterWrapper(uint32_t docIdLimit, uint64_t numWordIds, std::string_view path)
     : _writer(docIdLimit, numWordIds, path)
 {
     std::filesystem::create_directory(std::filesystem::path(path));
@@ -40,7 +40,7 @@ FieldWriterWrapper::open(const Schema &schema, const uint32_t indexId,
 }
 
 FieldWriterWrapper &
-FieldWriterWrapper::newWord(vespalib::stringref word)
+FieldWriterWrapper::newWord(std::string_view word)
 {
     _writer.newWord(word);
     return *this;

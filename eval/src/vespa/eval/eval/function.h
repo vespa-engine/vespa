@@ -45,15 +45,15 @@ public:
     Function &operator=(const Function &rhs) = delete;
     ~Function() { delete_node(std::move(_root)); }
     size_t num_params() const { return _params.size(); }
-    vespalib::stringref param_name(size_t idx) const { return _params[idx]; }
+    std::string_view param_name(size_t idx) const { return _params[idx]; }
     bool has_error() const;
     vespalib::string get_error() const;
     const nodes::Node &root() const { return *_root; }
     static std::shared_ptr<Function const> create(nodes::Node_UP root_in, std::vector<vespalib::string> params_in);
-    static std::shared_ptr<Function const> parse(vespalib::stringref expression);
-    static std::shared_ptr<Function const> parse(vespalib::stringref expression, const SymbolExtractor &symbol_extractor);
-    static std::shared_ptr<Function const> parse(const std::vector<vespalib::string> &params, vespalib::stringref expression);
-    static std::shared_ptr<Function const> parse(const std::vector<vespalib::string> &params, vespalib::stringref expression,
+    static std::shared_ptr<Function const> parse(std::string_view expression);
+    static std::shared_ptr<Function const> parse(std::string_view expression, const SymbolExtractor &symbol_extractor);
+    static std::shared_ptr<Function const> parse(const std::vector<vespalib::string> &params, std::string_view expression);
+    static std::shared_ptr<Function const> parse(const std::vector<vespalib::string> &params, std::string_view expression,
                      const SymbolExtractor &symbol_extractor);
     vespalib::string dump() const {
         nodes::DumpContext dump_context(_params);
@@ -62,7 +62,7 @@ public:
     vespalib::string dump_as_lambda() const;
     // Utility function used to unwrap an expression contained inside
     // a named wrapper. For example 'max(x+y)' -> 'max', 'x+y'
-    static bool unwrap(vespalib::stringref input,
+    static bool unwrap(std::string_view input,
                        vespalib::string &wrapper,
                        vespalib::string &body,
                        vespalib::string &error);

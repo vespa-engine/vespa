@@ -4,7 +4,7 @@
 
 namespace storage {
 
-TlsStatisticsMetricsWrapper::EndpointMetrics::EndpointMetrics(vespalib::stringref type, metrics::MetricSet* owner)
+TlsStatisticsMetricsWrapper::EndpointMetrics::EndpointMetrics(std::string_view type, metrics::MetricSet* owner)
     : metrics::MetricSet(type, {}, "Endpoint type metrics", owner),
       tls_connections_established("tls-connections-established", {},
               "Number of secure mTLS connections established", this),

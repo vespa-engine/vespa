@@ -74,7 +74,7 @@ TEST(DocumentTest, testFieldPath)
                                        "{\"\"}", "", ""
                                      };
     for (size_t i(0); i < sizeof(testValues)/sizeof(testValues[0]); i+=3) {
-        vespalib::stringref tmp = testValues[i];
+        std::string_view tmp = testValues[i];
         vespalib::string key = FieldPathEntry::parseKey(tmp);
         EXPECT_EQ(testValues[i+1], key);
         EXPECT_EQ(testValues[i+2], vespalib::string(tmp));

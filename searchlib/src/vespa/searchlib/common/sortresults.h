@@ -111,7 +111,7 @@ private:
 public:
     FastS_SortSpec(const FastS_SortSpec &) = delete;
     FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
-    FastS_SortSpec(vespalib::stringref documentmetastore, uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory);
+    FastS_SortSpec(std::string_view documentmetastore, uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory);
     ~FastS_SortSpec() override;
 
     std::pair<const char *, size_t> getSortRef(size_t i) const {

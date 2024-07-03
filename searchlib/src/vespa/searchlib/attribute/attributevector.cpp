@@ -77,13 +77,13 @@ make_memory_allocator(const vespalib::string& name, const search::attribute::Con
 }
 
 bool
-exists(vespalib::stringref name) {
+exists(std::string_view name) {
     return fs::exists(fs::path(name)); 
 }
 
 }
 
-AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config &c)
+AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
     : _baseFileName(baseFileName),
       _config(std::make_unique<Config>(c)),
       _interlock(std::make_shared<attribute::Interlock>()),
@@ -248,7 +248,7 @@ IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
 
 bool
-AttributeVector::save(vespalib::stringref fileName)
+AttributeVector::save(std::string_view fileName)
 {
     TuneFileAttributes tune;
     DummyFileHeaderContext fileHeaderContext;
@@ -264,7 +264,7 @@ AttributeVector::save()
 
 
 bool
-AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref fileName)
+AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileName)
 {
     commit();
     // First check if new style save is available.
@@ -285,7 +285,7 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref file
 }
 
 attribute::AttributeHeader
-AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
+AttributeVector::createAttributeHeader(std::string_view fileName) const {
     return attribute::AttributeHeader(fileName,
                                       getConfig().basicType(),
                                       getConfig().collectionType(),
@@ -537,14 +537,14 @@ void AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &
 
 
 std::unique_ptr<AttributeSaver>
-AttributeVector::initSave(vespalib::stringref fileName)
+AttributeVector::initSave(std::string_view fileName)
 {
     commit();
     return onInitSave(fileName);
 }
 
 std::unique_ptr<AttributeSaver>
-AttributeVector::onInitSave(vespalib::stringref)
+AttributeVector::onInitSave(std::string_view)
 {
     return std::unique_ptr<AttributeSaver>();
 }

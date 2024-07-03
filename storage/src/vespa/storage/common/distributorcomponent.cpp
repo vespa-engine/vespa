@@ -8,7 +8,7 @@
 namespace storage {
 
 DistributorComponent::DistributorComponent(DistributorComponentRegister& compReg,
-                                           vespalib::stringref name)
+                                           std::string_view name)
     : StorageComponent(compReg, name),
       _timeCalculator(nullptr),
       _distributorConfig(std::make_unique<DistributorManagerConfig>()),

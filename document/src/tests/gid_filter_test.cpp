@@ -16,7 +16,7 @@ protected:
         BucketIdFactory _id_factory;
         std::unique_ptr<Node> _root;
         
-        explicit Fixture(vespalib::stringref selection);
+        explicit Fixture(std::string_view selection);
         ~Fixture();
 
         Fixture(const Fixture&) = delete;
@@ -24,17 +24,17 @@ protected:
         Fixture& operator=(const Fixture&) = delete;
         Fixture& operator=(Fixture&&) = delete;
 
-        static Fixture for_selection(vespalib::stringref s) {
+        static Fixture for_selection(std::string_view s) {
             return Fixture(s);
         }
     };
 
-    static GlobalId id_to_gid(vespalib::stringref id_string) {
+    static GlobalId id_to_gid(std::string_view id_string) {
         return DocumentId(id_string).getGlobalId();
     }
 
-    bool might_match(vespalib::stringref selection,
-                     vespalib::stringref id_string) const
+    bool might_match(std::string_view selection,
+                     std::string_view id_string) const
     {
         Fixture f(selection);
         auto filter = GidFilter::for_selection_root_node(*f._root);
@@ -42,7 +42,7 @@ protected:
     }
 };
 
-GidFilterTest::Fixture::Fixture(vespalib::stringref selection)
+GidFilterTest::Fixture::Fixture(std::string_view selection)
     : _repo(),
       _id_factory(),
       _root(Parser(_repo.getTypeRepo(), _id_factory).parse(std::string(selection)))

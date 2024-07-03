@@ -442,7 +442,7 @@ struct MyRegExpTerm : RegExpTerm {
     }
 };
 struct MyNearestNeighborTerm : NearestNeighborTerm {
-    MyNearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
+    MyNearestNeighborTerm(std::string_view query_tensor_name, std::string_view field_name,
                           int32_t i, Weight w, uint32_t target_num_hits,
                           bool allow_approximate, uint32_t explore_additional_hits,
                           double distance_threshold)
@@ -751,7 +751,7 @@ verify_multiterm_get(const MultiTerm & mt) {
         auto v = mt.getAsString(i);
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
-        EXPECT_EQUAL(v.first, vespalib::stringref(buf, res.ptr - buf));
+        EXPECT_EQUAL(v.first, std::string_view(buf, res.ptr - buf));
         EXPECT_EQUAL(v.second.percent(), i-4);
     }
 }
@@ -770,7 +770,7 @@ TEST("add and get of string MultiTerm") {
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
-        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+        mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
     EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
     verify_multiterm_get(mt);
@@ -793,7 +793,7 @@ TEST("first integer then string MultiTerm") {
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
-        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+        mt.addTerm(std::string_view(buf, res.ptr - buf), Weight(i-4));
     }
     EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
     verify_multiterm_get(mt);

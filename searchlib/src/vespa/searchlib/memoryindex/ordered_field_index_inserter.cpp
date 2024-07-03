@@ -127,7 +127,7 @@ OrderedFieldIndexInserter<interleaved_features>::commit()
 
 template <bool interleaved_features>
 void
-OrderedFieldIndexInserter<interleaved_features>::setNextWord(const vespalib::stringref word)
+OrderedFieldIndexInserter<interleaved_features>::setNextWord(const std::string_view word)
 {
     flushWord();
     // TODO: Adjust here if zero length words should be legal.

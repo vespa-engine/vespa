@@ -6,15 +6,15 @@
 namespace proton::matching {
 
 ViewResolver &
-ViewResolver::add(vespalib::stringref view,
-                  vespalib::stringref field)
+ViewResolver::add(std::string_view view,
+                  std::string_view field)
 {
     _map[view].push_back(field);
     return *this;
 }
 
 bool
-ViewResolver::resolve(vespalib::stringref view,
+ViewResolver::resolve(std::string_view view,
                       std::vector<vespalib::string> &fields) const
 {
     auto pos = _map.find(view);

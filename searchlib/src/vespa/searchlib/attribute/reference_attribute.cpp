@@ -40,11 +40,11 @@ extractUniqueValueCount(const vespalib::GenericHeader &header)
 
 }
 
-ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName)
+ReferenceAttribute::ReferenceAttribute(const std::string_view baseFileName)
     : ReferenceAttribute(baseFileName, Config(BasicType::REFERENCE))
 {}
 
-ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName, const Config & cfg)
+ReferenceAttribute::ReferenceAttribute(const std::string_view baseFileName, const Config & cfg)
     : NotImplementedAttribute(baseFileName, cfg),
       _store(get_memory_allocator()),
       _indices(cfg.getGrowStrategy(), getGenerationHolder(), get_initial_alloc()),
@@ -213,7 +213,7 @@ ReferenceAttribute::onUpdateStat()
 }
 
 std::unique_ptr<AttributeSaver>
-ReferenceAttribute::onInitSave(vespalib::stringref fileName)
+ReferenceAttribute::onInitSave(std::string_view fileName)
 {
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<ReferenceAttributeSaver>

@@ -151,7 +151,7 @@ dfa_fuzzy_match_in_dictionary(std::string_view target, const StringEnumStore& st
     auto view = store.get_dictionary().get_posting_dictionary().getFrozenView();
     vespalib::Timer timer;
     DfaFuzzyMatcher matcher(target, 2, prefix_size, cased, prefix_match, LevenshteinDfa::DfaType::Explicit);
-    Utf8Reader reader(vespalib::stringref(target.data(), target.size()));
+    Utf8Reader reader(std::string_view(target.data(), target.size()));
     std::string target_copy;
     Utf8Writer<std::string> writer(target_copy);
     for (size_t pos = 0; pos < prefix_size && reader.hasMore(); ++pos) {

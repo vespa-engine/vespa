@@ -1164,8 +1164,8 @@ Test::assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos
 namespace {
 
 void
-verifyCorrectDotProductExecutor(BlueprintFactory & factory, vespalib::stringref attrName,
-                                vespalib::stringref queryVector, vespalib::stringref expected)
+verifyCorrectDotProductExecutor(BlueprintFactory & factory, std::string_view attrName,
+                                std::string_view queryVector, std::string_view expected)
 {
     ParameterList params = {{ParameterType::ATTRIBUTE, attrName}, {ParameterType::STRING, "vector"}};
     FtFeatureTest ft(factory, "value(0)");

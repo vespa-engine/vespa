@@ -6,8 +6,8 @@
 namespace storage {
 namespace framework {
 
-XmlStatusReporter::XmlStatusReporter(vespalib::stringref id,
-                                     vespalib::stringref name)
+XmlStatusReporter::XmlStatusReporter(std::string_view id,
+                                     std::string_view name)
     : StatusReporter(id, name)
 {
 }
@@ -48,7 +48,7 @@ XmlStatusReporter::reportStatus(std::ostream& out,
     out << "<?xml version=\"1.0\"?>\n";
     vespalib::XmlOutputStream xos(out);
     initXmlReport(xos, path);
-    vespalib::stringref failure = reportXmlStatus(xos, path);
+    std::string_view failure = reportXmlStatus(xos, path);
     if (!failure.empty()) {
         using namespace vespalib::xml;
         xos << XmlContent("Failed to report XML status: " + failure);

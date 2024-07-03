@@ -32,7 +32,7 @@ api_read_consistency_to_spi(api::InternalReadConsistency consistency) noexcept {
 }
 
 document::FieldSet::SP
-getFieldSet(const document::FieldSetRepo & repo, vespalib::stringref name, MessageTracker & tracker) {
+getFieldSet(const document::FieldSetRepo & repo, std::string_view name, MessageTracker & tracker) {
     try {
         return repo.getFieldSet(name);
     } catch (document::FieldNotFoundException & e) {

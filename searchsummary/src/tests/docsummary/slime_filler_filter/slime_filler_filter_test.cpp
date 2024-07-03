@@ -14,12 +14,12 @@ public:
         : _iterator(iterator)
     {
     }
-    WrappedIterator check_render(vespalib::stringref field_name) {
+    WrappedIterator check_render(std::string_view field_name) {
         auto iterator = _iterator.check_field(field_name);
         EXPECT_TRUE(iterator.should_render());
         return iterator;
     }
-    WrappedIterator check_block(vespalib::stringref field_name) {
+    WrappedIterator check_block(std::string_view field_name) {
         auto iterator = _iterator.check_field(field_name);
         EXPECT_FALSE(iterator.should_render());
         return iterator;
@@ -42,10 +42,10 @@ protected:
     void drop_filter() { _filter.reset(); }
     void reset_filter() { _filter = std::make_unique<SlimeFillerFilter>(); }
 
-    WrappedIterator check_render(vespalib::stringref field_name) {
+    WrappedIterator check_render(std::string_view field_name) {
         return get_filter().check_render(field_name);
     }
-    WrappedIterator check_block(vespalib::stringref field_name) {
+    WrappedIterator check_block(std::string_view field_name) {
         return get_filter().check_block(field_name);
     }
     void check_render_no_sub_fields() {
@@ -68,14 +68,14 @@ protected:
     }
 
 public:
-    SlimeFillerFilterTest& add(vespalib::stringref field_path) {
+    SlimeFillerFilterTest& add(std::string_view field_path) {
         if (_filter) {
             _filter->add(field_path);
         }
         return *this;
     }
 
-    SlimeFillerFilterTest& add_remaining(vespalib::stringref field_path) {
+    SlimeFillerFilterTest& add_remaining(std::string_view field_path) {
         SlimeFillerFilter::add_remaining(_filter, field_path);
         return *this;
     }

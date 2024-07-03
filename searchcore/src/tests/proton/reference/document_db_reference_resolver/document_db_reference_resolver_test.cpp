@@ -71,7 +71,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     IGidToLidMapperFactory::SP getGidToLidMapperFactory() override {
         return factory;
     }
-    std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref name) override {
+    std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) override {
         auto itr = attributes.find(name);
         if (itr != attributes.end()) {
             return itr->second;
@@ -79,7 +79,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
             return std::shared_ptr<search::attribute::ReadableAttributeVector>();
         }
     }
-    void addIntAttribute(vespalib::stringref name) {
+    void addIntAttribute(std::string_view name) {
         attributes[name] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
     }
     std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override {
@@ -89,7 +89,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
     MockGidToLidChangeHandler &getGidToLidChangeHandler() {
         return *_gidToLidChangeHandler;
     }
-    void removeAttribute(vespalib::stringref name) {
+    void removeAttribute(std::string_view name) {
         attributes.erase(name);
     }
 };
@@ -97,12 +97,12 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
 struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
     using ReferenceMap = std::map<vespalib::string, IDocumentDBReference::SP>;
     ReferenceMap map;
-    IDocumentDBReference::SP get(vespalib::stringref name) const override {
+    IDocumentDBReference::SP get(std::string_view name) const override {
         auto itr = map.find(name);
         ASSERT_TRUE(itr != map.end());
         return itr->second;
     }
-    IDocumentDBReference::SP tryGet(vespalib::stringref name) const override {
+    IDocumentDBReference::SP tryGet(std::string_view name) const override {
         auto itr = map.find(name);
         if (itr != map.end()) {
             return itr->second;
@@ -110,10 +110,10 @@ struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
             return IDocumentDBReference::SP();
         }
     }
-    void add(vespalib::stringref name, IDocumentDBReference::SP reference) override {
+    void add(std::string_view name, IDocumentDBReference::SP reference) override {
         map[name] = reference;
     }
-    void remove(vespalib::stringref) override {}
+    void remove(std::string_view) override {}
 };
 
 struct MyAttributeManager : public MockAttributeManager {

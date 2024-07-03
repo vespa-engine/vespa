@@ -18,7 +18,7 @@ void StrChrFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
 void StrChrFieldSearcher::onValue(const document::FieldValue & fv)
 {
     const auto & sfv = static_cast<const document::LiteralFieldValueB &>(fv);
-    vespalib::stringref val = sfv.getValueRef();
+    std::string_view val = sfv.getValueRef();
     FieldRef fr(val.data(), std::min(maxFieldLength(), val.size()));
     matchDoc(fr);
 }

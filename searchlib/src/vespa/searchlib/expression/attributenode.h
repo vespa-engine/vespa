@@ -43,7 +43,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     DECLARE_EXPRESSIONNODE(AttributeNode);
     AttributeNode();
-    AttributeNode(vespalib::stringref name);
+    AttributeNode(std::string_view name);
     AttributeNode(const attribute::IAttributeVector & attribute);
     AttributeNode(const AttributeNode & attribute);
     AttributeNode & operator = (const AttributeNode & attribute);

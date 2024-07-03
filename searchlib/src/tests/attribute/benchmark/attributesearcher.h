@@ -137,7 +137,7 @@ AttributeFindSearcher<T>::doRun()
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =
-            _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
+            _attrPtr->getSearch(std::string_view(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);
@@ -215,7 +215,7 @@ AttributeRangeSearcher::doRun()
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =
-            _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
+            _attrPtr->getSearch(std::string_view(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);
@@ -254,7 +254,7 @@ AttributePrefixSearcher::doRun()
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =
-            _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
+            _attrPtr->getSearch(std::string_view(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(queryeval::ExecuteInfo::FULL, true);

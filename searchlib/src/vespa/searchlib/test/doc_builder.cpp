@@ -72,7 +72,7 @@ DocBuilder::get_data_type(const vespalib::string &name) const
 }
 
 ArrayFieldValue
-DocBuilder::make_array(vespalib::stringref field_name)
+DocBuilder::make_array(std::string_view field_name)
 {
     auto& field = _document_type->getField(field_name);
     auto& field_type = field.getDataType();
@@ -81,7 +81,7 @@ DocBuilder::make_array(vespalib::stringref field_name)
 }
 
 WeightedSetFieldValue
-DocBuilder::make_wset(vespalib::stringref field_name)
+DocBuilder::make_wset(std::string_view field_name)
 {
     auto& field = _document_type->getField(field_name);
     auto& field_type = field.getDataType();

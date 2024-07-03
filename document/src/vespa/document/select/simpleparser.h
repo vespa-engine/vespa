@@ -11,13 +11,13 @@ namespace document::select::simple {
 class Parser {
 public:
     virtual ~Parser() = default;
-    virtual bool parse(vespalib::stringref s) = 0;
-    vespalib::stringref getRemaining() const { return _remaining; }
+    virtual bool parse(std::string_view s) = 0;
+    std::string_view getRemaining() const { return _remaining; }
 protected:
-    void setRemaining(vespalib::stringref s) { _remaining = s; }
-    void setRemaining(vespalib::stringref s, size_t fromPos);
+    void setRemaining(std::string_view s) { _remaining = s; }
+    void setRemaining(std::string_view s, size_t fromPos);
 private:
-    vespalib::stringref _remaining;
+    std::string_view _remaining;
 };
 
 class NodeResult {
@@ -47,7 +47,7 @@ public:
     explicit IdSpecParser(const BucketIdFactory& bucketIdFactory) noexcept
         : _bucketIdFactory(bucketIdFactory)
     {}
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
     const IdValueNode & getId() const { return static_cast<const IdValueNode &>(getValue()); }
     bool isUserSpec() const { return getId().getType() == IdValueNode::USER; }
 private:
@@ -57,7 +57,7 @@ private:
 class OperatorParser : public Parser
 {
 public:
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
     const Operator * getOperator() const { return _operator; }
 private:
     const Operator *_operator;
@@ -66,13 +66,13 @@ private:
 class StringParser : public Parser, public ValueResult
 {
 public:
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
 };
 
 class IntegerParser : public Parser, public ValueResult
 {
 public:
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
 };
 
 class SelectionParser : public Parser, public NodeResult
@@ -81,7 +81,7 @@ public:
     explicit SelectionParser(const BucketIdFactory& bucketIdFactory) noexcept
         : _bucketIdFactory(bucketIdFactory)
     {}
-    bool parse(vespalib::stringref s) override;
+    bool parse(std::string_view s) override;
 private:
     const BucketIdFactory & _bucketIdFactory;
 };

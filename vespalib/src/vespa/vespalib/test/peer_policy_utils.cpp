@@ -4,15 +4,15 @@
 
 namespace vespalib::net::tls {
 
-RequiredPeerCredential required_cn(vespalib::stringref pattern) {
+RequiredPeerCredential required_cn(std::string_view pattern) {
     return {RequiredPeerCredential::Field::CN, pattern};
 }
 
-RequiredPeerCredential required_san_dns(vespalib::stringref pattern) {
+RequiredPeerCredential required_san_dns(std::string_view pattern) {
     return {RequiredPeerCredential::Field::SAN_DNS, pattern};
 }
 
-RequiredPeerCredential required_san_uri(vespalib::stringref pattern) {
+RequiredPeerCredential required_san_uri(std::string_view pattern) {
     return {RequiredPeerCredential::Field::SAN_URI, pattern};
 }
 

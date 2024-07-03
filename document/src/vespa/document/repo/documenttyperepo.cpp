@@ -30,7 +30,6 @@ using vespalib::IllegalArgumentException;
 using vespalib::hash_map;
 using vespalib::make_string;
 using vespalib::string;
-using vespalib::stringref;
 
 namespace document {
 
@@ -75,7 +74,7 @@ public:
 
     const DataType &addTensorType(const string &spec) __attribute__((noinline));
     const DataType *lookup(int32_t id) const __attribute__((noinline));
-    const DataType *lookup(stringref name) const __attribute__((noinline));
+    const DataType *lookup(std::string_view name) const __attribute__((noinline));
     const DataType &findOrThrow(int32_t id) const __attribute__((noinline));
     const DataType &findOrThrowOrCreate(int32_t id, const string &detailedType) __attribute__((noinline));
 };
@@ -141,7 +140,7 @@ const DataType *Repo::lookup(int32_t id) const {
     return (iter == _id_map.end()) ? nullptr : iter->second;
 }
 
-const DataType *Repo::lookup(stringref n) const {
+const DataType *Repo::lookup(std::string_view n) const {
     auto iter = _name_map.find(n);
     return (iter == _name_map.end()) ? nullptr : iter->second;
 }
@@ -1055,7 +1054,7 @@ DocumentTypeRepo::getDocumentType(int32_t type_id) const noexcept {
 }
 
 const DocumentType *
-DocumentTypeRepo::getDocumentType(stringref name) const noexcept {
+DocumentTypeRepo::getDocumentType(std::string_view name) const noexcept {
     const auto * rp = findRepo(DocumentType::createId(name));
     if (rp && rp->doc()->getName() == name) {
         return rp->doc();
@@ -1075,7 +1074,7 @@ DocumentTypeRepo::getDataType(const DocumentType &doc_type, int32_t id) const {
 }
 
 const DataType *
-DocumentTypeRepo::getDataType(const DocumentType &doc_type, stringref name) const {
+DocumentTypeRepo::getDataType(const DocumentType &doc_type, std::string_view name) const {
     const DataTypeRepo *dt_repo = findRepo(doc_type.getId());
     return dt_repo ? dt_repo->repo.lookup(name) : nullptr;
 }

@@ -23,7 +23,7 @@ using search::docsummary::test::SlimeValue;
 
 using ElementVector = std::vector<uint32_t>;
 
-std::vector<char> as_vector(vespalib::stringref value) {
+std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
 }
 

@@ -20,7 +20,7 @@ class QueryTermFilterFactory : public IQueryTermFilterFactory
 public:
     QueryTermFilterFactory(const search::index::Schema& schema);
     ~QueryTermFilterFactory() override;
-    std::shared_ptr<const IQueryTermFilter> make(vespalib::stringref input_field) const override;
+    std::shared_ptr<const IQueryTermFilter> make(std::string_view input_field) const override;
 };
 
 }

@@ -84,8 +84,8 @@ struct Tag
     const vespalib::string& key() const { return NameRepo::tagKey(_key); }
     const vespalib::string& value() const { return NameRepo::tagValue(_value); }
 
-    Tag(vespalib::stringref k);
-    Tag(vespalib::stringref k, vespalib::stringref v);
+    Tag(std::string_view k);
+    Tag(std::string_view k, std::string_view v);
     Tag(const Tag &) noexcept;
     Tag & operator = (const Tag &);
     Tag(Tag &&) noexcept = default;
@@ -103,7 +103,7 @@ class Metric : public vespalib::Printable
 {
 public:
     using String = vespalib::string;
-    using stringref = vespalib::stringref;
+    using stringref = std::string_view;
     using UP = std::unique_ptr<Metric>;
     using SP = std::shared_ptr<Metric>;
     using Tags = std::vector<Tag>;

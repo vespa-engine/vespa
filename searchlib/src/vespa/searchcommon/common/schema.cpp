@@ -19,7 +19,7 @@ namespace {
 template <typename T>
 void
 writeFields(vespalib::asciistream & os,
-            vespalib::stringref prefix,
+            std::string_view prefix,
             const std::vector<T> & fields)
 {
     os << prefix << "[" << fields.size() << "]\n";
@@ -57,7 +57,7 @@ struct FieldName {
 
 template <typename T>
 uint32_t
-getFieldId(vespalib::stringref name, const T &map) noexcept
+getFieldId(std::string_view name, const T &map) noexcept
 {
     auto it = map.find(name);
     return (it != map.end()) ? it->second : Schema::UNKNOWN_FIELD_ID;
@@ -69,17 +69,17 @@ namespace search::index {
 
 const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 
-Schema::Field::Field(vespalib::stringref n, DataType dt) noexcept
+Schema::Field::Field(std::string_view n, DataType dt) noexcept
     : Field(n, dt, schema::CollectionType::SINGLE, "")
 {
 }
 
-Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct) noexcept
+Schema::Field::Field(std::string_view n, DataType dt, CollectionType ct) noexcept
     : Field(n, dt, ct, "")
 {
 }
 
-Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct, vespalib::stringref tensor_spec) noexcept
+Schema::Field::Field(std::string_view n, DataType dt, CollectionType ct, std::string_view tensor_spec) noexcept
     : _name(n),
       _dataType(dt),
       _collectionType(ct),
@@ -103,7 +103,7 @@ Schema::Field & Schema::Field::operator = (Field &&) noexcept = default;
 Schema::Field::~Field() = default;
 
 void
-Schema::Field::write(vespalib::asciistream & os, vespalib::stringref prefix) const
+Schema::Field::write(vespalib::asciistream & os, std::string_view prefix) const
 {
     os << prefix << "name " << _name << "\n";
     os << prefix << "datatype " << getTypeName(_dataType) << "\n";
@@ -125,14 +125,14 @@ Schema::Field::operator!=(const Field &rhs) const noexcept
     return !((*this) == rhs);
 }
 
-Schema::IndexField::IndexField(vespalib::stringref name, DataType dt) noexcept
+Schema::IndexField::IndexField(std::string_view name, DataType dt) noexcept
     : Field(name, dt),
       _avgElemLen(512),
       _interleaved_features(false)
 {
 }
 
-Schema::IndexField::IndexField(vespalib::stringref name, DataType dt,
+Schema::IndexField::IndexField(std::string_view name, DataType dt,
                                CollectionType ct) noexcept
     : Field(name, dt, ct),
       _avgElemLen(512),
@@ -153,7 +153,7 @@ Schema::IndexField::IndexField(IndexField &&) noexcept = default;
 Schema::IndexField & Schema::IndexField::operator = (IndexField &&) noexcept = default;
 
 void
-Schema::IndexField::write(vespalib::asciistream & os, vespalib::stringref prefix) const
+Schema::IndexField::write(vespalib::asciistream & os, std::string_view prefix) const
 {
     Field::write(os, prefix);
     os << prefix << "averageelementlen " << static_cast<int32_t>(_avgElemLen) << "\n";
@@ -364,31 +364,31 @@ Schema::addFieldSet(const FieldSet &fieldSet)
 }
 
 uint32_t
-Schema::getIndexFieldId(vespalib::stringref name) const noexcept
+Schema::getIndexFieldId(std::string_view name) const noexcept
 {
     return getFieldId(name, _indexIds);
 }
 
 uint32_t
-Schema::getAttributeFieldId(vespalib::stringref name) const noexcept
+Schema::getAttributeFieldId(std::string_view name) const noexcept
 {
     return getFieldId(name, _attributeIds);
 }
 
 uint32_t
-Schema::getFieldSetId(vespalib::stringref name) const noexcept
+Schema::getFieldSetId(std::string_view name) const noexcept
 {
     return getFieldId(name, _fieldSetIds);
 }
 
 bool
-Schema::isIndexField(vespalib::stringref name) const noexcept
+Schema::isIndexField(std::string_view name) const noexcept
 {
     return _indexIds.find(name) != _indexIds.end();
 }
 
 bool
-Schema::isAttributeField(vespalib::stringref name) const noexcept
+Schema::isAttributeField(std::string_view name) const noexcept
 {
     return _attributeIds.find(name) != _attributeIds.end();
 }

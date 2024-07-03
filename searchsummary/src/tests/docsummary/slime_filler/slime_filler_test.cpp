@@ -97,7 +97,7 @@ slime_to_string(const Slime& slime)
 }
 
 vespalib::string
-make_slime_data_string(vespalib::stringref data)
+make_slime_data_string(std::string_view data)
 {
     Slime slime;
     SlimeInserter inserter(slime);

@@ -16,7 +16,7 @@ namespace storage::framework::defaultimplementation {
 
 ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
                        Runnable& runnable,
-                       vespalib::stringref id,
+                       std::string_view id,
                        vespalib::duration waitTime,
                        vespalib::duration maxProcessTime,
                        int ticksBeforeWait,

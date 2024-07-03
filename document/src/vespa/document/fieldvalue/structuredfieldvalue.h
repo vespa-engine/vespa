@@ -108,12 +108,12 @@ public:
     const DataType *getDataType() const override { return _type; }
 
     /** Wrapper for DataType's hasField() function. */
-    virtual bool hasField(vespalib::stringref name) const = 0;
+    virtual bool hasField(std::string_view name) const = 0;
     /**
      * Wrapper for DataType's getField() function.
      * @throws FieldNotFoundException If no field with given name exist.
      */
-    virtual const Field& getField(vespalib::stringref name) const = 0;
+    virtual const Field& getField(std::string_view name) const = 0;
 
     /**
      * Retrieve value of given field and assign it to given field.
@@ -129,7 +129,7 @@ public:
         return getFieldValue(field);
     }
     /** @return Retrieve value of given field. Null pointer if not set. */
-    FieldValue::UP getValue(vespalib::stringref name) const {
+    FieldValue::UP getValue(std::string_view name) const {
         return getFieldValue(getField(name));
     }
     /** @return True if value is set. */
@@ -148,10 +148,10 @@ public:
     void setValue(const Field& field, FieldValue::UP value) {
         setFieldValue(field, std::move(value));
     }
-    void setValue(vespalib::stringref fieldName, const FieldValue& value) {
+    void setValue(std::string_view fieldName, const FieldValue& value) {
         setFieldValue(getField(fieldName), value);
     }
-    void setValue(vespalib::stringref fieldName, FieldValue::UP value) {
+    void setValue(std::string_view fieldName, FieldValue::UP value) {
         setFieldValue(getField(fieldName), std::move(value));
     }
     /** Remove the value of given field if it is set. */
@@ -162,10 +162,10 @@ public:
     virtual void clear() = 0;
 
         // Utility functions for easy but less efficient access
-    bool hasValue(vespalib::stringref fieldName) const {
+    bool hasValue(std::string_view fieldName) const {
         return hasFieldValue(getField(fieldName));
     }
-    void remove(vespalib::stringref fieldName) {
+    void remove(std::string_view fieldName) {
         removeFieldValue(getField(fieldName));
     }
 

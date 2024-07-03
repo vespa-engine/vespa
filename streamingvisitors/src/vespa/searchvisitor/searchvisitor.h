@@ -419,14 +419,14 @@ private:
         void setFilter(std::unique_ptr<vsm::DocsumFilter> filter) { _docsumFilter = std::move(filter); }
         void setDocsumCache(const vsm::IDocSumCache & cache) { _docsumFilter->setDocSumStore(cache); }
         void setDocsumWriter(IDocsumWriter & docsumWriter) { _docsumWriter = & docsumWriter; }
-        vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, vespalib::stringref summaryClass) override;
+        vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, std::string_view summaryClass) override;
         void set_dump_features(bool dump_features) { _dump_features = dump_features; }
         void set_location(const vespalib::string& location) { _location = location; }
         void set_stack_dump(std::vector<char> stack_dump) { _stack_dump = std::move(stack_dump); }
-        void add_summary_field(vespalib::stringref field) { _summaryFields.emplace_back(field); }
+        void add_summary_field(std::string_view field) { _summaryFields.emplace_back(field); }
         search::fef::Properties & highlightTerms() { return _highlight_terms;}
     private:
-        StreamingDocsumsState& get_streaming_docsums_state(vespalib::stringref summary_class);
+        StreamingDocsumsState& get_streaming_docsums_state(std::string_view summary_class);
         vsm::GetDocsumsStateCallback            _callback;
         vespalib::hash_map<vespalib::string, std::unique_ptr<StreamingDocsumsState>> _docsum_states;
         std::vector<vespalib::string>           _summaryFields;
@@ -491,8 +491,8 @@ private:
     vsm::StringFieldIdTMapT                 _fieldsUnion;
 
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
-    bool is_text_matching(vespalib::stringref index) const noexcept override;
-    Normalizing normalizing_mode(vespalib::stringref index) const noexcept override;
+    bool is_text_matching(std::string_view index) const noexcept override;
+    Normalizing normalizing_mode(std::string_view index) const noexcept override;
 };
 
 class SearchVisitorFactory : public storage::VisitorFactory {

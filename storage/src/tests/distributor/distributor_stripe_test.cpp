@@ -670,7 +670,7 @@ TEST_F(DistributorStripeTest, external_client_requests_are_handled_individually_
 
     std::vector<api::StorageMessage::Priority> priorities({50, 255, 10, 40, 0});
     document::DocumentId id("id:foo:testdoctype1:n=1:foo");
-    vespalib::stringref field_set = "";
+    std::string_view field_set = "";
     for (auto pri : priorities) {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
         cmd->setPriority(pri);
@@ -728,7 +728,7 @@ TEST_F(DistributorStripeTest, closing_aborts_priority_queued_client_requests)
     addNodesToBucketDB(bucket, "0=1/1/1/t");
 
     document::DocumentId id("id:foo:testdoctype1:n=1:foo");
-    vespalib::stringref field_set = "";
+    std::string_view field_set = "";
     for (int i = 0; i < 10; ++i) {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId()), id, field_set);
         _stripe->handle_or_enqueue_message(cmd);

@@ -25,7 +25,7 @@ public:
     {
     }
 
-    WrapInserter& word(vespalib::stringref word_) {
+    WrapInserter& word(std::string_view word_) {
         _inserter.setNextWord(word_);
         return *this;
     }

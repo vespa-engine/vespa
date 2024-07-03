@@ -19,7 +19,7 @@ SlimeFillerFilter::Iterator::Iterator(const SlimeFillerFilter* next) noexcept
 }
 
 SlimeFillerFilter::Iterator
-SlimeFillerFilter::Iterator::check_field(vespalib::stringref field_name) const
+SlimeFillerFilter::Iterator::check_field(std::string_view field_name) const
 {
     assert(_should_render);
     return (_next != nullptr) ? _next->check_field(field_name) : SlimeFillerFilter::Iterator(true);
@@ -33,7 +33,7 @@ SlimeFillerFilter::SlimeFillerFilter()
 SlimeFillerFilter::~SlimeFillerFilter() = default;
 
 SlimeFillerFilter::Iterator
-SlimeFillerFilter::check_field(vespalib::stringref field_name) const
+SlimeFillerFilter::check_field(std::string_view field_name) const
 {
     auto itr = _filter.find(field_name);
     if (itr == _filter.end()) {
@@ -55,10 +55,10 @@ bool
 SlimeFillerFilter::empty() const { return _filter.empty(); }
 
 SlimeFillerFilter&
-SlimeFillerFilter::add(vespalib::stringref field_path)
+SlimeFillerFilter::add(std::string_view field_path)
 {
-    vespalib::stringref field_name;
-    vespalib::stringref remaining_path;
+    std::string_view field_name;
+    std::string_view remaining_path;
     auto dot_pos = field_path.find('.');
     if (dot_pos != vespalib::string::npos) {
         field_name = field_path.substr(0, dot_pos);
@@ -87,7 +87,7 @@ SlimeFillerFilter::add(vespalib::stringref field_path)
 }
 
 void
-SlimeFillerFilter::add_remaining(std::unique_ptr<SlimeFillerFilter>& filter, vespalib::stringref field_path)
+SlimeFillerFilter::add_remaining(std::unique_ptr<SlimeFillerFilter>& filter, std::string_view field_path)
 {
     if (filter) {
         auto dot_pos = field_path.find('.');

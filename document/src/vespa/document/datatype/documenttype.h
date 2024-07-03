@@ -57,11 +57,11 @@ public:
     using UP = std::unique_ptr<DocumentType>;
     using SP = std::shared_ptr<DocumentType>;
 
-    DocumentType(vespalib::stringref name, int32_t id);
-    DocumentType(vespalib::stringref name, int32_t id, const StructDataType& fields);
+    DocumentType(std::string_view name, int32_t id);
+    DocumentType(std::string_view name, int32_t id, const StructDataType& fields);
 
-    explicit DocumentType(vespalib::stringref name);
-    DocumentType(vespalib::stringref name, const StructDataType& fields);
+    explicit DocumentType(std::string_view name);
+    DocumentType(std::string_view name, const StructDataType& fields);
     DocumentType(const DocumentType &);   // TODO remove usage
     DocumentType & operator = (const DocumentType &);  // TODO remove usage
 
@@ -90,9 +90,9 @@ public:
     uint32_t getFieldCount() const noexcept override {
         return _fields->getFieldCount();
     }
-    const Field & getField(vespalib::stringref name) const override;
+    const Field & getField(std::string_view name) const override;
     const Field & getField(int fieldId) const override;
-    bool hasField(vespalib::stringref name) const noexcept override {
+    bool hasField(std::string_view name) const noexcept override {
         return _fields->hasField(name);
     }
     bool hasField(int fieldId) const noexcept override {

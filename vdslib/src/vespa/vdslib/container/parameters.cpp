@@ -56,7 +56,7 @@ void Parameters::deserialize(document::ByteBuffer& buffer)
     for (int i=0; i<mysize; i++) {
         int32_t keylen = 0;
         buffer.getIntNetwork(keylen);
-        vespalib::stringref key(buffer.getBufferAtPos(), keylen);
+        std::string_view key(buffer.getBufferAtPos(), keylen);
         buffer.incPos(keylen);
         int32_t sz(0);
         buffer.getIntNetwork(sz);
@@ -95,7 +95,7 @@ Parameters::operator==(const Parameters &other) const
     return true;
 }
 
-vespalib::stringref Parameters::get(vespalib::stringref id, vespalib::stringref def) const
+std::string_view Parameters::get(std::string_view id, std::string_view def) const
 {
     ParametersMap::const_iterator it = _parameters.find(id);
     if (it == _parameters.end()) return def;
@@ -173,10 +173,10 @@ Parameters::set(KeyT id, double value) {
 }
 
 
-template int32_t vdslib::Parameters::get(vespalib::stringref , int32_t) const;
-template int64_t vdslib::Parameters::get(vespalib::stringref , int64_t) const;
-template uint64_t vdslib::Parameters::get(vespalib::stringref , uint64_t) const;
-template double vdslib::Parameters::get(vespalib::stringref , double) const;
-template std::string vdslib::Parameters::get(vespalib::stringref , std::string) const;
+template int32_t vdslib::Parameters::get(std::string_view , int32_t) const;
+template int64_t vdslib::Parameters::get(std::string_view , int64_t) const;
+template uint64_t vdslib::Parameters::get(std::string_view , uint64_t) const;
+template double vdslib::Parameters::get(std::string_view , double) const;
+template std::string vdslib::Parameters::get(std::string_view , std::string) const;
 
 VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vdslib::Parameters::Value);

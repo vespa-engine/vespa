@@ -180,7 +180,7 @@ struct ExpectedResult {
 void
 verifyJavaDistribution(const vespalib::string& name, const ClusterState& state, const Distribution& distribution,
                        const NodeType& nodeType, uint16_t redundancy, uint16_t nodeCount,
-                       vespalib::stringref upStates, const std::vector<ExpectedResult> results)
+                       std::string_view upStates, const std::vector<ExpectedResult> results)
 {
     (void) nodeCount;
     for (uint32_t i=0, n=results.size(); i<n; ++i) {

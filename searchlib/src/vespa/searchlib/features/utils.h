@@ -34,7 +34,7 @@ using ConstCharPtr = const char *;
  * @return The numeric value.
  */
 template <typename T>
-T strToNum(vespalib::stringref str);
+T strToNum(std::string_view str);
 
 template <typename T>
 feature_t getAsFeature(T value) __attribute__((__always_inline__));
@@ -69,7 +69,7 @@ inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
  * @return The feature value.
  */
 template <>
-inline feature_t getAsFeature<vespalib::stringref>(vespalib::stringref value) {
+inline feature_t getAsFeature<std::string_view>(std::string_view value) {
     return vespalib::hash2d(value);
 }
 

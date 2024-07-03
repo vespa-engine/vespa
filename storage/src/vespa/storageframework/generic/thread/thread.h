@@ -32,7 +32,7 @@ class Thread : public ThreadHandle {
 public:
     using UP = std::unique_ptr<Thread>;
 
-    explicit Thread(vespalib::stringref id) : _id(id) {}
+    explicit Thread(std::string_view id) : _id(id) {}
     ~Thread() override = default;
 
     [[nodiscard]] virtual const vespalib::string& getId() const { return _id; }

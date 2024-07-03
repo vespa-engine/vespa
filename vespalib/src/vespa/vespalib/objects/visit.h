@@ -25,5 +25,5 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, unsigned
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, float value);
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, double value);
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::string &value);
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, vespalib::stringref value);
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, std::string_view value);
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const char *value);

@@ -13,9 +13,9 @@ TEST(StaticStringViewTest, simple_usage) {
     static_assert(std::same_as<decltype(value),StaticStringView>);
     auto a_ref = value.ref();
     auto a_view = value.view();
-    static_assert(std::same_as<decltype(a_ref),vespalib::stringref>);
+    static_assert(std::same_as<decltype(a_ref),std::string_view>);
     static_assert(std::same_as<decltype(a_view),std::string_view>);
-    vespalib::stringref ref = value;
+    std::string_view ref = value;
     std::string_view view = value;
     EXPECT_EQ(a_ref, expect);
     EXPECT_EQ(a_view, expect_std);

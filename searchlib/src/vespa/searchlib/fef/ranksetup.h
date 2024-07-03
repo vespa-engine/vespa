@@ -29,7 +29,7 @@ public:
     struct MutateOperation {
     public:
         MutateOperation() : MutateOperation("", "") {}
-        MutateOperation(vespalib::stringref attribute, vespalib::stringref operation)
+        MutateOperation(std::string_view attribute, std::string_view operation)
             : _attribute(attribute),
               _operation(operation)
         {}

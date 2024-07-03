@@ -24,7 +24,7 @@ class TestShutdownListener
 public:
     TestShutdownListener() : _reason() {}
 
-    void requestShutdown(vespalib::stringref reason) override {
+    void requestShutdown(std::string_view reason) override {
         _reason = reason;
     }
 

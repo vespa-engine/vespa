@@ -46,7 +46,7 @@ ThreadPoolImpl::~ThreadPoolImpl()
 }
 
 Thread::UP
-ThreadPoolImpl::startThread(Runnable& runnable, vespalib::stringref id, vespalib::duration waitTime,
+ThreadPoolImpl::startThread(Runnable& runnable, std::string_view id, vespalib::duration waitTime,
                             vespalib::duration maxProcessTime, int ticksBeforeWait,
                             std::optional<vespalib::CpuUsage::Category> cpu_category)
 {

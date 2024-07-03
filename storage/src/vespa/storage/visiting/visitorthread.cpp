@@ -333,7 +333,7 @@ VisitorThread::handleNonExistingVisitorCall(const Event& entry, ReturnCode& code
  * Utility function to get a visitor instance from a given library.
  */
 std::shared_ptr<Visitor>
-VisitorThread::createVisitor(vespalib::stringref libName,
+VisitorThread::createVisitor(std::string_view libName,
                               const vdslib::Parameters& params,
                               vespalib::asciistream & error)
 {

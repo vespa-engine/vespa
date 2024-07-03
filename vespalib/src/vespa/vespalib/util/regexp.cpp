@@ -14,7 +14,7 @@ namespace vespalib {
 
 namespace {
 
-bool has_option(vespalib::stringref re) {
+bool has_option(std::string_view re) {
     return (re.find('|') != re.npos);
 }
 
@@ -27,7 +27,7 @@ bool maybe_none(char c) {
 const vespalib::string special("^|()[]{}.*?+\\$");
 bool is_special(char c) { return special.find(c) != special.npos; }
 
-vespalib::string escape(vespalib::stringref str) {
+vespalib::string escape(std::string_view str) {
     vespalib::string result;
     for (char c: str) {
         if (is_special(c)) {
@@ -41,7 +41,7 @@ vespalib::string escape(vespalib::stringref str) {
 } // namespace vespalib::<unnamed>
 
 vespalib::string
-RegexpUtil::get_prefix(vespalib::stringref re)
+RegexpUtil::get_prefix(std::string_view re)
 {
     vespalib::string prefix;
     if ((re.size() > 0) && (re.data()[0] == '^') && !has_option(re)) {
@@ -58,13 +58,13 @@ RegexpUtil::get_prefix(vespalib::stringref re)
 }
 
 vespalib::string
-RegexpUtil::make_from_suffix(vespalib::stringref suffix)
+RegexpUtil::make_from_suffix(std::string_view suffix)
 {
     return escape(suffix) + "$";
 }
 
 vespalib::string
-RegexpUtil::make_from_substring(vespalib::stringref substring)
+RegexpUtil::make_from_substring(std::string_view substring)
 {
     return escape(substring);
 }

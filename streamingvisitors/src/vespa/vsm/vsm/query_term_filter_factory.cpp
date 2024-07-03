@@ -62,7 +62,7 @@ QueryTermFilterFactory::populate_views(StringSet& views, const vespalib::string&
 }
 
 std::shared_ptr<const IQueryTermFilter>
-QueryTermFilterFactory::make(vespalib::stringref input_field) const
+QueryTermFilterFactory::make(std::string_view input_field) const
 {
     StringSet views;
     auto itr = _field_map.find(input_field);

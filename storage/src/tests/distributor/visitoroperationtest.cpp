@@ -1114,7 +1114,7 @@ TEST_F(VisitorOperationTest, assigning_put_lock_access_token_sets_special_visito
     auto cmd = std::dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
     ASSERT_TRUE(cmd);
     EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
-                                       vespalib::stringref("")),
+                                       std::string_view("")),
               "its-a me, mario");
 }
 

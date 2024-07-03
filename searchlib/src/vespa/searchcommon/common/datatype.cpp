@@ -10,7 +10,7 @@ namespace search::index::schema {
 using config::InvalidConfigException;
 
 DataType
-dataTypeFromName(vespalib::stringref name) {
+dataTypeFromName(std::string_view name) {
     if      (name == "BOOL")   { return DataType::BOOL; }
     else if (name == "UINT2")   { return DataType::UINT2; }
     else if (name == "UINT4")   { return DataType::UINT4; }
@@ -67,7 +67,7 @@ operator<<(std::ostream &os, const DataType &type)
 }
 
 CollectionType
-collectionTypeFromName(vespalib::stringref name) {
+collectionTypeFromName(std::string_view name) {
     if (name == "SINGLE") { return CollectionType::SINGLE; }
     else if (name == "ARRAY") { return CollectionType::ARRAY; }
     else if (name == "WEIGHTEDSET") { return CollectionType::WEIGHTEDSET; }

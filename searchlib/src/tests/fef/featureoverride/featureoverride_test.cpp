@@ -218,7 +218,7 @@ struct SimpleRankFixture {
         vespalib::nbostream data;
         auto tensor = vespalib::eval::value_from_spec(spec, FastValueBuilderFactory::get());
         vespalib::eval::encode_value(*tensor, data);
-        overrides.add(name, vespalib::stringref(data.peek(), data.size()));
+        overrides.add(name, std::string_view(data.peek(), data.size()));
     }
     void add_override(const vespalib::string &name, const vespalib::string &str) {
         overrides.add(name, str);

@@ -212,8 +212,8 @@ const HitList & QueryNode::evaluateHits(HitList & hl) const
 std::unique_ptr<QueryNode>
 QueryNode::build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& query_rep)
 {
-    vespalib::stringref query_tensor_name = query_rep.getTerm();
-    vespalib::stringref field_name = query_rep.getIndexName();
+    std::string_view query_tensor_name = query_rep.getTerm();
+    std::string_view field_name = query_rep.getIndexName();
     int32_t unique_id = query_rep.getUniqueId();
     auto weight = query_rep.GetWeight();
     uint32_t target_hits = query_rep.getTargetHits();

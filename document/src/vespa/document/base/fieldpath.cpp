@@ -111,7 +111,7 @@ FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
     setFillValue(*_dataType);
 }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, vespalib::stringref variableName) :
+FieldPathEntry::FieldPathEntry(const DataType & dataType, std::string_view variableName) :
     _type(VARIABLE),
     _name(""),
     _field(),
@@ -137,7 +137,7 @@ FieldPathEntry::stealFieldValueToSet() const
 }
 
 vespalib::string
-FieldPathEntry::parseKey(vespalib::stringref & key)
+FieldPathEntry::parseKey(std::string_view & key)
 {
     vespalib::string v;
     const char *c = key.data();

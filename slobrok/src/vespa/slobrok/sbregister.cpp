@@ -32,7 +32,7 @@ createSpec(FRT_Supervisor &orb)
 
 
 void
-discard(std::vector<vespalib::string> &vec, vespalib::stringref val)
+discard(std::vector<vespalib::string> &vec, std::string_view val)
 {
     uint32_t i = 0;
     uint32_t size = vec.size();
@@ -99,7 +99,7 @@ RegisterAPI::~RegisterAPI()
 
 
 void
-RegisterAPI::registerName(vespalib::stringref name)
+RegisterAPI::registerName(std::string_view name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     for (uint32_t i = 0; i < _names.size(); ++i) {
@@ -116,7 +116,7 @@ RegisterAPI::registerName(vespalib::stringref name)
 
 
 void
-RegisterAPI::unregisterName(vespalib::stringref name)
+RegisterAPI::unregisterName(std::string_view name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _busy.store(true, std::memory_order_relaxed);

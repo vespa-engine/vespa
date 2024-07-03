@@ -19,7 +19,7 @@ using vespalib::compression::decompress;
 using vespalib::compression::compress;
 using vespalib::DataBuffer;
 using vespalib::ConstBufferRef;
-using vespalib::stringref;
+using std::string_view;
 using vespalib::Memory;
 using vespalib::Slime;
 using vespalib::Version;
@@ -52,7 +52,7 @@ Memory SERVICE_F("service");
 }
 
 bool
-RPCSendV2::isCompatible(stringref method, stringref request, stringref response)
+RPCSendV2::isCompatible(string_view method, string_view request, string_view response)
 {
     return  (method == METHOD_NAME) &&
             (request == METHOD_PARAMS) &&
@@ -168,13 +168,13 @@ public:
     Version getVersion() const override {
         return Version(_slime.get()[VERSION_F].asString().make_stringref());
     }
-    stringref getRoute() const override {
+    string_view getRoute() const override {
         return _slime.get()[ROUTE_F].asString().make_stringref();
     }
-    stringref getSession() const override {
+    string_view getSession() const override {
         return _slime.get()[SESSION_F].asString().make_stringref();
     }
-    stringref getProtocol() const override {
+    string_view getProtocol() const override {
         return _slime.get()[PROTOCOL_F].asString().make_stringref();
     }
     BlobRef getPayload() const override {

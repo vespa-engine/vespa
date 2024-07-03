@@ -41,7 +41,7 @@ StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
 }
 
 void
-StorageComponentRegisterImpl::setNodeInfo(vespalib::stringref clusterName,
+StorageComponentRegisterImpl::setNodeInfo(std::string_view clusterName,
                                           const lib::NodeType& nodeType,
                                           uint16_t index)
 {

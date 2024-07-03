@@ -61,7 +61,7 @@ Status::operator=(const Status& rhs)
 }
 
 vespalib::string
-Status::createName(vespalib::stringref index, vespalib::stringref attr)
+Status::createName(std::string_view index, std::string_view attr)
 {
     vespalib::string name (index);
     name += ".attribute.";

@@ -30,9 +30,9 @@ public:
     ~DocumentTypeRepo();
 
     const DocumentType *getDocumentType(int32_t doc_type_id) const noexcept;
-    const DocumentType *getDocumentType(vespalib::stringref name) const noexcept;
+    const DocumentType *getDocumentType(std::string_view name) const noexcept;
     const DataType *getDataType(const DocumentType &doc_type, int32_t id) const;
-    const DataType *getDataType(const DocumentType &doc_type, vespalib::stringref name) const;
+    const DataType *getDataType(const DocumentType &doc_type, std::string_view name) const;
     const AnnotationType *getAnnotationType(const DocumentType &doc_type, int32_t id) const;
     void forEachDocumentType(std::function<void(const DocumentType &)> handler) const;
     const DocumentType *getDefaultDocType() const { return _default; }

@@ -41,12 +41,12 @@ ExceptionWithPayload::what() const noexcept {
     return _msg.c_str();
 }
 
-ExceptionWithPayload::ExceptionWithPayload(vespalib::stringref msg)
+ExceptionWithPayload::ExceptionWithPayload(std::string_view msg)
     : std::exception(),
       _msg(msg),
       _payload()
 { }
-ExceptionWithPayload::ExceptionWithPayload(vespalib::stringref msg, Anything::UP payload)
+ExceptionWithPayload::ExceptionWithPayload(std::string_view msg, Anything::UP payload)
     : std::exception(),
       _msg(msg),
       _payload(std::move(payload))
@@ -70,27 +70,27 @@ SilenceUncaughtException::~SilenceUncaughtException()
 }
 
 vespalib::string
-PortListenException::make_message(int port, vespalib::stringref protocol,
-                                  vespalib::stringref msg)
+PortListenException::make_message(int port, std::string_view protocol,
+                                  std::string_view msg)
 {
     return make_string("failed to listen on port %d with protocol %s%s%s",
                        port, vespalib::string(protocol).c_str(), msg.empty() ? "" : ": ",
                        vespalib::string(msg).c_str());
 }
 
-PortListenException::PortListenException(int port, vespalib::stringref protocol,
-                                         vespalib::stringref msg,
-                                         vespalib::stringref location, int skipStack)
+PortListenException::PortListenException(int port, std::string_view protocol,
+                                         std::string_view msg,
+                                         std::string_view location, int skipStack)
     : Exception(make_message(port, protocol, msg), location, skipStack + 1),
       _port(port),
       _protocol(protocol)
 {
 }
 
-PortListenException::PortListenException(int port, vespalib::stringref protocol,
+PortListenException::PortListenException(int port, std::string_view protocol,
                                          const Exception &cause,
-                                         vespalib::stringref msg,
-                                         vespalib::stringref location, int skipStack)
+                                         std::string_view msg,
+                                         std::string_view location, int skipStack)
     : Exception(make_message(port, protocol, msg), cause, location, skipStack + 1),
       _port(port),
       _protocol(protocol)

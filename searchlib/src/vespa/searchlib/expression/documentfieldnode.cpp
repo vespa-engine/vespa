@@ -48,7 +48,7 @@ DocumentFieldNode::operator = (const DocumentFieldNode & rhs)
 }
 
 std::unique_ptr<ResultNode>
-deduceResultNode(vespalib::stringref fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
+deduceResultNode(std::string_view fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
 {
     std::unique_ptr<ResultNode> value;
     if (fv.isA(FieldValue::Type::BYTE) || fv.isA(FieldValue::Type::INT) || fv.isA(FieldValue::Type::LONG)) {
@@ -264,7 +264,7 @@ DocumentFieldNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 class String2ResultNode : public ResultNode
 {
 public:
-    String2ResultNode(vespalib::stringref s) : _s(s) { }
+    String2ResultNode(std::string_view s) : _s(s) { }
     int64_t onGetInteger(size_t index) const override { (void) index; return strtoul(_s.c_str(), nullptr, 0); }
     double  onGetFloat(size_t index)   const override { (void) index; return vespalib::locale::c::strtod(_s.c_str(), nullptr); }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; (void) buf; return ConstBufferRef(_s.c_str(), _s.size()); }

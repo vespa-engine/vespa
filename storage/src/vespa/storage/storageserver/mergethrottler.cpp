@@ -1184,7 +1184,7 @@ MergeThrottler::bucketIsUnknownOrAborted(const document::Bucket& bucket) const
 
 std::shared_ptr<api::StorageMessage>
 MergeThrottler::makeAbortReply(api::StorageCommand& cmd,
-                               vespalib::stringref reason) const
+                               std::string_view reason) const
 {
     LOG(debug, "Aborting message %s with reason '%s'",
         cmd.toString().c_str(), reason.data());

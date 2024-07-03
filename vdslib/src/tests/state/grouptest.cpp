@@ -6,7 +6,7 @@
 using namespace storage::lib;
 
 Group::UP
-make_group(uint16_t index, vespalib::stringref distribution, uint16_t redundancy = 1)
+make_group(uint16_t index, std::string_view distribution, uint16_t redundancy = 1)
 {
     return std::make_unique<Group>(index, "group", Group::Distribution(distribution), redundancy);
 }

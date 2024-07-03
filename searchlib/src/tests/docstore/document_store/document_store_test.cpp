@@ -87,18 +87,18 @@ TEST("require that LogDocumentStore::Config equality operator detects inequality
 }
 
 using search::docstore::Value;
-vespalib::stringref S1("this is a string long enough to be compressed and is just used for sanity checking of compression"
+std::string_view S1("this is a string long enough to be compressed and is just used for sanity checking of compression"
                        "Adding some repeatble sequences like aaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbb to ensure compression"
                        "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz");
 
-Value createValue(vespalib::stringref s, CompressionConfig cfg) {
+Value createValue(std::string_view s, CompressionConfig cfg) {
     Value v(7);
     vespalib::DataBuffer input;
     input.writeBytes(s.data(), s.size());
     v.set(std::move(input), s.size(), cfg);
     return v;
 }
-void verifyValue(vespalib::stringref s, const Value & v) {
+void verifyValue(std::string_view s, const Value & v) {
     Value::Result result = v.decompressed();
     ASSERT_TRUE(result.second);
     EXPECT_EQUAL(s.size(), v.getUncompressedSize());

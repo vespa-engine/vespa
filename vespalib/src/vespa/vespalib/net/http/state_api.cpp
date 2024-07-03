@@ -59,8 +59,8 @@ void build_health_status(JSONStringer &json, const HealthProducer &healthProduce
 }
 
 vespalib::string get_param(const std::map<vespalib::string,vespalib::string> &params,
-                           vespalib::stringref param_name,
-                           vespalib::stringref default_value)
+                           std::string_view param_name,
+                           std::string_view default_value)
 {
     auto maybe_value = params.find(param_name);
     if (maybe_value == params.end()) {

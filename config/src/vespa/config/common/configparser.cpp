@@ -8,7 +8,7 @@
 
 namespace config {
 
-void ConfigParser::throwNoDefaultValue(vespalib::stringref key) {
+void ConfigParser::throwNoDefaultValue(std::string_view key) {
     throw InvalidConfigException("Config parameter " + key + " has no "
             "default value and is not specified in config", VESPA_STRLOC);
 }
@@ -85,14 +85,14 @@ ConfigParser::deQuote(const vespalib::string & source)
 namespace {
 
 bool
-getValueForKey(vespalib::stringref key, vespalib::stringref line,
+getValueForKey(std::string_view key, std::string_view line,
                vespalib::string& retval)
 {
     if (line.length() <= key.length()) {
         return false;
     }
 
-    vespalib::stringref sub = line.substr(0, key.length());
+    std::string_view sub = line.substr(0, key.length());
     if (sub != key) {
         return false;
     }
@@ -124,7 +124,7 @@ getValueForKey(vespalib::stringref key, vespalib::stringref line,
 }
 
 StringVector
-ConfigParser::getLinesForKey(vespalib::stringref key, Cfg lines)
+ConfigParser::getLinesForKey(std::string_view key, Cfg lines)
 {
     StringVector retval;
 
@@ -152,7 +152,7 @@ ConfigParser::getUniqueNonWhiteSpaceLines(Cfg config) {
 }
 
 void
-ConfigParser::stripLinesForKey(vespalib::stringref key,
+ConfigParser::stripLinesForKey(std::string_view key,
                                std::set<vespalib::string>& config)
 {
     vespalib::string value;
@@ -239,7 +239,7 @@ ConfigParser::splitArray(Cfg config)
 }
 
 vespalib::string
-ConfigParser::stripWhitespace(vespalib::stringref source)
+ConfigParser::stripWhitespace(std::string_view source)
 {
     // Remove leading spaces and return.
     if (source.empty()) {

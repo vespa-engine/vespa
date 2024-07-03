@@ -89,7 +89,7 @@ struct GetInt {
 };
 
 struct GetString {
-    using T = vespalib::stringref;
+    using T = std::string_view;
     T operator () (const FieldValue & fv) const { return static_cast<const LiteralFieldValueB &>(fv).getValueRef(); }
 };
 

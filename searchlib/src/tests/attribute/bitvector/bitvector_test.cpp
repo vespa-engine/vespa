@@ -207,7 +207,7 @@ BitVectorTest::getSearch(const V &vec, const T &term, bool prefix, bool useBitVe
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
     return (static_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(&query[0], query.size()),
+        getSearch(std::string_view(&query[0], query.size()),
                   SearchContextParams().useBitVector(useBitVector));
 }
 

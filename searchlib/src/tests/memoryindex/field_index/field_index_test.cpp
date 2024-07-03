@@ -81,7 +81,7 @@ private:
             assert(!_insideWord);
             _ss << "]";
         }
-        void startWord(vespalib::stringref word) override {
+        void startWord(std::string_view word) override {
             assert(!_insideWord);
             if (!_firstWord)
                 _ss << ",";
@@ -235,7 +235,7 @@ assertPostingList(std::vector<uint32_t> &exp, PostingIteratorType itr)
 
 template <bool interleaved_features>
 typename FieldIndex<interleaved_features>::PostingList::Iterator
-find_in_field_index(const vespalib::stringref word,
+find_in_field_index(const std::string_view word,
                     uint32_t field_id,
                     const FieldIndexCollection& fic)
 {
@@ -247,7 +247,7 @@ find_in_field_index(const vespalib::stringref word,
 
 template <bool interleaved_features>
 typename FieldIndex<interleaved_features>::PostingList::ConstIterator
-find_frozen_in_field_index(const vespalib::stringref word,
+find_frozen_in_field_index(const std::string_view word,
                            uint32_t field_id,
                            const FieldIndexCollection& fic)
 {
@@ -437,7 +437,7 @@ myremove(uint32_t docId, DocumentInverter &inv)
 class MyDrainRemoves : IFieldIndexRemoveListener {
     FieldIndexRemover &_remover;
 public:
-    void remove(const vespalib::stringref, uint32_t) override { }
+    void remove(const std::string_view, uint32_t) override { }
 
     MyDrainRemoves(FieldIndexCollection &fieldIndexes, uint32_t fieldId)
         : _remover(fieldIndexes.getFieldIndex(fieldId)->getDocumentRemover())
@@ -543,7 +543,7 @@ struct FieldIndexTest : public ::testing::Test {
     {
     }
     ~FieldIndexTest() override;
-    SearchIterator::UP search(const vespalib::stringref word,
+    SearchIterator::UP search(const std::string_view word,
                               const SimpleMatchData& match_data) {
         return make_search_iterator<FieldIndexType::has_interleaved_features>(idx.find(word), idx.getFeatureStore(), 0, match_data.array);
     }
@@ -737,7 +737,7 @@ struct FieldIndexCollectionTest : public ::testing::Test {
     ~FieldIndexCollectionTest() override;
 
     [[nodiscard]]NormalFieldIndex::PostingList::Iterator
-    find(const vespalib::stringref word, uint32_t field_id) const {
+    find(const std::string_view word, uint32_t field_id) const {
         return find_in_field_index<false>(word, field_id, fic);
     }
 };
@@ -951,14 +951,14 @@ public:
           _inv(_inv_context)
     {
     }
-    [[nodiscard]] NormalFieldIndex::PostingList::Iterator find(const vespalib::stringref word, uint32_t field_id) const {
+    [[nodiscard]] NormalFieldIndex::PostingList::Iterator find(const std::string_view word, uint32_t field_id) const {
         return find_in_field_index<false>(word, field_id, _fic);
     }
-    [[nodiscard]] NormalFieldIndex::PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t field_id) const {
+    [[nodiscard]] NormalFieldIndex::PostingList::ConstIterator findFrozen(const std::string_view word, uint32_t field_id) const {
         return find_frozen_in_field_index<false>(word, field_id, _fic);
     }
     [[nodiscard]] SearchIterator::UP
-    search(const vespalib::stringref word, uint32_t field_id,const SimpleMatchData& match_data) const {
+    search(const std::string_view word, uint32_t field_id,const SimpleMatchData& match_data) const {
         return make_search_iterator<false>(findFrozen(word, field_id), featureStoreRef(_fic, field_id),
                                            field_id, match_data.array);
     }

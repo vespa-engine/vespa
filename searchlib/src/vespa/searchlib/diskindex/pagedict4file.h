@@ -68,7 +68,7 @@ public:
     PageDict4FileSeqWrite();
     ~PageDict4FileSeqWrite();
 
-    void writeWord(vespalib::stringref word, const PostingListCounts &counts) override;
+    void writeWord(std::string_view word, const PostingListCounts &counts) override;
 
     /**
      * Open dictionary file for sequential write.  The index with most

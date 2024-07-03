@@ -17,7 +17,7 @@ class Application {
     vespalib::string _specString;
     int parseOpts(int argc, char **argv);
     vespalib::string getSources();
-    HostFilter parse_host_set(vespalib::stringref raw_arg) const;
+    HostFilter parse_host_set(std::string_view raw_arg) const;
 public:
     void usage(const char *self);
     int main(int argc, char **argv);
@@ -63,7 +63,7 @@ int Application::parseOpts(int argc, char **argv) {
     return optind;
 }
 
-HostFilter Application::parse_host_set(vespalib::stringref raw_arg) const {
+HostFilter Application::parse_host_set(std::string_view raw_arg) const {
     vespalib::StringTokenizer tokenizer(raw_arg, ",");
     tokenizer.removeEmptyTokens();
 

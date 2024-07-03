@@ -34,7 +34,7 @@ using WeightedConstChar = IAttributeVector::WeightedConstChar;
 using WeightedEnum      = IAttributeVector::WeightedEnum;
 using test::MockGidToLidMapperFactory;
 
-std::shared_ptr<ReferenceAttribute> create_reference_attribute(vespalib::stringref name = "ref") {
+std::shared_ptr<ReferenceAttribute> create_reference_attribute(std::string_view name = "ref") {
     return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
 }
 
@@ -52,7 +52,7 @@ GlobalId dummy_gid(uint32_t doc_index) {
     return DocumentId(vespalib::make_string("id:foo:bar::%u", doc_index)).getGlobalId();
 }
 
-std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term) {
+std::unique_ptr<QueryTermSimple> word_term(std::string_view term) {
     return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
 }
 
@@ -72,7 +72,7 @@ ImportedAttributeFixture::map_reference(DocId from_lid, GlobalId via_gid, DocId 
 
 
 std::shared_ptr<ImportedAttributeVector>
-ImportedAttributeFixture::create_attribute_vector_from_members(vespalib::stringref name) {
+ImportedAttributeFixture::create_attribute_vector_from_members(std::string_view name) {
     return ImportedAttributeVectorFactory::create(name, reference_attr, document_meta_store, target_attr, target_document_meta_store, use_search_cache);
 }
 
