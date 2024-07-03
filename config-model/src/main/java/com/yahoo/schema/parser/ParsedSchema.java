@@ -117,7 +117,7 @@ public class ParsedSchema extends ParsedBlock {
         importedFields.add(new ImportedField(asFieldName, refFieldName, foregnFieldName));
     }
 
-    void addIndex(ParsedIndex index) {
+    public void addIndex(ParsedIndex index) {
         String idxName = index.name();
         verifyThat(! extraIndexes.containsKey(idxName), "already has index", idxName);
         extraIndexes.put(idxName, index);

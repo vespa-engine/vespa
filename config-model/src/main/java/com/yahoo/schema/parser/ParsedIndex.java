@@ -14,7 +14,7 @@ import java.util.Optional;
  * advanced logic here!
  * @author arnej27959
  **/
-class ParsedIndex extends ParsedBlock {
+public class ParsedIndex extends ParsedBlock {
 
     private Boolean enableBm25 = null;
     private Boolean isPrefix = null;
@@ -26,7 +26,7 @@ class ParsedIndex extends ParsedBlock {
     private Long upperBound = null;
     private Double densePLT = null;
     
-    ParsedIndex(String name) {
+    public ParsedIndex(String name) {
         super(name, "index");
     }
 
@@ -41,39 +41,39 @@ class ParsedIndex extends ParsedBlock {
     Optional<Long> getUpperBound() { return Optional.ofNullable(this.upperBound); }
     Optional<Double> getDensePostingListThreshold() { return Optional.ofNullable(this.densePLT); }
 
-    void addAlias(String alias) {
+    public void addAlias(String alias) {
         aliases.add(alias);
     }
 
-    void setArity(int arity) {
+    public void setArity(int arity) {
         this.arity = arity;
     }
 
-    void setDensePostingListThreshold(double threshold) {
+    public void setDensePostingListThreshold(double threshold) {
         this.densePLT = threshold;
     }
 
-    void setEnableBm25(boolean value) {
+    public void setEnableBm25(boolean value) {
         this.enableBm25 = value;
     }
 
-    void setHnswIndexParams(HnswIndexParams params) {
+    public void setHnswIndexParams(HnswIndexParams params) {
         this.hnswParams = params;
     }
 
-    void setLowerBound(long value) {
+    public void setLowerBound(long value) {
         this.lowerBound = value;
     }
 
-    void setPrefix(boolean value) {
+    public void setPrefix(boolean value) {
         this.isPrefix = value;
     }
 
-    void setStemming(Stemming stemming) {
+    public void setStemming(Stemming stemming) {
         this.stemming = stemming;
     }
 
-    void setUpperBound(long value) {
+    public void setUpperBound(long value) {
         this.upperBound = value;
     }
 }

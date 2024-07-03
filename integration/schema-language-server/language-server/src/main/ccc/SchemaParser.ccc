@@ -26,6 +26,7 @@ INJECT SchemaParser:
     import com.yahoo.schema.parser.ParsedType;
 
     import com.yahoo.schema.document.Case;
+    import com.yahoo.schema.document.HnswIndexParams;
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;
     import com.yahoo.schema.document.Sorting;
@@ -332,7 +333,7 @@ rootSchemaItem(ParsedSchema schema) : {}
         | rankProfile(schema)
        | documentSummary(schema)
         | fieldOutsideDoc(schema)
-    //   | indexOutsideDoc(schema)
+       | indexOutsideDoc(schema)
         | structOutsideDoc(schema)
     //   | annotationOutside(schema)
         | fieldSetElm(schema)
@@ -622,7 +623,7 @@ void fieldBodyElm(ParsedField field) : { }
        fieldStemming(field) |
        idElm(field) |
        summaryInField(field) |
-    //   indexInsideField(field) |
+       indexInsideField(field) |
     //   indexing(field) |
        matchSettingsElm(field.matchSettings()) |
        normalizingElm(field) |
@@ -1251,6 +1252,108 @@ void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
 void documentSummaryItem(ParsedDocumentSummary summary) : { }
  
     summaryInDocument(summary)
+;
+
+/**
+ * Consumes an index block in a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void indexOutsideDoc(ParsedSchema schema) :
+{
+    ParsedIndex op;
+    String indexName;
+}
+ 
+    <INDEX> indexName = identifierStr()
+    {
+        op = new ParsedIndex(indexName);
+    }
+    ( (<COLON> indexBody(op) (<COMMA> indexBody(op))*) |
+      (openLbrace() (indexBody(op) | <NL>)* <RBRACE>) )
+    {
+        schema.addIndex(op);
+    }
+;
+
+/**
+ * Consumes an index block for a field element.
+ *
+ * @param field  the field to modify
+ */
+void indexInsideField(ParsedField field) :
+{
+    ParsedIndex op;
+    String indexName = field.name();
+}
+ 
+    <INDEX> [indexName = identifierStr()]
+    {
+        // TODO: Remove support for index with different name than field name in Vespa 9
+        //if ( ! indexName.equals(field.name()))
+        //    deployLogger.logApplicationPackage(Level.WARNING, "Creating an index for field '" + field.name() +
+        //    "' with a different name '" + indexName + "' than the field name" +
+        //    " is deprecated, and support will be removed in Vespa 9. Define a field with the wanted name outside the document instead.");
+        op = new ParsedIndex(indexName);
+    }
+    ( (<COLON> indexBody(op) (<COMMA> indexBody(op))*) |
+      (openLbrace() (indexBody(op) | <NL>)* <RBRACE>) )
+    {
+        field.addIndex(op);
+    }
+;
+
+
+/**
+ * Consumes a single index statement for an index block.
+ *
+ * @param index The index to modify.
+ */
+void indexBody(ParsedIndex index) :
+{
+    String str;
+    int arity;
+    long num;
+    double threshold;
+}
+ 
+    ( <PREFIX>                                                       { index.setPrefix(true); }
+      | <ALIAS> <COLON> str = identifierWithDashStr()                   { index.addAlias(str); }
+      | <STEMMING> <COLON> str = identifierWithDashStr()                { index.setStemming(Stemming.get(str)); }
+      | <ARITY> <COLON> arity = integerElm()                            { index.setArity(arity); }
+      | <LOWER_BOUND> <COLON> num = longValue()                       { index.setLowerBound(num); }
+      | <UPPER_BOUND> <COLON> num = longValue()                       { index.setUpperBound(num); }
+      | <DENSE_POSTING_LIST_THRESHOLD> <COLON> threshold = floatValue() { index.setDensePostingListThreshold(threshold); }
+      | <ENABLE_BM25>                                                { index.setEnableBm25(true); }
+      | hnswIndex(index)                                             { }
+    )
+;
+
+void hnswIndex(ParsedIndex index) :
+{
+    HnswIndexParams.Builder params = new HnswIndexParams.Builder();
+}
+ 
+    ( SCAN(<HNSW> openLbrace()) =>
+      (<HNSW> ( (openLbrace() (hnswIndexBody(params) | <NL>)* <RBRACE>) )) |
+      <HNSW> )
+    {
+        index.setHnswIndexParams(params.build());
+    }
+;
+
+//void multiLineHnswIndex(HnswIndexParams.Builder params) : {}
+    
+
+void hnswIndexBody(HnswIndexParams.Builder params) :
+{
+    int num;
+    boolean bool;
+}
+ 
+    ( <MAX_LINKS_PER_NODE> <COLON> num = integerElm() { params.setMaxLinksPerNode(num); }
+      | <NEIGHBORS_TO_EXPLORE_AT_INSERT> <COLON> num = integerElm() { params.setNeighborsToExploreAtInsert(num); }
+      | <MULTI_THREADED_INDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
 ;
 
 /**

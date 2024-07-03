@@ -101,7 +101,7 @@ public class ParsedField extends ParsedBlock {
         aliases.put(to, from);
     }
 
-    void addIndex(ParsedIndex index) {
+    public void addIndex(ParsedIndex index) {
         String idxName = index.name();
         verifyThat(! fieldIndexes.containsKey(idxName), "already has index", idxName);
         fieldIndexes.put(idxName, index);
