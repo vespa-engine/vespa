@@ -10,13 +10,13 @@ import java.util.List;
  * far as possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedRankFunction extends ParsedBlock {
+public class ParsedRankFunction extends ParsedBlock {
 
     private boolean inline;
     private String expression;
     private final List<String> parameters = new ArrayList<>();
 
-    ParsedRankFunction(String name) {
+    public ParsedRankFunction(String name) {
         super(name, "function");
     }
 
@@ -24,16 +24,16 @@ class ParsedRankFunction extends ParsedBlock {
     String getExpression() { return this.expression; }
     List<String> getParameters() { return List.copyOf(parameters); }
 
-    void addParameter(String param) {
+    public void addParameter(String param) {
         verifyThat(! parameters.contains(param), "cannot have parameter", param, "twice");
         parameters.add(param);
     }
 
-    void setInline(boolean value) {
+    public void setInline(boolean value) {
         this.inline = value;
     }
 
-    void setExpression(String value) {
+    public void setExpression(String value) {
         this.expression = value;
     }
 }

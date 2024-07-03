@@ -7,11 +7,12 @@ INJECT SchemaParser:
     import java.io.OutputStream;
     import java.util.List;
 
+
     import com.yahoo.schema.DistributableResource;
     import com.yahoo.schema.FeatureNames;
     import com.yahoo.schema.OnnxModel;
     import com.yahoo.schema.RankProfile.DiversitySettings;
-    import com.yahoo.schema.RankProfile.MatchSettings;
+    import com.yahoo.schema.RankProfile.MatchPhaseSettings;
     import com.yahoo.schema.RankProfile;
     import com.yahoo.schema.Schema;
 
@@ -39,6 +40,8 @@ INJECT SchemaParser:
     import com.yahoo.schema.document.MatchAlgorithm;
     import com.yahoo.schema.document.Sorting;
     import com.yahoo.schema.document.Stemming;
+
+    import com.yahoo.search.query.ranking.Diversity;
 
     import com.yahoo.searchlib.rankingexpression.FeatureList;
     import com.yahoo.searchlib.rankingexpression.Reference;
@@ -1546,11 +1549,11 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
     //   fieldRankType(profile)
     //   | fieldWeight(profile)
     //   | fieldRankFilter(profile)
-    //   | firstPhase(profile)
-    //   | matchPhase(profile)
-    //   | diversity(profile)
-    //   | function(profile)
-    //   | mutate(profile)
+       | firstPhase(profile)
+       | matchPhase(profile)
+       | diversityElm(profile)
+       | functionElm(profile)
+       | mutateElm(profile)
     //   | ignoreRankFeatures(profile)
     //   | numThreadsPerSearch(profile)
     //   | minHitsPerThread(profile)
@@ -1586,6 +1589,163 @@ void inheritsRankProfile(ParsedRankProfile profile) :
     <INHERITS> name = identifierWithDashStr { profile.inherit(name); }
     ( <COMMA>  name = identifierWithDashStr { profile.inherit(name); } )*
 ;
+
+/**
+ * This rule consumes an mutate statement of a rank-profile.
+ *
+ * @param profile The profile to modify.
+ */
+void mutateElm(ParsedRankProfile profile) : { }
+ 
+    <MUTATE> openLbrace() (mutate_operation(profile) <NL>)+ <RBRACE>
+;
+
+void mutate_operation(ParsedRankProfile profile) :
+{
+    String attribute, operation;
+    RankProfile.MutateOperation.Phase phase;
+}
+ 
+   ( <ON_MATCH> { phase = RankProfile.MutateOperation.Phase.on_match; }
+   | <ON_FIRST_PHASE> { phase = RankProfile.MutateOperation.Phase.on_first_phase; }
+   | <ON_SECOND_PHASE> { phase = RankProfile.MutateOperation.Phase.on_second_phase; }
+   | <ON_SUMMARY> { phase = RankProfile.MutateOperation.Phase.on_summary; }
+   )
+   openLbrace() attribute = identifierStr() operation = mutate_expr() (<NL>)* <RBRACE>
+   { profile.addMutateOperation(phase, attribute, operation); }
+;
+
+String mutate_expr() :
+{
+     String op;
+     Number constant = null;
+}
+ 
+    (("+=" | "-=" | "=") { op = lastConsumedToken.toString(); } constant = number())
+    { return constant != null ? (op + constant) : op; }
+;
+
+/**
+ * This rule consumes a function statement of a rank-profile.
+ *
+ * @param profile The profile to modify.
+ */
+void functionElm(ParsedRankProfile profile) :
+{
+    String name, expression, parameter;
+    boolean inline = false;
+    ParsedRankFunction func;
+}
+ 
+    (  ( <FUNCTION> | <MACRO> ) inline = inlineElm() name = identifierStr() [ "$" { name = name + lastConsumedToken.toString(); } ]
+      "("
+                                             { func = new ParsedRankFunction(name); }
+          [ parameter = identifierStr()         { func.addParameter(parameter); }
+          ( <COMMA> parameter = identifierStr() { func.addParameter(parameter); } )* ]
+      ")"
+      openLbrace() expression = expression() (<NL>)* <RBRACE> )
+    {
+        func.setExpression(expression);
+        func.setInline(inline);
+        var old = profile.addOrReplaceFunction(func);
+        if (old != null) {
+            throw new IllegalArgumentException("Function '" + func.name()
+                                               + "' is defined twice in rank profile '"
+                                               + profile.name() + "'");
+        }
+    }
+;
+
+boolean inlineElm() : { }
+ 
+    ( <INLINE> { return true; } ) ?
+    { return false; }
+;
+
+
+/**
+ * This rule consumes a match-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void matchPhase(ParsedRankProfile profile) :
+{
+    MatchPhaseSettings settings = new MatchPhaseSettings();
+}
+ 
+    <MATCH_PHASE> openLbrace() (matchPhaseItem(profile, settings) | <NL>)* <RBRACE>
+    {
+        settings.checkValid();
+        profile.setMatchPhase(settings);
+    }
+;
+
+void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
+{
+    String str;
+    int num;
+    double multiplier;
+    double coverage;
+}
+ 
+    ( <ATTRIBUTE> <COLON> str = identifierStr() { settings.setAttribute(str); }
+      | diversityDeprecated(profile)
+      | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
+                          | <DESCENDING> { settings.setAscending(false); } )
+      | <MAX_HITS> <COLON> num = integerElm() { settings.setMaxHits(num); }
+      | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
+      | <EVALUATION_POINT> <COLON> multiplier = floatValue() { settings.setEvaluationPoint(multiplier); }
+      | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = floatValue() { settings.setPrePostFilterTippingPoint(multiplier); }
+    )
+;
+
+
+/**
+ * This rule consumes a diversity block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void diversityElm(ParsedRankProfile profile) :
+{
+    DiversitySettings settings = new DiversitySettings();
+}
+ 
+    <DIVERSITY> openLbrace() (diversityItem(settings) | <NL>)* <RBRACE>
+    {
+ 	    profile.setDiversity(settings);
+    }
+;
+
+void diversityDeprecated(ParsedRankProfile profile) :
+{
+    DiversitySettings settings = new DiversitySettings();
+}
+ 
+    <DIVERSITY> openLbrace() (diversityItem(settings) | <NL>)* <RBRACE>
+    {
+ 	    profile.setDiversity(settings);
+        // deployLogger.logApplicationPackage(Level.WARNING, "'diversity is deprecated inside 'match-phase'. Specify it at 'rank-profile' level.");
+    }
+;
+
+void diversityItem(DiversitySettings settings) :
+{
+    String str;
+    int num;
+    double multiplier;
+}
+ 
+    (   <ATTRIBUTE> <COLON> str = identifierStr() { settings.setAttribute(str); }
+      | <MIN_GROUPS> <COLON> num = integerElm() { settings.setMinGroups(num); }
+      | <CUTOFF_FACTOR> <COLON> multiplier = floatValue() { settings.setCutoffFactor(multiplier); }
+      | <CUTOFF_STRATEGY> <COLON>
+        (   <STRICT> { settings.setCutoffStrategy(Diversity.CutoffStrategy.strict); }
+          | <LOOSE>  { settings.setCutoffStrategy(Diversity.CutoffStrategy.loose); }
+        )
+    )
+;
+
+
 
 /**
  * Consumes the first-phase block of a rank profile.

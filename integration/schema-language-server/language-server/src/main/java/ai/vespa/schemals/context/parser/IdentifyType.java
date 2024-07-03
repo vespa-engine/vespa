@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.Range;
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
 import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyType extends Identifier {
@@ -37,7 +38,7 @@ public class IdentifyType extends Identifier {
 
         SchemaNode parent = node.getParent();
         if (
-            node.getType() == Token.TokenType.TYPE &&
+            node.getType() == TokenType.TYPE &&
             parent != null &&
             parent.size() > parent.indexOf(node)
         ) {
@@ -45,7 +46,7 @@ public class IdentifyType extends Identifier {
 
             if (parent.getClassLeafIdentifierString().equals("tensorTypeWithPrefix")) {
                 childIndex++;
-                if (childIndex >= parent.size() || parent.get(childIndex).getType() != Token.TokenType.TENSOR_TYPE) {
+                if (childIndex >= parent.size() || parent.get(childIndex).getType() != TokenType.TENSOR_TYPE) {
                     ret.add(new Diagnostic(node.getRange(), "Expected a tensor type", DiagnosticSeverity.Error, ""));
                     return ret;
                 }
@@ -68,18 +69,18 @@ public class IdentifyType extends Identifier {
             // Check if type is valid
             if (
                 child.size() > 2 &&
-                child.get(1).getType() == Token.TokenType.LESSTHAN
+                child.get(1).getType() == TokenType.LESSTHAN
             ) {
-                Token.TokenType firstChildType = child.get(0).getType();
+                TokenType firstChildType = child.get(0).getType();
                 if (
-                    firstChildType != Token.TokenType.ANNOTATIONREFERENCE &&
-                    firstChildType != Token.TokenType.REFERENCE
+                    firstChildType != TokenType.ANNOTATIONREFERENCE &&
+                    firstChildType != TokenType.REFERENCE
                 ) {
                     for (int i = 2; i < child.size(); i += 2) {
                         ret.addAll(validateType(child.get(i)));
                     }
                 }
-            } else if (child.getType() != Token.TokenType.TENSOR_TYPE) {
+            } else if (child.getType() != TokenType.TENSOR_TYPE) {
                 ret.addAll(validateType(child));
                 child.setType(null);
             }

@@ -143,13 +143,13 @@ public class ParsedRankProfile extends ParsedBlock {
         fieldsRankWeight.put(field, weight);
     }
 
-    ParsedRankFunction addOrReplaceFunction(ParsedRankFunction func) {
+    public ParsedRankFunction addOrReplaceFunction(ParsedRankFunction func) {
         // allowed with warning
         // verifyThat(! functions.containsKey(func.name()), "already has function", func.name());
         return functions.put(func.name(), func);
     }
 
-    void addMutateOperation(MutateOperation.Phase phase, String attrName, String operation) {
+    public void addMutateOperation(MutateOperation.Phase phase, String attrName, String operation) {
         mutateOperations.add(new MutateOperation(phase, attrName, operation));
     }
 
@@ -176,11 +176,11 @@ public class ParsedRankProfile extends ParsedBlock {
         this.keepRankCount = count;
     }
 
-    void setMatchPhase(MatchPhaseSettings settings) {
+    public void setMatchPhase(MatchPhaseSettings settings) {
         verifyThat(matchPhase == null, "already has match-phase");
         this.matchPhase = settings;
     }
-    void setDiversity(DiversitySettings settings) {
+    public void setDiversity(DiversitySettings settings) {
         verifyThat(diversity == null, "already has diversity");
         this.diversity = settings;
     }
