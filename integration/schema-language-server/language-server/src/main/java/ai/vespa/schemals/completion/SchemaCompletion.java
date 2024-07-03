@@ -20,7 +20,9 @@ public class SchemaCompletion {
     public static ArrayList<CompletionItem> getCompletionItems(EventPositionContext context) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
-        CSTUtils.printTreeUpToPosition(context.logger, context.document.getRootNode(), context.position);
+        if (context.document.isInsideComment(context.position)) {
+            return ret;
+        }
 
         for (CompletionProvider provider : providers) {
             if (provider.match(context)) {

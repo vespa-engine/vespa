@@ -23,14 +23,17 @@ public class TypeCompletionProvider implements CompletionProvider {
     @Override
     public boolean match(EventPositionContext context) {
         SchemaDocumentLexer lexer = context.document.lexer;
-
-        if (lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE) != null) {
+        LexicalToken match = lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE);
+        if (match != null && match.range().getStart().getLine() == context.position.getLine()) {
+            return true;
+        }
+        match = lexer.matchBackwards(context.position, 1, false, TokenType.FIELD, TokenType.IDENTIFIER, TokenType.TYPE, TokenType.IDENTIFIER);
+        if (match != null && match.range().getStart().getLine() == context.position.getLine()) {
             return true;
         }
 
-        context.logger.println(lexer.tokenAtOrBeforePosition(context.position, false).toString());
         for (TokenType tokenType : compoundTypes) {
-            LexicalToken match = lexer.matchBackwards(context.position, 3, true, tokenType, TokenType.LESSTHAN);
+            match = lexer.matchBackwards(context.position, 3, true, tokenType, TokenType.LESSTHAN);
             if (match != null && match.range().getStart().getLine() == context.position.getLine())return true;
 
             // Dirty gt symbols are inserted when incomplete type is written
@@ -59,6 +62,7 @@ public class TypeCompletionProvider implements CompletionProvider {
             CompletionUtils.constructType("raw"),
             CompletionUtils.constructSnippet("reference", "reference<$1>"),
             //CompletionUtils.constructType("struct"), TODO: find defined structs
+            CompletionUtils.constructType("string"),
             CompletionUtils.constructSnippet("tensor", "tensor<$1>($0)"),
             CompletionUtils.constructType("uri"),
             CompletionUtils.constructSnippet("weightedset", "weightedset<$1>")

@@ -37,14 +37,12 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("struct", "struct ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("field", "field ${1:name} type $0", "field"),
             CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {\n\t$0\n}", "field {}"),
-            CompletionUtils.constructSnippet("compression", "compression {\n\t$0\n}"),
 
         });
 
         put("fieldElm", new CompletionItem[]{
             CompletionUtils.constructSnippet("alias", "alias: $1"),
-            CompletionUtils.constructSnippet("attribute", "attribute ${1:name}: ${2:property}", "attribute:"),
-            CompletionUtils.constructSnippet("attribute", "attribute ${1:name} {\n\t$0\n}", "attribute {}"),
+            // attribute is deprecated
             CompletionUtils.constructSnippet("bolding", "bolding: on"),
             CompletionUtils.constructSnippet("dictionary", "dictionary {\n\t$0\n}"),
             CompletionUtils.constructSnippet("id", "id: "),

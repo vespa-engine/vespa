@@ -17,7 +17,7 @@ public class IdentifyDeprecatedToken extends Identifier {
         super(logger);
     }
 
-    private static final HashSet<TokenType> depricatedTokens = new HashSet<TokenType>() {{
+    private static final HashSet<TokenType> deprecatedTokens = new HashSet<TokenType>() {{
         add(TokenType.ATTRIBUTE);
         add(TokenType.ENABLE_BIT_VECTORS);
         add(TokenType.SUMMARY_TO);
@@ -26,7 +26,7 @@ public class IdentifyDeprecatedToken extends Identifier {
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        if (depricatedTokens.contains(node.getType())) {
+        if (deprecatedTokens.contains(node.getType())) {
             ret.add(
                 new Diagnostic(node.getRange(), node.getText() + " is deprecated.", DiagnosticSeverity.Warning, "")
             );

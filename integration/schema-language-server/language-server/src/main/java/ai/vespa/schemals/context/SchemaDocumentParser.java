@@ -100,6 +100,18 @@ public class SchemaDocumentParser {
         return null;
     }
 
+    public boolean isInsideComment(Position pos) {
+        int offset = positionToOffset(pos);
+
+        if (content.charAt(offset) == '\n')offset--;
+
+        for (int i = offset; i >= 0; i--) {
+            if (content.charAt(i) == '\n')break;
+            if (content.charAt(i) == '#')return true;
+        }
+        return false;
+    }
+
     public SchemaNode getRootNode() {
         return CST;
     }
