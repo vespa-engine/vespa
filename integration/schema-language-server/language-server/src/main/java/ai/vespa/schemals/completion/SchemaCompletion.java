@@ -21,12 +21,8 @@ public class SchemaCompletion {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
         if (context.document.isInsideComment(context.position)) {
-            context.logger.println("INSIDE COMMENT");
             return ret;
         }
-        context.logger.println("NOT INSIDE COMMENT");
-
-        //CSTUtils.printTreeUpToPosition(context.logger, context.document.getRootNode(), context.position);
 
         for (CompletionProvider provider : providers) {
             if (provider.match(context)) {
