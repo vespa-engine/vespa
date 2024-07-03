@@ -12,7 +12,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
-import ai.vespa.schemals.context.parser.IdentifyIdentifier;
+import ai.vespa.schemals.context.parser.IdentifySymbolDefinition;
 import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.context.parser.IdentifyType;
 import ai.vespa.schemals.parser.SchemaParser;
@@ -53,7 +53,7 @@ public class SchemaDocumentParser {
         SchemaDocumentParser self = this;
 
         this.parseIdentifiers = new ArrayList<Identifier>() {{
-            add(new IdentifyIdentifier(logger, self, schemaIndex));
+            add(new IdentifySymbolDefinition(logger, self, schemaIndex));
             add(new IdentifyType(logger));
             add(new IdentifySymbolReferences(logger, self, schemaIndex));
             add(new IdentifyDeprecatedToken(logger));

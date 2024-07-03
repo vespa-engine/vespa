@@ -15,7 +15,7 @@ import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.SchemaNode;
 
-public class IdentifyIdentifier extends Identifier {
+public class IdentifySymbolDefinition extends Identifier {
 
     protected SchemaDocumentParser document;
     protected SchemaIndex schemaIndex;
@@ -42,7 +42,7 @@ public class IdentifyIdentifier extends Identifier {
         }});
     }};
 
-    public IdentifyIdentifier(PrintStream logger, SchemaDocumentParser document, SchemaIndex schemaIndex) {
+    public IdentifySymbolDefinition(PrintStream logger, SchemaDocumentParser document, SchemaIndex schemaIndex) {
         super(logger);
         this.document = document;
         this.schemaIndex = schemaIndex;
