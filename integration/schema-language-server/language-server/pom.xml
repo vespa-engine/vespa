@@ -33,6 +33,11 @@
       <artifactId>vespajlib</artifactId>
       <version>8-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>searchlib</artifactId>
+      <version>8-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -112,7 +117,7 @@
             </configuration>
           </execution>
         </executions>
-    </plugin>
+      </plugin>
     </plugins>
   </build>
 </project>
