@@ -26,7 +26,7 @@ public class IdentifyDeprecatedToken extends Identifier {
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        if (depricatedTokens.contains(node.getType())) {
+        if (deprecatedTokens.contains(node.getType())) {
             ret.add(
                 new Diagnostic(node.getRange(), node.getText() + " is deprecated.", DiagnosticSeverity.Warning, "")
             );
