@@ -453,6 +453,7 @@ public class Model implements Cloneable {
             addLabels(tagged, ranking);
             addConnectivityRankProperties(tagged, ranking);
             addSignificances(tagged, ranking);
+            addDocumentFrequencies(tagged, ranking);
         }
     }
 
@@ -497,6 +498,17 @@ public class Model implements Cloneable {
             if ( ! t.hasExplicitSignificance()) continue;
             String name = "vespa.term." + t.getUniqueID() + ".significance";
             ranking.getProperties().put(name, String.valueOf(t.getSignificance()));
+        }
+    }
+
+    private void addDocumentFrequencies(List<Item> candidates, Ranking ranking) {
+        for (Item  candidate : candidates) {
+            TaggableItem t = (TaggableItem) candidate;
+            var documentFrequency = t.getDocumentFrequency();
+            if ( ! documentFrequency.isPresent()) continue;
+            String name = "vespa.term." + t.getUniqueID() + ".docfreq";
+            ranking.getProperties().put(name, String.valueOf(documentFrequency.get().frequency()));
+            ranking.getProperties().put(name, String.valueOf(documentFrequency.get().count()));
         }
     }
 

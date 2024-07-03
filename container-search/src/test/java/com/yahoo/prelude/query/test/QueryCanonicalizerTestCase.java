@@ -402,6 +402,19 @@ public class QueryCanonicalizerTestCase {
     }
 
     @Test
+    void testDocumentFrequency() {
+        Query q = new Query("?query=a%20b");
+        CompositeItem root = (CompositeItem) q.getModel().getQueryTree().getRoot();
+        ((WordItem) root.getItem(0)).setDocumentFrequency(new DocumentFrequency(13, 100));
+        ((WordItem) root.getItem(1)).setDocumentFrequency(new DocumentFrequency(14, 110));;
+        q.prepare();
+        assertEquals("13", q.getRanking().getProperties().get("vespa.term.1.docfreq").get(0));
+        assertEquals("100", q.getRanking().getProperties().get("vespa.term.1.docfreq").get(1));
+        assertEquals("14", q.getRanking().getProperties().get("vespa.term.2.docfreq").get(0));
+        assertEquals("110", q.getRanking().getProperties().get("vespa.term.2.docfreq").get(1));
+    }
+
+    @Test
     void testPhraseWeight() {
         PhraseItem root = new PhraseItem();
         root.setWeight(200);
