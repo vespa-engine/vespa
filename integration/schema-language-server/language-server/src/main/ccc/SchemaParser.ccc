@@ -1562,13 +1562,13 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
     //   | postFilterThreshold(profile)
     //   | approximateThreshold(profile)
     //   | targetHitsMaxAdjustmentFactor(profile)
-      | rankFeaturesElm(profile)
+       | rankFeaturesElm(profile)
     //   | rankProperties(profile)
-    //   | secondPhase(profile)
-    //   | globalPhase(profile)
+       | secondPhase(profile)
+       | globalPhase(profile)
     //   | inputs(profile)
     //   | constants(schema, profile)
-      | matchFeaturesElm(profile)
+       | matchFeaturesElm(profile)
     //   | summaryFeatures(profile)
        | onnxModelInProfile(profile)
     //   | strict(profile)
@@ -1772,6 +1772,61 @@ void firstPhaseItem(ParsedRankProfile profile) :
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 ;
+
+/**
+ * Consumes the second-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void secondPhase(ParsedRankProfile profile) : { }
+ 
+    <SECOND_PHASE> openLbrace() (secondPhaseItem(profile) | <NL>)* <RBRACE>
+;
+
+/**
+ * Consumes a statement for a second-phase block.
+ *
+ * @param profile The rank profile to modify.
+ */
+void secondPhaseItem(ParsedRankProfile profile) :
+{
+    String expression;
+    int rerankCount;
+    double dropLimit;
+}
+ 
+    ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
+    | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setRerankCount(rerankCount); }
+    | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
+    )
+;
+
+/**
+ * Consumes the global-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void globalPhase(ParsedRankProfile profile) : { }
+ 
+    <GLOBAL_PHASE> openLbrace() (globalPhaseItem(profile) | <NL>)* <RBRACE>
+;
+
+/**
+ * Consumes a statement for a global-phase block.
+ *
+ * @param profile The rank profile to modify.
+ */
+void globalPhaseItem(ParsedRankProfile profile) :
+{
+    String expression;
+    int rerankCount;
+}
+ 
+    ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
+    | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setGlobalPhaseRerankCount(rerankCount); }
+    )
+;
+
 
 TensorType tensorTypeWithPrefix(String errorMessage) :
 { TensorType type; }

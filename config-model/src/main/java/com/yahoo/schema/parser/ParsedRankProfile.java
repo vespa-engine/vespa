@@ -205,27 +205,27 @@ public class ParsedRankProfile extends ParsedBlock {
         this.rankScoreDropLimit = limit;
     }
 
-    void setSecondPhaseRankScoreDropLimit(double limit) {
+    public void setSecondPhaseRankScoreDropLimit(double limit) {
         verifyThat(secondPhaseRankScoreDropLimit == null, "already has rank-score-drop-limit for second phase");
         this.secondPhaseRankScoreDropLimit = limit;
     }
 
-    void setRerankCount(int count) {
+    public void setRerankCount(int count) {
         verifyThat(reRankCount == null, "already has rerank-count");
         this.reRankCount = count;
     }
 
-    void setSecondPhaseRanking(String expression) {
+    public void setSecondPhaseRanking(String expression) {
         verifyThat(secondPhaseExpression == null, "already has second-phase expression");
         this.secondPhaseExpression = expression;
     }
 
-    void setGlobalPhaseExpression(String expression) {
+    public void setGlobalPhaseExpression(String expression) {
         verifyThat(globalPhaseExpression == null, "already has global-phase expression");
         this.globalPhaseExpression = expression;
     }
 
-    void setGlobalPhaseRerankCount(int count) {
+    public void setGlobalPhaseRerankCount(int count) {
         verifyThat(globalPhaseRerankCount == null, "already has global-phase rerank-count");
         this.globalPhaseRerankCount = count;
     }
