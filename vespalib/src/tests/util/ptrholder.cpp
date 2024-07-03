@@ -74,5 +74,3 @@ TEST(PtrHolderTest, test_simple)
     EXPECT_TRUE(data.ctorCnt == 2);
     EXPECT_TRUE(data.dtorCnt == 2);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

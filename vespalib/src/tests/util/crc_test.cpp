@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
@@ -28,7 +28,7 @@ TEST(FCrcTest, test_correctness)
 TEST(CrcTest, benchmark)
 {
     constexpr size_t bufSz = 1024;
-    constexpr size_t numRep = 1000 * 1000;
+    constexpr size_t numRep = 100 * 1000;
     std::vector<char> a(numRep+bufSz);
     for(size_t i(0), m(a.size()); i < m; i++) {
         a[i] = i&0xff;
@@ -42,5 +42,3 @@ TEST(CrcTest, benchmark)
     }
     printf("sum = %x\n", sum);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

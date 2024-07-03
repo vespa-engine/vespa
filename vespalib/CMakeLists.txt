@@ -36,7 +36,6 @@ vespa_define_module(
     src/tests/barrier
     src/tests/benchmark
     src/tests/benchmark_timer
-    src/tests/bits
     src/tests/box
     src/tests/btree
     src/tests/btree/btree-scan-speed
@@ -53,8 +52,6 @@ vespa_define_module(
     src/tests/coro/received
     src/tests/coro/waiting_for
     src/tests/cpu_usage
-    src/tests/crc
-    src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader
     src/tests/data/lz4_encode_decode
@@ -81,7 +78,6 @@ vespa_define_module(
     src/tests/drop-file-from-cache
     src/tests/dual_merge_director
     src/tests/encoding/base64
-    src/tests/eventbarrier
     src/tests/exception_classes
     src/tests/execution_profiler
     src/tests/executor
@@ -104,8 +100,6 @@ vespa_define_module(
     src/tests/invokeservice
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
-    src/tests/issue
-    src/tests/json
     src/tests/latch
     src/tests/left_right_heap
     src/tests/make_fixture_macros
@@ -126,7 +120,6 @@ vespa_define_module(
     src/tests/net/tls/policy_checking_certificate_verifier
     src/tests/net/tls/protocol_snooping
     src/tests/net/tls/transport_options
-    src/tests/nexus
     src/tests/nice
     src/tests/objects/identifiable
     src/tests/objects/nbostream
@@ -139,15 +132,12 @@ vespa_define_module(
     src/tests/portal/handle_manager
     src/tests/portal/http_request
     src/tests/portal/reactor
-    src/tests/printable
     src/tests/priority_queue
     src/tests/process
     src/tests/programoptions
     src/tests/random
-    src/tests/ref_counted
     src/tests/regex
     src/tests/rendezvous
-    src/tests/require
     src/tests/runnable_pair
     src/tests/rusage
     src/tests/rw_spin_lock
@@ -155,7 +145,6 @@ vespa_define_module(
     src/tests/sha1
     src/tests/shared_operation_throttler
     src/tests/shared_string_repo
-    src/tests/sharedptr
     src/tests/shutdownguard
     src/tests/signalhandler
     src/tests/simple_thread_bundle
@@ -164,7 +153,6 @@ vespa_define_module(
     src/tests/slime/are_equal
     src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
-    src/tests/small_vector
     src/tests/spin_lock
     src/tests/stash
     src/tests/state_server
@@ -194,7 +182,6 @@ vespa_define_module(
     src/tests/tutorial/minimal
     src/tests/tutorial/simple
     src/tests/tutorial/threads
-    src/tests/typify
     src/tests/unwind_message
     src/tests/util
     src/tests/util/generationhandler_stress
@@ -203,7 +190,6 @@ vespa_define_module(
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/wakeup
-    src/tests/xmlserializable
     src/tests/zcurve
 
     LIBS

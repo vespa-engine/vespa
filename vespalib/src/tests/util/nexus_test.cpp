@@ -83,5 +83,3 @@ TEST(NexusTest, example_multi_threaded_unit_test) {
     EXPECT_EQ(a, 5);
     EXPECT_EQ(b, 7);
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()

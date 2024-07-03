@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/jsonstream.h>
 #include <vespa/vespalib/util/jsonexception.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 
@@ -426,6 +426,3 @@ TEST(JSONTest, test_json_stream_state_reporting)
            << End();
     EXPECT_EQ("Current: Finalized", stream.getJsonStreamState());
 }
-
-GTEST_MAIN_RUN_ALL_TESTS()
-

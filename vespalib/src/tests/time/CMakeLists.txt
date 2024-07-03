@@ -6,11 +6,3 @@ vespa_add_executable(vespalib_time_box_test_app TEST
     vespalib
 )
 vespa_add_test(NAME vespalib_time_box_test_app COMMAND vespalib_time_box_test_app)
-vespa_add_executable(vespalib_time_test_app TEST
-    SOURCES
-    time_test.cpp
-    DEPENDS
-    vespalib
-    GTest::GTest
-)
-vespa_add_test(NAME vespalib_time_test_app COMMAND vespalib_time_test_app)
