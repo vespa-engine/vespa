@@ -44,7 +44,7 @@ public class ParsedField extends ParsedBlock {
         this.type = type;
     }
 
-    ParsedType getType() { return this.type; }
+    public ParsedType getType() { return this.type; }
     boolean hasBolding() { return this.hasBolding; }
     boolean hasFilter() { return this.isFilter; }
     boolean hasLiteral() { return this.isLiteral; }

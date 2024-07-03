@@ -628,10 +628,9 @@ void fieldBodyElm(ParsedField field) : { }
     //   rankType(field) |
     //   fieldSorting(field) |
        structFieldElm(field) |
-       summaryTo(field) |
+       summaryToElm(field) |
        weightElm(field) |
-    //   weightedset(field.getType()) )
-      weightElm(field)
+       weightedsetElm(field.getType())
     )
 ;
 
@@ -649,7 +648,7 @@ void structFieldBodyElm(ParsedField field) : { }
     //  queryCommand(field) |
       rankElm(field) |
       structFieldElm(field) |
-      summaryTo(field)
+      summaryToElm(field)
     )
 ;
 
@@ -658,7 +657,7 @@ void structFieldBodyElm(ParsedField field) : { }
  *
  * @param field The field to modify.
  */
-void summaryTo(ParsedField field) :
+void summaryToElm(ParsedField field) :
 {
     String name = field.name();
     String destination;
@@ -683,6 +682,26 @@ void weightElm(ParsedField field) :
 }
 
     <WEIGHT> <COLON> num = integerElm { field.setWeight(num); }
+;
+
+/**
+ * This rule consumes a weighted set statement of a field element.
+ *
+ * @param fieldType The field type to modify.
+ */
+void weightedsetElm(ParsedType fieldType) : { }
+    <WEIGHTEDSET> ( (<COLON> weightedsetBody(fieldType))
+                | (openLbrace() (weightedsetBody(fieldType) (<NL>)*)* <RBRACE>) )
+;
+
+/**
+ * This rule consumes one body item of a weighted set block.
+ *
+ * @param type The field type to modify.
+ */
+void weightedsetBody(ParsedType type) : { }
+    ( <CREATE_IF_NONEXISTENT> { type.setCreateIfNonExistent(true); }
+      | <REMOVE_IF_ZERO>      { type.setRemoveIfZero(true); } )
 ;
 
 /**
