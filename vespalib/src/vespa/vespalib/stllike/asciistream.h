@@ -30,7 +30,7 @@ class asciistream
 {
 public:
     asciistream();
-    asciistream(stringref buf);
+    asciistream(std::string_view buf);
     ~asciistream();
     asciistream(const asciistream & rhs);
     asciistream & operator = (const asciistream & rhs);
@@ -43,7 +43,7 @@ public:
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
     asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (stringref v)           { doFill(v.size()); write(v.data(), v.size()); return *this; }
+    asciistream & operator << (std::string_view v)           { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (short v)    { return *this << static_cast<long long>(v); }
     asciistream & operator << (unsigned short v)   { return *this << static_cast<unsigned long long>(v); }
@@ -78,7 +78,7 @@ public:
     asciistream & operator >> (unsigned long long & v);
     asciistream & operator >> (float & v);
     asciistream & operator >> (double & v);
-    stringref str() const { return stringref(c_str(), size()); }
+    std::string_view str() const { return std::string_view(c_str(), size()); }
     const char * c_str() const { return _rbuf.data() + _rPos; }
     size_t        size() const { return length() - _rPos; }
     bool         empty() const { return size() == 0; }
@@ -149,8 +149,8 @@ public:
     asciistream & operator << (Precision v);
     asciistream & operator >> (Precision v);
     void eatWhite();
-    static asciistream createFromFile(stringref fileName);
-    static asciistream createFromDevice(stringref fileName);
+    static asciistream createFromFile(std::string_view fileName);
+    static asciistream createFromDevice(std::string_view fileName);
     string getline(char delim='\n');
     char getFill() const noexcept { return _fill; }
     size_t getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
@@ -172,7 +172,7 @@ private:
     size_t length() const { return _rbuf.size(); }
     size_t        _rPos;
     string        _wbuf;
-    stringref     _rbuf;
+    std::string_view     _rbuf;
     Base          _base;
     FloatSpec     _floatSpec;
     FloatModifier _floatModifier;

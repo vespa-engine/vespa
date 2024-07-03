@@ -10,9 +10,6 @@
 
 namespace vespalib {
 
-using stringref = std::string_view;
-
-
 /**
  * class intended as a mostly-drop-in replacement for std::string
  * optimized for good multi-core performance using the well-known
@@ -118,7 +115,7 @@ public:
     /**
      * Returns true iff input string is a prefix of this string.
      */
-    [[nodiscard]] bool starts_with(stringref prefix) const noexcept {
+    [[nodiscard]] bool starts_with(std::string_view prefix) const noexcept {
         if (prefix.size() > size()) {
             return false;
         }
@@ -210,10 +207,10 @@ public:
     }
     small_string & assign(const char * s) noexcept { return assign(s, strlen(s)); }
     small_string & assign(const void * s, size_type sz) noexcept;
-    small_string & assign(stringref s, size_type pos, size_type sz) noexcept {
+    small_string & assign(std::string_view s, size_type pos, size_type sz) noexcept {
         return assign(s.data() + pos, sz);
     }
-    small_string & assign(stringref rhs) noexcept {
+    small_string & assign(std::string_view rhs) noexcept {
         if (data() != rhs.data()) assign(rhs.data(), rhs.size());
         return *this;
     }
@@ -248,7 +245,7 @@ public:
     }
 
     small_string & insert(iterator p, const_iterator f, const_iterator l) noexcept { return insert(p-c_str(), f, l-f); }
-    small_string & insert(size_type start, stringref v) noexcept { return insert(start, v.data(), v.size()); }
+    small_string & insert(size_type start, std::string_view v) noexcept { return insert(start, v.data(), v.size()); }
     small_string & insert(size_type start, const void * v, size_type sz) noexcept;
 
     /**
@@ -339,11 +336,11 @@ public:
     std::strong_ordering operator <=>(const char * s) const noexcept { return strong_compare(s, strlen(s)); }
     std::strong_ordering operator <=>(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()); }
     std::strong_ordering operator <=>(const small_string & s) const noexcept { return strong_compare(s.data(), s.size()); }
-    std::strong_ordering operator <=>(stringref s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(std::string_view s) const noexcept { return strong_compare(s.data(), s.size()); }
     bool operator ==(const char * s) const noexcept { return strong_compare(s, strlen(s)) == std::strong_ordering::equal; }
     bool operator ==(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
     bool operator ==(const small_string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
-    bool operator ==(stringref s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(std::string_view s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
 
     template<typename T> bool operator != (const T& s) const noexcept { return ! operator == (s); }
 
@@ -482,11 +479,11 @@ operator + (const small_string<StackSize> & a, const small_string<StackSize> & b
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, stringref b) noexcept;
+operator + (const small_string<StackSize> & a, std::string_view b) noexcept;
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (stringref a, const small_string<StackSize> & b) noexcept;
+operator + (std::string_view a, const small_string<StackSize> & b) noexcept;
 
 template<uint32_t StackSize>
 small_string<StackSize>
@@ -496,18 +493,18 @@ template<uint32_t StackSize>
 small_string<StackSize>
 operator + (const char * a, const small_string<StackSize> & b) noexcept;
 
-inline bool contains(stringref text, stringref key) noexcept {
-    return text.find(key) != stringref::npos;
+inline bool contains(std::string_view text, std::string_view key) noexcept {
+    return text.find(key) != std::string_view::npos;
 }
 
-inline bool starts_with(stringref text, stringref key) noexcept {
+inline bool starts_with(std::string_view text, std::string_view key) noexcept {
     if (text.size() >= key.size()) {
         return memcmp(text.begin(), key.begin(), key.size()) == 0;
     }
     return false;
 }
 
-inline bool ends_with(stringref text, stringref key) noexcept {
+inline bool ends_with(std::string_view text, std::string_view key) noexcept {
     if (text.size() >= key.size()) {
         return memcmp(text.end()-key.size(), key.begin(), key.size()) == 0;
     }

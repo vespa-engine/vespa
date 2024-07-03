@@ -19,7 +19,7 @@ TEST(StringEscapeTest, xml_attribute_regular_chars_are_not_escaped) {
 TEST(StringEscapeTest, control_characters_are_escaped_in_attributes) {
     EXPECT_EQ(xml_attribute_escaped("\n"), "&#10;");
     EXPECT_EQ(xml_attribute_escaped("\r"), "&#13;");
-    EXPECT_EQ(xml_attribute_escaped(stringref("\x00", 1)), "&#0;"); // Can't just invoke strlen with null byte :)
+    EXPECT_EQ(xml_attribute_escaped(std::string_view("\x00", 1)), "&#0;"); // Can't just invoke strlen with null byte :)
     EXPECT_EQ(xml_attribute_escaped("\x1f"), "&#31;");
 }
 
@@ -37,6 +37,6 @@ TEST(StringEscapeTest, xml_content_regular_chars_are_not_escaped) {
 
 TEST(StringEscapeTest, control_characters_are_escaped_in_content) {
     EXPECT_EQ(xml_content_escaped("\r"), "&#13;");
-    EXPECT_EQ(xml_content_escaped(stringref("\x00", 1)), "&#0;");
+    EXPECT_EQ(xml_content_escaped(std::string_view("\x00", 1)), "&#0;");
     EXPECT_EQ(xml_content_escaped("\x1f"), "&#31;");
 }

@@ -97,12 +97,12 @@ ProcessMemoryStats::createStatsFromSmaps()
     uint64_t lineVal = 0;
     while (!smaps.eof()) {
         string backedLine = smaps.getline();
-        stringref line(backedLine);
+        std::string_view line(backedLine);
         if (isRange(line)) {
             ret._mappings_count += 1;
             anonymous = isAnonymous(line);
         } else if (!line.empty()) {
-            stringref lineHeader = getLineHeader(line);
+            std::string_view lineHeader = getLineHeader(line);
             if (lineHeader == "Size") {
                 asciistream is(line.substr(lineHeader.size() + 1));
                 is >> lineVal;

@@ -173,7 +173,7 @@ JSONWriter::appendNull()
 }
 
 JSONWriter &
-JSONWriter::appendKey(stringref str)
+JSONWriter::appendKey(std::string_view str)
 {
     considerComma();
     indent();
@@ -243,7 +243,7 @@ JSONWriter::appendUInt64(uint64_t v)
 }
 
 JSONWriter &
-JSONWriter::appendString(stringref str)
+JSONWriter::appendString(std::string_view str)
 {
     considerComma();
     quote(str.data(), str.size());
@@ -252,7 +252,7 @@ JSONWriter::appendString(stringref str)
 }
 
 JSONWriter &
-JSONWriter::appendJSON(stringref json)
+JSONWriter::appendJSON(std::string_view json)
 {
     considerComma();
     (*_os) << json;
@@ -278,7 +278,7 @@ JSONStringer::clear()
 
 JSONStringer::~JSONStringer() { }
 
-stringref
+std::string_view
 JSONStringer::toString() const {
     return _oss->str();
 }

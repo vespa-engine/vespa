@@ -128,8 +128,8 @@ public:
                 TOO_MANY_OPEN_FILES, DIRECTORY_HAVE_CONTENT, FILE_FULL,
                 ALREADY_EXISTS };
 
-    IoException(stringref msg, Type type, stringref location, int skipStack = 0);
-    IoException(stringref msg, Type type, const Exception& cause, stringref location, int skipStack = 0);
+    IoException(std::string_view msg, Type type, std::string_view location, int skipStack = 0);
+    IoException(std::string_view msg, Type type, const Exception& cause, std::string_view location, int skipStack = 0);
     IoException(const IoException &);
     IoException & operator =(const IoException &) = delete;
     IoException(IoException &&) noexcept;
@@ -138,7 +138,7 @@ public:
 
     VESPA_DEFINE_EXCEPTION_SPINE(IoException);
 
-    static string createMessage(stringref msg, Type type);
+    static string createMessage(std::string_view msg, Type type);
 
     Type getType() const { return _type; }
 

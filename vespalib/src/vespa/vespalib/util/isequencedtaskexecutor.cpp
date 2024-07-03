@@ -20,8 +20,8 @@ ISequencedTaskExecutor::executeTasks(TaskList tasks) {
 }
 
 ISequencedTaskExecutor::ExecutorId
-ISequencedTaskExecutor::getExecutorIdFromName(stringref componentId) const {
-    hash<stringref> hashfun;
+ISequencedTaskExecutor::getExecutorIdFromName(std::string_view componentId) const {
+    hash<std::string_view> hashfun;
     return getExecutorId(hashfun(componentId));
 }
 

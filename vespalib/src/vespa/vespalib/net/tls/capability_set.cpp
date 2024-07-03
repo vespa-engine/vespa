@@ -18,7 +18,7 @@ string CapabilitySet::to_string() const {
            emit_comma = true;
        }
        // TODO let asciistream and std::string_view play along
-       os << stringref(cap.name().data(), cap.name().size());
+       os << std::string_view(cap.name().data(), cap.name().size());
     });
     os << "})";
     return os.str();

@@ -18,7 +18,7 @@ public:
     AsciiSerializer &put(uint64_t value) override;
     AsciiSerializer &put(float value) override;
     AsciiSerializer &put(double value) override;
-    AsciiSerializer &put(stringref val) override;
+    AsciiSerializer &put(std::string_view val) override;
 
     const asciistream &getStream() const { return _stream; }
     asciistream &getStream() { return _stream; }

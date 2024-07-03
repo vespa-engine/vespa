@@ -63,8 +63,8 @@ Version::verifySanity()
 }
 
 // Precondition: input.empty() == false
-static int parseInteger(stringref input) __attribute__((noinline));
-static int parseInteger(stringref input)
+static int parseInteger(std::string_view input) __attribute__((noinline));
+static int parseInteger(std::string_view input)
 {
     const char *s = input.data();
     unsigned char firstDigit = s[0];
@@ -90,30 +90,30 @@ Version::Version(const string & versionString)
       _stringValue(versionString)
 {
     if ( ! versionString.empty()) {
-        stringref r(versionString.c_str(), versionString.size());
-        stringref::size_type dot(r.find('.'));
-        stringref majorS(r.substr(0, dot)); 
+        std::string_view r(versionString.c_str(), versionString.size());
+        std::string_view::size_type dot(r.find('.'));
+        std::string_view majorS(r.substr(0, dot)); 
 
         if ( !majorS.empty()) {
             _major = parseInteger(majorS);
-            if (dot == stringref::npos) return;
+            if (dot == std::string_view::npos) return;
             r = r.substr(dot + 1);
             dot = r.find('.');
-            stringref minorS(r.substr(0, dot)); 
+            std::string_view minorS(r.substr(0, dot)); 
             if ( !minorS.empty()) {
                 _minor = parseInteger(minorS);
 
-                if (dot == stringref::npos) return;
+                if (dot == std::string_view::npos) return;
                 r = r.substr(dot + 1);
                 dot = r.find('.');
-                stringref microS(r.substr(0, dot)); 
+                std::string_view microS(r.substr(0, dot)); 
                 if ( ! microS.empty()) {
                     _micro = parseInteger(microS);
 
-                    if (dot == stringref::npos) return;
+                    if (dot == std::string_view::npos) return;
                     r = r.substr(dot + 1);
                     dot = r.find('.');
-                    if (dot == stringref::npos) {
+                    if (dot == std::string_view::npos) {
                         _qualifier = r; 
                     } else {
                         throw IllegalArgumentException("too many dot-separated components in version string '" + versionString + "'");

@@ -171,7 +171,7 @@ operator + (const small_string<StackSize> & a, const small_string<StackSize> & b
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, stringref b) noexcept
+operator + (const small_string<StackSize> & a, std::string_view b) noexcept
 {
     small_string<StackSize> t(a);
     t += b;
@@ -180,7 +180,7 @@ operator + (const small_string<StackSize> & a, stringref b) noexcept
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (stringref a, const small_string<StackSize> & b) noexcept
+operator + (std::string_view a, const small_string<StackSize> & b) noexcept
 {
     small_string<StackSize> t(a);
     t += b;

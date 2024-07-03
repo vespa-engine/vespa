@@ -14,7 +14,7 @@ JsonStream::StateEntry::StateEntry() noexcept
 JsonStream::StateEntry::StateEntry(State s) noexcept
     : state(s), object_key(""), array_index(size_t(0))
 {}
-JsonStream::StateEntry::StateEntry(State s, stringref key) noexcept
+JsonStream::StateEntry::StateEntry(State s, std::string_view key) noexcept
     : state(s), object_key(key), array_index(size_t(0))
 {}
 JsonStream::StateEntry::StateEntry(const StateEntry &) noexcept = default;
@@ -42,7 +42,7 @@ JsonStream::JsonStream(asciistream& as, bool createIndents)
 JsonStream::~JsonStream() = default;
 
 JsonStream&
-JsonStream::operator<<(stringref value)
+JsonStream::operator<<(std::string_view value)
 {
     if (_state.empty()) {
         fail("Stream already finalized. Can't add a string value.");
@@ -366,7 +366,7 @@ JsonStream::getJsonStreamState() const
 }
 
 void
-JsonStream::fail(stringref error) const
+JsonStream::fail(std::string_view error) const
 {
     asciistream report;
     report << "Invalid state on call: " << error
