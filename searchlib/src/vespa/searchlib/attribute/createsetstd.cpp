@@ -19,7 +19,7 @@ using attribute::BasicType;
 
 
 AttributeVector::SP
-AttributeFactory::createSetStd(stringref name, const Config & info)
+AttributeFactory::createSetStd(string_view name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::WSET);
     AttributeVector::SP ret;

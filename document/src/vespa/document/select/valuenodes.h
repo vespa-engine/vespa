@@ -134,7 +134,6 @@ class VariableValueNode : public ValueNode
 {
     vespalib::string _value;
 public:
-    // TODO stringref
     VariableValueNode(const vespalib::string & variableName) : _value(variableName) {}
 
     const vespalib::string& getVariableName() const { return _value; }

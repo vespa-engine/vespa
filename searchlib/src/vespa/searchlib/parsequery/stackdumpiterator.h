@@ -55,7 +55,7 @@ private:
     std::unique_ptr<query::PredicateQueryTerm> _predicate_query_term;
     std::unique_ptr<query::TermVector>         _terms;
 
-    VESPA_DLL_LOCAL std::string_view read_stringref(const char *&p);
+    VESPA_DLL_LOCAL std::string_view read_string_view(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
     VESPA_DLL_LOCAL int64_t readCompressedInt(const char *&p);
     template <typename T>

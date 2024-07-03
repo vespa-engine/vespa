@@ -211,7 +211,7 @@ TEST("require that vespalib::dirname works")
 
 TEST("require that vespalib::getOpenErrorString works")
 {
-    stringref dirName = "mydir";
+    std::string_view dirName = "mydir";
     std::filesystem::remove_all(std::filesystem::path(dirName));
     std::filesystem::create_directory(std::filesystem::path(dirName));
     {

@@ -251,7 +251,7 @@ class QueryBuilder : public QueryBuilderBase {
     }
 
 public:
-    using stringref = std::string_view;
+    using string_view = std::string_view;
     typename NodeTypes::And &addAnd(int child_count) {
         return addIntermediate(createAnd<NodeTypes>(), child_count);
     }
@@ -267,33 +267,33 @@ public:
     typename NodeTypes::Or &addOr(int child_count) {
         return addIntermediate(createOr<NodeTypes>(), child_count);
     }
-    typename NodeTypes::WeakAnd &addWeakAnd(int child_count, uint32_t targetNumHits, stringref view) {
+    typename NodeTypes::WeakAnd &addWeakAnd(int child_count, uint32_t targetNumHits, string_view view) {
         return addIntermediate(createWeakAnd<NodeTypes>(targetNumHits, view), child_count);
     }
     typename NodeTypes::Equiv &addEquiv(int child_count, int32_t id, Weight weight) {
         return addIntermediate(createEquiv<NodeTypes>(id, weight), child_count);
     }
-    typename NodeTypes::Phrase &addPhrase(int child_count, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::Phrase &addPhrase(int child_count, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         typename NodeTypes::Phrase &node = addIntermediate(createPhrase<NodeTypes>(view, id, weight), child_count);
         setWeightOverride(weight);
         return node;
     }
-    typename NodeTypes::SameElement &addSameElement(int child_count, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::SameElement &addSameElement(int child_count, string_view view, int32_t id, Weight weight) {
         return addIntermediate(createSameElement<NodeTypes>(view, id, weight), child_count);
     }
-    typename NodeTypes::WeightedSetTerm &addWeightedSetTerm( int child_count, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::WeightedSetTerm &addWeightedSetTerm(int child_count, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         typename NodeTypes::WeightedSetTerm &node = addTerm(createWeightedSetTerm<NodeTypes>(child_count, view, id, weight));
         return node;
     }
-    typename NodeTypes::DotProduct &addDotProduct( int child_count, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::DotProduct &addDotProduct(int child_count, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         typename NodeTypes::DotProduct &node = addTerm( createDotProduct<NodeTypes>(child_count, view, id, weight));
         return node;
     }
     typename NodeTypes::WandTerm &addWandTerm(
-            int child_count, stringref view,
+            int child_count, string_view view,
             int32_t id, Weight weight, uint32_t targetNumHits,
             int64_t scoreThreshold, double thresholdBoostFactor)
     {
@@ -306,49 +306,49 @@ public:
         return addIntermediate(createRank<NodeTypes>(), child_count);
     }
 
-    typename NodeTypes::NumberTerm &addNumberTerm(stringref term, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::NumberTerm &addNumberTerm(string_view term, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createNumberTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::PrefixTerm &addPrefixTerm(stringref term, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::PrefixTerm &addPrefixTerm(string_view term, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createPrefixTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::RangeTerm &addRangeTerm(const Range &range, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::RangeTerm &addRangeTerm(const Range &range, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createRangeTerm<NodeTypes>(range, view, id, weight));
     }
-    typename NodeTypes::StringTerm &addStringTerm(stringref term, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::StringTerm &addStringTerm(string_view term, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createStringTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::SubstringTerm &addSubstringTerm(stringref t, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::SubstringTerm &addSubstringTerm(string_view t, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createSubstringTerm<NodeTypes>(t, view, id, weight));
     }
-    typename NodeTypes::SuffixTerm &addSuffixTerm(stringref term, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::SuffixTerm &addSuffixTerm(string_view term, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createSuffixTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::LocationTerm &addLocationTerm(const Location &loc, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::LocationTerm &addLocationTerm(const Location &loc, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createLocationTerm<NodeTypes>(loc, view, id, weight));
     }
-    typename NodeTypes::PredicateQuery &addPredicateQuery(PredicateQueryTerm::UP term, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::PredicateQuery &addPredicateQuery(PredicateQueryTerm::UP term, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createPredicateQuery<NodeTypes>(std::move(term), view, id, weight));
     }
-    typename NodeTypes::RegExpTerm &addRegExpTerm(stringref term, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::RegExpTerm &addRegExpTerm(string_view term, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createRegExpTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::FuzzyTerm &addFuzzyTerm(stringref term, stringref view, int32_t id, Weight weight,
+    typename NodeTypes::FuzzyTerm &addFuzzyTerm(string_view term, string_view view, int32_t id, Weight weight,
                                                 uint32_t max_edit_distance, uint32_t prefix_lock_length,
                                                 bool prefix_match) {
         adjustWeight(weight);
         return addTerm(createFuzzyTerm<NodeTypes>(term, view, id, weight, max_edit_distance, prefix_lock_length, prefix_match));
     }
-    typename NodeTypes::NearestNeighborTerm &add_nearest_neighbor_term(stringref query_tensor_name, stringref field_name,
+    typename NodeTypes::NearestNeighborTerm &add_nearest_neighbor_term(string_view query_tensor_name, string_view field_name,
                                                                        int32_t id, Weight weight, uint32_t target_num_hits,
                                                                        bool allow_approximate, uint32_t explore_additional_hits,
                                                                        double distance_threshold)
@@ -362,7 +362,7 @@ public:
     typename NodeTypes::FalseQueryNode &add_false_node() {
         return addTerm(create_false<NodeTypes>());
     }
-    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::InTerm& add_in_term(std::unique_ptr<TermVector> terms, MultiTerm::Type type, string_view view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(create_in_term<NodeTypes>(std::move(terms), type, view, id, weight));
     }

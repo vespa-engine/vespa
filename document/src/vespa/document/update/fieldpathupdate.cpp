@@ -47,7 +47,7 @@ FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type) noexcept
 FieldPathUpdate::FieldPathUpdate(const FieldPathUpdate &) = default;
 FieldPathUpdate & FieldPathUpdate::operator =(const FieldPathUpdate &) = default;
 
-FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type, stringref fieldPath, stringref whereClause)
+FieldPathUpdate::FieldPathUpdate(FieldPathUpdateType type, string_view fieldPath, string_view whereClause)
     : _type(type),
       _originalFieldPath(fieldPath),
       _originalWhereClause(whereClause)

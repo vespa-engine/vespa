@@ -12,7 +12,7 @@ namespace search {
 using attribute::CollectionType;
 
 AttributeVector::SP
-AttributeFactory::createAttribute(stringref name, const Config & cfg)
+AttributeFactory::createAttribute(string_view name, const Config & cfg)
 {
     AttributeVector::SP ret;
     if (cfg.collectionType().type() == CollectionType::ARRAY) {

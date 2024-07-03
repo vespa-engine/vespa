@@ -185,7 +185,7 @@ MatchEngine::performSearch(SearchRequest::Source req)
         search::fef::Properties & trace = ret->propertiesMap.lookupCreate("trace");
         vespalib::SmartBuffer output(4_Ki);
         vespalib::slime::BinaryFormat::encode(ret->request->trace().getSlime(), output);
-        trace.add("slime", output.obtain().make_stringref());
+        trace.add("slime", output.obtain().make_stringview());
     }
     return ret;
 }

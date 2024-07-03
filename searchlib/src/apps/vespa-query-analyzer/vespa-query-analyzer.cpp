@@ -76,7 +76,7 @@ struct Matcher : vespalib::slime::ObjectTraverser {
         }
     }
     void field(const Memory &symbol, const Inspector &inspector) final {
-        path.emplace_back(symbol.make_stringref());
+        path.emplace_back(symbol.make_stringview());
         if (match(path, inspector)) {
             result.push_back(path);
         }
@@ -101,7 +101,7 @@ std::vector<Path> find_tag(const Inspector &root, const vespalib::string &name) 
                                return ((path.size() > 0) &&
                                        (std::holds_alternative<std::string_view>(path.back())) &&
                                        (std::get<std::string_view>(path.back()) == "tag") &&
-                                       (value.asString().make_stringref() == name));
+                                       (value.asString().make_stringview() == name));
                            });
     matcher.search(root);
     return matcher.result;
@@ -149,7 +149,7 @@ const Inspector &apply_path(const Inspector &node, const Path &path, size_t max 
 
 void extract(vespalib::string &value, const Inspector &data) {
     if (data.valid() && data.type() == STRING()) {
-        value = data.asString().make_stringref();
+        value = data.asString().make_stringview();
     }
 }
 
@@ -161,7 +161,7 @@ struct Sample {
     double total_time_ms = 0.0;
     size_t count = 0;
     Sample(const Inspector &sample) {
-        auto name = sample["name"].asString().make_stringref();
+        auto name = sample["name"].asString().make_stringview();
         if (ends_with(name, "/init")) {
             type = Type::INIT;
         }
@@ -320,18 +320,18 @@ struct Node {
         type = strip_name(type);
         id = obj["id"].asLong();
         docid_limit = obj["docid_limit"].asLong();
-        query_term = obj["query_term"].asString().make_stringref();
+        query_term = obj["query_term"].asString().make_stringview();
         if (query_term.size() > 0) {
             const Inspector &attr = obj["attribute"];
             if (attr.valid()) {
-                field_name = attr["name"].asString().make_stringref();
+                field_name = attr["name"].asString().make_stringview();
                 if (type == "AttributeFieldBlueprint") {
                     type = fmt("Attribute{%s,%s}",
                                attr["type"].asString().make_string().c_str(),
                                attr["fast_search"].asBool() ? "fs" : "lookup");
                 }
             } else {
-                field_name = obj["field_name"].asString().make_stringref();
+                field_name = obj["field_name"].asString().make_stringview();
                 if (type == "DiskTermBlueprint") {
                     type = "DiskTerm";
                 }
@@ -568,7 +568,7 @@ struct Analyzer {
                 std::map<Sample::Type,double> time_map;
                 for (const Path &prof_path: prof_list) {
                     const Inspector &prof = apply_path(node, prof_path, prof_path.size()-1);
-                    if (prof["profiler"].asString().make_stringref() == "tree") {
+                    if (prof["profiler"].asString().make_stringview() == "tree") {
                         total_ms += prof["total_time_ms"].asDouble();
                         each_sample(prof, [&](const Sample &sample) {
                                               if (sample.type == Sample::Type::SEEK) {

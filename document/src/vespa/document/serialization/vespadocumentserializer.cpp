@@ -427,7 +427,7 @@ void VespaDocumentSerializer::write(const MapValueUpdate &value)
 namespace {
 
 // We must ensure that string passed is always zero-terminated, so take in
-// string instead of stringref. No extra allocs; function only ever called with
+// string instead of string_view. No extra allocs; function only ever called with
 // string arguments.
 void
 writeStringWithZeroTermination(nbostream & os, const vespalib::string& s)

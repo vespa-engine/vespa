@@ -18,7 +18,7 @@ namespace uca {
 
 class UcaConverterFactory : public ConverterFactory {
 public:
-    BlobConverter::UP create(stringref local, stringref strength) const override;
+    BlobConverter::UP create(string_view local, string_view strength) const override;
 };
 
 class UcaConverter : public BlobConverter

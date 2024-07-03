@@ -228,7 +228,7 @@ TEST(ExecutionProfilerTest, flat_profiling_does_not_report_tasks_with_count_0) {
     EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
     EXPECT_EQ(slime["topn"].asLong(), 2);
     EXPECT_EQ(slime["roots"].entries(), 1);
-    EXPECT_EQ(slime["roots"][0]["name"].asString().make_stringref(), "baz");
+    EXPECT_EQ(slime["roots"][0]["name"].asString().make_stringview(), "baz");
     EXPECT_EQ(slime["roots"][0]["count"].asLong(), 1);
 }
 

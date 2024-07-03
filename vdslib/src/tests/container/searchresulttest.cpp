@@ -23,7 +23,7 @@ std::vector<ConvertedValue> convert(vespalib::ConstArrayRef<FeatureValue> v) {
     std::vector<ConvertedValue> result;
     for (auto& iv : v) {
         if (iv.is_data()) {
-            result.emplace_back(iv.as_data().make_stringref());
+            result.emplace_back(iv.as_data().make_stringview());
         } else {
             result.emplace_back(iv.as_double());
         }

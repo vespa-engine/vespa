@@ -103,7 +103,7 @@ protected:
     using BasicType = search::attribute::BasicType;
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     using QueryPacketT = std::string_view;
-    using stringref = std::string_view;
+    using string_view = std::string_view;
     using ValueModifier = attribute::ValueModifier;
     using EnumModifier = attribute::EnumModifier;
 public:

@@ -626,7 +626,7 @@ CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
         // due to a higher version having been previously received.
         auto& state_reply = dynamic_cast<api::SetSystemStateReply&>(*reply);
         if (state_reply.getResult().getResult() == api::ReturnCode::REJECTED) {
-            vespalib::string err_msg = state_reply.getResult().getMessage(); // ReturnCode message is stringref
+            vespalib::string err_msg = state_reply.getResult().getMessage(); // ReturnCode message is string_view
             request.returnError(FRTE_RPC_METHOD_FAILED, err_msg.c_str());
             return;
         }

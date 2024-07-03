@@ -19,7 +19,7 @@ std::mutex _GlobalDirtyICUThreadSafeLock;
 }
 
 BlobConverter::UP
-UcaConverterFactory::create(stringref local, stringref strength) const {
+UcaConverterFactory::create(string_view local, string_view strength) const {
     return std::make_unique<UcaConverter>(local, strength);
 }
 

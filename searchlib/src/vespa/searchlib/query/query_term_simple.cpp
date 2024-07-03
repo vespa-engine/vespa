@@ -255,8 +255,8 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
       _fuzzy_prefix_lock_length(0)
 {
     if (isFullRange(_term)) {
-        stringref rest(_term.c_str() + 1, _term.size() - 2);
-        stringref parts[9];
+        string_view rest(_term.c_str() + 1, _term.size() - 2);
+        string_view parts[9];
         size_t numParts(0);
         while (! rest.empty() && ((numParts + 1) < NELEMS(parts))) {
             size_t pos(rest.find(';'));
@@ -268,7 +268,7 @@ QueryTermSimple::QueryTermSimple(const string & term_, Type type)
                 }
             } else {
                 parts[numParts++] = rest;
-                rest = stringref();
+                rest = string_view();
             }
         }
         _valid = (numParts >= 2) && (numParts < NELEMS(parts));
