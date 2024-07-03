@@ -8750,6 +8750,7 @@
     "methods" : [
       "public void <init>(com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
       "public void <init>(java.util.List, java.util.List)",
+      "public static com.yahoo.search.schema.SchemaInfo createStub(com.yahoo.search.query.parser.ParserEnvironment$LegacyQueryParsing)",
       "public java.util.Map schemas()",
       "public java.util.Map clusters()",
       "public com.yahoo.search.query.parser.ParserEnvironment$LegacyQueryParsing legacyQueryParsingFlags()",

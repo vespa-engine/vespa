@@ -16,6 +16,7 @@ import com.yahoo.search.searchchain.Execution;
  */
 public final class ParserEnvironment {
 
+    /** these flags are only for how the weakAnd parser handles implicit AND/SAND/PHRASE/SPHRASE items */
     public record LegacyQueryParsing(boolean keepImplicitAnds,
                                      boolean markSegmentAnds,
                                      boolean keepSegmentAnds,
@@ -23,8 +24,8 @@ public final class ParserEnvironment {
     {
         public LegacyQueryParsing() {
             this(/*keepImplicitAnds    = */ true,
-                 /*markSegmentAnds     = */ true,
-                 /*keepSegmentAnds     = */ true,
+                 /*markSegmentAnds     = */ false,
+                 /*keepSegmentAnds     = */ false,
                  /*keepImplicitPhrases = */ true);
         }
     }

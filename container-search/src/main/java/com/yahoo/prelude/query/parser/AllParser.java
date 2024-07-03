@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -9,6 +10,7 @@ import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.SegmentItem;
@@ -106,7 +108,7 @@ public class AllParser extends SimpleParser {
         if (other instanceof AndItem) {
             return ! legacyQueryParsing.keepImplicitAnds();
         }
-        if (weakAnd && other instanceof SegmentItem sand) {
+        if (weakAnd && other instanceof AndSegmentItem sand) {
             if (legacyQueryParsing.keepSegmentAnds()) {
                 return false;
             } else if (legacyQueryParsing.markSegmentAnds()) {
@@ -116,6 +118,11 @@ public class AllParser extends SimpleParser {
             return true;
         }
         if (weakAnd && other instanceof PhraseItem phrase) {
+            if (phrase.isExplicit()) return false;
+            if (legacyQueryParsing.keepImplicitPhrases()) return false;
+            return true;
+        }
+        if (weakAnd && other instanceof PhraseSegmentItem phrase) {
             if (phrase.isExplicit()) return false;
             if (legacyQueryParsing.keepImplicitPhrases()) return false;
             return true;

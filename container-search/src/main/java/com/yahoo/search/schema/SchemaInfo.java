@@ -66,6 +66,11 @@ public class SchemaInfo {
         this(schemas, clusters, new LegacyQueryParsing());
     }
 
+    /** only for unit tests */
+    public static SchemaInfo createStub(LegacyQueryParsing lqp) {
+        return new SchemaInfo(List.of(), List.of(), lqp);
+    }
+
     private SchemaInfo(List<Schema> schemas, List<Cluster> clusters, LegacyQueryParsing lqp) {
         Map<String, Schema> schemaMap = new LinkedHashMap<>();
         schemas.forEach(schema -> schemaMap.put(schema.name(), schema));
