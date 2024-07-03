@@ -11,7 +11,8 @@ start = element deployment {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
-   Step
+   Step &
+   Dev?
 }
 
 Step =
