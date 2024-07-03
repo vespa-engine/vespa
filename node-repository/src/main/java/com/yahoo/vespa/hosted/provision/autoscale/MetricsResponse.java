@@ -87,7 +87,7 @@ public class MetricsResponse {
         var cluster = node.get().allocation().get().membership().cluster().id();
         var metrics = clusterMetrics.getOrDefault(cluster, ClusterMetricSnapshot.empty(at));
         metrics = metrics.withQueryRate(metrics.queryRate() + Metric.queryRate.from(nodeValues));
-        metrics = metrics.withWriteRate(metrics.queryRate() + Metric.writeRate.from(nodeValues));
+        metrics = metrics.withWriteRate(metrics.writeRate() + Metric.writeRate.from(nodeValues));
         clusterMetrics.put(cluster, metrics);
     }
 
