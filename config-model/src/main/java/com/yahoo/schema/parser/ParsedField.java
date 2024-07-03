@@ -138,7 +138,7 @@ public class ParsedField extends ParsedBlock {
         return this.sortSettings;
     }
 
-    void addQueryCommand(String command) {
+    public void addQueryCommand(String command) {
         queryCommands.add(command);
     }
 

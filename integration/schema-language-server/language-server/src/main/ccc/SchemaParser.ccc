@@ -428,7 +428,7 @@ void fieldSetElm(ParsedSchema schema) :
 }
 
   <FIELDSET> name = identifierStr openLbrace() { fieldSet = new ParsedFieldSet(name); }
-    ((fieldsElm(fieldSet) | queryCommandElm(fieldSet)) (<NL>)*)+
+    ((fieldsElm(fieldSet) | queryCommandInFieldSetElm(fieldSet)) (<NL>)*)+
   <RBRACE>
   {
      schema.addFieldSet(fieldSet);
@@ -445,7 +445,7 @@ void fieldsElm(ParsedFieldSet fieldSet) :
     )
 ;
 
-void queryCommandElm(ParsedFieldSet fieldSet) :
+void queryCommandInFieldSetElm(ParsedFieldSet fieldSet) :
 {
     String queryCommand;
 }
@@ -626,7 +626,7 @@ void fieldBodyElm(ParsedField field) : { }
     //   indexing(field) |
        matchSettingsElm(field.matchSettings()) |
        normalizingElm(field) |
-    //   queryCommand(field) |
+       queryCommandInField(field) |
        rankElm(field) |
        rankTypeElm(field) |
        fieldSorting(field) |
@@ -648,7 +648,7 @@ void structFieldBodyElm(ParsedField field) : { }
      // indexing(field) |
       attributeElm(field) |
       matchSettingsElm(field.matchSettings()) |
-    //  queryCommand(field) |
+      queryCommandInField(field) |
       rankElm(field) |
       structFieldElm(field) |
       summaryToElm(field)
@@ -1057,6 +1057,112 @@ void dictionarySetting(ParsedField field) : { }
     {}
 ;
 
+void queryCommandInField(ParsedField field) :
+{
+    String command;
+}
+ 
+    <QUERY_COMMAND> <COLON> ( command = identifierWithDashStr() | command = quotedString() )
+    {
+        field.addQueryCommand(command);
+    }
+;
+
+void aliasElm(ParsedField field) :
+{
+    String aliasedName = field.name();
+    String alias;
+}
+
+    <ALIAS> [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr
+    {
+       field.addAlias(aliasedName, alias);
+    }
+;
+
+void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
+
+    <MATCH> ( (<COLON> matchType(matchInfo))
+               | (openLbrace() (matchItem(matchInfo) | <NL>)* <RBRACE>) )
+;
+
+void matchType(ParsedMatchSettings matchInfo) : { }
+
+    (   <MTOKEN>    { matchInfo.setType(MatchType.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchInfo.setType(MatchType.TEXT); }
+      | <WORD>      { matchInfo.setType(MatchType.WORD); }
+      | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
+      | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
+      | <CASED>     { matchInfo.setCase(Case.CASED); }
+      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
+      | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
+      | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
+;
+
+/**
+ * This rule consumes a single match item for a match block.
+ *
+ * @param matchInfo The settings to modify.
+ */
+void matchItem(ParsedMatchSettings matchInfo) : { }
+ 
+    ( matchType(matchInfo) | exactTerminator(matchInfo) | gramSize(matchInfo) | matchSize(matchInfo) |
+     maxTermOccurrences(matchInfo) | maxTokenLength(matchInfo) )
+;
+
+void exactTerminator(ParsedMatchSettings matchInfo) :
+{
+    String terminator;
+}
+ 
+    <EXACT_TERMINATOR> <COLON> terminator = quotedString()
+    {
+        matchInfo.setExactTerminator(terminator);
+    }
+;
+
+void gramSize(ParsedMatchSettings matchInfo) :
+{
+    int gramSize;
+}
+ 
+    <GRAM_SIZE> <COLON> gramSize = integerElm()
+    {
+        matchInfo.setGramSize(gramSize);
+    }
+;
+
+void matchSize(ParsedMatchSettings matchInfo) :
+{
+    int matchSize;
+}
+ 
+    <MAX_LENGTH> <COLON> matchSize = integerElm() {
+        matchInfo.setMaxLength(matchSize);
+    }
+;
+
+void maxTermOccurrences(ParsedMatchSettings matchInfo) :
+{
+    int maxTermOccurrences;
+}
+ 
+    <MAX_OCCURRENCES> <COLON> maxTermOccurrences = integerElm() {
+        matchInfo.setMaxTermOccurrences(maxTermOccurrences);
+    }
+;
+
+void maxTokenLength(ParsedMatchSettings matchInfo) :
+{
+    int maxTokenLength;
+}
+ 
+    <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerElm() {
+        matchInfo.setMaxTokenLength(maxTokenLength);
+    }
+;
+
 /**
  * Consumes a rank statement of a field element.
  *
@@ -1095,39 +1201,6 @@ void idElm(ParsedField field) :
     {
         field.setId(fieldId);
     }
-;
-
-void aliasElm(ParsedField field) :
-{
-    String aliasedName = field.name();
-    String alias;
-}
-
-    <ALIAS> [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr
-    {
-       field.addAlias(aliasedName, alias);
-    }
-;
-
-void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
-
-    <MATCH> ( (<COLON> matchType(matchInfo))
-            //   | (openLbrace() (matchItem(matchInfo) | <NL>)* <RBRACE>) )
-    )
-;
-
-void matchType(ParsedMatchSettings matchInfo) : { }
-
-    (   <MTOKEN>    { matchInfo.setType(MatchType.TEXT); } // Deprecated synonym to TEXT
-      | <TEXT>      { matchInfo.setType(MatchType.TEXT); }
-      | <WORD>      { matchInfo.setType(MatchType.WORD); }
-      | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
-      | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
-      | <CASED>     { matchInfo.setCase(Case.CASED); }
-      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
-      | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
-      | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
-      | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
 ;
 
 /**
