@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.DeprecatedElement;
+import com.yahoo.config.application.api.DeploymentSpec.DevSpec;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelSteps;
 import com.yahoo.config.application.api.DeploymentSpec.RevisionChange;
 import com.yahoo.config.application.api.DeploymentSpec.RevisionTarget;
@@ -76,7 +77,6 @@ public class DeploymentSpecXmlReader {
     private static final String testTag = "test";
     private static final String stagingTag = "staging";
     private static final String devTag = "dev";
-    private static final String perfTag = "perf";
     private static final String upgradeTag = "upgrade";
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
@@ -162,6 +162,7 @@ public class DeploymentSpecXmlReader {
             }
             readEndpoints(root, Optional.empty(), steps, applicationEndpoints, Map.of());
         }
+        DevSpec devSpec = readDevSpec(root);
 
         return new DeploymentSpec(steps,
                                   optionalIntegerAttribute(majorVersionAttribute, root),
@@ -171,7 +172,8 @@ public class DeploymentSpecXmlReader {
                                   readHostTTL(root),
                                   applicationEndpoints,
                                   xmlForm,
-                                  deprecatedElements);
+                                  deprecatedElements,
+                                  devSpec);
     }
 
     /**
@@ -274,7 +276,7 @@ public class DeploymentSpecXmlReader {
                           .anyMatch(node -> prodTag.equals(node.getNodeName()))) {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
-            case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
+            case stagingTag: // Intentional fallthrough from test tag.
                 return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
@@ -370,8 +372,8 @@ public class DeploymentSpecXmlReader {
         String containerId = requireStringAttribute("container-id", endpointElement);
         Optional<String> endpointId = stringAttribute("id", endpointElement);
         Optional<String> zoneEndpointType = getZoneEndpointType(endpointElement, level);
-        String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") +
-                           " endpoint '" + endpointId.orElse(Endpoint.DEFAULT_ID) + "': ";
+        String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") + " endpoint" +
+                           (zoneEndpointType.isEmpty() ? " '" + endpointId.orElse(Endpoint.DEFAULT_ID) + "': " : ": ");
 
         if (zoneEndpointType.isPresent() && endpointId.isPresent())
             illegal(msgPrefix + "cannot declare 'id' with type 'zone' or 'private'");
@@ -380,30 +382,8 @@ public class DeploymentSpecXmlReader {
         if ( ! XML.getChildren(endpointElement, invalidChild).isEmpty())
             illegal(msgPrefix + "invalid element '" + invalidChild + "'");
 
-        boolean enabled = XML.attribute("enabled", endpointElement)
-                             .map(value -> {
-                                 if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("zone"))
-                                     illegal(msgPrefix + "only endpoints of type 'zone' can specify 'enabled'");
-
-                                 return switch (value) {
-                                     case "true" -> true;
-                                     case "false" -> false;
-                                     default -> throw new IllegalArgumentException(msgPrefix + "invalid 'enabled' value; must be 'true' or 'false'");
-                                 };
-                             }).orElse(true);
-
-        List<AllowedUrn> allowedUrns = new ArrayList<>();
-        for (var allow : XML.getChildren(endpointElement, "allow")) {
-            if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("private"))
-                illegal(msgPrefix + "only endpoints of type 'private' can specify 'allow' children");
-
-            switch (requireStringAttribute("with", allow)) {
-                case "aws-private-link" -> allowedUrns.add(new AllowedUrn(AccessType.awsPrivateLink, requireStringAttribute("arn", allow)));
-                case "gcp-service-connect" -> allowedUrns.add(new AllowedUrn(AccessType.gcpServiceConnect, requireStringAttribute("project", allow)));
-                default -> illegal("Private endpoint for container-id '" + containerId + "': " +
-                                   "invalid attribute 'with': '" + requireStringAttribute("with", allow) + "'");
-            }
-        }
+        boolean enabled = readEnabled(endpointElement, zoneEndpointType, msgPrefix);
+        List<AllowedUrn> allowedUrns = readAllowedUrns(endpointElement, zoneEndpointType, containerId, msgPrefix);
 
         List<Endpoint.Target> targets = new ArrayList<>();
         if (level == Endpoint.Level.application) {
@@ -441,10 +421,10 @@ public class DeploymentSpecXmlReader {
                 if (region == null || region.isBlank())
                     illegal(msgPrefix + "empty 'region' element");
                 if (   zoneEndpointType.isEmpty()
-                       && Stream.of(RegionName.from(region), null)
-                                .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
-                                .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
-                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))
+                    && Stream.of(RegionName.from(region), null)
+                             .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
+                             .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
+                             .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))
                     illegal(msgPrefix + "targets zone endpoint in '" + region + "' with 'enabled' set to 'false'");
                 if ( ! regions.add(RegionName.from(region)))
                     illegal(msgPrefix + "duplicate 'region' element: '" + region + "'");
@@ -487,6 +467,36 @@ public class DeploymentSpecXmlReader {
         if (zoneEndpointType.isEmpty())
             return Optional.of(new Endpoint(endpointId.orElse(Endpoint.DEFAULT_ID), containerId, level, targets));
         return Optional.empty();
+    }
+
+    static boolean readEnabled(Element endpointElement, Optional<String> zoneEndpointType, String msgPrefix) {
+        return XML.attribute("enabled", endpointElement)
+                  .map(value -> {
+                      if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("zone"))
+                          illegal(msgPrefix + "only endpoints of type 'zone' can specify 'enabled'");
+
+               return switch (value) {
+                   case "true" -> true;
+                   case "false" -> false;
+                   default -> throw new IllegalArgumentException(msgPrefix + "invalid 'enabled' value; must be 'true' or 'false'");
+               };
+           }).orElse(true);
+    }
+
+    static List<AllowedUrn> readAllowedUrns(Element endpointElement, Optional<String> zoneEndpointType, String containerId, String msgPrefix) {
+        List<AllowedUrn> allowedUrns = new ArrayList<>();
+        for (var allow : XML.getChildren(endpointElement, "allow")) {
+            if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("private"))
+                illegal(msgPrefix + "only endpoints of type 'private' can specify 'allow' children");
+
+            switch (requireStringAttribute("with", allow)) {
+                case "aws-private-link" -> allowedUrns.add(new AllowedUrn(AccessType.awsPrivateLink, requireStringAttribute("arn", allow)));
+                case "gcp-service-connect" -> allowedUrns.add(new AllowedUrn(AccessType.gcpServiceConnect, requireStringAttribute("project", allow)));
+                default -> illegal("Private endpoint for container-id '" + containerId + "': " +
+                                   "invalid attribute 'with': '" + requireStringAttribute("with", allow) + "'");
+            }
+        }
+        return allowedUrns;
     }
 
     static Bcp readBcp(Element parent, Optional<String> instance, List<Step> steps,
@@ -784,6 +794,53 @@ public class DeploymentSpecXmlReader {
             default -> throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
                                                           "Must be one of 'separate', 'leading', 'simultaneous'");
         };
+    }
+
+    private DevSpec readDevSpec(Element root) {
+        Element devElement = XML.getChild(root, devTag);
+        if (devElement == null) return DevSpec.empty;
+
+        Optional<AthenzService> athenzService = XML.attribute(athenzServiceAttribute, devElement).map(AthenzService::from);
+        Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(devElement);
+        Optional<Duration> hostTTL = XML.attribute(hostTTLAttribute, devElement).map(s -> toDuration(s, "host TTL"));
+        Tags tags = XML.attribute(tagsTag, devElement).map(Tags::fromString).orElse(Tags.empty());
+
+        Map<ClusterSpec.Id, ZoneEndpoint> endpoints = new LinkedHashMap<>();
+        Element endpointsElement = XML.getChild(devElement, endpointsTag);
+        if (endpointsElement != null) {
+            for (Element endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
+                readDevZoneEndpoint(endpointElement, endpoints);
+            }
+        }
+        return new DevSpec(athenzService, Optional.of(cloudAccounts), hostTTL, tags, endpoints);
+    }
+
+    // TODO: if the other readEndpoints is ever refactored, factor in this, too.
+    private static void readDevZoneEndpoint(Element endpointElement, Map<ClusterSpec.Id, ZoneEndpoint> endpoints) {
+        String endpointType = getZoneEndpointType(endpointElement, Level.instance)
+                .orElseThrow(() -> new IllegalArgumentException("Illegal endpoint type for <dev>: only 'zone' and 'private' endpoints are allowed"));
+
+        if ( ! XML.getChildren(endpointElement, regionTag).isEmpty())
+            throw new IllegalArgumentException("Illegal 'region' children of <endpoint> in <dev>");
+
+        String containerId = requireStringAttribute("container-id", endpointElement);
+        boolean enabled = readEnabled(endpointElement, Optional.of(endpointType), "Dev endpoint");
+        List<AllowedUrn> allowedUrns = readAllowedUrns(endpointElement, Optional.of(endpointType), containerId, "Dev endpoint");
+
+        ZoneEndpoint endpoint = switch (endpointType) {
+            case "zone" -> new ZoneEndpoint(enabled, false, List.of());
+            case "private" -> new ZoneEndpoint(true, true, allowedUrns); // Doesn't turn off public visibility.
+            default -> throw new IllegalArgumentException("Unsupported zone endpoint type '" + endpointType + "'");
+        };
+        endpoints.merge(ClusterSpec.Id.from(containerId), endpoint, (o, n) -> {
+            if (o.isPrivateEndpoint() == n.isPrivateEndpoint())
+                throw new IllegalArgumentException("Multiple '" + (o.isPrivateEndpoint() ? "private" : "zone") +
+                                                   "' type endpoints declared for container-id '" + containerId + "' in <dev>");
+
+            return new ZoneEndpoint(o.isPublicEndpoint() && n.isPublicEndpoint(),   // Private one doesn't affect this.
+                                    o.isPrivateEndpoint() || n.isPrivateEndpoint(), // One has to be private, since we merge.
+                                    new ArrayList<>() {{ addAll(o.allowedUrns()); addAll(n.allowedUrns()); }});
+        });
     }
 
     private void deprecate(Element element, List<String> attributes, int majorVersion, String message) {

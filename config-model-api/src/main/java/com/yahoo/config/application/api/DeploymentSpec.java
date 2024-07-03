@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -23,8 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * Specifies the environments and regions to which an application should be deployed.
@@ -49,7 +55,8 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   List.of(),
                                                                   "<deployment version='1.0'/>",
-                                                                  List.of());
+                                                                  List.of(),
+                                                                  DevSpec.empty);
 
     private final List<Step> steps;
 
@@ -61,6 +68,7 @@ public class DeploymentSpec {
     private final Optional<Duration> hostTTL;
     private final List<Endpoint> endpoints;
     private final List<DeprecatedElement> deprecatedElements;
+    private final DevSpec devSpec;
 
     private final String xmlForm;
 
@@ -72,7 +80,8 @@ public class DeploymentSpec {
                           Optional<Duration> hostTTL,
                           List<Endpoint> endpoints,
                           String xmlForm,
-                          List<DeprecatedElement> deprecatedElements) {
+                          List<DeprecatedElement> deprecatedElements,
+                          DevSpec devSpec) {
         this.steps = List.copyOf(Objects.requireNonNull(steps));
         this.majorVersion = Objects.requireNonNull(majorVersion);
         this.athenzDomain = Objects.requireNonNull(athenzDomain);
@@ -82,6 +91,7 @@ public class DeploymentSpec {
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
+        this.devSpec = Objects.requireNonNull(devSpec);
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
         validateAthenz();
@@ -188,18 +198,25 @@ public class DeploymentSpec {
 
     /** The most specific Athenz service for the given arguments. */
     public Optional<AthenzService> athenzService(InstanceName instance, Environment environment, RegionName region) {
-        return instance(instance).flatMap(spec -> spec.athenzService(environment, region))
-                                 .or(this::athenzService);
+        return (environment.isManuallyDeployed() ? devSpec.athenzService
+                                                 : instance(instance).flatMap(spec -> spec.athenzService(environment, region)))
+                .or(this::athenzService);
     }
 
     /** The most specific Cloud account for the given arguments. */
     public CloudAccount cloudAccount(CloudName cloud, InstanceName instance, ZoneId zone) {
-        return instance(instance).map(spec -> spec.cloudAccounts(zone.environment(), zone.region()))
-                                 .orElse(cloudAccounts)
-                                 .getOrDefault(cloud, CloudAccount.empty);
+        return (zone.environment().isManuallyDeployed() ? devSpec.cloudAccounts
+                                                        : instance(instance).map(spec -> spec.cloudAccounts(zone.environment(), zone.region())))
+                .orElse(cloudAccounts)
+                .getOrDefault(cloud, CloudAccount.empty);
     }
 
     public Map<CloudName, CloudAccount> cloudAccounts() { return cloudAccounts; }
+
+    public Tags tags(InstanceName instance, Environment environment) {
+        return environment.isManuallyDeployed() ? devSpec.tags
+                                                : instance(instance).map(DeploymentInstanceSpec::tags).orElse(Tags.empty());
+    }
 
     /**
      * Additional host time-to-live for this application. Requires a custom cloud account to be set.
@@ -208,8 +225,9 @@ public class DeploymentSpec {
      * deploy to, e.g., test and staging zones, and want to avoid the delay of having to provision hosts.
      */
     public Optional<Duration> hostTTL(InstanceName instance, Environment environment, RegionName region) {
-        return instance(instance).flatMap(spec -> spec.hostTTL(environment, Optional.of(region)))
-                                 .or(this::hostTTL);
+        return (environment.isManuallyDeployed() ? devSpec.hostTTL
+                                                 : instance(instance).flatMap(spec -> spec.hostTTL(environment, Optional.of(region))))
+                .or(this::hostTTL);
     }
 
     Optional<Duration> hostTTL() { return hostTTL; }
@@ -226,15 +244,12 @@ public class DeploymentSpec {
         if (   zone.environment().isTest()
             && instances().stream()
                           .anyMatch(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).values().stream()
-                                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))) return ZoneEndpoint.privateEndpoint;
+                                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint())))
+            return ZoneEndpoint.privateEndpoint;
 
         if (zone.environment().isManuallyDeployed())
-            return instance(instance).filter(spec -> spec.deploysTo(zone.environment(), zone.region()))
-                                     .map(spec -> spec.zoneEndpoints().get(cluster))
-                                     .map(endpoints -> endpoints.get(null))
-                                     .orElse(ZoneEndpoint.defaultEndpoint);
+            return devSpec.zoneEndpoints.getOrDefault(cluster, ZoneEndpoint.defaultEndpoint);
 
-        if (zone.environment() != Environment.prod) return ZoneEndpoint.defaultEndpoint;
         return instance(instance).flatMap(spec -> spec.zoneEndpoint(zone, cluster))
                                  .orElse(ZoneEndpoint.defaultEndpoint);
     }
@@ -259,7 +274,7 @@ public class DeploymentSpec {
         Optional<DeploymentInstanceSpec> instance = instance(name);
         if (instance.isEmpty())
             throw new IllegalArgumentException("No instance '" + name + "' in deployment.xml. Instances: " +
-                                               instances().stream().map(spec -> spec.name().toString()).collect(Collectors.joining(",")));
+                                               instances().stream().map(spec -> spec.name().toString()).collect(joining(",")));
         return instance.get();
     }
 
@@ -740,13 +755,61 @@ public class DeploymentSpec {
                 return "Element '" + tagName + "' is " + deprecationDescription + ". " + message;
             }
             return "Element '" + tagName + "' contains attribute" + (attributes.size() > 1 ? "s " : " ") +
-                   attributes.stream().map(attr -> "'" + attr + "'").collect(Collectors.joining(", ")) +
+                   attributes.stream().map(attr -> "'" + attr + "'").collect(joining(", ")) +
                    " " + deprecationDescription + ". " + message;
         }
 
         @Override
         public String toString() {
             return humanReadableString();
+        }
+
+    }
+
+    public static class DevSpec {
+
+        public static final DevSpec empty = new DevSpec(Optional.empty(), Optional.empty(), Optional.empty(), Tags.empty(), Map.of());
+
+        private final Optional<AthenzService> athenzService;
+        private final Optional<Map<CloudName, CloudAccount>> cloudAccounts;
+        private final Optional<Duration> hostTTL;
+        private final Tags tags;
+        private final Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints;
+
+        public DevSpec(Optional<AthenzService> athenzService,
+                       Optional<Map<CloudName, CloudAccount>> cloudAccounts,
+                       Optional<Duration> hostTTL,
+                       Tags tags,
+                       Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints) {
+            this.athenzService = Objects.requireNonNull(athenzService);
+            this.cloudAccounts = cloudAccounts.map(Map::copyOf);
+            this.hostTTL = Objects.requireNonNull(hostTTL);
+            this.tags = Objects.requireNonNull(tags);
+            this.zoneEndpoints = Map.copyOf(zoneEndpoints);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DevSpec devSpec = (DevSpec) o;
+            return Objects.equals(athenzService, devSpec.athenzService) && Objects.equals(cloudAccounts, devSpec.cloudAccounts) && Objects.equals(hostTTL, devSpec.hostTTL) && Objects.equals(tags, devSpec.tags) && Objects.equals(zoneEndpoints, devSpec.zoneEndpoints);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(athenzService, cloudAccounts, hostTTL, tags, zoneEndpoints);
+        }
+
+        @Override
+        public String toString() {
+            StringJoiner joiner = new StringJoiner(", ", "dev settings: ", "").setEmptyValue("no dev settings");
+            athenzService.ifPresent(service -> joiner.add("athenz-service: " + service.value()));
+            cloudAccounts.ifPresent(cas -> joiner.add(cas.entrySet().stream().map(ca -> ca.getKey() + ": " + ca.getValue()).collect(joining(", ", "cloud accounts: ", ""))));
+            hostTTL.ifPresent(ttl -> joiner.add("host-ttl: " + ttl));
+            if ( ! tags.isEmpty()) joiner.add("tags: " + tags);
+            if ( ! zoneEndpoints.isEmpty()) joiner.add("endpoint settings for clusters: " + zoneEndpoints.keySet().stream().map(ClusterSpec.Id::value).collect(joining(", ")));
+            return joiner.toString();
         }
 
     }

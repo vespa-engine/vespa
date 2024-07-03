@@ -148,24 +148,35 @@ public class DeploymentSpecTest {
     @Test
     public void specWithTags() {
         StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "   <instance id='a' tags='tag1 tag2'>" +
-                "      <prod>" +
-                "         <region>us-east1</region>" +
-                "         <region>us-west1</region>" +
-                "      </prod>" +
-                "   </instance>" +
-                "   <instance id='b' tags='tag3'>" +
-                "      <prod>" +
-                "         <region>us-east1</region>" +
-                "         <region>us-west1</region>" +
-                "      </prod>" +
-                "   </instance>" +
-                "</deployment>"
+                """
+                <deployment version='1.0'>
+                   <instance id='a' tags='tag1 tag2'>
+                      <prod>
+                         <region>us-east1</region>
+                         <region>us-west1</region>
+                      </prod>
+                   </instance>
+                   <instance id='b' tags='tag3'>
+                      <prod>
+                         <region>us-east1</region>
+                         <region>us-west1</region>
+                      </prod>
+                   </instance>
+                   <dev tags='tag4' />
+                </deployment>
+                """
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(Tags.fromString("tag1 tag2"), spec.requireInstance("a").tags());
-        assertEquals(Tags.fromString("tag3"), spec.requireInstance("b").tags());
+        assertEquals(Tags.fromString("tag1 tag2"), spec.tags(InstanceName.from("a"), prod));
+        assertEquals(Tags.fromString("tag4"), spec.tags(InstanceName.from("a"), dev));
+        assertEquals(Tags.fromString("tag3"), spec.tags(InstanceName.from("b"), test));
+        assertEquals(Tags.fromString("tag3"), spec.tags(InstanceName.from("b"), staging));
+        assertEquals(Tags.fromString("tag4"), spec.tags(InstanceName.from("b"), perf));
+        assertEquals(Tags.empty(), spec.tags(InstanceName.from("wild-pikachu-appeared"), prod));
+        assertEquals(Tags.empty(), spec.tags(InstanceName.from("wild-pikachu-appeared"), test));
+        assertEquals(Tags.empty(), spec.tags(InstanceName.from("wild-pikachu-appeared"), staging));
+        assertEquals(Tags.fromString("tag4"), spec.tags(InstanceName.from("wild-pikachu-appeared"), dev));
+        assertEquals(Tags.fromString("tag4"), spec.tags(InstanceName.from("wild-pikachu-appeared"), perf));
     }
 
     @Test
@@ -1215,20 +1226,17 @@ public class DeploymentSpecTest {
                                                      <allow with='gcp-service-connect' project='nine' />
                                                    </endpoint>
                                                 </endpoints>
-                                                <dev />
                                              </instance>
-                                             <instance id='other'>
-                                               <dev />
-                                               <perf />
+                                             <dev>
                                                <endpoints>
-                                                 <endpoint container-id='pew' type='private' />
+                                                 <endpoint container-id='aye' type='private'>
+                                                   <allow with='aws-private-link' arn='darn' />
+                                                 </endpoint>
+                                                 <endpoint container-id='yip' type='private' />
+                                                 <endpoint container-id='yap' type='zone' enabled='false'/>
+                                                 <endpoint container-id='aye' type='zone' enabled='false' />
                                                </endpoints>
-                                             </instance>
-                                             <instance id='last'>
-                                               <endpoints>
-                                                 <endpoint container-id='pew' type='private' />
-                                               </endpoints>
-                                             </instance>
+                                             </dev>
                                           </deployment>""");
 
         assertEquals(
@@ -1261,10 +1269,12 @@ public class DeploymentSpecTest {
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("nope-not-this-one")));
 
+        // not declared for dev
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("bax")));
-        assertEquals(ZoneEndpoint.privateEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("froz")));
+
+        assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "darn"))),
+                     spec.zoneEndpoint(InstanceName.from("dev"), devZone, ClusterSpec.Id.from("aye")));
 
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("default"), perfZone, ClusterSpec.Id.from("bax")));
@@ -1276,9 +1286,9 @@ public class DeploymentSpecTest {
                      spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("froz")));
 
         assertEquals(new ZoneEndpoint(true, true, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("other"), devZone, ClusterSpec.Id.from("pew")));
-        assertEquals(new ZoneEndpoint(true, true, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("other"), perfZone, ClusterSpec.Id.from("pew")));
+                     spec.zoneEndpoint(InstanceName.from("other"), devZone, ClusterSpec.Id.from("yip")));
+        assertEquals(new ZoneEndpoint(false, false, List.of()),
+                     spec.zoneEndpoint(InstanceName.from("bother"), perfZone, ClusterSpec.Id.from("yap")));
 
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("last"), devZone, ClusterSpec.Id.from("pew")));
@@ -1306,17 +1316,17 @@ public class DeploymentSpecTest {
         assertInvalidEndpoints("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>",
                                "Endpoint id 'foo' is specified multiple times");
         assertInvalidEndpoints("<endpoint id='default' type='zone' container-id='foo' />",
-                               "Instance-level endpoint 'default': cannot declare 'id' with type 'zone' or 'private'");
+                               "Instance-level endpoint: cannot declare 'id' with type 'zone' or 'private'");
         assertInvalidEndpoints("<endpoint id='default' type='private' container-id='foo' />",
-                               "Instance-level endpoint 'default': cannot declare 'id' with type 'zone' or 'private'");
+                               "Instance-level endpoint: cannot declare 'id' with type 'zone' or 'private'");
         assertInvalidEndpoints("<endpoint type='zone' />",
                                "Missing required attribute 'container-id' in 'endpoint'");
         assertInvalidEndpoints("<endpoint type='private' />",
                                "Missing required attribute 'container-id' in 'endpoint'");
         assertInvalidEndpoints("<endpoint container-id='foo' type='zone'><allow /></endpoint>",
-                               "Instance-level endpoint 'default': only endpoints of type 'private' can specify 'allow' children");
+                               "Instance-level endpoint: only endpoints of type 'private' can specify 'allow' children");
         assertInvalidEndpoints("<endpoint type='private' container-id='foo' enabled='true' />",
-                               "Instance-level endpoint 'default': only endpoints of type 'zone' can specify 'enabled'");
+                               "Instance-level endpoint: only endpoints of type 'zone' can specify 'enabled'");
         assertInvalidEndpoints("<endpoint type='zone' container-id='qrs'/><endpoint type='zone' container-id='qrs'/>",
                                "Multiple zone endpoints (for all regions) declared for container id 'qrs'");
         assertInvalidEndpoints("<endpoint type='private' container-id='qrs'><region>us</region></endpoint>" +
@@ -1398,8 +1408,8 @@ public class DeploymentSpecTest {
                          </deployment>""";
         assertInvalid(String.format(xmlForm, "id='foo' region='us-east'", "<region>us-east</region>"), "Instance-level endpoint 'foo': invalid 'region' attribute");
         assertInvalid(String.format(xmlForm, "id='foo'", "<instance>us-east</instance>"), "Instance-level endpoint 'foo': invalid element 'instance'");
-        assertInvalid(String.format(xmlForm, "type='zone'", "<instance>us-east</instance>"), "Instance-level endpoint 'default': invalid element 'instance'");
-        assertInvalid(String.format(xmlForm, "type='private'", "<instance>us-east</instance>"), "Instance-level endpoint 'default': invalid element 'instance'");
+        assertInvalid(String.format(xmlForm, "type='zone'", "<instance>us-east</instance>"), "Instance-level endpoint: invalid element 'instance'");
+        assertInvalid(String.format(xmlForm, "type='private'", "<instance>us-east</instance>"), "Instance-level endpoint: invalid element 'instance'");
     }
 
     @Test
@@ -1760,6 +1770,7 @@ public class DeploymentSpecTest {
                           <region>eu-west-1</region>
                       </prod>
                     </instance>
+                    <dev cloud-account='900000000009' />
                 </deployment>
                 """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -1770,17 +1781,19 @@ public class DeploymentSpecTest {
         assertCloudAccount("200000000000", spec, AWS, "beta",  prod,    "us-west-1");
         assertCloudAccount("",             spec, AWS, "beta",  staging, "default");
         assertCloudAccount("gcp:barbaz",   spec, GCP, "beta",  staging, "default");
-        assertCloudAccount("700000000000", spec, AWS, "beta",  perf,    "default");
-        assertCloudAccount("200000000000", spec, AWS, "beta",  dev,     "default");
+        assertCloudAccount("900000000009", spec, AWS, "beta",  perf,    "default");
+        assertCloudAccount("900000000009", spec, AWS, "beta",  dev,     "default");
+        assertCloudAccount("900000000009", spec, AWS, "zeta",  dev,     "default");
         assertCloudAccount("300000000000", spec, AWS, "main",  prod,    "us-east-1");
         assertCloudAccount("100000000000", spec, AWS, "main",  prod,    "eu-west-1");
-        assertCloudAccount("400000000000", spec, AWS, "main",  dev,     "default");
+        assertCloudAccount("900000000009", spec, AWS, "main",  dev,     "default");
         assertCloudAccount("500000000000", spec, AWS, "main",  test,    "default");
         assertCloudAccount("100000000000", spec, AWS, "main",  staging, "default");
         assertCloudAccount("default",      spec, AWS, "beta",  prod,    "us-west-2");
         assertCloudAccount("",             spec, GCP, "beta",  prod,    "us-west-2");
         assertCloudAccount("",             spec, AWS, "beta",  prod,    "us-west-3");
         assertCloudAccount("",             spec, GCP, "beta",  prod,    "us-west-3");
+        assertCloudAccount("",             spec, GCP, "beta",  dev,     "us-west-2");
     }
 
     @Test
@@ -1799,18 +1812,17 @@ public class DeploymentSpecTest {
                   </instance>
                   <instance id='beta'>
                     <staging empty-host-ttl='3d'/>
-                    <perf empty-host-ttl='4h'/>
                     <prod>
                         <region>us-east</region>
                         <region empty-host-ttl='0d'>us-west</region>
                     </prod>
                   </instance>
                   <instance id='gamma' empty-host-ttl='6h'>
-                    <dev empty-host-ttl='7d'/>
                     <prod>
                         <region>us-east</region>
                     </prod>
                   </instance>
+                  <dev empty-host-ttl='8m'/>
                 </deployment>
                 """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -1818,8 +1830,8 @@ public class DeploymentSpecTest {
 
         assertHostTTL(Duration.ofHours(1), spec, "alpha", test, null);
         assertHostTTL(Duration.ofHours(1), spec, "alpha", staging, null);
-        assertHostTTL(Duration.ofHours(1), spec, "alpha", dev, null);
-        assertHostTTL(Duration.ofHours(1), spec, "alpha", perf, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "alpha", dev, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "alpha", perf, null);
         assertHostTTL(Duration.ofMinutes(1), spec, "alpha", prod, "us-east");
         assertHostTTL(Duration.ofMinutes(2), spec, "alpha", prod, "us-west");
         assertEquals(Optional.of(Duration.ofMinutes(1)), spec.requireInstance("alpha").steps().stream()
@@ -1833,22 +1845,22 @@ public class DeploymentSpecTest {
 
         assertHostTTL(Duration.ofHours(1), spec, "beta", test, null);
         assertHostTTL(Duration.ofDays(3), spec, "beta", staging, null);
-        assertHostTTL(Duration.ofHours(1), spec, "beta", dev, null);
-        assertHostTTL(Duration.ofHours(4), spec, "beta", perf, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "beta", dev, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "beta", perf, null);
         assertHostTTL(Duration.ofHours(1), spec, "beta", prod, "us-east");
         assertHostTTL(Duration.ZERO, spec, "beta", prod, "us-west");
 
         assertHostTTL(Duration.ofHours(6), spec, "gamma", test, null);
         assertHostTTL(Duration.ofHours(6), spec, "gamma", staging, null);
-        assertHostTTL(Duration.ofDays(7), spec, "gamma", dev, null);
-        assertHostTTL(Duration.ofHours(6), spec, "gamma", perf, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "gamma", dev, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "gamma", perf, null);
         assertHostTTL(Duration.ofHours(6), spec, "gamma", prod, "us-east");
         assertHostTTL(Duration.ofHours(6), spec, "gamma", prod, "us-west");
 
         assertHostTTL(Duration.ofHours(1), spec, "nope", test, null);
         assertHostTTL(Duration.ofHours(1), spec, "nope", staging, null);
-        assertHostTTL(Duration.ofHours(1), spec, "nope", dev, null);
-        assertHostTTL(Duration.ofHours(1), spec, "nope", perf, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "nope", dev, null);
+        assertHostTTL(Duration.ofMinutes(8), spec, "nope", perf, null);
         assertHostTTL(Duration.ofHours(1), spec, "nope", prod, "us-east");
         assertHostTTL(Duration.ofHours(1), spec, "nope", prod, "us-west");
     }

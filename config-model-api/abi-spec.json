@@ -367,6 +367,22 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.application.api.DeploymentSpec$DevSpec" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, java.util.Map)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [
+      "public static final com.yahoo.config.application.api.DeploymentSpec$DevSpec empty"
+    ]
+  },
   "com.yahoo.config.application.api.DeploymentSpec$ParallelSteps" : {
     "superClass" : "com.yahoo.config.application.api.DeploymentSpec$Steps",
     "interfaces" : [ ],
@@ -499,7 +515,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, java.util.List, java.lang.String, java.util.List)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
       "public boolean isEmpty()",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
@@ -508,6 +524,7 @@
       "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.CloudAccount cloudAccount(com.yahoo.config.provision.CloudName, com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId)",
       "public java.util.Map cloudAccounts()",
+      "public com.yahoo.config.provision.Tags tags(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment)",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id)",
       "public java.lang.String xmlForm()",
