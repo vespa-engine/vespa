@@ -21,7 +21,7 @@ public class ParsedDocumentSummary extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, ParsedSummaryField> fields = new LinkedHashMap<>();
 
-    ParsedDocumentSummary(String name) {
+    public ParsedDocumentSummary(String name) {
         super(name, "document-summary");
     }
 
@@ -36,15 +36,15 @@ public class ParsedDocumentSummary extends ParsedBlock {
         return fields.put(fieldName, field);
     }
 
-    void setFromDisk(boolean value) {
+    public void setFromDisk(boolean value) {
         this.fromDisk = value;
     }
 
-    void setOmitSummaryFeatures(boolean value) {
+    public void setOmitSummaryFeatures(boolean value) {
         this.omitSummaryFeatures = value;
     }
 
-    void inherit(String other) {
+    public void inherit(String other) {
         inherited.add(other);
     }
 

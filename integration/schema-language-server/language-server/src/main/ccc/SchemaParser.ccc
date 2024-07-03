@@ -330,7 +330,7 @@ rootSchemaItem(ParsedSchema schema) : {}
     //   | importField(schema)
     //   | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
         | rankProfile(schema)
-    //   | documentSummary(schema)
+       | documentSummary(schema)
         | fieldOutsideDoc(schema)
     //   | indexOutsideDoc(schema)
         | structOutsideDoc(schema)
@@ -1201,6 +1201,56 @@ void idElm(ParsedField field) :
     {
         field.setId(fieldId);
     }
+;
+
+/**
+ * Consumes a document-summary block from within a schema block.
+ *
+ * @param schema the schema object to add content to
+ */
+void documentSummary(ParsedSchema schema) :
+{
+    String name;
+    ParsedDocumentSummary summary;
+}
+ 
+    ( <DOCUMENT_SUMMARY>
+      name = identifierWithDashStr() { summary = new ParsedDocumentSummary(name); }
+      [inheritsDocumentSummary(summary)]
+      openLbrace()
+         (
+           <FROM_DISK> { summary.setFromDisk(true); } |
+           <OMIT_SUMMARY_FEATURES> { summary.setOmitSummaryFeatures(true); } |
+           documentSummaryItem(summary) |
+           <NL>
+         )*
+      <RBRACE>
+    )
+    { schema.addDocumentSummary(summary); }
+;
+
+/**
+ * This rule consumes an inherits statement of a document summary.
+ *
+ * @param documentSummary the document summary to modify
+ */
+void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierWithDashStr() { documentSummary.inherit(name); }
+    ( <COMMA>  name = identifierWithDashStr() { documentSummary.inherit(name); } )*
+;
+
+/**
+ * Consumes a single document-summary item.
+ *
+ * @param summary The document summary to modify.
+ */
+void documentSummaryItem(ParsedDocumentSummary summary) : { }
+ 
+    summaryInDocument(summary)
 ;
 
 /**

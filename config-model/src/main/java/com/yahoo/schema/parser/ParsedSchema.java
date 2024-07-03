@@ -95,7 +95,7 @@ public class ParsedSchema extends ParsedBlock {
 
     void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
 
-    void addDocumentSummary(ParsedDocumentSummary docsum) {
+    public void addDocumentSummary(ParsedDocumentSummary docsum) {
         String dsName = docsum.name();
         verifyThat(! docSums.containsKey(dsName), "already has document-summary", dsName);
         docSums.put(dsName, docsum);
