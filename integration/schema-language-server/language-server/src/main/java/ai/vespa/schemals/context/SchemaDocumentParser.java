@@ -14,6 +14,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
+import ai.vespa.schemals.context.parser.IdentifyDiryNodes;
 import ai.vespa.schemals.context.parser.IdentifySymbolDefinition;
 import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.context.parser.IdentifyType;
@@ -60,6 +61,7 @@ public class SchemaDocumentParser {
             add(new IdentifyType(logger));
             add(new IdentifySymbolReferences(logger, self, schemaIndex));
             add(new IdentifyDeprecatedToken(logger));
+            add(new IdentifyDiryNodes(logger));
         }};
 
         if (content != null) {
@@ -277,8 +279,6 @@ public class SchemaDocumentParser {
         Node node = parserFaultTolerant.rootNode();
         errors.addAll(parseCST(node));
 
-        //errors.addAll(findDirtyNode(node));
-
         //CSTUtils.printTree(logger, CST);
 
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
@@ -308,24 +308,6 @@ public class SchemaDocumentParser {
             return new ArrayList<Diagnostic>();
         }
         return traverseCST(CST);
-    }
-
-
-    private ArrayList<Diagnostic> findDirtyNode(Node node) {
-        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
-
-        for (Node child : node) {
-            ret.addAll(findDirtyNode(child));
-        }
-
-        if (node.isDirty() && ret.size() == 0) {
-            Range range = CSTUtils.getNodeRange(node);
-
-            ret.add(new Diagnostic(range, "Dirty Node"));
-        }
-
-
-        return ret;
     }
 
     /*
