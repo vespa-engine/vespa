@@ -15,12 +15,12 @@ CountMetricValues<T>::toString() const {
 }
 template <typename T>
 double
-CountMetricValues<T>::getDoubleValue(stringref) const {
+CountMetricValues<T>::getDoubleValue(string_view) const {
     return static_cast<double>(_value);
 }
 template <typename T>
 uint64_t
-CountMetricValues<T>::getLongValue(stringref) const {
+CountMetricValues<T>::getLongValue(string_view) const {
     return static_cast<uint64_t>(_value);
 }
 template <typename T>

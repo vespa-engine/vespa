@@ -66,7 +66,7 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
     visit(visitor, "uniqueid", _uniqueId);
 }
 
-QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, stringref termS, const string & indexS,
+QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, string_view termS, const string & indexS,
                      Type type, Normalizing normalizing)
     : QueryTermUCS4(QueryNormalization::optional_fold(termS, type, normalizing), type),
       _hitList(),

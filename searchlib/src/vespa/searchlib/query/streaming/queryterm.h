@@ -61,12 +61,12 @@ public:
         uint32_t _hitCount;
         uint32_t _fieldLength;
     };
-    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, stringref term, const string & index, Type type)
+    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, string_view term, const string & index, Type type)
         : QueryTerm(std::move(resultBase), term, index, type, (type == Type::EXACTSTRINGTERM)
                                                               ? Normalizing::LOWERCASE
                                                               : Normalizing::LOWERCASE_AND_FOLD)
     {}
-    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, stringref term, const string & index, Type type, Normalizing normalizing);
+    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, string_view term, const string & index, Type type, Normalizing normalizing);
     QueryTerm(const QueryTerm &) = delete;
     QueryTerm & operator = (const QueryTerm &) = delete;
     QueryTerm(QueryTerm &&) = delete;

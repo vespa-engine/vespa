@@ -33,7 +33,7 @@ struct EqualObject : ObjectTraverser {
       : state(state_in), rhs(rhs_in) {}
     void field(const Memory &symbol, const Inspector &inspector) final {
         if (!state.failed) {
-            state.path.emplace_back(symbol.make_stringref());            
+            state.path.emplace_back(symbol.make_stringview());
             state.check_equal(inspector, rhs[symbol]);
             state.path.pop_back();
         }
@@ -49,7 +49,7 @@ struct MissingFields : ObjectTraverser {
         if (!state.failed) {
             const Inspector &field = lhs[symbol];
             if (!field.valid()) {
-                state.path.emplace_back(symbol.make_stringref());            
+                state.path.emplace_back(symbol.make_stringview());
                 state.mismatch(field, inspector);
                 state.path.pop_back();
             }

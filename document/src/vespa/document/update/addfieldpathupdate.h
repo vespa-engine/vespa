@@ -12,8 +12,8 @@ class AddFieldPathUpdate final : public FieldPathUpdate
 public:
     /** For deserialization */
     AddFieldPathUpdate();
-    AddFieldPathUpdate(const DataType& type, stringref fieldPath,
-                       stringref whereClause, std::unique_ptr<ArrayFieldValue> values);
+    AddFieldPathUpdate(const DataType& type, string_view fieldPath,
+                       string_view whereClause, std::unique_ptr<ArrayFieldValue> values);
     AddFieldPathUpdate(AddFieldPathUpdate &&) noexcept = default;
     AddFieldPathUpdate & operator =(AddFieldPathUpdate &&) noexcept = default;
     AddFieldPathUpdate(const AddFieldPathUpdate &) = delete;

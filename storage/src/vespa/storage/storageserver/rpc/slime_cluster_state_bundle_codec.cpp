@@ -194,7 +194,7 @@ struct StateInserter : vespalib::slime::ObjectTraverser {
         : _space_states(space_states) {}
 
     void field(const Memory& symbol, const Inspector& inspector) override {
-        _space_states.emplace(FixedBucketSpaces::from_string(symbol.make_stringref()),
+        _space_states.emplace(FixedBucketSpaces::from_string(symbol.make_stringview()),
                               std::make_shared<const lib::ClusterState>(inspector.asString().make_string()));
     }
 };

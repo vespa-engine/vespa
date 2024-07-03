@@ -30,8 +30,8 @@ AssignFieldPathUpdate::AssignFieldPathUpdate()
 
 AssignFieldPathUpdate::AssignFieldPathUpdate(
         const DataType& type,
-        stringref fieldPath,
-        stringref whereClause,
+        string_view fieldPath,
+        string_view whereClause,
         std::unique_ptr<FieldValue> newValue)
     : FieldPathUpdate(Assign, fieldPath, whereClause),
       _newValue(std::move(newValue)),
@@ -42,7 +42,7 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
     checkCompatibility(*_newValue, type);
 }
 
-AssignFieldPathUpdate::AssignFieldPathUpdate(stringref fieldPath, stringref whereClause, stringref expression)
+AssignFieldPathUpdate::AssignFieldPathUpdate(string_view fieldPath, string_view whereClause, string_view expression)
     : FieldPathUpdate(Assign, fieldPath, whereClause),
       _newValue(),
       _expression(expression),

@@ -25,7 +25,7 @@ struct Memory
     Memory(std::string_view str_ref) noexcept
         : data(str_ref.data()), size(str_ref.size()) {}
     vespalib::string make_string() const;
-    std::string_view make_stringref() const noexcept { return stringref(data, size); }
+    std::string_view make_stringview() const noexcept { return {data, size}; }
     bool operator == (const Memory &rhs) const noexcept {
         if (size != rhs.size) {
             return false;

@@ -18,7 +18,7 @@ namespace search {
 using attribute::BasicType;
 
 AttributeVector::SP
-AttributeFactory::createSingleStd(stringref name, const Config & info)
+AttributeFactory::createSingleStd(string_view name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     switch(info.basicType().type()) {
