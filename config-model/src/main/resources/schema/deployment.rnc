@@ -12,7 +12,7 @@ start = element deployment {
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
    Step &
-   Dev
+   Dev?
 }
 
 Step =
