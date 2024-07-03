@@ -20,6 +20,8 @@ public class IdentifyDeprecatedToken extends Identifier {
     private static final HashSet<TokenType> deprecatedTokens = new HashSet<TokenType>() {{
         add(TokenType.ATTRIBUTE);
         add(TokenType.ENABLE_BIT_VECTORS);
+        add(TokenType.INDEX);
+        add(TokenType.SUMMARY_TO);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {

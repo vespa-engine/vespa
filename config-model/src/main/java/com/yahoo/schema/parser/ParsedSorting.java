@@ -30,19 +30,19 @@ public class ParsedSorting extends ParsedBlock {
     Optional<Strength> getStrength() { return Optional.ofNullable(sortStrength); }
     Optional<String> getLocale() { return Optional.ofNullable(sortLocale); }
 
-    void setAscending() { this.ascending = true; }
+    public void setAscending() { this.ascending = true; }
 
-    void setDescending() { this.ascending = false; }
+    public void setDescending() { this.ascending = false; }
 
-    void setLocale(String value) {
+    public void setLocale(String value) {
         verifyThat(sortLocale == null, "sorting already has locale", sortLocale);
         this.sortLocale = value;
     }
-    void setFunction(Function value) {
+    public void setFunction(Function value) {
         verifyThat(sortFunction == null, "sorting already has function", sortFunction);
         this.sortFunction = value;
     }
-    void setStrength(Strength value) {
+    public void setStrength(Strength value) {
         verifyThat(sortStrength == null, "sorting already has strength", sortStrength);
         this.sortStrength = value;
     }

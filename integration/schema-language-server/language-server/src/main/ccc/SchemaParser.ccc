@@ -1,15 +1,21 @@
 PARSER_CLASS=SchemaParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser;
-LEGACY_GLITCHY_LOOKAHEAD=true;
 FAULT_TOLERANT=true;
 
 INJECT SchemaParser:
 
-    import com.yahoo.schema.Schema;
-
     import java.io.OutputStream;
     import java.util.List;
 
+    import com.yahoo.schema.DistributableResource;
+    import com.yahoo.schema.FeatureNames;
+    import com.yahoo.schema.OnnxModel;
+    import com.yahoo.schema.RankProfile.DiversitySettings;
+    import com.yahoo.schema.RankProfile.MatchSettings;
+    import com.yahoo.schema.RankProfile;
+    import com.yahoo.schema.Schema;
+
+    import com.yahoo.schema.parser.DictionaryOption;
     import com.yahoo.schema.parser.ParsedAnnotation;
     import com.yahoo.schema.parser.ParsedAttribute;
     import com.yahoo.schema.parser.ParsedDocument;
@@ -28,12 +34,16 @@ INJECT SchemaParser:
     import com.yahoo.schema.parser.ParsedType;
 
     import com.yahoo.schema.document.Case;
+    import com.yahoo.schema.document.HnswIndexParams;
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;
-    import com.yahoo.tensor.TensorType;
+    import com.yahoo.schema.document.Sorting;
+    import com.yahoo.schema.document.Stemming;
 
     import com.yahoo.searchlib.rankingexpression.FeatureList;
+    import com.yahoo.searchlib.rankingexpression.Reference;
 
+    import com.yahoo.tensor.TensorType;
 {
 
     private PrintStream logger = new PrintStream(
@@ -351,7 +361,7 @@ ParsedSchema rootSchema :
     ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
         schema = new ParsedSchema(name);
       }
-      openLbrace (rootSchemaItem(schema)! (<NL>)*)*
+      openLbrace (rootSchemaItem(schema) | <NL>)*
       <RBRACE> (<NL>)* <EOF> )
     { return schema; }
 ;
@@ -366,17 +376,17 @@ rootSchemaItem(ParsedSchema schema) : {}
     ( 
         documentElm(schema)
     //   | rawAsBase64(schema)
-    //   | searchStemming(schema)
+       | searchStemming(schema)
     //   | importField(schema)
-    //   | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+       | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
         | rankProfile(schema)
-    //   | documentSummary(schema)
+       | documentSummary(schema)
         | fieldOutsideDoc(schema)
-    //   | indexOutsideDoc(schema)
+       | indexOutsideDoc(schema)
         | structOutsideDoc(schema)
     //   | annotationOutside(schema)
         | fieldSetElm(schema)
-    //   | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
+       | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
  )
 ;
 
@@ -395,7 +405,7 @@ void documentElm(ParsedSchema schema) :
     {
         document = new ParsedDocument(name);
     }
-      openLbrace (documentElmBody(document) (<NL>)*)* <RBRACE> )
+      openLbrace (documentElmBody(document) | <NL>)* <RBRACE> )
     {
         schema.addDocument(document);
     }
@@ -454,7 +464,7 @@ ParsedField fieldElm() :
     {
         field = new ParsedField(name, type);
     }
-    openLbrace() ( fieldBodyElm(field) (<NL>)*)* <RBRACE>
+    openLbrace() ( fieldBodyElm(field) | <NL>)* <RBRACE>
     {
         return field;
     }
@@ -468,7 +478,7 @@ void fieldSetElm(ParsedSchema schema) :
 }
 
   <FIELDSET> name = identifierStr openLbrace() { fieldSet = new ParsedFieldSet(name); }
-    ((fieldsElm(fieldSet) | queryCommandElm(fieldSet)) (<NL>)*)+
+    ((fieldsElm(fieldSet) | queryCommandInFieldSetElm(fieldSet)) (<NL>)*)+
   <RBRACE>
   {
      schema.addFieldSet(fieldSet);
@@ -485,7 +495,7 @@ void fieldsElm(ParsedFieldSet fieldSet) :
     )
 ;
 
-void queryCommandElm(ParsedFieldSet fieldSet) :
+void queryCommandInFieldSetElm(ParsedFieldSet fieldSet) :
 {
     String queryCommand;
 }
@@ -530,7 +540,7 @@ ParsedStruct structDefinitionElm() :
 
     ( <STRUCT> name = identifierStr (<NL>)* { struct = new ParsedStruct(name); }
 //    [ inheritsStruct(struct) (<NL>)* ]
-    openLbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE> )
+    openLbrace() (structFieldDefinition(struct) | <NL>)* <RBRACE> )
     {
         return struct;
     }
@@ -619,9 +629,32 @@ void structFieldDefinition(ParsedStruct struct) :
     <FIELD> name = identifierStr <TYPE> type = dataType() {
         field = new ParsedField(name, type);
     }
-    // openLbrace (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE>
+    openLbrace (idElm(field) (<NL>)*)? (matchSettingsElm(field.matchSettings()) | <NL>)* <RBRACE>
     {
         struct.addField(field);
+    }
+;
+
+/**
+ * This rule consumes a struct subfield from a document field body. This is not to be confused with a document
+ * struct's fields, but rather this is a subfield of a document field of type struct.
+ *
+ * @param field    the field to modify
+ */
+void structFieldElm(ParsedField field) :
+{
+    String name;
+    ParsedField structField;
+}
+    <STRUCT_FIELD> name = identifierStr {
+        if (name != null && Schema.isReservedName(name.toLowerCase())) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        structField = new ParsedField(name, null);
+    }
+    openLbrace() (structFieldBodyElm(structField) | <NL>)* <RBRACE>
+    { 
+        field.addStructField(structField); 
     }
 ;
 
@@ -634,25 +667,61 @@ void fieldBodyElm(ParsedField field) : { }
 
      ( aliasElm(field) |
        attributeElm(field) |
-    //   bolding(field) |
-    //   dictionary(field) |
-    //   fieldStemming(field) |
+       boldingElm(field) |
+       dictionaryElm(field) |
+       fieldStemming(field) |
        idElm(field) |
-    //   summaryInField(field) |
-    //   indexInsideField(field) |
+       summaryInField(field) |
+       indexInsideField(field) |
     //   indexing(field) |
        matchSettingsElm(field.matchSettings()) |
-    //   normalizing(field) |
-    //   queryCommand(field) |
+       normalizingElm(field) |
+       queryCommandInField(field) |
        rankElm(field) |
-    //   rankType(field) |
-    //   fieldSorting(field) |
-    //   structField(field) |
-    //   summaryTo(field) |
-    //   weight(field) |
-    //   weightedset(field.getType()) )
-      weightElm(field)
+       rankTypeElm(field) |
+       fieldSorting(field) |
+       structFieldElm(field) |
+       summaryToElm(field) |
+       weightElm(field) |
+       weightedsetElm(field.getType())
     )
+;
+
+/**
+ * This rule consumes a single element of a struct subfield body block.
+ * Only elements that are supported in streaming schema and indexed schema (with complex attributes) are allowed.
+ *
+ * @param field    the field being built
+ */
+void structFieldBodyElm(ParsedField field) : { }
+    (  summaryInField(field) |
+     // indexing(field) |
+      attributeElm(field) |
+      matchSettingsElm(field.matchSettings()) |
+      queryCommandInField(field) |
+      rankElm(field) |
+      structFieldElm(field) |
+      summaryToElm(field)
+    )
+;
+
+/**
+ * This rule consumes a summary-to statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void summaryToElm(ParsedField field) :
+{
+    String name = field.name();
+    String destination;
+    ParsedSummaryField psf;
+}
+    <SUMMARY_TO> [name = identifierStr()] <COLON> destination = identifierStr()
+    {
+        psf = field.summaryFieldFor(name);
+        psf.addDestination(destination);
+    }
+    ( <COMMA> destination = identifierStr() { psf.addDestination(destination); } )*
 ;
 
 /**
@@ -666,6 +735,42 @@ void weightElm(ParsedField field) :
 }
 
     <WEIGHT> <COLON> num = integerElm { field.setWeight(num); }
+;
+
+/**
+ * This rule consumes a weighted set statement of a field element.
+ *
+ * @param fieldType The field type to modify.
+ */
+void weightedsetElm(ParsedType fieldType) : { }
+    <WEIGHTEDSET> ( (<COLON> weightedsetBody(fieldType))
+                | (openLbrace() (weightedsetBody(fieldType) | <NL>)* <RBRACE>) )
+;
+
+/**
+ * This rule consumes one body item of a weighted set block.
+ *
+ * @param type The field type to modify.
+ */
+void weightedsetBody(ParsedType type) : { }
+    ( <CREATE_IF_NONEXISTENT> { type.setCreateIfNonExistent(true); }
+      | <REMOVE_IF_ZERO>      { type.setRemoveIfZero(true); } )
+;
+
+/**
+ * This rule consumes a rank-type statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void rankTypeElm(ParsedField field) :
+{
+    String typeName;
+    String indexName = "";
+}
+    <RANK_TYPE> [indexName = identifierStr()] <COLON> typeName = identifierStr()
+    {
+        field.addRankType(indexName, typeName);
+    }
 ;
 
 /**
@@ -688,10 +793,17 @@ void attributeElm(ParsedField field) :
         ParsedAttribute attr = field.attributeFor(name);
     }
          ( (<COLON> attributeSetting(attr))
-           | (openLbrace() (attributeSetting(attr) (<NL>)*)* <RBRACE>) )
+           | (openLbrace() (attributeSetting(attr) | <NL>)* <RBRACE>) )
 ;
 
 /* pick up sorting in field block */
+void fieldSorting(ParsedField field) : { }
+
+    sortingElm(field.sortInfo())
+;
+
+
+/* pick up sorting in attribute block */
 void attributeSorting(ParsedAttribute attribute) : { }
 
     sortingElm(attribute.sortInfo())
@@ -701,8 +813,34 @@ void attributeSorting(ParsedAttribute attribute) : { }
 void sortingElm(ParsedSorting sort) : { }
 
     <SORTING>
-        //  ( (<COLON> sortingSetting(sort))
-        //    | (openLbrace() (sortingSetting(sort) (<NL>)*)* <RBRACE>) )
+          ( (<COLON> sortingSetting(sort))
+            | (openLbrace() (sortingSetting(sort) | <NL>)* <RBRACE>) )
+;
+
+
+
+void sortingSetting(ParsedSorting sorting) :
+{
+    String locale;
+}
+ 
+    (
+        <ASCENDING> { sorting.setAscending(); }
+      | <DESCENDING> { sorting.setDescending(); }
+      | <FUNCTION> <COLON> (
+                               <UCA>       { sorting.setFunction(Sorting.Function.UCA); }
+                             | <RAW>       { sorting.setFunction(Sorting.Function.RAW); }
+                             | <LOWERCASE> { sorting.setFunction(Sorting.Function.LOWERCASE); }
+                           )
+      | <STRENGTH> <COLON> (
+                               <PRIMARY>    { sorting.setStrength(Sorting.Strength.PRIMARY); }
+                             | <SECONDARY>  { sorting.setStrength(Sorting.Strength.SECONDARY); }
+                             | <TERTIARY>   { sorting.setStrength(Sorting.Strength.TERTIARY); }
+                             | <QUATERNARY> { sorting.setStrength(Sorting.Strength.QUATERNARY); }
+                             | <IDENTICAL>  { sorting.setStrength(Sorting.Strength.IDENTICAL); }
+                           )
+      | <LOCALE> <COLON> locale = identifierWithDashStr() { sorting.setLocale(locale); }
+    )
 ;
 
 /**
@@ -735,6 +873,347 @@ void attributeSetting(ParsedAttribute attribute) :
 ;
 
 /**
+ * This rule consumes a summary statement defined inside a document-summary block.
+ *
+ * @param docsum The document summary to modify.
+ */
+void summaryInDocument(ParsedDocumentSummary docsum) :
+{
+    String name;
+    ParsedType type = null;
+    ParsedSummaryField psf;
+}
+
+    <SUMMARY> name = identifierWithDashStr() { }
+    (<TYPE>   type = dataType())?
+    openLbrace() {
+        psf = new ParsedSummaryField(name, type);
+	if (type != null) {
+	    psf.setHasExplicitType();
+	}
+    }
+    (summaryItem(psf) | <NL>)* <RBRACE>
+    {
+        var old = docsum.addField(psf);
+        if (old != null) {
+            // deployLogger.logApplicationPackage(Level.WARNING, "Summary field '" + psf.name()
+            //                                   + "' is defined twice in document-summary '"
+            //                                   + docsum.name() + "'");
+        }
+    }
+;
+
+/**
+ * The rule consumes a summary statement defined inside a field.
+ *
+ * @param field The field to modify.
+ */
+void summaryInField(ParsedField field) : { }
+ 
+    <SUMMARY> ( SCAN([identifierStr] <COLON>) => summaryInFieldShort(field)
+              | summaryInFieldLong(field) )
+;
+
+/**
+ * This rule consumes a single-line summary field.
+ */
+void summaryInFieldShort(ParsedField field) :
+{
+    String name = field.name();
+    ParsedSummaryField psf;
+}
+ 
+    [ name = identifierStr() ]
+    {
+        psf = field.summaryFieldFor(name);
+    }
+    <COLON> ( <DYNAMIC> { psf.setDynamic(); }
+              | <MATCHED_ELEMENTS_ONLY> { psf.setMatchedElementsOnly(); }
+              | (<FULL> | <STATIC>) { psf.setFull(); }
+              | <TOKENS> { psf.setTokens(); }
+            )
+;
+
+/**
+ * This rule consumes a multi-line summary field.
+ */
+void summaryInFieldLong(ParsedField field) :
+{
+    String name = field.name();
+    ParsedType type = field.getType();
+    boolean explicitType = false;
+    ParsedSummaryField psf;
+}
+ 
+    ( [ name = identifierStr() [ <TYPE> { type = dataType(); explicitType = true; } ] ]
+      openLbrace()
+      {
+          psf = field.summaryFieldFor(name, type);
+	  if (explicitType) {
+              psf.setHasExplicitType();
+          }
+      }
+      (summaryItem(psf) | <NL>)* <RBRACE> )
+;
+
+/**
+ * This rule consumes an item of a summary field block.
+ *
+ * @param field The field to modify.
+ */
+void summaryItem(ParsedSummaryField field) : { }
+ 
+    ( summaryTransform(field)
+      | summaryBolding(field)
+      | summarySourceList(field)
+      | summaryDestinationList(field)
+    )
+;
+
+/**
+ * This rule consumes a transform statement for a summary field element.
+ *
+ * @param field            The field to modify.
+ */
+void summaryTransform(ParsedSummaryField field) : { }
+ 
+    ( <DYNAMIC>              { field.setDynamic(); }
+     | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
+     | (<FULL> | <STATIC>)   { field.setFull(); }
+     | <TOKENS> { field.setTokens(); }
+    )
+;
+
+/**
+ * This rule consumes a bolding statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryBolding(ParsedSummaryField field) :
+{
+    boolean bold;
+}
+ 
+    <BOLDING> <COLON> bold = bool()
+    { field.setBold(bold); }
+;
+
+/**
+ * This rule consumes a source-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summarySourceList(ParsedSummaryField field) :
+{
+    String str;
+}
+ 
+    ( <SOURCE> <COLON> str = identifierStr() { field.addSource(str); }
+      (        <COMMA> str = identifierStr() { field.addSource(str); } )* ) +
+;
+
+/**
+ * This rule consumes a destination-list statement for a summary field element.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryDestinationList(ParsedSummaryField field) :
+{
+    String str;
+}
+ 
+    <TO> <COLON> str = identifierStr() { field.addDestination(str); }
+    (    <COMMA> str = identifierStr() { field.addDestination(str); } )*
+;
+
+/**
+ * This rule consumes a stemming block of a field element.
+ *
+ * @param field The field to modify.
+ */
+void fieldStemming(ParsedField field) :
+{
+    String setting;
+}
+ 
+    <STEMMING> <COLON> setting = identifierWithDashStr
+    {
+        field.setStemming(Stemming.get(setting));
+    }
+;
+
+/**
+ * This rule consumes a stemming statement for a schema element.
+ *
+ * @param schema the schema to modify
+ */
+void searchStemming(ParsedSchema schema) :
+{
+    String setting;
+}
+ 
+    <STEMMING> <COLON> setting = identifierWithDashStr
+    { schema.setStemming(Stemming.get(setting)); }
+;
+
+/**
+ * This rule consumes a normalizing statement of a field element.
+ * At the moment, this can only be used to turn off normalizing.
+ *
+ * @param field The field to modify.
+ */
+void normalizingElm(ParsedField field) :
+{
+    String setting;
+}
+ 
+    <NORMALIZING> <COLON> setting = identifierWithDashStr
+    {
+        field.setNormalizing(setting);
+    }
+;
+
+/**
+ * This rule consumes a bolding statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void boldingElm(ParsedField field) :
+{
+    boolean bold;
+}
+ 
+    <BOLDING> <COLON> bold = bool() { field.setBolding(bold); }
+;
+
+/**
+ * This rule consumes a dictionary statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void dictionaryElm(ParsedField field) : { }
+ 
+    <DICTIONARY>
+    ( (<COLON> dictionarySetting(field))
+    | (openLbrace() (dictionarySetting(field) | <NL>)* <RBRACE>))
+;
+
+void dictionarySetting(ParsedField field) : { }
+ 
+    (   <HASH>            { field.dictionary(DictionaryOption.HASH); }
+      | <BTREE>           { field.dictionary(DictionaryOption.BTREE); }
+      | <CASED>           { field.dictionary(DictionaryOption.CASED); }
+      | <UNCASED>         { field.dictionary(DictionaryOption.UNCASED); } )
+    {}
+;
+
+void queryCommandInField(ParsedField field) :
+{
+    String command;
+}
+ 
+    <QUERY_COMMAND> <COLON> ( command = identifierWithDashStr() | command = quotedString() )
+    {
+        field.addQueryCommand(command);
+    }
+;
+
+void aliasElm(ParsedField field) :
+{
+    String aliasedName = field.name();
+    String alias;
+}
+
+    <ALIAS> [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr
+    {
+       field.addAlias(aliasedName, alias);
+    }
+;
+
+void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
+
+    <MATCH> ( (<COLON> matchType(matchInfo))
+               | (openLbrace() (matchItem(matchInfo) | <NL>)* <RBRACE>) )
+;
+
+void matchType(ParsedMatchSettings matchInfo) : { }
+
+    (   <MTOKEN>    { matchInfo.setType(MatchType.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchInfo.setType(MatchType.TEXT); }
+      | <WORD>      { matchInfo.setType(MatchType.WORD); }
+      | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
+      | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
+      | <CASED>     { matchInfo.setCase(Case.CASED); }
+      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
+      | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
+      | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
+;
+
+/**
+ * This rule consumes a single match item for a match block.
+ *
+ * @param matchInfo The settings to modify.
+ */
+void matchItem(ParsedMatchSettings matchInfo) : { }
+ 
+    ( matchType(matchInfo) | exactTerminator(matchInfo) | gramSize(matchInfo) | matchSize(matchInfo) |
+     maxTermOccurrences(matchInfo) | maxTokenLength(matchInfo) )
+;
+
+void exactTerminator(ParsedMatchSettings matchInfo) :
+{
+    String terminator;
+}
+ 
+    <EXACT_TERMINATOR> <COLON> terminator = quotedString()
+    {
+        matchInfo.setExactTerminator(terminator);
+    }
+;
+
+void gramSize(ParsedMatchSettings matchInfo) :
+{
+    int gramSize;
+}
+ 
+    <GRAM_SIZE> <COLON> gramSize = integerElm()
+    {
+        matchInfo.setGramSize(gramSize);
+    }
+;
+
+void matchSize(ParsedMatchSettings matchInfo) :
+{
+    int matchSize;
+}
+ 
+    <MAX_LENGTH> <COLON> matchSize = integerElm() {
+        matchInfo.setMaxLength(matchSize);
+    }
+;
+
+void maxTermOccurrences(ParsedMatchSettings matchInfo) :
+{
+    int maxTermOccurrences;
+}
+ 
+    <MAX_OCCURRENCES> <COLON> maxTermOccurrences = integerElm() {
+        matchInfo.setMaxTermOccurrences(maxTermOccurrences);
+    }
+;
+
+void maxTokenLength(ParsedMatchSettings matchInfo) :
+{
+    int maxTokenLength;
+}
+ 
+    <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerElm() {
+        matchInfo.setMaxTokenLength(maxTokenLength);
+    }
+;
+
+/**
  * Consumes a rank statement of a field element.
  *
  * @param field The field to modify.
@@ -742,7 +1221,7 @@ void attributeSetting(ParsedAttribute attribute) :
 void rankElm(ParsedField field) : { }
 
     <RANK> ( (<COLON> rankSettingElm(field))
-             | (openLbrace() (rankSettingElm(field) (<NL>)*)* <RBRACE>) )
+             | (openLbrace() (rankSettingElm(field) | <NL>)* <RBRACE>) )
 ;
 
 /**
@@ -774,38 +1253,266 @@ void idElm(ParsedField field) :
     }
 ;
 
-void aliasElm(ParsedField field) :
+/**
+ * Consumes a document-summary block from within a schema block.
+ *
+ * @param schema the schema object to add content to
+ */
+void documentSummary(ParsedSchema schema) :
 {
-    String aliasedName = field.name();
-    String alias;
+    String name;
+    ParsedDocumentSummary summary;
 }
+ 
+    ( <DOCUMENT_SUMMARY>
+      name = identifierWithDashStr() { summary = new ParsedDocumentSummary(name); }
+      [inheritsDocumentSummary(summary)]
+      openLbrace()
+         (
+           <FROM_DISK> { summary.setFromDisk(true); } |
+           <OMIT_SUMMARY_FEATURES> { summary.setOmitSummaryFeatures(true); } |
+           documentSummaryItem(summary) |
+           <NL>
+         )*
+      <RBRACE>
+    )
+    { schema.addDocumentSummary(summary); }
+;
 
-    <ALIAS> [aliasedName = identifierStr] <COLON> alias = identifierWithDashStr
+/**
+ * This rule consumes an inherits statement of a document summary.
+ *
+ * @param documentSummary the document summary to modify
+ */
+void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierWithDashStr() { documentSummary.inherit(name); }
+    ( <COMMA>  name = identifierWithDashStr() { documentSummary.inherit(name); } )*
+;
+
+/**
+ * Consumes a single document-summary item.
+ *
+ * @param summary The document summary to modify.
+ */
+void documentSummaryItem(ParsedDocumentSummary summary) : { }
+ 
+    summaryInDocument(summary)
+;
+
+/**
+ * Consumes an index block in a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void indexOutsideDoc(ParsedSchema schema) :
+{
+    ParsedIndex op;
+    String indexName;
+}
+ 
+    <INDEX> indexName = identifierStr()
     {
-       field.addAlias(aliasedName, alias);
+        op = new ParsedIndex(indexName);
+    }
+    ( (<COLON> indexBody(op) (<COMMA> indexBody(op))*) |
+      (openLbrace() (indexBody(op) | <NL>)* <RBRACE>) )
+    {
+        schema.addIndex(op);
     }
 ;
 
-void matchSettingsElm(ParsedMatchSettings matchInfo) : { }
+/**
+ * Consumes an index block for a field element.
+ *
+ * @param field  the field to modify
+ */
+void indexInsideField(ParsedField field) :
+{
+    ParsedIndex op;
+    String indexName = field.name();
+}
+ 
+    <INDEX> [indexName = identifierStr()]
+    {
+        // TODO: Remove support for index with different name than field name in Vespa 9
+        //if ( ! indexName.equals(field.name()))
+        //    deployLogger.logApplicationPackage(Level.WARNING, "Creating an index for field '" + field.name() +
+        //    "' with a different name '" + indexName + "' than the field name" +
+        //    " is deprecated, and support will be removed in Vespa 9. Define a field with the wanted name outside the document instead.");
+        op = new ParsedIndex(indexName);
+    }
+    ( (<COLON> indexBody(op) (<COMMA> indexBody(op))*) |
+      (openLbrace() (indexBody(op) | <NL>)* <RBRACE>) )
+    {
+        field.addIndex(op);
+    }
+;
 
-    <MATCH> ( (<COLON> matchType(matchInfo))
-            //   | (openLbrace() (matchItem(matchInfo) (<NL>)*)* <RBRACE>) )
+
+/**
+ * Consumes a single index statement for an index block.
+ *
+ * @param index The index to modify.
+ */
+void indexBody(ParsedIndex index) :
+{
+    String str;
+    int arity;
+    long num;
+    double threshold;
+}
+ 
+    ( <PREFIX>                                                       { index.setPrefix(true); }
+      | <ALIAS> <COLON> str = identifierWithDashStr()                   { index.addAlias(str); }
+      | <STEMMING> <COLON> str = identifierWithDashStr()                { index.setStemming(Stemming.get(str)); }
+      | <ARITY> <COLON> arity = integerElm()                            { index.setArity(arity); }
+      | <LOWER_BOUND> <COLON> num = longValue()                       { index.setLowerBound(num); }
+      | <UPPER_BOUND> <COLON> num = longValue()                       { index.setUpperBound(num); }
+      | <DENSE_POSTING_LIST_THRESHOLD> <COLON> threshold = floatValue() { index.setDensePostingListThreshold(threshold); }
+      | <ENABLE_BM25>                                                { index.setEnableBm25(true); }
+      | hnswIndex(index)                                             { }
     )
 ;
 
-void matchType(ParsedMatchSettings matchInfo) : { }
-
-    (   <MTOKEN>    { matchInfo.setType(MatchType.TEXT); } // Deprecated synonym to TEXT
-      | <TEXT>      { matchInfo.setType(MatchType.TEXT); }
-      | <WORD>      { matchInfo.setType(MatchType.WORD); }
-      | <EXACT>     { matchInfo.setType(MatchType.EXACT); }
-      | <GRAM>      { matchInfo.setType(MatchType.GRAM); }
-      | <CASED>     { matchInfo.setCase(Case.CASED); }
-      | <UNCASED>   { matchInfo.setCase(Case.UNCASED); }
-      | <PREFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.PREFIX); }
-      | <SUBSTRING> { matchInfo.setAlgorithm(MatchAlgorithm.SUBSTRING); }
-      | <SUFFIX>    { matchInfo.setAlgorithm(MatchAlgorithm.SUFFIX); } )
+void hnswIndex(ParsedIndex index) :
+{
+    HnswIndexParams.Builder params = new HnswIndexParams.Builder();
+}
+ 
+    ( SCAN(<HNSW> openLbrace()) =>
+      (<HNSW> ( (openLbrace() (hnswIndexBody(params) | <NL>)* <RBRACE>) )) |
+      <HNSW> )
+    {
+        index.setHnswIndexParams(params.build());
+    }
 ;
+
+
+void hnswIndexBody(HnswIndexParams.Builder params) :
+{
+    int num;
+    boolean bool;
+}
+ 
+    ( <MAX_LINKS_PER_NODE> <COLON> num = integerElm() { params.setMaxLinksPerNode(num); }
+      | <NEIGHBORS_TO_EXPLORE_AT_INSERT> <COLON> num = integerElm() { params.setNeighborsToExploreAtInsert(num); }
+      | <MULTI_THREADED_INDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
+;
+
+void onnxModelInSchema(ParsedSchema schema) :
+{
+    OnnxModel onnxModel;
+}
+ 
+    onnxModel = onnxModel() { schema.add(onnxModel); }
+;
+
+void onnxModelInProfile(ParsedRankProfile profile) :
+{
+    OnnxModel onnxModel;
+}
+ 
+    onnxModel = onnxModel() { profile.add(onnxModel); }
+;
+
+/** Consumes an onnx-model block. */
+OnnxModel onnxModel() :
+{
+    String name;
+    OnnxModel onnxModel;
+}
+ 
+    ( <ONNX_MODEL> name = identifierStr() { onnxModel = new OnnxModel(name); }
+      openLbrace() (onnxModelItem(onnxModel) | <NL>)+ <RBRACE> )
+    { return onnxModel; }
+;
+
+/**
+ * Consumes an onnx-model block.
+ *
+ * @param onnxModel the onnxModel to modify
+ */
+void onnxModelItem(OnnxModel onnxModel) :
+{
+    String path = null;
+    int num;
+}
+ 
+    (
+        (path = fileItem()) { onnxModel.setFileName(path); } |
+        (path = uriItem()) { onnxModel.setUri(path); } |
+        <GPU_DEVICE> <COLON> num = integerElm() { onnxModel.setGpuDevice(num, false); } |
+        <INTRAOP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessIntraOpThreads(num); } |
+        <INTEROP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessInterOpThreads(num); } |
+        <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
+                                  | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
+        (<ONNX_INPUT_SL>) {
+            String name = lastConsumedToken.toString().substring(5, lastConsumedToken.toString().lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String source = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
+            onnxModel.addInputNameMapping(name, source);
+        } |
+        (<ONNX_OUTPUT_SL>) {
+            String name = lastConsumedToken.toString().substring(6, lastConsumedToken.toString().lastIndexOf(":")).trim();
+            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
+            String as = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
+            onnxModel.addOutputNameMapping(name, as);
+        }
+    )
+;
+
+/**
+ * Consumes a constant block of a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void rankingConstant(ParsedSchema schema) :
+{
+    String name;
+    String path = null;
+    DistributableResource.PathType pathType = DistributableResource.PathType.FILE;
+    TensorType type = null;
+}
+ 
+    ( <CONSTANT> name = identifierStr() openLbrace()
+      (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. Remove?
+       | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
+      )+
+      <RBRACE>
+    )
+    {
+        if (type == null) throw new IllegalArgumentException("constant '" + name + "' must have a type");
+        if (path == null) throw new IllegalArgumentException("constant '" + name + "' must have a file");
+        schema.add(new RankProfile.Constant(FeatureNames.asConstantFeature(name), type, path, pathType));
+    }
+;
+
+String fileItem() :
+{
+   String path;
+}
+ 
+  (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = com.yahoo.path.Path.fromString(lastConsumedToken.toString()).getRelative(); } { } (<NL>)*) { return path; }
+;
+
+String uriItem() :
+{
+   String path;
+}
+ 
+  (<URI> <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*) { return path; }
+;
+
+String rankingConstantErrorMessage(String name) : {}
+ 
+    { return "For ranking constant ' " + name + "'"; }
+;
+
 
 /**
  * Consumes a rank-profile block of a schema element.
@@ -821,7 +1528,7 @@ void rankProfile(ParsedSchema schema) :
     ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDashStr
     { profile = new ParsedRankProfile(name); }
     [inheritsRankProfile(profile)]
-    openLbrace() (rankProfileItem(schema, profile) (<NL>)*)* <RBRACE>
+    openLbrace() (rankProfileItem(schema, profile) | <NL>)* <RBRACE>
     {
         schema.addRankProfile(profile);
     }
@@ -860,7 +1567,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
     //   | constants(schema, profile)
       | matchFeaturesElm(profile)
     //   | summaryFeatures(profile)
-    //   | onnxModelInProfile(profile)
+       | onnxModelInProfile(profile)
     //   | strict(profile)
     //   | significance(profile)
     )
@@ -890,7 +1597,7 @@ void firstPhase(ParsedRankProfile profile) :
     String exp;
 }
 
-    <FIRST_PHASE> openLbrace() (firstPhaseItem(profile) (<NL>)*)* <RBRACE>
+    <FIRST_PHASE> openLbrace() (firstPhaseItem(profile) | <NL>)* <RBRACE>
 ;
 
 void firstPhaseItem(ParsedRankProfile profile) :
@@ -905,6 +1612,14 @@ void firstPhaseItem(ParsedRankProfile profile) :
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 ;
+
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{ TensorType type; }
+ 
+    <TYPE> <COLON> type = tensorTypeElm(errorMessage)
+    { return type; }
+;
+
 
 TensorType tensorTypeElm(String errorMessage) :
 {
@@ -1224,6 +1939,6 @@ Number number() :
     ( num = floatValue | num = longValue ) { return num; }
 ;
 
-openLbrace :
-    (<NL>)* <LBRACE> (<NL>)*
+void openLbrace() : { }
+    ((<NL>)* <LBRACE> (<NL>)*)
 ;

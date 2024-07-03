@@ -115,7 +115,7 @@ public class ParsedRankProfile extends ParsedBlock {
         this.inheritedSummaryFeatures = other;
     }
 
-    void add(RankProfile.Constant constant) {
+    public void add(RankProfile.Constant constant) {
         verifyThat(! constants.containsKey(constant.name()), "already has constant", constant.name());
         constants.put(constant.name(), constant);
     }
@@ -125,7 +125,7 @@ public class ParsedRankProfile extends ParsedBlock {
         inputs.put(name, input);
     }
 
-    void add(OnnxModel model) {
+    public void add(OnnxModel model) {
         onnxModels.add(model);
     }
 

@@ -73,6 +73,8 @@ public class SchemaDocumentParser {
     public void updateFileContent(String content) {
         this.content = content;
         parseContent();
+
+        CSTUtils.printTree(logger, CST);
     }
 
     public String getFileURI() {

@@ -44,7 +44,7 @@ public class ParsedField extends ParsedBlock {
         this.type = type;
     }
 
-    ParsedType getType() { return this.type; }
+    public ParsedType getType() { return this.type; }
     boolean hasBolding() { return this.hasBolding; }
     boolean hasFilter() { return this.isFilter; }
     boolean hasLiteral() { return this.isLiteral; }
@@ -68,7 +68,7 @@ public class ParsedField extends ParsedBlock {
     Map<String, String> getRankTypes() { return Collections.unmodifiableMap(rankTypes); }
 
     /** get an existing summary field for modification, or create it */
-    ParsedSummaryField summaryFieldFor(String name) {
+    public ParsedSummaryField summaryFieldFor(String name) {
         if (summaryFields.containsKey(name)) {
             return summaryFields.get(name);
         }
@@ -78,7 +78,7 @@ public class ParsedField extends ParsedBlock {
     }
 
     /** get an existing summary field for modification, or create it */
-    ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
+    public ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
         if (summaryFields.containsKey(name)) {
             var sf = summaryFields.get(name);
             if (sf.getType() == null) {
@@ -101,17 +101,17 @@ public class ParsedField extends ParsedBlock {
         aliases.put(to, from);
     }
 
-    void addIndex(ParsedIndex index) {
+    public void addIndex(ParsedIndex index) {
         String idxName = index.name();
         verifyThat(! fieldIndexes.containsKey(idxName), "already has index", idxName);
         fieldIndexes.put(idxName, index);
     }
 
-    void addRankType(String index, String rankType) {
+    public void addRankType(String index, String rankType) {
         rankTypes.put(index, rankType);
     }
 
-    void dictionary(DictionaryOption option) {
+    public void dictionary(DictionaryOption option) {
         dictionaryOptions.add(option);
     }
 
@@ -133,16 +133,16 @@ public class ParsedField extends ParsedBlock {
         indexingOp = idxOp;
     }
 
-    ParsedSorting sortInfo() {
+    public ParsedSorting sortInfo() {
         if (sortSettings == null) sortSettings = new ParsedSorting(name(), "field.sorting");
         return this.sortSettings;
     }
 
-    void addQueryCommand(String command) {
+    public void addQueryCommand(String command) {
         queryCommands.add(command);
     }
 
-    void addStructField(ParsedField structField) {
+    public void addStructField(ParsedField structField) {
         String fieldName = structField.name();
         verifyThat(! structFields.containsKey(fieldName), "already has struct-field", fieldName);
         structFields.put(fieldName, structField);

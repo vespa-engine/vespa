@@ -95,7 +95,7 @@ public class ParsedSchema extends ParsedBlock {
 
     void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
 
-    void addDocumentSummary(ParsedDocumentSummary docsum) {
+    public void addDocumentSummary(ParsedDocumentSummary docsum) {
         String dsName = docsum.name();
         verifyThat(! docSums.containsKey(dsName), "already has document-summary", dsName);
         docSums.put(dsName, docsum);
@@ -117,13 +117,13 @@ public class ParsedSchema extends ParsedBlock {
         importedFields.add(new ImportedField(asFieldName, refFieldName, foregnFieldName));
     }
 
-    void addIndex(ParsedIndex index) {
+    public void addIndex(ParsedIndex index) {
         String idxName = index.name();
         verifyThat(! extraIndexes.containsKey(idxName), "already has index", idxName);
         extraIndexes.put(idxName, index);
     }
 
-    void add(OnnxModel model) {
+    public void add(OnnxModel model) {
         onnxModels.add(model);
     }
 
@@ -133,7 +133,7 @@ public class ParsedSchema extends ParsedBlock {
         rankProfiles.put(rpName, profile);
     }
 
-    void add(RankProfile.Constant constant) {
+    public void add(RankProfile.Constant constant) {
         constants.put(constant.name(), constant);
     }
 
@@ -151,7 +151,7 @@ public class ParsedSchema extends ParsedBlock {
 
     void inheritByDocument(String other) { inheritedByDocument.add(other); }
 
-    void setStemming(Stemming value) {
+    public void setStemming(Stemming value) {
         verifyThat((defaultStemming == null) || (defaultStemming == value),
                    "already has stemming", defaultStemming, "cannot also set", value);
         defaultStemming = value;

@@ -64,7 +64,9 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
             CompletionUtils.constructSnippet("summary", "summary: ", "summary:"),
             CompletionUtils.constructSnippet("summary", "summary {\n\t$0\n}", "summary {}"),
             // summary-to is deprecated
-            CompletionUtils.constructSnippet("weight", "weight: ")
+            CompletionUtils.constructSnippet("weight", "weight: "),
+            CompletionUtils.constructSnippet("weightedset", "weightedset: ", "weightedset:"),
+            CompletionUtils.constructSnippet("weightedset", "weightedset {\n\t$0\n}", "weightedset {}"),
         });
 
         put("structDefinitionElm", new CompletionItem[]{

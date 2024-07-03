@@ -94,6 +94,7 @@ public class CSTUtils {
     public static void printTree(PrintStream logger, SchemaNode node, Integer indent) {
         Range range = node.getRange();
         logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClassLeafIdentifierString()
+            + (node.isDirty() ? " [DIRTY]" : "")
             + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
                 );
 

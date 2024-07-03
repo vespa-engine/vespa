@@ -196,14 +196,14 @@ public class ParsedType {
         return new ParsedType(name, Variant.DOCUMENT);
     }
 
-    void setCreateIfNonExistent(boolean value) {
+    public void setCreateIfNonExistent(boolean value) {
         if (variant != Variant.WSET) {
             throw new IllegalArgumentException("CreateIfNonExistent only valid for weightedset, not " + variant);
         }
         this.createIfNonExistent = value;
     }
 
-    void setRemoveIfZero(boolean value) {
+    public void setRemoveIfZero(boolean value) {
         if (variant != Variant.WSET) {
             throw new IllegalArgumentException("RemoveIfZero only valid for weightedset, not " + variant);
         }
