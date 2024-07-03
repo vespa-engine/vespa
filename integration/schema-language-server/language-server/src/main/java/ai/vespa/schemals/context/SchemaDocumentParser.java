@@ -4,6 +4,8 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.text.html.parser.Parser;
+
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -18,6 +20,7 @@ import ai.vespa.schemals.context.parser.IdentifyType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.Token;
 import com.yahoo.schema.parser.ParsedSchema;
 import com.yahoo.schema.parser.ParsedBlock;
 
@@ -138,6 +141,40 @@ public class SchemaDocumentParser {
         return node;
     }
 
+    private class ParserPayload {
+        int numOfLeadingChars = 0;
+        String source;
+
+        ParserPayload(String source) {
+
+            this.source = source;
+
+            int firstSplit = source.indexOf(':') + 1;
+            if (firstSplit == 0) {
+                firstSplit = source.indexOf('{') + 1;
+            }
+
+            String sourceSubStr = source.substring(firstSplit);
+            int leadingChars = sourceSubStr.length() - sourceSubStr.stripLeading().length();
+
+            numOfLeadingChars = firstSplit + leadingChars;
+        }
+
+        String getLeadingChars() {
+            return source.substring(0, numOfLeadingChars);
+        }
+
+        Position getContentPosition() {
+            String leadingChars = getLeadingChars();
+            long numOfNewLines = leadingChars.chars().filter(ch -> ch == '\n').count();
+
+            int lastNewLine = leadingChars.lastIndexOf('\n');
+
+            return new Position((int)numOfNewLines, leadingChars.length() - lastNewLine - 1);
+        }
+
+    }
+
     private void parseContent() {
         CharSequence sequence = content;
 
@@ -145,7 +182,7 @@ public class SchemaDocumentParser {
 
         ParsedBlock.setCanIgnoreException(true);
 
-        SchemaParser parserStrict = new SchemaParser(getFileName(), sequence);
+        SchemaParser parserStrict = new SchemaParser(logger, getFileName(), sequence);
         parserStrict.setParserTolerant(false);
 
         ArrayList<Diagnostic> errors = new ArrayList<Diagnostic>();
@@ -160,8 +197,57 @@ public class SchemaDocumentParser {
             Node.TerminalNode node = e.getToken();
 
             Range range = CSTUtils.getNodeRange(node);
+            String message = e.getMessage();
 
-            errors.add(new Diagnostic(range, e.getMessage()));
+            
+            Throwable cause = e.getCause();
+            if (
+                cause != null &&
+                cause instanceof com.yahoo.searchlib.rankingexpression.parser.ParseException &&
+                node instanceof Token
+            ) {
+                com.yahoo.searchlib.rankingexpression.parser.ParseException parseCause = (com.yahoo.searchlib.rankingexpression.parser.ParseException) cause;
+                com.yahoo.searchlib.rankingexpression.parser.Token tok = parseCause.currentToken.next;
+
+                Position relativeStartPosition = new Position(
+                    tok.beginLine - 1,
+                    tok.beginColumn - 1
+                );
+
+                Position relativeEndPosition = new Position(
+                    tok.endLine - 1,
+                    tok.endColumn - 1
+                );
+
+                if (relativeStartPosition.equals(relativeEndPosition)) {
+                    relativeEndPosition.setCharacter(relativeEndPosition.getCharacter() + 1);
+                }
+
+                logger.println(tok.beginColumn);
+                logger.println(tok.endColumn);
+
+                Token rootToken = (Token) node;
+                String source = rootToken.getSource();
+                
+                ParserPayload parserPayload = new ParserPayload(source);
+
+                Position parsingStartPosition = CSTUtils.addPositions(range.getStart(), parserPayload.getContentPosition());
+
+                Position absoluteStartPosition = CSTUtils.addPositions(parsingStartPosition, relativeStartPosition);
+                Position absoluteEndPosition = CSTUtils.addPositions(parsingStartPosition, relativeEndPosition);
+
+                range = new Range(
+                    absoluteStartPosition,
+                    absoluteEndPosition
+                );
+
+                message = parseCause.getMessage();
+
+            }
+
+            errors.add(new Diagnostic(range, message));
+
+
         } catch (IllegalArgumentException e) {
             // Complex error, invalidate the whole document
 
@@ -191,7 +277,7 @@ public class SchemaDocumentParser {
         Node node = parserFaultTolerant.rootNode();
         errors.addAll(parseCST(node));
 
-        errors.addAll(findDirtyNode(node));
+        //errors.addAll(findDirtyNode(node));
 
         //CSTUtils.printTree(logger, CST);
 

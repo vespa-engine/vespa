@@ -105,8 +105,8 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<Boolean> isUseSignificanceModel() { return Optional.ofNullable(this.useSignificanceModel); }
 
     void addSummaryFeatures(FeatureList features) { this.summaryFeatures.add(features); }
-    void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
-    void addRankFeatures(FeatureList features) { this.rankFeatures.add(features); }
+    public void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
+    public void addRankFeatures(FeatureList features) { this.rankFeatures.add(features); }
 
     public void inherit(String other) { inherited.add(other); }
 
@@ -167,7 +167,7 @@ public class ParsedRankProfile extends ParsedBlock {
         this.ignoreDefaultRankFeatures = value;
     }
 
-    void setInheritedMatchFeatures(String other) {
+    public void setInheritedMatchFeatures(String other) {
         this.inheritedMatchFeatures = other;
     }
 
