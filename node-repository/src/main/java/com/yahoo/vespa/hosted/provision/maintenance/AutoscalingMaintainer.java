@@ -62,9 +62,6 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         int failures = 0;
         outer:
         for (var applicationNodes : activeNodesByApplication().entrySet()) {
-            boolean enabled = enabledFlag.with(Dimension.INSTANCE_ID,
-                                               applicationNodes.getKey().serializedForm()).value();
-            if (!enabled) continue;
             for (var clusterNodes : nodesByCluster(applicationNodes.getValue()).entrySet()) {
                 if (shuttingDown()) break outer;
                 attempts++;
@@ -82,6 +79,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
      */
     private boolean autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId) {
         boolean redeploy = false;
+        boolean enabled = enabledFlag.with(Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
         boolean enableDetailedLogging = enableDetailedLoggingFlag.with(Dimension.INSTANCE_ID, applicationId.serializedForm()).value();
         try (var lock = nodeRepository().applications().lock(applicationId)) {
             Optional<Application> application = nodeRepository().applications().get(applicationId);
@@ -99,7 +97,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             // Autoscale unless an autoscaling is already in progress
             Autoscaling autoscaling = null;
             if (cluster.target().resources().isEmpty() && !cluster.scalingInProgress()) {
-                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes, enableDetailedLogging);
+                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes, enabled, enableDetailedLogging);
                 if (autoscaling.isPresent() || cluster.target().isEmpty()) // Ignore empty from recently started servers
                     cluster = cluster.withTarget(autoscaling);
             }
