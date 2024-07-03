@@ -27,6 +27,7 @@ INJECT SchemaParser:
     import com.yahoo.schema.document.Case;
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;
+    import com.yahoo.schema.document.Sorting;
     import com.yahoo.tensor.TensorType;
 }
 
@@ -625,8 +626,8 @@ void fieldBodyElm(ParsedField field) : { }
     //   normalizing(field) |
     //   queryCommand(field) |
        rankElm(field) |
-    //   rankType(field) |
-    //   fieldSorting(field) |
+       rankTypeElm(field) |
+       fieldSorting(field) |
        structFieldElm(field) |
        summaryToElm(field) |
        weightElm(field) |
@@ -705,6 +706,22 @@ void weightedsetBody(ParsedType type) : { }
 ;
 
 /**
+ * This rule consumes a rank-type statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void rankTypeElm(ParsedField field) :
+{
+    String typeName;
+    String indexName = "";
+}
+    <RANK_TYPE> [indexName = identifierStr()] <COLON> typeName = identifierStr()
+    {
+        field.addRankType(indexName, typeName);
+    }
+;
+
+/**
  * This rule consumes an attribute statement of a field element.
  *
  * @param field The field to modify.
@@ -728,6 +745,13 @@ void attributeElm(ParsedField field) :
 ;
 
 /* pick up sorting in field block */
+void fieldSorting(ParsedField field) : { }
+
+    sortingElm(field.sortInfo())
+;
+
+
+/* pick up sorting in attribute block */
 void attributeSorting(ParsedAttribute attribute) : { }
 
     sortingElm(attribute.sortInfo())
@@ -737,8 +761,34 @@ void attributeSorting(ParsedAttribute attribute) : { }
 void sortingElm(ParsedSorting sort) : { }
 
     <SORTING>
-        //  ( (<COLON> sortingSetting(sort))
-        //    | (openLbrace() (sortingSetting(sort) (<NL>)*)* <RBRACE>) )
+          ( (<COLON> sortingSetting(sort))
+            | (openLbrace() (sortingSetting(sort) (<NL>)*)* <RBRACE>) )
+;
+
+
+
+void sortingSetting(ParsedSorting sorting) :
+{
+    String locale;
+}
+ 
+    (
+        <ASCENDING> { sorting.setAscending(); }
+      | <DESCENDING> { sorting.setDescending(); }
+      | <FUNCTION> <COLON> (
+                               <UCA>       { sorting.setFunction(Sorting.Function.UCA); }
+                             | <RAW>       { sorting.setFunction(Sorting.Function.RAW); }
+                             | <LOWERCASE> { sorting.setFunction(Sorting.Function.LOWERCASE); }
+                           )
+      | <STRENGTH> <COLON> (
+                               <PRIMARY>    { sorting.setStrength(Sorting.Strength.PRIMARY); }
+                             | <SECONDARY>  { sorting.setStrength(Sorting.Strength.SECONDARY); }
+                             | <TERTIARY>   { sorting.setStrength(Sorting.Strength.TERTIARY); }
+                             | <QUATERNARY> { sorting.setStrength(Sorting.Strength.QUATERNARY); }
+                             | <IDENTICAL>  { sorting.setStrength(Sorting.Strength.IDENTICAL); }
+                           )
+      | <LOCALE> <COLON> locale = identifierWithDashStr() { sorting.setLocale(locale); }
+    )
 ;
 
 /**

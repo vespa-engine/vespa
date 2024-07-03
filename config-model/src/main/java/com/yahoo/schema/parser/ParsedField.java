@@ -107,7 +107,7 @@ public class ParsedField extends ParsedBlock {
         fieldIndexes.put(idxName, index);
     }
 
-    void addRankType(String index, String rankType) {
+    public void addRankType(String index, String rankType) {
         rankTypes.put(index, rankType);
     }
 
@@ -133,7 +133,7 @@ public class ParsedField extends ParsedBlock {
         indexingOp = idxOp;
     }
 
-    ParsedSorting sortInfo() {
+    public ParsedSorting sortInfo() {
         if (sortSettings == null) sortSettings = new ParsedSorting(name(), "field.sorting");
         return this.sortSettings;
     }
