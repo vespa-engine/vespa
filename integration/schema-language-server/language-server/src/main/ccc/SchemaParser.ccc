@@ -576,9 +576,32 @@ void structFieldDefinition(ParsedStruct struct) :
     <FIELD> name = identifierStr <TYPE> type = dataType() {
         field = new ParsedField(name, type);
     }
-    // openLbrace (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE>
+    openLbrace (idElm(field) (<NL>)*)? (matchSettingsElm(field.matchSettings()) (<NL>)*)* <RBRACE>
     {
         struct.addField(field);
+    }
+;
+
+/**
+ * This rule consumes a struct subfield from a document field body. This is not to be confused with a document
+ * struct's fields, but rather this is a subfield of a document field of type struct.
+ *
+ * @param field    the field to modify
+ */
+void structFieldElm(ParsedField field) :
+{
+    String name;
+    ParsedField structField;
+}
+    <STRUCT_FIELD> name = identifierStr {
+        if (name != null && Schema.isReservedName(name.toLowerCase())) {
+            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+        }
+        structField = new ParsedField(name, null);
+    }
+    openLbrace() (structFieldBodyElm(structField) (<NL>)*)* <RBRACE>
+    { 
+        field.addStructField(structField); 
     }
 ;
 
@@ -604,11 +627,29 @@ void fieldBodyElm(ParsedField field) : { }
        rankElm(field) |
     //   rankType(field) |
     //   fieldSorting(field) |
-    //   structField(field) |
+       structFieldElm(field) |
     //   summaryTo(field) |
     //   weight(field) |
     //   weightedset(field.getType()) )
       weightElm(field)
+    )
+;
+
+/**
+ * This rule consumes a single element of a struct subfield body block.
+ * Only elements that are supported in streaming schema and indexed schema (with complex attributes) are allowed.
+ *
+ * @param field    the field being built
+ */
+void structFieldBodyElm(ParsedField field) : { }
+    ( /* summaryInField(field) | */
+     // indexing(field) |
+      attributeElm(field) |
+      matchSettingsElm(field.matchSettings()) |
+    //  queryCommand(field) |
+      rankElm(field) |
+      structFieldElm(field) // |
+    // summaryTo(field)
     )
 ;
 

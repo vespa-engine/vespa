@@ -142,7 +142,7 @@ public class ParsedField extends ParsedBlock {
         queryCommands.add(command);
     }
 
-    void addStructField(ParsedField structField) {
+    public void addStructField(ParsedField structField) {
         String fieldName = structField.name();
         verifyThat(! structFields.containsKey(fieldName), "already has struct-field", fieldName);
         structFields.put(fieldName, structField);
