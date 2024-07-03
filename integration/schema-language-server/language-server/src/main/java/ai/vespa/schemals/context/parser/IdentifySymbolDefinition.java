@@ -7,13 +7,15 @@ import java.util.HashSet;
 
 import org.eclipse.lsp4j.Diagnostic;
 
+import com.yahoo.schema.Schema;
+
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.SchemaNode;
 
-public class IdentifyIdentifier extends Identifier {
+public class IdentifySymbolDefinition extends Identifier {
 
     protected SchemaDocumentParser document;
     protected SchemaIndex schemaIndex;
@@ -40,7 +42,7 @@ public class IdentifyIdentifier extends Identifier {
         }});
     }};
 
-    public IdentifyIdentifier(PrintStream logger, SchemaDocumentParser document, SchemaIndex schemaIndex) {
+    public IdentifySymbolDefinition(PrintStream logger, SchemaDocumentParser document, SchemaIndex schemaIndex) {
         super(logger);
         this.document = document;
         this.schemaIndex = schemaIndex;
@@ -60,14 +62,24 @@ public class IdentifyIdentifier extends Identifier {
             parent.size() > 1
         ) {
             SchemaNode child = parent.get(1);
-            child.setUserDefinedIdentifier();
-            if (schemaIndex.findSymbol(document.getFileURI(), nodeType, child.getText()) == null) {
-                Symbol symbol = new Symbol(nodeType, child);
-                schemaIndex.insert(document.getFileURI(), symbol);
-            } else {
-                ret.add(new Diagnostic(child.getRange(), "Duplicate identifier"));
-            }
 
+            if (
+                nodeType == Token.TokenType.FIELD &&
+                Schema.isReservedName(child.getText().toLowerCase())
+            ) {
+                ret.add(new Diagnostic(child.getRange(), "Reserved name '" + child.getText() + "' can not be used as a field name."));
+            
+            } else {
+
+                child.setUserDefinedIdentifier();
+                if (schemaIndex.findSymbol(document.getFileURI(), nodeType, child.getText()) == null) {
+                    Symbol symbol = new Symbol(nodeType, child);
+                    schemaIndex.insert(document.getFileURI(), symbol);
+                } else {
+                    ret.add(new Diagnostic(child.getRange(), "Duplicate identifier"));
+                }
+
+            }
         }
 
         return ret;

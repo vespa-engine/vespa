@@ -43,6 +43,16 @@ public class CSTUtils {
         );
     }
 
+    public static Position addPositions(Position lhs, Position rhs) {
+        int line = lhs.getLine() + rhs.getLine();
+        int column = rhs.getCharacter();
+        if (rhs.getLine() == 0) {
+            column += lhs.getCharacter();
+        }
+
+        return new Position(line, column);
+    }
+
     /* Returns the last non-dirty node before the supplied position */
     public static SchemaNode getLastCleanNode(SchemaNode node, Position pos) {
         for (int i = node.size() - 1; i >= 0; i--) {

@@ -4,14 +4,73 @@ LEGACY_GLITCHY_LOOKAHEAD=true;
 FAULT_TOLERANT=true;
 
 INJECT SchemaParser:
-{
 
-    import com.yahoo.schema.parser.*;
+    import com.yahoo.schema.Schema;
+
+    import java.io.OutputStream;
+    import java.util.List;
+
+    import com.yahoo.schema.parser.ParsedAnnotation;
+    import com.yahoo.schema.parser.ParsedAttribute;
+    import com.yahoo.schema.parser.ParsedDocument;
+    import com.yahoo.schema.parser.ParsedDocumentSummary;
+    import com.yahoo.schema.parser.ParsedField;
+    import com.yahoo.schema.parser.ParsedFieldSet;
+    import com.yahoo.schema.parser.ParsedIndex;
+    import com.yahoo.schema.parser.ParsedIndexingOp;
+    import com.yahoo.schema.parser.ParsedMatchSettings;
+    import com.yahoo.schema.parser.ParsedRankFunction;
+    import com.yahoo.schema.parser.ParsedRankProfile;
+    import com.yahoo.schema.parser.ParsedSchema;
+    import com.yahoo.schema.parser.ParsedSorting;
+    import com.yahoo.schema.parser.ParsedStruct;
+    import com.yahoo.schema.parser.ParsedSummaryField;
+    import com.yahoo.schema.parser.ParsedType;
 
     import com.yahoo.schema.document.Case;
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;
     import com.yahoo.tensor.TensorType;
+
+    import com.yahoo.searchlib.rankingexpression.FeatureList;
+
+{
+
+    private PrintStream logger = new PrintStream(
+        new OutputStream() {
+            public void write(int b) {
+                return;
+            }
+        }
+    );
+
+    public SchemaParser(PrintStream logger, String inputSource, CharSequence content) {
+        this(inputSource, content);
+        this.logger = logger;
+    }
+
+    /**
+     * Parses the given token image as a ranking expression feature list.
+     *
+     * @param image The token image to parse.
+     * @return The consumed feature list.
+     * @throws ParseException Thrown if the image could not be parsed.
+     */
+    private FeatureList getFeatureList(String image, List<NonTerminalCall> callStack) throws ParseException {
+        logger.println(image);
+        try {
+            return new FeatureList(image);
+        }
+        catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
+            throw (ParseException) new ParseException(
+                "Could not parse feature list '" + lastConsumedToken.toString() + "' at " +
+                lastConsumedToken.getLocation(),
+                lastConsumedToken,
+                callStack
+            ).initCause(e);
+        }
+    }
+    
 }
 
 // --------------------------------------------------------------------------------
@@ -383,7 +442,6 @@ void fieldOutsideDoc(ParsedSchema schema) :
 
 /**
  * Consumes a field block
- * TODO: Reserved names
  */
 ParsedField fieldElm() :
 {
@@ -394,9 +452,6 @@ ParsedField fieldElm() :
 
     <FIELD> name = identifierStr <TYPE> type = dataType()
     {
-        // if (name != null && Schema.isReservedName(name.toLowerCase())) {
-        //     throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
-        // }
         field = new ParsedField(name, type);
     }
     openLbrace() ( fieldBodyElm(field) (<NL>)*)* <RBRACE>
@@ -562,10 +617,6 @@ void structFieldDefinition(ParsedStruct struct) :
 }
 
     <FIELD> name = identifierStr <TYPE> type = dataType() {
-//        if (name != null && Schema.isReservedName(name.toLowerCase())) {
-        if (name != null && false) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
-        }
         field = new ParsedField(name, type);
     }
     // openLbrace (id(field) (<NL>)*)? (matchSettings(field.matchSettings()) (<NL>)*)* <RBRACE>
@@ -801,13 +852,13 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
     //   | postFilterThreshold(profile)
     //   | approximateThreshold(profile)
     //   | targetHitsMaxAdjustmentFactor(profile)
-    //   | rankFeatures(profile)
+      | rankFeaturesElm(profile)
     //   | rankProperties(profile)
     //   | secondPhase(profile)
     //   | globalPhase(profile)
     //   | inputs(profile)
     //   | constants(schema, profile)
-    //   | matchFeatures(profile)
+      | matchFeaturesElm(profile)
     //   | summaryFeatures(profile)
     //   | onnxModelInProfile(profile)
     //   | strict(profile)
@@ -869,6 +920,45 @@ TensorType tensorTypeElm(String errorMessage) :
             throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
         }
         return tensorType;
+    }
+;
+
+/**
+ * Consumes a match-features block of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void matchFeaturesElm(ParsedRankProfile profile) :
+{
+    String features;
+}
+
+    ( <MATCHFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1).trim(); } |
+      <MATCHFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                                             lastConsumedToken.toString().lastIndexOf("}")).trim(); } |
+      <MATCHFEATURES_ML_INHERITS> {
+          int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
+          String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
+          profile.setInheritedMatchFeatures(rest.substring(0, rest.indexOf(" ")).trim());
+          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}")).trim();
+      }
+    )
+    {
+        profile.addMatchFeatures(getFeatureList(features, parsingStack));
+    }
+;
+
+/** Consumes a rank-features block of a rank profile */
+void rankFeaturesElm(ParsedRankProfile profile) :
+{
+    String features;
+}
+
+    ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1).trim(); } 
+      <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                                            lastConsumedToken.toString().lastIndexOf("}")).trim(); } )
+    {
+        profile.addRankFeatures(getFeatureList(features, parsingStack));
     }
 ;
 
