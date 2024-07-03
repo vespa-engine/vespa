@@ -88,6 +88,7 @@ public class SchemaDocumentParser {
         int offset = positionToOffset(pos);
 
         // Skip whitespace
+        // But not newline because newline is a token
         while (offset >= 0 && Character.isWhitespace(content.charAt(offset)))offset--;
 
         for (int i = offset; i >= 0; i--) {
@@ -135,36 +136,6 @@ public class SchemaDocumentParser {
         if (onlyLeaf)return null;
 
         return node;
-
-        /*
-        Integer lowerLimit = 0;
-        Integer upperLimit = node.size() - 1;
-
-        Integer currentSearch = (upperLimit + lowerLimit) / 2;
-
-        while (lowerLimit <= upperLimit) {
-            SchemaNode search = node.get(currentSearch);
-
-            if (CSTUtils.positionLT(pos, search.getRange().getEnd())) {
-
-                if (CSTUtils.positionInRange(search.getRange(), pos)) {
-                    return getNodeAtPosition(search, pos, onlyLeaf);
-                }
-
-                upperLimit = currentSearch - 1;
-            } else {
-                lowerLimit = currentSearch + 1;
-            }
-
-            currentSearch = (upperLimit + lowerLimit) / 2;
-        }
-
-        if (CSTUtils.positionInRange(node.getRange(), pos) && !onlyLeaf) {
-            return node;
-        }
-
-        return null;
-        */
     }
 
     private void parseContent() {
