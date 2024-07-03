@@ -31,7 +31,7 @@ vespalib::string get_doc_id(int id) {
     return "id:test:test::" + std::to_string(id);
 }
 
-vespalib::string src_cfg(vespalib::stringref prefix, vespalib::stringref suffix) {
+vespalib::string src_cfg(std::string_view prefix, std::string_view suffix) {
     return prefix + TEST_PATH("cfg") + suffix;
 }
 

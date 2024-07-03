@@ -56,7 +56,7 @@ AsyncInitializationPolicy::initSynchronous()
 namespace {
 
 mbus::Error
-currentPolicyInitError(vespalib::stringref error) {
+currentPolicyInitError(std::string_view error) {
     // If an init error has been recorded for the last init attempt, report
     // it back until we've managed to successfully complete the init step.
     if (error.empty()) {

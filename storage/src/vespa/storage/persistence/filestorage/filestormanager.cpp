@@ -249,7 +249,7 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
 
 void
 FileStorManager::replyDroppedOperation(api::StorageMessage& msg, const document::Bucket& bucket,
-                                       api::ReturnCode::Result returnCode, vespalib::stringref reason)
+                                       api::ReturnCode::Result returnCode, std::string_view reason)
 {
     std::ostringstream error;
     error << "Dropping " << msg.getType() << " to bucket "

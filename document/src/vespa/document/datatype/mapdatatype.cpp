@@ -56,11 +56,11 @@ MapDataType::equals(const DataType& other) const noexcept
 
 void
 MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
-                                vespalib::stringref remainFieldName,
+                                std::string_view remainFieldName,
                                 const DataType &keyType, const DataType &valueType)
 {
     if (!remainFieldName.empty() && remainFieldName[0] == '{') {
-        vespalib::stringref rest = remainFieldName;
+        std::string_view rest = remainFieldName;
         vespalib::string keyValue = FieldPathEntry::parseKey(rest);
 
         valueType.buildFieldPath(path, (rest[0] == '.') ? rest.substr(1) : rest);
@@ -96,7 +96,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
 }
 
 void
-MapDataType::onBuildFieldPath(FieldPath & fieldPath, vespalib::stringref remainFieldName) const
+MapDataType::onBuildFieldPath(FieldPath & fieldPath, std::string_view remainFieldName) const
 {
     buildFieldPathImpl(fieldPath, *this, remainFieldName, getKeyType(), getValueType());
 }

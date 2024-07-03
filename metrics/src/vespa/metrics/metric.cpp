@@ -43,11 +43,11 @@ namespace {
     std::regex name_pattern_regex(namePattern);
 }
 
-Tag::Tag(vespalib::stringref k)
+Tag::Tag(std::string_view k)
     : _key(NameRepo::tagKeyId(k)),
       _value(TagValueId::empty_handle)
 { }
-Tag::Tag(vespalib::stringref k, vespalib::stringref v)
+Tag::Tag(std::string_view k, std::string_view v)
     : _key(NameRepo::tagKeyId(k)),
       _value(NameRepo::tagValueId(v))
 { }

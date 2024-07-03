@@ -61,10 +61,10 @@
 #define VESPA_DEFINE_EXCEPTION(MyClass, Parent)                            \
 class MyClass : public Parent {                                            \
 public:                                                                    \
-    explicit MyClass(vespalib::stringref msg,                              \
-            vespalib::stringref location = "", int skipStack = 0);         \
-    MyClass(vespalib::stringref msg, const Exception &cause,               \
-            vespalib::stringref location = "", int skipStack = 0);         \
+    explicit MyClass(std::string_view msg,                              \
+            std::string_view location = "", int skipStack = 0);         \
+    MyClass(std::string_view msg, const Exception &cause,               \
+            std::string_view location = "", int skipStack = 0);         \
     MyClass(const MyClass &);                                              \
     MyClass & operator=(const MyClass &) = delete;                         \
     MyClass(MyClass &&) noexcept;                                          \
@@ -82,11 +82,11 @@ public:                                                                    \
  * @param MyClass the name of your class
  **/
 #define VESPA_IMPLEMENT_EXCEPTION(MyClass, Parent)                           \
-    MyClass::MyClass(vespalib::stringref msg,                                \
-            vespalib::stringref location, int skipStack)                     \
+    MyClass::MyClass(std::string_view msg,                                \
+            std::string_view location, int skipStack)                     \
         : Parent(msg, location, skipStack + 1) {}                            \
-    MyClass::MyClass(vespalib::stringref msg, const Exception &cause,        \
-            vespalib::stringref location, int skipStack)                     \
+    MyClass::MyClass(std::string_view msg, const Exception &cause,        \
+            std::string_view location, int skipStack)                     \
         : Parent(msg, cause, location, skipStack + 1) {}                     \
     MyClass::MyClass(const MyClass &) = default;                             \
     MyClass::MyClass(MyClass &&) noexcept = default;                         \

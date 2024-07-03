@@ -30,12 +30,12 @@ public:
         return tmp;
     }
 
-    static vespalib::stringref getString(document::ByteBuffer& buf) {
+    static std::string_view getString(document::ByteBuffer& buf) {
         uint32_t tmp;
         buf.getIntNetwork((int32_t&) tmp);
         const char * p = buf.getBufferAtPos();
         buf.incPos(tmp);
-        vespalib::stringref s(p, tmp);
+        std::string_view s(p, tmp);
         return s;
     }
 

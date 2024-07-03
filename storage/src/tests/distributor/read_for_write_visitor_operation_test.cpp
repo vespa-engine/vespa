@@ -215,7 +215,7 @@ TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_locks_bucket_with_random
     auto cmd = std::dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
     ASSERT_TRUE(cmd);
     EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
-                                       vespalib::stringref("not found :I")),
+                                       std::string_view("not found :I")),
               "fritjof");
 }
 

@@ -79,7 +79,7 @@ ClusterState::ClusterState(const vespalib::string& serialized)
             throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);
         }
         vespalib::string key = token.substr(0, index);
-        vespalib::stringref value = token.substr(index + 1);
+        std::string_view value = token.substr(index + 1);
         if (key.size() > 0 && key[0] == '.') {
             if (lastAbsolutePath == "") {
                 throw IllegalArgumentException("The first path in system state string needs to be absolute", VESPA_STRLOC);
@@ -100,7 +100,7 @@ ClusterState::ClusterState(const vespalib::string& serialized)
 }
 
 bool
-ClusterState::parse(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData) {
+ClusterState::parse(std::string_view key, std::string_view value, NodeData & nodeData) {
     switch (key[0]) {
     case 'c':
         if (key == "cluster") {
@@ -138,10 +138,10 @@ ClusterState::parse(vespalib::stringref key, vespalib::stringref value, NodeData
 }
 
 bool
-ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData) {
+ClusterState::parseSorD(std::string_view key, std::string_view value, NodeData & nodeData) {
     const NodeType* nodeType = nullptr;
     vespalib::string::size_type dot = key.find('.');
-    vespalib::stringref type(dot == vespalib::string::npos
+    std::string_view type(dot == vespalib::string::npos
                              ? key : key.substr(0, dot));
     if (type == "storage") {
         nodeType = &NodeType::STORAGE;
@@ -200,7 +200,7 @@ serialize_node(vespalib::asciistream & out, const Node & node, const NodeState &
     prefix << "." << node.getIndex() << ".";
     vespalib::asciistream ost;
     state.serialize(ost, prefix.str(), false);
-    vespalib::stringref content = ost.str();
+    std::string_view content = ost.str();
     if ( !content.empty()) {
         out << " " << content;
     }

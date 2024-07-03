@@ -25,7 +25,7 @@ public:
                         std::shared_ptr<const search::IDocumentMetaStoreContext> dmsContext,
                         std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler);
     virtual ~DocumentDBReference();
-    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(vespalib::stringref name) override;
+    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) override;
     virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const override;
     virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override;
     virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override;

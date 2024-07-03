@@ -31,10 +31,10 @@ class PrometheusWriter : public MetricVisitor {
     using I64OrDouble = std::variant<int64_t, double>;
     struct TimeSeriesSample {
         // All referenced strings shall be either arena-allocated or static
-        vespalib::ConstArrayRef<vespalib::stringref> metric_path;
-        vespalib::stringref                          aggr;
+        vespalib::ConstArrayRef<std::string_view> metric_path;
+        std::string_view                          aggr;
         // Labels are laid out in key/value pairs, that is size() is always % 2 == 0
-        vespalib::ConstArrayRef<vespalib::stringref> labels;
+        vespalib::ConstArrayRef<std::string_view> labels;
         I64OrDouble                                  value;
 
         bool operator<(const TimeSeriesSample& rhs) const noexcept;
@@ -43,25 +43,25 @@ class PrometheusWriter : public MetricVisitor {
     vespalib::Stash                         _arena;
     std::string                             _timestamp_str;
     std::vector<TimeSeriesSample>           _samples;
-    vespalib::hash_set<vespalib::stringref> _unique_str_refs;
-    std::vector<vespalib::stringref>        _path;
+    vespalib::hash_set<std::string_view> _unique_str_refs;
+    std::vector<std::string_view>        _path;
     vespalib::asciistream&                  _out;
 public:
     explicit PrometheusWriter(vespalib::asciistream& out);
     ~PrometheusWriter() override;
 
 private:
-    [[nodiscard]] vespalib::stringref arena_stable_string_ref(vespalib::stringref str);
-    [[nodiscard]] vespalib::ConstArrayRef<vespalib::stringref> as_prometheus_labels(const Metric& m);
-    [[nodiscard]] vespalib::ConstArrayRef<vespalib::stringref> metric_to_path_ref(vespalib::stringref leaf_metric_name);
-    [[nodiscard]] vespalib::stringref stable_name_string_ref(vespalib::stringref raw_name);
-    [[nodiscard]] vespalib::stringref stable_label_value_string_ref(vespalib::stringref raw_label_value);
-    void build_labels_upto_root(vespalib::SmallVector<vespalib::stringref, 16>& out, const Metric& m);
+    [[nodiscard]] std::string_view arena_stable_string_ref(std::string_view str);
+    [[nodiscard]] vespalib::ConstArrayRef<std::string_view> as_prometheus_labels(const Metric& m);
+    [[nodiscard]] vespalib::ConstArrayRef<std::string_view> metric_to_path_ref(std::string_view leaf_metric_name);
+    [[nodiscard]] std::string_view stable_name_string_ref(std::string_view raw_name);
+    [[nodiscard]] std::string_view stable_label_value_string_ref(std::string_view raw_label_value);
+    void build_labels_upto_root(vespalib::SmallVector<std::string_view, 16>& out, const Metric& m);
 
-    [[nodiscard]] static vespalib::string escaped_label_value(vespalib::stringref value);
+    [[nodiscard]] static vespalib::string escaped_label_value(std::string_view value);
     // Renders name with a tailing '_' character, as the caller is expected to append an aggregate.
-    static void render_path_as_metric_name_prefix(vespalib::asciistream& out, vespalib::ConstArrayRef<vespalib::stringref> path);
-    static void render_label_pairs(vespalib::asciistream& out, vespalib::ConstArrayRef<vespalib::stringref> labels);
+    static void render_path_as_metric_name_prefix(vespalib::asciistream& out, vespalib::ConstArrayRef<std::string_view> path);
+    static void render_label_pairs(vespalib::asciistream& out, vespalib::ConstArrayRef<std::string_view> labels);
     static void render_sample_value(vespalib::asciistream& out, I64OrDouble value);
 
     // MetricVisitor impl

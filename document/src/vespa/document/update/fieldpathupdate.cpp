@@ -24,7 +24,7 @@ using namespace fieldvalue;
 namespace {
 
 std::unique_ptr<select::Node>
-parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
+parseDocumentSelection(std::string_view query, const DocumentTypeRepo& repo)
 {
     BucketIdFactory factory;
     try {
@@ -115,13 +115,13 @@ FieldPathUpdate::getResultingDataType(const FieldPath & path) const
     return path.back().getDataType();
 }
 
-vespalib::stringref
+std::string_view
 FieldPathUpdate::getString(nbostream & stream)
 {
     uint32_t sz(0);
     stream >> sz;
 
-    vespalib::stringref s(stream.peek(), sz - 1);
+    std::string_view s(stream.peek(), sz - 1);
     stream.adjustReadPos(sz);
     return s;
 }

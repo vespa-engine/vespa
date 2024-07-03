@@ -52,25 +52,25 @@ private:
 
 public:
     CreateVisitorCommand(document::BucketSpace bucketSpace,
-                         vespalib::stringref libraryName,
-                         vespalib::stringref instanceId,
-                         vespalib::stringref docSelection);
+                         std::string_view libraryName,
+                         std::string_view instanceId,
+                         std::string_view docSelection);
 
     /** Create another command with similar visitor settings. */
     CreateVisitorCommand(const CreateVisitorCommand& template_);
     ~CreateVisitorCommand() override;
 
     void setVisitorCmdId(uint32_t id) { _visitorCmdId = id; }
-    void setControlDestination(vespalib::stringref d) { _controlDestination = d; }
-    void setDataDestination(vespalib::stringref d) { _dataDestination = d; }
+    void setControlDestination(std::string_view d) { _controlDestination = d; }
+    void setDataDestination(std::string_view d) { _dataDestination = d; }
     void setParameters(const vdslib::Parameters& params) { _params = params; }
     void setMaximumPendingReplyCount(uint32_t count) { _maxPendingReplyCount = count; }
-    void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
+    void setFieldSet(std::string_view fieldSet) { _fieldSet = fieldSet; }
     void setVisitRemoves(bool value = true) { _visitRemoves = value; }
     void setVisitInconsistentBuckets(bool visitInconsistent = true) { _visitInconsistentBuckets = visitInconsistent; }
     void addBucketToBeVisited(const document::BucketId& id) { _buckets.push_back(id); }
     void setVisitorId(const VisitorId id) { _visitorId = id; }
-    void setInstanceId(vespalib::stringref id) { _instanceId = id; }
+    void setInstanceId(std::string_view id) { _instanceId = id; }
     void setQueueTimeout(duration milliSecs) { _queueTimeout = milliSecs; }
     void setFromTime(Timestamp ts) { _fromTime = ts; }
     void setToTime(Timestamp ts) { _toTime = ts; }
@@ -147,7 +147,7 @@ private:
     vespalib::string  _instanceId;
 
 public:
-    explicit DestroyVisitorCommand(vespalib::stringref instanceId);
+    explicit DestroyVisitorCommand(std::string_view instanceId);
 
     const vespalib::string & getInstanceId() const { return _instanceId; }
 

@@ -23,7 +23,7 @@ namespace document {
 class LiteralFieldValueB : public FieldValue {
 public:
     using string = vespalib::string;
-    using stringref = vespalib::stringref;
+    using stringref = std::string_view;
     using UP = std::unique_ptr<LiteralFieldValueB>;
     using value_type = string;
 
@@ -64,7 +64,7 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     FieldValue& assign(const FieldValue&) override;
 
-    FieldValue& operator=(vespalib::stringref) override;
+    FieldValue& operator=(std::string_view) override;
 protected:
     void syncBacking() const __attribute__((noinline));
     void sync() const {

@@ -633,7 +633,7 @@ TwoPhaseUpdateOperation::hasTasCondition() const noexcept
 }
 
 void
-TwoPhaseUpdateOperation::replyWithTasFailure(DistributorStripeMessageSender& sender, vespalib::stringref message)
+TwoPhaseUpdateOperation::replyWithTasFailure(DistributorStripeMessageSender& sender, std::string_view message)
 {
     sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, message));
 }

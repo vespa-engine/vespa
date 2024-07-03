@@ -217,7 +217,7 @@ File::readAll() const
 }
 
 vespalib::string
-File::readAll(vespalib::stringref path)
+File::readAll(std::string_view path)
 {
     File file(path);
     file.open(File::READONLY);
@@ -240,7 +240,7 @@ File::sync()
 }
 
 void
-File::sync(vespalib::stringref path)
+File::sync(std::string_view path)
 {
     File file(path);
     file.open(READONLY);

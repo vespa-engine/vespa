@@ -105,7 +105,7 @@ RPCHooksBase::initRPC()
 }
 
 RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const config::ConfigUri & configUri,
-                             vespalib::stringref slobrokId, uint32_t transportThreads)
+                             std::string_view slobrokId, uint32_t transportThreads)
     : proton(parent),
       slobrok_config(configUri.createWithNewId(slobrokId)),
       identity(configUri.getConfigId()),

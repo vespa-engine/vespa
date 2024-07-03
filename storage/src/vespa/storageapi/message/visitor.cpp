@@ -16,9 +16,9 @@ IMPLEMENT_COMMAND(VisitorInfoCommand, VisitorInfoReply)
 IMPLEMENT_REPLY(VisitorInfoReply)
 
 CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
-                                           vespalib::stringref libraryName,
-                                           vespalib::stringref instanceId,
-                                           vespalib::stringref docSelection)
+                                           std::string_view libraryName,
+                                           std::string_view instanceId,
+                                           std::string_view docSelection)
     : StorageCommand(MessageType::VISITOR_CREATE),
       _bucketSpace(bucketSpace),
       _libName(libraryName),
@@ -146,7 +146,7 @@ CreateVisitorReply::print(std::ostream& out, bool verbose,
     }
 }
 
-DestroyVisitorCommand::DestroyVisitorCommand(vespalib::stringref instanceId)
+DestroyVisitorCommand::DestroyVisitorCommand(std::string_view instanceId)
     : StorageCommand(MessageType::VISITOR_DESTROY),
       _instanceId(instanceId)
 {

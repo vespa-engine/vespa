@@ -24,7 +24,7 @@ private:
 public:
     WordStore();
     ~WordStore();
-    vespalib::datastore::EntryRef addWord(const vespalib::stringref word);
+    vespalib::datastore::EntryRef addWord(const std::string_view word);
     const char *getWord(vespalib::datastore::EntryRef ref) const {
         RefType internalRef(ref);
         return _store.getEntryArray<char>(internalRef, buffer_array_size);

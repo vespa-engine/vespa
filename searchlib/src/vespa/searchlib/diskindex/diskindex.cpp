@@ -36,7 +36,7 @@ DiskIndex::LookupResult::LookupResult() noexcept
 }
 
 DiskIndex::Key::Key() noexcept = default;
-DiskIndex::Key::Key(IndexList indexes, vespalib::stringref word) noexcept :
+DiskIndex::Key::Key(IndexList indexes, std::string_view word) noexcept :
     _word(word),
     _indexes(std::move(indexes))
 {
@@ -193,7 +193,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
 }
 
 DiskIndex::LookupResult::UP
-DiskIndex::lookup(uint32_t index, vespalib::stringref word)
+DiskIndex::lookup(uint32_t index, std::string_view word)
 {
     /** Only used for testing */
     IndexList indexes;
@@ -246,7 +246,7 @@ unite(const DiskIndex::IndexList & indexes, const DiskIndex::LookupResultVector 
 }
 
 DiskIndex::LookupResultVector
-DiskIndex::lookup(const std::vector<uint32_t> & indexes, vespalib::stringref word)
+DiskIndex::lookup(const std::vector<uint32_t> & indexes, std::string_view word)
 {
     Key key(indexes, word);
     LookupResultVector result;

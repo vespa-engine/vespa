@@ -312,7 +312,7 @@ TEST_F(DocumentUpdateTest, testUpdateArray)
 }
 
 std::unique_ptr<ValueUpdate>
-createAddUpdate(vespalib::stringref key, int weight) {
+createAddUpdate(std::string_view key, int weight) {
     auto upd = std::make_unique<AddValueUpdate>(StringFieldValue::make(key));
     upd->setWeight(weight);
     return upd;

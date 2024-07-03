@@ -100,7 +100,7 @@ public:
      * is alive, no calls will be made towards the persistence provider.
      */
     virtual ResumeGuard pause() = 0;
-    void requestShutdown(vespalib::stringref reason) override;
+    void requestShutdown(std::string_view reason) override;
     DoneInitializeHandler& getDoneInitializeHandler() { return *this; }
 
     void configure(std::unique_ptr<StorServerConfig> config);

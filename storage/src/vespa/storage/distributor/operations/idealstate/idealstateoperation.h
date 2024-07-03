@@ -198,7 +198,7 @@ public:
     void setDetailedReason(std::string detailedReason) {
         _detailedReason = std::move(detailedReason);
     }
-    void setDetailedReason(vespalib::stringref detailedReason) {
+    void setDetailedReason(std::string_view detailedReason) {
         _detailedReason = std::string(detailedReason);
     }
 

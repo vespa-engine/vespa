@@ -18,7 +18,7 @@ namespace document {
 namespace {
 
 FieldSet::SP
-parseSpecialValues(vespalib::stringref name)
+parseSpecialValues(std::string_view name)
 {
     if ((name.size() == 4) && (name[1] == 'i') && (name[2] == 'd') && (name[3] == ']')) {
         return std::make_shared<DocIdOnly>();
@@ -39,8 +39,8 @@ parseSpecialValues(vespalib::stringref name)
 
 FieldSet::SP
 parseFieldCollection(const DocumentTypeRepo& repo,
-                     vespalib::stringref docType,
-                     vespalib::stringref fieldNames)
+                     std::string_view docType,
+                     std::string_view fieldNames)
 {
     const DocumentType* typePtr = repo.getDocumentType(docType);
     if (!typePtr) {
@@ -66,7 +66,7 @@ parseFieldCollection(const DocumentTypeRepo& repo,
 }
 
 FieldSet::SP
-FieldSetRepo::parse(const DocumentTypeRepo& repo, vespalib::stringref str)
+FieldSetRepo::parse(const DocumentTypeRepo& repo, std::string_view str)
 {
     if (str[0] == '[') {
         return parseSpecialValues(str);
@@ -143,7 +143,7 @@ FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
     }
 }
 FieldSet::SP
-FieldSetRepo::getFieldSet(vespalib::stringref fieldSetString) const {
+FieldSetRepo::getFieldSet(std::string_view fieldSetString) const {
     auto found = _configuredFieldSets.find(fieldSetString);
     if (found != _configuredFieldSets.end()) {
         return found->second;

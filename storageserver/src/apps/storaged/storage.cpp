@@ -34,7 +34,7 @@ namespace storage {
 
 namespace {
 
-Process::UP createProcess(vespalib::stringref configId) {
+Process::UP createProcess(std::string_view configId) {
     // FIXME: Rewrite parameter to config uri and pass when all subsequent configs are converted.
     config::ConfigUri uri(configId);
     std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());

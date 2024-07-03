@@ -631,7 +631,7 @@ TEST(PropertiesTest, test_integer_lookup)
 
 TEST(PropertiesTest, second_phase_rank_score_drop_limit)
 {
-    vespalib::stringref name = hitcollector::SecondPhaseRankScoreDropLimit::NAME;
+    std::string_view name = hitcollector::SecondPhaseRankScoreDropLimit::NAME;
     EXPECT_EQ(vespalib::string("vespa.hitcollector.secondphase.rankscoredroplimit"), name);
     Properties p;
     EXPECT_EQ(std::optional<search::feature_t>(), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p));

@@ -84,7 +84,7 @@ print(std::ostream& out, bool, const std::string&) const
 }
 
 FieldValue&
-LiteralFieldValueB::operator=(vespalib::stringref value)
+LiteralFieldValueB::operator=(std::string_view value)
 {
     setValue(value);
     return *this;

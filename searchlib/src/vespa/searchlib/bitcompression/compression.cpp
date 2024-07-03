@@ -271,7 +271,7 @@ FeatureEncodeContext<bigEndian>::writeBytes(vespalib::ConstArrayRef<char> buf)
 template <bool bigEndian>
 void
 FeatureEncodeContext<bigEndian>::
-writeString(vespalib::stringref buf)
+writeString(std::string_view buf)
 {
     size_t len = buf.size();
     for (unsigned int i = 0; i < len; ++i) {

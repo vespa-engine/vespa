@@ -21,7 +21,7 @@ class PredicateQueryTerm {
         uint64_t _sub_query_bitmap;
 
     public:
-        Entry(vespalib::stringref key, const ValueType &value,
+        Entry(std::string_view key, const ValueType &value,
               uint64_t sub_query_bitmap = ALL_SUB_QUERIES) noexcept
             : _key(key), _value(value), _sub_query_bitmap(sub_query_bitmap) {}
 
@@ -43,12 +43,12 @@ public:
 
     PredicateQueryTerm() noexcept : _features(), _range_features() {}
 
-    void addFeature(vespalib::stringref key, vespalib::stringref value,
+    void addFeature(std::string_view key, std::string_view value,
                     uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
         _features.emplace_back(key, value, sub_query_bitmask);
     }
 
-    void addRangeFeature(vespalib::stringref key, uint64_t value,
+    void addRangeFeature(std::string_view key, uint64_t value,
                          uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
         _range_features.emplace_back(key, value, sub_query_bitmask);
     }

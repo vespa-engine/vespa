@@ -168,7 +168,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
                   search::engine::Trace      & root_trace,
-                  vespalib::stringref          queryStack,
+                  std::string_view          queryStack,
                   const vespalib::string     & location,
                   const ViewResolver         & viewResolver,
                   const IDocumentMetaStore   & metaStore,
@@ -273,7 +273,7 @@ MatchToolsFactory::createDiversifier(uint32_t heapSize) const
 }
 
 std::unique_ptr<AttributeOperationTask>
-MatchToolsFactory::createTask(vespalib::stringref attribute, vespalib::stringref operation) const {
+MatchToolsFactory::createTask(std::string_view attribute, std::string_view operation) const {
     return (!attribute.empty() && ! operation.empty())
            ? std::make_unique<AttributeOperationTask>(_requestContext, attribute, operation)
            : std::unique_ptr<AttributeOperationTask>();
@@ -364,7 +364,7 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,
-                                               vespalib::stringref attribute, vespalib::stringref operation)
+                                               std::string_view attribute, std::string_view operation)
     : _requestContext(requestContext),
       _attribute(attribute),
       _operation(operation)

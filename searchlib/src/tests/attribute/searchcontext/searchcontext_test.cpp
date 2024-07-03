@@ -449,7 +449,7 @@ SearchContextTest::getSearch(const V & vec, const T & term, TermType termType)
     buildTermQuery(query, vec.getName(), ss.str(), termType);
 
     return (dynamic_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(&query[0], query.size()),
+        getSearch(std::string_view(&query[0], query.size()),
                   attribute::SearchContextParams());
 }
 

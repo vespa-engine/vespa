@@ -21,7 +21,7 @@ struct ComponentRegister {
     virtual ~ComponentRegister() {}
 
     virtual void registerComponent(ManagedComponent&) = 0;
-    virtual void requestShutdown(vespalib::stringref reason) = 0;
+    virtual void requestShutdown(std::string_view reason) = 0;
 };
 
 }

@@ -40,9 +40,9 @@ private:
     /** The arity of the current item */
     uint32_t _currArity;
     /** The index name (field name) in the current item */
-    vespalib::stringref _curr_index_name;
+    std::string_view _curr_index_name;
     /** The term in the current item */
-    vespalib::stringref _curr_term;
+    std::string_view _curr_term;
     int64_t             _curr_integer_term;
 
     /* extra arguments */
@@ -55,7 +55,7 @@ private:
     std::unique_ptr<query::PredicateQueryTerm> _predicate_query_term;
     std::unique_ptr<query::TermVector>         _terms;
 
-    VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
+    VESPA_DLL_LOCAL std::string_view read_stringref(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
     VESPA_DLL_LOCAL int64_t readCompressedInt(const char *&p);
     template <typename T>
@@ -71,12 +71,12 @@ public:
     /**
      * Make an iterator on a buffer. To get the first item, next must be called.
      */
-    explicit SimpleQueryStackDumpIterator(vespalib::stringref buf);
+    explicit SimpleQueryStackDumpIterator(std::string_view buf);
     SimpleQueryStackDumpIterator(const SimpleQueryStackDumpIterator &) = delete;
     SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &) = delete;
     ~SimpleQueryStackDumpIterator();
 
-    vespalib::stringref getStack() const noexcept { return vespalib::stringref(_buf, _bufEnd - _buf); }
+    std::string_view getStack() const noexcept { return std::string_view(_buf, _bufEnd - _buf); }
     size_t getPosition() const noexcept { return _currPos; }
 
     /**
@@ -143,11 +143,11 @@ public:
     std::unique_ptr<query::PredicateQueryTerm> getPredicateQueryTerm();
     std::unique_ptr<query::TermVector> get_terms();
 
-    vespalib::stringref getIndexName() const noexcept { return _curr_index_name; }
-    vespalib::stringref getTerm() const noexcept { return _curr_term; }
+    std::string_view getIndexName() const noexcept { return _curr_index_name; }
+    std::string_view getTerm() const noexcept { return _curr_term; }
     int64_t getIntegerTerm() const noexcept { return _curr_integer_term; }
 
-    static vespalib::stringref DEFAULT_INDEX;
+    static std::string_view DEFAULT_INDEX;
 };
 
 }

@@ -11,7 +11,7 @@ LOG_SETUP(".document.datatype.document");
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
-using vespalib::stringref;
+using std::string_view;
 
 
 namespace document {
@@ -37,7 +37,7 @@ DocumentType::FieldSet::FieldSet(const vespalib::string & name, Fields fields,
       _field_collection(build_field_collection(fields, doc_type))
 {}
 
-DocumentType::DocumentType(stringref name, int32_t id)
+DocumentType::DocumentType(string_view name, int32_t id)
     : StructuredDataType(name, id),
       _inheritedTypes(),
       _ownedFields(std::make_shared<StructDataType>(name + ".header")),
@@ -50,7 +50,7 @@ DocumentType::DocumentType(stringref name, int32_t id)
     }
 }
 
-DocumentType::DocumentType(stringref name, int32_t id, const StructDataType& fields)
+DocumentType::DocumentType(string_view name, int32_t id, const StructDataType& fields)
     : StructuredDataType(name, id),
       _inheritedTypes(),
       _fields(&fields),
@@ -62,7 +62,7 @@ DocumentType::DocumentType(stringref name, int32_t id, const StructDataType& fie
     }
 }
 
-DocumentType::DocumentType(stringref name)
+DocumentType::DocumentType(string_view name)
     : StructuredDataType(name),
       _inheritedTypes(),
       _ownedFields(std::make_shared<StructDataType>(name + ".header")),
@@ -75,7 +75,7 @@ DocumentType::DocumentType(stringref name)
     }
 }
 
-DocumentType::DocumentType(stringref name, const StructDataType& fields)
+DocumentType::DocumentType(string_view name, const StructDataType& fields)
     : StructuredDataType(name),
       _inheritedTypes(),
       _fields(&fields),
@@ -223,7 +223,7 @@ DocumentType::equals(const DataType& other) const noexcept
 }
 
 const Field&
-DocumentType::getField(stringref name) const
+DocumentType::getField(string_view name) const
 {
     return _fields->getField(name);
 }

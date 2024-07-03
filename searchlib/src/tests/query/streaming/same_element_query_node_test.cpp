@@ -33,8 +33,8 @@ namespace {
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
-    explicit AllowRewrite(vespalib::stringref index) noexcept : _allowedIndex(index) {}
-    bool allow_float_terms_rewrite(vespalib::stringref index) const noexcept override { return index == _allowedIndex; }
+    explicit AllowRewrite(std::string_view index) noexcept : _allowedIndex(index) {}
+    bool allow_float_terms_rewrite(std::string_view index) const noexcept override { return index == _allowedIndex; }
 private:
     vespalib::string _allowedIndex;
 };
@@ -44,7 +44,7 @@ private:
 TEST(SameElementQueryNodeTest, a_unhandled_sameElement_stack)
 {
     const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
-    vespalib::stringref stackDump(stack);
+    std::string_view stackDump(stack);
     EXPECT_EQ(85u, stackDump.size());
     AllowRewrite empty("");
     const Query q(empty, stackDump);

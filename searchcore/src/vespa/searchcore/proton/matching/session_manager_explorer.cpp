@@ -51,7 +51,7 @@ SessionManagerExplorer::get_children_names() const
 }
 
 std::unique_ptr<StateExplorer>
-SessionManagerExplorer::get_child(vespalib::stringref name) const
+SessionManagerExplorer::get_child(std::string_view name) const
 {
     if (name == SEARCH) {
         return std::make_unique<SearchSessionExplorer>(_manager);

@@ -19,7 +19,7 @@ extract_prefix(std::string_view target, uint32_t prefix_size, bool cased)
 {
     std::vector<uint32_t> result;
     result.reserve(prefix_size);
-    Utf8Reader reader(vespalib::stringref(target.data(), target.size()));
+    Utf8Reader reader(std::string_view(target.data(), target.size()));
     for (size_t pos = 0; pos < prefix_size && reader.hasMore(); ++pos) {
         uint32_t code_point = reader.getChar();
         if (!cased) {
@@ -33,7 +33,7 @@ extract_prefix(std::string_view target, uint32_t prefix_size, bool cased)
 std::string_view
 extract_suffix(std::string_view target, uint32_t prefix_size)
 {
-    Utf8Reader reader(vespalib::stringref(target.data(), target.size()));
+    Utf8Reader reader(std::string_view(target.data(), target.size()));
     for (size_t pos = 0; pos < prefix_size && reader.hasMore(); ++pos) {
         (void) reader.getChar();
     }

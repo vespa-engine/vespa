@@ -105,7 +105,7 @@ Trace::start(int level, bool useUTC) {
 Trace::~Trace() = default;
 
 Trace::Cursor &
-Trace::createCursor(vespalib::stringref name) {
+Trace::createCursor(std::string_view name) {
     Cursor & trace = traces().addObject();
     addTimeStamp(trace);
     trace.setString("tag", name);
@@ -113,12 +113,12 @@ Trace::createCursor(vespalib::stringref name) {
 }
 
 Trace::Cursor *
-Trace::maybeCreateCursor(uint32_t level, vespalib::stringref name) {
+Trace::maybeCreateCursor(uint32_t level, std::string_view name) {
     return shouldTrace(level) ? & createCursor(name) : nullptr;
 }
 
 void
-Trace::addEvent(uint32_t level, vespalib::stringref event) {
+Trace::addEvent(uint32_t level, std::string_view event) {
     if (!shouldTrace(level)) { return; }
 
     Cursor & trace = traces().addObject();

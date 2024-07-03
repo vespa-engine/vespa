@@ -38,7 +38,7 @@ using vespalib::slime::Inspector;
 using vespalib::slime::SlimeInserter;
 using vespalib::make_string_short::fmt;
 using vespalib::normalize_class_name;
-using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
+using Path = std::vector<std::variant<size_t,std::string_view>>;
 
 vespalib::string strict_equiv_name = "search::queryeval::EquivImpl<true, search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char> >";
 
@@ -527,7 +527,7 @@ vespalib::string path_to_str(const Path &path) {
         }
         std::visit(vespalib::overload{
                 [&str](size_t value)noexcept{ str.append(fmt("%zu", value)); },
-                [&str](vespalib::stringref value)noexcept{ str.append(value); }}, item);
+                [&str](std::string_view value)noexcept{ str.append(value); }}, item);
     }
     str.append("]");
     return str;
@@ -544,8 +544,8 @@ vespalib::string to_str(const Inspector &value) {
 
 void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
     auto cmp_hook = [expect_eq](const auto &path, const auto &a, const auto &b) {
-                        if (!path.empty() && std::holds_alternative<vespalib::stringref>(path.back())) {
-                            vespalib::stringref field = std::get<vespalib::stringref>(path.back());
+                        if (!path.empty() && std::holds_alternative<std::string_view>(path.back())) {
+                            std::string_view field = std::get<std::string_view>(path.back());
                             // ignore these fields to enable comparing optimized with unoptimized trees
                             if (field == "relative_estimate" || field == "cost" || field == "strict_cost") {
                                 auto check_value = [&](double value){

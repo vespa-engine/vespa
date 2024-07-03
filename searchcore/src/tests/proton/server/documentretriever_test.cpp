@@ -148,7 +148,7 @@ const int64_t static_zcurve_value = 1118035438880ll;
 const int64_t dynamic_zcurve_value = 6145423666930817152ll;
 const TensorDataType tensorDataType(ValueType::from_spec(tensor_spec));
 
-std::vector<char> as_vector(vespalib::stringref value) {
+std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
 }
 

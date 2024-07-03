@@ -8,8 +8,8 @@ using search::streaming::QueryTermList;
 namespace vsm {
 
 namespace {
-vespalib::stringref TRUE = "true";
-vespalib::stringref FALSE = "false";
+std::string_view TRUE = "true";
+std::string_view FALSE = "false";
 }
 
 std::unique_ptr<FieldSearcher>

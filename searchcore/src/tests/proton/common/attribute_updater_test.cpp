@@ -64,7 +64,7 @@ using vespalib::eval::ValueType;
 
 namespace {
 
-std::vector<char> as_vector(vespalib::stringref value) {
+std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
 }
 
@@ -165,7 +165,7 @@ check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values)
     return true;
 }
 
-GlobalId toGid(vespalib::stringref docId) {
+GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
@@ -182,7 +182,7 @@ void assertNoRef(AttributeVector &vec, uint32_t doc)
     EXPECT_TRUE(asReferenceAttribute(vec).getReference(doc) == nullptr);
 }
 
-void assertRef(AttributeVector &vec, vespalib::stringref str, uint32_t doc) {
+void assertRef(AttributeVector &vec, std::string_view str, uint32_t doc) {
     const Reference *ref = asReferenceAttribute(vec).getReference(doc);
     EXPECT_TRUE(ref != nullptr);
     const GlobalId &gid = ref->gid();

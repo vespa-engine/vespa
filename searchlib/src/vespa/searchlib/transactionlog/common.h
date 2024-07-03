@@ -90,7 +90,7 @@ private:
     vespalib::nbostream_longlivedbuf  _buf;
 };
 
-int makeDirectory(vespalib::stringref dir);
+int makeDirectory(std::string_view dir);
 
 class Writer {
 public:

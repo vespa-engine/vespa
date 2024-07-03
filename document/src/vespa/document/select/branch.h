@@ -19,8 +19,8 @@ namespace document::select {
 class Branch : public Node
 {
 public:
-    explicit Branch(vespalib::stringref name) : Node(name) {}
-    Branch(vespalib::stringref name, uint32_t max_depth) : Node(name, max_depth) {}
+    explicit Branch(std::string_view name) : Node(name) {}
+    Branch(std::string_view name, uint32_t max_depth) : Node(name, max_depth) {}
 
     bool isLeafNode() const override { return false; }
 };

@@ -20,7 +20,7 @@ public:
     using const_iterator = AnnotationVector::const_iterator;
 
     template <typename T>
-    SpanTree(vespalib::stringref name, std::unique_ptr<T> root)
+    SpanTree(std::string_view name, std::unique_ptr<T> root)
         : _name(name),
           _root(std::move(root)) {
     }

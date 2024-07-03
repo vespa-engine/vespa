@@ -95,7 +95,7 @@ void ensure_openssl_initialized_once() {
     (void) openssl_resources;
 }
 
-BioPtr bio_from_string(vespalib::stringref str) {
+BioPtr bio_from_string(std::string_view str) {
     LOG_ASSERT(str.size() <= INT_MAX);
 #if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
     BioPtr bio(::BIO_new_mem_buf(str.data(), static_cast<int>(str.size())));
@@ -234,7 +234,7 @@ OpenSslTlsContextImpl::~OpenSslTlsContextImpl() {
     }
 }
 
-void OpenSslTlsContextImpl::add_certificate_authorities(vespalib::stringref ca_pem) {
+void OpenSslTlsContextImpl::add_certificate_authorities(std::string_view ca_pem) {
     auto bio = bio_from_string(ca_pem);
     ::X509_STORE* cert_store = ::SSL_CTX_get_cert_store(_ctx.get()); // Internal pointer, not owned by us.
     while (true) {
@@ -248,7 +248,7 @@ void OpenSslTlsContextImpl::add_certificate_authorities(vespalib::stringref ca_p
     }
 }
 
-void OpenSslTlsContextImpl::add_certificate_chain(vespalib::stringref chain_pem) {
+void OpenSslTlsContextImpl::add_certificate_chain(std::string_view chain_pem) {
     auto bio = bio_from_string(chain_pem);
     // First certificate in the chain is the node's own (trusted) certificate.
     auto own_cert = read_trusted_x509_from_bio(*bio);
@@ -273,7 +273,7 @@ void OpenSslTlsContextImpl::add_certificate_chain(vespalib::stringref chain_pem)
     }
 }
 
-void OpenSslTlsContextImpl::use_private_key(vespalib::stringref key_pem) {
+void OpenSslTlsContextImpl::use_private_key(std::string_view key_pem) {
     auto bio = bio_from_string(key_pem);
     EvpPkeyPtr key(::PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, empty_passphrase()));
     if (!key) {

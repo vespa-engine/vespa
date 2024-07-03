@@ -15,7 +15,7 @@ void strip_cr(vespalib::string &str) {
     }
 }
 
-std::vector<vespalib::string> split(vespalib::stringref str, char sep) {
+std::vector<vespalib::string> split(std::string_view str, char sep) {
     vespalib::string token;
     std::vector<vespalib::string> list;
     for (char c: str) {
@@ -45,7 +45,7 @@ int decode_hex_digit(char c) {
     return -1;
 }
 
-int decode_hex_num(vespalib::stringref src, size_t idx) {
+int decode_hex_num(std::string_view src, size_t idx) {
     if (src.size() < (idx + 2)) {
         return -1;
     }
@@ -57,7 +57,7 @@ int decode_hex_num(vespalib::stringref src, size_t idx) {
     return ((a << 4) | b);
 }
 
-vespalib::string dequote(vespalib::stringref src) {
+vespalib::string dequote(std::string_view src) {
     vespalib::string dst;
     for (size_t idx = 0; idx < src.size(); ++idx) {
         char c = src[idx];

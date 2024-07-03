@@ -56,7 +56,7 @@ using vespalib::string;
 
 namespace {
 
-vespalib::stringref
+std::string_view
 extract_search_cluster(const vdslib::Parameters& params)
 {
     Parameters::ValueRef searchCluster;
@@ -66,7 +66,7 @@ extract_search_cluster(const vdslib::Parameters& params)
     return searchCluster;
 }
 
-vespalib::stringref
+std::string_view
 extract_schema(const vdslib::Parameters& params)
 {
     Parameters::ValueRef schema;
@@ -211,7 +211,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator(const search::IAttributeManage
 SearchVisitor::SummaryGenerator::~SummaryGenerator() = default;
 
 SearchVisitor::StreamingDocsumsState&
-SearchVisitor::SummaryGenerator::get_streaming_docsums_state(vespalib::stringref summary_class) {
+SearchVisitor::SummaryGenerator::get_streaming_docsums_state(std::string_view summary_class) {
     auto itr = _docsum_states.find(summary_class);
     if (itr != _docsum_states.end()) {
         return *itr->second;
@@ -243,7 +243,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(vespalib::stringref
 }
 
 vespalib::ConstBufferRef
-SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, vespalib::stringref summaryClass)
+SearchVisitor::SummaryGenerator::fillSummary(AttributeVector::DocId lid, std::string_view summaryClass)
 {
     if (_docsumWriter != nullptr) {
         vespalib::Slime slime;
@@ -338,7 +338,7 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
 }
 
 bool
-SearchVisitor::is_text_matching(vespalib::stringref index) const noexcept {
+SearchVisitor::is_text_matching(std::string_view index) const noexcept {
     StringFieldIdTMap fieldIdMap;
     _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
     return std::any_of(fieldIdMap.map().begin(), fieldIdMap.map().end(),[&specMap=_fieldSearchSpecMap.specMap()](const auto & fieldId) {
@@ -376,7 +376,7 @@ count_normalize_none(const vsm::FieldSearchSpecMapT & specMap, const StringField
 }
 
 search::Normalizing
-SearchVisitor::normalizing_mode(vespalib::stringref index) const noexcept {
+SearchVisitor::normalizing_mode(std::string_view index) const noexcept {
     StringFieldIdTMap fieldIdMap;
     _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
     if (count_normalize_none(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) return Normalizing::NONE;
@@ -411,9 +411,9 @@ SearchVisitor::init(const Parameters & params)
     }
     _queryResult->getSearchResult().setWantedHitCount(wantedSummaryCount);
 
-    vespalib::stringref sortRef;
+    std::string_view sortRef;
     bool hasSortSpec = params.lookup("sort", sortRef);
-    vespalib::stringref groupingRef;
+    std::string_view groupingRef;
     bool hasGrouping = params.lookup("aggregation", groupingRef);
 
     if (params.lookup("rankprofile", valueRef) ) {
@@ -465,8 +465,8 @@ SearchVisitor::init(const Parameters & params)
                     for (uint32_t j = 0; j < prop.size(); ++j) {
                         LOG(debug, "Hightligthterms[%u][%u]: key '%s' -> value '%s'",
                             i, j, string(prop.key(j)).c_str(), string(prop.value(j)).c_str());
-                        vespalib::stringref index = prop.key(j);
-                        vespalib::stringref term = prop.value(j);
+                        std::string_view index = prop.key(j);
+                        std::string_view term = prop.value(j);
                         vespalib::string norm_term = QueryNormalization::optional_fold(term, search::TermType::WORD, normalizing_mode(index));
                         _summaryGenerator.highlightTerms().add(index, norm_term);
                     }
@@ -505,7 +505,7 @@ SearchVisitor::init(const Parameters & params)
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
             QueryTermDataFactory addOnFactory(this);
-            _query = Query(addOnFactory, vespalib::stringref(queryBlob.data(), queryBlob.size()));
+            _query = Query(addOnFactory, std::string_view(queryBlob.data(), queryBlob.size()));
             _searchBuffer->reserve(0x10000);
 
             int stackCount = 0;
@@ -1188,7 +1188,7 @@ SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const S
         LOG(debug, "Filling attribute '%s',  isPosition='%s'", finfoGuard->getName().c_str(), isPosition ? "true" : "false");
         uint32_t fieldId = finfo._field;
         if (isPosition) {
-            vespalib::stringref org = PositionDataType::cutZCurveFieldName(finfoGuard->getName());
+            std::string_view org = PositionDataType::cutZCurveFieldName(finfoGuard->getName());
             fieldId = _fieldsUnion.find(org)->second;
         }
         const StorageDocument::SubDocument & subDoc = document.getComplexField(fieldId);

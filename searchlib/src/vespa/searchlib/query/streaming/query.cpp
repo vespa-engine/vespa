@@ -158,7 +158,7 @@ RankWithQueryNode::evaluate() const {
 
 Query::Query() = default;
 
-Query::Query(const QueryNodeResultFactory & factory, vespalib::stringref queryRep)
+Query::Query(const QueryNodeResultFactory & factory, std::string_view queryRep)
     : _root()
 {
     build(factory, queryRep);
@@ -170,7 +170,7 @@ Query::evaluate() const {
 }
 
 bool
-Query::build(const QueryNodeResultFactory & factory, vespalib::stringref queryRep)
+Query::build(const QueryNodeResultFactory & factory, std::string_view queryRep)
 {
     search::SimpleQueryStackDumpIterator stack(queryRep);
     if (stack.next()) {

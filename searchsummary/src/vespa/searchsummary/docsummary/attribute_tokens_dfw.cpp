@@ -36,7 +36,7 @@ make_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
 }
 
 void
-insert_value(vespalib::stringref value, Inserter& inserter, vespalib::string& scratch, bool lowercase)
+insert_value(std::string_view value, Inserter& inserter, vespalib::string& scratch, bool lowercase)
 {
     Cursor& arr = inserter.insertArray(1);
     ArrayInserter ai(arr);
@@ -118,7 +118,7 @@ void
 SingleAttributeTokensDFWState::insertField(uint32_t docid, Inserter& target)
 {
     auto s = _attr.get_raw(docid);
-    insert_value(vespalib::stringref(s.data(), s.size()), target, _lowercase_scratch, _lowercase);
+    insert_value(std::string_view(s.data(), s.size()), target, _lowercase_scratch, _lowercase);
 }
 
 DocsumFieldWriterState*

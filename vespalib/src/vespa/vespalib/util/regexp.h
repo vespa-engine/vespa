@@ -21,7 +21,7 @@ public:
      * @param re Regular expression.
      * @return prefix that must be present in matching strings
      **/
-    static vespalib::string get_prefix(vespalib::stringref re);
+    static vespalib::string get_prefix(std::string_view re);
 
     /**
      * Make a regexp matching strings with the given suffix.
@@ -29,7 +29,7 @@ public:
      * @param suffix the suffix
      * @return the regexp
      **/
-    static vespalib::string make_from_suffix(vespalib::stringref suffix);
+    static vespalib::string make_from_suffix(std::string_view suffix);
 
     /**
      * Make a regexp matching strings with the given substring.
@@ -37,7 +37,7 @@ public:
      * @param substring the substring
      * @return the regexp
      **/
-    static vespalib::string make_from_substring(vespalib::stringref substring);
+    static vespalib::string make_from_substring(std::string_view substring);
 };
 
 } // namespace vespalib

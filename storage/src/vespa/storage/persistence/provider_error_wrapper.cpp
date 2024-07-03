@@ -29,14 +29,14 @@ ProviderErrorWrapper::handle(const spi::Result & result) const {
     }
 }
 
-void ProviderErrorWrapper::trigger_shutdown_listeners(vespalib::stringref reason) const {
+void ProviderErrorWrapper::trigger_shutdown_listeners(std::string_view reason) const {
     std::lock_guard<std::mutex> guard(_mutex);
     for (auto& listener : _listeners) {
         listener->on_fatal_error(reason);
     }
 }
 
-void ProviderErrorWrapper::trigger_resource_exhaustion_listeners(vespalib::stringref reason) const {
+void ProviderErrorWrapper::trigger_resource_exhaustion_listeners(std::string_view reason) const {
     std::lock_guard<std::mutex> guard(_mutex);
     for (auto& listener : _listeners) {
         listener->on_resource_exhaustion_error(reason);

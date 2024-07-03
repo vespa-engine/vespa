@@ -101,7 +101,7 @@ class Component : private ManagedComponent
 public:
     using UP = std::unique_ptr<Component>;
 
-    Component(ComponentRegister&, vespalib::stringref name);
+    Component(ComponentRegister&, std::string_view name);
     ~Component() override;
 
     /**
@@ -157,7 +157,7 @@ public:
                                         int ticksBeforeWait = 1,
                                         std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt) const;
 
-    void requestShutdown(vespalib::stringref reason);
+    void requestShutdown(std::string_view reason);
 
 };
 

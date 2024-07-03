@@ -35,7 +35,7 @@ NodeState::NodeState()
 }
 
 NodeState::NodeState(const NodeType& type, const State& state,
-                     vespalib::stringref description, double capacity)
+                     std::string_view description, double capacity)
     : _type(&type),
       _state(nullptr),
       _description(description),
@@ -50,7 +50,7 @@ NodeState::NodeState(const NodeType& type, const State& state,
     }
 }
 
-NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
+NodeState::NodeState(std::string_view serialized, const NodeType* type)
     : _type(type),
       _state(&State::UP),
       _description(),
@@ -148,7 +148,7 @@ namespace {
 }
 
 void
-NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
+NodeState::serialize(vespalib::asciistream & out, std::string_view prefix,
                      bool includeDescription) const
 {
     SeparatorPrinter sep;

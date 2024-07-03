@@ -79,7 +79,7 @@ BoolFieldValue::getAsString() const {
 }
 
 BoolFieldValue&
-BoolFieldValue::operator=(vespalib::stringref v) {
+BoolFieldValue::operator=(std::string_view v) {
     _value = (v == "true");
     return *this;
 }

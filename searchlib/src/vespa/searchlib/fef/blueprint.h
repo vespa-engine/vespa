@@ -75,7 +75,7 @@ protected:
      * class. The @ref setup method is used to tailor a blueprint
      * object for a specific set of parameters.
      **/
-    explicit Blueprint(vespalib::stringref baseName);
+    explicit Blueprint(std::string_view baseName);
 
     using IAttributeVector = attribute::IAttributeVector;
     /**
@@ -89,7 +89,7 @@ protected:
      * @param inName feature name of input
      * @param type accepted input type
      **/
-    std::optional<FeatureType> defineInput(vespalib::stringref inName,
+    std::optional<FeatureType> defineInput(std::string_view inName,
                                            AcceptInput accept = AcceptInput::NUMBER);
 
     /**
@@ -105,7 +105,7 @@ protected:
      * @param outName output name
      * @param desc output description
      **/
-    void describeOutput(vespalib::stringref outName, vespalib::stringref desc,
+    void describeOutput(std::string_view outName, std::string_view desc,
                         FeatureType type = FeatureType::number());
 
     /**
@@ -124,14 +124,14 @@ protected:
      * for later use in createExecutor
      **/
     static const IAttributeVector *
-    lookupAndStoreAttribute(const vespalib::string & key, vespalib::stringref attrName,
+    lookupAndStoreAttribute(const vespalib::string & key, std::string_view attrName,
                             const IQueryEnvironment & env, IObjectStore & objectStore);
     /**
      * Used to lookup attribute from the most efficient source.
      **/
     static const IAttributeVector *
-    lookupAttribute(const vespalib::string & key, vespalib::stringref attrName, const IQueryEnvironment & env);
-    static vespalib::string createAttributeKey(vespalib::stringref attrName);
+    lookupAttribute(const vespalib::string & key, std::string_view attrName, const IQueryEnvironment & env);
+    static vespalib::string createAttributeKey(std::string_view attrName);
 
 public:
     Blueprint(const Blueprint &) = delete;
@@ -192,7 +192,7 @@ public:
      * before invoking the @ref setup method (and must not be invoked
      * by others).
      **/
-    void setName(vespalib::stringref name) { _name = name; }
+    void setName(std::string_view name) { _name = name; }
 
     /**
      * Obtain the name of this blueprint.

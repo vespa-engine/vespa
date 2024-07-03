@@ -9,7 +9,7 @@ namespace vespalib {
 
 /**
  * This is a simple wrapper class for a typed array with no memory ownership.
- * It is similar to vespalib::stringref
+ * It is similar to std::string_view
  **/
 template <typename T>
 class ArrayRef {

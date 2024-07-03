@@ -59,8 +59,8 @@ struct Response {
             ret.AddString(ns.c_str());
         req->SetError(FRTE_NO_ERROR);
     }
-    Response(vespalib::stringref name, vespalib::stringref md5,
-             vespalib::stringref id, vespalib::stringref hash,
+    Response(std::string_view name, std::string_view md5,
+             std::string_view id, std::string_view hash,
              int changed_in=0, long generation_in=0)
         : defName(name),
           defMd5(md5),

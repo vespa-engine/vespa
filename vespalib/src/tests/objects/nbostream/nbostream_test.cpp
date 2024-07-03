@@ -197,7 +197,7 @@ TEST_F("Test serializing c string", Fixture)
 
 TEST_F("Test serializing stringref", Fixture)
 {
-    vespalib::stringref val("Hello");
+    std::string_view val("Hello");
     ExpBuffer exp({ 0x00, 0x00, 0x00, 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f });
     f._stream << val;
     EXPECT_EQUAL(exp, f._stream);

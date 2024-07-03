@@ -637,7 +637,7 @@ CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
                      activate_reply.activateVersion(), activate_reply.actualVersion());
     } else {
         request.addReturnInt(reply->getResult().getResult());
-        vespalib::stringref m = reply->getResult().getMessage();
+        std::string_view m = reply->getResult().getMessage();
         request.addReturnString(m.data(), m.size());
 
         if (reply->getType() == api::MessageType::GETNODESTATE_REPLY) {

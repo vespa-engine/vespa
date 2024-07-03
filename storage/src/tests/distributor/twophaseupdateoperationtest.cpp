@@ -134,7 +134,7 @@ struct TwoPhaseUpdateOperationTest : Test, DistributorStripeTestUtil {
             _timestampToUpdate = ts;
             return *this;
         }
-        UpdateOptions& condition(vespalib::stringref cond) {
+        UpdateOptions& condition(std::string_view cond) {
             _condition = documentapi::TestAndSetCondition(cond);
             return *this;
         }

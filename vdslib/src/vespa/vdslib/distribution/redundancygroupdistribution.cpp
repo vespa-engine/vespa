@@ -11,7 +11,7 @@ namespace storage::lib {
 
 namespace {
     void verifyLegal(vespalib::StringTokenizer& st,
-                     vespalib::stringref serialized)
+                     std::string_view serialized)
     {
         // First, verify sanity of the serialized string
         uint32_t firstAsterisk = st.size();
@@ -47,7 +47,7 @@ namespace {
         }
     }
 
-    std::vector<uint16_t> parse(vespalib::stringref serialized) {
+    std::vector<uint16_t> parse(std::string_view serialized) {
         std::vector<uint16_t> result;
         if (serialized == "") return result;
         vespalib::StringTokenizer st(serialized, "|");
@@ -66,7 +66,7 @@ namespace {
 }
 
 RedundancyGroupDistribution::RedundancyGroupDistribution(
-        vespalib::stringref serialized)
+        std::string_view serialized)
     : _values(parse(serialized))
 {
 }

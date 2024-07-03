@@ -12,7 +12,7 @@
 namespace search::docsummary {
 
 JuniperQueryAdapter::JuniperQueryAdapter(const QueryNormalization * normalization, const IQueryTermFilter *query_term_filter,
-                                         vespalib::stringref buf, const search::fef::Properties & highlightTerms)
+                                         std::string_view buf, const search::fef::Properties & highlightTerms)
     : _query_normalization(normalization),
       _query_term_filter(query_term_filter),
       _buf(buf),

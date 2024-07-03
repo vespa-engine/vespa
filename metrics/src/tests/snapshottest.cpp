@@ -21,14 +21,14 @@ struct SubSubMetricSet : public MetricSet {
     DoubleAverageMetric average2;
     SumMetric<DoubleAverageMetric> averageSum;
 
-    SubSubMetricSet(vespalib::stringref name, MetricSet* owner = 0);
+    SubSubMetricSet(std::string_view name, MetricSet* owner = 0);
     ~SubSubMetricSet();
     MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                      metrics::MetricSet* owner, bool includeUnused) const override;
     void incValues();
 };
 
-SubSubMetricSet::SubSubMetricSet(vespalib::stringref name, MetricSet* owner)
+SubSubMetricSet::SubSubMetricSet(std::string_view name, MetricSet* owner)
     : MetricSet(name, {}, "", owner),
       incVal(1),
       count1("count1", {}, "", this),
@@ -79,7 +79,7 @@ struct SubMetricSet : public MetricSet {
     SubSubMetricSet set2;
     SumMetric<SubSubMetricSet> setSum;
 
-    SubMetricSet(vespalib::stringref name, MetricSet* owner = 0);
+    SubMetricSet(std::string_view name, MetricSet* owner = 0);
     ~SubMetricSet();
 
     MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
@@ -88,7 +88,7 @@ struct SubMetricSet : public MetricSet {
     void incValues();
 };
 
-SubMetricSet::SubMetricSet(vespalib::stringref name, MetricSet* owner)
+SubMetricSet::SubMetricSet(std::string_view name, MetricSet* owner)
     : MetricSet(name, {}, "", owner),
       set1("set1", this),
       set2("set2", this),
@@ -121,14 +121,14 @@ struct TestMetricSet : public MetricSet {
     SubMetricSet set2;
     SumMetric<SubMetricSet> setSum;
 
-    TestMetricSet(vespalib::stringref name);
+    TestMetricSet(std::string_view name);
     ~TestMetricSet();
 
     void incValues();
 };
 
 
-TestMetricSet::TestMetricSet(vespalib::stringref name)
+TestMetricSet::TestMetricSet(std::string_view name)
     : MetricSet(name, {}, "", nullptr),
       set1("set1", this),
       set2("set2", this),

@@ -23,7 +23,7 @@ private:
     const search::attribute::IAttributeVector *_attribute;
     vespalib::eval::ValueType _type;
     WeightedBufferType _attrBuffer;
-    std::vector<vespalib::stringref> _addr_ref;
+    std::vector<std::string_view> _addr_ref;
     std::unique_ptr<vespalib::eval::Value> _tensor;
 
 public:

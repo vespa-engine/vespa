@@ -295,7 +295,7 @@ using vespa::config::content::core::BucketspacesConfigBuilder;
 
 namespace {
 
-BucketspacesConfigBuilder::Documenttype doc_type(vespalib::stringref name, vespalib::stringref space) {
+BucketspacesConfigBuilder::Documenttype doc_type(std::string_view name, std::string_view space) {
     BucketspacesConfigBuilder::Documenttype dt;
     dt.name = name;
     dt.bucketspace = space;

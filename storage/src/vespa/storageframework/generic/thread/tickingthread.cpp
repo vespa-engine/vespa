@@ -135,7 +135,7 @@ class TickingThreadPoolImpl final : public TickingThreadPool {
     };
 
 public:
-    TickingThreadPoolImpl(vespalib::stringref name, vespalib::duration waitTime,
+    TickingThreadPoolImpl(std::string_view name, vespalib::duration waitTime,
                           int ticksBeforeWait, vespalib::duration maxProcessTime)
         : _name(name),
           _waitTime(waitTime),
@@ -211,7 +211,7 @@ private:
 
 TickingThreadPool::UP
 TickingThreadPool::createDefault(
-        vespalib::stringref name,
+        std::string_view name,
         vespalib::duration waitTime,
         int ticksBeforeWait,
         vespalib::duration maxProcessTime)
@@ -220,7 +220,7 @@ TickingThreadPool::createDefault(
 }
 
 TickingThreadPool::UP
-TickingThreadPool::createDefault(vespalib::stringref name, vespalib::duration waitTime)
+TickingThreadPool::createDefault(std::string_view name, vespalib::duration waitTime)
 {
     return createDefault(name, waitTime, 1, 5s);
 }

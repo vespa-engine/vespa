@@ -18,7 +18,7 @@ class InvalidValueNode : public ValueNode
 {
     vespalib::string _name;
 public:
-    InvalidValueNode(vespalib::stringref name);
+    InvalidValueNode(std::string_view name);
 
     std::unique_ptr<Value> getValue(const Context&) const override {
         return std::make_unique<InvalidValue>();
@@ -54,7 +54,7 @@ class StringValueNode : public ValueNode
 {
     vespalib::string _value;
 public:
-    explicit StringValueNode(vespalib::stringref val);
+    explicit StringValueNode(std::string_view val);
 
     const vespalib::string& getValue() const { return _value; }
 
@@ -212,7 +212,7 @@ class FieldExprNode final : public ValueNode {
     vespalib::string _right_expr;
 public:
     explicit FieldExprNode(const vespalib::string& doctype) : _left_expr(), _right_expr(doctype) {}
-    FieldExprNode(std::unique_ptr<FieldExprNode> left_expr, vespalib::stringref right_expr)
+    FieldExprNode(std::unique_ptr<FieldExprNode> left_expr, std::string_view right_expr)
         : ValueNode(left_expr->max_depth() + 1),
           _left_expr(std::move(left_expr)),
           _right_expr(right_expr)
@@ -264,7 +264,7 @@ public:
     enum Type { SCHEME, NS, TYPE, USER, GROUP, GID, SPEC, BUCKET, ALL };
 
     IdValueNode(const BucketIdFactory& bucketIdFactory,
-                vespalib::stringref name, vespalib::stringref type,
+                std::string_view name, std::string_view type,
                 int widthBits = -1, int divisionBits = -1);
 
     Type getType() const { return _type; }
@@ -302,7 +302,7 @@ class FunctionValueNode : public ValueNode
 public:
     enum Function { LOWERCASE, HASH, ABS };
 
-    FunctionValueNode(vespalib::stringref name, std::unique_ptr<ValueNode> src);
+    FunctionValueNode(std::string_view name, std::unique_ptr<ValueNode> src);
 
     Function getFunction() const { return _function; }
     const vespalib::string &getFunctionName(void) const { return _funcname; }
@@ -340,7 +340,7 @@ public:
     enum Operator { ADD, SUB, MUL, DIV, MOD };
 
     ArithmeticValueNode(std::unique_ptr<ValueNode> left,
-                        vespalib::stringref op,
+                        std::string_view op,
                         std::unique_ptr<ValueNode> right);
 
     Operator getOperator() const { return _operator; }

@@ -129,7 +129,7 @@ public:
     const SharedRpcResources& shared_rpc_resources() const noexcept { return *_shared_rpc_resources; }
     SharedRpcResources& shared_rpc_resources() noexcept { return *_shared_rpc_resources; }
 
-    void wait_until_visible_in_slobrok(vespalib::stringref id) {
+    void wait_until_visible_in_slobrok(std::string_view id) {
         const auto deadline = std::chrono::steady_clock::now() + slobrok_register_timeout;
         while (_shared_rpc_resources->slobrok_mirror().lookup(id).empty()) {
             if (std::chrono::steady_clock::now() > deadline) {

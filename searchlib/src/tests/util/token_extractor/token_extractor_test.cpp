@@ -90,7 +90,7 @@ TokenExtractorTest::process(const StringFieldValue& value)
     Words result;
     _terms.clear();
     auto span_trees = value.getSpanTrees();
-    vespalib::stringref text = value.getValueRef();
+    std::string_view text = value.getValueRef();
     _token_extractor.extract(_terms, span_trees, text, _doc.get());
     auto it  = _terms.begin();
     auto ite = _terms.end();

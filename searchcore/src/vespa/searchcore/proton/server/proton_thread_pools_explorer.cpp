@@ -49,7 +49,7 @@ ProtonThreadPoolsExplorer::get_children_names() const
 }
 
 std::unique_ptr<vespalib::StateExplorer>
-ProtonThreadPoolsExplorer::get_child(vespalib::stringref name) const
+ProtonThreadPoolsExplorer::get_child(std::string_view name) const
 {
     if (name == FIELD_WRITER) {
         return std::make_unique<SequencedTaskExecutorExplorer>(_field_writer);

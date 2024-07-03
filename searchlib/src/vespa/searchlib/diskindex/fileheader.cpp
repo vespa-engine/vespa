@@ -102,7 +102,7 @@ FileHeader::taste(const vespalib::string &name,
     for (uint32_t i = 0; ;++i) {
         vespalib::asciistream as;
         as << "format." << i;
-        vespalib::stringref key(as.str());
+        std::string_view key(as.str());
         if (!header.hasTag(key)) {
             break;
         }

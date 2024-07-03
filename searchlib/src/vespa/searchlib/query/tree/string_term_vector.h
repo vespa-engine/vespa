@@ -16,9 +16,9 @@ class StringTermVector : public TermVector {
 public:
     explicit StringTermVector(uint32_t sz);
     ~StringTermVector() override;
-    void addTerm(vespalib::stringref term, Weight weight) override;
+    void addTerm(std::string_view term, Weight weight) override;
     void addTerm(int64_t term, Weight weight) override;
-    void addTerm(vespalib::stringref term);
+    void addTerm(std::string_view term);
     [[nodiscard]] StringAndWeight getAsString(uint32_t index) const override;
     [[nodiscard]] IntegerAndWeight getAsInteger(uint32_t index) const override;
     [[nodiscard]] Weight getWeight(uint32_t index) const override;

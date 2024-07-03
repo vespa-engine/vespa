@@ -38,7 +38,7 @@ struct SimpleOr : Or
     ~SimpleOr() override;
 };
 struct SimpleWeakAnd : WeakAnd {
-    SimpleWeakAnd(uint32_t targetNumHits, vespalib::stringref view) :
+    SimpleWeakAnd(uint32_t targetNumHits, std::string_view view) :
         WeakAnd(targetNumHits, view)
     {}
 };
@@ -48,34 +48,34 @@ struct SimpleEquiv : Equiv {
     ~SimpleEquiv() override;
 };
 struct SimplePhrase : Phrase {
-    SimplePhrase(vespalib::stringref view, int32_t id, Weight weight)
+    SimplePhrase(std::string_view view, int32_t id, Weight weight)
         : Phrase(view, id, weight) {}
     ~SimplePhrase() override;
 };
 
 struct SimpleSameElement : SameElement {
-    SimpleSameElement(vespalib::stringref view, int32_t id, Weight weight)
+    SimpleSameElement(std::string_view view, int32_t id, Weight weight)
         : SameElement(view, id, weight) {}
     ~SimpleSameElement() override;
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
-    SimpleWeightedSetTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight)
+    SimpleWeightedSetTerm(uint32_t num_terms, std::string_view view, int32_t id, Weight weight)
         : WeightedSetTerm(num_terms, view, id, weight) {}
     ~SimpleWeightedSetTerm() override;
 };
 struct SimpleDotProduct : DotProduct {
-    SimpleDotProduct(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight)
+    SimpleDotProduct(uint32_t num_terms, std::string_view view, int32_t id, Weight weight)
         : DotProduct(num_terms, view, id, weight) {}
     ~SimpleDotProduct() override;
 };
 struct SimpleWandTerm : WandTerm {
-    SimpleWandTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight,
+    SimpleWandTerm(uint32_t num_terms, std::string_view view, int32_t id, Weight weight,
                    uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
         : WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
     ~SimpleWandTerm() override;
 };
 struct SimpleInTerm : InTerm {
-    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, vespalib::stringref view, int32_t id, Weight weight)
+    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, std::string_view view, int32_t id, Weight weight)
         : InTerm(std::move(terms), type, view, id, weight)
     {
     }
@@ -86,49 +86,49 @@ struct SimpleRank : Rank
     ~SimpleRank() override;
 };
 struct SimpleNumberTerm : NumberTerm {
-    SimpleNumberTerm(Type term, vespalib::stringref view,
+    SimpleNumberTerm(Type term, std::string_view view,
                     int32_t id, Weight weight)
         : NumberTerm(term, view, id, weight) {
     }
     ~SimpleNumberTerm() override;
 };
 struct SimpleLocationTerm : LocationTerm {
-    SimpleLocationTerm(const Type &term, vespalib::stringref view,
+    SimpleLocationTerm(const Type &term, std::string_view view,
                        int32_t id, Weight weight)
         : LocationTerm(term, view, id, weight) {
     }
     ~SimpleLocationTerm() override;
 };
 struct SimplePrefixTerm : PrefixTerm {
-    SimplePrefixTerm(const Type &term, vespalib::stringref view,
+    SimplePrefixTerm(const Type &term, std::string_view view,
                      int32_t id, Weight weight)
         : PrefixTerm(term, view, id, weight) {
     }
     ~SimplePrefixTerm() override;
 };
 struct SimpleRangeTerm : RangeTerm {
-    SimpleRangeTerm(const Type &term, vespalib::stringref view,
+    SimpleRangeTerm(const Type &term, std::string_view view,
                     int32_t id, Weight weight)
         : RangeTerm(term, view, id, weight) {
     }
     ~SimpleRangeTerm() override;
 };
 struct SimpleStringTerm : StringTerm {
-    SimpleStringTerm(const Type &term, vespalib::stringref view,
+    SimpleStringTerm(const Type &term, std::string_view view,
                      int32_t id, Weight weight)
         : StringTerm(term, view, id, weight) {
     }
     ~SimpleStringTerm() override;
 };
 struct SimpleSubstringTerm : SubstringTerm {
-    SimpleSubstringTerm(const Type &term, vespalib::stringref view,
+    SimpleSubstringTerm(const Type &term, std::string_view view,
                      int32_t id, Weight weight)
         : SubstringTerm(term, view, id, weight) {
     }
     ~SimpleSubstringTerm() override;
 };
 struct SimpleSuffixTerm : SuffixTerm {
-    SimpleSuffixTerm(const Type &term, vespalib::stringref view,
+    SimpleSuffixTerm(const Type &term, std::string_view view,
                      int32_t id, Weight weight)
         : SuffixTerm(term, view, id, weight) {
     }
@@ -136,21 +136,21 @@ struct SimpleSuffixTerm : SuffixTerm {
 };
 struct SimplePredicateQuery : PredicateQuery {
     SimplePredicateQuery(PredicateQueryTerm::UP term,
-                         vespalib::stringref view,
+                         std::string_view view,
                          int32_t id, Weight weight)
         : PredicateQuery(std::move(term), view, id, weight) {
     }
     ~SimplePredicateQuery() override;
 };
 struct SimpleRegExpTerm : RegExpTerm {
-    SimpleRegExpTerm(const Type &term, vespalib::stringref view,
+    SimpleRegExpTerm(const Type &term, std::string_view view,
                      int32_t id, Weight weight)
         : RegExpTerm(term, view, id, weight) {
     }
     ~SimpleRegExpTerm() override;
 };
 struct SimpleNearestNeighborTerm : NearestNeighborTerm {
-    SimpleNearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
+    SimpleNearestNeighborTerm(std::string_view query_tensor_name, std::string_view field_name,
                               int32_t id, Weight weight, uint32_t target_num_hits,
                               bool allow_approximate, uint32_t explore_additional_hits,
                               double distance_threshold)
@@ -161,7 +161,7 @@ struct SimpleNearestNeighborTerm : NearestNeighborTerm {
     ~SimpleNearestNeighborTerm() override;
 };
 struct SimpleFuzzyTerm : FuzzyTerm {
-    SimpleFuzzyTerm(const Type &term, vespalib::stringref view,
+    SimpleFuzzyTerm(const Type &term, std::string_view view,
                      int32_t id, Weight weight,
                      uint32_t max_edit_distance, uint32_t prefix_lock_length,
                      bool prefix_match)

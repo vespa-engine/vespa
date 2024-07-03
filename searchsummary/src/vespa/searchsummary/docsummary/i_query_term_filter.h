@@ -15,7 +15,7 @@ class IQueryTermFilter
 public:
     virtual ~IQueryTermFilter() = default;
 
-    virtual bool use_view(vespalib::stringref view) const = 0;
+    virtual bool use_view(std::string_view view) const = 0;
 };
 
 }

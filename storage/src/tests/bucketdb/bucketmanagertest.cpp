@@ -602,7 +602,7 @@ public:
         return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, explicit_state);
     }
 
-    auto createFullFetchCommandWithHash(vespalib::stringref hash) const {
+    auto createFullFetchCommandWithHash(std::string_view hash) const {
         return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, *_state, hash);
     }
 

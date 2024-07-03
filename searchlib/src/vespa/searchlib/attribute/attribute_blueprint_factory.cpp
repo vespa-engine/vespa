@@ -104,7 +104,6 @@ using vespalib::Issue;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
 using vespalib::string;
-using vespalib::stringref;
 
 namespace search {
 namespace {
@@ -116,7 +115,7 @@ public:
           _scratchPad(scratchPad)
     { }
 
-    stringref asString() const override {
+    std::string_view asString() const override {
         return queryeval::termAsString(_node, _scratchPad);
     }
 
@@ -424,7 +423,7 @@ class LookupKey : public IDirectPostingStore::LookupKey {
 public:
     LookupKey(MultiTerm & terms, uint32_t index) : _terms(terms), _index(index) {}
 
-    stringref asString() const override {
+    std::string_view asString() const override {
         return _terms.getAsString(_index).first;
     }
 
@@ -567,9 +566,9 @@ AttributeFieldBlueprint::getRange(vespalib::string &from, vespalib::string &to) 
         Int64Range range = _search_context->getAsIntegerTerm();
         char buf[32];
         auto res = std::to_chars(buf, buf + sizeof(buf), range.lower(), 10);
-        from = vespalib::stringref(buf, res.ptr - buf);
+        from = std::string_view(buf, res.ptr - buf);
         res = std::to_chars(buf, buf + sizeof(buf), range.upper(), 10);
-        to = vespalib::stringref(buf, res.ptr - buf);
+        to = std::string_view(buf, res.ptr - buf);
         return true;
     } else if (_type == FLOAT) {
         DoubleRange range = _search_context->getAsDoubleTerm();
@@ -686,7 +685,7 @@ public:
     void createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger);
 
     static QueryTermSimple::UP
-    extractTerm(vespalib::stringref term, bool isInteger) {
+    extractTerm(std::string_view term, bool isInteger) {
         if (isInteger) {
             return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
         }

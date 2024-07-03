@@ -14,7 +14,7 @@ const NodeType NodeType::STORAGE("storage", NodeType::Type::STORAGE);
 const NodeType NodeType::DISTRIBUTOR("distributor", NodeType::Type::DISTRIBUTOR);
 
 const NodeType&
-NodeType::get(vespalib::stringref serialized)
+NodeType::get(std::string_view serialized)
 {
     if (serialized == STORAGE._name) {
         return STORAGE;
@@ -40,7 +40,7 @@ NodeType::get(Type type) noexcept
     abort();
 }
 
-NodeType::NodeType(vespalib::stringref name, Type type) noexcept
+NodeType::NodeType(std::string_view name, Type type) noexcept
     : _type(type), _name(name)
 {
 }

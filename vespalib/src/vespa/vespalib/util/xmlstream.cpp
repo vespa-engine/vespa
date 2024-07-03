@@ -402,7 +402,7 @@ using ConstCharP = const char *;
 
 template XmlAttribute::XmlAttribute(const std::string &, std::string, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, vespalib::string, unsigned int);
-template XmlAttribute::XmlAttribute(const std::string &, vespalib::stringref, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, std::string_view, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, CharP, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, bool, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, short, unsigned int);

@@ -6,11 +6,10 @@
 #include <cassert>
 
 using vespalib::IllegalArgumentException;
-using vespalib::stringref;
 using vespalib::make_string_short::fmt;
 namespace search::query {
 
-StringTerm::StringTerm(const Type &term, vespalib::stringref view, int32_t id, Weight weight)
+StringTerm::StringTerm(const Type &term, std::string_view view, int32_t id, Weight weight)
     : QueryNodeMixinType(term, view, id, weight)
 {}
 
@@ -34,13 +33,13 @@ class WeightedStringTermVector final : public TermVector {
 public:
     explicit WeightedStringTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
     ~WeightedStringTermVector() override;
-    void addTerm(stringref term, Weight weight) override {
+    void addTerm(std::string_view term, Weight weight) override {
         _terms.emplace_back(term, weight);
     }
     void addTerm(int64_t value, Weight weight) override {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), value, 10);
-        addTerm(stringref(buf, res.ptr - buf), weight);
+        addTerm(std::string_view(buf, res.ptr - buf), weight);
     }
     [[nodiscard]] StringAndWeight getAsString(uint32_t index) const override {
         const auto & v = _terms[index];
@@ -63,7 +62,7 @@ private:
 class WeightedIntegerTermVector final : public TermVector {
 public:
     explicit WeightedIntegerTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
-    void addTerm(stringref, Weight) override {
+    void addTerm(std::string_view, Weight) override {
         // Will/should never happen
         assert(false);
     }
@@ -74,7 +73,7 @@ public:
         const auto & v = _terms[index];
         auto res = std::to_chars(_scratchPad, _scratchPad + sizeof(_scratchPad)-1, v.first, 10);
         res.ptr[0] = '\0';
-        return {stringref(_scratchPad, res.ptr - _scratchPad), v.second};
+        return {std::string_view(_scratchPad, res.ptr - _scratchPad), v.second};
     }
     IntegerAndWeight getAsInteger(uint32_t index) const override {
         return _terms[index];
@@ -119,7 +118,7 @@ MultiTerm::downgrade() {
 }
 
 void
-MultiTerm::addTerm(vespalib::stringref term, Weight weight) {
+MultiTerm::addTerm(std::string_view term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<WeightedStringTermVector>(_num_terms);
         _type = Type::STRING;

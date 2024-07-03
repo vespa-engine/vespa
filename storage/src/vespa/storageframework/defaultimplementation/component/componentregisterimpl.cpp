@@ -39,7 +39,7 @@ ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
 }
 
 void
-ComponentRegisterImpl::requestShutdown(vespalib::stringref reason)
+ComponentRegisterImpl::requestShutdown(std::string_view reason)
 {
     std::lock_guard lock(_componentLock);
     if (_shutdownListener) {
@@ -89,7 +89,7 @@ ComponentRegisterImpl::setThreadPool(ThreadPool& tp)
 }
 
 const StatusReporter*
-ComponentRegisterImpl::getStatusReporter(vespalib::stringref id)
+ComponentRegisterImpl::getStatusReporter(std::string_view id)
 {
     std::lock_guard lock(_componentLock);
     for (auto* component : _components) {
@@ -126,7 +126,7 @@ namespace {
     struct MetricHookWrapper : public metrics::UpdateHook {
         MetricUpdateHook& _hook;
 
-        MetricHookWrapper(vespalib::stringref name, MetricUpdateHook& hook, vespalib::system_time::duration period)
+        MetricHookWrapper(std::string_view name, MetricUpdateHook& hook, vespalib::system_time::duration period)
             : metrics::UpdateHook(name.data(), period), // Expected to point to static name
               _hook(hook)
         {
@@ -137,7 +137,7 @@ namespace {
 }
 
 void
-ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
+ComponentRegisterImpl::registerUpdateHook(std::string_view name,
                                           MetricUpdateHook& hook,
                                           vespalib::system_time::duration period)
 {

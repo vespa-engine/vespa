@@ -26,16 +26,16 @@ TEST(FixedBucketSpacesTest, bucket_space_from_name_throws_exception_for_unknown_
 
 TEST(FixedBucketSpacesTest, name_from_bucket_space_is_defined_for_default_space)
 {
-    EXPECT_EQ(vespalib::stringref("default"),
+    EXPECT_EQ(std::string_view("default"),
                          FixedBucketSpaces::to_string(FixedBucketSpaces::default_space()));
-    EXPECT_EQ(vespalib::stringref("default"), FixedBucketSpaces::default_space_name());
+    EXPECT_EQ(std::string_view("default"), FixedBucketSpaces::default_space_name());
 }
 
 TEST(FixedBucketSpacesTest, name_from_bucket_space_is_defined_for_global_space)
 {
-    EXPECT_EQ(vespalib::stringref("global"),
+    EXPECT_EQ(std::string_view("global"),
                          FixedBucketSpaces::to_string(FixedBucketSpaces::global_space()));
-    EXPECT_EQ(vespalib::stringref("global"), FixedBucketSpaces::global_space_name());
+    EXPECT_EQ(std::string_view("global"), FixedBucketSpaces::global_space_name());
 }
 
 TEST(FixedBucketSpacesTest, name_from_bucket_space_throws_exception_for_unknown_space)

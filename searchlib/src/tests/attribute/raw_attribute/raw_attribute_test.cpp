@@ -25,7 +25,7 @@ vespalib::ConstArrayRef<char> raw_hello(hello.c_str(), hello.size());
 
 std::filesystem::path attr_path("raw.dat");
 
-std::vector<char> as_vector(vespalib::stringref value) {
+std::vector<char> as_vector(std::string_view value) {
     return {value.data(), value.data() + value.size()};
 }
 

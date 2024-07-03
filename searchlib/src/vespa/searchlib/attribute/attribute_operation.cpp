@@ -165,7 +165,7 @@ private:
 
 struct Operation {
     enum class Type { INC, DEC, ADD, SUB, MUL, DIV, MOD, SET, BAD };
-    Operation(Type operation_in, vespalib::stringref operand_in) : operation(operation_in), operand(operand_in) { }
+    Operation(Type operation_in, std::string_view operand_in) : operation(operation_in), operand(operand_in) { }
     template <typename V>
     std::unique_ptr<AttributeOperation> create(BasicType type, V vector) const;
     template <typename IT, typename V>
@@ -173,12 +173,12 @@ struct Operation {
     bool valid() const { return operation != Type::BAD; }
     bool hasArgument() const { return valid() && (operation != Type::INC) && (operation != Type::DEC); }
     Type operation;
-    vespalib::stringref operand;
-    static Operation create(vespalib::stringref s);
+    std::string_view operand;
+    static Operation create(std::string_view s);
 };
 
 Operation
-Operation::create(vespalib::stringref s)
+Operation::create(std::string_view s)
 {
     Type op = Type::BAD;
     if (s.size() >= 2) {

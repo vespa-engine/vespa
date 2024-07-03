@@ -49,9 +49,9 @@ private:
 
 public:
     // Create leaf node
-    Group(uint16_t index, vespalib::stringref name) noexcept;
+    Group(uint16_t index, std::string_view name) noexcept;
     // Create branch node
-    Group(uint16_t index, vespalib::stringref name,
+    Group(uint16_t index, std::string_view name,
           const Distribution&, uint16_t redundancy);
     ~Group() override;
 

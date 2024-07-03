@@ -19,11 +19,11 @@ namespace {
 }
 
 void
-Parser::setRemaining(vespalib::stringref s, size_t fromPos) {
+Parser::setRemaining(std::string_view s, size_t fromPos) {
     _remaining = s.substr(std::min(fromPos, s.size()));
 }
 
-bool IdSpecParser::parse(vespalib::stringref s)
+bool IdSpecParser::parse(std::string_view s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -76,7 +76,7 @@ bool IdSpecParser::parse(vespalib::stringref s)
     return retval;
 }
 
-bool OperatorParser::parse(vespalib::stringref s)
+bool OperatorParser::parse(std::string_view s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -120,7 +120,7 @@ bool OperatorParser::parse(vespalib::stringref s)
     return retval;
 }
 
-bool StringParser::parse(vespalib::stringref s)
+bool StringParser::parse(std::string_view s)
 {
     bool retval(false);
     setRemaining(s);
@@ -145,7 +145,7 @@ bool StringParser::parse(vespalib::stringref s)
     return retval;
 }
 
-bool IntegerParser::parse(vespalib::stringref s)
+bool IntegerParser::parse(std::string_view s)
 {
     bool retval(false);
     size_t pos(eatWhite(s.data(), s.size()));
@@ -167,7 +167,7 @@ bool IntegerParser::parse(vespalib::stringref s)
     return retval;
 }
 
-bool SelectionParser::parse(vespalib::stringref s)
+bool SelectionParser::parse(std::string_view s)
 {
     bool retval(false);
     IdSpecParser id(_bucketIdFactory);

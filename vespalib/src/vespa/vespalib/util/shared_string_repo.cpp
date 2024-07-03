@@ -197,7 +197,7 @@ SharedStringRepo::stats()
 namespace {
 
 uint32_t
-try_make_direct_id(vespalib::stringref str) noexcept {
+try_make_direct_id(std::string_view str) noexcept {
     if ((str.size() > SharedStringRepo::FAST_DIGITS) || ((str.size() > 1) && (str[0] == '0'))) {
         return SharedStringRepo::ID_BIAS;
     } else if (str.empty()) {
@@ -229,7 +229,7 @@ string_from_direct_id(uint32_t id) {
 }
 
 string_id
-SharedStringRepo::resolve(vespalib::stringref str) {
+SharedStringRepo::resolve(std::string_view str) {
     uint32_t direct_id = try_make_direct_id(str);
     if (direct_id >= ID_BIAS) {
         uint64_t full_hash = xxhash::xxh3_64(str.data(), str.size());
@@ -276,7 +276,7 @@ SharedStringRepo::Handle
 SharedStringRepo::Handle::handle_from_number_slow(int64_t value) {
     char buf[24];
     auto res = std::to_chars(buf, buf + sizeof(buf), value, 10);
-    return Handle(vespalib::stringref(buf, res.ptr - buf));
+    return Handle(std::string_view(buf, res.ptr - buf));
 }
 
 SharedStringRepo::Handles::Handles()

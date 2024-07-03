@@ -32,7 +32,7 @@ namespace vsm {
 namespace {
 
 void
-setMatchType(FieldSearcherContainer & searcher, vespalib::stringref arg1) {
+setMatchType(FieldSearcherContainer & searcher, std::string_view arg1) {
     if (arg1 == "prefix") {
         searcher->match_type(FieldSearcher::PREFIX);
     } else if (arg1 == "substring") {
@@ -63,7 +63,7 @@ FieldSearchSpec::FieldSearchSpec(FieldSearchSpec&& rhs) noexcept = default;
 FieldSearchSpec& FieldSearchSpec::operator=(FieldSearchSpec&& rhs) noexcept = default;
 
 FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname, Searchmethod searchDef,
-                                 Normalizing normalize_mode, vespalib::stringref arg1_in, size_t maxLength_in) :
+                                 Normalizing normalize_mode, std::string_view arg1_in, size_t maxLength_in) :
     _id(fid),
     _name(fname),
     _maxLength(maxLength_in),
@@ -182,7 +182,7 @@ namespace {
 }
 
 vespalib::string
-FieldSearchSpecMap::stripNonFields(vespalib::stringref rawIndex)
+FieldSearchSpecMap::stripNonFields(std::string_view rawIndex)
 {
     if ((rawIndex.find('[') != vespalib::string::npos) || (rawIndex.find('{') != vespalib::string::npos)) {
         std::string index = std::regex_replace(std::string(rawIndex), G_map1, G_value);
@@ -194,7 +194,7 @@ FieldSearchSpecMap::stripNonFields(vespalib::stringref rawIndex)
 }
 
 void
-FieldSearchSpecMap::addFieldsFromIndex(vespalib::stringref rawIndex, StringFieldIdTMap & fieldIdMap) const {
+FieldSearchSpecMap::addFieldsFromIndex(std::string_view rawIndex, StringFieldIdTMap & fieldIdMap) const {
     for (const auto & dtm : documentTypeMap()) {
         const IndexFieldMapT & fim = dtm.second;
         vespalib::string index(stripNonFields(rawIndex));

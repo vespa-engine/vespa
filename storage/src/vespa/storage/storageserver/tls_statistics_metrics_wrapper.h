@@ -14,7 +14,7 @@ namespace storage {
 // periodic metric snapshotting.
 class TlsStatisticsMetricsWrapper : public metrics::MetricSet {
     struct EndpointMetrics : metrics::MetricSet {
-        EndpointMetrics(vespalib::stringref type, metrics::MetricSet* owner);
+        EndpointMetrics(std::string_view type, metrics::MetricSet* owner);
         ~EndpointMetrics() override;
 
         metrics::LongCountMetric tls_connections_established;

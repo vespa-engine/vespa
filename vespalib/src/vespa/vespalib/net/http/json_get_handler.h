@@ -29,21 +29,21 @@ struct JsonGetHandler {
         [[nodiscard]] int status_code() const noexcept { return _status_code; }
         [[nodiscard]] bool ok() const noexcept { return _status_code == 200; }
         [[nodiscard]] bool failed() const noexcept { return _status_code != 200; }
-        [[nodiscard]] vespalib::stringref status_message() const noexcept {
+        [[nodiscard]] std::string_view status_message() const noexcept {
             if (_status_code == 200) {
                 return "OK";
             } else {
                 return _status_or_payload;
             }
         }
-        [[nodiscard]] vespalib::stringref payload() const noexcept {
+        [[nodiscard]] std::string_view payload() const noexcept {
             if (_status_code == 200) {
                 return _status_or_payload;
             } else {
                 return {};
             }
         }
-        [[nodiscard]] vespalib::stringref content_type() const noexcept {
+        [[nodiscard]] std::string_view content_type() const noexcept {
             if (_content_type_override.empty()) {
                 return "application/json";
             } else {

@@ -35,7 +35,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
 {
     size_t len = input.size();
     if (len >= 2) {
-        vespalib::stringref s(input.c_str()+1, len - 2);
+        std::string_view s(input.c_str()+1, len - 2);
         using ValueAndIndexType = typename OutputType::value_type;
         typename ValueAndIndexType::ValueType value;
         if ((input[0] == '{' && input[len - 1] == '}') ||
@@ -44,7 +44,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
             char colon;
             while ( ! s.empty() ) {
                 vespalib::string::size_type commaPos(s.find(','));
-                vespalib::stringref item(s.substr(0, commaPos));
+                std::string_view item(s.substr(0, commaPos));
                 vespalib::asciistream is(item);
                 try {
                     is >> key >> colon >> value;
@@ -64,7 +64,7 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
                 if (commaPos != vespalib::string::npos) {
                     s = s.substr(commaPos+1);
                 } else {
-                    s = vespalib::stringref();
+                    s = std::string_view();
                 }
             }
         } else if (len >= 2 && input[0] == '[' && input[len - 1] == ']') {

@@ -80,7 +80,7 @@ struct VisitorTest : Test {
 
         VisitorOptions() {}
 
-        VisitorOptions& withVisitorType(vespalib::stringref type) {
+        VisitorOptions& withVisitorType(std::string_view type) {
             visitorType = type;
             return *this;
         }
@@ -109,7 +109,7 @@ struct VisitorTest : Test {
 
 protected:
     void doTestVisitorInstanceHasConsistencyLevel(
-            vespalib::stringref visitorType,
+            std::string_view visitorType,
             spi::ReadConsistency expectedConsistency);
 
     template <typename T>
@@ -850,7 +850,7 @@ TEST_F(VisitorTest, no_more_iterators_sent_while_memory_used_above_limit) {
 
 void
 VisitorTest::doTestVisitorInstanceHasConsistencyLevel(
-        vespalib::stringref visitorType,
+        std::string_view visitorType,
         spi::ReadConsistency expectedConsistency)
 {
     ASSERT_NO_FATAL_FAILURE(initializeTest());

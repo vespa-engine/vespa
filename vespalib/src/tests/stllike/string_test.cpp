@@ -463,9 +463,9 @@ TEST("test that small_string::pop_back works") {
 
 
 TEST("test that operator<() works with stringref versus string") {
-    vespalib::stringref sra("a");
+    std::string_view sra("a");
     vespalib::string sa("a");
-    vespalib::stringref srb("b");
+    std::string_view srb("b");
     vespalib::string sb("b");
     EXPECT_FALSE(sra < sra);
     EXPECT_FALSE(sra < sa);
@@ -501,7 +501,7 @@ TEST("starts_with has expected semantics for small_string") {
 
 TEST("starts_with has expected semantics for stringref") {
     vespalib::string a("foobar");
-    vespalib::stringref ar(a);
+    std::string_view ar(a);
     EXPECT_TRUE(ar.starts_with(""));
     EXPECT_TRUE(ar.starts_with("foo"));
     EXPECT_TRUE(ar.starts_with("foobar"));

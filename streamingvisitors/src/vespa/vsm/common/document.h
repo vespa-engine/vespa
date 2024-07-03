@@ -38,7 +38,7 @@ class StringFieldIdTMap
   StringFieldIdTMapT _map;
 };
 
-using FieldRef = vespalib::stringref;
+using FieldRef = std::string_view;
 
 /**
   This is the base class representing a document. It gives a document some

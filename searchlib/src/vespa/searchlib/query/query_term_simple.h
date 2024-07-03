@@ -15,7 +15,7 @@ class QueryTermSimple {
 public:
     using UP = std::unique_ptr<QueryTermSimple>;
     using string = vespalib::string;
-    using stringref = vespalib::stringref;
+    using stringref = std::string_view;
     using Type = TermType;
 
     template <typename N>
@@ -43,7 +43,7 @@ public:
     size_t                     getMaxPerGroup() const noexcept { return _maxPerGroup; }
     size_t           getDiversityCutoffGroups() const noexcept { return _diversityCutoffGroups; }
     bool             getDiversityCutoffStrict() const noexcept { return _diversityCutoffStrict; }
-    vespalib::stringref getDiversityAttribute() const noexcept { return _diversityAttribute; }
+    std::string_view getDiversityAttribute() const noexcept { return _diversityAttribute; }
     [[nodiscard]] size_t fuzzy_max_edit_distance() const noexcept { return _fuzzy_max_edit_distance; }
     [[nodiscard]] size_t fuzzy_prefix_lock_length() const noexcept { return _fuzzy_prefix_lock_length; }
     [[nodiscard]] bool   fuzzy_prefix_match() const noexcept { return _fuzzy_prefix_match; }

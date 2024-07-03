@@ -47,8 +47,8 @@ protected:
     ~DocumentSelectParserTest() override;
 
     static Document::SP createDoc(
-            vespalib::stringref doctype, vespalib::stringref id, uint32_t hint,
-            double hfloat, vespalib::stringref hstr, vespalib::stringref cstr,
+            std::string_view doctype, std::string_view id, uint32_t hint,
+            double hfloat, std::string_view hstr, std::string_view cstr,
             uint64_t hlong = 0);
 
     static DocumentUpdate::SP createUpdate(
@@ -59,7 +59,7 @@ protected:
     parseFieldValue(const std::string& expression);
 
     template <typename ContainsType>
-    select::ResultList doParse(vespalib::stringref expr, const ContainsType& t);
+    select::ResultList doParse(std::string_view expr, const ContainsType& t);
 
     std::string parse_to_tree(const std::string& str);
 
@@ -114,8 +114,8 @@ void DocumentSelectParserTest::SetUp()
 }
 
 Document::SP
-DocumentSelectParserTest::createDoc(vespalib::stringref doctype, vespalib::stringref id, uint32_t hint, double hfloat,
-                                    vespalib::stringref hstr, vespalib::stringref cstr, uint64_t hlong)
+DocumentSelectParserTest::createDoc(std::string_view doctype, std::string_view id, uint32_t hint, double hfloat,
+                                    std::string_view hstr, std::string_view cstr, uint64_t hlong)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
     auto doc = std::make_shared<Document>(*_repo, *type, DocumentId(id));
@@ -486,7 +486,7 @@ TEST_F(DocumentSelectParserTest, testParseBranches)
 
 template <typename ContainsType>
 select::ResultList
-DocumentSelectParserTest::doParse(vespalib::stringref expr,
+DocumentSelectParserTest::doParse(std::string_view expr,
                                   const ContainsType& t)
 {
     std::unique_ptr<select::Node> root(_parser->parse(std::string(expr)));
@@ -1583,7 +1583,7 @@ TEST_F(DocumentSelectParserTest, test_function_call_on_doctype_throws_exception)
 
 namespace {
 
-void check_parse_i64(vespalib::stringref str, bool expect_ok, int64_t expected_output) {
+void check_parse_i64(std::string_view str, bool expect_ok, int64_t expected_output) {
     int64_t out = 0;
     bool ok = select::util::parse_i64(str.data(), str.size(), out);
     EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for i64 input " << str;
@@ -1592,7 +1592,7 @@ void check_parse_i64(vespalib::stringref str, bool expect_ok, int64_t expected_o
     }
 }
 
-void check_parse_hex_i64(vespalib::stringref str, bool expect_ok, int64_t expected_output) {
+void check_parse_hex_i64(std::string_view str, bool expect_ok, int64_t expected_output) {
     int64_t out = 0;
     bool ok = select::util::parse_hex_i64(str.data(), str.size(), out);
     EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for hex i64 input " << str;
@@ -1601,7 +1601,7 @@ void check_parse_hex_i64(vespalib::stringref str, bool expect_ok, int64_t expect
     }
 }
 
-void check_parse_double(vespalib::stringref str, bool expect_ok, double expected_output) {
+void check_parse_double(std::string_view str, bool expect_ok, double expected_output) {
     double out = 0;
     bool ok = select::util::parse_double(str.data(), str.size(), out);
     EXPECT_EQ(expect_ok, ok) << "Parsing did not returned expected success status for hex i64 input " << str;

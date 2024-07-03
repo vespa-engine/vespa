@@ -28,7 +28,7 @@ public:
 
     void initFromDocsumRequest(const search::engine::DocsumRequest &req);
 
-    void setResultClassName(vespalib::stringref name) { _resultClassName = name; }
+    void setResultClassName(std::string_view name) { _resultClassName = name; }
     void setStackDump(uint32_t stackDumpLen, const char *stackDump);
     void locations_possible(bool value) { _locations_possible = value; }
     bool locations_possible() const { return _locations_possible; }
@@ -38,7 +38,7 @@ public:
     vespalib::duration getTimeout() const { return _timeout; }
 
     const vespalib::string & getResultClassName()      const { return _resultClassName; }
-    vespalib::stringref getStackDump() const {
+    std::string_view getStackDump() const {
         return {_stackDump.data(), _stackDump.size()};
     }
 
@@ -49,7 +49,7 @@ public:
     void highlightTerms(fef::Properties & terms) { _highlightTerms = terms; }
     void set_fields(const FieldSet& fields_in) { _fields = fields_in; }
     const FieldSet& get_fields() const { return _fields; }
-    bool need_field(vespalib::stringref field) const;
+    bool need_field(std::string_view field) const;
 };
 
 }

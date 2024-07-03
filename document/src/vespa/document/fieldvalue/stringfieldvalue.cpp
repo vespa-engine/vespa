@@ -15,7 +15,7 @@
 
 using vespalib::nbostream;
 using vespalib::ConstBufferRef;
-using vespalib::stringref;
+using std::string_view;
 
 namespace document {
 

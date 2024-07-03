@@ -134,7 +134,7 @@ RoutableFactories60::CreateVisitorMessageFactory::doEncode(const DocumentMessage
 }
 
 bool RoutableFactories60::CreateVisitorMessageFactory::encodeBucketSpace(
-        vespalib::stringref bucketSpace,
+        std::string_view bucketSpace,
         vespalib::GrowableByteBuffer& buf) const {
     doEncodeBucketSpace(bucketSpace, buf);
     return true;
@@ -297,7 +297,7 @@ RoutableFactories60::EmptyBucketsReplyFactory::doEncode(const DocumentReply &, v
     return true;
 }
 
-bool RoutableFactories60::GetBucketListMessageFactory::encodeBucketSpace(vespalib::stringref bucketSpace,
+bool RoutableFactories60::GetBucketListMessageFactory::encodeBucketSpace(std::string_view bucketSpace,
                                                                          vespalib::GrowableByteBuffer &buf) const
 {
     doEncodeBucketSpace(bucketSpace, buf);
@@ -643,7 +643,7 @@ RoutableFactories60::QueryResultReplyFactory::doEncode(const DocumentReply &, ve
     return true;
 }
 
-bool RoutableFactories60::StatBucketMessageFactory::encodeBucketSpace(vespalib::stringref bucketSpace,
+bool RoutableFactories60::StatBucketMessageFactory::encodeBucketSpace(std::string_view bucketSpace,
                                                                       vespalib::GrowableByteBuffer &buf) const
 {
     doEncodeBucketSpace(bucketSpace, buf);
@@ -879,7 +879,7 @@ void RoutableFactories60::encodeTasCondition(vespalib::GrowableByteBuffer & buf,
 }
 
 void RoutableFactories60::doEncodeBucketSpace(
-        vespalib::stringref bucketSpace,
+        std::string_view bucketSpace,
         vespalib::GrowableByteBuffer& buf) {
     buf.putString(bucketSpace);
 }

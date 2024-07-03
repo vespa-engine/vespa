@@ -38,16 +38,16 @@ public:
     [[nodiscard]] bool usePositionData() const noexcept { return _position_data; }
     [[nodiscard]] bool prefix_match() const noexcept { return _prefix_match; }
 
-    static bool isPossibleRangeTerm(vespalib::stringref term) noexcept {
+    static bool isPossibleRangeTerm(std::string_view term) noexcept {
         return (term[0] == '[' || term[0] == '<' || term[0] == '>');
     }
 protected:
-    Term(vespalib::stringref view, int32_t id, Weight weight);
+    Term(std::string_view view, int32_t id, Weight weight);
 };
 
 class TermNode : public Node, public Term {
 protected:
-    TermNode(vespalib::stringref view, int32_t id, Weight weight) : Term(view, id, weight) {}
+    TermNode(std::string_view view, int32_t id, Weight weight) : Term(view, id, weight) {}
 };
 /**
  * Generic functionality for most of Term's derived classes.
@@ -63,12 +63,12 @@ public:
     const T &getTerm() const { return _term; }
 
 protected:
-    TermBase(T term, vespalib::stringref view, int32_t id, Weight weight);
+    TermBase(T term, std::string_view view, int32_t id, Weight weight);
 };
 
 
 template <typename T>
-TermBase<T>::TermBase(T term, vespalib::stringref view, int32_t id, Weight weight)
+TermBase<T>::TermBase(T term, std::string_view view, int32_t id, Weight weight)
     : TermNode(view, id, weight),
        _term(std::move(term))
 {}

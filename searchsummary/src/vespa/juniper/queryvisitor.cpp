@@ -211,7 +211,7 @@ std::string_view QueryVisitor::get_index(const QueryItem* item)
 
 
 void
-QueryVisitor::visitKeyword(const QueryItem* item, vespalib::stringref keyword, bool prefix, bool specialToken)
+QueryVisitor::visitKeyword(const QueryItem* item, std::string_view keyword, bool prefix, bool specialToken)
 {
     if (keyword.empty()) {
         // Do not consider empty terms.

@@ -25,7 +25,7 @@ class UcaConverter : public BlobConverter
 {
 public:
     using Collator = icu::Collator;
-    UcaConverter(vespalib::stringref locale, vespalib::stringref strength);
+    UcaConverter(std::string_view locale, std::string_view strength);
     ~UcaConverter();
     const Collator & getCollator() const { return *_collator; }
 private:

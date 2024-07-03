@@ -80,7 +80,7 @@ public:
         auto tensor = SimpleValue::from_spec(TensorSpec::from_expr(spec_expr));
         vespalib::nbostream stream;
         vespalib::eval::encode_value(*tensor, stream);
-        env.query_props.add(query_tensor_name, vespalib::stringref(stream.peek(), stream.size()));
+        env.query_props.add(query_tensor_name, std::string_view(stream.peek(), stream.size()));
     }
     void prepare() {
         env.prepare(searcher, query.term_list);

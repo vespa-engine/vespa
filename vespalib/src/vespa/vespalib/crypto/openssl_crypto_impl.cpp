@@ -177,7 +177,7 @@ void set_certificate_expires_from_now(::X509& cert, std::chrono::seconds valid_f
 }
 
 void
-set_name_entry_if_non_empty(::X509_NAME& name, const char* field, vespalib::stringref entry) {
+set_name_entry_if_non_empty(::X509_NAME& name, const char* field, std::string_view entry) {
     if (entry.empty()) {
         return;
     }

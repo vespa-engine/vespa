@@ -5,7 +5,7 @@
 
 namespace mbus {
 
-TcpDirective::TcpDirective(vespalib::stringref host, uint32_t port, vespalib::stringref session) :
+TcpDirective::TcpDirective(std::string_view host, uint32_t port, std::string_view session) :
     _host(host),
     _port(port),
     _session(session)

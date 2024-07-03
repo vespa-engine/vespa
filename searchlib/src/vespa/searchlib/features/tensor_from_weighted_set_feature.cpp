@@ -34,7 +34,7 @@ namespace {
 struct WeightedStringVector
 {
     std::vector<IAttributeVector::WeightedString> _data;
-    void insert(vespalib::stringref key, vespalib::stringref weight) {
+    void insert(std::string_view key, std::string_view weight) {
         _data.emplace_back(key, util::strToNum<int32_t>(weight));
     }
 };
@@ -117,7 +117,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
         auto factory = FastValueBuilderFactory::get();
         size_t sz = vector._data.size();
         auto builder = factory.create_value_builder<double>(valueType, 1, 1, sz);
-        std::vector<vespalib::stringref> addr_ref;
+        std::vector<std::string_view> addr_ref;
         for (const auto &elem : vector._data) {
             addr_ref.clear();
             addr_ref.push_back(elem.value());

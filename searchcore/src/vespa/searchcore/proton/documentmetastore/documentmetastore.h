@@ -93,7 +93,7 @@ private:
     // Implements AttributeVector
     void before_inc_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;
-    std::unique_ptr<search::AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    std::unique_ptr<search::AttributeSaver> onInitSave(std::string_view fileName) override;
     bool onLoad(vespalib::Executor *executor) override;
 
     template <typename TreeView>

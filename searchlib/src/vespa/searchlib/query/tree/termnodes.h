@@ -17,7 +17,7 @@ using StringBase = TermBase<vespalib::string>;
 class NumberTerm : public QueryNodeMixin<NumberTerm, StringBase >
 {
 public:
-    NumberTerm(Type term, vespalib::stringref view, int32_t id, Weight weight)
+    NumberTerm(Type term, std::string_view view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight) {}
     virtual ~NumberTerm() = 0;
 };
@@ -27,7 +27,7 @@ public:
 class PrefixTerm : public QueryNodeMixin<PrefixTerm, StringBase >
 {
 public:
-    PrefixTerm(const Type &term, vespalib::stringref view,
+    PrefixTerm(const Type &term, std::string_view view,
                int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -39,7 +39,7 @@ public:
 class RangeTerm : public QueryNodeMixin<RangeTerm, TermBase<Range> >
 {
 public:
-    RangeTerm(const Type& term, vespalib::stringref view,
+    RangeTerm(const Type& term, std::string_view view,
               int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -51,7 +51,7 @@ public:
 class StringTerm : public QueryNodeMixin<StringTerm, StringBase >
 {
 public:
-    StringTerm(const Type &term, vespalib::stringref view, int32_t id, Weight weight);
+    StringTerm(const Type &term, std::string_view view, int32_t id, Weight weight);
     virtual ~StringTerm() = 0;
 };
 
@@ -60,7 +60,7 @@ public:
 class SubstringTerm : public QueryNodeMixin<SubstringTerm, StringBase >
 {
  public:
-    SubstringTerm(const Type &term, vespalib::stringref view,
+    SubstringTerm(const Type &term, std::string_view view,
                   int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -72,7 +72,7 @@ class SubstringTerm : public QueryNodeMixin<SubstringTerm, StringBase >
 class SuffixTerm : public QueryNodeMixin<SuffixTerm, StringBase >
 {
 public:
-    SuffixTerm(const Type &term, vespalib::stringref view,
+    SuffixTerm(const Type &term, std::string_view view,
                int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -84,7 +84,7 @@ public:
 class LocationTerm : public QueryNodeMixin<LocationTerm, TermBase<Location> >
 {
 public:
-    LocationTerm(const Type &term, vespalib::stringref view,
+    LocationTerm(const Type &term, std::string_view view,
                  int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -98,7 +98,7 @@ class PredicateQuery : public QueryNodeMixin<PredicateQuery,
                                              TermBase<PredicateQueryTerm::UP> >
 {
 public:
-    PredicateQuery(PredicateQueryTerm::UP term, vespalib::stringref view,
+    PredicateQuery(PredicateQueryTerm::UP term, std::string_view view,
                    int32_t id, Weight weight)
         : QueryNodeMixinType(std::move(term), view, id, weight)
     {}
@@ -109,7 +109,7 @@ public:
 class RegExpTerm : public QueryNodeMixin<RegExpTerm, StringBase>
 {
 public:
-    RegExpTerm(const Type &term, vespalib::stringref view,
+    RegExpTerm(const Type &term, std::string_view view,
                int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -123,7 +123,7 @@ class FuzzyTerm : public QueryNodeMixin<FuzzyTerm, StringBase> {
     uint32_t _prefix_lock_length;
     // Prefix match mode is stored in parent Term
 public:
-    FuzzyTerm(const Type &term, vespalib::stringref view,
+    FuzzyTerm(const Type &term, std::string_view view,
               int32_t id, Weight weight, uint32_t max_edit_distance,
               uint32_t prefix_lock_length, bool prefix_match)
         : QueryNodeMixinType(term, view, id, weight),
@@ -159,7 +159,7 @@ private:
     double _distance_threshold;
 
 public:
-    NearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
+    NearestNeighborTerm(std::string_view query_tensor_name, std::string_view field_name,
                         int32_t id, Weight weight, uint32_t target_num_hits,
                         bool allow_approximate, uint32_t explore_additional_hits,
                         double distance_threshold)
@@ -184,7 +184,7 @@ public:
     using StringAndWeight = TermVector::StringAndWeight;
     using IntegerAndWeight = TermVector::IntegerAndWeight;
     ~MultiTerm() override;
-    void addTerm(vespalib::stringref term, Weight weight);
+    void addTerm(std::string_view term, Weight weight);
     void addTerm(int64_t term, Weight weight);
     // Note that the first refers to a zero terminated string.
     // That is required as the comparator for the enum store requires it.

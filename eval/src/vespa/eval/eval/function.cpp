@@ -1008,7 +1008,7 @@ void parse_expression(ParseContext &ctx) {
     }
 }
 
-auto parse_function(const Params &params, vespalib::stringref expression,
+auto parse_function(const Params &params, std::string_view expression,
                     const SymbolExtractor *symbol_extractor)
 {
     ParseContext ctx(params, expression.data(), expression.size(), symbol_extractor);
@@ -1044,25 +1044,25 @@ Function::create(nodes::Node_UP root_in, std::vector<vespalib::string> params_in
 }
 
 std::shared_ptr<Function const>
-Function::parse(vespalib::stringref expression)
+Function::parse(std::string_view expression)
 {
     return parse_function(ImplicitParams(), expression, nullptr);
 }
 
 std::shared_ptr<Function const>
-Function::parse(vespalib::stringref expression, const SymbolExtractor &symbol_extractor)
+Function::parse(std::string_view expression, const SymbolExtractor &symbol_extractor)
 {
     return parse_function(ImplicitParams(), expression, &symbol_extractor);
 }
 
 std::shared_ptr<Function const>
-Function::parse(const std::vector<vespalib::string> &params, vespalib::stringref expression)
+Function::parse(const std::vector<vespalib::string> &params, std::string_view expression)
 {
     return parse_function(ExplicitParams(params), expression, nullptr);
 }
 
 std::shared_ptr<Function const>
-Function::parse(const std::vector<vespalib::string> &params, vespalib::stringref expression,
+Function::parse(const std::vector<vespalib::string> &params, std::string_view expression,
                 const SymbolExtractor &symbol_extractor)
 {
     return parse_function(ExplicitParams(params), expression, &symbol_extractor);
@@ -1093,7 +1093,7 @@ Function::dump_as_lambda() const
 }
 
 bool
-Function::unwrap(vespalib::stringref input,
+Function::unwrap(std::string_view input,
                  vespalib::string &wrapper,
                  vespalib::string &body,
                  vespalib::string &error)
@@ -1120,8 +1120,8 @@ Function::unwrap(vespalib::stringref input,
         return false;
     }
     assert(body_end >= body_begin);
-    wrapper = vespalib::stringref(input.data() + wrapper_begin, wrapper_end - wrapper_begin);
-    body = vespalib::stringref(input.data() + body_begin, body_end - body_begin);
+    wrapper = std::string_view(input.data() + wrapper_begin, wrapper_end - wrapper_begin);
+    body = std::string_view(input.data() + body_begin, body_end - body_begin);
     return true;
 }
 

@@ -537,7 +537,7 @@ DistributorStripeTestUtil::getBucketSpaces() const
 }
 
 void
-DistributorStripeTestUtil::enable_cluster_state(vespalib::stringref state)
+DistributorStripeTestUtil::enable_cluster_state(std::string_view state)
 {
     getBucketDBUpdater().simulate_cluster_state_bundle_activation(lib::ClusterStateBundle(lib::ClusterState(state)));
 }

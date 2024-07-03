@@ -267,7 +267,7 @@ StringResultNode::add(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    vespalib::stringref bs(s.c_str(), s.size());
+    std::string_view bs(s.c_str(), s.size());
     size_t i(0);
     for (; i < _value.length() && i < bs.length(); i++) {
         _value[i] += bs[i];
@@ -283,7 +283,7 @@ StringResultNode::min(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    vespalib::stringref bs(s.c_str(), s.size());
+    std::string_view bs(s.c_str(), s.size());
     if (_value > bs) {
         _value = bs;
     }
@@ -294,7 +294,7 @@ StringResultNode::max(const ResultNode & b)
 {
     char buf[32];
     ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    vespalib::stringref bs(s.c_str(), s.size());
+    std::string_view bs(s.c_str(), s.size());
     if (_value < bs) {
         _value = bs;
     }

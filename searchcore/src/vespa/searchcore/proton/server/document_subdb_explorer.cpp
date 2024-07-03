@@ -52,7 +52,7 @@ DocumentSubDBExplorer::get_children_names() const
 }
 
 std::unique_ptr<StateExplorer>
-DocumentSubDBExplorer::get_child(vespalib::stringref name) const
+DocumentSubDBExplorer::get_child(std::string_view name) const
 {
     if (name == DOCUMENT_META_STORE) {
         // TODO(geirst): Avoid const cast by adding const interface to

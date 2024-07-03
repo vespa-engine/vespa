@@ -68,7 +68,7 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
 
     int64_t edge_interval = (value / _arity) * _arity;
     size = snprintf(buffer + prefix_size, buffer_size - prefix_size, "%" PRIu64, edge_interval);
-    handler.handleEdge(vespalib::stringref(buffer, prefix_size + size),
+    handler.handleEdge(std::string_view(buffer, prefix_size + size),
                        value - edge_interval);
 
     uint64_t level_size = _arity;
@@ -89,7 +89,7 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
                             "%" PRIu64 "-%" PRIu64,
                            start, start + level_size - 1);
         }
-        handler.handleRange(vespalib::stringref(buffer, prefix_size + size));
+        handler.handleRange(std::string_view(buffer, prefix_size + size));
         level_size *= _arity;
         if (!level_size) {  // overflow
             break;

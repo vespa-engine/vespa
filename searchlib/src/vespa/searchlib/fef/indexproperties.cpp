@@ -37,7 +37,7 @@ lookupStringVector(const Properties &props, const vespalib::string &name,
 }
 
 std::optional<double>
-lookup_opt_double(const Properties &props, vespalib::stringref name, std::optional<double> default_value)
+lookup_opt_double(const Properties &props, std::string_view name, std::optional<double> default_value)
 {
     Property p = props.lookup(name);
     if (p.found()) {

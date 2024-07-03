@@ -84,7 +84,7 @@ private:
 
     void handle_request_done_rpc_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);
     void handle_request_done_decode_error(const RpcRequestContext& req_ctx,
-                                          vespalib::stringref description);
+                                          std::string_view description);
     void create_and_dispatch_error_reply(api::StorageCommand& cmd, api::ReturnCode error);
 
     api::ReturnCode map_frt_error_to_storage_api_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);

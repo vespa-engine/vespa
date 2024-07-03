@@ -90,7 +90,7 @@ struct ChangedBucketOwnershipHandlerTest : Test {
     }
 
     static std::shared_ptr<const lib::ClusterStateBundle> make_state_bundle_with_config(
-            vespalib::stringref state_str, uint16_t node_count)
+            std::string_view state_str, uint16_t node_count)
     {
         return std::make_shared<const lib::ClusterStateBundle>(
                 std::make_shared<const lib::ClusterState>(state_str),

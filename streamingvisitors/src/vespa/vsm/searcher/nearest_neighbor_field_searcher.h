@@ -49,7 +49,7 @@ public:
                  search::fef::IQueryEnvironment& query_env) override;
     void onValue(const document::FieldValue& fv) override;
 
-    static search::attribute::DistanceMetric distance_metric_from_string(vespalib::stringref value);
+    static search::attribute::DistanceMetric distance_metric_from_string(std::string_view value);
 };
 
 }

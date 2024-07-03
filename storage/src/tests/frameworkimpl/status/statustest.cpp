@@ -30,7 +30,7 @@ vespalib::string fetch(int port, const vespalib::string &path) {
     vespalib::string result;
     ssize_t res = conn->read(buf, sizeof(buf));
     while (res > 0) {
-        result.append(vespalib::stringref(buf, res));
+        result.append(std::string_view(buf, res));
         res = conn->read(buf, sizeof(buf));
     }
     assert(res == 0);

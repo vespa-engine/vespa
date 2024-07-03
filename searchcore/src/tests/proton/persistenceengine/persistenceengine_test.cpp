@@ -224,7 +224,7 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     void handleRemoveByGid(FeedToken token, const Bucket& bucket,
                            Timestamp timestamp,
-                           vespalib::stringref, const GlobalId&) override {
+                           std::string_view, const GlobalId&) override {
         bool wasFound = existingTimestamp > 0;
         token->setResult(std::make_unique<RemoveResult>(wasFound), wasFound);
         handle(token, bucket, timestamp, DocumentId());

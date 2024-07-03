@@ -115,9 +115,9 @@ class Query
 {
 public:
     Query();
-    Query(const QueryNodeResultFactory & factory, vespalib::stringref queryRep);
+    Query(const QueryNodeResultFactory & factory, std::string_view queryRep);
     /// Will build the query tree
-    bool build(const QueryNodeResultFactory & factory, vespalib::stringref queryRep);
+    bool build(const QueryNodeResultFactory & factory, std::string_view queryRep);
     /// Will clear the results from the querytree.
     void reset();
     /// Will get all leafnodes.

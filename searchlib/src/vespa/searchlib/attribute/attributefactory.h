@@ -15,7 +15,7 @@ class AttributeVector;
  **/
 class AttributeFactory {
 private:
-    using stringref = vespalib::stringref;
+    using stringref = std::string_view;
     using Config = attribute::Config;
     using AttributeSP = std::shared_ptr<AttributeVector>;
     static AttributeSP createArrayStd(stringref name, const Config & cfg);

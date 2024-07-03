@@ -33,14 +33,14 @@ struct StateManagerTest : Test, NodeStateReporter {
     void SetUp() override;
     void TearDown() override;
 
-    static std::shared_ptr<api::SetSystemStateCommand> make_set_state_cmd(vespalib::stringref state_str, uint16_t cc_index) {
+    static std::shared_ptr<api::SetSystemStateCommand> make_set_state_cmd(std::string_view state_str, uint16_t cc_index) {
         auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state_str));
         cmd->setSourceIndex(cc_index);
         return cmd;
     }
 
     static std::shared_ptr<const lib::ClusterStateBundle> make_state_bundle_with_config(
-            vespalib::stringref state_str, uint16_t num_nodes)
+            std::string_view state_str, uint16_t num_nodes)
     {
         auto state = std::make_shared<const ClusterState>(state_str);
         auto distr = lib::DistributionConfigBundle::of(lib::Distribution::getDefaultDistributionConfig(1, num_nodes));
@@ -51,7 +51,7 @@ struct StateManagerTest : Test, NodeStateReporter {
 
 
     static std::shared_ptr<api::SetSystemStateCommand> make_set_state_cmd_with_config(
-            vespalib::stringref state_str, uint16_t num_nodes)
+            std::string_view state_str, uint16_t num_nodes)
     {
         return std::make_shared<api::SetSystemStateCommand>(make_state_bundle_with_config(state_str, num_nodes));
     }

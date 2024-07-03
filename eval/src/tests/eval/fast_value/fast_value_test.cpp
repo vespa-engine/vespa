@@ -161,7 +161,7 @@ TEST(FastValueTest, document_fast_value_memory_usage) {
     verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 100, 4288);
 }
 
-using SA = std::vector<vespalib::stringref>;
+using SA = std::vector<std::string_view>;
 
 TEST(FastValueBuilderTest, scalar_add_subspace_robustness) {
     auto factory = FastValueBuilderFactory::get();

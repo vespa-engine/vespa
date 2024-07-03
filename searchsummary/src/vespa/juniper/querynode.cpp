@@ -31,7 +31,7 @@ QueryExpr::QueryExpr(QueryExpr* e)
 QueryExpr::~QueryExpr() = default;
 
 
-QueryTerm::QueryTerm(vespalib::stringref term, int ix, int wgt)
+QueryTerm::QueryTerm(std::string_view term, int ix, int wgt)
     : QueryExpr(wgt, 0),
       ucs4_len(0),
       total_match_cnt(0),

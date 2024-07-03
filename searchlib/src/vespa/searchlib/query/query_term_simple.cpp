@@ -23,7 +23,7 @@ constexpr bool isRepresentableByInt64(double d) noexcept {
            (d < double(std::numeric_limits<int64_t>::max()));
 }
 
-bool isFullRange(vespalib::stringref s) noexcept {
+bool isFullRange(std::string_view s) noexcept {
     const size_t sz(s.size());
     return (sz >= 3u) &&
            (s[0] == '<' || s[0] == '[') &&

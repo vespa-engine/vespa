@@ -21,7 +21,7 @@
 namespace storage::framework {
 
 struct HtmlStatusReporter : public StatusReporter {
-    HtmlStatusReporter(vespalib::stringref id, vespalib::stringref name);
+    HtmlStatusReporter(std::string_view id, std::string_view name);
     virtual ~HtmlStatusReporter();
 
     /**

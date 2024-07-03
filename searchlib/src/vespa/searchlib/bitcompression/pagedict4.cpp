@@ -94,8 +94,8 @@ using StartOffset = PageDict4StartOffset;
 #define K_VALUE_COUNTFILE_L6_ACCNUMDOCS 16
 
 static uint32_t
-getLCP(vespalib::stringref word,
-       vespalib::stringref prevWord)
+getLCP(std::string_view word,
+       std::string_view prevWord)
 {
     size_t len1 = word.size();
     size_t len2 = prevWord.size();
@@ -109,7 +109,7 @@ getLCP(vespalib::stringref word,
 
 
 static void
-addLCPWord(vespalib::stringref word, size_t lcp, std::vector<char> &v)
+addLCPWord(std::string_view word, size_t lcp, std::vector<char> &v)
 {
     v.push_back(lcp);
     size_t pos = lcp;
@@ -174,7 +174,7 @@ PageDict4SSWriter::PageDict4SSWriter(SSEC &sse)
 PageDict4SSWriter::~PageDict4SSWriter() = default;
 
 void
-PageDict4SSWriter::addL6Skip(vespalib::stringref word,
+PageDict4SSWriter::addL6Skip(std::string_view word,
                              const StartOffset &startOffset,
                              uint64_t wordNum,
                              uint64_t pageNum,
@@ -190,7 +190,7 @@ PageDict4SSWriter::addL6Skip(vespalib::stringref word,
                          K_VALUE_COUNTFILE_L6_WORDNUM);
     _eL6.writeComprBufferIfNeeded();
     size_t lcp = getLCP(word, _l6Word);
-    vespalib::stringref wordSuffix = word.substr(lcp);
+    std::string_view wordSuffix = word.substr(lcp);
     _eL6.smallAlign(8);
     _eL6.writeBits(lcp, 8);
     _eL6.writeComprBufferIfNeeded();
@@ -211,7 +211,7 @@ PageDict4SSWriter::addL6Skip(vespalib::stringref word,
 
 void
 PageDict4SSWriter::
-addOverflowCounts(vespalib::stringref word,
+addOverflowCounts(std::string_view word,
                   const Counts &counts,
                   const StartOffset &startOffset,
                   uint64_t wordNum)
@@ -227,7 +227,7 @@ addOverflowCounts(vespalib::stringref word,
     _eL6.writeComprBufferIfNeeded();
     _eL6.smallAlign(8);
     size_t lcp = getLCP(word, _l6Word);
-    vespalib::stringref wordSuffix = word.substr(lcp);
+    std::string_view wordSuffix = word.substr(lcp);
     _eL6.writeBits(lcp, 8);
     _eL6.writeComprBufferIfNeeded();
     _eL6.writeString(wordSuffix);
@@ -429,7 +429,7 @@ PageDict4SPWriter::resetPage()
 
 
 void
-PageDict4SPWriter::addL3Skip(vespalib::stringref word,
+PageDict4SPWriter::addL3Skip(std::string_view word,
                              const StartOffset &startOffset,
                              uint64_t wordNum,
                              uint64_t pageNum)
@@ -736,7 +736,7 @@ PageDict4PWriter::resetPage()
 
 
 void
-PageDict4PWriter::addCounts(vespalib::stringref word, const Counts &counts)
+PageDict4PWriter::addCounts(std::string_view word, const Counts &counts)
 {
     assert(_countsWordOffset == _words.size());
     size_t lcp = getLCP(_pendingCountsWord, _countsWord);
@@ -791,7 +791,7 @@ PageDict4PWriter::addCounts(vespalib::stringref word, const Counts &counts)
 
 /* Private use */
 void
-PageDict4PWriter::addOverflowCounts(vespalib::stringref word, const Counts &counts)
+PageDict4PWriter::addOverflowCounts(std::string_view word, const Counts &counts)
 {
     assert(_countsEntries == 0);
     assert(_countsSize == 0);
@@ -1041,7 +1041,7 @@ PageDict4SSReader::setup(DC &ssd)
 
 PageDict4SSLookupRes
 PageDict4SSReader::
-lookup(vespalib::stringref key)
+lookup(std::string_view key)
 {
     PageDict4SSLookupRes res;
 
@@ -1240,7 +1240,7 @@ lookupOverflow(uint64_t wordNum) const
     size_t lcp = *bytes;
     ++bytes;
     assert(lcp <= word.size());
-    vespalib::stringref suffix = reinterpret_cast<const char *>(bytes);
+    std::string_view suffix = reinterpret_cast<const char *>(bytes);
     dL6.setByteCompr(bytes + suffix.size() + 1);
     assert(lcp + suffix.size() == word.size());
     assert(suffix == word.substr(lcp));
@@ -1276,9 +1276,9 @@ void
 PageDict4SPLookupRes::
 lookup(const SSReader &ssReader,
        const void *sparsePage,
-       vespalib::stringref key,
-       vespalib::stringref l6Word,
-       vespalib::stringref lastSPWord,
+       std::string_view key,
+       std::string_view l6Word,
+       std::string_view lastSPWord,
        const StartOffset &l6StartOffset,
        uint64_t l6WordNum,
        uint64_t lowestPageNum)
@@ -1470,9 +1470,9 @@ bool
 PageDict4PLookupRes::
 lookup(const SSReader &ssReader,
        const void *page,
-       vespalib::stringref key,
-       vespalib::stringref l3Word,
-       vespalib::stringref lastPWord,
+       std::string_view key,
+       std::string_view l3Word,
+       std::string_view lastPWord,
        const StartOffset &l3StartOffset,
        uint64_t l3WordNum)
 {

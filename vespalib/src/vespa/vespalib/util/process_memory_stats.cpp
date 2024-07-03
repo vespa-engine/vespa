@@ -24,7 +24,7 @@ namespace {
  */
 
 bool
-isRange(vespalib::stringref line) {
+isRange(std::string_view line) {
     for (char c : line) {
         if (c == ' ') {
             return true;
@@ -51,7 +51,7 @@ isRange(vespalib::stringref line) {
  */
 
 bool
-isAnonymous(vespalib::stringref line) {
+isAnonymous(std::string_view line) {
     int delims = 0;
     for (char c : line) {
         if (delims >= 4) {
@@ -78,8 +78,8 @@ isAnonymous(vespalib::stringref line) {
  * mapped pages.
  */
 
-vespalib::stringref
-getLineHeader(vespalib::stringref line)
+std::string_view
+getLineHeader(std::string_view line)
 {
     return line.substr(0, line.find(':'));
 }

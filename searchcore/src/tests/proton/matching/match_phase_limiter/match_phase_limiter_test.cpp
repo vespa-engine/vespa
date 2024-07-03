@@ -306,7 +306,7 @@ TEST_F("require that the match phase limiter may chose to limit the query even w
     EXPECT_TRUE(limiter.was_limited());
 }
 
-void verify(vespalib::stringref expected, const vespalib::Slime & slime) {
+void verify(std::string_view expected, const vespalib::Slime & slime) {
     vespalib::Slime expectedSlime;
     vespalib::slime::JsonFormat::decode(expected, expectedSlime);
     EXPECT_EQUAL(expectedSlime, slime);

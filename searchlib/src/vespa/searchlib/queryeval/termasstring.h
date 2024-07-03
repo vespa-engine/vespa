@@ -9,6 +9,6 @@ namespace search::query { class Node; }
 namespace search::queryeval {
 
 vespalib::string termAsString(const search::query::Node &term_node);
-vespalib::stringref termAsString(const search::query::Node &term_node, vespalib::string & scratchPad);
+std::string_view termAsString(const search::query::Node &term_node, vespalib::string & scratchPad);
 
 }

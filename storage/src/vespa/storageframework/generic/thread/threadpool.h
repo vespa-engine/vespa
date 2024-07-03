@@ -32,7 +32,7 @@ struct ThreadPool {
     virtual ~ThreadPool() = default;
 
     virtual std::unique_ptr<Thread>
-    startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTime,
+    startThread(Runnable&, std::string_view id, vespalib::duration waitTime,
                 vespalib::duration maxProcessTime, int ticksBeforeWait,
                 std::optional<vespalib::CpuUsage::Category> cpu_category) = 0;
 

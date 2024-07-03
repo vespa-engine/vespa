@@ -5,7 +5,7 @@
 
 namespace search::tensor {
 
-ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref name,
+ImportedTensorAttributeVector::ImportedTensorAttributeVector(std::string_view name,
                                                              std::shared_ptr<ReferenceAttribute> reference_attribute,
                                                              std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                                              std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
@@ -19,7 +19,7 @@ ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref
 {
 }
 
-ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref name,
+ImportedTensorAttributeVector::ImportedTensorAttributeVector(std::string_view name,
                                                              std::shared_ptr<ReferenceAttribute> reference_attribute,
                                                              std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
                                                              std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,

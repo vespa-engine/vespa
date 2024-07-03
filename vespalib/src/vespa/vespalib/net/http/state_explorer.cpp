@@ -11,7 +11,7 @@ StateExplorer::get_children_names() const
 }
  
 std::unique_ptr<StateExplorer>
-StateExplorer::get_child(vespalib::stringref) const
+StateExplorer::get_child(std::string_view) const
 {
     return std::unique_ptr<StateExplorer>(nullptr);
 }

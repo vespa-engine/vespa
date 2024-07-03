@@ -60,7 +60,7 @@ Route::toDebugString() const {
 }
 
 Route
-Route::parse(vespalib::stringref route)
+Route::parse(std::string_view route)
 {
     return RouteParser::createRoute(route);
 }

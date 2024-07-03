@@ -24,19 +24,19 @@ namespace document {
 
 namespace {
 
-vespalib::stringref
+std::string_view
 readCStr(nbostream & stream) {
     const char * s = stream.peek();
     size_t sz = strnlen(s, stream.size());
     stream.adjustReadPos(sz+1);
-    return vespalib::stringref(s, sz);
+    return std::string_view(s, sz);
 }
 
 const DocumentType *
-deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, vespalib::stringref & documentId)
+deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, std::string_view & documentId)
 {
     documentId = readCStr(stream);
-    vespalib::stringref typestr = readCStr(stream);
+    std::string_view typestr = readCStr(stream);
     int16_t version = 0;
     stream >> version;
     const DocumentType * docType =  repo.getDocumentType(typestr);
@@ -110,7 +110,7 @@ DocumentUpdate::eagerDeserialize() const {
 
 void DocumentUpdate::lazyDeserialize(const DocumentTypeRepo & repo, nbostream & stream) {
     size_t start(stream.rp());
-    vespalib::stringref voidId;
+    std::string_view voidId;
     deserializeHeader(repo, stream, voidId);
     deserializeBody(repo, stream);
     stream.rp(start);
@@ -252,7 +252,7 @@ DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && s
     _repo = &repo;
     _backing = std::move(stream);
     size_t startPos = _backing.rp();
-    vespalib::stringref docId;
+    std::string_view docId;
     _type = deserializeHeader(repo, _backing, docId);
     _documentId.set(docId);
     _backing.rp(startPos);
@@ -263,7 +263,7 @@ DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & st
 {
     _repo = &repo;
     size_t startPos = stream.rp();
-    vespalib::stringref docId;
+    std::string_view docId;
     _type = deserializeHeader(repo, stream, docId);
     _documentId.set(docId);
     deserializeBody(repo, stream);

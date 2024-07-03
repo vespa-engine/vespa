@@ -18,7 +18,7 @@ private:
     DenseTensorStore _denseTensorStore;
 
 public:
-    DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
+    DenseTensorAttribute(std::string_view baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~DenseTensorAttribute() override;
     // Implements AttributeVector and ITensorAttribute

@@ -26,7 +26,7 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
 struct MyError : public std::exception {
-    explicit MyError(vespalib::stringref m) :
+    explicit MyError(std::string_view m) :
         std::exception(),
         msg(m)
     {}

@@ -11,7 +11,7 @@ namespace search {
 class SummaryException : public vespalib::IoException
 {
 public:
-    SummaryException(vespalib::stringref msg, FastOS_FileInterface & file, vespalib::stringref location);
+    SummaryException(std::string_view msg, FastOS_FileInterface & file, std::string_view location);
 };
 
 } // namespace search

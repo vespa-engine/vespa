@@ -42,34 +42,34 @@ using search::query::WandTerm;
 using search::query::WeakAnd;
 using search::query::WeightedSetTerm;
 using vespalib::string;
-using vespalib::stringref;
+using std::string_view;
 
 namespace search::queryeval {
 
 namespace {
 
-stringref
+string_view
 termAsString(const search::query::Range &term, string & scratchPad) {
     vespalib::asciistream os;
     scratchPad = (os << term).str();
     return scratchPad;
 }
 
-stringref
+string_view
 termAsString(const search::query::Location &term, string & scratchPad) {
     vespalib::asciistream os;
     scratchPad = (os << term).str();
     return scratchPad;
 }
 
-stringref
+string_view
 termAsString(const string &term, string &) {
     return term;
 }
 
 struct TermAsStringVisitor : public QueryVisitor {
     string  & _scratchPad;
-    stringref term;
+    string_view term;
     bool      isSet;
 
     TermAsStringVisitor(string & scratchPad) : _scratchPad(scratchPad), term(), isSet(false) {}
@@ -81,7 +81,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     }
 
     void illegalVisit() {
-        term = stringref();
+        term = string_view();
         isSet = false;
     }
 
@@ -132,7 +132,7 @@ termAsString(const Node &term_node) {
     return termAsString(term_node, scratchPad);
 }
 
-stringref
+string_view
 termAsString(const search::query::Node &term_node, string & scratchPad) {
     TermAsStringVisitor visitor(scratchPad);
     const_cast<Node &>(term_node).accept(visitor);

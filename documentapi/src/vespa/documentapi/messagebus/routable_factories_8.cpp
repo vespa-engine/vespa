@@ -41,30 +41,30 @@ document::DocumentId get_document_id(const protobuf::DocumentId& src) {
 }
 
 // TODO DocumentAPI should be extended to use actual document::FieldSet enums instead of always passing strings.
-void set_raw_field_set(protobuf::FieldSet& dest, vespalib::stringref src) {
+void set_raw_field_set(protobuf::FieldSet& dest, std::string_view src) {
     dest.set_spec(src.data(), src.size());
 }
 
 // Note: returns by ref
-vespalib::stringref get_raw_field_set(const protobuf::FieldSet& src) noexcept {
+std::string_view get_raw_field_set(const protobuf::FieldSet& src) noexcept {
     return src.spec();
 }
 
-void set_raw_selection(protobuf::DocumentSelection& dest, vespalib::stringref src) {
+void set_raw_selection(protobuf::DocumentSelection& dest, std::string_view src) {
     dest.set_selection(src.data(), src.size());
 }
 
 // Note: returns by ref
-vespalib::stringref get_raw_selection(const protobuf::DocumentSelection& src) noexcept {
+std::string_view get_raw_selection(const protobuf::DocumentSelection& src) noexcept {
     return src.selection();
 }
 
-void set_bucket_space(protobuf::BucketSpace& dest, vespalib::stringref space_name) {
+void set_bucket_space(protobuf::BucketSpace& dest, std::string_view space_name) {
     dest.set_name(space_name.data(), space_name.size());
 }
 
 // Note: returns by ref
-vespalib::stringref get_bucket_space(const protobuf::BucketSpace& src) noexcept {
+std::string_view get_bucket_space(const protobuf::BucketSpace& src) noexcept {
     return src.name();
 }
 

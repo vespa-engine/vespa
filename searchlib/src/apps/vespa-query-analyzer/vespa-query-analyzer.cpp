@@ -46,7 +46,7 @@ void apply_diff(vespalib::string &str, int diff, char small, char big, int len) 
     }
 }
 
-using Path = std::vector<std::variant<size_t,vespalib::stringref>>;
+using Path = std::vector<std::variant<size_t,std::string_view>>;
 using Paths = std::vector<Path>;
 
 template <typename F>
@@ -89,8 +89,8 @@ template <typename F> Matcher<F>::~Matcher() = default;
 std::vector<Path> find_field(const Inspector &root, const vespalib::string &name) {
     auto matcher = Matcher([&](const Path &path, const Inspector &){
                                return ((path.size() > 0) &&
-                                       (std::holds_alternative<vespalib::stringref>(path.back())) &&
-                                       (std::get<vespalib::stringref>(path.back()) == name));
+                                       (std::holds_alternative<std::string_view>(path.back())) &&
+                                       (std::get<std::string_view>(path.back()) == name));
                            });
     matcher.search(root);
     return matcher.result;
@@ -99,8 +99,8 @@ std::vector<Path> find_field(const Inspector &root, const vespalib::string &name
 std::vector<Path> find_tag(const Inspector &root, const vespalib::string &name) {
     auto matcher = Matcher([&](const Path &path, const Inspector &value){
                                return ((path.size() > 0) &&
-                                       (std::holds_alternative<vespalib::stringref>(path.back())) &&
-                                       (std::get<vespalib::stringref>(path.back()) == "tag") &&
+                                       (std::holds_alternative<std::string_view>(path.back())) &&
+                                       (std::get<std::string_view>(path.back()) == "tag") &&
                                        (value.asString().make_stringref() == name));
                            });
     matcher.search(root);
@@ -116,13 +116,13 @@ vespalib::string path_to_str(const Path &path) {
         }
         std::visit(vespalib::overload{
                 [&str](size_t value)noexcept{ str.append(fmt("%zu", value)); },
-                [&str](vespalib::stringref value)noexcept{ str.append(value); }}, item);
+                [&str](std::string_view value)noexcept{ str.append(value); }}, item);
     }
     str.append("]");
     return str;
 }
 
-vespalib::string strip_name(vespalib::stringref name) {
+vespalib::string strip_name(std::string_view name) {
     auto end = name.find("<");
     auto ns = name.rfind("::", end);
     size_t begin = (ns > name.size()) ? 0 : ns + 2;
@@ -139,8 +139,8 @@ const Inspector &apply_path(const Inspector &node, const Path &path, size_t max 
         if (std::holds_alternative<size_t>(elem)) {
             ptr = &((*ptr)[std::get<size_t>(elem)]);
         }
-        if (std::holds_alternative<vespalib::stringref>(elem)) {
-            auto ref = std::get<vespalib::stringref>(elem);
+        if (std::holds_alternative<std::string_view>(elem)) {
+            auto ref = std::get<std::string_view>(elem);
             ptr = &((*ptr)[Memory(ref.data(), ref.size())]);
         }
     }

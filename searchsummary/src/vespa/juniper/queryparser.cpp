@@ -39,7 +39,7 @@ public:
         }
     }
 
-    vespalib::stringref get_index() const override;
+    std::string_view get_index() const override;
     int get_weight() const override;
     ItemCreator get_creator() const override;
 
@@ -52,7 +52,7 @@ public:
 
 QueryParserQueryItem::~QueryParserQueryItem() = default;
 
-vespalib::stringref
+std::string_view
 QueryParserQueryItem::get_index() const
 {
     return _index;

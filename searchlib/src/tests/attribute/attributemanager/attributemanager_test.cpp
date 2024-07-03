@@ -18,7 +18,7 @@ using namespace vespa::config::search;
 using namespace search;
 using namespace search::attribute;
 using std::shared_ptr;
-using vespalib::stringref;
+using std::string_view;
 
 using BT = BasicType;
 using CT = CollectionType;

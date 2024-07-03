@@ -206,13 +206,13 @@ class GetCommand : public BucketInfoCommand {
     InternalReadConsistency _internal_read_consistency;
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
-               vespalib::stringref fieldSet, Timestamp before = MAX_TIMESTAMP);
+               std::string_view fieldSet, Timestamp before = MAX_TIMESTAMP);
     ~GetCommand() override;
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
-    void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
+    void setFieldSet(std::string_view fieldSet) { _fieldSet = fieldSet; }
     [[nodiscard]] bool has_condition() const noexcept { return _condition.isPresent(); }
     [[nodiscard]] const TestAndSetCondition& condition() const noexcept { return _condition; }
     void set_condition(TestAndSetCondition cond) { _condition = std::move(cond); }

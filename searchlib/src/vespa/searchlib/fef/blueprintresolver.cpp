@@ -283,7 +283,7 @@ BlueprintResolver::describe_feature(const vespalib::string &name)
 }
 
 void
-BlueprintResolver::addSeed(vespalib::stringref feature)
+BlueprintResolver::addSeed(std::string_view feature)
 {
     _seeds.emplace_back(feature);
 }

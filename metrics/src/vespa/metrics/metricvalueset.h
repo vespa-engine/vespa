@@ -37,7 +37,7 @@ namespace metrics {
 
 struct MetricValueClass {
     using UP = std::unique_ptr<MetricValueClass>;
-    using stringref = vespalib::stringref;
+    using stringref = std::string_view;
     virtual ~MetricValueClass() {}
 
     virtual double getDoubleValue(stringref id) const = 0;

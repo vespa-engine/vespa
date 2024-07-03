@@ -7,7 +7,7 @@
 namespace search::expression {
 
 void
-CurrentIndexSetup::Usage::notify_unbound_struct_usage(vespalib::stringref name)
+CurrentIndexSetup::Usage::notify_unbound_struct_usage(std::string_view name)
 {
     _unbound.insert(name);
 }
@@ -19,7 +19,7 @@ CurrentIndexSetup::Usage::Usage()
 
 CurrentIndexSetup::Usage::~Usage() = default;
 
-vespalib::stringref
+std::string_view
 CurrentIndexSetup::Usage::get_unbound_struct_name() const
 {
     assert(has_single_unbound_struct());
@@ -46,7 +46,7 @@ CurrentIndexSetup::CurrentIndexSetup()
 CurrentIndexSetup::~CurrentIndexSetup() = default;
 
 const CurrentIndex *
-CurrentIndexSetup::resolve(vespalib::stringref field_name) const
+CurrentIndexSetup::resolve(std::string_view field_name) const
 {
     size_t pos = field_name.rfind('.');
     if (pos > field_name.size()) {
@@ -64,7 +64,7 @@ CurrentIndexSetup::resolve(vespalib::stringref field_name) const
 }
 
 void
-CurrentIndexSetup::bind(vespalib::stringref struct_name, const CurrentIndex &index)
+CurrentIndexSetup::bind(std::string_view struct_name, const CurrentIndex &index)
 {
     auto res = _bound.insert(std::make_pair(vespalib::string(struct_name),
                                             std::addressof(index)));

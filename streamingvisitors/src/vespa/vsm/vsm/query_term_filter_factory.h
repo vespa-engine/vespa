@@ -33,7 +33,7 @@ public:
     QueryTermFilterFactory(VsmfieldsConfig& vsm_fields_config,
                             VsmsummaryConfig& vsm_summary_config);
     ~QueryTermFilterFactory() override;
-    std::shared_ptr<const search::docsummary::IQueryTermFilter> make(vespalib::stringref input_field) const override;
+    std::shared_ptr<const search::docsummary::IQueryTermFilter> make(std::string_view input_field) const override;
 };
 
 }

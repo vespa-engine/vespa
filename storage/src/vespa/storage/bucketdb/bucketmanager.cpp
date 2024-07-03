@@ -202,7 +202,7 @@ struct MetricsUpdater {
 namespace {
 
 void
-output(vespalib::JsonStream & json, vespalib::stringref name, uint64_t value, vespalib::stringref bucketSpace) {
+output(vespalib::JsonStream & json, std::string_view name, uint64_t value, std::string_view bucketSpace) {
     using namespace vespalib::jsonstream;
     json << Object();
     json << "name" << name;
@@ -216,7 +216,7 @@ output(vespalib::JsonStream & json, vespalib::stringref name, uint64_t value, ve
 }
 
 void
-output(vespalib::JsonStream & json, vespalib::stringref name, uint64_t value) {
+output(vespalib::JsonStream & json, std::string_view name, uint64_t value) {
     output(json, name, value, "");
 }
 

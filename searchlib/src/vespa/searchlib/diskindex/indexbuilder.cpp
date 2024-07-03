@@ -38,7 +38,7 @@ public:
     FileHandle();
     ~FileHandle();
 
-    void open(vespalib::stringref dir,
+    void open(std::string_view dir,
               const SchemaUtil::IndexIterator &index,
               uint32_t docIdLimit, uint64_t numWordIds,
               const FieldLengthInfo &field_length_info,
@@ -62,7 +62,7 @@ public:
                 const TuneFileSeqWrite &tuneFileWrite, const FileHeaderContext &fileHeaderContext);
     ~FieldHandle();
 
-    void new_word(vespalib::stringref word);
+    void new_word(std::string_view word);
     void add_document(const index::DocIdAndFeatures &features);
 
     const Schema::IndexField &getSchemaField();
@@ -78,7 +78,7 @@ public:
                       uint64_t numWordIds, const IFieldLengthInspector & field_length_inspector,
                       const TuneFileSeqWrite &tuneFileWrite, const FileHeaderContext &fileHeaderContext);
     ~FieldIndexBuilder() override;
-    void startWord(vespalib::stringref word) override;
+    void startWord(std::string_view word) override;
     void endWord() override;
     void add_document(const DocIdAndFeatures &features) override;
 private:
@@ -108,7 +108,7 @@ FieldIndexBuilder::FieldIndexBuilder(const Schema &schema, uint32_t fieldId, Ind
 FieldIndexBuilder::~FieldIndexBuilder() = default;
 
 void
-FieldIndexBuilder::startWord(vespalib::stringref word)
+FieldIndexBuilder::startWord(std::string_view word)
 {
     assert(!_inWord);
     // TODO: Check sort order
@@ -139,7 +139,7 @@ FileHandle::FileHandle()
 FileHandle::~FileHandle() = default;
 
 void
-FileHandle::open(vespalib::stringref dir,
+FileHandle::open(std::string_view dir,
                  const SchemaUtil::IndexIterator &index,
                  uint32_t docIdLimit, uint64_t numWordIds,
                  const FieldLengthInfo &field_length_info,
@@ -195,7 +195,7 @@ FieldHandle::~FieldHandle() {
 }
 
 void
-FieldHandle::new_word(vespalib::stringref word)
+FieldHandle::new_word(std::string_view word)
 {
     _file.writer()->newWord(word);
 }
@@ -247,7 +247,7 @@ extractFields(const Schema &schema) {
     return fields;
 }
 
-IndexBuilder::IndexBuilder(const Schema &schema, vespalib::stringref prefix, uint32_t docIdLimit,
+IndexBuilder::IndexBuilder(const Schema &schema, std::string_view prefix, uint32_t docIdLimit,
                            uint64_t numWordIds, const index::IFieldLengthInspector &field_length_inspector,
                            const TuneFileIndexing &tuneFileIndexing, const search::common::FileHeaderContext &fileHeaderContext)
     : index::IndexBuilder(schema),
@@ -288,7 +288,7 @@ IndexBuilder::startField(uint32_t fieldId) {
 }
 
 vespalib::string
-IndexBuilder::appendToPrefix(vespalib::stringref name) const
+IndexBuilder::appendToPrefix(std::string_view name) const
 {
     if (_prefix.empty()) {
         return name;

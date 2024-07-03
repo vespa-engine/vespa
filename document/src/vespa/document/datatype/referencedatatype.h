@@ -24,7 +24,7 @@ public:
 
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainingFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, std::string_view remainingFieldName) const override;
 
     const ReferenceDataType * cast_reference() const noexcept override { return this; }
     bool equals(const DataType &type) const noexcept override;

@@ -24,8 +24,8 @@ namespace search::docsummary {
 
 namespace {
 
-vespalib::stringref
-getSpanString(vespalib::stringref s, const Span &span)
+std::string_view
+getSpanString(std::string_view s, const Span &span)
 {
     return {s.data() + span.from(), static_cast<size_t>(span.length())};
 }

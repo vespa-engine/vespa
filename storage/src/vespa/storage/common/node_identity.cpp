@@ -4,7 +4,7 @@
 
 namespace storage {
 
-NodeIdentity::NodeIdentity(vespalib::stringref cluster_name_in,
+NodeIdentity::NodeIdentity(std::string_view cluster_name_in,
                            const lib::NodeType& node_type_in,
                            uint16_t node_index_in)
     : _cluster_name(cluster_name_in),

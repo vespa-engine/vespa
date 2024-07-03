@@ -388,7 +388,7 @@ TEST_F(AttributeWriterTest, handles_batch_remove)
 }
 
 void
-verifyAttributeContent(const AttributeVector & v, uint32_t lid, vespalib::stringref expected)
+verifyAttributeContent(const AttributeVector & v, uint32_t lid, std::string_view expected)
 {
     attribute::ConstCharContent sbuf;
     sbuf.fill(v, lid);
@@ -796,7 +796,7 @@ public:
     size_t clear_doc_cnt;
     const Value* exp_tensor;
 
-    MockDenseTensorAttribute(vespalib::stringref name, const AVConfig& cfg)
+    MockDenseTensorAttribute(std::string_view name, const AVConfig& cfg)
         : DenseTensorAttribute(name, cfg),
           prepare_set_tensor_cnt(0),
           complete_set_tensor_cnt(0),

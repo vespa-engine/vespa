@@ -20,7 +20,7 @@ namespace search::tensor {
 class SerializedFastValueAttribute : public TensorAttribute {
     TensorBufferStore _tensorBufferStore; // data store for serialized tensors
 public:
-    SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
+    SerializedFastValueAttribute(std::string_view baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~SerializedFastValueAttribute() override;
 
     SerializedTensorRef get_serialized_tensor_ref(uint32_t docid) const override;

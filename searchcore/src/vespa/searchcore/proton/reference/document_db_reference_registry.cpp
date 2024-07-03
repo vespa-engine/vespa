@@ -16,7 +16,7 @@ DocumentDBReferenceRegistry::~DocumentDBReferenceRegistry()
 }
 
 std::shared_ptr<IDocumentDBReference>
-DocumentDBReferenceRegistry::get(vespalib::stringref name) const
+DocumentDBReferenceRegistry::get(std::string_view name) const
 {
     std::unique_lock<std::mutex> guard(_lock);
     auto itr = _handlers.find(name);
@@ -28,7 +28,7 @@ DocumentDBReferenceRegistry::get(vespalib::stringref name) const
 }
 
 std::shared_ptr<IDocumentDBReference>
-DocumentDBReferenceRegistry::tryGet(vespalib::stringref name) const
+DocumentDBReferenceRegistry::tryGet(std::string_view name) const
 {
     std::lock_guard<std::mutex> guard(_lock);
     auto itr = _handlers.find(name);
@@ -40,7 +40,7 @@ DocumentDBReferenceRegistry::tryGet(vespalib::stringref name) const
 }
 
 void
-DocumentDBReferenceRegistry::add(vespalib::stringref name, std::shared_ptr<IDocumentDBReference> referee)
+DocumentDBReferenceRegistry::add(std::string_view name, std::shared_ptr<IDocumentDBReference> referee)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _handlers[name] = referee;
@@ -48,7 +48,7 @@ DocumentDBReferenceRegistry::add(vespalib::stringref name, std::shared_ptr<IDocu
 }
 
 void
-DocumentDBReferenceRegistry::remove(vespalib::stringref name)
+DocumentDBReferenceRegistry::remove(std::string_view name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _handlers.erase(name);

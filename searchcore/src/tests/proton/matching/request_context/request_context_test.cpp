@@ -47,7 +47,7 @@ private:
     void insert_tensor_in_properties(const vespalib::string& tensor_name, const Value& tensor_value) {
         vespalib::nbostream stream;
         encode_value(tensor_value, stream);
-        _query_env.getProperties().add(tensor_name, vespalib::stringref(stream.data(), stream.size()));
+        _query_env.getProperties().add(tensor_name, std::string_view(stream.data(), stream.size()));
     }
 
 public:

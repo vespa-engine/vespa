@@ -24,7 +24,7 @@ namespace proton {
 
 namespace {
 
-GlobalId toGid(vespalib::stringref docId) {
+GlobalId toGid(std::string_view docId) {
     return DocumentId(docId).getGlobalId();
 }
 
@@ -95,7 +95,7 @@ struct Fixture
         _timestamp = Timestamp(_timestamp.getValue() + 1);
     }
 
-    void put(vespalib::stringref docId, uint32_t lid) {
+    void put(std::string_view docId, uint32_t lid) {
         bumpTimeStamp();
         const GlobalId gid(toGid(docId));
         uint32_t docSize = 1;
@@ -103,7 +103,7 @@ struct Fixture
         _dms->commit();
     }
 
-    uint32_t put(vespalib::stringref docId) {
+    uint32_t put(std::string_view docId) {
         auto inspectRes = _dms->inspect(toGid(docId), 0u);
         uint32_t lid = inspectRes.getLid();
         put(docId, lid);
@@ -136,7 +136,7 @@ struct Fixture
     }
 
     template <typename Function>
-    void assertPut(vespalib::stringref docId, uint32_t expLid,
+    void assertPut(std::string_view docId, uint32_t expLid,
                    generation_t currentGeneration, generation_t firstUsedGeneration,
                    Function &&func)
     {

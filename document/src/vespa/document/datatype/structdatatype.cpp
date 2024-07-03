@@ -17,13 +17,13 @@ namespace document {
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 
-StructDataType::StructDataType(vespalib::stringref name)
+StructDataType::StructDataType(std::string_view name)
     : StructuredDataType(name),
       _nameFieldMap(),
       _idFieldMap()
 { }
 
-StructDataType::StructDataType(vespalib::stringref name, int32_t dataTypeId)
+StructDataType::StructDataType(std::string_view name, int32_t dataTypeId)
     : StructuredDataType(name, dataTypeId),
       _nameFieldMap(),
       _idFieldMap()
@@ -102,7 +102,7 @@ StructDataType::createFieldValue() const
 }
 
 const Field&
-StructDataType::getField(vespalib::stringref name) const
+StructDataType::getField(std::string_view name) const
 {
     StringFieldMap::const_iterator it(_nameFieldMap.find(name));
     if (it == _nameFieldMap.end()) {
@@ -134,7 +134,7 @@ StructDataType::getField(int32_t fieldId) const
 }
 
 bool
-StructDataType::hasField(vespalib::stringref name) const noexcept {
+StructDataType::hasField(std::string_view name) const noexcept {
     return _nameFieldMap.find(name) != _nameFieldMap.end();
 }
 

@@ -4,7 +4,7 @@
 
 class MatchTester : public slobrok::api::IMirrorAPI
 {
-    SpecList lookup(vespalib::stringref ) const override {
+    SpecList lookup(std::string_view ) const override {
         return SpecList();
     }
     uint32_t updates() const override { return 0; }

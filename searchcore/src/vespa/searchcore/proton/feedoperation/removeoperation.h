@@ -14,7 +14,7 @@ protected:
     {}
 public:
     virtual bool hasDocType() const = 0;
-    virtual vespalib::stringref getDocType() const = 0;
+    virtual std::string_view getDocType() const = 0;
     virtual const document::GlobalId & getGlobalId() const = 0;
 };
 
@@ -32,7 +32,7 @@ public:
     vespalib::string toString() const override;
 
     bool hasDocType() const override { return _docId.hasDocType(); }
-    vespalib::stringref getDocType() const override { return _docId.getDocType(); }
+    std::string_view getDocType() const override { return _docId.getDocType(); }
 };
 
 class RemoveOperationWithGid : public RemoveOperation {
@@ -42,7 +42,7 @@ class RemoveOperationWithGid : public RemoveOperation {
 public:
     RemoveOperationWithGid();
     RemoveOperationWithGid(document::BucketId bucketId, Timestamp timestamp,
-                           const document::GlobalId & gid, vespalib::stringref docType);
+                           const document::GlobalId & gid, std::string_view docType);
     ~RemoveOperationWithGid() override;
     const document::GlobalId & getGlobalId() const override { return _gid; }
     void serialize(vespalib::nbostream &os) const override;
@@ -50,7 +50,7 @@ public:
     vespalib::string toString() const override;
 
     bool hasDocType() const override { return true; }
-    vespalib::stringref getDocType() const override { return _docType; }
+    std::string_view getDocType() const override { return _docType; }
 };
 
 } // namespace proton

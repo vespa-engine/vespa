@@ -125,7 +125,7 @@ struct SetStateFixture : FixtureBase {
     }
 };
 
-std::shared_ptr<const lib::ClusterState> state_of(vespalib::stringref state) {
+std::shared_ptr<const lib::ClusterState> state_of(std::string_view state) {
     return std::make_shared<const lib::ClusterState>(state);
 }
 

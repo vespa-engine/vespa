@@ -454,7 +454,7 @@ NormalizeSubjectFunctionNode::onExecute() const
             }
         }
     }
-    static_cast<StringResultNode &> (updateResult()).set(vespalib::stringref(tmp.c_str() + pos, tmp.size() - pos));
+    static_cast<StringResultNode &> (updateResult()).set(std::string_view(tmp.c_str() + pos, tmp.size() - pos));
     return true;
 }
 

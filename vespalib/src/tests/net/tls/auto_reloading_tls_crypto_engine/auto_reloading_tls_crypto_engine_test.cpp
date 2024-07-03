@@ -85,7 +85,7 @@ PhL9XBnJJfzvG5GKXIK/iZgFuYkCIFLp+SIQ5Nc1+NzrU2ii/mkzCgC4N/nOWu9H
 88OP2wnm
 -----END CERTIFICATE-----)";
 
-void write_file(vespalib::stringref path, vespalib::stringref data) {
+void write_file(std::string_view path, std::string_view data) {
     File f(path);
     f.open(File::CREATE | File::TRUNC);
     f.write(data.data(), data.size(), 0);

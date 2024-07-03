@@ -76,7 +76,7 @@ using BucketSpacesConfigBuilder = vespa::config::content::core::BucketspacesConf
 
 namespace {
 
-BucketSpacesConfigBuilder::Documenttype make_doc_type(vespalib::stringref name, vespalib::stringref space) {
+BucketSpacesConfigBuilder::Documenttype make_doc_type(std::string_view name, std::string_view space) {
     BucketSpacesConfigBuilder::Documenttype doc_type;
     doc_type.name = name;
     doc_type.bucketspace = space;

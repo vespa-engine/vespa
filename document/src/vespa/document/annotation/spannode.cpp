@@ -13,7 +13,7 @@ class ToStringVisitor : public SpanTreeVisitor {
 public:
     ToStringVisitor();
     ~ToStringVisitor();
-    vespalib::stringref str() const { return _os.str(); }
+    std::string_view str() const { return _os.str(); }
 private:
     vespalib::asciistream _os;
     vespalib::string _indent;

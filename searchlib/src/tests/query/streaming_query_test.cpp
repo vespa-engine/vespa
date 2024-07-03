@@ -304,8 +304,8 @@ TEST(StreamingQueryTest, test_query_language)
 class AllowRewrite : public QueryNodeResultFactory
 {
 public:
-    explicit AllowRewrite(vespalib::stringref index) noexcept : _allowedIndex(index) {}
-    bool allow_float_terms_rewrite(vespalib::stringref index) const noexcept override { return index == _allowedIndex; }
+    explicit AllowRewrite(std::string_view index) noexcept : _allowedIndex(index) {}
+    bool allow_float_terms_rewrite(std::string_view index) const noexcept override { return index == _allowedIndex; }
 private:
     vespalib::string _allowedIndex;
 };
@@ -315,7 +315,7 @@ const char TERM_UNIQ = static_cast<char>(ParseItem::ITEM_TERM) | static_cast<cha
 TEST(StreamingQueryTest, e_is_not_rewritten_even_if_allowed)
 {
     const char term[6] = {TERM_UNIQ, 3, 1, 'c', 1, 'e'};
-    vespalib::stringref stackDump(term, sizeof(term));
+    std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(6u, stackDump.size());
     AllowRewrite allowRewrite("c");
     const Query q(allowRewrite, stackDump);
@@ -324,14 +324,14 @@ TEST(StreamingQueryTest, e_is_not_rewritten_even_if_allowed)
     EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
     const auto & qt = static_cast<const QueryTerm &>(root);
     EXPECT_EQ("c", qt.index());
-    EXPECT_EQ(vespalib::stringref("e"), qt.getTerm());
+    EXPECT_EQ(std::string_view("e"), qt.getTerm());
     EXPECT_EQ(3u, qt.uniqueId());
 }
 
 TEST(StreamingQueryTest, onedot0e_is_not_rewritten_by_default)
 {
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
-    vespalib::stringref stackDump(term, sizeof(term));
+    std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
     AllowRewrite empty("nix");
     const Query q(empty, stackDump);
@@ -340,14 +340,14 @@ TEST(StreamingQueryTest, onedot0e_is_not_rewritten_by_default)
     EXPECT_TRUE(dynamic_cast<const QueryTerm *>(&root) != nullptr);
     const auto & qt = static_cast<const QueryTerm &>(root);
     EXPECT_EQ("c", qt.index());
-    EXPECT_EQ(vespalib::stringref("1.0e"), qt.getTerm());
+    EXPECT_EQ(std::string_view("1.0e"), qt.getTerm());
     EXPECT_EQ(3u, qt.uniqueId());
 }
 
 TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
 {
     const char term[9] = {TERM_UNIQ, 3, 1, 'c', 4, '1', '.', '0', 'e'};
-    vespalib::stringref stackDump(term, sizeof(term));
+    std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(9u, stackDump.size());
     AllowRewrite empty("c");
     const Query q(empty, stackDump);
@@ -360,7 +360,7 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
     {
         const auto & qt = static_cast<const QueryTerm &>(*equiv.get_terms()[0]);
         EXPECT_EQ("c", qt.index());
-        EXPECT_EQ(vespalib::stringref("1.0e"), qt.getTerm());
+        EXPECT_EQ(std::string_view("1.0e"), qt.getTerm());
         EXPECT_EQ(3u, qt.uniqueId());
     }
     EXPECT_TRUE(dynamic_cast<const PhraseQueryNode *>(equiv.get_terms()[1].get()) != nullptr);
@@ -370,13 +370,13 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
          {
             const auto & qt = *phrase.get_terms()[0];
             EXPECT_EQ("c", qt.index());
-            EXPECT_EQ(vespalib::stringref("1"), qt.getTerm());
+            EXPECT_EQ(std::string_view("1"), qt.getTerm());
             EXPECT_EQ(0u, qt.uniqueId());
         }
         {
             const auto & qt = *phrase.get_terms()[1];
             EXPECT_EQ("c", qt.index());
-            EXPECT_EQ(vespalib::stringref("0e"), qt.getTerm());
+            EXPECT_EQ(std::string_view("0e"), qt.getTerm());
             EXPECT_EQ(0u, qt.uniqueId());
         }
     }
@@ -385,7 +385,7 @@ TEST(StreamingQueryTest, onedot0e_is_rewritten_if_allowed_too)
 TEST(StreamingQueryTest, negative_integer_is_rewritten_if_allowed_for_string_field)
 {
     const char term[7] = {TERM_UNIQ, 3, 1, 'c', 2, '-', '5'};
-    vespalib::stringref stackDump(term, sizeof(term));
+    std::string_view stackDump(term, sizeof(term));
     EXPECT_EQ(7u, stackDump.size());
     AllowRewrite empty("c");
     const Query q(empty, stackDump);
@@ -396,13 +396,13 @@ TEST(StreamingQueryTest, negative_integer_is_rewritten_if_allowed_for_string_fie
     {
         auto& qt = *equiv.get_terms()[0];
         EXPECT_EQ("c", qt.index());
-        EXPECT_EQ(vespalib::stringref("-5"), qt.getTerm());
+        EXPECT_EQ(std::string_view("-5"), qt.getTerm());
         EXPECT_EQ(3u, qt.uniqueId());
     }
     {
         auto& qt = *equiv.get_terms()[1];
         EXPECT_EQ("c", qt.index());
-        EXPECT_EQ(vespalib::stringref("5"), qt.getTerm());
+        EXPECT_EQ(std::string_view("5"), qt.getTerm());
         EXPECT_EQ(0u, qt.uniqueId());
     }
 }

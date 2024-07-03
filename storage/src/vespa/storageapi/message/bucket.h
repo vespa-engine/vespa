@@ -357,7 +357,7 @@ public:
     RequestBucketInfoCommand(document::BucketSpace bucketSpace,
                              uint16_t distributor,
                              const lib::ClusterState& state,
-                             vespalib::stringref _distributionHash);
+                             std::string_view _distributionHash);
 
     RequestBucketInfoCommand(document::BucketSpace bucketSpace,
                              uint16_t distributor,

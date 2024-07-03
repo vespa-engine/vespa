@@ -13,7 +13,7 @@ class CatSerializer : public vespalib::NBOSerializer, public ResultSerializer
 public:
     CatSerializer(vespalib::nbostream & stream) : vespalib::NBOSerializer(stream) { }
     CatSerializer & put(const vespalib::Identifiable & value) override;
-    CatSerializer & put(vespalib::stringref value) override;
+    CatSerializer & put(std::string_view value) override;
     ResultSerializer & putResult(const RawResultNode & value) override;
     ResultSerializer & putResult(const ResultNodeVector & value) override;
     void proxyPut(const ResultNode & value) override;

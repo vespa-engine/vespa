@@ -26,7 +26,7 @@ public:
      * @param port    The port to connect to.
      * @param session The session to route to.
      */
-    TcpDirective(vespalib::stringref host, uint32_t port, vespalib::stringref session);
+    TcpDirective(std::string_view host, uint32_t port, std::string_view session);
 
     ~TcpDirective() override;
 
