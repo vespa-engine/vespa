@@ -422,6 +422,7 @@ public abstract class Item implements Cloneable {
         if ( ! Objects.equals(this.connectedItem, other.connectedItem)) return false;
         if (this.connectivity != other.connectivity) return false;
         if (this.significance != other.significance) return false;
+        if (! Objects.equals(this.documentFrequency, other.documentFrequency)) return false;
         if (this.language != other.language) return false;
         return true;
     }
@@ -429,7 +430,7 @@ public abstract class Item implements Cloneable {
     @Override
     public int hashCode() {
         return Objects.hash(weight, fromSpecialToken, creator, annotations, isRanked, usePositionData, label,
-                            uniqueID, connectedItem, connectivity, significance, language);
+                            uniqueID, connectedItem, connectivity, significance, documentFrequency, language);
     }
 
     protected boolean hasUniqueID() {
