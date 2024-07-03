@@ -28,8 +28,6 @@ StepExceptInstance =
     Bcp? &
     Test? &
     Staging? &
-    Dev? &
-    Perf? &
     Prod*
 
 PrimitiveStep =
