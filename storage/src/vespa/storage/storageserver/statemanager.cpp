@@ -160,7 +160,7 @@ StateManager::reportHtmlStatus(std::ostream& out,
             << "<th>Received at time</th><th>State</th></tr>\n";
         for (const auto & it : std::ranges::reverse_view(_systemStateHistory)) {
             out << "<tr><td>" << vespalib::to_string(vespalib::to_utc(it.first)) << "</td><td>"
-                << xml_content_escaped(it.second->getBaselineClusterState()->toString()) << "</td></tr>\n";
+                << xml_content_escaped(it.second->toString()) << "</td></tr>\n";
         }
         out << "</table>\n";
     }
