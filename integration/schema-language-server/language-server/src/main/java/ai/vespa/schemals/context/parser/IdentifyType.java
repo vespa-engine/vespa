@@ -41,8 +41,17 @@ public class IdentifyType extends Identifier {
             parent != null &&
             parent.size() > parent.indexOf(node)
         ) {
-            SchemaNode child = parent.get(parent.indexOf(node) + 1);
+            int childIndex = parent.indexOf(node) + 1;
 
+            if (parent.getClassLeafIdentifierString().equals("tensorTypeWithPrefix")) {
+                childIndex++;
+                if (childIndex >= parent.size() || parent.get(childIndex).getType() != Token.TokenType.TENSOR_TYPE) {
+                    ret.add(new Diagnostic(node.getRange(), "Expected a tensor type", DiagnosticSeverity.Error, ""));
+                    return ret;
+                }
+            }
+
+            SchemaNode child = parent.get(childIndex);
             // Check if it uses deprecated array
             if (
                 child.getClassLeafIdentifierString().equals("dataType") &&
