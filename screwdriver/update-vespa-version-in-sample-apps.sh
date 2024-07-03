@@ -9,7 +9,7 @@ if [[ $# -ne 1 ]]; then
     exit 1
 fi
 
-readonly VESPA_RELEASE="$1"
+export VESPA_RELEASE="$1"
 export JAVA_HOME=$(dirname $(dirname $(readlink -f /usr/bin/java)))
 
 BUILD_DIR=$(mktemp -d)
@@ -23,6 +23,11 @@ function is_published {
     rm -rf $TMP_MVN_REPO/com/yahoo/vespa
     # Because the transfer of artifacts to Maven Central is not atomic we can't just check a simple pom or jar to be available. Because of this we
     # check that the publication is complete enough to compile a Java sample app
+
+    # Update Vespa version property in pom.xml
+    if ! mvn -V -B versions:set-property -Dproperty=vespa_version -DnewVersion=${VESPA_RELEASE}; then
+        return 1
+    fi
     if mvn -V -B -pl ai.vespa.examples:album-recommendation-java -Dmaven.repo.local=$TMP_MVN_REPO -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -DskipTests clean package; then
         return 0
     else
@@ -51,9 +56,6 @@ set -x
 
 git clone git@github.com:vespa-engine/sample-apps.git
 cd sample-apps
-
-# Update Vespa version property in pom.xml
-mvn -V -B versions:set-property -Dproperty=vespa_version -DnewVersion=${VESPA_RELEASE}
 
 wait_until_published
 
