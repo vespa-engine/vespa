@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyDeprecatedToken extends Identifier {
@@ -16,8 +17,10 @@ public class IdentifyDeprecatedToken extends Identifier {
         super(logger);
     }
 
-    private static final HashSet<Token.TokenType> depricatedTokens = new HashSet<Token.TokenType>() {{
-        add(Token.TokenType.ENABLE_BIT_VECTORS);
+    private static final HashSet<TokenType> depricatedTokens = new HashSet<TokenType>() {{
+        add(TokenType.ATTRIBUTE);
+        add(TokenType.ENABLE_BIT_VECTORS);
+        add(TokenType.SUMMARY_TO);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {

@@ -68,7 +68,7 @@ public class ParsedField extends ParsedBlock {
     Map<String, String> getRankTypes() { return Collections.unmodifiableMap(rankTypes); }
 
     /** get an existing summary field for modification, or create it */
-    ParsedSummaryField summaryFieldFor(String name) {
+    public ParsedSummaryField summaryFieldFor(String name) {
         if (summaryFields.containsKey(name)) {
             return summaryFields.get(name);
         }
@@ -78,7 +78,7 @@ public class ParsedField extends ParsedBlock {
     }
 
     /** get an existing summary field for modification, or create it */
-    ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
+    public ParsedSummaryField summaryFieldFor(String name, ParsedType type) {
         if (summaryFields.containsKey(name)) {
             var sf = summaryFields.get(name);
             if (sf.getType() == null) {

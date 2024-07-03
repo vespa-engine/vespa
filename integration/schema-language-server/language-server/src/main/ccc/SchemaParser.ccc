@@ -628,8 +628,8 @@ void fieldBodyElm(ParsedField field) : { }
     //   rankType(field) |
     //   fieldSorting(field) |
        structFieldElm(field) |
-    //   summaryTo(field) |
-    //   weight(field) |
+       summaryTo(field) |
+       weightElm(field) |
     //   weightedset(field.getType()) )
       weightElm(field)
     )
@@ -648,9 +648,28 @@ void structFieldBodyElm(ParsedField field) : { }
       matchSettingsElm(field.matchSettings()) |
     //  queryCommand(field) |
       rankElm(field) |
-      structFieldElm(field) // |
-    // summaryTo(field)
+      structFieldElm(field) |
+      summaryTo(field)
     )
+;
+
+/**
+ * This rule consumes a summary-to statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void summaryTo(ParsedField field) :
+{
+    String name = field.name();
+    String destination;
+    ParsedSummaryField psf;
+}
+    <SUMMARY_TO> [name = identifierStr()] <COLON> destination = identifierStr()
+    {
+        psf = field.summaryFieldFor(name);
+        psf.addDestination(destination);
+    }
+    ( <COMMA> destination = identifierStr() { psf.addDestination(destination); } )*
 ;
 
 /**

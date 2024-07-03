@@ -11,7 +11,7 @@ import java.util.List;
  * possible.  Do not put advanced logic here!
  * @author arnej27959
  **/
-class ParsedSummaryField extends ParsedBlock {
+public class ParsedSummaryField extends ParsedBlock {
 
     private ParsedType type;
     private boolean isDyn = false;
@@ -42,7 +42,7 @@ class ParsedSummaryField extends ParsedBlock {
     boolean getTokens() { return isTokens; }
     boolean getHasExplicitType() { return hasExplicitType; }
 
-    void addDestination(String dst) { destinations.add(dst); }
+    public void addDestination(String dst) { destinations.add(dst); }
     void addSource(String src) { sources.add(src); }
     void setBold(boolean value) { this.isBold = value; }
     void setDynamic() { this.isDyn = true; }
