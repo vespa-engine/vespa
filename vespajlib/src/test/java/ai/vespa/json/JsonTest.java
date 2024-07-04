@@ -169,4 +169,22 @@ class JsonTest {
                 .toJson(false);
         assertEquals(expected, actual);
     }
+
+    @Test
+    void create_builder_from_existing_json() {
+        var jsonArray = Json.Builder.newArray()
+                .add(1)
+                .add(2)
+                .add(3)
+                .build();
+        var jsonArrayCopy = Json.Builder.fromArray(jsonArray).build();
+        assertEquals(jsonArray.toJson(false), jsonArrayCopy.toJson(false));
+
+        var jsonObject = Json.Builder.newObject()
+                .set("foo", "bar")
+                .set("baz", Json.Builder.newArray().add("qux"))
+                .build();
+        var jsonObjectCopy = Json.Builder.fromObject(jsonObject).build();
+        assertEquals(jsonObject.toJson(false), jsonObjectCopy.toJson(false));
+    }
 }
