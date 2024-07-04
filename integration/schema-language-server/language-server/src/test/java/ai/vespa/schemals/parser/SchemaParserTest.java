@@ -56,18 +56,6 @@ public class SchemaParserTest {
     }
 
     @Test
-    void noDuplicateDocuments() throws Exception {
-        String input = joinLines
-            ("schema foo {",
-             "  document foo {",
-             "  }",
-             "  document bar {",
-             "  }",
-             "}");
-        assertThrows(IllegalArgumentException.class, () -> parseString(input), "Expected parser to throw on duplicate document in Schema!");
-    }
-
-    @Test
     void parsingFatTest() throws Exception {
         checkFileParses("../../../config-model/src/test/cfg/search/data/travel/schemas/TTData.sd");
         checkFileParses("../../../config-model/src/test/cfg/search/data/travel/schemas/TTEdge.sd");

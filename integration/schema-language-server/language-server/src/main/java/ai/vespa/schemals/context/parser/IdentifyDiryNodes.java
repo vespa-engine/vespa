@@ -33,19 +33,29 @@ public class IdentifyDiryNodes extends Identifier {
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        if (node.isDirty() && node.isLeaf()) {
+        ParseExceptionSource parseException = node.getParseExceptionSource();
+        
+        if (parseException != null) {
+            TokenSource tokenSource = node.getTokenSource();
+            Range range = CSTUtils.getRangeFromOffsets(tokenSource, parseException.beginOffset, parseException.endOffset);
+            String message = getParseExceptionMessage(parseException.parseException);
+            ret.add(new Diagnostic(range, message));
+        }
 
-            ParseExceptionSource parseException = node.getParseExceptionSource();
-            
-            if (parseException != null) {
-                TokenSource tokenSource = node.getTokenSource();
-                Range range = CSTUtils.getRangeFromOffsets(tokenSource, parseException.beginOffset, parseException.endOffset);
-                String message = getParseExceptionMessage(parseException.parseException);
-                ret.add(new Diagnostic(range, message));
-            } else {
-                ret.add(new Diagnostic(node.getRange(), "Dirty Node"));
-            }
+        IllegalArgumentException illegalArgumentException = node.getIllegalArgumentException();
 
+        if (illegalArgumentException != null) {
+            ret.add(new Diagnostic(node.getRange(), illegalArgumentException.getMessage()));
+        }
+
+
+        if (
+            node.isDirty() &&
+            node.isLeaf() &&
+            parseException == null &&
+            illegalArgumentException == null
+        ) {
+            ret.add(new Diagnostic(node.getRange(), "Dirty Node"));
         }
 
         return ret;

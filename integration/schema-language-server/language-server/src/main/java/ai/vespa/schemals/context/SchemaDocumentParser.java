@@ -22,7 +22,6 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
-//import ai.vespa.schemals.parser.indexinglanguage;
 
 import com.yahoo.schema.parser.ParsedSchema;
 import com.yahoo.tensor.functions.Diag;
@@ -197,12 +196,10 @@ public class SchemaDocumentParser {
 
     }
 
-    private void parseContent() {
+    private ArrayList<Diagnostic> parseContent() {
         CharSequence sequence = content;
 
         logger.println("Parsing document: " + fileURI);
-
-        ParsedBlock.setCanIgnoreException(true);
 
         SchemaParser parserStrict = new SchemaParser(logger, getFileName(), sequence);
         parserStrict.setParserTolerant(false);
@@ -211,7 +208,7 @@ public class SchemaDocumentParser {
 
         try {
 
-            ParsedSchema root = parserStrict.Root();
+            parserStrict.Root();
             faultySchema = false;
         } catch (ParseException e) {
             faultySchema = true;
@@ -292,7 +289,7 @@ public class SchemaDocumentParser {
 
             diagnosticsHandler.publishDiagnostics(fileURI, errors);
             
-            return;
+            return errors;
         }
 
         SchemaParser parserFaultTolerant = new SchemaParser(getFileName(), sequence);
@@ -312,6 +309,8 @@ public class SchemaDocumentParser {
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
         lexer.setCST(CST);
+
+        return errors;
     }
 
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
