@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
@@ -17,7 +18,9 @@ import java.util.List;
  * @author bratseth
  */
 public class Autoscaler {
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Autoscaler.class.getName());
+
+    private static final Logger log = Logger.getLogger(Autoscaler.class.getName());
+
     /** What cost difference is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
     /** What resource difference is worth a reallocation? */
@@ -53,28 +56,33 @@ public class Autoscaler {
     /**
      * Autoscale a cluster by load. This returns a better allocation (if found) inside the min and max limits.
      *
-     * @param clusterNodes the list of all the active nodes in a cluster
-     * @param enableDetailedLogging Whether to log autoscaling decision data
+     * @param clusterNodes          the list of all the active nodes in a cluster
+     * @param enabled               Whether autoscaling is enabled
+     * @param logDetails            Whether to log decision details
      * @return scaling advice for this cluster
      */
-    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, boolean enableDetailedLogging) {
+    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, boolean enabled, boolean logDetails) {
         var limits = Limits.of(cluster);
         var model = model(application, cluster, clusterNodes);
         if (model.isEmpty()) return Autoscaling.empty();
 
-        if (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources()))
+        boolean disabledByUser = !limits.isEmpty() && cluster.minResources().equals(cluster.maxResources());
+        boolean disabledByFeatureFlag = !enabled;
+        if (disabledByUser)
             return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", model);
+        if (disabledByFeatureFlag)
+            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is disabled by feature flag", model);
 
         if ( ! model.isStable(nodeRepository))
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
         var loadAdjustment = model.loadAdjustment();
-        if (enableDetailedLogging) {
+        if (logDetails) {
             log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " +
                      loadAdjustment.toString() + ", ideal " + model.idealLoad() + ", " + model.cpu());
         }
 
-        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, enableDetailedLogging);
+        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, logDetails);
 
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);
