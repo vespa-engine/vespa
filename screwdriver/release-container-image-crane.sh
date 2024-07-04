@@ -23,10 +23,10 @@ fi
 crane auth login -u aressem -p $GHCR_DEPLOY_TOKEN ghcr.io
 SRC_IMAGE=ghcr.io/vespa-engine/vespa-preview:$VESPA_VERSION
 SRC_IMAGE_DIGEST=$(crane digest $SRC_IMAGE)
-#cosign verify \
-#    --certificate-identity https://buildkite.com/vespaai/vespa-engine-vespa \
-#    --certificate-oidc-issuer https://agent.buildkite.com \
-#    $SRC_IMAGE@$SRC_IMAGE_DIGEST
+cosign verify \
+    --certificate-identity https://buildkite.com/vespaai/vespa-engine-vespa \
+    --certificate-oidc-issuer https://agent.buildkite.com \
+    $SRC_IMAGE@$SRC_IMAGE_DIGEST
 
 # Copy to Docker Hub
 if curl -fsSL https://hub.docker.com/v2/repositories/vespaengine/vespa/tags/$VESPA_VERSION &> /dev/null; then
