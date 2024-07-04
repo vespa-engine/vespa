@@ -187,7 +187,7 @@ public class SchemaDocumentParser {
 
     }
 
-    private void parseContent() {
+    private ArrayList<Diagnostic> parseContent() {
         CharSequence sequence = content;
 
         logger.println("Parsing document: " + fileURI);
@@ -280,7 +280,7 @@ public class SchemaDocumentParser {
 
             diagnosticsHandler.publishDiagnostics(fileURI, errors);
             
-            return;
+            return errors;
         }
 
         SchemaParser parserFaultTolerant = new SchemaParser(getFileName(), sequence);
@@ -300,6 +300,8 @@ public class SchemaDocumentParser {
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
         lexer.setCST(CST);
+
+        return errors;
     }
 
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {

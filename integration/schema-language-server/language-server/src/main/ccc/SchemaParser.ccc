@@ -570,6 +570,7 @@ void documentElm(ParsedSchema schema) :
 {
     String name = schema.name();
     ParsedDocument document;
+    Token beginToken = lastConsumedToken.getNext();
 }
 
     ( <DOCUMENT> (name = identifierStr)? (<NL>)*
@@ -579,7 +580,11 @@ void documentElm(ParsedSchema schema) :
     [ inheritsDocument(document) (<NL>)* ]
       openLbrace (documentBodyElm(document) | <NL>)* <RBRACE> )
     {
-        schema.addDocument(document);
+        try {
+            schema.addDocument(document);
+        } catch (IllegalArgumentException e) {
+            beginToken.addIllegalArugmentException(e);
+        }
     }
 ;
 
