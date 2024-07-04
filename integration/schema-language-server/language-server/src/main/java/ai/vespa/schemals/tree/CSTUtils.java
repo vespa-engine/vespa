@@ -10,7 +10,7 @@ import ai.vespa.schemals.parser.TokenSource;
 
 public class CSTUtils {
 
-    private static Position getPositionFromOffset(TokenSource tokenSource, int offset) {
+    public static Position getPositionFromOffset(TokenSource tokenSource, int offset) {
         int line = tokenSource.getLineFromOffset(offset) - 1;
         int startOfLineOffset = tokenSource.getLineStartOffset(line + 1);
         int column = offset - startOfLineOffset;
