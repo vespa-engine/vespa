@@ -93,7 +93,7 @@ public class ParsedSchema extends ParsedBlock {
         this.myDocument = document;
     }
 
-    void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
+    public void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
 
     public void addDocumentSummary(ParsedDocumentSummary docsum) {
         String dsName = docsum.name();
@@ -147,7 +147,7 @@ public class ParsedSchema extends ParsedBlock {
         this.rawAsBase64 = value;
     }
 
-    void inherit(String other) { inherited.add(other); }
+    public void inherit(String other) { inherited.add(other); }
 
     void inheritByDocument(String other) { inheritedByDocument.add(other); }
 

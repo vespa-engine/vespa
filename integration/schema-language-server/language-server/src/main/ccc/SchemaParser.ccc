@@ -345,13 +345,12 @@ UNPARSED :
  * ever consume leading newlines.
  *
  * @return the schema object
- * TODO: implement rootDocument
  */
 ParsedSchema Root :
 {
     ParsedSchema schema;
 }
-    (<NL>)* (schema = rootSchema)
+    (<NL>)* (schema = rootSchema() | schema = rootDocument())
     { return schema; }
 ;
 
@@ -367,10 +366,12 @@ ParsedSchema Root :
 ParsedSchema rootSchema :
 {
     String name;
+    String inherited = null;
     ParsedSchema schema;
 }
-    ( ( <SCHEMA> | <SEARCH> ) name = identifierStr {
+    ( ( <SCHEMA> | <SEARCH> ) name = identifierStr() (<INHERITS> inherited = identifierStr() )? {
         schema = new ParsedSchema(name);
+        if (inherited != null) schema.inherit(inherited);
       }
       openLbrace (rootSchemaItem(schema) | <NL>)*
       <RBRACE> (<NL>)* <EOF> )
@@ -401,6 +402,42 @@ rootSchemaItem(ParsedSchema schema) : {}
  )
 ;
 
+
+/**
+ * Consumes a schema definition that contains only documents to be used for inheritance, etc.
+ *
+ * @return the schema definition object.
+ */
+ParsedSchema rootDocument() :
+{
+    ParsedSchema schema = null;
+}
+ 
+    ( (schema = rootDocumentItem(schema) | <NL>)*<EOF> )
+    {
+        return schema;
+    }
+;
+
+/**
+ * Consumes a single item from within a root document node.
+ *
+ * @param schema the schema object to modify.
+ */
+ParsedSchema rootDocumentItem(ParsedSchema schema) :
+{
+    ParsedDocument doc = null;
+}
+ 
+    ( doc = namedDocument() {
+        if (schema == null) schema = new ParsedSchema(doc.name());
+        schema.addDocument(doc);
+        schema.setDocumentWithoutSchema();
+        return schema;
+    } )
+;
+
+
 /**
  * Consumes a document element. The name defaults to the schema's name, but may be set.
  *
@@ -416,12 +453,29 @@ void documentElm(ParsedSchema schema) :
     {
         document = new ParsedDocument(name);
     }
+    [ inheritsDocument(document) (<NL>)* ]
       openLbrace (documentBodyElm(document) | <NL>)* <RBRACE> )
     {
         schema.addDocument(document);
     }
 ;
 
+/**
+ * Consumes a document element, explicitly named
+ */
+ParsedDocument namedDocument() :
+{
+    String name;
+    ParsedDocument document;
+}
+ 
+    ( <DOCUMENT> name = identifierStr() (<NL>)* { document = new ParsedDocument(name); }
+      [ inheritsDocument(document) (<NL>)* ]
+      <LBRACE> (<NL>)* (documentBodyElm(document) | <NL>)* <RBRACE> )
+    {
+        return document;
+    }
+;
 
 
 /**
