@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 
 public class CSTUtils {
 
@@ -76,6 +77,7 @@ public class CSTUtils {
      * Logger utils
      * */
 
+
     public static void printTree(PrintStream logger, Node node) {
         printTree(logger, node, 0);
     }
@@ -96,14 +98,14 @@ public class CSTUtils {
     }
 
     public static void printTree(PrintStream logger, SchemaNode node, Integer indent) {
-        Range range = node.getRange();
-        logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClassLeafIdentifierString()
-            + (node.isDirty() ? " [DIRTY]" : "")
-            + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
-                );
+        logger.println(new String(new char[indent]).replace("\0", "\t") + schemaNodeString(node));
 
         for (int i = 0; i < node.size(); i++) {
             printTree(logger, node.get(i), indent + 1);
+        }
+
+        if (node.hasIndexingNode()) {
+            ILUtils.printTree(logger, node.getIndexingNode(), indent + 1);
         }
     }
 
@@ -135,14 +137,31 @@ public class CSTUtils {
         Range range = node.getRange();
         if (!positionLT(pos, range.getStart())) {
             boolean dirty = node.isDirty();
-            logger.println(new String(new char[indent]).replace("\0", "\t") + node.getClassLeafIdentifierString() + (dirty ? " [DIRTY]" : "")
-            + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
-                    );
+            logger.println(new String(new char[indent]).replace("\0", "\t") + schemaNodeString(node));
         }
 
 
         for (int i = 0; i < node.size(); i++) {
             printTreeUpToPosition(logger, node.get(i), pos, indent + 1);
         }
+    }
+
+    private static String schemaNodeString(SchemaNode node) {
+
+        String ret = node.getClassLeafIdentifierString();
+
+        if (node.isDirty()) {
+            ret += " [DIRTY]";
+        }
+
+        if (node.isIndexingElm()) {
+            ret += " [ILSCRIPT]";
+        }
+
+        Range range = node.getRange();
+        ret += ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ")";
+        ret += " - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")";
+
+        return ret;
     }
 }

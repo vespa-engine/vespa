@@ -101,11 +101,23 @@
         <version>2.0.0-RC7</version>
         <executions>
           <execution>
+            <id>1</id>
             <goals>
               <goal>ccc-generate</goal>
             </goals>
             <configuration>
                 <grammarFile>${project.basedir}/src/main/ccc/SchemaParser.ccc</grammarFile>
+                <outputDir>${project.basedir}/target/generated-sources/ccc</outputDir>
+                <jdk>17</jdk>
+            </configuration>
+          </execution>
+          <execution>
+            <id>2</id>
+            <goals>
+              <goal>ccc-generate</goal>
+            </goals>
+            <configuration>
+                <grammarFile>${project.basedir}/src/main/ccc/indexinglanguage/IndexingParser.ccc</grammarFile>
                 <outputDir>${project.basedir}/target/generated-sources/ccc</outputDir>
                 <jdk>17</jdk>
             </configuration>
@@ -117,7 +129,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.7.0</version>
         <configuration>
-            <excludePackageNames>ai.vespa.schemals.parser</excludePackageNames>
+            <excludePackageNames>ai.vespa.schemals.parser,ai.vespa.schemals.parser.indexinglanguage</excludePackageNames>
         </configuration>
       </plugin>
       <plugin>
