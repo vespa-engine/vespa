@@ -297,7 +297,7 @@ public class SchemaDocumentParser {
         Node node = parserFaultTolerant.rootNode();
         errors.addAll(parseCST(node));
 
-        //CSTUtils.printTree(logger, CST);
+        CSTUtils.printTree(logger, CST);
 
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 

@@ -82,18 +82,44 @@ INJECT SchemaParser:
         String inputString = tokS.toString();
         int startSplit = lastConsumedToken.getEndOffset();
         int endSplit = startSplit;
-        
+
         if (multiline) {
-            // TODO: implement witchcraft
+            
+            if (nextTokenType() != TokenType.LBRACE) {
+                throw new ParseException("Unexpected token " + nextTokenType() + " expected : or {", lastConsumedToken.getNext(), parsingStack);
+            }
+
+            lastConsumedToken = nextToken(lastConsumedToken);
+
+            int braceLevel = 1;
+
+            while (
+                nextTokenType() != TokenType.EOF &&
+                braceLevel > 0
+            ) {
+                lastConsumedToken = nextToken(lastConsumedToken);
+
+                if (lastConsumedToken.getType() == TokenType.LBRACE) {
+                    braceLevel++;
+                }
+
+                if(lastConsumedToken.getType() == TokenType.RBRACE) {
+                    braceLevel--;
+                }
+            }
+
         } else {
 
-            while (nextTokenType() != TokenType.NL) {
+            while (nextTokenType() != TokenType.NL && nextTokenType() != TokenType.EOF) {
                 lastConsumedToken = nextToken(lastConsumedToken);
             }
-            endSplit = lastConsumedToken.getEndOffset();
+            
         }
+        
+        endSplit = lastConsumedToken.getEndOffset();
 
-        inputString = inputString.substring(startSplit ,endSplit);
+        inputString = inputString.substring(startSplit, endSplit);
+        logger.println("To the indexing parser:");
         logger.println(inputString);
 
         SimpleCharStream input = new SimpleCharStream(inputString);
@@ -124,6 +150,7 @@ INJECT SchemaParser:
      * @throws ParseException Thrown if the image could not be parsed.
      */
     private FeatureList getFeatureList(String image, List<NonTerminalCall> callStack) throws ParseException {
+        // TODO: use parsingStack instaed of arguemnt
         logger.println(image);
         try {
             return new FeatureList(image);
