@@ -57,7 +57,7 @@ public class ParsedDocument extends ParsedBlock {
         return result;
     }
 
-    void inherit(String other) { inherited.add(other); }
+    public void inherit(String other) { inherited.add(other); }
 
     public void addField(ParsedField field) {
         String fieldName = field.name().toLowerCase();
@@ -73,7 +73,7 @@ public class ParsedDocument extends ParsedBlock {
         struct.tagOwner(this);
     }
 
-    void addAnnotation(ParsedAnnotation annotation) {
+    public void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
         verifyThat(! docAnnotations.containsKey(annName), "already has annotation", annName);
         docAnnotations.put(annName, annotation);

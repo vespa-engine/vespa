@@ -129,16 +129,16 @@ public class ParsedRankProfile extends ParsedBlock {
         onnxModels.add(model);
     }
 
-    void addFieldRankFilter(String field, boolean filter) {
+    public void addFieldRankFilter(String field, boolean filter) {
         fieldsRankFilter.put(field, filter);
     }
 
-    void addFieldRankType(String field, String type) {
+    public void addFieldRankType(String field, String type) {
         verifyThat(! fieldsRankType.containsKey(field), "already has rank type for field", field);
         fieldsRankType.put(field, type);
     }
 
-    void addFieldRankWeight(String field, int weight) {
+    public void addFieldRankWeight(String field, int weight) {
         verifyThat(! fieldsRankType.containsKey(field), "already has weight for field", field);
         fieldsRankWeight.put(field, weight);
     }

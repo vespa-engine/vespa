@@ -34,6 +34,7 @@ INJECT SchemaParser:
     import com.yahoo.schema.parser.ParsedStruct;
     import com.yahoo.schema.parser.ParsedSummaryField;
     import com.yahoo.schema.parser.ParsedType;
+    import com.yahoo.schema.parser.Utils;
 
     import com.yahoo.schema.document.Case;
     import com.yahoo.schema.document.HnswIndexParams;
@@ -385,17 +386,17 @@ ParsedSchema rootSchema :
 rootSchemaItem(ParsedSchema schema) : {}
     ( 
         documentElm(schema)
-    //   | rawAsBase64(schema)
+       | rawAsBase64(schema)
        | searchStemming(schema)
-    //   | importField(schema)
+       | importField(schema)
        | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
-        | rankProfile(schema)
+       | rankProfile(schema)
        | documentSummary(schema)
-        | fieldOutsideDoc(schema)
+       | fieldOutsideDoc(schema)
        | indexOutsideDoc(schema)
-        | structOutsideDoc(schema)
-    //   | annotationOutside(schema)
-        | fieldSetElm(schema)
+       | structOutsideDoc(schema)
+       | annotationOutside(schema)
+       | fieldSetElm(schema)
        | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
  )
 ;
@@ -415,23 +416,70 @@ void documentElm(ParsedSchema schema) :
     {
         document = new ParsedDocument(name);
     }
-      openLbrace (documentElmBody(document) | <NL>)* <RBRACE> )
+      openLbrace (documentBodyElm(document) | <NL>)* <RBRACE> )
     {
         schema.addDocument(document);
     }
 ;
+
+
 
 /**
  * Consumes a document body block
  *
  * @param document the document type to modify.
  */
-void documentElmBody(ParsedDocument document) : {}
+void documentBodyElm(ParsedDocument document) : {}
     (
-        structInsideDoc(document)
+        annotationElm(document)
+        | structInsideDoc(document)
         | fieldInsideDoc(document)
     )
 ;
+
+void rawAsBase64(ParsedSchema schema) :
+{
+    boolean enabled = false;
+}
+ 
+    <RAW_AS_BASE64_IN_SUMMARY>
+    {
+        enabled = true;
+    }
+    [ <COLON> ( <TRUE> | ( <FALSE> { enabled = false; } ) ) ]
+    {
+        schema.enableRawAsBase64(enabled);
+    }
+;
+
+/**
+ * Consumes struct inheritance
+ *
+ * @param struct The struct type to modify.
+ */
+void inheritsStruct(ParsedStruct struct) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierStr() { struct.inherit(name); }
+    ( <COMMA>  name = identifierStr() { struct.inherit(name); } )*
+;
+
+/**
+ * Consumes a document inheritance statement.
+ *
+ * @param document The document type to modify.
+ */
+void inheritsDocument(ParsedDocument document) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierStr() { document.inherit(name); }
+    ( <COMMA>  name = identifierStr() { document.inherit(name); } )*
+;
+
 
 /**
  * Consumes a field block from within a document element.
@@ -515,6 +563,68 @@ void queryCommandInFieldSetElm(ParsedFieldSet fieldSet) :
 ;
 
 /**
+ * This rule consumes a annotation block from within a schema element.
+ *
+ * @param schema the schema object to add content to
+ */
+void annotationOutside(ParsedSchema schema) :
+{
+    String name;
+    ParsedAnnotation type;
+}
+ 
+    <ANNOTATION> name = identifierStr() { type = new ParsedAnnotation(name); }
+    [ inheritsAnnotation(type) (<NL>)* ]
+    openLbrace() annotationBody(type) <RBRACE>
+    {
+        schema.addAnnotation(type);
+    }
+;
+
+/**
+ * Consumes an annotation block from within a document element
+ *
+ * @param document the document object to add content to
+ */
+void annotationElm(ParsedDocument document) :
+{
+    String name;
+    ParsedAnnotation type;
+}
+ 
+    <ANNOTATION> name = identifierStr() { type = new ParsedAnnotation(name); }
+    [ inheritsAnnotation(type) (<NL>)* ]
+    openLbrace() annotationBody(type) <RBRACE>
+    {
+        document.addAnnotation(type);
+    }
+;
+
+/**
+ * Consumes a single element of an annotation body block.
+ */
+void annotationBody(ParsedAnnotation type) :
+{
+    ParsedStruct struct = new ParsedStruct("annotation." + type.name());
+    boolean seenField = false;
+}
+ 
+    (structFieldDefinition(struct) { seenField = true; } (<NL>)*)*
+    {
+        if (seenField) type.setStruct(struct);
+    }
+;
+
+void inheritsAnnotation(ParsedAnnotation annotation) :
+{
+    String name;
+}
+ 
+    <INHERITS> name = identifierStr() { annotation.inherit(name); }
+;
+
+
+/**
  * This rule consumes a struct block from within a document element.
  * @param document the document object to add content to
  */
@@ -544,12 +654,12 @@ void structOutsideDoc(ParsedSchema schema) :
 ParsedStruct structDefinitionElm() :
 {
     String name;
-//    String inherited;
+    String inherited;
     ParsedStruct struct;
 }
 
     ( <STRUCT> name = identifierStr (<NL>)* { struct = new ParsedStruct(name); }
-//    [ inheritsStruct(struct) (<NL>)* ]
+    [ inheritsStruct(struct) (<NL>)* ]
     openLbrace() (structFieldDefinition(struct) | <NL>)* <RBRACE> )
     {
         return struct;
@@ -1553,9 +1663,9 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
 
     (
         firstPhase(profile)
-    //   fieldRankType(profile)
-    //   | fieldWeight(profile)
-    //   | fieldRankFilter(profile)
+       | fieldRankType(profile)
+       | fieldWeight(profile)
+       | fieldRankFilter(profile)
        | firstPhase(profile)
        | matchPhase(profile)
        | diversityElm(profile)
@@ -1574,9 +1684,9 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | secondPhase(profile)
        | globalPhase(profile)
        | inputsElm(profile)
-    //   | constants(schema, profile)
+       | constantsElm(schema, profile)
        | matchFeaturesElm(profile)
-    //   | summaryFeatures(profile)
+       | summaryFeatures(profile)
        | onnxModelInProfile(profile)
        | strictElm(profile)
        | significanceElm(profile)
@@ -2154,6 +2264,133 @@ String rankPropertyItem() :
 ;
 
 /**
+ * Consumes a field-weight statement of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void fieldWeight(ParsedRankProfile profile) :
+{
+    Integer num;
+    String name;
+}
+ 
+    <WEIGHT> name = identifierStr() <COLON> num = integerElm()
+    { profile.addFieldRankWeight(name, num); }
+;
+
+/**
+ * Consumes a rank-type statement of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void fieldRankType(ParsedRankProfile profile) :
+{
+    String name;
+    String type;
+}
+ 
+    <RANK_TYPE> name = identifierStr() <COLON> type = identifierStr()
+    { profile.addFieldRankType(name, type); }
+;
+
+/**
+ * Consumes a rank filter statement of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void fieldRankFilter(ParsedRankProfile profile) :
+{
+    String name;
+}
+ 
+    <RANK> name = identifierStr() <COLON> <FILTER>
+    { profile.addFieldRankFilter(name, true); }
+;
+
+/**
+ * Consumes a set of constants available in ranking expressions in the enclosing profile.
+ */
+void constantsElm(ParsedSchema schema, ParsedRankProfile profile) :
+{
+    String name;
+}
+ 
+    <CONSTANTS> <LBRACE> (<NL>)*
+    ( constantElm(schema, profile) (<NL>)* )*
+    <RBRACE>
+;
+
+void constantElm(ParsedSchema schema, ParsedRankProfile profile) :
+{
+    Reference name = null;
+    InputType type = new InputType(TensorType.empty, false);
+    Tensor value = null;
+    String valuePath = null;
+}
+ 
+    (
+      name = constantName()
+      (
+        SCAN( (type = valueType(name))? <COLON> (<NL>)* (tensorValue(type.tensorType()) | fileItem)) => 
+        ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type.tensorType()) | valuePath = fileItem())
+        {
+            if (value != null)
+                profile.add(new RankProfile.Constant(name, value));
+            else
+                profile.add(new RankProfile.Constant(name, type.tensorType(), valuePath));
+        }
+        )
+        | // Deprecated forms (TODO: Vespa > 8: Add warning):
+        ( constantValue(profile, name) | constantTensor(profile, name) )
+      )
+    )
+;
+
+/** Returns the reference "constant(name)" for both "constant(name)" and "name". */
+Reference constantName() :
+{
+    String name;
+}
+ 
+    (
+        ( <CONSTANT> "(" name = identifierStr() ")" )
+        |
+        name = identifierStr()
+    )
+    { return FeatureNames.asConstantFeature(name); }
+;
+
+// Deprecated form
+void constantValue(ParsedRankProfile profile, Reference name) :
+{
+    Token value;
+}
+ 
+    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
+    { profile.add(new RankProfile.Constant(name, Tensor.from(value.toString()))); }
+;
+
+// Deprecated form
+void constantTensor(ParsedRankProfile profile, Reference name) :
+{
+    String tensorString = "";
+    TensorType type = null;
+}
+ 
+    <LBRACE> (<NL>)*
+      (( tensorString = tensorValuePrefixedByValue() |
+         type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
+    { profile.add(new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));
+    }
+;
+
+String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
+ 
+    { return "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
+;
+
+
+/**
  * Parses a tensor written in a tensor literal form,
  * https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form
  */
@@ -2329,6 +2566,26 @@ TensorType tensorTypeElm(String errorMessage) :
             throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
         }
         return tensorType;
+    }
+;
+
+void importField(ParsedSchema schema) :
+{
+    String fieldRefSpec;
+    String aliasFieldName;
+}
+ 
+    <IMPORT> <FIELD> fieldRefSpec = identifierStr() <AS> aliasFieldName = identifierStr() openLbrace()
+    <RBRACE>
+    {
+        long nDots = Utils.count(fieldRefSpec, '.');
+        if (nDots != 1) {
+            throw new IllegalArgumentException("Illegal field reference spec '" + fieldRefSpec + "': Does not include a single '.'");
+        }
+        int indexOfDot = fieldRefSpec.indexOf('.');
+        String documentReferenceFieldName = fieldRefSpec.substring(0, indexOfDot);
+        String foreignFieldName = fieldRefSpec.substring(indexOfDot + 1);
+        schema.addImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName);
     }
 ;
 

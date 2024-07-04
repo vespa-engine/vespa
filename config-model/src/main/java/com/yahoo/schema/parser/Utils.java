@@ -4,12 +4,12 @@ package com.yahoo.schema.parser;
 /**
  * @author bjorncs
  */
-class Utils {
+public class Utils {
 
     private Utils() {}
 
     // Separate class since javacc does not accept Java code using lambdas
-    static int count(String str, char ch) {
+    public static int count(String str, char ch) {
         return (int) str.chars().filter(c -> c == ch).count();
     }
 }
