@@ -45,7 +45,7 @@ public class ParsedStruct extends ParsedBlock {
         fields.put(fieldName, field);
     }
 
-    void inherit(String other) {
+    public void inherit(String other) {
         verifyThat(! name().equals(other), "cannot inherit from itself");
         inherited.add(other);
     }

@@ -79,8 +79,6 @@ public class IdentifySymbolDefinition extends Identifier {
                 if (schemaIndex.findSymbol(document.getFileURI(), nodeType, child.getText()) == null) {
                     Symbol symbol = new Symbol(nodeType, child);
                     schemaIndex.insert(document.getFileURI(), symbol);
-                } else {
-                    ret.add(new Diagnostic(child.getRange(), "Duplicate identifier"));
                 }
 
             }

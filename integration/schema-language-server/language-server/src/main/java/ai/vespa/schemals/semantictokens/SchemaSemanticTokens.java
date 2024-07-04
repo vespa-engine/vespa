@@ -4,17 +4,22 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
+import java.util.regex.Pattern;
 
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 
 public class SchemaSemanticTokens implements Visitor {
@@ -34,6 +39,7 @@ public class SchemaSemanticTokens implements Visitor {
 
     private static final ArrayList<String> manualyRegisteredLSPNames = new ArrayList<String>() {{
         add("type");
+        add("comment");
     }};
 
     private static final Map<TokenType, String> tokenTypeLSPNameMap = new HashMap<TokenType, String>() {{
@@ -115,11 +121,17 @@ public class SchemaSemanticTokens implements Visitor {
 
         private int tokenType;
         private Range range;
-        
+
         SemanticTokenMarker(Integer tokenType, SchemaNode node) {
-            this.tokenType = tokenType;
-            this.range = node.getRange();
+            this(tokenType, node.getRange());
         }
+        
+        SemanticTokenMarker(Integer tokenType, Range range) {
+            this.tokenType = tokenType;
+            this.range = range;
+        }
+
+        Range getRange() { return range; }
 
         private ArrayList<Integer> compactForm() {
             int length = range.getEnd().getCharacter() - range.getStart().getCharacter();
@@ -193,6 +205,76 @@ public class SchemaSemanticTokens implements Visitor {
         return ret;
     }
 
+    private static ArrayList<SemanticTokenMarker> convertCommentRanges(ArrayList<Range> comments) {
+        ArrayList<SemanticTokenMarker> ret = new ArrayList<>();
+
+        int tokenType = tokenTypes.indexOf("comment");
+
+        for (Range range : comments) {
+            ret.add(new SemanticTokenMarker(tokenType, range));
+        }
+
+        return ret;
+    }
+
+    private static ArrayList<SemanticTokenMarker> findComments(SchemaNode rootNode) {
+        TokenSource tokenSource = rootNode.getTokenSource();
+        String source = tokenSource.toString();
+        ArrayList<Range> ret = new ArrayList<>();
+
+        int index = source.indexOf("#");
+        while (index >= 0) {
+            Position start = CSTUtils.getPositionFromOffset(tokenSource, index);
+
+            index = source.indexOf("\n", index + 1);
+
+            if (index < 0) {
+                index = source.length() - 1;
+            }
+
+            Position end = CSTUtils.getPositionFromOffset(tokenSource, index);
+
+            ret.add(new Range(start, end));
+
+            index = source.indexOf("#", index + 1);
+        }
+
+        return convertCommentRanges(ret);
+    }
+
+    // This function assumes that both of the lists are sorted, and that no elements are overlapping
+    private static ArrayList<SemanticTokenMarker> mergeSemanticTokenMarkers(ArrayList<SemanticTokenMarker> lhs, ArrayList<SemanticTokenMarker> rhs) {
+        ArrayList<SemanticTokenMarker> ret = new ArrayList<>(lhs.size() + rhs.size());
+
+        int lhsIndex = 0;
+        int rhsIndex = 0;
+        while (
+            lhsIndex < lhs.size() &&
+            rhsIndex < rhs.size()
+        ) {
+            Position rhsPos = rhs.get(rhsIndex).getRange().getStart();
+            Position lhsPos = lhs.get(lhsIndex).getRange().getStart();
+
+            if (CSTUtils.positionLT(lhsPos, rhsPos)) {
+                ret.add(lhs.get(lhsIndex));
+                lhsIndex++;
+            } else {
+                ret.add(rhs.get(rhsIndex));
+                rhsIndex++;
+            }
+        }
+
+        for (int i = lhsIndex; i < lhs.size(); i++) {
+            ret.add(lhs.get(i));
+        }
+
+        for (int i = rhsIndex; i < rhs.size(); i++) {
+            ret.add(rhs.get(i));
+        }
+
+        return ret;
+    }
+
     public static SemanticTokens getSemanticTokens(EventContext context) {
 
         SchemaNode node = context.document.getRootNode();
@@ -200,8 +282,12 @@ public class SchemaSemanticTokens implements Visitor {
             return new SemanticTokens(new ArrayList<>());
         }
 
+        ArrayList<SemanticTokenMarker> comments = findComments(node);
+
         ArrayList<SemanticTokenMarker> markers = traverseCST(node, context.logger);
-        ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(markers);
+        ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
+            mergeSemanticTokenMarkers(markers, comments)
+        );
 
         return new SemanticTokens(compactMarkers);
     }

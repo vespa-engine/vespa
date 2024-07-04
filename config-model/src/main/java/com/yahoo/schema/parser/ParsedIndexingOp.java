@@ -14,11 +14,11 @@ import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
  * methods for extracting information from it
  * @author arnej27959
  **/
-class ParsedIndexingOp {
+public class ParsedIndexingOp {
 
     private final ScriptExpression script;
 
-    ParsedIndexingOp(ScriptExpression script) {
+    public ParsedIndexingOp(ScriptExpression script) {
         this.script = script;
     }
 

@@ -78,7 +78,7 @@ public class ParsedSchema extends ParsedBlock {
     List<ParsedSchema> getAllResolvedInherits() { return List.copyOf(allResolvedInherits.values()); }
     List<RankProfile.Constant> getConstants() { return List.copyOf(constants.values()); }
 
-    void addAnnotation(ParsedAnnotation annotation) {
+    public void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
         verifyThat(! extraAnnotations.containsKey(annName), "already has annotation", annName);
         extraAnnotations.put(annName, annotation);
@@ -93,7 +93,7 @@ public class ParsedSchema extends ParsedBlock {
         this.myDocument = document;
     }
 
-    void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
+    public void setDocumentWithoutSchema() { this.documentWithoutSchema = true; }
 
     public void addDocumentSummary(ParsedDocumentSummary docsum) {
         String dsName = docsum.name();
@@ -113,7 +113,7 @@ public class ParsedSchema extends ParsedBlock {
         fieldSets.put(fsName, fieldSet);
     }
 
-    void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {
+    public void addImportedField(String asFieldName, String refFieldName, String foregnFieldName) {
         importedFields.add(new ImportedField(asFieldName, refFieldName, foregnFieldName));
     }
 
@@ -143,11 +143,11 @@ public class ParsedSchema extends ParsedBlock {
         extraStructs.put(sName, struct);
     }
 
-    void enableRawAsBase64(boolean value) {
+    public void enableRawAsBase64(boolean value) {
         this.rawAsBase64 = value;
     }
 
-    void inherit(String other) { inherited.add(other); }
+    public void inherit(String other) { inherited.add(other); }
 
     void inheritByDocument(String other) { inheritedByDocument.add(other); }
 

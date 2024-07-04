@@ -4,8 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.text.html.parser.Parser;
-
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -22,8 +20,6 @@ import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
-import com.yahoo.schema.parser.ParsedSchema;
-import com.yahoo.schema.parser.ParsedBlock;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -191,12 +187,10 @@ public class SchemaDocumentParser {
 
     }
 
-    private void parseContent() {
+    private ArrayList<Diagnostic> parseContent() {
         CharSequence sequence = content;
 
         logger.println("Parsing document: " + fileURI);
-
-        ParsedBlock.setCanIgnoreException(true);
 
         SchemaParser parserStrict = new SchemaParser(logger, getFileName(), sequence);
         parserStrict.setParserTolerant(false);
@@ -205,7 +199,7 @@ public class SchemaDocumentParser {
 
         try {
 
-            ParsedSchema root = parserStrict.Root();
+            parserStrict.Root();
             faultySchema = false;
         } catch (ParseException e) {
             faultySchema = true;
@@ -261,6 +255,14 @@ public class SchemaDocumentParser {
 
             }
 
+            if (
+                cause != null &&
+                cause instanceof com.yahoo.schema.parser.ParseException
+            ) {
+                logger.println(e);
+                logger.println(cause);
+            }
+
             errors.add(new Diagnostic(range, message));
 
 
@@ -278,7 +280,7 @@ public class SchemaDocumentParser {
 
             diagnosticsHandler.publishDiagnostics(fileURI, errors);
             
-            return;
+            return errors;
         }
 
         SchemaParser parserFaultTolerant = new SchemaParser(getFileName(), sequence);
@@ -293,11 +295,13 @@ public class SchemaDocumentParser {
         Node node = parserFaultTolerant.rootNode();
         errors.addAll(parseCST(node));
 
-        //CSTUtils.printTree(logger, CST);
+        // CSTUtils.printTree(logger, CST);
 
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
         lexer.setCST(CST);
+
+        return errors;
     }
 
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
