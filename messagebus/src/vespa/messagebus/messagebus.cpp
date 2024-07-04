@@ -14,7 +14,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".messagebus");
 
-using vespalib::make_string;
+using namespace vespalib::make_string_short;
 using namespace std::chrono_literals;
 
 namespace {
@@ -169,8 +169,7 @@ MessageBus::createSourceSession(IReplyHandler &handler)
 }
 
 SourceSession::UP
-MessageBus::createSourceSession(IReplyHandler &handler,
-                                const SourceSessionParams &params)
+MessageBus::createSourceSession(IReplyHandler &handler, const SourceSessionParams &params)
 {
     return createSourceSession(SourceSessionParams(params).setReplyHandler(handler));
 }
@@ -262,9 +261,7 @@ MessageBus::getRoutingTable(const string &protocol)
 }
 
 IRoutingPolicy::SP
-MessageBus::getRoutingPolicy(const string &protocolName,
-                             const string &policyName,
-                             const string &policyParam)
+MessageBus::getRoutingPolicy(const string &protocolName, const string &policyName, const string &policyParam)
 {
     return _protocolRepository->getRoutingPolicy(protocolName, policyName, policyParam);
 }
@@ -350,8 +347,7 @@ void
 MessageBus::handleReply(Reply::UP reply)
 {
     _pendingCount.fetch_sub(1, std::memory_order_relaxed);
-    _pendingSize.fetch_sub(reply->getContext().value.UINT64,
-                           std::memory_order_relaxed);
+    _pendingSize.fetch_sub(reply->getContext().value.UINT64, std::memory_order_relaxed);
     IReplyHandler &handler = reply->getCallStack().pop(*reply);
     deliverReply(std::move(reply), handler);
 }
@@ -376,10 +372,10 @@ MessageBus::deliverMessage(Message::UP msg, std::string_view session)
     }
     if (msgHandler == nullptr) {
         deliverError(std::move(msg), ErrorCode::UNKNOWN_SESSION,
-                     make_string("Session '%s' does not exist.", string(session).c_str()));
+                     fmt("Session '%s' does not exist.", string(session).c_str()));
     } else if (!checkPending(*msg)) {
         deliverError(std::move(msg), ErrorCode::SESSION_BUSY,
-                     make_string("Session '%s' is busy, try again later.", string(session).c_str()));
+                     fmt("Session '%s' is busy, try again later.", string(session).c_str()));
     } else {
         _msn->deliverMessage(std::move(msg), *msgHandler);
     }
