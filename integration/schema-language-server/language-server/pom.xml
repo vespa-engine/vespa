@@ -122,6 +122,17 @@
                 <jdk>17</jdk>
             </configuration>
           </execution>
+          <execution>
+            <id>3</id>
+            <goals>
+              <goal>ccc-generate</goal>
+            </goals>
+            <configuration>
+                <grammarFile>${project.basedir}/src/main/ccc/rankingexpression/RankingExpressionParser.ccc</grammarFile>
+                <outputDir>${project.basedir}/target/generated-sources/ccc</outputDir>
+                <jdk>17</jdk>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -129,7 +140,11 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.7.0</version>
         <configuration>
-            <excludePackageNames>ai.vespa.schemals.parser,ai.vespa.schemals.parser.indexinglanguage</excludePackageNames>
+        <excludePackageNames>
+            ai.vespa.schemals.parser,
+            ai.vespa.schemals.parser.indexinglanguage,
+            ai.vespa.schemals.parser.rankingexpression
+        </excludePackageNames>
         </configuration>
       </plugin>
       <plugin>
