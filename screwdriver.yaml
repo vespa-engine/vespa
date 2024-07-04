@@ -512,6 +512,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 6 * * *
     secrets:
       - CLOUDSMITH_API_CREDS
+      - CLOUDSMITH_API_TOKEN
     steps:
       - install: |
           dnf install -y dnf-plugins-core jq
