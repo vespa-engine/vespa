@@ -21,7 +21,7 @@ public class ParsedFieldSet extends ParsedBlock {
         super(name, "fieldset");
     }
 
-    ParsedMatchSettings matchSettings() {
+    public ParsedMatchSettings matchSettings() {
         if (matchInfo == null) matchInfo = new ParsedMatchSettings();
         return this.matchInfo;
     }

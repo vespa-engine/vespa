@@ -681,7 +681,7 @@ void fieldSetElm(ParsedSchema schema) :
 }
 
   <FIELDSET> name = identifierStr openLbrace() { fieldSet = new ParsedFieldSet(name); }
-    ((fieldsElm(fieldSet) | queryCommandInFieldSetElm(fieldSet)) (<NL>)*)+
+    ((fieldsElm(fieldSet) | queryCommandInFieldSetElm(fieldSet) | matchSettingsElm(fieldSet.matchSettings())) (<NL>)*)+
   <RBRACE>
   {
      schema.addFieldSet(fieldSet);
@@ -960,7 +960,7 @@ void fieldBodyElm(ParsedField field) : { }
  */
 void structFieldBodyElm(ParsedField field) : { }
     (  summaryInField(field) |
-     // indexing(field) |
+      indexingElm(field) |
       attributeElm(field) |
       matchSettingsElm(field.matchSettings()) |
       queryCommandInField(field) |
@@ -1011,6 +1011,7 @@ void summaryToElm(ParsedField field) :
         psf.addDestination(destination);
     }
     ( <COMMA> destination = identifierStr() { psf.addDestination(destination); } )*
+;
 
 /**
  * This rule consumes a weight statement of a field element.
@@ -2276,7 +2277,7 @@ void rankFeaturesElm(ParsedRankProfile profile) :
 }
 
     ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1).trim(); } 
-      <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+    | <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                                             lastConsumedToken.toString().lastIndexOf("}")).trim(); } )
     {
         profile.addRankFeatures(getFeatureList(features));
