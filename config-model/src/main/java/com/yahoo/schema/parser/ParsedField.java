@@ -128,7 +128,7 @@ public class ParsedField extends ParsedBlock {
         return attributes.computeIfAbsent(attrName, n -> new ParsedAttribute(n));
     }
 
-    void setIndexingOperation(ParsedIndexingOp idxOp) {
+    public void setIndexingOperation(ParsedIndexingOp idxOp) {
         verifyThat(indexingOp == null, "already has indexing");
         indexingOp = idxOp;
     }

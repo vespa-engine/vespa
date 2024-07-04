@@ -4,8 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.text.html.parser.Parser;
-
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -261,6 +259,14 @@ public class SchemaDocumentParser {
 
             }
 
+            if (
+                cause != null &&
+                cause instanceof com.yahoo.schema.parser.ParseException
+            ) {
+                logger.println(e);
+                logger.println(cause);
+            }
+
             errors.add(new Diagnostic(range, message));
 
 
@@ -293,7 +299,7 @@ public class SchemaDocumentParser {
         Node node = parserFaultTolerant.rootNode();
         errors.addAll(parseCST(node));
 
-        //CSTUtils.printTree(logger, CST);
+        CSTUtils.printTree(logger, CST);
 
         diagnosticsHandler.publishDiagnostics(fileURI, errors);
 
