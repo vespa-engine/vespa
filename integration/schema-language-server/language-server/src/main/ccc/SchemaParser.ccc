@@ -5,6 +5,7 @@ FAULT_TOLERANT=true;
 INJECT SchemaParser:
 
     import java.io.OutputStream;
+    import java.util.Optional;
     import java.util.List;
 
 
@@ -42,11 +43,17 @@ INJECT SchemaParser:
     import com.yahoo.schema.document.Stemming;
 
     import com.yahoo.search.query.ranking.Diversity;
+    import com.yahoo.search.schema.RankProfile.InputType;
+
 
     import com.yahoo.searchlib.rankingexpression.FeatureList;
     import com.yahoo.searchlib.rankingexpression.Reference;
 
+    import com.yahoo.tensor.Tensor;
+    import com.yahoo.tensor.IndexedTensor;
+    import com.yahoo.tensor.MixedTensor;
     import com.yahoo.tensor.TensorType;
+    import com.yahoo.tensor.TensorAddress;
 {
 
     private PrintStream logger = new PrintStream(
@@ -69,7 +76,7 @@ INJECT SchemaParser:
      * @return The consumed feature list.
      * @throws ParseException Thrown if the image could not be parsed.
      */
-    private FeatureList getFeatureList(String image, List<NonTerminalCall> callStack) throws ParseException {
+    private FeatureList getFeatureList(String image) throws ParseException {
         logger.println(image);
         try {
             return new FeatureList(image);
@@ -79,7 +86,7 @@ INJECT SchemaParser:
                 "Could not parse feature list '" + lastConsumedToken.toString() + "' at " +
                 lastConsumedToken.getLocation(),
                 lastConsumedToken,
-                callStack
+                parsingStack
             ).initCause(e);
         }
     }
@@ -1554,25 +1561,25 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | diversityElm(profile)
        | functionElm(profile)
        | mutateElm(profile)
-    //   | ignoreRankFeatures(profile)
-    //   | numThreadsPerSearch(profile)
-    //   | minHitsPerThread(profile)
-    //   | numSearchPartitions(profile)
-    //   | termwiseLimit(profile)
-    //   | postFilterThreshold(profile)
-    //   | approximateThreshold(profile)
-    //   | targetHitsMaxAdjustmentFactor(profile)
+       | ignoreRankFeatures(profile)
+       | numThreadsPerSearch(profile)
+       | minHitsPerThread(profile)
+       | numSearchPartitions(profile)
+       | termwiseLimit(profile)
+       | postFilterThreshold(profile)
+       | approximateThreshold(profile)
+       | targetHitsMaxAdjustmentFactor(profile)
        | rankFeaturesElm(profile)
-    //   | rankProperties(profile)
+       | rankProperties(profile)
        | secondPhase(profile)
        | globalPhase(profile)
-    //   | inputs(profile)
+       | inputsElm(profile)
     //   | constants(schema, profile)
        | matchFeaturesElm(profile)
     //   | summaryFeatures(profile)
        | onnxModelInProfile(profile)
-    //   | strict(profile)
-    //   | significance(profile)
+       | strictElm(profile)
+       | significanceElm(profile)
     )
 ;
 
@@ -1828,29 +1835,135 @@ void globalPhaseItem(ParsedRankProfile profile) :
 ;
 
 
-TensorType tensorTypeWithPrefix(String errorMessage) :
-{ TensorType type; }
+
+/** Consumes an inputs block of a rank profile. */
+void inputsElm(ParsedRankProfile profile) :
+{
+    Reference reference;
+    TensorType type;
+    List<Reference> seenInputs = new ArrayList<>();
+}
  
-    <TYPE> <COLON> type = tensorTypeElm(errorMessage)
-    { return type; }
+    <INPUTS> <LBRACE> (<NL>)*
+    (
+        reference = inputElm(profile) { seenInputs.add(reference); }
+        (<NL> { seenInputs.add(null); })*
+    )*
+    <RBRACE>
+    {
+        Reference last = null;
+        for (Reference current : seenInputs) {
+            if (last != null && current != null) {
+	            //deployLogger.logApplicationPackage(Level.WARNING, "Expected newline between inputs " + last + " and " + current);
+	        }
+	        last = current;
+        }
+    }
 ;
 
-
-TensorType tensorTypeElm(String errorMessage) :
+Reference inputElm(ParsedRankProfile profile) :
 {
-    String tensorTypeString;
+    Reference reference;
+    InputType type = new InputType(TensorType.empty, false);
+    Tensor defaultValue = null;
 }
-
-    <TENSOR_TYPE> { tensorTypeString = lastConsumedToken.toString(); }
+ 
+    reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type.tensorType()) )?
     {
-        TensorType tensorType;
-        try {
-            tensorType = TensorType.fromSpec(tensorTypeString);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
-        }
-        return tensorType;
+        profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue)));
+        return reference;
     }
+;
+
+/** Returns the reference "query(name)" for both "query(name)" and "name". */
+Reference inputName() :
+{
+    String name;
+}
+ 
+    (
+        ( <QUERY> "(" name = identifierStr() ")" )
+        |
+        name = identifierStr()
+    )
+    { return FeatureNames.asQueryFeature(name); }
+;
+
+InputType valueType(Reference reference) :
+{
+    TensorType type;
+    InputType result;
+}
+ 
+    (
+      ( type = tensorTypeElm("Type of " + reference) { result = new InputType(type, false); } )
+      |
+      ( <DOUBLE_KEYWORD> { result = new InputType(TensorType.empty, false); } )
+      |
+      ( <LONG_KEYWORD> {
+        result = new InputType(TensorType.empty, false);
+        //deployLogger.logApplicationPackage(Level.WARNING, "Input " + reference + ": 'long' is not possible, treated as 'double'");
+      } )
+      |
+      ( <FLOAT_KEYWORD> {
+        result = new InputType(TensorType.empty, false);
+        //deployLogger.logApplicationPackage(Level.WARNING, "Input " + reference + ": 'float' is not possible, treated as 'double'");
+      } )
+      |
+      ( <STRING_KEYWORD> { result = new InputType(TensorType.empty, true); } )
+    )
+    { return result; }
+;
+
+/**
+ * Consumes a summary-features block of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void summaryFeatures(ParsedRankProfile profile) :
+{
+    String features;
+    String inherited = null;
+}
+ 
+    ( <SUMMARYFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1).trim(); } |
+      <SUMMARYFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                              lastConsumedToken.toString().lastIndexOf("}")).trim(); } |
+      <SUMMARYFEATURES_ML_INHERITS> {
+          int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
+          String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
+          profile.setInheritedSummaryFeatures(rest.substring(0, rest.indexOf(" ")).trim());
+          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}")).trim();
+      }
+    )
+    {
+        profile.addSummaryFeatures(getFeatureList(features));
+    }
+;
+
+void strictElm(ParsedRankProfile profile) :
+{}
+ 
+    <STRICT> <COLON> (
+        ( <TRUE> { profile.setStrict(true); } ) |
+        ( <FALSE> { profile.setStrict(false); } )
+    )
+;
+
+void significanceElm(ParsedRankProfile profile) :
+{}
+ 
+    <SIGNIFICANCE> openLbrace() (significanceItem(profile) | <NL>)* <RBRACE>
+    {}
+;
+
+void significanceItem(ParsedRankProfile profile) :
+{}
+ 
+    <USE_MODEL> <COLON> (
+        ( <TRUE>  { profile.setUseSignificanceModel(true);  } ) |
+        ( <FALSE> { profile.setUseSignificanceModel(false); } )
+    )
 ;
 
 /**
@@ -1874,7 +1987,7 @@ void matchFeaturesElm(ParsedRankProfile profile) :
       }
     )
     {
-        profile.addMatchFeatures(getFeatureList(features, parsingStack));
+        profile.addMatchFeatures(getFeatureList(features));
     }
 ;
 
@@ -1888,7 +2001,334 @@ void rankFeaturesElm(ParsedRankProfile profile) :
       <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                                             lastConsumedToken.toString().lastIndexOf("}")).trim(); } )
     {
-        profile.addRankFeatures(getFeatureList(features, parsingStack));
+        profile.addRankFeatures(getFeatureList(features));
+    }
+;
+
+
+/**
+ * This rule consumes a ignore-default-rank-features statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void ignoreRankFeatures(ParsedRankProfile profile) : { }
+ 
+    <IGNORE_DEFAULT_RANK_FEATURES> { profile.setIgnoreDefaultRankFeatures(true); }
+;
+
+/**
+ * This rule consumes a num-threads-per-search statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void numThreadsPerSearch(ParsedRankProfile profile) :
+{
+    int num;
+}
+ 
+    (<NUM_THREADS_PER_SEARCH> <COLON> num = integerElm()) { profile.setNumThreadsPerSearch(num); }
+;
+
+/**
+ * This rule consumes a min-hits-per-thread statement for a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void minHitsPerThread(ParsedRankProfile profile) :
+{
+    int num;
+}
+ 
+    (<MIN_HITS_PER_THREAD> <COLON> num = integerElm()) { profile.setMinHitsPerThread(num); }
+;
+
+/**
+ * This rule consumes a num-search-partitions statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void numSearchPartitions(ParsedRankProfile profile) :
+{
+    int num;
+}
+ 
+    (<NUM_SEARCH_PARTITIONS> <COLON> num = integerElm()) { profile.setNumSearchPartitions(num); }
+;
+
+/**
+ * This rule consumes a termwise-limit statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void termwiseLimit(ParsedRankProfile profile) :
+{
+    double num;
+}
+ 
+    (<TERMWISE_LIMIT> <COLON> num = floatValue()) { profile.setTermwiseLimit(num); }
+;
+
+/**
+ * This rule consumes a post-filter-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void postFilterThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+ 
+    (<POST_FILTER_THRESHOLD> <COLON> threshold = floatValue()) { profile.setPostFilterThreshold(threshold); }
+;
+
+/**
+ * This rule consumes an approximate-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void approximateThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+ 
+    (<APPROXIMATE_THRESHOLD> <COLON> threshold = floatValue()) { profile.setApproximateThreshold(threshold); }
+;
+
+/**
+ * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void targetHitsMaxAdjustmentFactor(ParsedRankProfile profile) :
+{
+    double factor;
+}
+ 
+    (<TARGET_HITS_MAX_ADJUSTMENT_FACTOR> <COLON> factor = floatValue()) { profile.setTargetHitsMaxAdjustmentFactor(factor); }
+;
+
+/**
+ * Consumes a rank-properties block of a rank profile. There
+ * is a little trick within this rule to allow the final rank property
+ * to skip the terminating newline token.
+ *
+ * @param profile the rank profile to modify
+ */
+void rankProperties(ParsedRankProfile profile) : { }
+ 
+    <RANK_PROPERTIES> openLbrace() (SCAN(rankPropertyItem() <COLON> rankPropertyItem() <NL>) =>
+                               (rankProperty(profile) (<NL>)+))* [rankProperty(profile)] <RBRACE>
+;
+
+/**
+ * Consumes a single rank property pair for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void rankProperty(ParsedRankProfile profile) :
+{
+    String key, val;
+}
+ 
+    key = rankPropertyItem() <COLON> val = rankPropertyItem()
+    { profile.addRankProperty(key, val); }
+;
+
+/**
+ * Consumes a single rank property for a rank-properties block.
+ *
+ * @return the token image of the consumed item
+ */
+String rankPropertyItem() :
+{
+    String image = null;
+    String ret = "";
+    Token dToken = null;
+}
+ 
+    ( ( image = identifierWithDashStr() { ret += image; }
+        | dToken = <DOUBLE> { ret += dToken.toString(); }
+        | image = quotedString()                  { ret += image; }
+        | ( "(" | ")" | <DOT> | <COMMA> )         { ret += lastConsumedToken.toString(); } )+ )
+    { return ret; }
+;
+
+/**
+ * Parses a tensor written in a tensor literal form,
+ * https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form
+ */
+Tensor tensorValue(TensorType type) :
+{
+    Tensor.Builder builder = Tensor.Builder.of(type);
+    Number doubleValue = null;
+}
+ 
+    ( mappedTensorValue(builder) | indexedTensorValues(builder) |  doubleValue = number() )
+    {
+        if (doubleValue != null) {
+            if (type.rank() > 0)
+                throw new IllegalArgumentException("A tensor of type " + type + " cannot be a number");
+            builder.cell(doubleValue.doubleValue());
+        }
+        return builder.build();
+    }
+;
+
+/** A mapped or mixed tensor value. */
+void mappedTensorValue(Tensor.Builder builder) : {}
+ 
+    "{"
+    ( mappedTensorBlock(builder) )*
+    ( <COMMA> (<NL>)* mappedTensorBlock(builder) )*
+    "}"
+;
+
+
+void mappedTensorBlock(Tensor.Builder builder) :
+{
+    TensorAddress mappedAddress;
+}
+ 
+    mappedAddress = tensorAddress(builder.type()) <COLON> (<NL>)*
+    ( mappedTensorCellValue(mappedAddress, builder) | indexedTensorBlockValues(mappedAddress, builder) )
+;
+
+void indexedTensorBlockValues(TensorAddress mappedAddress, Tensor.Builder builder) :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+ 
+    arrayTensorValues(values)
+    {
+        MixedTensor.BoundBuilder boundBuilder = (MixedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.block(mappedAddress, arrayValues);
+    }
+;
+
+void indexedTensorValues(Tensor.Builder builder) :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+ 
+    arrayTensorValues(values)
+    {
+        IndexedTensor.BoundBuilder boundBuilder = (IndexedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.fill(arrayValues);
+    }
+;
+
+/** Tensor array values. Using sub-bracketing for multiple dimensions is optional and therefore ignored here. */
+void arrayTensorValues(List<Double> values) : {}
+ 
+    "[" (                 ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+        ( <COMMA> (<NL>)* ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+    "]"
+;
+
+void indexedTensorValue(List<Double> values) :
+{
+    Number value;
+}
+ 
+    value = number()
+    { values.add(value.doubleValue()); }
+;
+
+void mappedTensorCellValue(TensorAddress address, Tensor.Builder builder) :
+{
+    double value;
+}
+ 
+    value = tensorCellValue()
+    { builder.cell(address, value); }
+;
+
+TensorAddress tensorAddress(TensorType type) :
+{
+    TensorAddress.Builder builder = new TensorAddress.PartialBuilder(type);
+    String label;
+}
+ 
+    (
+        label = tensorAddressLabel() { builder.add(label); }
+        |
+        ( "{" ( tensorAddressElement(builder) )* ( <COMMA> tensorAddressElement(builder) )* "}" )
+    )
+    { return builder.build(); }
+;
+
+void tensorAddressElement(TensorAddress.Builder builder) :
+{
+    String dimension;
+    String label;
+}
+ 
+    dimension = identifierStr() <COLON> (<NL>)* label = tensorAddressLabel()
+    { builder.add(dimension, label); }
+;
+
+String tensorAddressLabel() :
+{
+    String label;
+}
+ 
+    ( label = identifierStr() | label = quotedString() )
+    { return label; }
+;
+
+double tensorCellValue() :
+{
+    Number value;
+}
+ 
+    value = number()
+    { return value.doubleValue(); }
+;
+
+/** Undocumented syntax for supplying a tensor constant value by a string prefixed by "value" */
+String tensorValuePrefixedByValue() :
+{
+    String tensor;
+}
+ 
+    ( <TENSOR_VALUE_SL> { tensor = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1); } |
+      <TENSOR_VALUE_ML> { tensor = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
+                                                         lastConsumedToken.toString().lastIndexOf("}")); } )
+    {
+        return tensor;
+    }
+;
+
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{ TensorType type; }
+ 
+    <TYPE> <COLON> type = tensorTypeElm(errorMessage)
+    { return type; }
+;
+
+
+TensorType tensorTypeElm(String errorMessage) :
+{
+    String tensorTypeString;
+}
+
+    <TENSOR_TYPE> { tensorTypeString = lastConsumedToken.toString(); }
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+        }
+        return tensorType;
     }
 ;
 

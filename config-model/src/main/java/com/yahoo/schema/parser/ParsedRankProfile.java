@@ -104,13 +104,13 @@ public class ParsedRankProfile extends ParsedBlock {
 
     Optional<Boolean> isUseSignificanceModel() { return Optional.ofNullable(this.useSignificanceModel); }
 
-    void addSummaryFeatures(FeatureList features) { this.summaryFeatures.add(features); }
+    public void addSummaryFeatures(FeatureList features) { this.summaryFeatures.add(features); }
     public void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
     public void addRankFeatures(FeatureList features) { this.rankFeatures.add(features); }
 
     public void inherit(String other) { inherited.add(other); }
 
-    void setInheritedSummaryFeatures(String other) {
+    public void setInheritedSummaryFeatures(String other) {
         verifyThat(inheritedSummaryFeatures == null, "already inherits summary-features");
         this.inheritedSummaryFeatures = other;
     }
@@ -120,7 +120,7 @@ public class ParsedRankProfile extends ParsedBlock {
         constants.put(constant.name(), constant);
     }
 
-    void addInput(Reference name, RankProfile.Input input) {
+    public void addInput(Reference name, RankProfile.Input input) {
         verifyThat(! inputs.containsKey(name), "already has input", name);
         inputs.put(name, input);
     }
@@ -153,7 +153,7 @@ public class ParsedRankProfile extends ParsedBlock {
         mutateOperations.add(new MutateOperation(phase, attrName, operation));
     }
 
-    void addRankProperty(String key, String value) {
+    public void addRankProperty(String key, String value) {
         List<String> values = rankProperties.computeIfAbsent(key, k -> new ArrayList<String>());
         values.add(value);
     }
@@ -163,7 +163,7 @@ public class ParsedRankProfile extends ParsedBlock {
         this.firstPhaseExpression = expression;
     }
 
-    void setIgnoreDefaultRankFeatures(boolean value) {
+    public void setIgnoreDefaultRankFeatures(boolean value) {
         this.ignoreDefaultRankFeatures = value;
     }
 
@@ -185,17 +185,17 @@ public class ParsedRankProfile extends ParsedBlock {
         this.diversity = settings;
     }
 
-    void setMinHitsPerThread(int minHits) {
+    public void setMinHitsPerThread(int minHits) {
         verifyThat(minHitsPerThread == null, "already has min-hits-per-thread");
         this.minHitsPerThread = minHits;
     }
 
-    void setNumSearchPartitions(int numParts) {
+    public void setNumSearchPartitions(int numParts) {
         verifyThat(numSearchPartitions == null, "already has num-search-partitions");
         this.numSearchPartitions = numParts;
     }
 
-    void setNumThreadsPerSearch(int threads) {
+    public void setNumThreadsPerSearch(int threads) {
         verifyThat(numThreadsPerSearch == null, "already has num-threads-per-search");
         this.numThreadsPerSearch = threads;
     }
@@ -230,31 +230,31 @@ public class ParsedRankProfile extends ParsedBlock {
         this.globalPhaseRerankCount = count;
     }
 
-    void setStrict(boolean strict) {
+    public void setStrict(boolean strict) {
         verifyThat(this.strict == null, "already has strict");
         this.strict = strict;
     }
 
-    void setUseSignificanceModel(boolean useSignificanceModel) {
+    public void setUseSignificanceModel(boolean useSignificanceModel) {
         verifyThat(this.useSignificanceModel == null, "already has use-model");
         this.useSignificanceModel = useSignificanceModel;
     }
-    void setTermwiseLimit(double limit) {
+    public void setTermwiseLimit(double limit) {
         verifyThat(termwiseLimit == null, "already has termwise-limit");
         this.termwiseLimit = limit;
     }
 
-    void setPostFilterThreshold(double threshold) {
+    public void setPostFilterThreshold(double threshold) {
         verifyThat(postFilterThreshold == null, "already has post-filter-threshold");
         this.postFilterThreshold = threshold;
     }
 
-    void setApproximateThreshold(double threshold) {
+    public void setApproximateThreshold(double threshold) {
         verifyThat(approximateThreshold == null, "already has approximate-threshold");
         this.approximateThreshold = threshold;
     }
 
-    void setTargetHitsMaxAdjustmentFactor(double factor) {
+    public void setTargetHitsMaxAdjustmentFactor(double factor) {
         verifyThat(targetHitsMaxAdjustmentFactor == null, "already has target-hits-max-adjustment-factor");
         this.targetHitsMaxAdjustmentFactor = factor;
     }
