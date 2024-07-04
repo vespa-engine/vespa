@@ -271,6 +271,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::put_document_message_fact
             if (src.getDocumentSP()) [[likely]] { // This should always be present in practice
                 set_document(*dest.mutable_document(), src.getDocument());
             }
+            dest.set_persisted_timestamp(src.persisted_timestamp());
             dest.set_create_if_missing(src.get_create_if_non_existent());
         },
         [type_repo = std::move(repo)](const protobuf::PutDocumentRequest& src) {
@@ -280,6 +281,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::put_document_message_fact
                 msg->setCondition(get_tas_condition(src.condition()));
             }
             msg->setTimestamp(src.force_assign_timestamp());
+            msg->set_persisted_timestamp(src.persisted_timestamp());
             msg->set_create_if_non_existent(src.create_if_missing());
             return msg;
         }
@@ -359,6 +361,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_document_message_f
             if (src.getCondition().isPresent()) {
                 set_tas_condition(*dest.mutable_condition(), src.getCondition());
             }
+            dest.set_persisted_timestamp(src.persisted_timestamp());
         },
         [](const protobuf::RemoveDocumentRequest& src) {
             auto msg = std::make_unique<RemoveDocumentMessage>();
@@ -366,6 +369,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_document_message_f
             if (src.has_condition()) {
                 msg->setCondition(get_tas_condition(src.condition()));
             }
+            msg->set_persisted_timestamp(src.persisted_timestamp());
             return msg;
         }
     );

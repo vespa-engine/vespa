@@ -146,6 +146,7 @@ public class Messages80TestCase extends MessagesTestBase {
             var msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
             msg.setTimestamp(666);
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
+            msg.setPersistedTimestamp(0x1badcafef000000dL);
             serialize("PutDocumentMessage", msg);
 
             forEachLanguage((lang) -> {
@@ -157,6 +158,7 @@ public class Messages80TestCase extends MessagesTestBase {
                 assertEquals(msg.getTimestamp(), deserializedMsg.getTimestamp());
                 assertEquals(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
                 assertFalse(deserializedMsg.getCreateIfNonExistent());
+                assertEquals(0x1badcafef000000dL, deserializedMsg.getPersistedTimestamp());
             });
             verifyCreateIfNonExistentFlag();
         }
@@ -271,11 +273,13 @@ public class Messages80TestCase extends MessagesTestBase {
         public void run() {
             var msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::"));
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
+            msg.setPersistedTimestamp(0x1badcafef000000dL);
             serialize("RemoveDocumentMessage", msg);
             forEachLanguage((lang) -> {
                 var deserializedMsg = (RemoveDocumentMessage)deserialize("RemoveDocumentMessage", DocumentProtocol.MESSAGE_REMOVEDOCUMENT, lang);
                 assertEquals(msg.getDocumentId().toString(), deserializedMsg.getDocumentId().toString());
                 assertEquals(msg.getCondition(), deserializedMsg.getCondition());
+                assertEquals(0x1badcafef000000dL, deserializedMsg.getPersistedTimestamp());
             });
         }
     }

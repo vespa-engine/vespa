@@ -7,16 +7,18 @@
 
 namespace documentapi {
 
-PutDocumentMessage::PutDocumentMessage() :
-    TestAndSetMessage(),
-    _document(),
-    _time(0)
+PutDocumentMessage::PutDocumentMessage()
+    : TestAndSetMessage(),
+      _document(),
+      _time(0),
+      _persisted_timestamp(0)
 {}
 
-PutDocumentMessage::PutDocumentMessage(document::Document::SP document) :
-    TestAndSetMessage(),
-    _document(),
-    _time(0)
+PutDocumentMessage::PutDocumentMessage(document::Document::SP document)
+    : TestAndSetMessage(),
+      _document(),
+      _time(0),
+      _persisted_timestamp(0)
 {
     setDocument(std::move(document));
 }
