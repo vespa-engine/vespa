@@ -83,6 +83,8 @@ INJECT SchemaParser:
         int startSplit = lastConsumedToken.getEndOffset();
         int endSplit = startSplit;
 
+        Token tokenToAddExceptionsTo = lastConsumedToken;
+
         if (multiline) {
             
             if (nextTokenType() != TokenType.LBRACE) {
@@ -119,27 +121,18 @@ INJECT SchemaParser:
         endSplit = lastConsumedToken.getEndOffset();
 
         inputString = inputString.substring(startSplit, endSplit);
-        logger.println("To the indexing parser:");
-        logger.println(inputString);
 
         SimpleCharStream input = new SimpleCharStream(inputString);
-
-        // if (lastConsumedToken.getNext() != null) {
-        //     logger.println(lastConsumedToken.getNext().getSource());
-        //     // input.backup(lastConsumedToken.getNext().getSource().length());
-        // }
 
         try {
             return IndexingOperation.fromStream(input, multiline, linguistics, embedders);
         } catch (com.yahoo.schema.parser.ParseException e) {
-            logger.println("FEEEEEIL");
-            logger.println(e);
-            // TODO: fix this error
-            throw (ParseException) (new ParseException("Error at: " + lastConsumedToken.getLocation()).initCause(e));
-        // } finally {
-            // token.next = null;
-            // jj_ntk = -1;
+
+            ParseException exception = (ParseException) (new ParseException("Error at: " + lastConsumedToken.getLocation()).initCause(e));
+
+            tokenToAddExceptionsTo.addParseException(exception, startSplit, endSplit);
         }
+        return null;
     }
 
     /**
@@ -149,22 +142,60 @@ INJECT SchemaParser:
      * @return The consumed feature list.
      * @throws ParseException Thrown if the image could not be parsed.
      */
-    private FeatureList getFeatureList(String image, List<NonTerminalCall> callStack) throws ParseException {
-        // TODO: use parsingStack instaed of arguemnt
-        logger.println(image);
+    private FeatureList getFeatureList(String image) throws ParseException {
         try {
             return new FeatureList(image);
         }
         catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
-            throw (ParseException) new ParseException(
+            ParseException exception = (ParseException) new ParseException(
                 "Could not parse feature list '" + lastConsumedToken.toString() + "' at " +
                 lastConsumedToken.getLocation(),
                 lastConsumedToken,
-                callStack
+                parsingStack
             ).initCause(e);
+
+            lastConsumedToken.addParseException(exception);
         }
+
+        return null;
     }
     
+}
+
+INJECT Token :
+{
+
+    public class ParseExceptionSource {
+        public ParseException parseException;
+        public int beginOffset;
+        public int endOffset;
+
+        ParseExceptionSource(ParseException e, int beginOffset, int endOffset) {
+            parseException = e;
+            this.beginOffset = beginOffset;
+            this.endOffset = endOffset;
+        }
+    }
+
+    private ParseExceptionSource parseExceptionSource;
+    private IllegalArgumentException illegalArgumentException;
+
+    public ParseExceptionSource getParseExceptionSource() { return parseExceptionSource; }
+    public IllegalArgumentException getIllegalArguemntException() { return illegalArgumentException; }
+
+    void addParseException(ParseException e, int beginOffset, int endOffset) {
+        parseExceptionSource = new ParseExceptionSource(e, beginOffset, endOffset);
+        setDirty(true);
+    }
+
+    void addParseException(ParseException e) {
+        addParseException(e, getBeginOffset(), getEndOffset());
+    }
+
+    void addIllegalArugmentException(IllegalArgumentException e) {
+        illegalArgumentException = e;
+        setDirty(true);
+    }
 }
 
 // --------------------------------------------------------------------------------
@@ -768,8 +799,10 @@ void indexingOperationElm(ParsedField field, boolean multiLine) : { }
 
     {
         IndexingOperation oldOp = newIndexingOperation(multiLine);
-        ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
-        field.setIndexingOperation(newOp);
+        if (oldOp != null) {
+            ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
+            field.setIndexingOperation(newOp);
+        }
     }
 ;
 
@@ -1062,7 +1095,10 @@ void matchFeaturesElm(ParsedRankProfile profile) :
       }
     )
     {
-        profile.addMatchFeatures(getFeatureList(features, parsingStack));
+        FeatureList featureList = getFeatureList(features);
+        if (featureList != null) {
+            profile.addMatchFeatures(featureList);
+        }
     }
 ;
 
@@ -1076,7 +1112,10 @@ void rankFeaturesElm(ParsedRankProfile profile) :
       <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                                             lastConsumedToken.toString().lastIndexOf("}")).trim(); } )
     {
-        profile.addRankFeatures(getFeatureList(features, parsingStack));
+        FeatureList featureList = getFeatureList(features);
+        if (featureList != null) {
+            profile.addMatchFeatures(featureList);
+        }
     }
 ;
 
