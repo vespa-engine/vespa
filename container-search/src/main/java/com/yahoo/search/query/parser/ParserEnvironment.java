@@ -16,9 +16,31 @@ import com.yahoo.search.searchchain.Execution;
  */
 public final class ParserEnvironment {
 
+    /** these flags are only for how the weakAnd parser handles implicit AND/SAND items */
+    public record ParserSettings(boolean keepImplicitAnds,
+                                     boolean markSegmentAnds,
+                                     boolean keepSegmentAnds)
+    {
+        public ParserSettings() {
+            this(/*keepImplicitAnds    = */ true,
+                 /*markSegmentAnds     = */ false,
+                 /*keepSegmentAnds     = */ false);
+        }
+    }
+
     private IndexFacts indexFacts = new IndexFacts();
     private Linguistics linguistics = new SimpleLinguistics();
     private SpecialTokens specialTokens = SpecialTokens.empty();
+    private ParserSettings parserSettings = new ParserSettings();
+
+    public ParserSettings getParserSettings() {
+        return parserSettings;
+    }
+
+    public ParserEnvironment setParserSettings(ParserSettings newValue) {
+        this.parserSettings = newValue;
+        return this;
+    }
 
     public IndexFacts getIndexFacts() {
         return indexFacts;
@@ -54,6 +76,8 @@ public final class ParserEnvironment {
         if (context.getIndexFacts() != null)
             env.setIndexFacts(context.getIndexFacts());
 
+        env.setParserSettings(context.schemaInfo().parserSettings());
+
         if (context.getLinguistics() != null)
             env.setLinguistics(context.getLinguistics());
 
@@ -66,6 +90,7 @@ public final class ParserEnvironment {
     public static ParserEnvironment fromParserEnvironment(ParserEnvironment environment) {
         return new ParserEnvironment()
                 .setIndexFacts(environment.indexFacts)
+                .setParserSettings(environment.parserSettings)
                 .setLinguistics(environment.linguistics)
                 .setSpecialTokens(environment.specialTokens);
     }

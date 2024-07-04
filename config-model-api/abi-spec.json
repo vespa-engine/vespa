@@ -1346,7 +1346,8 @@
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public boolean symmetricPutAndActivateReplicaSelection()",
       "public boolean enforceStrictlyIncreasingClusterStateVersions()",
-      "public boolean distributionConfigFromClusterController()"
+      "public boolean distributionConfigFromClusterController()",
+      "public boolean useLegacyWandQueryParsing()"
     ],
     "fields" : [ ]
   },

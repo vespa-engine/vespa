@@ -33,6 +33,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.GroupingQueryParser;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.SessionId;
+import com.yahoo.search.query.parser.ParserEnvironment.ParserSettings;
 import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -40,6 +41,7 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Disabled;
@@ -1030,16 +1032,33 @@ public class QueryTestCase {
         }
     }
 
+    private static void useParserSettings(Query query) {
+        var lqp = new ParserSettings(true, true, true);
+        var schemaStub = SchemaInfo.createStub(lqp);
+        var ctx = Execution.Context.createContextStub(schemaStub);
+        query.getModel().getExecution().context().populateFrom(ctx);
+    }
+
+    private static void disableParserSettings(Query query) {
+        var lqp = new ParserSettings(false, false, false);
+        var schemaStub = SchemaInfo.createStub(lqp);
+        var ctx = Execution.Context.createContextStub(schemaStub);
+        query.getModel().getExecution().context().populateFrom(ctx);
+    }
+
     @Test
     void testImplicitPhraseIsDefault() {
         Query query = new Query(httpEncode("?query=it's fine"));
+        useParserSettings(query);
         assertEquals("WEAKAND(100) (SAND it s) fine", query.getModel().getQueryTree().toString());
+        query = new Query(httpEncode("?query=it's fine"));
+        disableParserSettings(query);
+        assertEquals("WEAKAND(100) it s fine", query.getModel().getQueryTree().toString());
     }
 
     @Test
     void testImplicitPhrase() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c&type=all"));
-
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
         myField.addCommand("phrase-segmenting true");
@@ -1047,8 +1066,7 @@ public class QueryTestCase {
         test.addIndex(myField);
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-
-        assertEquals("AND myfield:'it s' myfield:\"a b\" myfield:c", query.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) myfield:'it s' myfield:\"a b\" myfield:c", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -1062,7 +1080,7 @@ public class QueryTestCase {
         test.addIndex(myField);
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
-
+        useParserSettings(query);
         assertEquals("WEAKAND(100) (SAND myfield:it myfield:s) (AND myfield:a myfield:b) myfield:c", query.getModel().getQueryTree().toString());
         // 'it' and 's' should have connectivity 1
         WeakAndItem root = (WeakAndItem) query.getModel().getQueryTree().getRoot();
@@ -1073,6 +1091,13 @@ public class QueryTestCase {
         assertEquals("s", s.getWord());
         assertEquals(s, it.getConnectedItem());
         assertEquals(1.0, it.getConnectivity(), 0.00000001);
+        query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+        assertEquals("WEAKAND(100) myfield:it myfield:s (AND myfield:a myfield:b) myfield:c", query.getModel().getQueryTree().toString());
+        query = new Query(httpEncode("?query=myfield:it's myfield:a.b myfield:c"));
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+        disableParserSettings(query);
+        assertEquals("WEAKAND(100) myfield:it myfield:s myfield:a myfield:b myfield:c", query.getModel().getQueryTree().toString());
     }
 
     @Test

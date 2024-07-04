@@ -49,24 +49,22 @@ public class CJKSearcher extends Searcher {
     }
 
     private Item transform(Item root) {
-        if (root instanceof PhraseItem) {
-            PhraseItem asPhrase = (PhraseItem) root;
+        if (root instanceof PhraseItem asPhrase) {
             if (asPhrase.isExplicit() || hasOverlappingTokens(asPhrase)) return root;
 
             AndItem replacement = new AndItem();
-            for (ListIterator<Item> i = ((CompositeItem) root).getItemIterator(); i.hasNext();) {
+            for (ListIterator<Item> i = asPhrase.getItemIterator(); i.hasNext();) {
                 Item item = i.next();
                 if (item instanceof WordItem)
                     replacement.addItem(item);
-                else if (item instanceof PhraseSegmentItem)
-                    replacement.addItem(new AndSegmentItem((PhraseSegmentItem) item));
+                else if (item instanceof PhraseSegmentItem asSegment)
+                    replacement.addItem(new AndSegmentItem(asSegment));
                 else
                     replacement.addItem(item); // should never get here
             }
             return replacement;
         }
-        else if (root instanceof PhraseSegmentItem) {
-            PhraseSegmentItem asSegment = (PhraseSegmentItem) root;
+        else if (root instanceof PhraseSegmentItem asSegment) {
             if (asSegment.isExplicit() || hasOverlappingTokens(asSegment))
                 return root;
             else
@@ -75,11 +73,11 @@ public class CJKSearcher extends Searcher {
         else if (root instanceof SegmentItem) {
             return root; // avoid descending into AndSegmentItems and similar
         }
-        else if (root instanceof CompositeItem) {
-            for (ListIterator<Item> i = ((CompositeItem) root).getItemIterator(); i.hasNext();) {
+        else if (root instanceof CompositeItem asComposite) {
+            for (ListIterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
                 Item item = i.next();
                 Item transformedItem = transform(item);
-                if (item != transformedItem && ((CompositeItem) root).acceptsItemsOfType(transformedItem.getItemType()))
+                if (item != transformedItem && asComposite.acceptsItemsOfType(transformedItem.getItemType()))
                     i.set(transformedItem);
             }
             return root;

@@ -67,3 +67,14 @@ searchcluster[].indexingmode enum { REALTIME, STREAMING } default=REALTIME
 
 ## Storage cluster route to use for search cluster if indexingmode is streaming.
 searchcluster[].storagecluster.routespec string default=""
+
+# flags for enabling legacy behavior in weakAnd query parsing:
+
+## make "a b,c d" parse as (WAND "a" (AND "b" "c") "d")
+parserSettings.keepImplicitAnds bool default=true
+
+## mark segment-and items (for folding later) in query parsing
+parserSettings.markSegmentAnds bool default=false
+
+## keep segment-and items as-is in query parsing (overrides markSegmentAnds)
+parserSettings.keepSegmentAnds bool default=false

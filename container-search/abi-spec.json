@@ -5939,6 +5939,26 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.query.parser.ParserEnvironment$ParserSettings" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(boolean, boolean, boolean)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public boolean keepImplicitAnds()",
+      "public boolean markSegmentAnds()",
+      "public boolean keepSegmentAnds()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.query.parser.ParserEnvironment" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -5948,6 +5968,8 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public com.yahoo.search.query.parser.ParserEnvironment$ParserSettings getParserSettings()",
+      "public com.yahoo.search.query.parser.ParserEnvironment setParserSettings(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)",
       "public com.yahoo.prelude.IndexFacts getIndexFacts()",
       "public com.yahoo.search.query.parser.ParserEnvironment setIndexFacts(com.yahoo.prelude.IndexFacts)",
       "public com.yahoo.language.Linguistics getLinguistics()",
@@ -8727,8 +8749,10 @@
     "methods" : [
       "public void <init>(com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
       "public void <init>(java.util.List, java.util.List)",
+      "public static com.yahoo.search.schema.SchemaInfo createStub(com.yahoo.search.query.parser.ParserEnvironment$ParserSettings)",
       "public java.util.Map schemas()",
       "public java.util.Map clusters()",
+      "public com.yahoo.search.query.parser.ParserEnvironment$ParserSettings parserSettings()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",

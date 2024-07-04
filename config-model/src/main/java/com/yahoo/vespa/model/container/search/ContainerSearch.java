@@ -50,6 +50,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
     private final List<SearchCluster> searchClusters = new LinkedList<>();
     private final Collection<String> schemasWithGlobalPhase;
     private final ApplicationPackage app;
+    private final boolean useLegacyWandQueryParsing;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
@@ -60,6 +61,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
         this.schemasWithGlobalPhase = getSchemasWithGlobalPhase(deployState);
         this.app = deployState.getApplicationPackage();
         this.owningCluster = cluster;
+        this.useLegacyWandQueryParsing = deployState.featureFlags().useLegacyWandQueryParsing();
 
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class, SEARCH_AND_DOCPROC_BUNDLE));
@@ -169,6 +171,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
     @Override
     public void getConfig(QrSearchersConfig.Builder builder) {
         searchClusters.forEach(sc -> builder.searchcluster(sc.getQrSearcherConfig()));
+        if (useLegacyWandQueryParsing) {
+            builder.parserSettings(cfg -> cfg
+                                   .keepImplicitAnds(true)
+                                   .keepSegmentAnds(true));
+        }
     }
 
 }
