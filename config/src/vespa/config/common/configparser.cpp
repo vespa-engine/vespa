@@ -85,8 +85,7 @@ ConfigParser::deQuote(const vespalib::string & source)
 namespace {
 
 bool
-getValueForKey(std::string_view key, std::string_view line,
-               vespalib::string& retval)
+getValueForKey(std::string_view key, std::string_view line, vespalib::string& retval)
 {
     if (line.length() <= key.length()) {
         return false;
@@ -158,8 +157,7 @@ ConfigParser::stripLinesForKey(std::string_view key,
     vespalib::string value;
     for (auto it = config.begin(); it != config.end();) {
         if (getValueForKey(key, *it, value)) {
-            auto it2 = it++;
-            config.erase(it2);
+            it = config.erase(it);
         } else {
             ++it;
         }
