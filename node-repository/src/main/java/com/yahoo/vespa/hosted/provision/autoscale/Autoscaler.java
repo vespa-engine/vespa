@@ -66,8 +66,12 @@ public class Autoscaler {
         var model = model(application, cluster, clusterNodes);
         if (model.isEmpty()) return Autoscaling.empty();
 
-        if (!enabled || (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources())))
+        boolean disabledByUser = !limits.isEmpty() && cluster.minResources().equals(cluster.maxResources());
+        boolean disabledByFeatureFlag = !enabled;
+        if (disabledByUser)
             return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", model);
+        if (disabledByFeatureFlag)
+            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is disabled by feature flag", model);
 
         if ( ! model.isStable(nodeRepository))
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
