@@ -75,7 +75,7 @@ public class SchemaParserTest {
         checkFileParses("../../../config-model/src/test/configmodel/types/other_doc.sd");
         checkFileParses("../../../config-model/src/test/configmodel/types/types.sd");
         checkFileParses("../../../config-model/src/test/configmodel/types/type_with_doc_field.sd");
-        //checkFileParses("../../../config-model/src/test/derived/advanced/advanced.sd");
+        checkFileParses("../../../config-model/src/test/derived/advanced/advanced.sd");
         checkFileParses("../../../config-model/src/test/derived/annotationsimplicitstruct/annotationsimplicitstruct.sd");
         checkFileParses("../../../config-model/src/test/derived/annotationsinheritance2/annotationsinheritance2.sd");
         checkFileParses("../../../config-model/src/test/derived/annotationsinheritance/annotationsinheritance.sd");
