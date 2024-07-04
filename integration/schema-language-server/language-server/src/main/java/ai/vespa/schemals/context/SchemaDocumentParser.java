@@ -20,8 +20,6 @@ import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
-import com.yahoo.schema.parser.ParsedSchema;
-import com.yahoo.schema.parser.ParsedBlock;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -194,8 +192,6 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing document: " + fileURI);
 
-        ParsedBlock.setCanIgnoreException(true);
-
         SchemaParser parserStrict = new SchemaParser(logger, getFileName(), sequence);
         parserStrict.setParserTolerant(false);
 
@@ -203,7 +199,7 @@ public class SchemaDocumentParser {
 
         try {
 
-            ParsedSchema root = parserStrict.Root();
+            parserStrict.Root();
             faultySchema = false;
         } catch (ParseException e) {
             faultySchema = true;

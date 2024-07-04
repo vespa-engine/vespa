@@ -7,8 +7,6 @@ package com.yahoo.schema.parser;
  **/
 public class ParsedBlock {
 
-    private static boolean canIgnoreException = false;
-
     private final String name;
     private final String blockType;
 
@@ -19,11 +17,6 @@ public class ParsedBlock {
 
     public final String name() { return name; }
     public final String blockType() { return blockType; }
-
-    protected void verifyThatIgnoreable(boolean check, String msg, Object ... msgDetails) {
-        if (canIgnoreException) return;
-        verifyThat(check, msg, msgDetails);
-    }
 
     protected void verifyThat(boolean check, String msg, Object ... msgDetails) {
         if (check) return;
@@ -41,15 +34,5 @@ public class ParsedBlock {
         return blockType + " '" + name + "'";
     }
 
-
-    /**
-     * Sets the flag indicating whether some exceptions can be ignored during parsing.
-     * WARNING: This will cause errors, therefore it should only be used in schema-language-server
-     *
-     * @param value the boolean value indicating whether exceptions can be ignored
-     */
-    public static void setCanIgnoreException(boolean value) {
-        canIgnoreException = value;
-    }
 }
 
