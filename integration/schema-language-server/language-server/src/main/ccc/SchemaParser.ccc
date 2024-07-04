@@ -104,37 +104,28 @@ INJECT SchemaParser:
 
         Token tokenToAddExceptionsTo = lastConsumedToken;
 
-        if (multiline) {
-            
-            if (nextTokenType() != TokenType.LBRACE) {
-                throw new ParseException("Unexpected token " + nextTokenType() + " expected : or {", lastConsumedToken.getNext(), parsingStack);
-            }
+        int braceLevel = 0;
 
+        while (
+            nextTokenType() != TokenType.EOF &&
+            (
+                braceLevel > 0 ||
+                nextTokenType() != TokenType.NL
+            ) &&
+            !(
+                braceLevel == 0 &&
+                nextTokenType() == TokenType.RBRACE
+            )
+        ) {
             lastConsumedToken = nextToken(lastConsumedToken);
 
-            int braceLevel = 1;
-
-            while (
-                nextTokenType() != TokenType.EOF &&
-                braceLevel > 0
-            ) {
-                lastConsumedToken = nextToken(lastConsumedToken);
-
-                if (lastConsumedToken.getType() == TokenType.LBRACE) {
-                    braceLevel++;
-                }
-
-                if(lastConsumedToken.getType() == TokenType.RBRACE) {
-                    braceLevel--;
-                }
+            if (lastConsumedToken.getType() == TokenType.LBRACE) {
+                braceLevel++;
             }
 
-        } else {
-
-            while (nextTokenType() != TokenType.NL && nextTokenType() != TokenType.EOF) {
-                lastConsumedToken = nextToken(lastConsumedToken);
+            if(lastConsumedToken.getType() == TokenType.RBRACE) {
+                braceLevel--;
             }
-            
         }
         
         endSplit = lastConsumedToken.getEndOffset();
