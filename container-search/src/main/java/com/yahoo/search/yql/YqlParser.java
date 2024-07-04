@@ -31,6 +31,7 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.FalseItem;
@@ -156,11 +157,14 @@ public class YqlParser implements Parser {
     public static final String CONNECTION_ID = "id";
     public static final String CONNECTION_WEIGHT = "weight";
     public static final String CONNECTIVITY = "connectivity";
+    public static final String COUNT = "count";
     public static final String DISTANCE = "distance";
     public static final String DISTANCE_THRESHOLD = "distanceThreshold";
+    public static final String DOCUMENT_FREQUENCY = "documentFrequency";
     public static final String DOT_PRODUCT = "dotProduct";
     public static final String EQUIV = "equiv";
     public static final String FILTER = "filter";
+    public static final String FREQUENCY = "frequency";
     public static final String GEO_LOCATION = "geoLocation";
     public static final String HIT_LIMIT = "hitLimit";
     public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
@@ -1610,6 +1614,11 @@ public class YqlParser implements Parser {
             if (significance != null) {
                 out.setSignificance(significance.doubleValue());
             }
+            Map < ?, ?> documentFrequency = getAnnotation(ast, DOCUMENT_FREQUENCY, Map.class, null, "document frequency");
+            if (documentFrequency != null) {
+                out.setDocumentFrequency(new DocumentFrequency(getLongMapValue(DOCUMENT_FREQUENCY, documentFrequency, FREQUENCY),
+                        getLongMapValue(DOCUMENT_FREQUENCY, documentFrequency, COUNT)));
+            }
             Integer uniqueId = getAnnotation(ast, UNIQUE_ID, Integer.class, null, "term ID", false);
             if (uniqueId != null) {
                 out.setUniqueID(uniqueId);
@@ -1864,6 +1873,14 @@ public class YqlParser implements Parser {
                                     "Expected %s for entry '%s' in map annotation '%s', got %s.",
                                     expectedValueClass.getName(), key, mapName, value.getClass().getName());
         return expectedValueClass.cast(value);
+    }
+
+    private static Long getLongMapValue(String mapName, Map<?, ?> map, String key) {
+        Number value = getMapValue(mapName, map, key, Number.class);
+        Preconditions.checkArgument(value instanceof Long || value instanceof Integer,
+                "Expected Long or Integer for entry '%s' in map annotation '%s', got %s.",
+                key, mapName, value.getClass().getName());
+        return value.longValue();
     }
 
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
