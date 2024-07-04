@@ -10,6 +10,7 @@ import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.parser.ast.featureListElm;
 
 public class SchemaNode {
 
@@ -83,10 +84,20 @@ public class SchemaNode {
         return (originalNode instanceof indexingElm);
     }
 
+    public boolean isFeatureListElm() {
+        return (originalNode instanceof featureListElm);
+    }
+
     public String getILScript() {
         if (!isIndexingElm())return null;
         indexingElm elmNode = (indexingElm)originalNode;
         return elmNode.getILScript();
+    }
+
+    public String getFeatureListString() {
+        if (!isFeatureListElm()) return null;
+        featureListElm elmNode = (featureListElm)originalNode;
+        return elmNode.getFeatureListString();
     }
 
     public boolean hasIndexingNode() {

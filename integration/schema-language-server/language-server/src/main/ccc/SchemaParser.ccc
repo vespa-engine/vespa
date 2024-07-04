@@ -1,6 +1,7 @@
 PARSER_CLASS=SchemaParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser;
 FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false; // Will create a tree node for every rule
 
 INJECT SchemaParser:
 
@@ -188,6 +189,18 @@ INJECT indexingElm:
 
     public void setILScript(String script) {
         this.ILScript = script;
+    }
+}
+
+INJECT featureListElm:
+{
+    private String featureListString = null;
+
+    public boolean hasFeatureListString() { return featureListString != null; }
+    public String getFeatureListString() { return featureListString; }
+
+    public void setFeatureListString(String features) {
+        this.featureListString = features;
     }
 }
 
@@ -1922,14 +1935,15 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | postFilterThreshold(profile)
        | approximateThreshold(profile)
        | targetHitsMaxAdjustmentFactor(profile)
-       | rankFeaturesElm(profile)
        | rankProperties(profile)
        | secondPhase(profile)
        | globalPhase(profile)
        | inputsElm(profile)
        | constantsElm(schema, profile)
-       | matchFeaturesElm(profile)
-       | summaryFeatures(profile)
+       | featureListElm(profile) // Captures rank, match and summary-features
+       //| rankFeaturesElm(profile)
+       //| matchFeaturesElm(profile)
+       //| summaryFeaturesElm(profile)
        | onnxModelInProfile(profile)
        | strictElm(profile)
        | significanceElm(profile)
@@ -2268,12 +2282,23 @@ InputType valueType(Reference reference) :
     { return result; }
 ;
 
+void featureListElm(ParsedRankProfile profile) :
+{
+    String features;
+}
+
+    ( (features = summaryFeaturesElm(profile)) | (features = matchFeaturesElm(profile)) | (features = rankFeaturesElm(profile)))
+    {
+        thisProduction.setFeatureListString(features);
+    }
+;
+
 /**
  * Consumes a summary-features block of a rank profile.
  *
  * @param profile the rank profile to modify
  */
-void summaryFeatures(ParsedRankProfile profile) :
+String summaryFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
     String inherited = null;
@@ -2290,10 +2315,11 @@ void summaryFeatures(ParsedRankProfile profile) :
       }
     )
     {
-        FeatureList featureList = getFeatureList(features);
-        if (featureList != null) {
-            profile.addSummaryFeatures(featureList);
-        }
+        //FeatureList featureList = getFeatureList(features);
+        //if (featureList != null) {
+        //    profile.addSummaryFeatures(featureList);
+        //}
+        return features;
     }
 ;
 
@@ -2327,7 +2353,7 @@ void significanceItem(ParsedRankProfile profile) :
  *
  * @param profile the rank profile to modify
  */
-void matchFeaturesElm(ParsedRankProfile profile) :
+String matchFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
 }
@@ -2343,15 +2369,16 @@ void matchFeaturesElm(ParsedRankProfile profile) :
       }
     )
     {
-        FeatureList featureList = getFeatureList(features);
-        if (featureList != null) {
-            profile.addMatchFeatures(featureList);
-        }
+        //FeatureList featureList = getFeatureList(features);
+        //if (featureList != null) {
+        //    profile.addMatchFeatures(featureList);
+        //}
+        return features;
     }
 ;
 
 /** Consumes a rank-features block of a rank profile */
-void rankFeaturesElm(ParsedRankProfile profile) :
+String rankFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
 }
@@ -2360,10 +2387,11 @@ void rankFeaturesElm(ParsedRankProfile profile) :
     | <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                                             lastConsumedToken.toString().lastIndexOf("}")).trim(); } )
     {
-        FeatureList featureList = getFeatureList(features);
-        if (featureList != null) {
-            profile.addRankFeatures(featureList);
-        }
+        //FeatureList featureList = getFeatureList(features);
+        //if (featureList != null) {
+        //    profile.addRankFeatures(featureList);
+        //}
+        return features;
     }
 ;
 

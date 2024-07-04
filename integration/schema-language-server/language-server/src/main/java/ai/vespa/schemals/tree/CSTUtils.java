@@ -158,6 +158,10 @@ public class CSTUtils {
             ret += " [ILSCRIPT]";
         }
 
+        if (node.isFeatureListElm()) {
+            ret += " [FEATURES]";
+        }
+
         Range range = node.getRange();
         ret += ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ")";
         ret += " - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")";
