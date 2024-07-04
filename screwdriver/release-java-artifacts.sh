@@ -61,7 +61,7 @@ sign_module() {
     AFILES=()
     ATYPES=()
     ACLASSIFIERS=()
-    for EX in $(find $P -name "$A-$V-*.jar"); do
+    for EX in $(find $P \( -name "$A-$V-*.jar" -or -name "$A-$V-*.zip" \) ); do
         AFILES+=($EX)
         EXB=$(basename $EX)
         EXT=${EXB##*.}
