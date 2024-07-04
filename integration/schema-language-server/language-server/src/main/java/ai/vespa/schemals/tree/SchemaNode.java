@@ -22,6 +22,7 @@ public class SchemaNode {
     private Node originalNode;
 
     private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
+    private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
 
     // This array has to be in order, without overlapping elements
     private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
@@ -104,12 +105,24 @@ public class SchemaNode {
         return this.indexingNode != null;
     }
 
+    public boolean hasFeatureListNode() {
+        return this.featureListNode != null;
+    }
+
     public ai.vespa.schemals.parser.indexinglanguage.Node getIndexingNode() {
         return this.indexingNode;
     }
 
+    public ai.vespa.schemals.parser.rankingexpression.Node getFeatureListNode() {
+        return this.featureListNode;
+    }
+
     public void setIndexingNode(ai.vespa.schemals.parser.indexinglanguage.Node node) {
         this.indexingNode = node;
+    }
+
+    public void setFeatureListNode(ai.vespa.schemals.parser.rankingexpression.Node node) {
+        this.featureListNode = node;
     }
 
     public String getIdentifierString() {

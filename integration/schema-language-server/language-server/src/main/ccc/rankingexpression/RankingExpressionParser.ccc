@@ -30,7 +30,20 @@ INJECT RankingExpressionParser :
     import java.util.ArrayList;
     import java.util.List;
     import java.util.Optional;
+    import java.io.OutputStream;
 {
+    private PrintStream logger = new PrintStream(
+        new OutputStream() {
+            public void write(int b) {
+                return;
+            }
+        }
+    );
+
+    public RankingExpressionParser(PrintStream logger, String inputSource, CharSequence content) {
+        this(inputSource, content);
+        this.logger = logger;
+    }
 }
 
 SKIP :

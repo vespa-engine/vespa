@@ -22,8 +22,10 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
+import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 
 import com.yahoo.schema.parser.ParsedSchema;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.functions.Diag;
 import com.yahoo.schema.parser.ParsedBlock;
 
@@ -330,6 +332,15 @@ public class SchemaDocumentParser {
             }
         }
 
+        if (node.isFeatureListElm()) {
+            Range nodeRange = node.getRange();
+            var featureListNode = parseFeatureList(node.getFeatureListString(), nodeRange.getEnd(), ret);
+
+            if (featureListNode != null) {
+                node.setFeatureListNode(featureListNode);
+            }
+        }
+
         for (int i = 0; i < node.size(); i++) {
             ret.addAll(traverseCST(node.get(i)));
         }
@@ -359,7 +370,7 @@ public class SchemaDocumentParser {
             // TODO: Verify expression
             return parser.rootNode();
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
-            logger.println("Encountered parsing error in parsing ILScript");
+            logger.println("Encountered parsing error in parsing feature list");
             Range range = ILUtils.getNodeRange(pe.getToken());
             range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
             range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
@@ -371,6 +382,33 @@ public class SchemaDocumentParser {
 
         return null;
     }
+
+    private ai.vespa.schemals.parser.rankingexpression.Node parseFeatureList(String featureListString, Position listStart, ArrayList<Diagnostic> diagnostics) {
+        if (featureListString == null)return null;
+        CharSequence sequence = featureListString;
+
+        RankingExpressionParser parser = new RankingExpressionParser(logger, getFileName(), sequence);
+        parser.setParserTolerant(false);
+
+        try {
+            logger.println("Trying to parse feature list: " + featureListString);
+            List<ReferenceNode> features = parser.featureList();
+            return parser.rootNode();
+        } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
+            logger.println("Encountered parsing error in parsing ILScript");
+            //Range range = ILUtils.getNodeRange(pe.getToken());
+            //range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
+            //range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
+
+            diagnostics.add(new Diagnostic(new Range(listStart, listStart), pe.getMessage()));
+        } catch(IllegalArgumentException ex) {
+            logger.println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
+        }
+
+
+        return null;
+    }
+
 
     /*
      * If necessary, the following methods can be sped up by
