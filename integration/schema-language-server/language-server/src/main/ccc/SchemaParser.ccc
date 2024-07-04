@@ -9,6 +9,11 @@ INJECT SchemaParser:
 
     import java.io.OutputStream;
     import java.util.List;
+    import java.util.Map;
+
+    import com.yahoo.language.Linguistics;
+    import com.yahoo.language.process.Embedder;
+    import com.yahoo.language.simple.SimpleLinguistics;
 
     import com.yahoo.schema.parser.ParsedAnnotation;
     import com.yahoo.schema.parser.ParsedAttribute;
@@ -26,10 +31,13 @@ INJECT SchemaParser:
     import com.yahoo.schema.parser.ParsedStruct;
     import com.yahoo.schema.parser.ParsedSummaryField;
     import com.yahoo.schema.parser.ParsedType;
+    import com.yahoo.schema.parser.SimpleCharStream;
 
+    import com.yahoo.schema.fieldoperation.IndexingOperation;
     import com.yahoo.schema.document.Case;
     import com.yahoo.schema.document.MatchType;
     import com.yahoo.schema.document.MatchAlgorithm;
+
     import com.yahoo.tensor.TensorType;
 
     import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -47,6 +55,65 @@ INJECT SchemaParser:
     public SchemaParser(PrintStream logger, String inputSource, CharSequence content) {
         this(inputSource, content);
         this.logger = logger;
+    }
+
+    /**
+     * Consumes an indexing language script which will use the simple linguistics implementation
+     * for testing, by taking input from the current input stream.
+     *
+     * @param multiline Whether or not to allow multi-line expressions.
+     */
+    @SuppressWarnings("deprecation")
+    private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+    }
+
+    /**
+     * Consumes an indexing language script from the current input stream.
+     *
+     * @param multiline Whether or not to allow multi-line expressions.
+     * @param linguistics What to use for tokenizing.
+     */
+    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+        // Find the CharStream to and set input to this stream, by converting it to a SimpleCharStream - Theodor
+        // SimpleCharStream input = new SimpleCharStream("summary | index"); //lastConsumedToken.getTokenSource();
+
+        TokenSource tokS = lastConsumedToken.getTokenSource();
+        String inputString = tokS.toString();
+        int startSplit = lastConsumedToken.getEndOffset();
+        int endSplit = startSplit;
+        
+        if (multiline) {
+            // TODO: implement witchcraft
+        } else {
+
+            while (nextTokenType() != TokenType.NL) {
+                lastConsumedToken = nextToken(lastConsumedToken);
+            }
+            endSplit = lastConsumedToken.getEndOffset();
+        }
+
+        inputString = inputString.substring(startSplit ,endSplit);
+        logger.println(inputString);
+
+        SimpleCharStream input = new SimpleCharStream(inputString);
+
+        // if (lastConsumedToken.getNext() != null) {
+        //     logger.println(lastConsumedToken.getNext().getSource());
+        //     // input.backup(lastConsumedToken.getNext().getSource().length());
+        // }
+
+        try {
+            return IndexingOperation.fromStream(input, multiline, linguistics, embedders);
+        } catch (com.yahoo.schema.parser.ParseException e) {
+            logger.println("FEEEEEIL");
+            logger.println(e);
+            // TODO: fix this error
+            throw (ParseException) (new ParseException("Error at: " + lastConsumedToken.getLocation()).initCause(e));
+        // } finally {
+            // token.next = null;
+            // jj_ntk = -1;
+        }
     }
 
     /**
@@ -640,7 +707,7 @@ void fieldBodyElm(ParsedField field) : { }
        idElm(field) |
     //   summaryInField(field) |
     //   indexInsideField(field) |
-    //   indexing(field) |
+       indexingElm(field) |
        matchSettingsElm(field.matchSettings()) |
     //   normalizing(field) |
     //   queryCommand(field) |
@@ -653,6 +720,30 @@ void fieldBodyElm(ParsedField field) : { }
     //   weightedset(field.getType()) )
       weightElm(field)
     )
+;
+
+/**
+ * This rule consumes an indexing block of a field element.
+ *
+ * @param field The field to modify.
+ */
+void indexingElm(ParsedField field) : { }
+
+    ( <INDEXING> ( (<COLON> indexingOperationElm(field, false)) | indexingOperationElm(field, true) ) )
+;
+
+/**
+ * This rule consumes an IL script block. This is expected to consume trailing newlines.
+ *
+ * @param field The field to modify.
+ */
+void indexingOperationElm(ParsedField field, boolean multiLine) : { }
+
+    {
+        IndexingOperation oldOp = newIndexingOperation(multiLine);
+        ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
+        field.setIndexingOperation(newOp);
+    }
 ;
 
 /**
