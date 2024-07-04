@@ -50,8 +50,7 @@ public class SchemaInfo {
         var cfg = qrSearchersConfig.legacyQueryParsing();
         return new LegacyQueryParsing(cfg.keepImplicitAnds(),
                                       cfg.markSegmentAnds(),
-                                      cfg.keepSegmentAnds(),
-                                      cfg.keepImplicitPhrases());
+                                      cfg.keepSegmentAnds());
     }
 
     @Inject

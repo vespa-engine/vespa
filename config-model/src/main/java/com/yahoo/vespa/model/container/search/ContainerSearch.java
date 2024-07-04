@@ -174,8 +174,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
         if (useLegacyWandQueryParsing) {
             builder.legacyQueryParsing(cfg -> cfg
                                        .keepImplicitAnds(true)
-                                       .keepSegmentAnds(true)
-                                       .keepImplicitPhrases(true));
+                                       .keepSegmentAnds(true));
         }
     }
 

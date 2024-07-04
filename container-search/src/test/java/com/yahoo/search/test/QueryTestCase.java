@@ -1033,14 +1033,14 @@ public class QueryTestCase {
     }
 
     private static void useLegacyQueryParsing(Query query) {
-        var lqp = new LegacyQueryParsing(true, true, true, true);
+        var lqp = new LegacyQueryParsing(true, true, true);
         var schemaStub = SchemaInfo.createStub(lqp);
         var ctx = Execution.Context.createContextStub(schemaStub);
         query.getModel().getExecution().context().populateFrom(ctx);
     }
 
     private static void disableLegacyQueryParsing(Query query) {
-        var lqp = new LegacyQueryParsing(false, false, false, false);
+        var lqp = new LegacyQueryParsing(false, false, false);
         var schemaStub = SchemaInfo.createStub(lqp);
         var ctx = Execution.Context.createContextStub(schemaStub);
         query.getModel().getExecution().context().populateFrom(ctx);

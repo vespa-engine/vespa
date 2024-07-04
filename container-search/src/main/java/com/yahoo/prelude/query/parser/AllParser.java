@@ -117,16 +117,6 @@ public class AllParser extends SimpleParser {
             }
             return true;
         }
-        if (weakAnd && other instanceof PhraseItem phrase) {
-            if (phrase.isExplicit()) return false;
-            if (legacyQueryParsing.keepImplicitPhrases()) return false;
-            return true;
-        }
-        if (weakAnd && other instanceof PhraseSegmentItem phrase) {
-            if (phrase.isExplicit()) return false;
-            if (legacyQueryParsing.keepImplicitPhrases()) return false;
-            return true;
-        }
         return false;
     }
 

@@ -5949,14 +5949,13 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public void <init>(boolean, boolean, boolean, boolean)",
+      "public void <init>(boolean, boolean, boolean)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public boolean keepImplicitAnds()",
       "public boolean markSegmentAnds()",
-      "public boolean keepSegmentAnds()",
-      "public boolean keepImplicitPhrases()"
+      "public boolean keepSegmentAnds()"
     ],
     "fields" : [ ]
   },

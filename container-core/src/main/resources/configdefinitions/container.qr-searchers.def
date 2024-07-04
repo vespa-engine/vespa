@@ -78,6 +78,3 @@ legacyQueryParsing.markSegmentAnds bool default=false
 
 ## keep segment-and items as-is in query parsing (overrides markSegmentAnds)
 legacyQueryParsing.keepSegmentAnds bool default=false
-
-## keep implicit phrases as-is in query parsing
-legacyQueryParsing.keepImplicitPhrases bool default=true
