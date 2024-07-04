@@ -211,6 +211,18 @@ public class Json implements Iterable<Json> {
             if (cursor.type() != Type.ARRAY) throw new InvalidJsonException("Input is not an array");
             return new Builder.Array(cursor);
         }
+        public static Builder.Object fromObject(Json json) {
+            json.requireType(Type.OBJECT);
+            var builder = newObject();
+            SlimeUtils.copyObject(json.inspector, builder.cursor);
+            return builder;
+        }
+        public static Builder.Array fromArray(Json json) {
+            json.requireType(Type.ARRAY);
+            var builder = newArray();
+            SlimeUtils.copyArray(json.inspector, builder.cursor);
+            return builder;
+        }
 
         private Builder(Cursor cursor) { this.cursor = cursor; }
 
