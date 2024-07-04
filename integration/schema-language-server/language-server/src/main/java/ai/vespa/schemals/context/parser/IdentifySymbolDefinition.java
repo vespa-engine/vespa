@@ -12,7 +12,6 @@ import com.yahoo.schema.Schema;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.context.Symbol;
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -43,6 +42,9 @@ public class IdentifySymbolDefinition extends Identifier {
         }});
         put(TokenType.RANK_PROFILE, new HashSet<String>() {{
             add("ai.vespa.schemals.parser.ast.rankProfile");
+        }});
+        put(TokenType.FUNCTION, new HashSet<String>() {{
+            add("ai.vespa.schemals.parser.ast.functionElm");
         }});
     }};
 

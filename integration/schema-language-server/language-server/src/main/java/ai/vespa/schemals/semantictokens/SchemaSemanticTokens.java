@@ -33,7 +33,8 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.STRUCT);
         add(TokenType.STRUCT_FIELD);
         add(TokenType.TYPE);
-        add(TokenType.SEARCH);
+        add(TokenType.FUNCTION);
+        add(TokenType.RANK_PROPERTIES);
     }};
 
     private static final ArrayList<String> manualyRegisteredLSPNames = new ArrayList<String>() {{
@@ -65,6 +66,7 @@ public class SchemaSemanticTokens implements Visitor {
         put("ai.vespa.schemals.parser.ast.structDefinitionElm", "variable");
         put("ai.vespa.schemals.parser.ast.structFieldDefinition", "variable");
         put("ai.vespa.schemals.parser.ast.rankProfile", "variable");
+        put("ai.vespa.schemals.parser.ast.functionElm", "function");
     }};
 
     private static ArrayList<String> tokenTypes;
