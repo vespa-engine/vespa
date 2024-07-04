@@ -6,7 +6,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.search.query.parser.ParserEnvironment.LegacyQueryParsing;
+import com.yahoo.search.query.parser.ParserEnvironment.ParserSettings;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -44,11 +44,11 @@ public class SchemaInfo {
 
     private final Map<String, Cluster> clusters;
 
-    private final LegacyQueryParsing legacyQueryParsing;
+    private final ParserSettings parserSettings;
 
-    private static LegacyQueryParsing extractLQP(QrSearchersConfig qrSearchersConfig) {
-        var cfg = qrSearchersConfig.legacyQueryParsing();
-        return new LegacyQueryParsing(cfg.keepImplicitAnds(),
+    private static ParserSettings extractLQP(QrSearchersConfig qrSearchersConfig) {
+        var cfg = qrSearchersConfig.parserSettings();
+        return new ParserSettings(cfg.keepImplicitAnds(),
                                       cfg.markSegmentAnds(),
                                       cfg.keepSegmentAnds());
     }
@@ -62,15 +62,15 @@ public class SchemaInfo {
     }
 
     public SchemaInfo(List<Schema> schemas, List<Cluster> clusters) {
-        this(schemas, clusters, new LegacyQueryParsing());
+        this(schemas, clusters, new ParserSettings());
     }
 
     /** only for unit tests */
-    public static SchemaInfo createStub(LegacyQueryParsing lqp) {
+    public static SchemaInfo createStub(ParserSettings lqp) {
         return new SchemaInfo(List.of(), List.of(), lqp);
     }
 
-    private SchemaInfo(List<Schema> schemas, List<Cluster> clusters, LegacyQueryParsing lqp) {
+    private SchemaInfo(List<Schema> schemas, List<Cluster> clusters, ParserSettings lqp) {
         Map<String, Schema> schemaMap = new LinkedHashMap<>();
         schemas.forEach(schema -> schemaMap.put(schema.name(), schema));
         this.schemas = Collections.unmodifiableMap(schemaMap);
@@ -79,7 +79,7 @@ public class SchemaInfo {
         clusters.forEach(cluster -> clusterMap.put(cluster.name(), cluster));
         this.clusters = Collections.unmodifiableMap(clusterMap);
 
-        this.legacyQueryParsing = lqp;
+        this.parserSettings = lqp;
     }
 
     /** Returns all schemas configured in this application, indexed by schema name. */
@@ -88,7 +88,7 @@ public class SchemaInfo {
     /** Returns information about all clusters available for searching in this application, indexed by cluster name. */
     public Map<String, Cluster> clusters() { return clusters; }
 
-    public LegacyQueryParsing legacyQueryParsingFlags() { return legacyQueryParsing; }
+    public ParserSettings parserSettings() { return parserSettings; }
 
     public Session newSession(Query query) {
         return new Session(query.getModel().getSources(), query.getModel().getRestrict(), clusters, schemas);

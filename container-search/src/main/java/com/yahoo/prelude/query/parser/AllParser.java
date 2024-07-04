@@ -18,7 +18,7 @@ import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.ParserEnvironment;
-import com.yahoo.search.query.parser.ParserEnvironment.LegacyQueryParsing;
+import com.yahoo.search.query.parser.ParserEnvironment.ParserSettings;
 
 import java.util.Iterator;
 
@@ -34,7 +34,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 public class AllParser extends SimpleParser {
 
     private final boolean weakAnd;
-    private final LegacyQueryParsing legacyQueryParsing;
+    private final ParserSettings parserSettings;
 
     /**
      * Creates an all/weakAnd parser
@@ -44,7 +44,7 @@ public class AllParser extends SimpleParser {
     public AllParser(ParserEnvironment environment, boolean weakAnd) {
         super(environment);
         this.weakAnd = weakAnd;
-        this.legacyQueryParsing = environment.getLegacyQueryParsing();
+        this.parserSettings = environment.getParserSettings();
     }
 
     @Override
@@ -106,12 +106,12 @@ public class AllParser extends SimpleParser {
 
     private boolean foldIntoAnd(CompositeItem other) {
         if (other instanceof AndItem) {
-            return ! legacyQueryParsing.keepImplicitAnds();
+            return ! parserSettings.keepImplicitAnds();
         }
         if (weakAnd && other instanceof AndSegmentItem sand) {
-            if (legacyQueryParsing.keepSegmentAnds()) {
+            if (parserSettings.keepSegmentAnds()) {
                 return false;
-            } else if (legacyQueryParsing.markSegmentAnds()) {
+            } else if (parserSettings.markSegmentAnds()) {
                 sand.shouldFoldIntoWand(weakAnd);
                 return false;
             }

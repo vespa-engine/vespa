@@ -172,9 +172,9 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains> implements
     public void getConfig(QrSearchersConfig.Builder builder) {
         searchClusters.forEach(sc -> builder.searchcluster(sc.getQrSearcherConfig()));
         if (useLegacyWandQueryParsing) {
-            builder.legacyQueryParsing(cfg -> cfg
-                                       .keepImplicitAnds(true)
-                                       .keepSegmentAnds(true));
+            builder.parserSettings(cfg -> cfg
+                                   .keepImplicitAnds(true)
+                                   .keepSegmentAnds(true));
         }
     }
 

@@ -17,11 +17,11 @@ import com.yahoo.search.searchchain.Execution;
 public final class ParserEnvironment {
 
     /** these flags are only for how the weakAnd parser handles implicit AND/SAND items */
-    public record LegacyQueryParsing(boolean keepImplicitAnds,
+    public record ParserSettings(boolean keepImplicitAnds,
                                      boolean markSegmentAnds,
                                      boolean keepSegmentAnds)
     {
-        public LegacyQueryParsing() {
+        public ParserSettings() {
             this(/*keepImplicitAnds    = */ true,
                  /*markSegmentAnds     = */ false,
                  /*keepSegmentAnds     = */ false);
@@ -31,14 +31,14 @@ public final class ParserEnvironment {
     private IndexFacts indexFacts = new IndexFacts();
     private Linguistics linguistics = new SimpleLinguistics();
     private SpecialTokens specialTokens = SpecialTokens.empty();
-    private LegacyQueryParsing legacyQueryParsing = new LegacyQueryParsing();
+    private ParserSettings parserSettings = new ParserSettings();
 
-    public LegacyQueryParsing getLegacyQueryParsing() {
-        return legacyQueryParsing;
+    public ParserSettings getParserSettings() {
+        return parserSettings;
     }
 
-    public ParserEnvironment setLegacyQueryParsing(LegacyQueryParsing newValue) {
-        this.legacyQueryParsing = newValue;
+    public ParserEnvironment setParserSettings(ParserSettings newValue) {
+        this.parserSettings = newValue;
         return this;
     }
 
@@ -76,7 +76,7 @@ public final class ParserEnvironment {
         if (context.getIndexFacts() != null)
             env.setIndexFacts(context.getIndexFacts());
 
-        env.setLegacyQueryParsing(context.schemaInfo().legacyQueryParsingFlags());
+        env.setParserSettings(context.schemaInfo().parserSettings());
 
         if (context.getLinguistics() != null)
             env.setLinguistics(context.getLinguistics());
@@ -90,7 +90,7 @@ public final class ParserEnvironment {
     public static ParserEnvironment fromParserEnvironment(ParserEnvironment environment) {
         return new ParserEnvironment()
                 .setIndexFacts(environment.indexFacts)
-                .setLegacyQueryParsing(environment.legacyQueryParsing)
+                .setParserSettings(environment.parserSettings)
                 .setLinguistics(environment.linguistics)
                 .setSpecialTokens(environment.specialTokens);
     }
