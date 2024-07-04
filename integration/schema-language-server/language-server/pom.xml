@@ -129,7 +129,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.7.0</version>
         <configuration>
-            <excludePackageNames>ai.vespa.schemals.parser</excludePackageNames>
+            <excludePackageNames>ai.vespa.schemals.parser,ai.vespa.schemals.parser.indexinglanguage</excludePackageNames>
         </configuration>
       </plugin>
       <plugin>
