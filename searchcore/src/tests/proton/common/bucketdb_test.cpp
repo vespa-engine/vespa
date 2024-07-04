@@ -280,7 +280,7 @@ TEST("require that bucket db can be explored")
             "    }"
             "  ]"
             "}";
-        EXPECT_TRUE(JsonFormat::decode(expectJson.str(), expectSlime) > 0);
+        EXPECT_TRUE(JsonFormat::decode(expectJson.view(), expectSlime) > 0);
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
         explorer.get_state(inserter, true);

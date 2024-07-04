@@ -108,7 +108,7 @@ TEST(PrintableTest, test_ascii_variant)
     {
         vespalib::asciistream as;
         as << foo;
-        EXPECT_EQ("19", as.str());
+        EXPECT_EQ("19", as.view());
 
         std::ostringstream ost;
         ost << foo;
@@ -123,7 +123,7 @@ TEST(PrintableTest, test_ascii_variant)
     {
         vespalib::asciistream as;
         as << bar;
-        EXPECT_EQ("3", as.str());
+        EXPECT_EQ("3", as.view());
 
         std::ostringstream ost;
         ost << bar;

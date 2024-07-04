@@ -21,9 +21,8 @@ class PredicateQueryTerm {
         uint64_t _sub_query_bitmap;
 
     public:
-        Entry(std::string_view key, const ValueType &value,
-              uint64_t sub_query_bitmap = ALL_SUB_QUERIES) noexcept
-            : _key(key), _value(value), _sub_query_bitmap(sub_query_bitmap) {}
+        Entry(vespalib::string key, ValueType value, uint64_t sub_query_bitmap = ALL_SUB_QUERIES) noexcept
+            : _key(std::move(key)), _value(std::move(value)), _sub_query_bitmap(sub_query_bitmap) {}
 
         const vespalib::string & getKey() const { return _key; }
         const ValueType & getValue() const { return _value; }
@@ -43,14 +42,12 @@ public:
 
     PredicateQueryTerm() noexcept : _features(), _range_features() {}
 
-    void addFeature(std::string_view key, std::string_view value,
-                    uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
-        _features.emplace_back(key, value, sub_query_bitmask);
+    void addFeature(vespalib::string key, vespalib::string value, uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
+        _features.emplace_back(std::move(key), std::move(value), sub_query_bitmask);
     }
 
-    void addRangeFeature(std::string_view key, uint64_t value,
-                         uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
-        _range_features.emplace_back(key, value, sub_query_bitmask);
+    void addRangeFeature(vespalib::string key, uint64_t value, uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
+        _range_features.emplace_back(std::move(key), value, sub_query_bitmask);
     }
 
     const std::vector<Entry<vespalib::string>> &getFeatures() const

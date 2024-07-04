@@ -29,7 +29,7 @@ private:
     std::shared_ptr<const CredentialMatchPattern> _match_pattern;
 public:
     RequiredPeerCredential() = default;
-    RequiredPeerCredential(Field field, vespalib::string must_match_pattern);
+    RequiredPeerCredential(Field field, std::string_view must_match_pattern);
     RequiredPeerCredential(const RequiredPeerCredential &) noexcept;
     RequiredPeerCredential & operator=(const RequiredPeerCredential &) = delete;
     RequiredPeerCredential(RequiredPeerCredential &&) noexcept;

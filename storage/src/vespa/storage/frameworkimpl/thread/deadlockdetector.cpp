@@ -165,7 +165,7 @@ namespace {
             } else if (state != DeadLockDetector::OK) {
                 vespalib::asciistream ost;
                 ost << "Thread " << id << " has registered tick again.";
-                LOGBP(info, "%s", ost.str().data());
+                LOGBP(info, "%s", ost.view().data());
                 state = DeadLockDetector::OK;
             }
         }
@@ -199,12 +199,12 @@ DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
     }
     if (warnOnly) {
         if (warning_enabled) {
-            LOGBT(warning, "deadlockw-" + id, "%s", vespalib::string(error.str()).c_str());
+            LOGBT(warning, "deadlockw-" + id, "%s", vespalib::string(error.view()).c_str());
         }
         return;
     } else {
         if (shutdown_enabled || warning_enabled) {
-            LOGBT(error, "deadlock-" + id, "%s", vespalib::string(error.str()).c_str());
+            LOGBT(error, "deadlock-" + id, "%s", vespalib::string(error.view()).c_str());
         }
     }
     if (shutdown_enabled) {
@@ -315,7 +315,7 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
         << "<pre>\n"
         << getBucketLockInfo()
         << "</pre>\n";
-    os << out.str();
+    os << out.view();
 }
 
 } // storage

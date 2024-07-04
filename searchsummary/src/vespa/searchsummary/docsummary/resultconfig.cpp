@@ -77,7 +77,7 @@ ResultConfig::lookupResultClass(uint32_t classID) const
 }
 
 uint32_t
-ResultConfig::lookupResultClassId(const vespalib::string &name) const
+ResultConfig::lookupResultClassId(std::string_view name) const
 {
     auto found = _nameLookup.find(name);
     return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : noClassID());

@@ -228,7 +228,7 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
         auto reply = cmd->makeReply();
         reply->setResult(make_no_address_for_service_error(*cmd->getAddress()));
         if (reply->getTrace().shouldTrace(TraceLevel::ERROR)) {
-            reply->getTrace().trace(TraceLevel::ERROR, reply->getResult().getMessage());
+            reply->getTrace().trace(TraceLevel::ERROR, vespalib::string(reply->getResult().getMessage()));
         }
         // Always dispatch async for synchronously generated replies, or we risk nuking the
         // stack if the reply receiver keeps resending synchronously as well.
@@ -336,7 +336,7 @@ void StorageApiRpcService::create_and_dispatch_error_reply(api::StorageCommand& 
         cmd.getAddress()->toString().c_str(), error.toString().c_str());
     error_reply->getTrace().swap(cmd.getTrace());
     if (error_reply->getTrace().shouldTrace(TraceLevel::ERROR)) {
-        error_reply->getTrace().trace(TraceLevel::ERROR, error.getMessage());
+        error_reply->getTrace().trace(TraceLevel::ERROR, vespalib::string(error.getMessage()));
     }
     error_reply->setResult(std::move(error));
     _message_dispatcher.dispatch_sync(std::move(error_reply));

@@ -36,7 +36,7 @@ public:
     small_string(const char * s) noexcept : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
     small_string(const void * s, size_type sz) noexcept : _buf(_stack), _sz(sz) { init(s); }
     small_string(const std::string & s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
-    small_string(std::string_view s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
+    explicit small_string(std::string_view s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(small_string && rhs) noexcept
         : _sz(rhs.size()), _bufferSize(rhs._bufferSize)
     {
@@ -344,7 +344,7 @@ public:
 
     template<typename T> bool operator != (const T& s) const noexcept { return ! operator == (s); }
 
-    [[nodiscard]] int compare(const small_string & s) const noexcept { return compare(s.c_str(), s.size()); }
+    [[nodiscard]] int compare(std::string_view s) const noexcept { return compare(s.data(), s.size()); }
     int compare(const char *s, size_t sz) const noexcept {
         int diff(memcmp(buffer(), s, std::min(sz, size())));
         return (diff != 0) ? diff : (size() - sz);

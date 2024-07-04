@@ -692,7 +692,7 @@ StateManager::getNodeInfo() const
     stream << End();
     stream.finalize();
 
-    return std::string(json.str());
+    return std::string(json.view());
 }
 
 void

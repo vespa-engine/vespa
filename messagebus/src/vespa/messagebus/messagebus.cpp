@@ -9,6 +9,7 @@
 #include <vespa/messagebus/network/inetwork.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".messagebus");
@@ -28,11 +29,7 @@ private:
     mbus::Resender *_resender;
 
 public:
-    explicit ResenderTask(mbus::Resender &resender)
-        : _resender(&resender)
-    {
-        // empty
-    }
+    explicit ResenderTask(mbus::Resender &resender) noexcept : _resender(&resender) { }
 
     void run() override {
         _resender->resendScheduled();
@@ -57,7 +54,7 @@ private:
 
 public:
     ShutdownTask(mbus::INetwork &net, mbus::Messenger &msn,
-                 bool &done, vespalib::Gate &gate)
+                 bool &done, vespalib::Gate &gate) noexcept
         : _net(net),
           _msn(msn),
           _done(done),
@@ -294,7 +291,7 @@ MessageBus::handleMessage(Message::UP msg)
 bool
 MessageBus::setupRouting(RoutingSpec spec)
 {
-    std::map<string, RoutingTable::SP> rtm;
+    vespalib::hash_map<string, RoutingTable::SP> rtm;
     for (uint32_t i = 0; i < spec.getNumTables(); ++i) {
         const RoutingTableSpec &cfg = spec.getTable(i);
         if (getProtocol(cfg.getProtocol()) == nullptr) { // protocol not found
@@ -312,7 +309,7 @@ MessageBus::setupRouting(RoutingSpec spec)
 }
 
 IProtocol *
-MessageBus::getProtocol(const string &name)
+MessageBus::getProtocol(std::string_view name)
 {
     return _protocolRepository->getProtocol(name);
 }
@@ -367,7 +364,7 @@ MessageBus::handleDiscard(Context ctx)
 }
 
 void
-MessageBus::deliverMessage(Message::UP msg, const string &session)
+MessageBus::deliverMessage(Message::UP msg, std::string_view session)
 {
     IMessageHandler *msgHandler = nullptr;
     {
@@ -379,10 +376,10 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
     }
     if (msgHandler == nullptr) {
         deliverError(std::move(msg), ErrorCode::UNKNOWN_SESSION,
-                     make_string("Session '%s' does not exist.", session.c_str()));
+                     make_string("Session '%s' does not exist.", string(session).c_str()));
     } else if (!checkPending(*msg)) {
         deliverError(std::move(msg), ErrorCode::SESSION_BUSY,
-                     make_string("Session '%s' is busy, try again later.", session.c_str()));
+                     make_string("Session '%s' is busy, try again later.", string(session).c_str()));
     } else {
         _msn->deliverMessage(std::move(msg), *msgHandler);
     }
@@ -424,3 +421,6 @@ MessageBus::setMaxPendingSize(uint32_t maxSize)
 }
 
 } // namespace mbus
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, std::shared_ptr<mbus::RoutingTable>);
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, mbus::IMessageHandler *);

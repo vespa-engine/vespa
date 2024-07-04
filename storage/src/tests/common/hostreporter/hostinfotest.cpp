@@ -37,7 +37,7 @@ TEST(HostInfoReporterTest, host_info_reporter) {
     hostinfo.printReport(stream);
     stream << End();
 
-    std::string_view jsonData = json.str();
+    std::string_view jsonData = json.view();
     vespalib::Slime slime;
     JsonFormat::decode(Memory(jsonData), slime);
     EXPECT_EQ(slime.get()["dummy"]["foo"].asString(), "bar");

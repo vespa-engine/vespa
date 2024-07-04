@@ -124,7 +124,7 @@ Group::setCapacity(vespalib::Double capacity)
         vespalib::asciistream ost;
         ost << "Illegal capacity '" << capacity << "'. Capacity "
             "must be a positive floating point number";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException(ost.view(), VESPA_STRLOC);
     }
     _capacity = capacity;
 }

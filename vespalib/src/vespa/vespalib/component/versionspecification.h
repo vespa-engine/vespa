@@ -170,7 +170,7 @@ public:
     bool matches(const Version& version) const;
 
 private:
-    bool matches(int spec, int v) const;
+    static bool matches(int spec, int v) ;
 };
 
 } // namespace vespalib

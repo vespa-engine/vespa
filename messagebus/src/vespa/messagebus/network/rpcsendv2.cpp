@@ -166,7 +166,7 @@ public:
     duration getRemainingTime() const override { return std::chrono::milliseconds(_slime.get()[TIMELEFT_F].asLong()); }
 
     Version getVersion() const override {
-        return Version(_slime.get()[VERSION_F].asString().make_stringview());
+        return Version(_slime.get()[VERSION_F].asString().make_string());
     }
     string_view getRoute() const override {
         return _slime.get()[ROUTE_F].asString().make_stringview();

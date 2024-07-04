@@ -8,7 +8,7 @@
 #include "identifiable.hpp"
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::CloneablePtr<T> &ptr) {
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const vespalib::CloneablePtr<T> &ptr) {
     if (ptr.get()) {
         visit(self, name, *ptr);
     } else {
@@ -17,7 +17,7 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const ve
 }
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const std::shared_ptr<T> &ptr) {
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const std::shared_ptr<T> &ptr) {
     if (ptr.get()) {
         visit(self, name, *ptr);
     } else {
@@ -26,7 +26,7 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const st
 }
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const std::unique_ptr<T> &ptr) {
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const std::unique_ptr<T> &ptr) {
     if (ptr.get()) {
         visit(self, name, *ptr);
     } else {
@@ -35,17 +35,17 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const st
 }
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::IdentifiablePtr<T> &ptr) {
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const vespalib::IdentifiablePtr<T> &ptr) {
     visit(self, name, ptr.get());
 }
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::IdentifiableSharedPtr<T> &ptr) {
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const vespalib::IdentifiableSharedPtr<T> &ptr) {
     visit(self, name, ptr.get());
 }
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const std::vector<T> &list) {
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const std::vector<T> &list) {
     self.openStruct(name, "std::vector");
     for (uint32_t i = 0; i < list.size(); ++i) {
         ::visit(self, vespalib::make_string("[%u]", i), list[i]);
@@ -54,7 +54,7 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const st
 }
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::Array<T> &list) {
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const vespalib::Array<T> &list) {
     self.openStruct(name, "vespalib::Array");
     for (uint32_t i = 0; i < list.size(); ++i) {
         ::visit(self, vespalib::make_string("[%u]", i), list[i]);

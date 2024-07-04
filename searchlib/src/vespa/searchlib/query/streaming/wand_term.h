@@ -12,7 +12,7 @@ namespace search::streaming {
 class WandTerm : public DotProductTerm {
     double _score_threshold;
 public:
-    WandTerm(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, uint32_t num_terms);
+    WandTerm(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
     ~WandTerm() override;
     void set_score_threshold(double value) { _score_threshold = value; }
     bool evaluate() const override;

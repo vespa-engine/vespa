@@ -3,26 +3,26 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <map>
-#include <memory>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace search::attribute::test {
 
 class MockAttributeContext : public IAttributeContext
 {
 private:
-    using Map = std::map<string, std::shared_ptr<const IAttributeVector>>;
+    using Map = vespalib::hash_map<string, std::shared_ptr<const IAttributeVector>>;
     Map _vectors;
 
 public:
+    MockAttributeContext();
     ~MockAttributeContext() override;
     void add(std::shared_ptr<const IAttributeVector> attr);
 
-    const IAttributeVector *get(const string &name) const;
-    const IAttributeVector * getAttribute(const string &name) const override;
-    const IAttributeVector * getAttributeStableEnum(const string &name) const override;
+    const IAttributeVector *get(std::string_view name) const;
+    const IAttributeVector * getAttribute(std::string_view name) const override;
+    const IAttributeVector * getAttributeStableEnum(std::string_view name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
-    void asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override;
+    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override;
 };
 
 }

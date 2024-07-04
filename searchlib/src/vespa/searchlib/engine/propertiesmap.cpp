@@ -20,7 +20,7 @@ PropertiesMap::~PropertiesMap() = default;
 fef::Properties &
 PropertiesMap::lookupCreate(std::string_view name)
 {
-    return _propertiesMap[name];
+    return _propertiesMap[vespalib::string(name)];
 }
 
 const fef::Properties &

@@ -52,7 +52,7 @@ Distribution::Distribution()
     vespalib::asciistream ost;
     config::AsciiConfigWriter writer(ost);
     writer.write(config.get());
-    _serialized = ost.str();
+    _serialized = ost.view();
     configure(config.get());
 }
 
@@ -100,7 +100,7 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig 
     vespalib::asciistream ost;
     config::AsciiConfigWriter writer(ost);
     writer.write(config);
-    _serialized = ost.str();
+    _serialized = ost.view();
     configure(config);
 }
 
@@ -372,7 +372,7 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
         ost << "Cannot get ideal state for bucket " << bucket << " using "
             << bucket.getUsedBits() << " bits when cluster uses "
             << clusterState.getDistributionBitCount() << " distribution bits.";
-        throw TooFewBucketBitsInUseException(ost.str(), VESPA_STRLOC);
+        throw TooFewBucketBitsInUseException(ost.view(), VESPA_STRLOC);
     }
     // Find what hierarchical groups we should have copies in
     std::vector<ResultGroup> _groupDistribution;
@@ -386,7 +386,7 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
         if (group == nullptr) {
             vespalib::asciistream ss;
             ss << "There is no legal distributor target in state with version " << clusterState.getVersion();
-            throw NoDistributorsAvailableException(ss.str(), VESPA_STRLOC);
+            throw NoDistributorsAvailableException(ss.view(), VESPA_STRLOC);
         }
         _groupDistribution.emplace_back(*group, 1);
     }
@@ -471,7 +471,7 @@ Distribution::getIdealDistributorNode(const ClusterState& state, const document:
     if (nodes.empty()) {
         vespalib::asciistream ss;
         ss << "There is no legal distributor target in state with version " << state.getVersion();
-        throw NoDistributorsAvailableException(ss.str(), VESPA_STRLOC);
+        throw NoDistributorsAvailableException(ss.view(), VESPA_STRLOC);
     }
     return nodes[0];
 }

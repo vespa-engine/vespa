@@ -33,7 +33,7 @@ private:
 
 public:
     NearestNeighborQueryNode(std::unique_ptr<QueryNodeResultBase> resultBase,
-                             const string& query_tensor_name, const string& field_name,
+                             std::string_view query_tensor_name, string field_name,
                              uint32_t target_hits, double distance_threshold,
                              int32_t unique_id, search::query::Weight weight);
     NearestNeighborQueryNode(const NearestNeighborQueryNode &) = delete;

@@ -22,7 +22,7 @@ public:
      * @param name name of structure
      * @param type type of structure
      **/
-    virtual void openStruct(const vespalib::string &name, const vespalib::string &type) = 0;
+    virtual void openStruct(std::string_view name, std::string_view type) = 0;
 
     /**
      * Close a (sub-)structure
@@ -35,7 +35,7 @@ public:
      * @param name variable name
      * @param value variable value
      **/
-    virtual void visitBool(const vespalib::string &name, bool value) = 0;
+    virtual void visitBool(std::string_view name, bool value) = 0;
 
     /**
      * Visit an integer value
@@ -43,7 +43,7 @@ public:
      * @param name variable name
      * @param value variable value
      **/
-    virtual void visitInt(const vespalib::string &name, int64_t value) = 0;
+    virtual void visitInt(std::string_view name, int64_t value) = 0;
 
     /**
      * Visit a floating-point value
@@ -51,7 +51,7 @@ public:
      * @param name variable name
      * @param value variable value
      **/
-    virtual void visitFloat(const vespalib::string &name, double value) = 0;
+    virtual void visitFloat(std::string_view name, double value) = 0;
 
     /**
      * Visit a string value
@@ -59,7 +59,7 @@ public:
      * @param name variable name
      * @param value variable value
      **/
-    virtual void visitString(const vespalib::string &name, const vespalib::string &value) = 0;
+    virtual void visitString(std::string_view name, std::string_view value) = 0;
 
     /**
      * Visit method used to indicate that an optional substructure is
@@ -67,7 +67,7 @@ public:
      *
      * @param name variable name
      **/
-    virtual void visitNull(const vespalib::string &name) = 0;
+    virtual void visitNull(std::string_view name) = 0;
 
     /**
      * Visit method invoked by the default implementation of member

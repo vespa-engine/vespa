@@ -126,7 +126,7 @@ vespalib::string strip_name(std::string_view name) {
     auto end = name.find("<");
     auto ns = name.rfind("::", end);
     size_t begin = (ns > name.size()) ? 0 : ns + 2;
-    return name.substr(begin, end - begin);
+    return vespalib::string(name.substr(begin, end - begin));
 }
 
 const Inspector &apply_path(const Inspector &node, const Path &path, size_t max = -1) {

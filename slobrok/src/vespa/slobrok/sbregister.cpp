@@ -25,7 +25,7 @@ createSpec(FRT_Supervisor &orb)
         str << vespalib::HostName::get();
         str << ":";
         str << orb.GetListenPort();
-        spec = str.str();
+        spec = str.view();
     }
     return spec;
 }
@@ -108,8 +108,8 @@ RegisterAPI::registerName(std::string_view name)
         }
     }
     _busy.store(true, std::memory_order_relaxed);
-    _names.push_back(name);
-    _pending.push_back(name);
+    _names.emplace_back(name);
+    _pending.emplace_back(name);
     discard(_unreg, name);
     ScheduleNow();
 }
@@ -122,7 +122,7 @@ RegisterAPI::unregisterName(std::string_view name)
     _busy.store(true, std::memory_order_relaxed);
     discard(_names, name);
     discard(_pending, name);
-    _unreg.push_back(name);
+    _unreg.emplace_back(name);
     ScheduleNow();
 }
 

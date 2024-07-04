@@ -60,7 +60,7 @@ public:
     void setInstanceId(const string& value) { _instanceId = value; }
 
     const string& getDocumentSelection() const { return _docSelection; }
-    void setDocumentSelection(const string& value) { _docSelection = value; }
+    void setDocumentSelection(string value) { _docSelection = std::move(value); }
 
     const string& getControlDestination() const { return _controlDestination; }
     void setControlDestination(const string& value) { _controlDestination = value; };

@@ -23,7 +23,7 @@ class Term
 public:
     virtual ~Term() = 0;
 
-    void setView(const vespalib::string & view) { _view = view; }
+    void setView(vespalib::string view) { _view = std::move(view); }
     void setRanked(bool ranked) noexcept { _ranked = ranked; }
     void setPositionData(bool position_data) noexcept { _position_data = position_data; }
     // Used for fuzzy prefix matching. Not to be confused with distinct Prefix query term type
@@ -42,12 +42,12 @@ public:
         return (term[0] == '[' || term[0] == '<' || term[0] == '>');
     }
 protected:
-    Term(std::string_view view, int32_t id, Weight weight);
+    Term(const vespalib::string & view, int32_t id, Weight weight);
 };
 
 class TermNode : public Node, public Term {
 protected:
-    TermNode(std::string_view view, int32_t id, Weight weight) : Term(view, id, weight) {}
+    TermNode(const vespalib::string & view, int32_t id, Weight weight) : Term(view, id, weight) {}
 };
 /**
  * Generic functionality for most of Term's derived classes.
@@ -63,12 +63,12 @@ public:
     const T &getTerm() const { return _term; }
 
 protected:
-    TermBase(T term, std::string_view view, int32_t id, Weight weight);
+    TermBase(T term, const vespalib::string & view, int32_t id, Weight weight);
 };
 
 
 template <typename T>
-TermBase<T>::TermBase(T term, std::string_view view, int32_t id, Weight weight)
+TermBase<T>::TermBase(T term, const vespalib::string & view, int32_t id, Weight weight)
     : TermNode(view, id, weight),
        _term(std::move(term))
 {}

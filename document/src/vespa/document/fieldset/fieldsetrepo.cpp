@@ -51,7 +51,7 @@ parseFieldCollection(const DocumentTypeRepo& repo,
     StringTokenizer tokenizer(fieldNames, ",");
     Field::Set::Builder builder;
     for (const auto & token : tokenizer) {
-        const DocumentType::FieldSet * fs = type.getFieldSet(token);
+        const DocumentType::FieldSet * fs = type.getFieldSet(vespalib::string(token));
         if (fs) {
             for (const auto & fieldName : fs->getFields()) {
                 builder.add(&type.getField(fieldName));

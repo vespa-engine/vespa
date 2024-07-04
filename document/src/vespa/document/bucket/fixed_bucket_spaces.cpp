@@ -10,21 +10,29 @@ static_assert(BucketSpace::placeHolder() != BucketSpace::invalid());
 static_assert(FixedBucketSpaces::default_space() == BucketSpace::placeHolder());
 static_assert(FixedBucketSpaces::global_space() != FixedBucketSpaces::default_space());
 
+namespace {
+
+vespalib::string DEFAULT = "default";
+vespalib::string GLOBAL = "global";
+
+}
+
 BucketSpace FixedBucketSpaces::from_string(std::string_view name) {
-    if (name == "default") {
+    if (name == DEFAULT) {
         return default_space();
-    } else if (name == "global") {
+    } else if (name == GLOBAL) {
         return global_space();
     } else {
         throw UnknownBucketSpaceException("Unknown bucket space name: " + vespalib::string(name), VESPA_STRLOC);
     }
 }
 
-std::string_view FixedBucketSpaces::to_string(BucketSpace space) {
+const vespalib::string &
+FixedBucketSpaces::to_string(BucketSpace space) {
     if (space == default_space()) {
-        return "default";
+        return DEFAULT;
     } else if (space == global_space()) {
-        return "global";
+        return GLOBAL;
     } else {
         throw UnknownBucketSpaceException("Unknown bucket space: " + space.toString(), VESPA_STRLOC);
     }

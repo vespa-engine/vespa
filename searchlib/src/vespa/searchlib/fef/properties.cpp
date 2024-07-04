@@ -51,8 +51,14 @@ Properties &
 Properties::add(std::string_view key, std::string_view value)
 {
     if (!key.empty()) {
-        Value & v = _data[key];
-        v.emplace_back(value);
+        auto node = _data.find(key);
+        Value * v = nullptr;
+        if (node != _data.end()) {
+            v = &node->second;
+        } else {
+            v = &_data[vespalib::string(key)];
+        }
+        v->emplace_back(value);
         ++_numValues;
     }
     return *this;

@@ -650,7 +650,7 @@ public:
         QueryTermSimple parsed_term(term, QueryTermSimple::Type::WORD);
         SearchContextParams scParams = createContextParams(_field.isFilter());
         if (parsed_term.getMaxPerGroup() > 0) {
-            const IAttributeVector *diversity(getRequestContext().getAttribute(parsed_term.getDiversityAttribute()));
+            const IAttributeVector *diversity(getRequestContext().getAttribute(vespalib::string(parsed_term.getDiversityAttribute())));
             if (check_valid_diversity_attr(diversity)) {
                 scParams.diversityAttribute(diversity)
                         .diversityCutoffGroups(parsed_term.getDiversityCutoffGroups())
@@ -685,7 +685,8 @@ public:
     void createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger);
 
     static QueryTermSimple::UP
-    extractTerm(std::string_view term, bool isInteger) {
+    extractTerm(std::string_view term_view, bool isInteger) {
+        vespalib::string term(term_view);
         if (isInteger) {
             return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
         }

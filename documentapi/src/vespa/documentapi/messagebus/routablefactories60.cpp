@@ -44,7 +44,7 @@ RoutableFactories60::DocumentMessageFactory::decode(document::ByteBuffer &in) co
 bool
 RoutableFactories60::DocumentReplyFactory::encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const
 {
-    const DocumentReply &msg = static_cast<const DocumentReply&>(obj);
+    const auto &msg = static_cast<const DocumentReply&>(obj);
     out.putByte(msg.getPriority());
     return doEncode(msg, out);
 }
@@ -84,7 +84,7 @@ RoutableFactories60::CreateVisitorMessageFactory::doDecode(document::ByteBuffer 
     for (int32_t i = 0; i < len; i++) {
         int64_t val;
         buf.getLong(val); // NOT using getLongNetwork
-        msg->getBuckets().push_back(document::BucketId(val));
+        msg->getBuckets().emplace_back(val);
     }
 
     msg->setFromTimestamp(decodeLong(buf));
@@ -155,7 +155,7 @@ RoutableFactories60::DestroyVisitorMessageFactory::doDecode(document::ByteBuffer
 bool
 RoutableFactories60::DestroyVisitorMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const DestroyVisitorMessage &msg = static_cast<const DestroyVisitorMessage&>(obj);
+    const auto &msg = static_cast<const DestroyVisitorMessage&>(obj);
     buf.putString(msg.getInstanceId());
     return true;
 }
@@ -392,7 +392,7 @@ RoutableFactories60::GetBucketStateReplyFactory::doDecode(document::ByteBuffer &
 bool
 RoutableFactories60::GetBucketStateReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const GetBucketStateReply &reply = static_cast<const GetBucketStateReply&>(obj);
+    const auto &reply = static_cast<const GetBucketStateReply&>(obj);
 
     buf.putInt(reply.getBucketState().size());
     for (const auto & state : reply.getBucketState()) {
@@ -412,7 +412,7 @@ RoutableFactories60::GetDocumentMessageFactory::doDecode(document::ByteBuffer &b
 bool
 RoutableFactories60::GetDocumentMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const GetDocumentMessage &msg = static_cast<const GetDocumentMessage&>(obj);
+    const auto &msg = static_cast<const GetDocumentMessage&>(obj);
 
     encodeDocumentId(msg.getDocumentId(), buf);
     buf.putString(msg.getFieldSet());
@@ -454,7 +454,7 @@ RoutableFactories60::GetDocumentReplyFactory::doDecode(document::ByteBuffer &buf
 bool
 RoutableFactories60::GetDocumentReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const GetDocumentReply &reply = static_cast<const GetDocumentReply&>(obj);
+    const auto &reply = static_cast<const GetDocumentReply&>(obj);
 
     buf.putByte(reply.hasDocument() ? 1 : 0);
     if (reply.hasDocument()) {
@@ -478,7 +478,7 @@ RoutableFactories60::MapVisitorMessageFactory::doDecode(document::ByteBuffer &bu
 bool
 RoutableFactories60::MapVisitorMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const MapVisitorMessage &msg = static_cast<const MapVisitorMessage&>(obj);
+    const auto &msg = static_cast<const MapVisitorMessage&>(obj);
     msg.getData().serialize(buf);
 
     return true;
@@ -538,7 +538,7 @@ RoutableFactories60::PutDocumentReplyFactory::doDecode(document::ByteBuffer &buf
 bool
 RoutableFactories60::PutDocumentReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const WriteDocumentReply& reply = (const WriteDocumentReply&)obj;
+    const auto& reply = (const WriteDocumentReply&)obj;
     buf.putLong(reply.getHighestModificationTimestamp());
     return true;
 }
@@ -552,7 +552,7 @@ RoutableFactories60::RemoveDocumentMessageFactory::decodeInto(RemoveDocumentMess
 bool
 RoutableFactories60::RemoveDocumentMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const RemoveDocumentMessage &msg = static_cast<const RemoveDocumentMessage&>(obj);
+    const auto &msg = static_cast<const RemoveDocumentMessage&>(obj);
     encodeDocumentId(msg.getDocumentId(), buf);
     encodeTasCondition(buf, msg);
     return true;
@@ -570,7 +570,7 @@ RoutableFactories60::RemoveDocumentReplyFactory::doDecode(document::ByteBuffer &
 bool
 RoutableFactories60::RemoveDocumentReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const RemoveDocumentReply &reply = static_cast<const RemoveDocumentReply&>(obj);
+    const auto &reply = static_cast<const RemoveDocumentReply&>(obj);
     buf.putBoolean(reply.getWasFound());
     buf.putLong(reply.getHighestModificationTimestamp());
     return true;
@@ -593,7 +593,7 @@ RoutableFactories60::RemoveLocationMessageFactory::doDecode(document::ByteBuffer
 bool
 RoutableFactories60::RemoveLocationMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
 {
-    const RemoveLocationMessage &msg = static_cast<const RemoveLocationMessage&>(obj);
+    const auto &msg = static_cast<const RemoveLocationMessage&>(obj);
     buf.putString(msg.getDocumentSelection());
     return true;
 }
@@ -695,7 +695,7 @@ RoutableFactories60::StatBucketReplyFactory::doEncode(const DocumentReply &obj, 
 DocumentMessage::UP
 RoutableFactories60::StatDocumentMessageFactory::doDecode(document::ByteBuffer &) const
 {
-    return DocumentMessage::UP(); // TODO: remove message type
+    return {}; // TODO: remove message type
 }
 
 bool
@@ -707,7 +707,7 @@ RoutableFactories60::StatDocumentMessageFactory::doEncode(const DocumentMessage 
 DocumentReply::UP
 RoutableFactories60::StatDocumentReplyFactory::doDecode(document::ByteBuffer &) const
 {
-    return DocumentReply::UP(); // TODO: remove reply type
+    return {}; // TODO: remove reply type
 }
 
 bool
@@ -878,9 +878,7 @@ void RoutableFactories60::encodeTasCondition(vespalib::GrowableByteBuffer & buf,
     buf.putString(msg.getCondition().getSelection());
 }
 
-void RoutableFactories60::doEncodeBucketSpace(
-        std::string_view bucketSpace,
-        vespalib::GrowableByteBuffer& buf) {
+void RoutableFactories60::doEncodeBucketSpace(std::string_view bucketSpace, vespalib::GrowableByteBuffer& buf) {
     buf.putString(bucketSpace);
 }
 string RoutableFactories60::doDecodeBucketSpace(document::ByteBuffer& buf) {

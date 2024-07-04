@@ -69,7 +69,7 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
             }
             stripes[i]->_messageQueue.clear();
         }
-        return std::string(posted_msgs.str());
+        return std::string(posted_msgs.view());
     }
 
     StatusReporterDelegate& distributor_status_delegate() {

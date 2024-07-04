@@ -33,9 +33,7 @@ get_document_types_config(DocBuilder::AddFieldsType add_fields)
     DocumenttypesConfigBuilderHelper builder;
     Struct header("searchdocument.header");
     add_fields(header);
-    builder.document(42, "searchdocument",
-                     header,
-                     Struct("searchdocument.body"));
+    builder.document(42, "searchdocument", header, Struct("searchdocument.body"));
     return builder.config();
 }
 
@@ -57,7 +55,7 @@ DocBuilder::~DocBuilder() = default;
 
 
 std::unique_ptr<Document>
-DocBuilder::make_document(vespalib::string document_id)
+DocBuilder::make_document(vespalib::string document_id) const
 {
     auto doc = std::make_unique<Document>(get_repo(), get_document_type(), DocumentId(document_id));
     return doc;
@@ -77,7 +75,7 @@ DocBuilder::make_array(std::string_view field_name)
     auto& field = _document_type->getField(field_name);
     auto& field_type = field.getDataType();
     assert(field_type.isArray());
-    return {field_type};
+    return ArrayFieldValue(field_type);
 }
 
 WeightedSetFieldValue

@@ -32,11 +32,10 @@ public:
 
     const Doom & getDoom() const override { return _doom; }
     vespalib::ThreadBundle & thread_bundle() const override { return _thread_bundle; }
-    const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;
+    const search::attribute::IAttributeVector *getAttribute(std::string_view name) const override;
 
-    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
-
-    const search::attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
+    void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const override;
+    const search::attribute::IAttributeVector *getAttributeStableEnum(std::string_view name) const override;
 
     const vespalib::eval::Value* get_query_tensor(const vespalib::string& tensor_name) const override;
 

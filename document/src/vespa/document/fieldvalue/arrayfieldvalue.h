@@ -26,10 +26,8 @@ private:
     bool addValue(const FieldValue&) override;
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
-    fieldvalue::ModificationStatus iterateSubset(
-            int startPos, int endPos, std::string_view variable,
-            PathRange nested,
-            fieldvalue::IteratorHandler& handler) const;
+    fieldvalue::ModificationStatus iterateSubset(int startPos, int endPos, const vespalib::string & variable,
+                                                 PathRange nested, fieldvalue::IteratorHandler& handler) const;
     fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
 public:
     using const_iterator = IArray::const_iterator;
@@ -41,9 +39,9 @@ public:
      *                  not enforce type compile time so it will be easier to
      *                  create instances using field's getDataType().
      */
-    ArrayFieldValue(const DataType &arrayType);
+    explicit ArrayFieldValue(const DataType &arrayType);
     ArrayFieldValue(const ArrayFieldValue&);
-    ~ArrayFieldValue();
+    ~ArrayFieldValue() override;
 
     ArrayFieldValue& operator=(const ArrayFieldValue&);
 

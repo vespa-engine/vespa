@@ -90,18 +90,17 @@ const vespalib::string & StringUtil::escape(const vespalib::string & source, ves
                                        char delimiter)
 {
     size_t escapeCount(0);
-    for(size_t i(0), m(source.size()); i < m; i++) {
-        if (source[i] == delimiter) {
+    for (char i : source) {
+        if (i == delimiter) {
             escapeCount += 3;
         } else {
-            escapeCount += ReplacementCharacters::needEscape(source[i]);
+            escapeCount += ReplacementCharacters::needEscape(i);
         }
     }
     if (escapeCount > 0) {
         std::vector<char> dst;
         dst.reserve(source.size() + escapeCount);
-        for(size_t i(0), m(source.size()); i < m; i++) {
-            const char c = source[i];
+        for (char c : source) {
             if (c == delimiter) {
                 dst.push_back('\\');
                 dst.push_back('x');
@@ -157,8 +156,8 @@ vespalib::string StringUtil::unescape(std::string_view source)
             throw IllegalArgumentException("Found \\x at end of input",
                                            VESPA_STRLOC);
         }
-        vespalib::string hexdigits = source.substr(i+2, 2);
-        char* endp(0);
+        vespalib::string hexdigits(source.substr(i+2, 2));
+        char* endp = nullptr;
         ost << static_cast<char>(strtol(hexdigits.c_str(), &endp, 16));
         if (*endp) {
             throw IllegalArgumentException("Value "+hexdigits
@@ -176,7 +175,7 @@ printAsHex(std::ostream& output, const void* source, unsigned int size,
 {
     assert(columnwidth > 0);
     unsigned char wildChar = '.';
-    const unsigned char* start = reinterpret_cast<const unsigned char*>(source);
+    const auto * start = reinterpret_cast<const unsigned char*>(source);
     uint32_t posWidth = 1;
     for (uint32_t i=size; i>9; i /= 10) { ++posWidth; }
     std::vector<unsigned char> printables(static_cast<size_t>(columnwidth) + 1);

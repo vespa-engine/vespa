@@ -56,7 +56,7 @@ void Parameters::deserialize(document::ByteBuffer& buffer)
     for (int i=0; i<mysize; i++) {
         int32_t keylen = 0;
         buffer.getIntNetwork(keylen);
-        std::string_view key(buffer.getBufferAtPos(), keylen);
+        vespalib::string key(buffer.getBufferAtPos(), keylen);
         buffer.incPos(keylen);
         int32_t sz(0);
         buffer.getIntNetwork(sz);
@@ -148,28 +148,28 @@ void
 Parameters::set(KeyT id, int32_t value) {
     char tmp[16];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
-    _parameters[id] = Value(tmp, size_t(res.ptr - tmp));
+    _parameters[vespalib::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
 void
 Parameters::set(KeyT id, int64_t value) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
-    _parameters[id] = Value(tmp, size_t(res.ptr - tmp));
+    _parameters[vespalib::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
 void
 Parameters::set(KeyT id, uint64_t value) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
-    _parameters[id] = Value(tmp, size_t(res.ptr - tmp));
+    _parameters[vespalib::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
 void
 Parameters::set(KeyT id, double value) {
     vespalib::asciistream ost;
     ost << value;
-    _parameters[id] = Value(ost.str());
+    _parameters[vespalib::string(id)] = Value(ost.view());
 }
 
 

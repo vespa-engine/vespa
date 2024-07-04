@@ -26,6 +26,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <memory>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
@@ -100,10 +101,9 @@ bool isWordChar(char c) {
 void
 tokenizeStringFieldValue(const document::FixedTypeRepo & repo, StringFieldValue &field)
 {
-    document::SpanTree::UP spanTree;
-    SpanList::UP spanList(std::make_unique<SpanList>());
+    auto spanList = std::make_unique<SpanList>();
     SpanList *spans = spanList.get();
-    spanTree.reset(new document::SpanTree(SPANTREE_NAME, std::move(spanList)));
+    auto spanTree = std::make_unique<document::SpanTree>(SPANTREE_NAME, std::move(spanList));
     const vespalib::string &text = field.getValue();
     uint32_t cur = 0;
     int32_t start = 0;
@@ -135,24 +135,20 @@ tokenizeStringFieldValue(const document::FixedTypeRepo & repo, StringFieldValue 
 
 
 void
-setFieldValue(Document &doc, const vespalib::string &fieldName,
-              const vespalib::string &fieldString)
+setFieldValue(Document &doc, std::string_view fieldName, std::string_view fieldString)
 {
-    std::unique_ptr<StringFieldValue> fieldValue =
-        StringFieldValue::make(fieldString);
+    std::unique_ptr<StringFieldValue> fieldValue = StringFieldValue::make(fieldString);
     document::FixedTypeRepo repo(*doc.getRepo(), doc.getType());
     tokenizeStringFieldValue(repo, *fieldValue);
     doc.setFieldValue(doc.getField(fieldName), std::move(fieldValue));
 }
 
 Document::UP
-makeDoc(const DocumentTypeRepo &repo, uint32_t i,
-        const vespalib::string &titleString,
-        const vespalib::string &bodyString = "")
+makeDoc(const DocumentTypeRepo &repo, uint32_t i, std::string_view titleString, std::string_view bodyString = "")
 {
     asciistream idstr;
     idstr << "id:test:test:: " << i;
-    DocumentId id(idstr.str());
+    DocumentId id(idstr.view());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
     auto doc(std::make_unique<Document>(repo, *docType, id));
     if (!titleString.empty()) {
@@ -176,16 +172,16 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i)
     asciistream bodyStr;
     titleStr << i;
     bodyStr << (i * 3);
-    return makeDoc(repo, i, titleStr.str(), bodyStr.str());
+    return makeDoc(repo, i, titleStr.view(), bodyStr.view());
 }
 
 
 SimpleStringTerm makeTerm(std::string_view term) {
-    return SimpleStringTerm(term, "field", 0, search::query::Weight(0));
+    return SimpleStringTerm(vespalib::string(term), "field", 0, search::query::Weight(0));
 }
 
 Node::UP makePhrase(const std::string &term1, const std::string &term2) {
-    SimplePhrase * phrase = new SimplePhrase("field", 0, search::query::Weight(0));
+    auto * phrase = new SimplePhrase("field", 0, search::query::Weight(0));
     Node::UP node(phrase);
     phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term1)));
     phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term2)));
@@ -195,7 +191,7 @@ Node::UP makePhrase(const std::string &term1, const std::string &term2) {
 class HoldDoc : public IDestructorCallback {
     std::unique_ptr<Document> _doc;
 public:
-    HoldDoc(std::unique_ptr<Document> doc) noexcept
+    explicit HoldDoc(std::unique_ptr<Document> doc) noexcept
         : _doc(std::move(doc))
     {
     }
@@ -224,8 +220,11 @@ struct Fixture {
     std::atomic<int> _stopRead;
     bool _reportWork;
 
-    Fixture(uint32_t readThreads = 1);
-
+    explicit Fixture(uint32_t readThreads = 1);
+    Fixture(const Fixture &index) = delete;
+    Fixture(Fixture &&index) = delete;
+    Fixture &operator=(const Fixture &index) = delete;
+    Fixture &operator=(Fixture &&index) = delete;
     ~Fixture();
 
     void internalSyncCommit() {
@@ -250,12 +249,6 @@ struct Fixture {
     void writeWork(uint32_t cnt);
     uint32_t getReadThreads() const { return _readThreads; }
     void stressTest(uint32_t writeCnt);
-
-private:
-    Fixture(const Fixture &index) = delete;
-    Fixture(Fixture &&index) = delete;
-    Fixture &operator=(const Fixture &index) = delete;
-    Fixture &operator=(Fixture &&index) = delete;
 };
 
 VESPA_THREAD_STACK_TAG(invert_executor)
@@ -316,7 +309,7 @@ Fixture::readWork(uint32_t cnt)
         asciistream keyStr;
         keyStr << key;
 
-        SimpleStringTerm term = makeTerm(keyStr.str());
+        SimpleStringTerm term = makeTerm(keyStr.view());
 
         uint32_t fieldId = 0;
         FakeRequestContext requestContext;
@@ -329,7 +322,7 @@ Fixture::readWork(uint32_t cnt)
         FieldSpecList fields;
         fields.add(field);
         Blueprint::UP result = index.createBlueprint(requestContext, fields, term);
-        if (!EXPECT_TRUE(result.get() != 0)) {
+        if (!EXPECT_TRUE(result)) {
             LOG(error, "Did not get blueprint");
             break;
         }
@@ -411,10 +404,7 @@ std::string toString(SearchIterator & search)
 //-----------------------------------------------------------------------------
 
 bool
-verifyResult(const FakeResult &expect,
-             Searchable &index,
-             std::string fieldName,
-             const Node &term)
+verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName, const Node &term)
 {
     uint32_t fieldId = 0;
     FakeRequestContext requestContext;
@@ -428,7 +418,7 @@ verifyResult(const FakeResult &expect,
     fields.add(field);
 
     Blueprint::UP result = index.createBlueprint(requestContext, fields, term);
-    if (!EXPECT_TRUE(result.get() != 0)) {
+    if (!EXPECT_TRUE(result)) {
         return false;
     }
     result->basic_plan(true, docid_limit);
@@ -437,7 +427,7 @@ verifyResult(const FakeResult &expect,
 
     result->fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = result->createSearch(*match_data);
-    if (!EXPECT_TRUE(search.get() != 0)) {
+    if (!EXPECT_TRUE(search)) {
         return false;
     }
     TermFieldMatchData &tmd = *match_data->resolveTermField(handle);

@@ -53,7 +53,7 @@ GlobalId dummy_gid(uint32_t doc_index) {
 }
 
 std::unique_ptr<QueryTermSimple> word_term(std::string_view term) {
-    return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
+    return std::make_unique<QueryTermUCS4>(vespalib::string(term), QueryTermSimple::Type::WORD);
 }
 
 

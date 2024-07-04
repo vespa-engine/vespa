@@ -456,7 +456,7 @@ TEST_F(DistributionTest, testHighSplitBit)
         ost2 << "\n";
     }
 
-    EXPECT_EQ(ost1.str(), ost2.str());
+    EXPECT_EQ(ost1.view(), ost2.view());
 }
 
 TEST_F(DistributionTest, test_distribution)

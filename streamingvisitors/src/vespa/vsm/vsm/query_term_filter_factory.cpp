@@ -51,7 +51,7 @@ QueryTermFilterFactory::populate_field_map(VsmsummaryConfig& vsm_summary_config)
 }
 
 void
-QueryTermFilterFactory::populate_views(StringSet& views, const vespalib::string& field) const
+QueryTermFilterFactory::populate_views(StringSet& views, std::string_view field) const
 {
     auto itr = _view_map.find(field);
     if (itr != _view_map.end()) {

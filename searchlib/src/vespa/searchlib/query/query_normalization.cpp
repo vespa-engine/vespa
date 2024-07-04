@@ -88,11 +88,11 @@ operator<<(std::ostream &os, Normalizing n) {
 vespalib::string
 QueryNormalization::optional_fold(std::string_view s, TermType type, Normalizing normalizing) {
     switch ( requireFold(type, normalizing)) {
-        case Normalizing::NONE: return s;
+        case Normalizing::NONE: return vespalib::string(s);
         case Normalizing::LOWERCASE: return lowercase(s);
         case Normalizing::LOWERCASE_AND_FOLD: return fold(s);
     }
-    return s;
+    return vespalib::string(s);
 }
 
 }

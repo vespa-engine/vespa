@@ -12,8 +12,9 @@ namespace search {
 using attribute::CollectionType;
 
 AttributeVector::SP
-AttributeFactory::createAttribute(string_view name, const Config & cfg)
+AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
 {
+    vespalib::string name(name_view);
     AttributeVector::SP ret;
     if (cfg.collectionType().type() == CollectionType::ARRAY) {
         if (cfg.fastSearch()) {

@@ -1521,7 +1521,7 @@ lookup(const SSReader &ssReader,
     uint32_t wordOffset = getPageByteSize() - wordsSize;
     const char *wordBuf = static_cast<const char *>(page) + wordOffset;
 
-    vespalib::string countsWord = l3Word;
+    vespalib::string countsWord(l3Word);
     StartOffset countsStartOffset = l3StartOffset;
     vespalib::string word;
     Counts counts;

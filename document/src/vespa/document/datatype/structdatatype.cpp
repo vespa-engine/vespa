@@ -44,7 +44,7 @@ StructDataType::print(std::ostream& out, bool verbose,
     if (verbose) {
         out << " {";
         assert(_idFieldMap.size() == _nameFieldMap.size());
-        if (_nameFieldMap.size() > 0) {
+        if (!_nameFieldMap.empty()) {
                 // Use fieldset to print even though inefficient. Don't need
                 // efficient print, and this gets fields in order
             Field::Set fields(getFieldSet());
@@ -61,7 +61,7 @@ void
 StructDataType::addField(const Field& field)
 {
     vespalib::string error = containsConflictingField(field);
-    if (error != "") {
+    if (!error.empty()) {
         throw IllegalArgumentException(make_string("Failed to add field '%s' to struct '%s': %s",
                                                    field.getName().data(), getName().c_str(),
                                                    error.c_str()), VESPA_STRLOC);
@@ -78,7 +78,7 @@ void
 StructDataType::addInheritedField(const Field& field)
 {
     vespalib::string error = containsConflictingField(field);
-    if (error != "") {
+    if (!error.empty()) {
             // Deploy application should fail if overwriting a field with field
             // of different type. Java version of document sees to this. C++
             // just accepts what it gets, as to make it easier to alter the
@@ -106,7 +106,7 @@ StructDataType::getField(std::string_view name) const
 {
     StringFieldMap::const_iterator it(_nameFieldMap.find(name));
     if (it == _nameFieldMap.end()) {
-        throw FieldNotFoundException(name, VESPA_STRLOC);
+        throw FieldNotFoundException(vespalib::string(name), VESPA_STRLOC);
     } else {
         return *it->second;
     }

@@ -23,14 +23,13 @@ AsyncInitializationPolicy::parse(string parameters) {
     std::map<string, string> retVal;
 
     vespalib::StringTokenizer tokenizer(parameters, ";");
-    for (uint32_t i = 0; i < tokenizer.size(); i++) {
-        string keyValue = tokenizer[i];
+    for (auto keyValue : tokenizer) {
         vespalib::StringTokenizer keyV(keyValue, "=");
 
         if (keyV.size() == 1) {
-            retVal[keyV[0]] = "true";
+            retVal[string(keyV[0])] = "true";
         } else {
-            retVal[keyV[0]] = keyV[1];
+            retVal[string(keyV[0])] = keyV[1];
         }
     }
 

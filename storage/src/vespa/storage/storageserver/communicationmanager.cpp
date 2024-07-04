@@ -597,7 +597,7 @@ CommunicationManager::serializeNodeState(const api::GetNodeStateReply& gns, std:
     } else {
         _component.getStateUpdater().getReportedNodeState()->serialize(tmp, "", includeDescription);
     }
-    os << tmp.str();
+    os << tmp.view();
 }
 
 void
@@ -626,7 +626,7 @@ CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
         // due to a higher version having been previously received.
         auto& state_reply = dynamic_cast<api::SetSystemStateReply&>(*reply);
         if (state_reply.getResult().getResult() == api::ReturnCode::REJECTED) {
-            vespalib::string err_msg = state_reply.getResult().getMessage(); // ReturnCode message is string_view
+            vespalib::string err_msg(state_reply.getResult().getMessage()); // ReturnCode message is string_view
             request.returnError(FRTE_RPC_METHOD_FAILED, err_msg.c_str());
             return;
         }
@@ -664,7 +664,7 @@ CommunicationManager::sendMessageBusReply(StorageTransportContext& context,
 
     // Create an MBus reply and transfer state to it.
     if (reply->getResult().getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
-        replyUP = std::make_unique<documentapi::WrongDistributionReply>(reply->getResult().getMessage());
+        replyUP = std::make_unique<documentapi::WrongDistributionReply>(vespalib::string(reply->getResult().getMessage()));
         replyUP->swapState(*context._docAPIMsg);
         replyUP->setTrace(reply->steal_trace());
         replyUP->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_WRONG_DISTRIBUTION,

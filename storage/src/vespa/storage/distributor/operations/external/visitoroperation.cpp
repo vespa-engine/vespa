@@ -813,7 +813,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
     os << _msg->getInstanceId() << '-'
        << _node_ctx.node_index() << '-' << cmd->getMsgId();
 
-    vespalib::string storageInstanceId(os.str());
+    vespalib::string storageInstanceId(os.view());
     cmd->setInstanceId(storageInstanceId);
     cmd->setAddress(api::StorageMessageAddress::create(_node_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, node));
     cmd->setMaximumPendingReplyCount(pending);

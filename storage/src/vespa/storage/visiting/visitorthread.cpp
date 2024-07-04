@@ -237,8 +237,8 @@ VisitorThread::run(framework::ThreadHandle& thread)
         } catch (std::exception& e) {
             vespalib::asciistream ost;
             ost << "Failed to handle visitor message:" << e.what();
-            LOG(warning, "Failed handling visitor message: %s", ost.str().data());
-            result = ReturnCode(ReturnCode::INTERNAL_FAILURE, ost.str());
+            LOG(warning, "Failed handling visitor message: %s", ost.view().data());
+            result = ReturnCode(ReturnCode::INTERNAL_FAILURE, ost.view());
             if (entry._message.get() && entry._message->getType() == api::MessageType::VISITOR_CREATE) {
                 _messageSender.closed(entry._visitorId);
                 _metrics.failedVisitors.inc(1);
@@ -326,7 +326,7 @@ VisitorThread::handleNonExistingVisitorCall(const Event& entry, ReturnCode& code
 
     vespalib::asciistream ost;
     ost << "Visitor " << entry._visitorId << " no longer exist";
-    code = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.str());
+    code = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.view());
 }
 
 /**
@@ -337,7 +337,7 @@ VisitorThread::createVisitor(std::string_view libName,
                               const vdslib::Parameters& params,
                               vespalib::asciistream & error)
 {
-    vespalib::string str = libName;
+    vespalib::string str(libName);
     std::transform(str.begin(), str.end(), str.begin(), tolower);
 
     auto it = _visitorFactories.find(str);
@@ -423,9 +423,9 @@ VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&
         vespalib::asciistream errors;
         visitor = createVisitor(cmd->getLibraryName(), cmd->getParameters(), errors);
         if (!visitor) {
-            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, errors.str());
+            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, errors.view());
             LOG(warning, "CreateVisitor(%s): Failed to create visitor: %s",
-                         cmd->getInstanceId().c_str(), errors.str().data());
+                         cmd->getInstanceId().c_str(), errors.view().data());
             break;
         }
         // Set visitor parameters
@@ -465,17 +465,17 @@ VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&
             vespalib::asciistream ost;
             ost << "Failed to parse document select string '"
                 << cmd->getDocumentSelection() << "': " << e.getMessage();
-            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.str());
+            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.view());
             LOG(warning, "CreateVisitor(%s): %s",
-                         cmd->getInstanceId().c_str(), ost.str().data());
+                         cmd->getInstanceId().c_str(), ost.view().data());
             break;
         } catch (document::select::ParsingFailedException& e) {
             vespalib::asciistream ost;
             ost << "Failed to parse document select string '"
                 << cmd->getDocumentSelection() << "': " << e.getMessage();
-            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.str());
+            result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.view());
             LOG(warning, "CreateVisitor(%s): %s",
-                         cmd->getInstanceId().c_str(), ost.str().data());
+                         cmd->getInstanceId().c_str(), ost.view().data());
             break;
         }
         LOG(debug, "CreateVisitor(%s): Successfully created visitor",
@@ -569,7 +569,7 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
             auto& rsp = dynamic_cast<RequestStatusPage&>(*cmd);
             vespalib::asciistream ost;
             getStatus(ost, rsp.getPath());
-            _messageSender.send(std::make_shared<RequestStatusPageReply>(rsp, std::string(ost.str())));
+            _messageSender.send(std::make_shared<RequestStatusPageReply>(rsp, std::string(ost.view())));
             break;
         }
     default:

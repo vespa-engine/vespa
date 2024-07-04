@@ -59,7 +59,7 @@ TEST_F("requireThatCanPrintToAscii", RawFixture<MyConfig>) {
     vespalib::asciistream ss;
     AsciiConfigWriter writer(ss);
     ASSERT_TRUE(writer.write(*f.cfg));
-    ASSERT_EQUAL("myField \"foo\"\n", ss.str());
+    ASSERT_EQUAL("myField \"foo\"\n", ss.view());
 }
 
 TEST_F("requireThatCanPrintAsConfigFormat", RawFixture<MyConfig>) {

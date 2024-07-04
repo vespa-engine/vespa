@@ -78,7 +78,7 @@ lookupConnectedness(const search::fef::IQueryEnvironment& env,
     // [vespa.term.2.connexity: "1", vespa.term.2.connexity: "0.5"]
     vespalib::asciistream os;
     os << "vespa.term." << currUniqueId << ".connexity";
-    Property p = env.getProperties().lookup(os.str());
+    Property p = env.getProperties().lookup(os.view());
     if (p.size() == 2) {
         // we have a defined connectedness with the previous term
         if (strToNum<uint32_t>(p.getAt(0)) == prevUniqueId) {
@@ -95,7 +95,7 @@ lookupSignificance(const search::fef::IQueryEnvironment& env, const ITermData& t
     // [vespa.term.1.significance: "0.5"]
     vespalib::asciistream os;
     os << "vespa.term." << term.getUniqueId() << ".significance";
-    Property p = env.getProperties().lookup(os.str());
+    Property p = env.getProperties().lookup(os.view());
     if (p.found()) {
         return strToNum<feature_t>(p.get());
     }
@@ -167,7 +167,7 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string
     // is represented as: [vespa.label.foo.id: "5"]
     vespalib::asciistream os;
     os << "vespa.label." << label << ".id";
-    Property p = env.getProperties().lookup(os.str());
+    Property p = env.getProperties().lookup(os.view());
     if (!p.found()) {
         return 0;
     }
@@ -195,7 +195,7 @@ lookup_document_frequency(const search::fef::IQueryEnvironment& env, const ITerm
     auto unique_id = term.getUniqueId();
     if (unique_id != 0) {
         os << "vespa.term." << unique_id << ".docfreq";
-        Property p = env.getProperties().lookup(os.str());
+        Property p = env.getProperties().lookup(os.view());
         if (p.size() == 2) {
             // we have a defined document frequency
             auto document_frequency = strToNum<uint64_t>(p.getAt(0));

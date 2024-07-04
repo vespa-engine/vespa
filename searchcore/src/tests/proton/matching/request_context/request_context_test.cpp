@@ -27,10 +27,10 @@ using namespace search::fef::indexproperties;
 
 class MyAttributeContext : public search::attribute::IAttributeContext {
 public:
-    const IAttributeVector* getAttribute(const vespalib::string&) const override { abort(); }
-    const IAttributeVector* getAttributeStableEnum(const vespalib::string&) const override { abort(); }
+    const IAttributeVector* getAttribute(std::string_view) const override { abort(); }
+    const IAttributeVector* getAttributeStableEnum(std::string_view) const override { abort(); }
     void getAttributeList(std::vector<const IAttributeVector*>&) const override { abort(); }
-    void asyncForAttribute(const vespalib::string&, std::unique_ptr<IAttributeFunctor>) const override { abort(); }
+    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override { abort(); }
 };
 
 class RequestContextTest : public ::testing::Test {

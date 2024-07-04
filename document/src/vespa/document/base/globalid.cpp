@@ -64,7 +64,7 @@ GlobalId::parse(std::string_view source)
         ost << "A gid string representation must be exactly "
             << (2 * LENGTH + 7) << " bytes long. Invalid source: '"
             << source << "'.";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException(ost.view(), VESPA_STRLOC);
     }
     if (source.substr(2 * LENGTH + 6, 1) != ")") {
         throw vespalib::IllegalArgumentException(

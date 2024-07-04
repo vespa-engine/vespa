@@ -3,8 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vector>
-#include <map>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace search::index { class Schema; }
 
@@ -20,13 +19,15 @@ namespace proton::matching {
 class ViewResolver
 {
 private:
-    using Map = std::map<vespalib::string, std::vector<vespalib::string> >;
+    using Map = vespalib::hash_map<vespalib::string, std::vector<vespalib::string> >;
     Map _map;
+
+
 
 public:
     /**
-     * Add a field to the given view. This function is public to
-     * facilitate testing. Duplicate detection is not performed here,
+     * Add a field to the given view. Public only for testing.
+     * Duplicate detection is not performed here,
      * so adding the same field to a view multiple times is not a good
      * idea.
      *
@@ -34,8 +35,7 @@ public:
      * @param view the name of the view
      * @param field the name of the field
      **/
-    ViewResolver &add(std::string_view view,
-                      std::string_view field);
+    ViewResolver &add(const vespalib::string & view, std::string_view field);
 
     /**
      * Resolve a view to obtain the set of fields it

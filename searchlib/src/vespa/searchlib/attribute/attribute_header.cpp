@@ -38,8 +38,8 @@ AttributeHeader::AttributeHeader()
 {
 }
 
-AttributeHeader::AttributeHeader(const vespalib::string &fileName)
-    : _fileName(fileName),
+AttributeHeader::AttributeHeader(vespalib::string fileName)
+    : _fileName(std::move(fileName)),
       _basicType(attribute::BasicType::Type::NONE),
       _collectionType(attribute::CollectionType::Type::SINGLE),
       _tensorType(vespalib::eval::ValueType::error_type()),
@@ -57,7 +57,7 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName)
 {
 }
 
-AttributeHeader::AttributeHeader(const vespalib::string &fileName,
+AttributeHeader::AttributeHeader(vespalib::string fileName,
                                  attribute::BasicType basicType,
                                  attribute::CollectionType collectionType,
                                  const vespalib::eval::ValueType &tensorType,
@@ -69,7 +69,7 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName,
                                  uint64_t totalValueCount,
                                  uint64_t createSerialNum,
                                  uint32_t version)
-    : _fileName(fileName),
+    : _fileName(std::move(fileName)),
       _basicType(basicType),
       _collectionType(collectionType),
       _tensorType(tensorType),

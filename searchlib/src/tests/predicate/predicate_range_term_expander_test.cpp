@@ -19,12 +19,12 @@ struct MyRangeHandler {
     ~MyRangeHandler() {
         EXPECT_EQUAL(expected_labels.size(), i);
     }
-    void handleRange(const string &label) {
+    void handleRange(std::string_view label) {
         TEST_STATE(("handleRange: " + label).c_str());
         ASSERT_TRUE(i < expected_labels.size());
         EXPECT_EQUAL(expected_labels[i++], label);
     }
-    void handleEdge(const string &label, uint64_t value) {
+    void handleEdge(std::string_view label, uint64_t value) {
         TEST_STATE(("handleEdge: " + label).c_str());
         EXPECT_EQUAL(expected_edge_label, label);
         EXPECT_EQUAL(expected_edge_value, value);

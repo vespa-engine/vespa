@@ -107,7 +107,7 @@ RPCHooksBase::initRPC()
 RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const config::ConfigUri & configUri,
                              std::string_view slobrokId, uint32_t transportThreads)
     : proton(parent),
-      slobrok_config(configUri.createWithNewId(slobrokId)),
+      slobrok_config(configUri.createWithNewId(vespalib::string(slobrokId))),
       identity(configUri.getConfigId()),
       rtcPort(port),
       numTranportThreads(transportThreads)

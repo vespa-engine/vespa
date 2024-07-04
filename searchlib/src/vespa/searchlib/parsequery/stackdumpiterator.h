@@ -143,7 +143,8 @@ public:
     std::unique_ptr<query::PredicateQueryTerm> getPredicateQueryTerm();
     std::unique_ptr<query::TermVector> get_terms();
 
-    std::string_view getIndexName() const noexcept { return _curr_index_name; }
+    std::string_view index_as_view() const noexcept { return _curr_index_name; }
+    vespalib::string index_as_string() const noexcept { return vespalib::string(_curr_index_name); }
     std::string_view getTerm() const noexcept { return _curr_term; }
     int64_t getIntegerTerm() const noexcept { return _curr_integer_term; }
 

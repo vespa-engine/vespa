@@ -73,8 +73,7 @@ private:
     vespalib::string _type;
 
 public:
-    DocumentTypeNotFoundException(const vespalib::string & name,
-                                  const vespalib::string& location);
+    DocumentTypeNotFoundException(vespalib::string name, const vespalib::string& location);
     ~DocumentTypeNotFoundException() override;
 
     const vespalib::string& getDocumentTypeName() const { return _type; }
@@ -127,11 +126,8 @@ private:
     int32_t _fieldId;
 
 public:
-    FieldNotFoundException(const vespalib::string& fieldName,
-                           const vespalib::string& location);
-    FieldNotFoundException(int32_t fieldId,
-                           int16_t serializationVersion,
-                           const vespalib::string& location);
+    FieldNotFoundException(vespalib::string fieldName, const vespalib::string& location);
+    FieldNotFoundException(int32_t fieldId, int16_t serializationVersion, const vespalib::string& location);
     ~FieldNotFoundException() override;
 
     const vespalib::string& getFieldName() const { return _fieldName; }

@@ -67,7 +67,7 @@ Location::getOldFormatString() const
             << "," << bounding_box.y.high
             << "]" ;
     }
-    return std::string(buf.str());
+    return std::string(buf.view());
 }
 
 std::string
@@ -96,7 +96,7 @@ Location::getJsonFormatString() const
             << "]}" ;
     }
     buf << "}";
-    return std::string(buf.str());
+    return std::string(buf.view());
 }
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {

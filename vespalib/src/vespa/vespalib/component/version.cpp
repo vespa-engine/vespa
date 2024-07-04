@@ -34,7 +34,7 @@ Version::initialize()
     } else if (_major > 0) {
         buf << _major;
     }
-    _stringValue = buf.str();
+    _stringValue = buf.view();
     if ((_major < 0) || (_minor < 0) || (_micro < 0) || !_qualifier.empty()) {
         verifySanity();
     }

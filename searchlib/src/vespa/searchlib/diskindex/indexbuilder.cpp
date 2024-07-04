@@ -291,7 +291,7 @@ vespalib::string
 IndexBuilder::appendToPrefix(std::string_view name) const
 {
     if (_prefix.empty()) {
-        return name;
+        return vespalib::string(name);
     }
     return _prefix + "/" + name;
 }

@@ -5,14 +5,13 @@
 
 namespace search::queryeval {
 
-SplitFloat::SplitFloat(const vespalib::string &input)
+SplitFloat::SplitFloat(std::string_view input)
 {
     bool seenText = false;
-    for (size_t i = 0; i < input.size(); ++i) {
-        unsigned char c = input[i];
+    for (unsigned char c : input) {
         if (isalnum(c)) {
             if (!seenText) {
-                _parts.push_back(vespalib::string());
+                _parts.emplace_back();
             }
             _parts.back().push_back(c);
             seenText = true;

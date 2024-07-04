@@ -18,7 +18,7 @@ IstreamConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
     ConfigDataBuffer buffer;
     std::stringstream buf;
     buf << _is.rdbuf();
-    buffer.setEncodedString(buf.str());
+    buffer.setEncodedString(buf.view());
     formatter.decode(buffer);
     return std::make_unique<ConfigType>(buffer);
 }

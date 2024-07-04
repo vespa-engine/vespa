@@ -89,7 +89,7 @@ protected:
      * @param inName feature name of input
      * @param type accepted input type
      **/
-    std::optional<FeatureType> defineInput(std::string_view inName,
+    std::optional<FeatureType> defineInput(const vespalib::string & inName,
                                            AcceptInput accept = AcceptInput::NUMBER);
 
     /**
@@ -105,7 +105,7 @@ protected:
      * @param outName output name
      * @param desc output description
      **/
-    void describeOutput(std::string_view outName, std::string_view desc,
+    void describeOutput(const vespalib::string & outName, std::string_view desc,
                         FeatureType type = FeatureType::number());
 
     /**

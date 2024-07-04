@@ -8,16 +8,14 @@
 namespace search::fef {
 
 std::optional<FeatureType>
-Blueprint::defineInput(std::string_view inName, AcceptInput accept)
+Blueprint::defineInput(const vespalib::string & inName, AcceptInput accept)
 {
     assert(_dependency_handler != nullptr);
     return _dependency_handler->resolve_input(inName, accept);
 }
 
 void
-Blueprint::describeOutput(std::string_view outName,
-                          std::string_view desc,
-                          FeatureType type)
+Blueprint::describeOutput(const vespalib::string & outName, std::string_view desc, FeatureType type)
 {
     (void) desc;
     assert(_dependency_handler != nullptr);

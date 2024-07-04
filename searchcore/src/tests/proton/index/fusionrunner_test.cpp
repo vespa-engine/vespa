@@ -169,7 +169,7 @@ FusionRunnerTest::createIndex(const string &dir, uint32_t id, bool fusion)
         ost << dir << "/index.flush." << id;
         _fusion_spec.flush_ids.push_back(id);
     }
-    std::string_view index_dir = ost.str();
+    std::string_view index_dir = ost.view();
     _selector->setDefaultSource(id - _selector->getBaseId());
 
     DocBuilder doc_builder(add_fields);

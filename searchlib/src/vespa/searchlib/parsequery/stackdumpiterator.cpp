@@ -239,14 +239,14 @@ SimpleQueryStackDumpIterator::readPredicate(const char *&p) {
         std::string_view key = read_string_view(p);
         std::string_view value = read_string_view(p);
         uint64_t sub_queries = read_value<uint64_t>(p);
-        _predicate_query_term->addFeature(key, value, sub_queries);
+        _predicate_query_term->addFeature(vespalib::string(key), vespalib::string(value), sub_queries);
     }
     count = readCompressedPositiveInt(p);
     for (size_t i = 0; i < count; ++i) {
         std::string_view key = read_string_view(p);
         uint64_t value = read_value<uint64_t>(p);
         uint64_t sub_queries = read_value<uint64_t>(p);
-        _predicate_query_term->addRangeFeature(key, value, sub_queries);
+        _predicate_query_term->addRangeFeature(vespalib::string(key), value, sub_queries);
     }
 }
 

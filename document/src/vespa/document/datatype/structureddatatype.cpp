@@ -52,7 +52,7 @@ int32_t StructuredDataType::createId(std::string_view name)
     } else {
         vespalib::asciistream ost;
         ost << name << ".0";  // Hardcode version 0 (version is not supported).
-        return crappyJavaStringHash(ost.str());
+        return crappyJavaStringHash(ost.view());
     }
 }
 
@@ -82,9 +82,10 @@ StructuredDataType::onBuildFieldPath(FieldPath & path, std::string_view remainFi
 
         path.insert(path.begin(), std::make_unique<FieldPathEntry>(fp));
     } else {
-        throw FieldNotFoundException(currFieldName, make_string("Invalid field path '%s', no field named '%s'",
-                                                                vespalib::string(remainFieldName).c_str(),
-                                                                vespalib::string(currFieldName).c_str()));
+        throw FieldNotFoundException(vespalib::string(currFieldName),
+                                     make_string("Invalid field path '%s', no field named '%s'",
+                                                 vespalib::string(remainFieldName).c_str(),
+                                                 vespalib::string(currFieldName).c_str()));
     }
 }
 

@@ -148,7 +148,7 @@ SourceBlenderSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "children", _children);
     for (const auto & child : _children) {
         vespalib::asciistream os;
-        os << "Source " << child;
+        os << "Source " << uint32_t(child);
         visit(visitor, os.str(), *getSearch(child));
     }
 }

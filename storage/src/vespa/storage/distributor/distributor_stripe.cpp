@@ -708,7 +708,7 @@ toBucketSpacesStats(const NodeMaintenanceStatsTracker &maintenanceStats)
 {
     PerNodeBucketSpacesStats result;
     for (const auto &entry : maintenanceStats.perNodeStats()) {
-        auto bucketSpace = document::FixedBucketSpaces::to_string(entry.first.bucketSpace());
+        const vespalib::string & bucketSpace(document::FixedBucketSpaces::to_string(entry.first.bucketSpace()));
         result[entry.first.node()][bucketSpace] = toBucketSpaceStats(entry.second);
     }
     return result;

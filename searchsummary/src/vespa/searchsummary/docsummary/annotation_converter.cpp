@@ -106,7 +106,7 @@ AnnotationConverter::convert(const StringFieldValue &input, vespalib::slime::Ins
     _out.clear();
     _text = input.getValueRef();
     handleIndexingTerms(input);
-    _juniper_converter.convert(_out.str(), inserter);
+    _juniper_converter.convert(_out.view(), inserter);
 }
 
 bool

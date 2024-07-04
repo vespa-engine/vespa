@@ -133,7 +133,7 @@ AttributeFindSearcher<T>::doRun()
         // build simple term query
         vespalib::asciistream ss;
         ss << _values[i % _values.size()].getValue();
-        this->buildTermQuery(_query, _attrPtr->getName(), ss.str().data());
+        this->buildTermQuery(_query, _attrPtr->getName(), ss.view().data());
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =
@@ -211,7 +211,7 @@ AttributeRangeSearcher::doRun()
         // build simple range term query
         vespalib::asciistream ss;
         ss << "[" << iter.a() << ";" << iter.b() << "]";
-        buildTermQuery(_query, _attrPtr->getName(), ss.str().data());
+        buildTermQuery(_query, _attrPtr->getName(), ss.view().data());
 
         AttributeGuard guard(_attrPtr);
         std::unique_ptr<attribute::SearchContext> searchContext =

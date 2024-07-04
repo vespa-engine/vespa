@@ -42,7 +42,7 @@ writeFieldSets(vespalib::asciistream &os,
         vespalib::asciistream tmp;
         tmp << prefix << i << "].field[";
         for (size_t j = 0; j < fss[i].getFields().size(); ++j) {
-            os << tmp.str() << j << "].name " << fss[i].getFields()[j] << "\n";
+            os << tmp.view() << j << "].name " << fss[i].getFields()[j] << "\n";
         }
     }
 }
@@ -273,7 +273,7 @@ Schema::saveToFile(const vespalib::string & fileName) const
         LOG(warning, "Could not open output file '%s' as part of saveToFile()", fileName.c_str());
         return false;
     }
-    file << os.str();
+    file << os.view();
     file.close();
     if (file.fail()) {
         LOG(warning,

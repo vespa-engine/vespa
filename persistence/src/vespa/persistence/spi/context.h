@@ -74,9 +74,7 @@ public:
     [[nodiscard]] const vespalib::Trace& getTrace() const noexcept { return _trace; }
 
     [[nodiscard]] bool shouldTrace(uint32_t level) const noexcept { return _trace.shouldTrace(level); }
-    void trace(uint32_t level, std::string_view msg, bool addTime = true) {
-        _trace.trace(level, msg, addTime);
-    }
+    void trace(uint32_t level, std::string_view msg, bool addTime = true);
 };
 
 }

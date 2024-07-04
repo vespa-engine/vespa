@@ -425,7 +425,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field, size_t numRe
 {
     asciistream idstr;
     idstr << "id:test:test:: " << i;
-    DocumentId id(idstr.str());
+    DocumentId id(idstr.view());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
     Document::UP doc(new Document(repo, *docType, id));
     ASSERT_TRUE(doc.get());
@@ -435,7 +435,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field, size_t numRe
         mainstr << (j + i * 1000) << " ";
     }
     mainstr << " and end field";
-    doc->setValue("main", StringFieldValue::make(mainstr.str()));
+    doc->setValue("main", StringFieldValue::make(mainstr.view()));
     if (extra_field) {
         doc->setValue("extra", StringFieldValue::make("foo"));
     }

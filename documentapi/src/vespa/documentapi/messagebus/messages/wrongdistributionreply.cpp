@@ -5,16 +5,16 @@
 
 namespace documentapi {
 
-WrongDistributionReply::WrongDistributionReply() :
-    DocumentReply(DocumentProtocol::REPLY_WRONGDISTRIBUTION),
-    _systemState()
+WrongDistributionReply::WrongDistributionReply()
+    : DocumentReply(DocumentProtocol::REPLY_WRONGDISTRIBUTION),
+      _systemState()
 {}
 
-WrongDistributionReply::WrongDistributionReply(const string &systemState) :
-    DocumentReply(DocumentProtocol::REPLY_WRONGDISTRIBUTION),
-    _systemState(systemState)
+WrongDistributionReply::WrongDistributionReply(string systemState)
+    : DocumentReply(DocumentProtocol::REPLY_WRONGDISTRIBUTION),
+      _systemState(systemState)
 {}
 
-WrongDistributionReply::~WrongDistributionReply() {}
+WrongDistributionReply::~WrongDistributionReply() = default;
 
 }

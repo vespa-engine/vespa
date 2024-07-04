@@ -52,7 +52,7 @@ IndexEnvironment::add_virtual_fields()
 {
     vespalib::hash_set<vespalib::string> vfields;
     for (auto& field : _fields) {
-        std::string_view name(field.name());
+        vespalib::string name(field.name());
         auto pos = name.rfind('.');
         while (pos != vespalib::string::npos) {
             name = name.substr(0, pos);

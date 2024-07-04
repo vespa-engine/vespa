@@ -371,7 +371,7 @@ JsonStream::fail(std::string_view error) const
     asciistream report;
     report << "Invalid state on call: " << error
            << " (" << getStateString() << ")";
-    throw JsonStreamException(report.str(), "", VESPA_STRLOC);
+    throw JsonStreamException(report.view(), "", VESPA_STRLOC);
 }
 
 }

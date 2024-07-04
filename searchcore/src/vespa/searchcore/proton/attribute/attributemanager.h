@@ -93,7 +93,7 @@ private:
 
     AttributeVectorSP internalAddAttribute(AttributeSpec && spec, uint64_t serialNum, const IAttributeFactory &factory);
     void addAttribute(AttributeWrap attribute, const ShrinkerSP &shrinker);
-    AttributeVectorSP findAttribute(const vespalib::string &name) const;
+    AttributeVectorSP findAttribute(std::string_view name) const;
     const FlushableWrap *findFlushable(const vespalib::string &name) const;
     Spec::AttributeList transferExistingAttributes(const AttributeManager &currMgr, Spec::AttributeList && newAttributes);
     void addNewAttributes(const Spec &newSpec, Spec::AttributeList && toBeAdded, IAttributeInitializerRegistry &initializerRegistry);
@@ -141,8 +141,8 @@ public:
     static void padAttribute(search::AttributeVector &v, uint32_t docIdLimit);
 
     // Implements search::IAttributeManager
-    search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
-    std::unique_ptr<AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
+    search::AttributeGuard::UP getAttribute(std::string_view name) const override;
+    std::unique_ptr<AttributeReadGuard> getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const override;
 
     /**
      * Fills all regular registered attributes (not extra attributes)
@@ -174,19 +174,19 @@ public:
 
     vespalib::Executor& get_shared_executor() const override { return _shared_executor; }
 
-    search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override;
+    search::AttributeVector *getWritableAttribute(std::string_view name) const override;
 
     const std::vector<search::AttributeVector *> &getWritableAttributes() const override;
 
     void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const override;
     void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const override;
-    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor> func) const override;
 
     void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
 
     const ImportedAttributesRepo *getImportedAttributes() const override { return _importedAttributes.get(); }
 
-    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
+    std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view) const override;
 
     TransientResourceUsage get_transient_resource_usage() const override;
 };

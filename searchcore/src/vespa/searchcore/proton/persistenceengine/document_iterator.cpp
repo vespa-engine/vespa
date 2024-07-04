@@ -108,7 +108,7 @@ DocumentIterator::add(const DocTypeName &doc_type_name, IDocumentRetriever::SP r
 void
 DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    add(DocTypeName(""), std::move(retriever));
+    add(DocTypeName(), std::move(retriever));
 }
 
 IterateResult

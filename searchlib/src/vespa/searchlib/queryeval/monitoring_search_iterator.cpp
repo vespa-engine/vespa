@@ -29,10 +29,10 @@ MonitoringSearchIterator::Dumper::addIndent()
 }
 
 void
-MonitoringSearchIterator::Dumper::addText(const vespalib::string &value)
+MonitoringSearchIterator::Dumper::addText(std::string_view value)
 {
     addIndent();
-    _str.append(value.c_str());
+    _str.append(value);
     uint32_t extraSpaces = value.size() < _textFormatWidth ? _textFormatWidth - value.size() : 0;
     _str.append(make_string(":%s ", vespalib::string(extraSpaces, ' ').c_str()));
 }
@@ -79,10 +79,10 @@ MonitoringSearchIterator::Dumper::Dumper(int indent,
 {
 }
 
-MonitoringSearchIterator::Dumper::~Dumper() {}
+MonitoringSearchIterator::Dumper::~Dumper() = default;
 
 void
-MonitoringSearchIterator::Dumper::openStruct(const vespalib::string &name, const vespalib::string &type)
+MonitoringSearchIterator::Dumper::openStruct(std::string_view name, std::string_view type)
 {
     if (type == "search::queryeval::MonitoringSearchIterator") {
         _stack.push(ITERATOR);
@@ -107,14 +107,14 @@ MonitoringSearchIterator::Dumper::closeStruct()
 }
 
 void
-MonitoringSearchIterator::Dumper::visitBool(const vespalib::string &name, bool value)
+MonitoringSearchIterator::Dumper::visitBool(std::string_view name, bool value)
 {
     (void) name;
     (void) value;
 }
 
 void
-MonitoringSearchIterator::Dumper::visitInt(const vespalib::string &name, int64_t value)
+MonitoringSearchIterator::Dumper::visitInt(std::string_view name, int64_t value)
 {
     if (_stack.top() == STATS) {
         if (name == "numSeeks") {
@@ -126,7 +126,7 @@ MonitoringSearchIterator::Dumper::visitInt(const vespalib::string &name, int64_t
 }
 
 void
-MonitoringSearchIterator::Dumper::visitFloat(const vespalib::string &name, double value)
+MonitoringSearchIterator::Dumper::visitFloat(std::string_view name, double value)
 {
     if (_stack.top() == STATS) {
         if (name == "avgDocIdSteps") {
@@ -140,7 +140,7 @@ MonitoringSearchIterator::Dumper::visitFloat(const vespalib::string &name, doubl
 }
 
 void
-MonitoringSearchIterator::Dumper::visitString(const vespalib::string &name, const vespalib::string &value)
+MonitoringSearchIterator::Dumper::visitString(std::string_view name, std::string_view value)
 {
     if (_stack.top() == ITERATOR) {
         if (name == "iteratorName") {
@@ -150,7 +150,7 @@ MonitoringSearchIterator::Dumper::visitString(const vespalib::string &name, cons
 }
 
 void
-MonitoringSearchIterator::Dumper::visitNull(const vespalib::string &name)
+MonitoringSearchIterator::Dumper::visitNull(std::string_view name)
 {
     (void) name;
 }
@@ -187,7 +187,7 @@ MonitoringSearchIterator::MonitoringSearchIterator(const vespalib::string &name,
 {
 }
 
-MonitoringSearchIterator::~MonitoringSearchIterator() {}
+MonitoringSearchIterator::~MonitoringSearchIterator() = default;
 
 void
 MonitoringSearchIterator::doSeek(uint32_t docId)

@@ -12,7 +12,7 @@ namespace search::streaming {
 class SameElementQueryNode : public MultiTerm
 {
 public:
-    SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, uint32_t num_terms) noexcept;
+    SameElementQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms) noexcept;
     ~SameElementQueryNode() override;
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;

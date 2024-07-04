@@ -20,7 +20,7 @@ public:
     /**
      * Required for inheritance.
      */
-    virtual ~INetworkOwner() { }
+    virtual ~INetworkOwner() = default;
 
     /**
      * All messages are sent across the network with its accompanying protocol name so that it can be decoded at the
@@ -29,7 +29,7 @@ public:
      * @param name The name of the protocol to return.
      * @return The named protocol.
      */
-    virtual IProtocol * getProtocol(const string &name) = 0;
+    virtual IProtocol * getProtocol(std::string_view name) = 0;
 
     /**
      * All messages that arrive in the network layer is passed to its owner through this function.
@@ -37,7 +37,7 @@ public:
      * @param message The message that just arrived from the network.
      * @param session The name of the session that is the recipient of the request.
      */
-    virtual void deliverMessage(std::unique_ptr<Message> message, const string &session) = 0;
+    virtual void deliverMessage(std::unique_ptr<Message> message, std::string_view session) = 0;
 
     /**
      * All replies that arrive in the network layer is passed through this to unentangle it from the network thread.

@@ -588,8 +588,8 @@ struct ComplexLeafBlueprint : LeafBlueprint {
 
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint &obj);
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::Blueprint *obj);
 

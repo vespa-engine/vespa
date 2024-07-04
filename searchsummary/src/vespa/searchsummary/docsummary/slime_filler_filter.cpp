@@ -76,7 +76,7 @@ SlimeFillerFilter::add(std::string_view field_path)
             }
         }
     } else {
-        auto insres = _filter.insert(std::make_pair(field_name, std::unique_ptr<SlimeFillerFilter>()));
+        auto insres = _filter.insert(std::make_pair(vespalib::string(field_name), std::unique_ptr<SlimeFillerFilter>()));
         assert(insres.second);
         if (!remaining_path.empty()) {
             insres.first->second = std::make_unique<SlimeFillerFilter>();

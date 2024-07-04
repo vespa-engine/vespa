@@ -341,7 +341,7 @@ SearchContextTest::fillVector(std::vector<vespalib::string> & values, size_t num
     for (size_t i = 0; i < numValues; ++i) {
         vespalib::asciistream ss;
         ss << "string" << (i < 10 ? "0" : "") << i;
-        values.emplace_back(ss.str());
+        values.emplace_back(ss.view());
     }
 }
 
@@ -1498,9 +1498,9 @@ SearchContextTest::testPrefixSearch(const vespalib::string& name, const Config& 
     for (uint32_t i = 0; i < longrange_values; ++i) {
         vespalib::asciistream ss;
         ss << "lpref" << i;
-        vespalib::string sss(ss.str());
+        vespalib::string sss(ss.view());
         exp_longrange.put(old_size + i);
-        vec.update(old_size + i, vespalib::string(ss.str()).c_str());
+        vec.update(old_size + i, vespalib::string(ss.view()).c_str());
     }
     attr->commit();
     performSearch(*attr, "lpref", exp_longrange, TermType::PREFIXTERM);

@@ -106,11 +106,12 @@ void add_n_docs_with_undefined_values(VectorType &vec, size_t n) {
 }
 
 GlobalId dummy_gid(uint32_t doc_index);
+
 std::unique_ptr<QueryTermSimple> word_term(std::string_view term);
 
 struct ReadGuardWrapper {
     std::unique_ptr<AttributeReadGuard> guard;
-    ReadGuardWrapper(std::unique_ptr<AttributeReadGuard> guard_) : guard(std::move(guard_)) {}
+    explicit ReadGuardWrapper(std::unique_ptr<AttributeReadGuard> guard_) : guard(std::move(guard_)) {}
     const IAttributeVector *operator->() const { return guard->operator->(); }
     const IAttributeVector &operator*() const { return guard->operator*(); }
 };
@@ -124,7 +125,7 @@ struct ImportedAttributeFixture {
     std::shared_ptr<ImportedAttributeVector> imported_attr;
     std::shared_ptr<test::MockGidToLidMapperFactory> mapper_factory;
 
-    ImportedAttributeFixture(bool use_search_cache_ = false, FastSearchConfig fastSearch = FastSearchConfig::Default);
+    explicit ImportedAttributeFixture(bool use_search_cache_ = false, FastSearchConfig fastSearch = FastSearchConfig::Default);
 
     virtual ~ImportedAttributeFixture();
 
