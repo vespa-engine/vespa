@@ -128,7 +128,7 @@ INJECT SchemaParser:
             return IndexingOperation.fromStream(input, multiline, linguistics, embedders);
         } catch (com.yahoo.schema.parser.ParseException e) {
 
-            ParseException exception = (ParseException) (new ParseException("Error at: " + lastConsumedToken.getLocation()).initCause(e));
+            ParseException exception = (ParseException) (new ParseException("Could not parse indexing language around: " + lastConsumedToken.getLocation()).initCause(e));
 
             tokenToAddExceptionsTo.addParseException(exception, startSplit, endSplit);
         }
