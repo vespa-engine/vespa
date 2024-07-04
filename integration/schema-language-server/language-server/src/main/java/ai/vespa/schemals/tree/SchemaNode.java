@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.parser.Node;
 
 public class SchemaNode {
@@ -124,6 +126,22 @@ public class SchemaNode {
     public boolean isDirty() {
         return originalNode.isDirty();
     }
+
+    public IllegalArgumentException getIllegalArgumentException() {
+        if (originalNode instanceof Token) {
+            return ((Token)originalNode).getIllegalArguemntException();
+        }
+        return null;
+    }
+
+    public ParseExceptionSource getParseExceptionSource() {
+        if (originalNode instanceof Token) {
+            return ((Token)originalNode).getParseExceptionSource();
+        }
+        return null;
+    }
+
+    public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
 
     public String toString() {
         return getText() + " [" + isSchemaType + "]";

@@ -10,18 +10,22 @@ import ai.vespa.schemals.parser.TokenSource;
 
 public class CSTUtils {
 
-    private static Position getPositionFromOffset(Node node, int offset) {
-        TokenSource token = node.getTokenSource();
-        int line = token.getLineFromOffset(offset) - 1;
-        int startOfLineOffset = token.getLineStartOffset(line + 1);
+    private static Position getPositionFromOffset(TokenSource tokenSource, int offset) {
+        int line = tokenSource.getLineFromOffset(offset) - 1;
+        int startOfLineOffset = tokenSource.getLineStartOffset(line + 1);
         int column = offset - startOfLineOffset;
         return new Position(line, column);
     }
 
+    public static Range getRangeFromOffsets(TokenSource tokenSource, int beginOffset, int endOffset) {
+        Position begin = getPositionFromOffset(tokenSource, beginOffset);
+        Position end = getPositionFromOffset(tokenSource, endOffset);
+        return new Range(begin, end);
+    }
+
     public static Range getNodeRange(Node node) {
-        Position start = getPositionFromOffset(node, node.getBeginOffset());
-        Position end = getPositionFromOffset(node, node.getEndOffset());
-        return new Range(start, end);
+        TokenSource tokenSource = node.getTokenSource();
+        return getRangeFromOffsets(tokenSource, node.getBeginOffset(), node.getEndOffset());
     }
 
 
