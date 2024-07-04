@@ -4,8 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
-import java.util.regex.Pattern;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -18,7 +16,7 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
-import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 
@@ -35,6 +33,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.STRUCT);
         add(TokenType.STRUCT_FIELD);
         add(TokenType.TYPE);
+        add(TokenType.SEARCH);
     }};
 
     private static final ArrayList<String> manualyRegisteredLSPNames = new ArrayList<String>() {{
@@ -217,14 +216,18 @@ public class SchemaSemanticTokens implements Visitor {
         return ret;
     }
 
-    private static ArrayList<SemanticTokenMarker> findComments(SchemaNode rootNode) {
-        TokenSource tokenSource = rootNode.getTokenSource();
+    private static ArrayList<SemanticTokenMarker> findComments(SchemaDocumentParser document) {
+        TokenSource tokenSource = document.getRootNode().getTokenSource();
         String source = tokenSource.toString();
         ArrayList<Range> ret = new ArrayList<>();
 
         int index = source.indexOf("#");
         while (index >= 0) {
             Position start = CSTUtils.getPositionFromOffset(tokenSource, index);
+            if (document.getLeafNodeAtPosition(start) != null) {
+                index = source.indexOf("#", index + 1);
+                continue;
+            }
 
             index = source.indexOf("\n", index + 1);
 
@@ -282,7 +285,7 @@ public class SchemaSemanticTokens implements Visitor {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> comments = findComments(node);
+        ArrayList<SemanticTokenMarker> comments = findComments(context.document);
 
         ArrayList<SemanticTokenMarker> markers = traverseCST(node, context.logger);
         ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
