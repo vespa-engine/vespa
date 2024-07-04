@@ -325,7 +325,7 @@ public class SchemaDocumentParser {
 
         if (node.isIndexingElm()) {
             Range nodeRange = node.getRange();
-            var indexingNode = parseIndexingScript(node.getILScript(), nodeRange.getEnd(), ret);
+            var indexingNode = parseIndexingScript(node.getILScript(), nodeRange.getStart(), ret);
 
             if (indexingNode != null) {
                 node.setIndexingNode(indexingNode);
@@ -334,7 +334,9 @@ public class SchemaDocumentParser {
 
         if (node.isFeatureListElm()) {
             Range nodeRange = node.getRange();
-            var featureListNode = parseFeatureList(node.getFeatureListString(), nodeRange.getEnd(), ret);
+            String nodeString = node.get(0).get(0).toString();
+            Position featureListStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
+            var featureListNode = parseFeatureList(node.getFeatureListString(), featureListStart, ret);
 
             if (featureListNode != null) {
                 node.setFeatureListNode(featureListNode);
