@@ -14,6 +14,7 @@ public enum Unit {
     DEPLOYMENT(BaseUnit.DEPLOYMENT, "A deployment on hosted Vespa"),
     DOCUMENT(BaseUnit.DOCUMENT, "Vespa document, a collection of fields defined in a schema file"),
     DOCUMENTID(BaseUnit.DOCUMENTID, "A unique document identifier"),
+    DOLLAR(BaseUnit.DOLLAR, "US dollar"),
     DOLLAR_PER_HOUR(BaseUnit.DOLLAR, BaseUnit.HOUR, "Total current cost of the cluster in $/hr"),
     FAILURE(BaseUnit.FAILURE, "Failures, typically for requests, operations or nodes"),
     FILE(BaseUnit.FILE, "Data file stored on the disk on a node"),
