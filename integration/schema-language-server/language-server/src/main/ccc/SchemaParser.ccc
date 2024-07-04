@@ -169,7 +169,7 @@ INJECT SchemaParser:
 
         return null;
     }
-    
+
 }
 
 INJECT Token :
@@ -188,10 +188,7 @@ INJECT Token :
     }
 
     private ParseExceptionSource parseExceptionSource;
-    private IllegalArgumentException illegalArgumentException;
-
     public ParseExceptionSource getParseExceptionSource() { return parseExceptionSource; }
-    public IllegalArgumentException getIllegalArguemntException() { return illegalArgumentException; }
 
     void addParseException(ParseException e, int beginOffset, int endOffset) {
         parseExceptionSource = new ParseExceptionSource(e, beginOffset, endOffset);
@@ -202,9 +199,21 @@ INJECT Token :
         addParseException(e, getBeginOffset(), getEndOffset());
     }
 
+    public class IllegalArgumentExceptionSource {
+        public IllegalArgumentException illegalArgumentException;
+        public Token endToken;
+
+        IllegalArgumentExceptionSource(IllegalArgumentException e, Token endToken) {
+            illegalArgumentException = e;
+            this.endToken = endToken;
+        }
+    }
+
+    private IllegalArgumentException illegalArgumentException;
+    public IllegalArgumentException getIllegalArguemntException() { return illegalArgumentException; }
+
     void addIllegalArugmentException(IllegalArgumentException e) {
         illegalArgumentException = e;
-        setDirty(true);
     }
 }
 
@@ -657,9 +666,15 @@ void inheritsDocument(ParsedDocument document) :
 void fieldInsideDoc(ParsedDocument document) :
 {
     ParsedField field;
+    Token beginToken = lastConsumedToken.getNext();
 }
     field = fieldElm() {
-        document.addField(field);
+        try {
+            document.addField(field);
+        } catch (IllegalArgumentException e) {
+            // This exception is due to a duplicate name
+            beginToken.getNext().addIllegalArugmentException(e);
+        }
     }
 ;
 
