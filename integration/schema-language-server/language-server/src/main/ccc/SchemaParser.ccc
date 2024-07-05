@@ -2304,14 +2304,14 @@ String summaryFeaturesElm(ParsedRankProfile profile) :
     String inherited = null;
 }
  
-    ( <SUMMARYFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1).trim(); } |
+    ( <SUMMARYFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } |
       <SUMMARYFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
-                                                              lastConsumedToken.toString().lastIndexOf("}")).trim(); } |
+                                                              lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } |
       <SUMMARYFEATURES_ML_INHERITS> {
           int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
           String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
           profile.setInheritedSummaryFeatures(rest.substring(0, rest.indexOf(" ")).trim());
-          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}")).trim();
+          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/
       }
     )
     {
@@ -2358,14 +2358,14 @@ String matchFeaturesElm(ParsedRankProfile profile) :
     String features;
 }
 
-    ( <MATCHFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1).trim(); } |
+    ( <MATCHFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } |
       <MATCHFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
-                                                                             lastConsumedToken.toString().lastIndexOf("}")).trim(); } |
+                                                                             lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } |
       <MATCHFEATURES_ML_INHERITS> {
           int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
           String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
           profile.setInheritedMatchFeatures(rest.substring(0, rest.indexOf(" ")).trim());
-          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}")).trim();
+          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/
       }
     )
     {
@@ -2383,9 +2383,9 @@ String rankFeaturesElm(ParsedRankProfile profile) :
     String features;
 }
 
-    ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1).trim(); } 
+    ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } 
     | <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
-                                                                            lastConsumedToken.toString().lastIndexOf("}")).trim(); } )
+                                                                            lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } )
     {
         //FeatureList featureList = getFeatureList(features);
         //if (featureList != null) {

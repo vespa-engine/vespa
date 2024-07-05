@@ -12,7 +12,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
-import ai.vespa.schemals.context.parser.IdentifyDiryNodes;
+import ai.vespa.schemals.context.parser.IdentifyDirtyNodes;
 import ai.vespa.schemals.context.parser.IdentifySymbolDefinition;
 import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.context.parser.IdentifyType;
@@ -34,6 +34,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
+import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
 
@@ -68,7 +69,7 @@ public class SchemaDocumentParser {
             add(new IdentifyType(logger));
             add(new IdentifySymbolReferences(logger, self, schemaIndex));
             add(new IdentifyDeprecatedToken(logger));
-            add(new IdentifyDiryNodes(logger));
+            add(new IdentifyDirtyNodes(logger));
         }};
 
         if (content != null) {
@@ -398,11 +399,11 @@ public class SchemaDocumentParser {
             return parser.rootNode();
         } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
             logger.println("Encountered parsing error in parsing ILScript");
-            //Range range = ILUtils.getNodeRange(pe.getToken());
-            //range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
-            //range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
+            Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
+            range.setStart(CSTUtils.addPositions(listStart, range.getStart()));
+            range.setEnd(CSTUtils.addPositions(listStart, range.getEnd()));
 
-            diagnostics.add(new Diagnostic(new Range(listStart, listStart), pe.getMessage()));
+            diagnostics.add(new Diagnostic(range, pe.getMessage()));
         } catch(IllegalArgumentException ex) {
             logger.println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
         }
