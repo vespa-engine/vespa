@@ -4,8 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
-import java.util.regex.Pattern;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -16,11 +14,26 @@ import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
-import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.fieldSetElm;
+import ai.vespa.schemals.parser.ast.fieldsElm;
+import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsRankProfile;
+import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.structDefinitionElm;
+import ai.vespa.schemals.parser.ast.structFieldDefinition;
+import ai.vespa.schemals.parser.ast.structFieldElm;
 
 public class SchemaSemanticTokens implements Visitor {
 
@@ -35,6 +48,8 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.STRUCT);
         add(TokenType.STRUCT_FIELD);
         add(TokenType.TYPE);
+        add(TokenType.FUNCTION);
+        add(TokenType.RANK_PROPERTIES);
     }};
 
     private static final ArrayList<String> manualyRegisteredLSPNames = new ArrayList<String>() {{
@@ -56,24 +71,27 @@ public class SchemaSemanticTokens implements Visitor {
         put(TokenType.TENSOR_TYPE, "type");
     }};
     
-    private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
-        put("ai.vespa.schemals.parser.ast.rootSchema", "namespace");
-        put("ai.vespa.schemals.parser.ast.documentElm", "class");
-        put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
-        put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
-        put("ai.vespa.schemals.parser.ast.fieldsElm", "variable");
-        put("ai.vespa.schemals.parser.ast.structFieldElm", "variable");
-        put("ai.vespa.schemals.parser.ast.structDefinitionElm", "variable");
-        put("ai.vespa.schemals.parser.ast.structFieldDefinition", "variable");
-        put("ai.vespa.schemals.parser.ast.rankProfile", "variable");
+    private static final HashMap<Class<? extends Node>, String> identifierTypeLSPNameMap = new HashMap<Class<? extends Node>, String>() {{
+        put(rootSchema.class, "namespace");
+        put(documentElm.class, "class");
+        put(inheritsDocument.class, "class");
+        put(fieldElm.class, "variable");
+        put(fieldSetElm.class, "variable");
+        put(fieldsElm.class, "variable");
+        put(structFieldElm.class, "variable");
+        put(structDefinitionElm.class, "variable");
+        put(structFieldDefinition.class, "variable");
+        put(rankProfile.class, "variable");
+        put(inheritsRankProfile.class, "variable");
+        put(functionElm.class, "function");
     }};
 
     private static ArrayList<String> tokenTypes;
     private static Map<TokenType, Integer> tokenTypeMap;
-    private static Map<String, Integer> identifierTypeMap;
+    private static Map<Class<? extends Node>, Integer> identifierTypeMap;
 
-    private static Integer addTokenType(String name) {
-        Integer index = tokenTypes.indexOf(name);
+    private static int addTokenType(String name) {
+        int index = tokenTypes.indexOf(name);
         if (index == -1) {
             index = tokenTypes.size();
             tokenTypes.add(name);
@@ -84,22 +102,22 @@ public class SchemaSemanticTokens implements Visitor {
     static {
         tokenTypes = new ArrayList<String>();
         tokenTypeMap = new HashMap<TokenType, Integer>();
-        identifierTypeMap = new HashMap<String, Integer>();
+        identifierTypeMap = new HashMap<Class<? extends Node>, Integer>();
 
         tokenTypes.addAll(manualyRegisteredLSPNames);
 
         for (Map.Entry<TokenType, String> set : tokenTypeLSPNameMap.entrySet()) {
-            Integer index = addTokenType(set.getValue());
+            int index = addTokenType(set.getValue());
             tokenTypeMap.put(set.getKey(), index);
         }
 
-        Integer keywordIndex = addTokenType("keyword");
+        int keywordIndex = addTokenType("keyword");
         for (TokenType type : keywordTokens) {
             tokenTypeMap.put(type, keywordIndex);
         }
 
-        for (Map.Entry<String, String> set : identifierTypeLSPNameMap.entrySet()) {
-            Integer index = addTokenType(set.getValue());
+        for (Map.Entry<Class<? extends Node>, String> set : identifierTypeLSPNameMap.entrySet()) {
+            int index = addTokenType(set.getValue());
             identifierTypeMap.put(set.getKey(), index);
         }
 
@@ -122,11 +140,11 @@ public class SchemaSemanticTokens implements Visitor {
         private int tokenType;
         private Range range;
 
-        SemanticTokenMarker(Integer tokenType, SchemaNode node) {
+        SemanticTokenMarker(int tokenType, SchemaNode node) {
             this(tokenType, node.getRange());
         }
         
-        SemanticTokenMarker(Integer tokenType, Range range) {
+        SemanticTokenMarker(int tokenType, Range range) {
             this.tokenType = tokenType;
             this.range = range;
         }
@@ -146,7 +164,7 @@ public class SchemaSemanticTokens implements Visitor {
         }
 
         static ArrayList<Integer> concatCompactForm(ArrayList<SemanticTokenMarker> markers) {
-            ArrayList<Integer> ret = new ArrayList<Integer>(markers.size() * 5);
+            ArrayList<Integer> ret = new ArrayList<>(markers.size() * 5);
 
             if (markers.size() == 0) {
                 return ret;
@@ -173,17 +191,16 @@ public class SchemaSemanticTokens implements Visitor {
 
         TokenType type = node.getType();
 
-        if (node.isSchemaType()) {
+        if (node instanceof TypeNode) {
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
         } else if (type != null) {
-            if (node.isUserDefinedIdentifier()) {
+            if (node instanceof SymbolNode) {
                 SchemaNode parent = node.getParent();
-                String parnetClassName = parent.getIdentifierString();
-                Integer tokenType = identifierTypeMap.get(parnetClassName);
+                Integer tokenType = identifierTypeMap.get(parent.getIdentifierClass());
                 
                 if (tokenType != null) {
                     ret.add(new SemanticTokenMarker(tokenType, node));
@@ -217,14 +234,18 @@ public class SchemaSemanticTokens implements Visitor {
         return ret;
     }
 
-    private static ArrayList<SemanticTokenMarker> findComments(SchemaNode rootNode) {
-        TokenSource tokenSource = rootNode.getTokenSource();
+    private static ArrayList<SemanticTokenMarker> findComments(SchemaDocumentParser document) {
+        TokenSource tokenSource = document.getRootNode().getTokenSource();
         String source = tokenSource.toString();
         ArrayList<Range> ret = new ArrayList<>();
 
         int index = source.indexOf("#");
         while (index >= 0) {
             Position start = CSTUtils.getPositionFromOffset(tokenSource, index);
+            if (document.getLeafNodeAtPosition(start) != null) {
+                index = source.indexOf("#", index + 1);
+                continue;
+            }
 
             index = source.indexOf("\n", index + 1);
 
@@ -282,7 +303,7 @@ public class SchemaSemanticTokens implements Visitor {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> comments = findComments(node);
+        ArrayList<SemanticTokenMarker> comments = findComments(context.document);
 
         ArrayList<SemanticTokenMarker> markers = traverseCST(node, context.logger);
         ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(

@@ -9,7 +9,6 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.SchemaDocumentLexer;
 import ai.vespa.schemals.context.SchemaDocumentLexer.LexicalToken;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 
 public class TypeCompletionProvider implements CompletionProvider {
