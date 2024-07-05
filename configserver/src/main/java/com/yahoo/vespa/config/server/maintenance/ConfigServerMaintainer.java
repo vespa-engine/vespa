@@ -31,15 +31,15 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
     /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
-                           Clock clock, Duration interval, boolean useLock) {
-       this(applicationRepository, curator, flagSource, clock, interval, useLock, false);
+                           Clock clock, Duration interval, boolean acquireLock) {
+       this(applicationRepository, curator, flagSource, clock, interval, acquireLock, false);
     }
 
     /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
-                           Clock clock, Duration interval, boolean useLock, boolean ignoreCollision) {
-        super(null, interval, clock, new JobControl(new JobControlFlags(curator, flagSource, useLock)),
-              new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), ignoreCollision);
+                           Clock clock, Duration interval, boolean acquireLock, boolean ignoreCollision) {
+        super(null, interval, clock, new JobControl(new JobControlFlags(curator, flagSource)),
+              new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), ignoreCollision, 1.0, acquireLock);
         this.applicationRepository = applicationRepository;
     }
 
@@ -69,12 +69,10 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
         private final Curator curator;
         private final ListFlag<String> inactiveJobsFlag;
-        private final boolean useLock;
 
-        public JobControlFlags(Curator curator, FlagSource flagSource, boolean useLock) {
+        public JobControlFlags(Curator curator, FlagSource flagSource) {
             this.curator = curator;
             this.inactiveJobsFlag = PermanentFlags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
-            this.useLock = useLock;
         }
 
         @Override
@@ -84,9 +82,7 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
         @Override
         public Mutex lockMaintenanceJob(String job) {
-            return (useLock)
-                    ? curator.lock(lockRoot.append(job), Duration.ofSeconds(1))
-                    : () -> { };
+            return curator.lock(lockRoot.append(job), Duration.ofSeconds(1));
         }
 
     }

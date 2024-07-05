@@ -29,7 +29,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                                    MetricsFetcher metricsFetcher,
                                    Duration interval,
                                    Metric metric) {
-        super(nodeRepository, interval, metric);
+        super(nodeRepository, interval, metric, false); // No locking because this not modify shared state
         this.metricsFetcher = metricsFetcher;
     }
 

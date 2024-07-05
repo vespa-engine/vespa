@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -35,7 +36,8 @@ public class ClusterModelTest {
         var target = model.loadAdjustment().scaled(nodeResources());
         int testingNodes = 5 - 1;
         int currentNodes = 5 - 1;
-        assertEquals(nodeResources(), model.loadWith(testingNodes, 1).scaled(Load.one().divide(model.loadWith(currentNodes, 1)).scaled(target)));
+        Instant now = new ManualClock().instant();
+        assertEquals(nodeResources(), model.loadWith(testingNodes, 1, now).scaled(Load.one().divide(model.loadWith(currentNodes, 1, now)).scaled(target)));
     }
 
     @Test
