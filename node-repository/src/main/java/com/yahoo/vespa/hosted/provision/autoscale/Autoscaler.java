@@ -79,7 +79,7 @@ public class Autoscaler {
         var loadAdjustment = model.loadAdjustment();
         if (logDetails) {
             log.info("Application: " + application.id().toShortString() + ", loadAdjustment: " +
-                     loadAdjustment.toString() + ", ideal " + model.idealLoad() + ", " + model.cpu(nodeRepository.clock().instant()));
+                     loadAdjustment.toString() + ", ideal " + model.idealLoad() + ", " + model.cpu());
         }
 
         var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits, logDetails);

@@ -24,12 +24,8 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
     private final NodeRepository nodeRepository;
 
     public NodeRepositoryMaintainer(NodeRepository nodeRepository, Duration interval, Metric metric) {
-        this(nodeRepository, interval, metric, true);
-    }
-
-    public NodeRepositoryMaintainer(NodeRepository nodeRepository, Duration interval, Metric metric, boolean acquireLock) {
         super(null, interval, nodeRepository.clock(), nodeRepository.jobControl(),
-              new NodeRepositoryJobMetrics(metric), nodeRepository.database().cluster(), acquireLock, 1.0, acquireLock);
+              new NodeRepositoryJobMetrics(metric), nodeRepository.database().cluster(), true);
         this.nodeRepository = nodeRepository;
     }
 

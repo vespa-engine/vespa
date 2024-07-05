@@ -7,7 +7,6 @@ import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -120,8 +119,7 @@ public class AllocationOptimizer {
                                             Limits limits,
                                             Load loadAdjustment,
                                             ClusterModel model) {
-        Instant now = nodeRepository.clock().instant();
-        var loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment, now);
+        var loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment);
 
         // Leave some headroom above the ideal allocation to avoid immediately needing to scale back up
         if (loadAdjustment.cpu() < 1 && (1.0 - loadWithTarget.cpu()) < headroomRequiredToScaleDown)
@@ -131,7 +129,7 @@ public class AllocationOptimizer {
         if (loadAdjustment.disk() < 1 && (1.0 - loadWithTarget.disk()) < headroomRequiredToScaleDown)
             loadAdjustment = loadAdjustment.withDisk(Math.min(1.0, loadAdjustment.disk() * (1.0 + headroomRequiredToScaleDown)));
 
-        loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment, now);
+        loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment);
 
         var scaled = loadWithTarget.scaled(model.current().realResources().nodeResources());
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
