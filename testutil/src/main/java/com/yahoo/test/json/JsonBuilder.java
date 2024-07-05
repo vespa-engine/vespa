@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.io.JsonStringEncoder;
  * @author hakonhall
  */
 class JsonBuilder {
+
     private final JsonStringEncoder jsonStringEncoder = JsonStringEncoder.getInstance();
     private final StringBuilder builder = new StringBuilder();
     private final String indentation;
@@ -72,4 +73,5 @@ class JsonBuilder {
 
     @Override
     public String toString() { return builder.toString(); }
+
 }

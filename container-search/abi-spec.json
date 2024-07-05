@@ -8519,7 +8519,8 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
-      "public com.yahoo.tensor.TensorType tensorType()"
+      "public com.yahoo.tensor.TensorType tensorType()",
+      "public java.lang.String toString()"
     ],
     "fields" : [ ]
   },
@@ -8564,6 +8565,7 @@
     ],
     "methods" : [
       "public com.yahoo.search.schema.Field$Type$Kind kind()",
+      "public java.lang.String toString()",
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]
