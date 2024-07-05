@@ -1187,7 +1187,7 @@ MergeThrottler::makeAbortReply(api::StorageCommand& cmd,
                                std::string_view reason) const
 {
     LOG(debug, "Aborting message %s with reason '%s'",
-        cmd.toString().c_str(), reason.data());
+        cmd.toString().c_str(), std::string(reason).c_str());
     std::unique_ptr<api::StorageReply> reply(cmd.makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, reason));
     return std::shared_ptr<api::StorageMessage>(reply.release());

@@ -762,12 +762,12 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     }
 
     for (const auto &fupd : upd.getUpdates()) {
-        LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().data());
+        LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().c_str());
         auto found = _attrMap.find(fupd.getField().getName());
         AttributeVector * attrp = (found != _attrMap.end()) ? found->second.attribute : nullptr;
         onUpdate.onUpdateField(fupd.getField(), attrp);
         if (__builtin_expect(attrp == nullptr, false)) {
-            LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().data());
+            LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().c_str());
             continue;
         }
         // TODO: Check if we must use > due to multiple entries for same
