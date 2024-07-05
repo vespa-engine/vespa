@@ -72,8 +72,7 @@ public:
     JSONStringer & operator = (JSONStringer &&) = default;
     ~JSONStringer();
     JSONStringer & clear();
-    std::string_view view() const;
-    std::string str() const;
+    std::string_view toString() const;
 };
 
 }

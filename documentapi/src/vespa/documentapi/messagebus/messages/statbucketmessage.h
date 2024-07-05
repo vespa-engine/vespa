@@ -57,10 +57,10 @@ public:
      *
      * @param value The selection string to set.
      */
-    void setDocumentSelection(string value) { _documentSelection = std::move(value); };
+    void setDocumentSelection(const string &value) { _documentSelection = value; };
 
     const string &getBucketSpace() const { return _bucketSpace; }
-    void setBucketSpace(string value) { _bucketSpace = std::move(value); }
+    void setBucketSpace(const string &value) { _bucketSpace = value; }
     uint32_t getType() const override;
     string toString() const override { return "statbucketmessage"; }
 };

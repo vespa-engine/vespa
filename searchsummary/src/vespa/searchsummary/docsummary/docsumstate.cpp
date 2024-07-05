@@ -6,6 +6,7 @@
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/juniper/queryhandle.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/common/matching_elements.h>
@@ -31,7 +32,7 @@ GetDocsumsState::DynTeaserState::~DynTeaserState() = default;
 std::unique_ptr<juniper::QueryHandle>&
 GetDocsumsState::DynTeaserState::get_query(std::string_view field)
 {
-    return _queries[vespalib::string(field)];
+    return _queries[field];
 }
 
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
@@ -86,8 +87,8 @@ GetDocsumsState::parse_locations()
         search::SimpleQueryStackDumpIterator iterator(stackdump);
         while (iterator.next()) {
             if (iterator.getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
-                vespalib::string view = iterator.index_as_string();
-                vespalib::string term(iterator.getTerm());
+                vespalib::string view = iterator.getIndexName();
+                vespalib::string term = iterator.getTerm();
                 GeoLocationParser parser;                
                 if (parser.parseNoField(term)) {
                     auto attr_name = PositionDataType::getZCurveFieldName(view);

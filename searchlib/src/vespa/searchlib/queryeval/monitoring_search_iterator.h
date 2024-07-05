@@ -64,29 +64,29 @@ public:
         std::stack<StructType> _stack;
 
         void addIndent();
-        void addText(std::string_view value);
+        void addText(const vespalib::string &value);
         void addInt(int64_t value, const vespalib::string &desc);
         void addFloat(double value, const vespalib::string &desc);
         void openScope();
         void closeScope();
 
     public:
-        explicit Dumper(int indent = 4,
+        Dumper(int indent = 4,
                uint32_t textFormatWidth = 1,
                uint32_t intFormatWidth = 1,
                uint32_t floatFormatWidth = 1,
                uint32_t floatFormatPrecision = 2);
-        ~Dumper() override;
+        ~Dumper();
 
         vespalib::string toString() const { return _str; }
 
-        void openStruct(std::string_view name, std::string_view type) override;
+        void openStruct(const vespalib::string &name, const vespalib::string &type) override;
         void closeStruct() override;
-        void visitBool(std::string_view name, bool value) override;
-        void visitInt(std::string_view name, int64_t value) override;
-        void visitFloat(std::string_view name, double value) override;
-        void visitString(std::string_view name, std::string_view value) override;
-        void visitNull(std::string_view name) override;
+        void visitBool(const vespalib::string &name, bool value) override;
+        void visitInt(const vespalib::string &name, int64_t value) override;
+        void visitFloat(const vespalib::string &name, double value) override;
+        void visitString(const vespalib::string &name, const vespalib::string &value) override;
+        void visitNull(const vespalib::string &name) override;
         void visitNotImplemented() override;
     };
 
@@ -104,7 +104,7 @@ public:
     MonitoringSearchIterator(const vespalib::string &name,
                              SearchIterator::UP search,
                              bool collectHitSkipStats);
-    ~MonitoringSearchIterator() override;
+    ~MonitoringSearchIterator();
 
     // Overrides SearchIterator
     void doSeek(uint32_t docId) override;

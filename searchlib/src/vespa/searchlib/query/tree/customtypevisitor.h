@@ -25,7 +25,7 @@ namespace search::query {
 template <class NodeTypes>
 class CustomTypeVisitor : public QueryVisitor {
 public:
-    virtual ~CustomTypeVisitor() = default;
+    virtual ~CustomTypeVisitor() {}
 
     virtual void visit(typename NodeTypes::And &) = 0;
     virtual void visit(typename NodeTypes::AndNot &) = 0;

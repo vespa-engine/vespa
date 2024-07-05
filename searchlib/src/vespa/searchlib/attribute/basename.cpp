@@ -32,9 +32,9 @@ BaseName::createAttributeName(std::string_view s)
 {
     size_t p(s.rfind('/'));
     if (p == string::npos) {
-       return vespalib::string(s);
+       return s;
     } else {
-        return vespalib::string(s.substr(p+1));
+        return s.substr(p+1);
     }
 }
 

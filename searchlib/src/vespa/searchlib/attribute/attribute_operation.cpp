@@ -18,21 +18,21 @@ namespace {
 template <typename T>
 struct Inc {
     using V = T;
-    explicit Inc(T ) {}
+    Inc(T ) {}
     T operator()(T oldVal) const { return oldVal + 1; }
 };
 
 template <typename T>
 struct Dec {
     using V = T;
-    explicit Dec(T ) {}
+    Dec(T ) {}
     T operator()(T oldVal) const { return oldVal - 1; }
 };
 
 template <typename T>
 struct Add {
     using V = T;
-    explicit Add(T m) : _m(m) {}
+    Add(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal + _m; }
 };
@@ -40,7 +40,7 @@ struct Add {
 template <typename T>
 struct Mul {
     using V = T;
-    explicit Mul(T m) : _m(m) {}
+    Mul(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal * _m; }
 };
@@ -48,7 +48,7 @@ struct Mul {
 template <typename T>
 struct Div {
     using V = T;
-    explicit Div(T m) : _m(m) {}
+    Div(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal / _m; }
 };
@@ -56,7 +56,7 @@ struct Div {
 template <typename T>
 struct Mod {
     using V = T;
-    explicit Mod(T m) : _m(m) {}
+    Mod(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal % static_cast<int64_t>(_m); }
 };
@@ -64,21 +64,21 @@ struct Mod {
 template <>
 struct Mod<double> {
     using V = double;
-    explicit Mod(double ) {}
+    Mod(double ) {}
     double operator()(double oldVal) const { return oldVal; }
 };
 
 template <>
 struct Mod<float> {
     using V = float;
-    explicit Mod(float ) {}
+    Mod(float ) {}
     float operator()(float oldVal) const { return oldVal; }
 };
 
 template <typename T>
 struct Set {
     using V = T;
-    explicit Set(T m) : _m(m) {}
+    Set(T m) : _m(m) {}
     T _m;
     T operator()(T) const { return  _m; }
 };
@@ -206,7 +206,7 @@ Operation::create(std::string_view s)
             s = s.substr(2);
         }
     }
-    return {op, s};
+    return Operation(op, s);
 }
 
 template<typename T, typename OP>
@@ -270,7 +270,7 @@ Operation::create(V vector) const {
         case Type::SET:
             return createOperation<T, UpdateFast<A, Set<T>>>(std::move(vector), value);
         default:
-            return {};
+            return std::unique_ptr<AttributeOperation>();
     }
 }
 
@@ -302,7 +302,7 @@ template <typename V>
 std::unique_ptr<AttributeOperation>
 Operation::create(BasicType type, V hits) const {
     if ( ! valid()) {
-        return {};
+        return std::unique_ptr<AttributeOperation>();
     }
     switch (type.type()) {
         case BasicType::INT64:
@@ -316,7 +316,7 @@ Operation::create(BasicType type, V hits) const {
         case BasicType::FLOAT:
             return create<FloatT, V>(std::move(hits));
         default:
-            return {};
+            return std::unique_ptr<AttributeOperation>();
     }
 }
 
@@ -324,19 +324,19 @@ Operation::create(BasicType type, V hits) const {
 
 template <typename Hits>
 std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType type, std::string_view operation, Hits docs) {
+AttributeOperation::create(BasicType type, const vespalib::string & operation, Hits docs) {
     Operation op = Operation::create(operation);
     return op.create<Hits>(type, std::move(docs));
 }
 
 template std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType, std::string_view, std::vector<uint32_t>);
+AttributeOperation::create(BasicType, const vespalib::string &, std::vector<uint32_t>);
 
 template std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType, std::string_view, std::vector<Hit>);
+AttributeOperation::create(BasicType, const vespalib::string &, std::vector<Hit>);
 
 template std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType, std::string_view, FullResult);
+AttributeOperation::create(BasicType, const vespalib::string &, FullResult);
 
 }
 

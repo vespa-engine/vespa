@@ -29,7 +29,7 @@ ConfigParser::deQuote(const vespalib::string & source)
         isQuoted = false;
     }
 
-    while (true) {
+    while (1) {
         const char hexchars[] = "0123456789abcdefABCDEF";
 
         char c = *s++;
@@ -85,7 +85,8 @@ ConfigParser::deQuote(const vespalib::string & source)
 namespace {
 
 bool
-getValueForKey(std::string_view key, std::string_view line, vespalib::string& retval)
+getValueForKey(std::string_view key, std::string_view line,
+               vespalib::string& retval)
 {
     if (line.length() <= key.length()) {
         return false;
@@ -155,9 +156,10 @@ ConfigParser::stripLinesForKey(std::string_view key,
                                std::set<vespalib::string>& config)
 {
     vespalib::string value;
-    for (auto it = config.begin(); it != config.end();) {
+    for (std::set<vespalib::string>::iterator it = config.begin(); it != config.end();) {
         if (getValueForKey(key, *it, value)) {
-            it = config.erase(it);
+            std::set<vespalib::string>::iterator it2 = it++;
+            config.erase(it2);
         } else {
             ++it;
         }
@@ -223,7 +225,7 @@ ConfigParser::splitArray(Cfg config)
         vespalib::string value = config[i].substr(pos + 1);
 
         if (key != lastValue) {
-            items.emplace_back();
+            items.push_back(StringVector());
             lastValue = key;
         }
 
@@ -241,7 +243,7 @@ ConfigParser::stripWhitespace(std::string_view source)
 {
     // Remove leading spaces and return.
     if (source.empty()) {
-        return vespalib::string(source);
+        return source;
     }
     size_t start = 0;
     bool found = false;
@@ -271,7 +273,7 @@ ConfigParser::stripWhitespace(std::string_view source)
                 found = true;
         }
     }
-    return std::string(source.substr(start, stop - start + 1));
+    return source.substr(start, stop - start + 1);
 }
 
 vespalib::string

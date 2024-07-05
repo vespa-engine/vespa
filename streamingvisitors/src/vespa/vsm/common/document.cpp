@@ -23,8 +23,7 @@ vespalib::asciistream & operator << (vespalib::asciistream & os, const FieldRef 
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const StringFieldIdTMap & f)
 {
-    std::map<vespalib::string, FieldIdT> ordered(f._map.begin(), f._map.end());
-    for (const auto& elem : ordered) {
+    for (const auto& elem : f._map) {
         os << elem.first << " = " << elem.second << '\n';
     }
     return os;
@@ -66,7 +65,7 @@ size_t StringFieldIdTMap::highestFieldNo() const
   return maxFNo;
 }
 
-Document::~Document() = default;
+Document::~Document() { }
 
 }
 

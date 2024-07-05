@@ -32,10 +32,10 @@ class MyAttributeContext : public IAttributeContext {
     const IAttributeVector &_attr;
 public:
     MyAttributeContext(const IAttributeVector &attr) : _attr(attr) {}
-     const IAttributeVector *getAttribute(std::string_view) const override {
+     const IAttributeVector *getAttribute(const string &) const override {
         return &_attr;
     }
-    const IAttributeVector *getAttributeStableEnum(std::string_view) const override {
+    const IAttributeVector *getAttributeStableEnum(const string &) const override {
         LOG_ABORT("MyAttributeContext::getAttributeStableEnum should not be reached");
     }
     void getAttributeList(vector<const IAttributeVector *> &) const override {
@@ -43,7 +43,7 @@ public:
     }
 
     void
-    asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
+    asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
         LOG_ABORT("MyAttributeContext::asyncForAttribute should not be reached");
     }
 };
@@ -53,17 +53,18 @@ class MyAttributeManager : public IAttributeManager {
 public:
 
     MyAttributeManager(const IAttributeVector &attr) : _attr(attr) {}
-    AttributeGuard::UP getAttribute(std::string_view) const override {
+    AttributeGuard::UP getAttribute(const string &) const override {
         LOG_ABORT("should not be reached");
     }
-    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view, bool) const override {
+    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool) const override {
         LOG_ABORT("should not be reached");
     }
     void getAttributeList(vector<AttributeGuard> &) const override {
         LOG_ABORT("should not be reached");
     }
 
-    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
+    void
+    asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
         LOG_ABORT("should not be reached");
     }
 
@@ -71,7 +72,7 @@ public:
         return std::make_unique<MyAttributeContext>(_attr);
     }
 
-    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view) const override {
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string&) const override {
         LOG_ABORT("should not be reached");
     }
 };

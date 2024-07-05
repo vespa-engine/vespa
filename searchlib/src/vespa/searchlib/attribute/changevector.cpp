@@ -7,15 +7,15 @@ LOG_SETUP(".searchlib.attribute.changevector");
 
 namespace search {
 
-StringChangeData::StringChangeData(vespalib::string s) noexcept
-    : _s(std::move(s))
+StringChangeData::StringChangeData(const vespalib::string & s)
+    : _s(s)
 {
-    if (StringAttribute::countZero(_s.data(), _s.size()) > 0) {
+    if (StringAttribute::countZero(s.data(), s.size()) > 0) {
         LOG(warning,
             "StringChangeData(): "
             "Input string contains <null> byte(s); "
             "truncating. (ticket #3079131)");
-        _s.assign(_s.data()); // keep data up to (not including) first '\0' byte
+        _s.assign(s.data()); // keep data up to (not including) first '\0' byte
     }
 }
 

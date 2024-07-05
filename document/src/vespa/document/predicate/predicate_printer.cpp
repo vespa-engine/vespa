@@ -22,8 +22,9 @@ PredicatePrinter::str() const {
     return _out->str();
 }
 
-PredicatePrinter::PredicatePrinter() : _out(std::make_unique<vespalib::asciistream>()), _negated(false) {}
-PredicatePrinter::~PredicatePrinter() = default;
+PredicatePrinter::PredicatePrinter() : _out(new vespalib::asciistream()), _negated(false) {}
+PredicatePrinter::~PredicatePrinter() { }
+
 
 void PredicatePrinter::visitFeatureSet(const Inspector &in) {
     printEscapedString(*_out, in[Predicate::KEY]);

@@ -9,12 +9,11 @@
 #include <vespa/messagebus/network/inetwork.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".messagebus");
 
-using namespace vespalib::make_string_short;
+using vespalib::make_string;
 using namespace std::chrono_literals;
 
 namespace {
@@ -29,7 +28,11 @@ private:
     mbus::Resender *_resender;
 
 public:
-    explicit ResenderTask(mbus::Resender &resender) noexcept : _resender(&resender) { }
+    explicit ResenderTask(mbus::Resender &resender)
+        : _resender(&resender)
+    {
+        // empty
+    }
 
     void run() override {
         _resender->resendScheduled();
@@ -54,7 +57,7 @@ private:
 
 public:
     ShutdownTask(mbus::INetwork &net, mbus::Messenger &msn,
-                 bool &done, vespalib::Gate &gate) noexcept
+                 bool &done, vespalib::Gate &gate)
         : _net(net),
           _msn(msn),
           _done(done),
@@ -169,7 +172,8 @@ MessageBus::createSourceSession(IReplyHandler &handler)
 }
 
 SourceSession::UP
-MessageBus::createSourceSession(IReplyHandler &handler, const SourceSessionParams &params)
+MessageBus::createSourceSession(IReplyHandler &handler,
+                                const SourceSessionParams &params)
 {
     return createSourceSession(SourceSessionParams(params).setReplyHandler(handler));
 }
@@ -261,7 +265,9 @@ MessageBus::getRoutingTable(const string &protocol)
 }
 
 IRoutingPolicy::SP
-MessageBus::getRoutingPolicy(const string &protocolName, const string &policyName, const string &policyParam)
+MessageBus::getRoutingPolicy(const string &protocolName,
+                             const string &policyName,
+                             const string &policyParam)
 {
     return _protocolRepository->getRoutingPolicy(protocolName, policyName, policyParam);
 }
@@ -288,7 +294,7 @@ MessageBus::handleMessage(Message::UP msg)
 bool
 MessageBus::setupRouting(RoutingSpec spec)
 {
-    vespalib::hash_map<string, RoutingTable::SP> rtm;
+    std::map<string, RoutingTable::SP> rtm;
     for (uint32_t i = 0; i < spec.getNumTables(); ++i) {
         const RoutingTableSpec &cfg = spec.getTable(i);
         if (getProtocol(cfg.getProtocol()) == nullptr) { // protocol not found
@@ -306,7 +312,7 @@ MessageBus::setupRouting(RoutingSpec spec)
 }
 
 IProtocol *
-MessageBus::getProtocol(std::string_view name)
+MessageBus::getProtocol(const string &name)
 {
     return _protocolRepository->getProtocol(name);
 }
@@ -347,7 +353,8 @@ void
 MessageBus::handleReply(Reply::UP reply)
 {
     _pendingCount.fetch_sub(1, std::memory_order_relaxed);
-    _pendingSize.fetch_sub(reply->getContext().value.UINT64, std::memory_order_relaxed);
+    _pendingSize.fetch_sub(reply->getContext().value.UINT64,
+                           std::memory_order_relaxed);
     IReplyHandler &handler = reply->getCallStack().pop(*reply);
     deliverReply(std::move(reply), handler);
 }
@@ -360,7 +367,7 @@ MessageBus::handleDiscard(Context ctx)
 }
 
 void
-MessageBus::deliverMessage(Message::UP msg, std::string_view session)
+MessageBus::deliverMessage(Message::UP msg, const string &session)
 {
     IMessageHandler *msgHandler = nullptr;
     {
@@ -372,10 +379,10 @@ MessageBus::deliverMessage(Message::UP msg, std::string_view session)
     }
     if (msgHandler == nullptr) {
         deliverError(std::move(msg), ErrorCode::UNKNOWN_SESSION,
-                     fmt("Session '%s' does not exist.", string(session).c_str()));
+                     make_string("Session '%s' does not exist.", session.c_str()));
     } else if (!checkPending(*msg)) {
         deliverError(std::move(msg), ErrorCode::SESSION_BUSY,
-                     fmt("Session '%s' is busy, try again later.", string(session).c_str()));
+                     make_string("Session '%s' is busy, try again later.", session.c_str()));
     } else {
         _msn->deliverMessage(std::move(msg), *msgHandler);
     }
@@ -417,6 +424,3 @@ MessageBus::setMaxPendingSize(uint32_t maxSize)
 }
 
 } // namespace mbus
-
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, std::shared_ptr<mbus::RoutingTable>);
-VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, mbus::IMessageHandler *);

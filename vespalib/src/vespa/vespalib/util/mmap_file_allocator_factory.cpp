@@ -13,7 +13,9 @@ MmapFileAllocatorFactory::MmapFileAllocatorFactory()
 {
 }
 
-MmapFileAllocatorFactory::~MmapFileAllocatorFactory() = default;
+MmapFileAllocatorFactory::~MmapFileAllocatorFactory()
+{
+}
 
 void
 MmapFileAllocatorFactory::setup(const vespalib::string& dir_name)

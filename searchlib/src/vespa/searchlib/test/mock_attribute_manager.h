@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <map>
+
 namespace search::attribute::test {
 
 class MockAttributeManager : public search::IAttributeManager {
@@ -15,19 +16,19 @@ protected:
 
     AttributeMap _attributes;
 
-    AttributeVector::SP findAttribute(std::string_view name) const;
+    AttributeVector::SP findAttribute(const vespalib::string &name) const;
 public:
     MockAttributeManager();
     ~MockAttributeManager() override;
 
-    AttributeGuard::UP getAttribute(std::string_view name) const override;
-    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override;
-    std::unique_ptr<AttributeReadGuard> getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const override;
+    AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
+    void asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override;
+    std::unique_ptr<AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override;
     void getAttributeList(std::vector<AttributeGuard> &list) const override;
     IAttributeContext::UP createContext() const override;
-    void addAttribute(std::string_view name, const AttributeVector::SP &attr);
+    void addAttribute(const vespalib::string &name, const AttributeVector::SP &attr);
     void addAttribute(const AttributeVector::SP &attr);
-    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const override;
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
 };
 
 }

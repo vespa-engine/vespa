@@ -45,7 +45,7 @@ public:
     Function &operator=(const Function &rhs) = delete;
     ~Function() { delete_node(std::move(_root)); }
     size_t num_params() const { return _params.size(); }
-    const vespalib::string & param_name(size_t idx) const { return _params[idx]; }
+    std::string_view param_name(size_t idx) const { return _params[idx]; }
     bool has_error() const;
     vespalib::string get_error() const;
     const nodes::Node &root() const { return *_root; }

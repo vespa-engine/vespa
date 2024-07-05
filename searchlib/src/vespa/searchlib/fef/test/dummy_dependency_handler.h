@@ -9,7 +9,9 @@
 #include <vespa/eval/eval/value_type.h>
 #include <map>
 
-namespace search::fef::test {
+namespace search {
+namespace fef {
+namespace test {
 
 /**
  * A very simple blueprint dependency resolver that will keep track of
@@ -34,4 +36,6 @@ struct DummyDependencyHandler : public Blueprint::DependencyHandler
     void fail(const vespalib::string &msg) override;
 };
 
-}
+} // namespace search::fef::test
+} // namespace search::fef
+} // namespace search

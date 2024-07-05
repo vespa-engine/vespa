@@ -18,13 +18,14 @@ ImportedAttributesRepo::ImportedAttributesRepo() = default;
 ImportedAttributesRepo::~ImportedAttributesRepo() = default;
 
 void
-ImportedAttributesRepo::add(const vespalib::string &name, ImportedAttributeVector::SP attr)
+ImportedAttributesRepo::add(const vespalib::string &name,
+                            ImportedAttributeVector::SP attr)
 {
     _repo[name] = std::move(attr);
 }
 
 const ImportedAttributeVector::SP &
-ImportedAttributesRepo::get(std::string_view name) const
+ImportedAttributesRepo::get(const vespalib::string &name) const
 {
     auto itr = _repo.find(name);
     if (itr != _repo.end()) {

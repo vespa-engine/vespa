@@ -98,7 +98,7 @@ ConfigSnapshot::serialize(ConfigDataBuffer & buffer) const
         default:
             vespalib::asciistream ss;
             ss << "Version '" << SNAPSHOT_FORMAT_VERSION << "' is not a valid version.";
-            throw ConfigWriteException(ss.view());
+            throw ConfigWriteException(ss.str());
     }
 }
 
@@ -170,7 +170,7 @@ ConfigSnapshot::deserialize(const ConfigDataBuffer & buffer)
     default:
         vespalib::asciistream ss;
         ss << "Version '" << version << "' is not a valid version.";
-        throw ConfigReadException(ss.view());
+        throw ConfigReadException(ss.str());
     }
 }
 

@@ -28,11 +28,12 @@ public:
     {
     }
 
-    const IAttributeVector * getAttribute(std::string_view name) const override;
-    const IAttributeVector * getAttributeStableEnum(std::string_view name) const override;
+    const IAttributeVector * getAttribute(const string & name) const override;
+    const IAttributeVector * getAttributeStableEnum(const string & name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
 
-    void asyncForAttribute(std::string_view name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
+    void
+    asyncForAttribute(const vespalib::string &name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
 };
 
 }

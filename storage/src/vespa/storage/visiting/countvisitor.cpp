@@ -35,7 +35,7 @@ CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                 hitCounter.addHit(doc->getId(), 0);
 
                 if (_doNamespace) {
-                    _namespaceCount[vespalib::string(idString.getNamespace())]++;
+                    _namespaceCount[idString.getNamespace()]++;
                 }
 
                 if (_doUser && idString.hasNumber()) {
@@ -43,7 +43,7 @@ CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                 }
 
                 if (_doGroup && idString.hasGroup()) {
-                    _groupCount[vespalib::string(idString.getGroup())]++;
+                    _groupCount[idString.getGroup()]++;
                 }
 
                 if (_doScheme) {

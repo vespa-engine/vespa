@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <typeinfo>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".termasstring");
@@ -50,14 +51,14 @@ namespace {
 string_view
 termAsString(const search::query::Range &term, string & scratchPad) {
     vespalib::asciistream os;
-    scratchPad = (os << term).view();
+    scratchPad = (os << term).str();
     return scratchPad;
 }
 
 string_view
 termAsString(const search::query::Location &term, string & scratchPad) {
     vespalib::asciistream os;
-    scratchPad = (os << term).view();
+    scratchPad = (os << term).str();
     return scratchPad;
 }
 
@@ -71,7 +72,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     string_view term;
     bool      isSet;
 
-    explicit TermAsStringVisitor(string & scratchPad) : _scratchPad(scratchPad), term(), isSet(false) {}
+    TermAsStringVisitor(string & scratchPad) : _scratchPad(scratchPad), term(), isSet(false) {}
 
     template <class TermNode>
     void visitTerm(TermNode &n) {
@@ -128,7 +129,7 @@ throwFailure(const search::query::Node &term_node) {
 string
 termAsString(const Node &term_node) {
     string scratchPad;
-    return string(termAsString(term_node, scratchPad));
+    return termAsString(term_node, scratchPad);
 }
 
 string_view

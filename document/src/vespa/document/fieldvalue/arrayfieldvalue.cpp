@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/log/log.h>
 #include <ostream>
-#include <ranges>
 
 LOG_SETUP(".document.fieldvalue.array");
 
@@ -171,7 +170,7 @@ ArrayFieldValue::print(std::ostream& out, bool verbose,
 
 fieldvalue::ModificationStatus
 ArrayFieldValue::iterateSubset(int startPos, int endPos,
-                               const vespalib::string & variable,
+                               std::string_view variable,
                                PathRange nested,
                                fieldvalue::IteratorHandler& handler) const
 {
@@ -199,8 +198,8 @@ ArrayFieldValue::iterateSubset(int startPos, int endPos,
         handler.getVariables().erase(variable);
     }
 
-    for (int i : std::ranges::reverse_view(indicesToRemove)) {
-        const_cast<ArrayFieldValue&>(*this).remove(i);
+    for (auto i = indicesToRemove.rbegin(); i != indicesToRemove.rend(); ++i) {
+        const_cast<ArrayFieldValue&>(*this).remove(*i);
     }
 
     return retVal;

@@ -21,6 +21,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.fieldsearchspec");
 
+#define DEBUGMASK 0x01
+
 using search::streaming::ConstQueryTermList;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
@@ -188,7 +190,7 @@ FieldSearchSpecMap::stripNonFields(std::string_view rawIndex)
         index = std::regex_replace(index, G_array, G_empty);
         return index;
     }
-    return vespalib::string(rawIndex);
+    return rawIndex;
 }
 
 void

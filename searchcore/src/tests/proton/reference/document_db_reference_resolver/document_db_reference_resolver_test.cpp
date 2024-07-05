@@ -47,7 +47,7 @@ const ReferenceAttribute *getReferenceAttribute(const IGidToLidChangeListener &l
 struct MyGidToLidMapperFactory : public IGidToLidMapperFactory {
     using SP = std::shared_ptr<MyGidToLidMapperFactory>;
     std::unique_ptr<IGidToLidMapper> getMapper() const override {
-        return {};
+        return std::unique_ptr<IGidToLidMapper>();
     }
 };
 
@@ -72,15 +72,15 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
         return factory;
     }
     std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) override {
-        auto itr = attributes.find(vespalib::string(name));
+        auto itr = attributes.find(name);
         if (itr != attributes.end()) {
             return itr->second;
         } else {
-            return {};
+            return std::shared_ptr<search::attribute::ReadableAttributeVector>();
         }
     }
     void addIntAttribute(std::string_view name) {
-        attributes[vespalib::string(name)] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
+        attributes[name] = AttributeFactory::createAttribute(name, Config(BasicType::INT32));
     }
     std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const vespalib::string &docTypeName) override {
         return std::make_unique<GidToLidChangeRegistrator>(_gidToLidChangeHandler, docTypeName);
@@ -90,7 +90,7 @@ struct MyDocumentDBReference : public MockDocumentDBReference {
         return *_gidToLidChangeHandler;
     }
     void removeAttribute(std::string_view name) {
-        attributes.erase(vespalib::string(name));
+        attributes.erase(name);
     }
 };
 
@@ -98,20 +98,20 @@ struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
     using ReferenceMap = std::map<vespalib::string, IDocumentDBReference::SP>;
     ReferenceMap map;
     IDocumentDBReference::SP get(std::string_view name) const override {
-        auto itr = map.find(vespalib::string(name));
+        auto itr = map.find(name);
         ASSERT_TRUE(itr != map.end());
         return itr->second;
     }
     IDocumentDBReference::SP tryGet(std::string_view name) const override {
-        auto itr = map.find(vespalib::string(name));
+        auto itr = map.find(name);
         if (itr != map.end()) {
             return itr->second;
         } else {
-            return {};
+            return IDocumentDBReference::SP();
         }
     }
     void add(std::string_view name, IDocumentDBReference::SP reference) override {
-        map[vespalib::string(name)] = reference;
+        map[name] = reference;
     }
     void remove(std::string_view) override {}
 };

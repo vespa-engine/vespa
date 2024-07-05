@@ -22,7 +22,7 @@ class BuilderMap : public std::map<ConfigKey, ConfigInstance *> {
     using Parent::Parent;
 };
 
-RawSpec::RawSpec(std::string_view config)
+RawSpec::RawSpec(const vespalib::string & config)
     : _config(config)
 {
 }
@@ -33,7 +33,7 @@ RawSpec::createSourceFactory(const TimingValues &) const
     return std::make_unique<RawSourceFactory>(_config);
 }
 
-FileSpec::FileSpec(std::string_view fileName)
+FileSpec::FileSpec(const vespalib::string & fileName)
     : _fileName(fileName)
 {
     verifyName(_fileName);
@@ -57,7 +57,7 @@ FileSpec::createSourceFactory(const TimingValues & ) const
     return std::make_unique<FileSourceFactory>(*this);
 }
 
-DirSpec::DirSpec(std::string_view dirName)
+DirSpec::DirSpec(const vespalib::string & dirName)
     : _dirName(dirName)
 {
 }
@@ -86,12 +86,12 @@ ServerSpec::ServerSpec()
 }
 
 void
-ServerSpec::initialize(std::string_view hostSpec)
+ServerSpec::initialize(const vespalib::string & hostSpec)
 {
     typedef vespalib::StringTokenizer tokenizer;
     tokenizer tok(hostSpec, ",");
     for (tokenizer::Iterator it = tok.begin(); it != tok.end(); it++) {
-        vespalib::string srcHost(*it);
+        vespalib::string srcHost = *it;
         vespalib::asciistream spec;
         if (srcHost.find("tcp/") == std::string::npos) {
             spec << "tcp/";
@@ -100,19 +100,19 @@ ServerSpec::initialize(std::string_view hostSpec)
         if (srcHost.find(":") == std::string::npos) {
             spec << ":" << DEFAULT_PROXY_PORT;
         }
-        _hostList.emplace_back(spec.view());
+        _hostList.push_back(spec.str());
     }
 }
 
-ServerSpec::ServerSpec(HostSpecList hostList)
-    : _hostList(std::move(hostList)),
+ServerSpec::ServerSpec(const HostSpecList & hostList)
+    : _hostList(hostList),
       _protocolVersion(protocol::readProtocolVersion()),
       _traceLevel(protocol::readTraceLevel()),
       _compressionType(protocol::readProtocolCompressionType())
 {
 }
 
-ServerSpec::ServerSpec(std::string_view hostSpec)
+ServerSpec::ServerSpec(const vespalib::string & hostSpec)
     : _hostList(),
       _protocolVersion(protocol::readProtocolVersion()),
       _traceLevel(protocol::readTraceLevel()),

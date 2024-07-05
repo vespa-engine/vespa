@@ -44,7 +44,7 @@ DoubleBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & 
         name << i;
         vespalib::asciistream desc;
         desc << "doubled value " << i;
-        describeOutput(name.str(), desc.view());
+        describeOutput(name.str(), desc.str());
     }
     _cnt = params.size();
     return true;

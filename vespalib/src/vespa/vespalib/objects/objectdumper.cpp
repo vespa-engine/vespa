@@ -4,8 +4,6 @@
 
 namespace vespalib {
 
-using string = vespalib::string;
-
 void
 ObjectDumper::addIndent()
 {
@@ -13,11 +11,11 @@ ObjectDumper::addIndent()
     if (n < 0) {
         n = 0;
     }
-    _str.append(string(n, ' '));
+    _str.append(vespalib::string(n, ' '));
 }
 
 void
-ObjectDumper::addLine(const string &line)
+ObjectDumper::addLine(const vespalib::string &line)
 {
     addIndent();
     _str.append(line);
@@ -48,12 +46,12 @@ ObjectDumper::~ObjectDumper() = default;
 //-----------------------------------------------------------------------------
 
 void
-ObjectDumper::openStruct(std::string_view name, std::string_view type)
+ObjectDumper::openStruct(const vespalib::string &name, const vespalib::string &type)
 {
     if (name.empty()) {
-        addLine(type + " {");
+        addLine(make_string("%s {", type.c_str()));
     } else {
-        addLine((string(name).append(": ").append(type).append(" {")));
+        addLine(make_string("%s: %s {", name.c_str(), type.c_str()));
     }
     openScope();
 }
@@ -66,33 +64,33 @@ ObjectDumper::closeStruct()
 }
 
 void
-ObjectDumper::visitBool(std::string_view name, bool value)
+ObjectDumper::visitBool(const vespalib::string &name, bool value)
 {
-    addLine(string(name).append(value ? ": true" : ": false"));
+    addLine(make_string("%s: %s", name.c_str(), value? "true" : "false"));
 }
 
 void
-ObjectDumper::visitInt(std::string_view name, int64_t value)
+ObjectDumper::visitInt(const vespalib::string &name, int64_t value)
 {
-    addLine(make_string("%s: %" PRId64 "", string(name).c_str(), value));
+    addLine(make_string("%s: %" PRId64 "", name.c_str(), value));
 }
 
 void
-ObjectDumper::visitFloat(std::string_view name, double value)
+ObjectDumper::visitFloat(const vespalib::string &name, double value)
 {
-    addLine(make_string("%s: %g", string(name).c_str(), value));
+    addLine(make_string("%s: %g", name.c_str(), value));
 }
 
 void
-ObjectDumper::visitString(std::string_view name, std::string_view value)
+ObjectDumper::visitString(const vespalib::string &name, const vespalib::string &value)
 {
-    addLine(string(name).append(": '").append(value).append('\''));
+    addLine(make_string("%s: '%s'", name.c_str(), value.c_str()));
 }
 
 void
-ObjectDumper::visitNull(std::string_view name)
+ObjectDumper::visitNull(const vespalib::string &name)
 {
-    addLine(name + ": <NULL>");
+    addLine(make_string("%s: <NULL>", name.c_str()));
 }
 
 void

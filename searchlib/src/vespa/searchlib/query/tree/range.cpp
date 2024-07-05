@@ -9,7 +9,7 @@ Range::Range(int64_t f, int64_t t)
 {
     vespalib::asciistream ost;
     ost << "[" << f << ";" << t << "]";
-    _range = ost.view();
+    _range = ost.str();
 }
 
 vespalib::asciistream &operator<<(vespalib::asciistream &out, const Range &range)

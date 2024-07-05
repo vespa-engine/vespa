@@ -307,7 +307,7 @@ GetDocIdNamespaceSpecificFunctionNode::visitMembers(vespalib::ObjectVisitor &vis
 
 void GetYMUMChecksumFunctionNode::onDoc(const Document & doc)
 {
-    vespalib::string ymumid(doc.getId().getScheme().getNamespaceSpecific());
+    const vespalib::string & ymumid = doc.getId().getScheme().getNamespaceSpecific();
 
     try {
         char decoded[20];

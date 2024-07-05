@@ -666,7 +666,8 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
 
 void AttributeWriter::setupAttributeMapping() {
     for (auto attr : getWritableAttributes()) {
-        _attrMap[attr->getName()] = AttributeWithInfo(attr, _attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix()));
+        std::string_view name = attr->getName();
+        _attrMap[name] = AttributeWithInfo(attr, _attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix()));
     }    
 }
 

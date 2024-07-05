@@ -30,7 +30,7 @@ createBucketId(size_t i) {
     constexpr size_t USED_BITS=5;
     vespalib::asciistream os;
     os << "id:a:b:n=" << userId(i) << ":" << i;
-    document::DocumentId docId(os.view());
+    document::DocumentId docId(os.str());
     BucketId b = docId.getGlobalId().convertToBucketId();
     EXPECT_EQUAL(userId(i), docId.getGlobalId().getLocationSpecificBits());
     b.setUsedBits(USED_BITS);

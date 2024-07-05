@@ -12,9 +12,4 @@ Context::Context(Priority pri, uint32_t maxTraceLevel) noexcept
 
 Context::~Context() = default;
 
-void
-Context::trace(uint32_t level, std::string_view msg, bool addTime) {
-    _trace.trace(level, vespalib::string(msg), addTime);
-}
-
 }

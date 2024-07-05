@@ -20,7 +20,7 @@ std::unique_ptr<ConfigType>
 AsciiConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
 {
     ConfigDataBuffer buffer;
-    buffer.setEncodedString(_is.view());
+    buffer.setEncodedString(_is.str());
     formatter.decode(buffer);
     return std::make_unique<ConfigType>(buffer);
 }

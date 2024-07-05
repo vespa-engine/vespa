@@ -11,9 +11,9 @@ class Range {
     vespalib::string _range;
 
 public:
-    Range() noexcept : _range() {}
+    Range() : _range() {}
     Range(int64_t f, int64_t t);
-    Range(vespalib::string range) noexcept : _range(std::move(range)) {}
+    Range(const vespalib::string &range) : _range(range) {}
 
     const vespalib::string & getRangeString() const { return _range; }
 };

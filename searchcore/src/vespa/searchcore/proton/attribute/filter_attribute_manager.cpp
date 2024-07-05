@@ -52,13 +52,14 @@ FlushTargetFilter shrinkFilter(SHRINK_TARGET_NAME_PREFIX, IFlushTarget::Type::GC
 }
 
 bool
-FilterAttributeManager::acceptAttribute(std::string_view name) const
+FilterAttributeManager::acceptAttribute(const vespalib::string &name) const
 {
-    return _acceptedAttributes.contains(name);
+    return _acceptedAttributes.count(name) > 0;
 }
 
-FilterAttributeManager::FilterAttributeManager(AttributeSet acceptedAttributes, IAttributeManager::SP mgr)
-    : _acceptedAttributes(std::move(acceptedAttributes)),
+FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttributes,
+                                               IAttributeManager::SP mgr)
+    : _acceptedAttributes(acceptedAttributes),
       _mgr(std::move(mgr))
 {
     // Assume that list of attributes in mgr doesn't change
@@ -123,21 +124,21 @@ FilterAttributeManager::getFactory() const {
 }
 
 AttributeGuard::UP
-FilterAttributeManager::getAttribute(std::string_view name) const
+FilterAttributeManager::getAttribute(const vespalib::string &name) const
 {
     if (acceptAttribute(name)) {
         return _mgr->getAttribute(name);
     }
-    return {};
+    return AttributeGuard::UP();
 }
 
 std::unique_ptr<search::attribute::AttributeReadGuard>
-FilterAttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const
+FilterAttributeManager::getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const
 {
     if (acceptAttribute(name)) {
         return _mgr->getAttributeReadGuard(name, stableEnumGuard);
     }
-    return {};
+    return std::unique_ptr<search::attribute::AttributeReadGuard>();
 }
 
 void
@@ -168,7 +169,7 @@ FilterAttributeManager::getAttributeFieldWriter() const
 }
 
 search::AttributeVector *
-FilterAttributeManager::getWritableAttribute(std::string_view name) const
+FilterAttributeManager::getWritableAttribute(const vespalib::string &name) const
 {
     if (acceptAttribute(name)) {
         return _mgr->getWritableAttribute(name);
@@ -219,11 +220,11 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
 }
 
 void
-FilterAttributeManager::asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const {
+FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
     AttributeGuard::UP attr = _mgr->getAttribute(name);
     if (!attr) { return; }
     vespalib::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
-    std::string_view attrName = (*attr)->getNamePrefix();
+    vespalib::string attrName = (*attr)->getNamePrefix();
     attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(attrName),
                                   [attr=std::move(attr), func=std::move(func)]() mutable {
                                       (*func)(**attr);
@@ -244,7 +245,7 @@ FilterAttributeManager::getImportedAttributes() const
 }
 
 std::shared_ptr<search::attribute::ReadableAttributeVector>
-FilterAttributeManager::readable_attribute_vector(std::string_view name) const
+FilterAttributeManager::readable_attribute_vector(const string& name) const
 {
     if (acceptAttribute(name)) {
         return _mgr->readable_attribute_vector(name);

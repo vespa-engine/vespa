@@ -45,9 +45,9 @@ InvalidDataTypeConversionException::InvalidDataTypeConversionException(
 
 InvalidDataTypeConversionException::~InvalidDataTypeConversionException() = default;
 
-DocumentTypeNotFoundException::DocumentTypeNotFoundException(vespalib::string name, const vespalib::string& location)
+DocumentTypeNotFoundException::DocumentTypeNotFoundException(const vespalib::string& name, const vespalib::string& location)
     : Exception("Document type "+name+" not found", location, 1),
-      _type(std::move(name))
+      _type(name)
 {
 }
 
@@ -63,7 +63,8 @@ DataTypeNotFoundException::DataTypeNotFoundException(const vespalib::string& nam
 
 DataTypeNotFoundException::~DataTypeNotFoundException() = default;
 
-AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(int id, const vespalib::string& location)
+AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(
+        int id, const vespalib::string& location)
     : Exception(vespalib::make_string("Data type with id %d not found", id),
                 location, 1)
 {
@@ -72,15 +73,18 @@ AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(int id, const v
 AnnotationTypeNotFoundException::~AnnotationTypeNotFoundException() = default;
 
 FieldNotFoundException::
-FieldNotFoundException(vespalib::string fieldName, const vespalib::string& location)
+FieldNotFoundException(const vespalib::string& fieldName,
+                       const vespalib::string& location)
     : Exception("Field with name " + fieldName + " not found", location, 1),
-      _fieldName(std::move(fieldName)),
+      _fieldName(fieldName),
       _fieldId(0)
 {
 }
 
 FieldNotFoundException::
-FieldNotFoundException(int fieldId, int16_t serializationVersion, const vespalib::string& location)
+FieldNotFoundException(int fieldId,
+                       int16_t serializationVersion,
+                       const vespalib::string& location)
     : Exception((serializationVersion < Document::getNewestSerializationVersion()) ?
                 vespalib::make_string("Field with id %i (serialization version %d) not found", fieldId, serializationVersion) :
         vespalib::make_string("Field with id %i not found", fieldId), location, 1),

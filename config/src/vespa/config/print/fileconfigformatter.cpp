@@ -97,7 +97,7 @@ struct ConfigEncoder : public ArrayTraverser,
             const Inspector & child(inspector[i]);
             vespalib::asciistream ss;
             ss << "{\"" << child["key"].asString().make_string() << "\"}";
-            prefixList.emplace_back(ss.view());
+            prefixList.emplace_back(ss.str());
             encodeMAPEntry(child);
             prefixList.pop_back();
         }
@@ -151,13 +151,13 @@ ConfigEncoder::entry(size_t index, const Inspector &inspector)
         if (type.compare("array") == 0) {
             vespalib::asciistream ss;
             ss << "[" << index << "]";
-            prefixList.emplace_back(ss.view());
+            prefixList.emplace_back(ss.str());
             encodeARRAY(inspector["value"]);
             prefixList.pop_back();
         } else if (type.compare("struct") == 0) {
             vespalib::asciistream ss;
             ss << "[" << index << "].";
-            prefixList.emplace_back(ss.view());
+            prefixList.emplace_back(ss.str());
             encodeOBJECT(inspector["value"]);
             prefixList.pop_back();
         } else {
@@ -225,7 +225,7 @@ FileConfigFormatter::encode(ConfigDataBuffer & buffer) const
 {
     SimpleBuffer buf;
     doEncode(buffer, buf);
-    buffer.setEncodedString(buf.get().make_stringview());
+    buffer.setEncodedString(buf.get().make_string());
 }
 
 size_t

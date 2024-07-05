@@ -397,7 +397,7 @@ toString(const BTreeNode * node) const
     }
     vespalib::asciistream ss;
     if (node->isLeaf()) {
-        const auto * lnode = static_cast<const LeafNodeType *>(node);
+        const LeafNodeType * lnode = static_cast<const LeafNodeType *>(node);
         ss << "L: keys(" << lnode->validSlots() << ")[";
         for (uint32_t i = 0; i < lnode->validSlots(); ++i) {
             if (i > 0) ss << ",";
@@ -405,7 +405,8 @@ toString(const BTreeNode * node) const
         }
         ss << "]";
     } else {
-        const auto * inode = static_cast<const InternalNodeType *>(node);
+        const InternalNodeType * inode =
+            static_cast<const InternalNodeType *>(node);
         ss << "I: validLeaves(" << inode->validLeaves() <<
             "), keys(" << inode->validSlots() << ")[";
         for (uint32_t i = 0; i < inode->validSlots(); ++i) {

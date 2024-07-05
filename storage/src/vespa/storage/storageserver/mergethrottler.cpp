@@ -475,7 +475,7 @@ MergeThrottler::rejectMergeIfOutdated(
         << ", storage node has version "
         << rejectLessThanVersion;
     sendReply(cmd,
-              api::ReturnCode(api::ReturnCode::WRONG_DISTRIBUTION, oss.view()),
+              api::ReturnCode(api::ReturnCode::WRONG_DISTRIBUTION, oss.str()),
               msgGuard, _metrics->chaining);
     LOG(debug, "Immediately rejected %s, due to it having state version < %u",
         cmd.toString().c_str(), rejectLessThanVersion);
@@ -582,7 +582,7 @@ MergeThrottler::attemptProcessNextQueuedMerge(MessageGuard& msgGuard)
                "been started by someone else since it was queued";
         LOG(debug, "%s", oss.c_str());
         sendReply(dynamic_cast<const api::MergeBucketCommand&>(*msg),
-                  api::ReturnCode(api::ReturnCode::BUSY, oss.view()),
+                  api::ReturnCode(api::ReturnCode::BUSY, oss.str()),
                   msgGuard, _metrics->chaining);
     }
     return true;
@@ -852,7 +852,7 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString() << " sent to node "
             << _component.getIndex()
             << ", which is not in its forwarding chain";
-        LOG(error, "%s", oss.view().data());
+        LOG(error, "%s", oss.str().data());
     } else if (mergeCmd.getChain().size() >= nodeSeq.unordered_nodes().size()) {
         // Chain is full but we haven't seen the merge! This means
         // the node has probably gone down with a merge it previously
@@ -860,19 +860,19 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString()
             << " is not in node's internal state, but has a "
             << "full chain, meaning it cannot be forwarded.";
-        LOG(debug, "%s", oss.view().data());
+        LOG(debug, "%s", oss.str().data());
     } else if (nodeSeq.chain_contains_this_node()) {
         oss << mergeCmd.toString()
             << " is not in node's internal state, but contains "
             << "this node in its non-full chain. This should not happen!";
-        LOG(error, "%s", oss.view().data());
+        LOG(error, "%s", oss.str().data());
     } else {
         valid = true;
     }
 
     if (!valid) {
         sendReply(mergeCmd,
-                  api::ReturnCode(api::ReturnCode::REJECTED, oss.view()),
+                  api::ReturnCode(api::ReturnCode::REJECTED, oss.str()),
                   msgGuard,
                   _metrics->local);
     }

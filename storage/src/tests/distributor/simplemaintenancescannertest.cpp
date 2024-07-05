@@ -99,10 +99,7 @@ namespace {
 std::string sortLines(const std::string& source) {
     vespalib::StringTokenizer st(source,"\n","");
     std::vector<vespalib::string> lines;
-    lines.reserve(st.size());
-    for (const auto & token : st) {
-        lines.emplace_back(token);
-    }
+    std::copy(st.begin(), st.end(), std::back_inserter(lines));
     std::sort(lines.begin(), lines.end());
     std::ostringstream ost;
     for (auto& line : lines) {

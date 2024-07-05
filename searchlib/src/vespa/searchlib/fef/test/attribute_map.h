@@ -33,8 +33,7 @@ public:
         _guards.emplace(guard->attribute()->getName(), std::move(guard));
     }
 
-    const IAttributeVector * getAttribute(std::string_view name_view) const {
-        vespalib::string name(name_view);
+    const IAttributeVector * getAttribute(const vespalib::string & name) const {
         auto attrItr = _attributes.find(name);
         if (attrItr != _attributes.end()) {
             return attrItr->second.get();

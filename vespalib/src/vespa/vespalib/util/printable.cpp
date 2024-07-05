@@ -30,7 +30,7 @@ AsciiPrintable::print(std::ostream& out, bool verbose,
 {
     vespalib::asciistream as;
     print(as, PrintProperties(verbose ? VERBOSE : NORMAL, indent));
-    out << as.view();
+    out << as.str();
 }
 
 vespalib::string

@@ -8,28 +8,34 @@
 
 namespace documentapi {
 
-RemoveLocationMessage::RemoveLocationMessage(const document::BucketIdFactory& factory,
-                                             document::select::Parser& parser,
-                                             string documentSelection)
-    : _documentSelection(std::move(documentSelection)),
+RemoveLocationMessage::RemoveLocationMessage(
+        const document::BucketIdFactory& factory,
+        document::select::Parser& parser,
+        const string& documentSelection)
+    : _documentSelection(documentSelection),
       _bucketId(),
       _bucketSpace()
 {
     document::BucketSelector bucketSel(factory);
-    auto exprResult = bucketSel.select(*parser.parse(_documentSelection));
+    std::unique_ptr<document::BucketSelector::BucketVector> exprResult(
+            bucketSel.select(*parser.parse(documentSelection)));
 
-    if (exprResult && exprResult->size() == 1) {
+    if (exprResult.get() && exprResult->size() == 1) {
         _bucketId = (*exprResult)[0];
     } else {
-        throw vespalib::IllegalArgumentException("Document selection doesn't map to a single bucket!", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException(
+                "Document selection doesn't map to a single bucket!",
+                VESPA_STRLOC);
     }
 }
 
-RemoveLocationMessage::~RemoveLocationMessage() = default;
+RemoveLocationMessage::~RemoveLocationMessage() {
+}
 
 DocumentReply::UP
 RemoveLocationMessage::doCreateReply() const {
-    return std::make_unique<DocumentReply>(DocumentProtocol::REPLY_REMOVELOCATION);
+    return DocumentReply::UP(
+            new DocumentReply(DocumentProtocol::REPLY_REMOVELOCATION));
 }
 
 uint32_t

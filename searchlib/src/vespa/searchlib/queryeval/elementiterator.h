@@ -43,7 +43,7 @@ private:
 
 }
 
-void visit(vespalib::ObjectVisitor &self, std::string_view name,
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::ElementIterator &obj);
-void visit(vespalib::ObjectVisitor &self, std::string_view name,
+void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::ElementIterator *obj);

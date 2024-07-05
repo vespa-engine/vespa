@@ -27,7 +27,7 @@ FileConfigReader<ConfigType>::read(const ConfigFormatter & formatter)
 
     std::stringstream buf;
     buf << file.rdbuf();
-    buffer.setEncodedString(buf.view());
+    buffer.setEncodedString(buf.str());
     formatter.decode(buffer);
     return std::make_unique<ConfigType>(buffer);
 }

@@ -7,11 +7,11 @@ namespace search::fef::test {
 using IAttributeVector = attribute::IAttributeVector;
 
 const IAttributeVector *
-MockAttributeContext::getAttribute(std::string_view name) const {
+MockAttributeContext::getAttribute(const string & name) const {
     return _attributes.getAttribute(name);
 }
 const IAttributeVector *
-MockAttributeContext::getAttributeStableEnum(std::string_view name) const {
+MockAttributeContext::getAttributeStableEnum(const string & name) const {
     return getAttribute(name);
 }
 void
@@ -20,7 +20,7 @@ MockAttributeContext::getAttributeList(std::vector<const IAttributeVector *> & l
 }
 
 void
-MockAttributeContext::asyncForAttribute(std::string_view, std::unique_ptr<attribute::IAttributeFunctor>) const {
+MockAttributeContext::asyncForAttribute(const vespalib::string &, std::unique_ptr<attribute::IAttributeFunctor>) const {
 }
 
 }

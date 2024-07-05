@@ -15,28 +15,28 @@ NameCollection tagValues;
 }
 
 MetricNameId
-NameRepo::metricId(std::string_view name)
+NameRepo::metricId(const vespalib::string &name)
 {
     size_t id = metricNames.resolve(name);
     return MetricNameId(id);
 }
 
 DescriptionId
-NameRepo::descriptionId(std::string_view name)
+NameRepo::descriptionId(const vespalib::string &name)
 {
     size_t id = descriptions.resolve(name);
     return DescriptionId(id);
 }
 
 TagKeyId
-NameRepo::tagKeyId(std::string_view name)
+NameRepo::tagKeyId(const vespalib::string &name)
 {
     size_t id = tagKeys.resolve(name);
     return TagKeyId(id);
 }
 
 TagValueId
-NameRepo::tagValueId(std::string_view value)
+NameRepo::tagValueId(const vespalib::string &value)
 {
     size_t id = tagValues.resolve(value);
     return TagValueId(id);

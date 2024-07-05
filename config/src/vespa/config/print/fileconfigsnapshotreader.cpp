@@ -24,7 +24,7 @@ FileConfigSnapshotReader::read()
     buf << file.rdbuf();
 
     ConfigDataBuffer buffer;
-    buffer.setEncodedString(buf.view());
+    buffer.setEncodedString(buf.str());
     JsonConfigFormatter formatter(true);
     formatter.decode(buffer);
     ConfigSnapshot snapshot;

@@ -43,7 +43,7 @@ asString(const std::vector<BucketEntry> & v) {
         ost << e.entry->toString() << "\n";
     }
 
-    return std::string(ost.view());
+    return std::string(ost.str());
 }
 
 }

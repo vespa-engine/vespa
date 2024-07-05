@@ -53,7 +53,7 @@ public:
      *
      * @param config The config represented as a raw string.
      */
-    explicit RawSpec(std::string_view config);
+    RawSpec(const vespalib::string & config);
 
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 
@@ -80,7 +80,7 @@ public:
      *
      * @param fileName Path to the file to serve config from.
      */
-    explicit FileSpec(std::string_view fileName);
+    FileSpec(const vespalib::string & fileName);
 
     /**
      * Get the file name of this spec.
@@ -107,7 +107,7 @@ public:
      *
      * @param dirName Directory to serve config from.
      */
-    explicit DirSpec(std::string_view dirName);
+    DirSpec(const vespalib::string & dirName);
     ~DirSpec() override;
 
     /**
@@ -144,14 +144,14 @@ public:
      *
      * @param list a list of host specifications.
      */
-    explicit ServerSpec(HostSpecList list);
+    ServerSpec(const HostSpecList & list);
 
     /**
      * Construct a ServerSpec with a host specification.
      *
      * @param hostSpec the host specification on the form "tcp/hostname:port"
      */
-    explicit ServerSpec(std::string_view hostSpec);
+    ServerSpec(const vespalib::string & hostSpec);
 
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 
@@ -184,7 +184,7 @@ public:
      */
     CompressionType compressionType() const { return _compressionType; }
 private:
-    void initialize(std::string_view hostSpec);
+    void initialize(const vespalib::string & hostSpec);
     HostSpecList          _hostList;
     const int             _protocolVersion;
     const int             _traceLevel;
@@ -197,7 +197,7 @@ private:
  */
 class ConfigServerSpec : public config::ServerSpec {
 public:
-    explicit ConfigServerSpec(FNET_Transport & transport);
+    ConfigServerSpec(FNET_Transport & transport);
     ~ConfigServerSpec() override;
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override;
 private:

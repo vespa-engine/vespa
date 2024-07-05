@@ -78,9 +78,9 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
         case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
             {
-                std::string_view term(iterator.getTerm());
+                vespalib::string term = iterator.getTerm();
                 if (_query_normalization) {
-                    std::string_view index = iterator.index_as_view();
+                    vespalib::string index = iterator.getIndexName();
                     if (index.empty()) {
                         index = SimpleQueryStackDumpIterator::DEFAULT_INDEX;
                     }
@@ -95,7 +95,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             break;
         case search::ParseItem::ITEM_NUMTERM:
             {
-                std::string_view term = iterator.getTerm();
+                vespalib::string term = iterator.getTerm();
                 queryeval::SplitFloat splitter(term);
                 if (splitter.parts() > 1) {
                     if (v->VisitPHRASE(&item, splitter.parts())) {
