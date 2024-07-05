@@ -41,6 +41,20 @@ namespace {
 using msg_ptr_vector = std::vector<api::StorageMessage::SP>;
 vespalib::string _storage("storage");
 api::StorageMessageAddress _address(&_storage, lib::NodeType::STORAGE, 0);
+
+struct MessageMeta {
+    std::vector<document::Document::SP> docs;
+    std::vector<document::DocumentId>   docIds;
+    std::vector<std::string>            infoMessages;
+    std::vector<uint64_t>               persisted_timestamps;
+
+    MessageMeta();
+    ~MessageMeta();
+};
+
+MessageMeta::MessageMeta() = default;
+MessageMeta::~MessageMeta() = default;
+
 }
 
 struct VisitorManagerTest : Test {
@@ -68,13 +82,14 @@ protected:
             int checkStatsBytesVisited = -1,
             uint64_t* message_id_out = nullptr);
     void getMessagesAndReply(
-            int expectedCount,
+            size_t expectedCount,
             TestVisitorMessageSession& session,
-            std::vector<document::Document::SP >& docs,
-            std::vector<document::DocumentId>& docIds,
+            MessageMeta& meta,
             api::ReturnCode::Result returnCode = api::ReturnCode::OK,
             std::optional<Priority::Value> priority = documentapi::Priority::PRI_NORMAL_4);
-    uint32_t getMatchingDocuments(std::vector<document::Document::SP >& docs);
+
+    uint32_t getMatchingDocuments(std::vector<document::Document::SP>& docs);
+
     void finishAndWaitForVisitorSessionCompletion(uint32_t sessionIndex);
 };
 
@@ -146,7 +161,7 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
             "And lose the name of action. - Soft you now!\n"
             "The fair Ophelia! Nymph, in thy orisons\n"
             "Be all my sins remember'd.\n");
-    for (uint32_t i=0; i<docCount; ++i) {
+    for (uint32_t i = 0; i < docCount; ++i) {
         std::ostringstream uri;
         uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/"
             << i << ".html";
@@ -156,7 +171,7 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
         const document::DocumentType& type(_documents.back()->getType());
         _documents.back()->setValue(type.getField("headerval"), document::IntFieldValue(i % 4));
     }
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         document::BucketId bid(16, i);
 
         auto cmd = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(bid));
@@ -171,7 +186,7 @@ VisitorManagerTest::initializeTest(bool defer_manager_thread_start)
                     StorBucketDatabase::CREATE_IF_NONEXISTING));
         entry.write();
     }
-    for (uint32_t i=0; i<docCount; ++i) {
+    for (uint32_t i = 0; i < docCount; ++i) {
         document::BucketId bid(16, i);
 
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), _documents[i], i+1);
@@ -190,8 +205,8 @@ void
 VisitorManagerTest::addSomeRemoves(bool removeAll)
 {
     framework::defaultimplementation::FakeClock clock;
-    for (uint32_t i=0; i<docCount; i += (removeAll ? 1 : 4)) {
-            // Add it to the database
+    for (uint32_t i = 0; i < docCount; i += (removeAll ? 1 : 4)) {
+        // Add it to the database
         document::BucketId bid(16, i % 10);
         auto cmd = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid), _documents[i]->getId(),
                                                         vespalib::count_us(clock.getSystemTime().time_since_epoch()) + docCount + i + 1);
@@ -244,14 +259,13 @@ VisitorManagerTest::getSession(uint32_t n)
 
 void
 VisitorManagerTest::getMessagesAndReply(
-        int expectedCount,
+        size_t expectedCount,
         TestVisitorMessageSession& session,
-        std::vector<document::Document::SP >& docs,
-        std::vector<document::DocumentId>& docIds,
+        MessageMeta& meta,
         api::ReturnCode::Result result,
         std::optional<Priority::Value> priority)
 {
-    for (int i = 0; i < expectedCount; i++) {
+    for (size_t i = 0; i < expectedCount; i++) {
         session.waitForMessages(i + 1);
         mbus::Reply::UP reply;
         {
@@ -262,12 +276,18 @@ VisitorManagerTest::getMessagesAndReply(
             }
 
             switch (session.sentMessages[i]->getType()) {
-            case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
-                docs.push_back(dynamic_cast<documentapi::PutDocumentMessage&>(*session.sentMessages[i]).getDocumentSP());
+            case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT: {
+                const auto& as_put = dynamic_cast<documentapi::PutDocumentMessage&>(*session.sentMessages[i]);
+                meta.docs.emplace_back(as_put.getDocumentSP());
+                meta.persisted_timestamps.emplace_back(as_put.persisted_timestamp());
                 break;
-            case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
-                docIds.push_back(dynamic_cast<documentapi::RemoveDocumentMessage&>(*session.sentMessages[i]).getDocumentId());
+            }
+            case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT: {
+                const auto& as_remove = dynamic_cast<documentapi::RemoveDocumentMessage&>(*session.sentMessages[i]);
+                meta.docIds.emplace_back(as_remove.getDocumentId());
+                meta.persisted_timestamps.emplace_back(as_remove.persisted_timestamp());
                 break;
+            }
             default:
                 break;
             }
@@ -319,10 +339,10 @@ VisitorManagerTest::verifyCreateVisitorReply(
 }
 
 uint32_t
-VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP >& docs) {
+VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP>& docs) {
     uint32_t equalCount = 0;
-    for (const auto & doc : docs) {
-        for (const auto & document : _documents) {
+    for (const auto& doc : docs) {
+        for (const auto& document : _documents) {
             if (doc->getId() == document->getId() && *doc == *document) {
                 equalCount++;
             }
@@ -334,10 +354,9 @@ VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP >& d
 
 namespace {
 
-int getTotalSerializedSize(const std::vector<document::Document::SP>& docs)
-{
+int getTotalSerializedSize(const std::vector<document::Document::SP>& docs) {
     int total = 0;
-    for (const auto & doc : docs) {
+    for (const auto& doc : docs) {
         total += int(doc->serialize().size());
     }
     return total;
@@ -352,16 +371,15 @@ TEST_F(VisitorManagerTest, normal_usage) {
     cmd->setAddress(_address);
     cmd->setControlDestination("foo/bar");
     _top->sendDown(cmd);
-    std::vector<document::Document::SP > docs;
-    std::vector<document::DocumentId> docIds;
+    MessageMeta meta;
 
     // Should receive one multioperation message (bucket 3 has one document).
-    getMessagesAndReply(1, getSession(0), docs, docIds);
+    getMessagesAndReply(1, getSession(0), meta);
 
     // All data has been replied to, expecting to get a create visitor reply
-    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, int(docs.size()), getTotalSerializedSize(docs)));
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, int(meta.docs.size()), getTotalSerializedSize(meta.docs)));
 
-    EXPECT_EQ(1u, getMatchingDocuments(docs));
+    EXPECT_EQ(1u, getMatchingDocuments(meta.docs));
     EXPECT_FALSE(_manager->hasPendingMessageState());
 }
 
@@ -372,11 +390,10 @@ TEST_F(VisitorManagerTest, resending) {
     cmd->setAddress(_address);
     cmd->setControlDestination("foo/bar");
     _top->sendDown(cmd);
-    std::vector<document::Document::SP > docs;
-    std::vector<document::DocumentId> docIds;
+    MessageMeta meta;
 
     TestVisitorMessageSession& session = getSession(0);
-    getMessagesAndReply(1, session, docs, docIds, api::ReturnCode::NOT_READY);
+    getMessagesAndReply(1, session, meta, api::ReturnCode::NOT_READY);
 
     {
         session.waitForMessages(2);
@@ -426,22 +443,21 @@ TEST_F(VisitorManagerTest, visit_empty_bucket) {
 TEST_F(VisitorManagerTest, multi_bucket_visit) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
     }
     cmd->setAddress(_address);
     cmd->setDataDestination("fooclient.0");
     _top->sendDown(cmd);
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    MessageMeta meta;
 
     // Should receive one multioperation message for each bucket
-    getMessagesAndReply(10, getSession(0), docs, docIds);
+    getMessagesAndReply(10, getSession(0), meta);
 
     // All data has been replied to, expecting to get a create visitor reply
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
 
-    EXPECT_EQ(docCount, getMatchingDocuments(docs));
+    EXPECT_EQ(docCount, getMatchingDocuments(meta.docs));
 }
 
 TEST_F(VisitorManagerTest, no_buckets) {
@@ -469,48 +485,47 @@ TEST_F(VisitorManagerTest, visit_puts_and_removes) {
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
     cmd->setAddress(_address);
     cmd->setVisitRemoves();
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
     }
     _top->sendDown(cmd);
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    MessageMeta meta;
 
-    getMessagesAndReply(10, getSession(0), docs, docIds);
+    getMessagesAndReply(10, getSession(0), meta);
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
 
-    EXPECT_EQ(docCount - (docCount + 3) / 4,
-              getMatchingDocuments(docs));
+    EXPECT_EQ(docCount - (docCount + 3) / 4, getMatchingDocuments(meta.docs));
 
-    EXPECT_EQ((docCount + 3) / 4,
-              docIds.size());
+    EXPECT_EQ((docCount + 3) / 4, meta.docIds.size());
+    EXPECT_THAT(meta.persisted_timestamps, SizeIs(meta.docs.size() + meta.docIds.size()));
+    EXPECT_THAT(meta.persisted_timestamps, Each(Ne(0)));
 }
 
 TEST_F(VisitorManagerTest, visit_with_timeframe_and_selection) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "testdoctype1.headerval < 2");
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis",
+                                                           "testdoctype1.headerval < 2");
     cmd->setFromTime(3);
     cmd->setToTime(8);
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
     }
     cmd->setAddress(_address);
     _top->sendDown(cmd);
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    MessageMeta meta;
 
-    getMessagesAndReply(2, getSession(0), docs, docIds);
+    getMessagesAndReply(2, getSession(0), meta);
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
 
-    ASSERT_EQ(2, docs.size());
+    ASSERT_EQ(2, meta.docs.size());
     std::set<std::string> expected;
     expected.insert("id:test:testdoctype1:n=4:http://www.ntnu.no/4.html");
     expected.insert("id:test:testdoctype1:n=5:http://www.ntnu.no/5.html");
     std::set<std::string> actual;
-    for (uint32_t i=0; i<docs.size(); ++i) {
-        actual.insert(docs[i]->getId().toString());
+    for (const auto& doc : meta.docs) {
+        actual.insert(doc->getId().toString());
     }
     EXPECT_THAT(expected, ContainerEq(actual));
 }
@@ -518,10 +533,10 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_selection) {
 TEST_F(VisitorManagerTest, visit_with_timeframe_and_bogus_selection) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis",
-            "DocType(testdoctype1---///---) XXX BAD Field(headerval) < 2");
+                                                           "DocType(testdoctype1---///---) XXX BAD Field(headerval) < 2");
     cmd->setFromTime(3);
     cmd->setToTime(8);
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         cmd->addBucketToBeVisited(document::BucketId(16, i));
     }
     cmd->setAddress(_address);
@@ -536,23 +551,19 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_bogus_selection) {
     EXPECT_EQ(api::ReturnCode::ILLEGAL_PARAMETERS, reply->getResult().getResult());
 }
 
-#define ASSERT_SUBSTRING_COUNT(source, expectedCount, substring) \
-    { \
-        uint32_t count = 0; \
-        std::ostringstream value; /* Let value be non-strings */ \
-        value << source; \
-        std::string s(value.str()); \
-        std::string::size_type pos = s.find(substring); \
-        while (pos != std::string::npos) { \
-            ++count; \
-            pos = s.find(substring, pos+1); \
-        } \
-        if (count != (uint32_t) expectedCount) { \
-            FAIL() << "Value of '" << s << "' contained " << count \
-                   << " instances of substring '" << substring << "', not " \
-                   << expectedCount << " as expected."; \
-        } \
+void assert_substring_count(std::string_view source, size_t expectedCount, std::string_view substring) {
+    uint32_t count = 0;
+    std::string::size_type pos = source.find(substring);
+    while (pos != std::string::npos) {
+        ++count;
+        pos = source.find(substring, pos + 1);
     }
+    if (count != (uint32_t) expectedCount) {
+        FAIL() << "Value of '" << source << "' contained " << count
+               << " instances of substring '" << substring << "', not "
+               << expectedCount << " as expected.";
+    }
+}
 
 TEST_F(VisitorManagerTest, visitor_callbacks) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
@@ -589,10 +600,10 @@ TEST_F(VisitorManagerTest, visitor_callbacks) {
     // All data has been replied to, expecting to get a create visitor reply
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
 
-    ASSERT_SUBSTRING_COUNT(replydata.str(), 1, "Starting visitor");
-    ASSERT_SUBSTRING_COUNT(replydata.str(), 2, "Handling block of 1 documents");
-    ASSERT_SUBSTRING_COUNT(replydata.str(), 2, "completedBucket");
-    ASSERT_SUBSTRING_COUNT(replydata.str(), 1, "completedVisiting");
+    ASSERT_NO_FATAL_FAILURE(assert_substring_count(replydata.view(), 1, "Starting visitor"));
+    ASSERT_NO_FATAL_FAILURE(assert_substring_count(replydata.view(), 2, "Handling block of 1 documents"));
+    ASSERT_NO_FATAL_FAILURE(assert_substring_count(replydata.view(), 2, "completedBucket"));
+    ASSERT_NO_FATAL_FAILURE(assert_substring_count(replydata.view(), 1, "completedVisiting"));
 }
 
 TEST_F(VisitorManagerTest, visitor_cleanup) {
@@ -657,10 +668,9 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
     // 4 pending
 
     // Finish a visitor
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    MessageMeta meta;
 
-    getMessagesAndReply(1, getSession(0), docs, docIds);
+    getMessagesAndReply(1, getSession(0), meta);
 
     // Should get a reply for the visitor.
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
@@ -668,7 +678,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
     // 3 pending
 
     // Fail a visitor
-    getMessagesAndReply(1, getSession(1), docs, docIds, api::ReturnCode::INTERNAL_FAILURE);
+    getMessagesAndReply(1, getSession(1), meta, api::ReturnCode::INTERNAL_FAILURE);
 
     // Should get a reply for the visitor.
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::INTERNAL_FAILURE));
@@ -704,7 +714,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
     }
 
     for (uint32_t i = 0; i < 4; ++i) {
-        getMessagesAndReply(1, getSession(i + 2), docs, docIds);
+        getMessagesAndReply(1, getSession(i + 2), meta);
         verifyCreateVisitorReply(api::ReturnCode::OK);
     }
 }
@@ -719,12 +729,10 @@ TEST_F(VisitorManagerTest, abort_on_failed_visitor_info) {
         cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
     }
-
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    MessageMeta meta;
 
     TestVisitorMessageSession& session = getSession(0);
-    getMessagesAndReply(1, session, docs, docIds, api::ReturnCode::NOT_READY);
+    getMessagesAndReply(1, session, meta, api::ReturnCode::NOT_READY);
 
     {
         session.waitForMessages(2);
@@ -857,13 +865,12 @@ TEST_F(VisitorManagerTest, prioritized_visitor_queing) {
     ASSERT_EQ(ids[4], message_id);
 
     // Finish the first visitor
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
-    getMessagesAndReply(1, getSession(0), docs, docIds, api::ReturnCode::OK, Priority::PRI_HIGHEST);
+    MessageMeta meta;
+    getMessagesAndReply(1, getSession(0), meta, api::ReturnCode::OK, Priority::PRI_HIGHEST);
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, -1, -1, &message_id));
 
     // We should now start the highest priority visitor.
-    getMessagesAndReply(1, getSession(4), docs, docIds, api::ReturnCode::OK, Priority::PRI_VERY_HIGH);
+    getMessagesAndReply(1, getSession(4), meta, api::ReturnCode::OK, Priority::PRI_VERY_HIGH);
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, -1, -1, &message_id));
     ASSERT_EQ(ids[9], message_id);
 
@@ -875,9 +882,8 @@ TEST_F(VisitorManagerTest, prioritized_visitor_queing) {
 }
 
 void VisitorManagerTest::finishAndWaitForVisitorSessionCompletion(uint32_t sessionIndex) {
-    std::vector<document::Document::SP > docs;
-    std::vector<document::DocumentId> docIds;
-    getMessagesAndReply(1, getSession(sessionIndex), docs, docIds, api::ReturnCode::OK, std::optional<Priority::Value>());
+    MessageMeta meta;
+    getMessagesAndReply(1, getSession(sessionIndex), meta, api::ReturnCode::OK, std::optional<Priority::Value>());
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
 }
 
@@ -938,9 +944,7 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
     // Very Important Visitor(tm) gets a concurrent slot
     ids[16] = sendCreateVisitor(1000ms, *_top, 0);
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
-
+    MessageMeta meta;
     std::set<uint64_t> finishedVisitors;
 
     // Verify that the correct visitors are running.
@@ -954,7 +958,7 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
         } else if (i == 6) {
             priority = documentapi::Priority::PRI_HIGH_1; // ids 15
         }
-        getMessagesAndReply(1, getSession(i), docs, docIds, api::ReturnCode::OK, priority);
+        getMessagesAndReply(1, getSession(i), meta, api::ReturnCode::OK, priority);
         ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, -1, -1, &message_id));
         finishedVisitors.insert(message_id);
     }
@@ -976,8 +980,7 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
         if (i == 8) {
             priority = documentapi::Priority::PRI_HIGH_2; // ids 14
         }
-        getMessagesAndReply(1, getSession(i), docs, docIds, api::ReturnCode::OK,
-                            priority);
+        getMessagesAndReply(1, getSession(i), meta, api::ReturnCode::OK, priority);
         uint64_t msgId = 0;
         ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, -1, -1, &msgId));
         finishedVisitors.insert(msgId);

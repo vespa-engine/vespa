@@ -21,19 +21,20 @@ void DumpVisitorSingle::handleDocuments(const document::BucketId&,
                                         DocEntryList& entries,
                                         HitCounter& hitCounter)
 {
-    LOG(debug, "Visitor %s handling block of %zu documents.",
-               _id.c_str(), entries.size());
+    LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), entries.size());
 
-    for (size_t i = 0; i < entries.size(); ++i) {
-        spi::DocEntry& entry(*entries[i]);
-        const uint32_t docSize = entry.getSize();
-        if (entry.isRemove()) {
-            hitCounter.addHit(*entry.getDocumentId(), docSize);
-            sendMessage(std::make_unique<documentapi::RemoveDocumentMessage>(*entry.getDocumentId()));
+    for (auto& entry : entries) {
+        const uint32_t docSize = entry->getSize();
+        if (entry->isRemove()) {
+            hitCounter.addHit(*entry->getDocumentId(), docSize);
+            auto msg = std::make_unique<documentapi::RemoveDocumentMessage>(*entry->getDocumentId());
+            msg->set_persisted_timestamp(entry->getTimestamp());
+            sendMessage(std::move(msg));
         } else {
-            hitCounter.addHit(*entry.getDocumentId(), docSize);
-            auto msg = std::make_unique<documentapi::PutDocumentMessage>(entry.releaseDocument());
+            hitCounter.addHit(*entry->getDocumentId(), docSize);
+            auto msg = std::make_unique<documentapi::PutDocumentMessage>(entry->releaseDocument());
             msg->setApproxSize(docSize);
+            msg->set_persisted_timestamp(entry->getTimestamp());
             sendMessage(std::move(msg));
         }
     }
