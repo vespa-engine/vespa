@@ -72,14 +72,12 @@ public class SchemaDocumentParser {
 
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
-        logger.println("Found " + parsingResult.diagnostics().size() + " errors during parsing");
-
         if (parsingResult.CST().isPresent()) {
             this.CST = parsingResult.CST().get();
             lexer.setCST(CST);
         }
 
-        //CSTUtils.printTree(logger, CST);
+        CSTUtils.printTree(logger, CST);
 
         logger.println("Found " + context.unresolvedTypeNodes().size() + " unresolved type nodes");
     }
@@ -276,7 +274,6 @@ public class SchemaDocumentParser {
         parser.setParserTolerant(false);
 
         try {
-            context.logger().println("Trying to parse indexing script: " + script);
             parser.root();
             // TODO: Verify expression
             return parser.rootNode();
