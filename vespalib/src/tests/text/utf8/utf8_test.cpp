@@ -55,11 +55,9 @@ TEST("utf8_test") {
         // read data produced from Java program
         int fd = ::open(TEST_PATH("regular-utf8.dat").c_str(), O_RDONLY);
         ASSERT_TRUE(fd > 0);
-        vespalib::string data;
-        data.clear();
-        data.reserve(5510);
-        ASSERT_TRUE(::read(fd, data.begin(), 5510) == 5509);
-        data.append_from_reserved(5509);
+        auto buf = std::make_unique<char[]>(5510);
+        ASSERT_TRUE(::read(fd, buf.get(), 5510) == 5509);
+        vespalib::string data(buf.get(), 5509);
         Utf8Reader r(data);
         uint32_t i = 32;
         uint32_t j = 3;

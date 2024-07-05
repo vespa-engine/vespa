@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/string.hpp>
+#include "string.hpp"
 #include <istream>
 #include <ostream>
+#include <algorithm>
 
 namespace vespalib {
 
@@ -35,6 +36,36 @@ template string operator + (const  char * a, const string & b) noexcept;
 const string &empty_string() noexcept {
     static string empty;
     return empty;
+}
+
+inline namespace waiting_for_godot {
+
+void ltrim(vespalib::string &s) noexcept;
+void rtrim(vespalib::string &s) noexcept;
+
+void
+ltrim(std::string &s) noexcept {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char c) {
+        return !std::isspace(c);
+    }));
+}
+
+void
+rtrim(std::string &s) noexcept {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char c) {
+        return !std::isspace(c);
+    }).base(), s.end());
+}
+}
+
+void
+chomp(vespalib::string & s) noexcept {
+    if constexpr (std::is_same_v<vespalib::string, std::string>) {
+        ltrim(s);
+        rtrim(s);
+    } else {
+        s.chomp();
+    }
 }
 
 }

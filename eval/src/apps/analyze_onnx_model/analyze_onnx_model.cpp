@@ -49,7 +49,7 @@ bool read_line(FilePointer &file, vespalib::string &line) {
 }
 
 void extract(const vespalib::string &str, const vespalib::string &prefix, vespalib::string &dst) {
-    if (starts_with(str, prefix)) {
+    if (str.starts_with(prefix)) {
         size_t pos = prefix.size();
         while ((str.size() > pos) && isspace(str[pos])) {
             ++pos;

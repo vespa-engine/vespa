@@ -13,6 +13,10 @@ public:
     DECLARE_NBO_SERIALIZE;
     VdsHit() noexcept : Hit(), _docId(), _summary() {}
     VdsHit(std::string_view docId, HitRank rank) noexcept : Hit(rank), _docId(docId), _summary() {}
+    VdsHit(const VdsHit &);
+    VdsHit & operator=(const VdsHit &);
+    VdsHit(VdsHit &&) noexcept = default;
+    VdsHit & operator=(VdsHit &&) noexcept = default;
     ~VdsHit() override;
     VdsHit *clone() const override { return new VdsHit(*this); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

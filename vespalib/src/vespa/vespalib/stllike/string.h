@@ -121,6 +121,12 @@ public:
         }
         return (memcmp(buffer(), prefix.data(), prefix.size()) == 0);
     }
+    [[nodiscard]] bool ends_with(std::string_view key) const noexcept {
+        if (size() >= key.size()) {
+            return memcmp(end()-key.size(), key.begin(), key.size()) == 0;
+        }
+        return false;
+    }
 
     /**
      * Find the last occurrence of a substring, starting at e and
@@ -270,6 +276,7 @@ public:
         }
         clear();
     }
+    void shrink_to_fit() noexcept;
     [[nodiscard]] const_iterator begin() const noexcept { return buffer(); }
     [[nodiscard]] const_iterator   end() const noexcept { return buffer() + size(); }
     iterator begin() noexcept { return buffer(); }
@@ -280,6 +287,7 @@ public:
     reverse_iterator   rend() noexcept { return begin() - 1; }
     [[nodiscard]] const char * c_str() const noexcept { return buffer(); }
     [[nodiscard]] const char * data()  const noexcept { return buffer(); }
+    [[nodiscard]] char * data() noexcept { return buffer(); }
     [[nodiscard]] size_type size()     const noexcept { return _sz; }
     [[nodiscard]] size_type length()   const noexcept { return size(); }
     [[nodiscard]] bool empty()         const noexcept { return _sz == 0; }
@@ -371,15 +379,6 @@ public:
     }
 
     /**
-     * Will extend the string within its current buffer. Assumes memory is already initialized.
-     * Can not extend beyond capacity.
-     * Note this is non-STL.
-     *
-     * @param newSz new size of string.
-     */
-    void append_from_reserved(size_type sz) noexcept;
-
-    /**
      * Ensure string has at least newCapacity characters of available
      * storage. If newCapacity is beyond the initial small string
      * stack size, heap storage will be used instead.
@@ -390,12 +389,6 @@ public:
         reserveBytes(newCapacity + 1);
     }
 
-    [[nodiscard]] size_t count_allocated_memory() const noexcept {
-        return sizeof(small_string) + (isAllocated() ? _bufferSize : 0);
-    }
-    [[nodiscard]] size_t count_used_memory() const noexcept {
-        return sizeof(small_string) - StackSize + size();
-    }
 private:
     std::strong_ordering strong_compare(const char *s, size_type sz) const noexcept {
         int res = compare(s, sz);
@@ -532,6 +525,8 @@ static inline string stringify(uint64_t number) noexcept
     }
     return retval;
 }
+
+void chomp(vespalib::string & s) noexcept;
 
 } // namespace vespalib
 

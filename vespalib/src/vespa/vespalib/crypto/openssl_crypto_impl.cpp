@@ -232,7 +232,7 @@ add_any_subject_alternate_names(::X509& subject, ::X509& issuer,
     vespalib::string san_csv;
     for (auto& san : sans) {
         if (!san_csv.empty()) {
-            san_csv.append(',');
+            san_csv += ',';
         }
         san_csv.append(san);
     }

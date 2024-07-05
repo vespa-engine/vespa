@@ -48,7 +48,7 @@ RankingExpressions::loadExpression(const vespalib::string &name) const
         LOG(warning, "rankexpression: %s -> could not read file: %s", name.c_str(), path.c_str());
         return {};
     }
-    if (ends_with(path, ".lz4")) {
+    if (path.ends_with(".lz4")) {
         size_t buffer_size = 64_Ki;
         vespalib::Lz4InputDecoder lz4_decoder(file, buffer_size);
         auto result = extract_data(lz4_decoder);

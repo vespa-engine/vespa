@@ -99,8 +99,7 @@ AttributeDirectory::saveSnapInfo()
 {
     if (!_snapInfo.save()) {
         vespalib::string dirName(getDirName());
-        LOG(warning, "Could not save meta-info file for attribute vector '%s' to disk",
-            dirName.c_str());
+        LOG(warning, "Could not save meta-info file for attribute vector '%s' to disk", dirName.c_str());
         LOG_ABORT("should not be reached");
     }
 }
@@ -141,7 +140,7 @@ AttributeDirectory::markValidSnapshot(SerialNum serialNum)
     }
     vespalib::string snapshotDir(getSnapshotDir(serialNum));
     vespalib::File::sync(snapshotDir);
-    vespalib::File::sync(dirname(snapshotDir));
+    vespalib::File::sync(vespalib::dirname(snapshotDir));
     search::DirectoryTraverse dirt(snapshotDir);
     uint64_t size_on_disk = dirt.GetTreeSize();
     {

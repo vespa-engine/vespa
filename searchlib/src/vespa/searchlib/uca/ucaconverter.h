@@ -26,12 +26,12 @@ class UcaConverter : public BlobConverter
 public:
     using Collator = icu::Collator;
     UcaConverter(std::string_view locale, std::string_view strength);
-    ~UcaConverter();
+    ~UcaConverter() override;
     const Collator & getCollator() const { return *_collator; }
 private:
     struct Buffer {
         vespalib::string _data;
-        uint8_t *ptr() { return (uint8_t *)_data.begin(); }
+        uint8_t *ptr() { return (uint8_t *)_data.data(); }
         int32_t siz() { return _data.size(); }
         Buffer() : _data() {
             reserve(_data.capacity()-8); // do not cause extra malloc() by default

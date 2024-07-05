@@ -99,39 +99,6 @@ TEST("test move constructor") {
     TEST_DO(verify_move("longer string than the 47 bytes that can be held in the short string optimization."));
 }
 
-TEST("testStringAlloc") {
-    fprintf(stderr, "... testing allocations\n");
-    string a("abcde");
-
-    for (int i=0; i<99999; i++) {
-        a.append("12345");
-    }
-    EXPECT_TRUE(a.size() == 5u*100000);
-    EXPECT_TRUE(a.capacity() > a.size());
-    EXPECT_TRUE(a.capacity() < 2*a.size());
-
-    string foo;
-    EXPECT_EQUAL(64ul, sizeof(foo));
-
-    small_string<112> bar;
-    EXPECT_EQUAL(128ul, sizeof(bar));
-
-    string reset;
-    for (int i=0; i<100; i++) {
-        reset.append("12345");
-    }
-    EXPECT_EQUAL(500u, reset.size());
-    EXPECT_EQUAL(511u, reset.capacity());
-    reset.reserve(2000);
-    EXPECT_EQUAL(500u, reset.size());
-    EXPECT_EQUAL(2000u, reset.capacity());
-    reset.reset();
-    EXPECT_EQUAL(0u, reset.size());
-    EXPECT_EQUAL(47u, reset.capacity());
-
-    TEST_FLUSH();
-}
-
 TEST("testStringCompare") {
     fprintf(stderr, "... testing comparison\n");
     string abc("abc");
@@ -367,33 +334,6 @@ TEST("testString") {
     }
 
     TEST_FLUSH();
-}
-
-TEST("require that vespalib::string can append characters (non-standard)") {
-    char c = 'x';
-    vespalib::string str;
-    str.append(c);
-    str.append(c);
-    str.append(c);
-    EXPECT_EQUAL(str, "xxx");
-}
-
-TEST("require that vespalib::append_from_reserved gives uninitialized data (non-standard)") {
-    vespalib::string str;
-    str.reserve(8);
-    char *s = &str[0];
-    s[0] = 'x';
-    s[1] = 'x';
-    s[2] = 'x';
-    str.append_from_reserved(3);
-    EXPECT_EQUAL(3u, str.size());
-    EXPECT_EQUAL(str, "xxx");
-    s[3] = 'y';
-    s[4] = 'y';
-    s[5] = 'y';
-    str.append_from_reserved(3);
-    EXPECT_EQUAL(6u, str.size());
-    EXPECT_EQUAL(str, "xxxyyy");
 }
 
 TEST("require that vespalib::resize works") {

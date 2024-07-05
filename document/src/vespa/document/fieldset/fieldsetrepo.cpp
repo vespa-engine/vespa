@@ -8,10 +8,8 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".document.fieldset.fieldsetrepo");
-
 using vespalib::StringTokenizer;
+using vespalib::IllegalArgumentException;
 
 namespace document {
 
@@ -31,20 +29,17 @@ parseSpecialValues(std::string_view name)
     } else if (name.size() == 10 && name == DocumentOnly::NAME) {
         return std::make_shared<DocumentOnly>();
     } else {
-        throw vespalib::IllegalArgumentException(
-                "The only special names (enclosed in '[]') allowed are "
-                "id, all, none, docid, document; but not '" + name + "'.");
+        throw IllegalArgumentException("The only special names (enclosed in '[]') allowed are "
+                                       "id, all, none, docid, document; but not '" + name + "'.");
     }
 }
 
 FieldSet::SP
-parseFieldCollection(const DocumentTypeRepo& repo,
-                     std::string_view docType,
-                     std::string_view fieldNames)
+parseFieldCollection(const DocumentTypeRepo& repo, std::string_view docType, std::string_view fieldNames)
 {
     const DocumentType* typePtr = repo.getDocumentType(docType);
     if (!typePtr) {
-        throw vespalib::IllegalArgumentException("Unknown document type " + docType);
+        throw IllegalArgumentException("Unknown document type " + docType);
     }
     const DocumentType& type(*typePtr);
 
@@ -73,9 +68,8 @@ FieldSetRepo::parse(const DocumentTypeRepo& repo, std::string_view str)
     } else {
         StringTokenizer tokenizer(str, ":");
         if (tokenizer.size() != 2) {
-            throw vespalib::IllegalArgumentException(
-                    "The field set list must consist of a document type, "
-                    "then a colon (:), then a comma-separated list of field names");
+            throw IllegalArgumentException("The field set list must consist of a document type, "
+                                           "then a colon (:), then a comma-separated list of field names");
         }
 
         return parseFieldCollection(repo, tokenizer[0], tokenizer[1]);
@@ -133,7 +127,7 @@ void
 FieldSetRepo::configureDocumentType(const DocumentType & documentType) {
     for (const auto & entry : documentType.getFieldSets()) {
         vespalib::string fieldSetName(documentType.getName());
-        fieldSetName.append(':').append(entry.first);
+        fieldSetName.append(":").append(entry.first);
         try {
             auto fieldset = parse(_doumentTyperepo, fieldSetName);
             _configuredFieldSets[fieldSetName] = std::move(fieldset);

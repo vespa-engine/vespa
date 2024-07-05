@@ -148,8 +148,7 @@ Properties::visitProperties(IPropertiesVisitor &visitor) const
 }
 
 void
-Properties::visitNamespace(std::string_view ns,
-                           IPropertiesVisitor &visitor) const
+Properties::visitNamespace(std::string_view ns, IPropertiesVisitor &visitor) const
 {
     vespalib::string tmp;
     vespalib::string prefix = ns + ".";
@@ -177,14 +176,13 @@ Properties::lookup(std::string_view key) const noexcept
     return {node->second};
 }
 
-Property Properties::lookup(std::string_view namespace1,
-                            std::string_view key) const noexcept
+Property Properties::lookup(std::string_view namespace1, std::string_view key) const noexcept
 {
     if (namespace1.empty() || key.empty()) {
         return {};
     }
     vespalib::string fullKey(namespace1);
-    fullKey.append('.').append(key);
+    fullKey.append(".").append(key);
     return lookup(fullKey);
 }
 
@@ -196,7 +194,7 @@ Property Properties::lookup(std::string_view namespace1,
         return {};
     }
     vespalib::string fullKey(namespace1);
-    fullKey.append('.').append(namespace2).append('.').append(key);
+    fullKey.append(".").append(namespace2).append(".").append(key);
     return lookup(fullKey);
 }
 
@@ -209,7 +207,7 @@ Property Properties::lookup(std::string_view namespace1,
         return {};
     }
     vespalib::string fullKey(namespace1);
-    fullKey.append('.').append(namespace2).append('.').append(namespace3).append('.').append(key);
+    fullKey.append(".").append(namespace2).append(".").append(namespace3).append(".").append(key);
     return lookup(fullKey);
 }
 

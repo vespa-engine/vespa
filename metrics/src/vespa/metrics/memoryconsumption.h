@@ -84,10 +84,9 @@ public:
     uint32_t _totalStringCount;
 
     MemoryConsumption();
-    ~MemoryConsumption();
+    ~MemoryConsumption() override;
 
     /** Get memory usage of a string that is not included when doing sizeof */
-    uint32_t getStringMemoryUsage(const std::string& s, uint32_t& uniqueCount);
     uint32_t getStringMemoryUsage(const vespalib::string& s, uint32_t& uniqueCount);
     void addSnapShotUsage(const std::string& name, uint32_t usage);
 

@@ -390,7 +390,6 @@ asciistream::operator >> (string & v)
     return *this;
 }
 
-
 namespace {
 const char * _C_char = "0123456789abcdefg";
 
@@ -608,7 +607,7 @@ asciistream::write(const void * buf, size_t len)
             LOG_ABORT("should not be reached");  // Impossible
         }
     }
-    _wbuf.append(buf, len);
+    _wbuf.append(static_cast<const char *>(buf), len);
     _rbuf = _wbuf;
 }
 

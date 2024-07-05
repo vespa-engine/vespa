@@ -66,16 +66,16 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
                                      const string &policyParam)
 {
     string cacheKey = protocolName;
-    cacheKey.append('.').append(policyName).append(".").append(policyParam);
+    cacheKey.append(".").append(policyName).append(".").append(policyParam);
     std::lock_guard guard(_lock);
-    RoutingPolicyCache::iterator cit = _routingPolicyCache.find(cacheKey);
+    auto cit = _routingPolicyCache.find(cacheKey);
     if (cit != _routingPolicyCache.end()) {
         return cit->second;
     }
-    ProtocolMap::iterator pit = _activeProtocols.find(protocolName);
+    auto pit = _activeProtocols.find(protocolName);
     if (pit == _activeProtocols.end()) {
         LOG(error, "Protocol '%s' not supported.", protocolName.c_str());
-        return IRoutingPolicy::SP();
+        return {};
     }
     IRoutingPolicy::UP policy;
     try {
@@ -86,7 +86,7 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
     if (policy.get() == nullptr) {
         LOG(error, "Protocol '%s' failed to create routing policy '%s' with parameter '%s'.",
             protocolName.c_str(), policyName.c_str(), policyParam.c_str());
-        return IRoutingPolicy::SP();
+        return {};
     }
     IRoutingPolicy::SP ret(policy.release());
     _routingPolicyCache[cacheKey] = ret;

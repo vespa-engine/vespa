@@ -13,51 +13,50 @@ namespace document {
 
 FieldPathEntry::~FieldPathEntry() = default;
 
-FieldPathEntry::FieldPathEntry() :
-    _type(NONE),
-    _name(""),
-    _field(),
-    _dataType(0),
-    _lookupIndex(0),
-    _lookupKey(),
-    _variableName(),
-    _fillInVal()
+FieldPathEntry::FieldPathEntry()
+    : _type(NONE),
+      _name(""),
+      _field(),
+      _dataType(nullptr),
+      _lookupIndex(0),
+      _lookupKey(),
+      _variableName(),
+      _fillInVal()
 { }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex) :
-    _type(ARRAY_INDEX),
-    _name(""),
-    _field(),
-    _dataType(&dataType),
-    _lookupIndex(arrayIndex),
-    _lookupKey(),
-    _variableName(),
-    _fillInVal()
+FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex)
+    : _type(ARRAY_INDEX),
+      _name(""),
+      _field(),
+      _dataType(&dataType),
+      _lookupIndex(arrayIndex),
+      _lookupKey(),
+      _variableName(),
+      _fillInVal()
 {
     setFillValue(*_dataType);
 }
 
-FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
-    _type(STRUCT_FIELD),
-    _name(fieldRef.getName()),
-    _field(fieldRef),
-    _dataType(&fieldRef.getDataType()),
-    _lookupIndex(0),
-    _lookupKey(),
-    _variableName(),
-    _fillInVal(fieldRef.createValue())
+FieldPathEntry::FieldPathEntry(const Field &fieldRef)
+    : _type(STRUCT_FIELD),
+      _name(fieldRef.getName()),
+      _field(fieldRef),
+      _dataType(&fieldRef.getDataType()),
+      _lookupIndex(0),
+      _lookupKey(),
+      _variableName(),
+      _fillInVal(fieldRef.createValue())
 { }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType,
-                               FieldValue::UP lookupKey) :
-    _type(MAP_KEY),
-    _name("value"),
-    _field(),
-    _dataType(&dataType),
-    _lookupIndex(0),
-    _lookupKey(std::move(lookupKey)),
-    _variableName(),
-    _fillInVal()
+FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType, FieldValue::UP lookupKey)
+    : _type(MAP_KEY),
+      _name("value"),
+      _field(),
+      _dataType(&dataType),
+      _lookupIndex(0),
+      _lookupKey(std::move(lookupKey)),
+      _variableName(),
+      _fillInVal()
 {
     setFillValue(fillType);
 }
