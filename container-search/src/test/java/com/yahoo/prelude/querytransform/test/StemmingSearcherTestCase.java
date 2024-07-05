@@ -19,7 +19,10 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -146,6 +149,33 @@ public class StemmingSearcherTestCase {
         assertStemmed("WEAKAND(100) " + emoji1, "/search?query=" + emoji1);
         assertStemmed("WEAKAND(100) (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
         assertStemmed("WEAKAND(100) (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
+    }
+
+    @Test
+    void testDocumentFrequnecyIsPropagated() {
+        var builder = new Query.Builder();
+        builder.setRequest(QueryTestCase.httpEncode("/search?query=trees"));
+        var query = builder.build();
+        var word = getFirstWord(query);
+        assert(word.isPresent());
+        word.get().setDocumentFrequency(new DocumentFrequency(13, 100));
+        executeStemming(query);
+        var stemmedWord = getFirstWord(query);
+        assert(stemmedWord.isPresent());
+        assert(word != stemmedWord);
+        assertNotEquals(word.get().getWord(), stemmedWord.get().getWord());
+        assertEquals(Optional.of(new DocumentFrequency(13, 100)), stemmedWord.get().getDocumentFrequency());
+    }
+
+    private static Optional<WordItem> getFirstWord(Query query) {
+        var item = query.getModel().getQueryTree().getRoot();
+        if (item instanceof WeakAndItem weakAndItem) {
+            if (weakAndItem.getTermCount() > 0) item = weakAndItem.getItem(0);
+        }
+        if (item instanceof WordItem subWord) {
+            return Optional.of(subWord);
+        }
+        return Optional.empty();
     }
 
     private Execution.Context newExecutionContext() {
