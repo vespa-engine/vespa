@@ -136,7 +136,7 @@
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
         <plexus-archiver.vespa.version>4.9.2</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
-        <plexus-io.vespa.version>3.4.2</plexus-io.vespa.version>
+        <plexus-io.vespa.version>3.5.0</plexus-io.vespa.version>
         <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.0.4</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.8.0</plexus-classworlds.vespa.version>
