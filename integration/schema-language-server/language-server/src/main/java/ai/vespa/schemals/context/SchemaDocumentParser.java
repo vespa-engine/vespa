@@ -22,8 +22,17 @@ import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
 
+import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
+
+import com.yahoo.schema.parser.ParsedSchema;
+import com.yahoo.tensor.functions.Diag;
+import com.yahoo.schema.parser.ParsedBlock;
+
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 
 public class SchemaDocumentParser {
 
@@ -308,10 +317,19 @@ public class SchemaDocumentParser {
 
     private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
 
-        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
+        ArrayList<Diagnostic> ret = new ArrayList<>();
         
         for (Identifier identifier : parseIdentifiers) {
             ret.addAll(identifier.identify(node));
+        }
+
+        if (node.isIndexingElm()) {
+            Range nodeRange = node.getRange();
+            var indexingNode = parseIndexingScript(node.getILScript(), nodeRange.getEnd(), ret);
+
+            if (indexingNode != null) {
+                node.setIndexingNode(indexingNode);
+            }
         }
 
         for (int i = 0; i < node.size(); i++) {
@@ -328,6 +346,32 @@ public class SchemaDocumentParser {
             return new ArrayList<Diagnostic>();
         }
         return traverseCST(CST);
+    }
+
+    private ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(String script, Position scriptStart, ArrayList<Diagnostic> diagnostics) {
+        if (script == null) return null;
+
+        CharSequence sequence = script;
+        IndexingParser parser = new IndexingParser(logger, getFileName(), sequence);
+        parser.setParserTolerant(false);
+
+        try {
+            logger.println("Trying to parse indexing script: " + script);
+            Expression indexingExpression = parser.root();
+            // TODO: Verify expression
+            return parser.rootNode();
+        } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
+            logger.println("Encountered parsing error in parsing ILScript");
+            Range range = ILUtils.getNodeRange(pe.getToken());
+            range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
+            range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
+
+            diagnostics.add(new Diagnostic(range, pe.getMessage()));
+        } catch(IllegalArgumentException ex) {
+            logger.println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
+        }
+
+        return null;
     }
 
     /*

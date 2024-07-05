@@ -83,7 +83,7 @@ INJECT SchemaParser:
      * @param multiline Whether or not to allow multi-line expressions.
      */
     @SuppressWarnings("deprecation")
-    private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
+    private String newIndexingOperation(boolean multiline) throws ParseException {
         return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
@@ -93,7 +93,7 @@ INJECT SchemaParser:
      * @param multiline Whether or not to allow multi-line expressions.
      * @param linguistics What to use for tokenizing.
      */
-    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+    private String newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
         // Find the CharStream to and set input to this stream, by converting it to a SimpleCharStream - Theodor
         // SimpleCharStream input = new SimpleCharStream("summary | index"); //lastConsumedToken.getTokenSource();
 
@@ -132,8 +132,9 @@ INJECT SchemaParser:
 
         inputString = inputString.substring(startSplit, endSplit);
 
-        SimpleCharStream input = new SimpleCharStream(inputString);
+        //SimpleCharStream input = new SimpleCharStream(inputString);
 
+        /*
         try {
             return IndexingOperation.fromStream(input, multiline, linguistics, embedders);
         } catch (com.yahoo.schema.parser.ParseException e) {
@@ -143,6 +144,8 @@ INJECT SchemaParser:
             tokenToAddExceptionsTo.addParseException(exception, startSplit, endSplit);
         }
         return null;
+        */
+        return inputString;
     }
 
     /**
@@ -170,6 +173,22 @@ INJECT SchemaParser:
         return null;
     }
 
+}
+
+/**
+ * The following stores the indexinglanguage script at the AST node 
+ * for parsing later.
+ */
+INJECT indexingElm:
+{
+    private String ILScript = null;
+
+    public boolean hasILScript() { return ILScript != null; }
+    public String getILScript() { return ILScript; }
+
+    public void setILScript(String script) {
+        this.ILScript = script;
+    }
 }
 
 INJECT Token :
@@ -215,6 +234,7 @@ INJECT Token :
     void addIllegalArugmentException(IllegalArgumentException e) {
         illegalArgumentException = e;
     }
+
 }
 
 // --------------------------------------------------------------------------------
@@ -1018,9 +1038,17 @@ void structFieldBodyElm(ParsedField field) : { }
  *
  * @param field The field to modify.
  */
-void indexingElm(ParsedField field) : { }
+void indexingElm(ParsedField field) : 
+{
+    String ILScript;
+}
 
-    ( <INDEXING> ( (<COLON> indexingOperationElm(field, false)) | indexingOperationElm(field, true) ) )
+    ( <INDEXING> ( (<COLON> (ILScript = indexingOperationElm(field, false))) | (ILScript = indexingOperationElm(field, true)) ) )
+{
+    if (ILScript != null && thisProduction != null) {
+        thisProduction.setILScript(ILScript);
+    }
+}
 ;
 
 /**
@@ -1028,14 +1056,15 @@ void indexingElm(ParsedField field) : { }
  *
  * @param field The field to modify.
  */
-void indexingOperationElm(ParsedField field, boolean multiLine) : { }
+String indexingOperationElm(ParsedField field, boolean multiLine) : { }
 
     {
-        IndexingOperation oldOp = newIndexingOperation(multiLine);
-        if (oldOp != null) {
-            ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
-            field.setIndexingOperation(newOp);
-        }
+        return newIndexingOperation(multiLine);
+        //IndexingOperation oldOp = newIndexingOperation(multiLine);
+        //if (oldOp != null) {
+        //    //ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
+        //    //field.setIndexingOperation(newOp);
+        //}
     }
 ;
 

@@ -5,18 +5,22 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.indexingElm;
 
 public class SchemaNode {
 
-    private Token.TokenType type;
+    private TokenType type;
     private String identifierString;
     private SchemaNode parent;
     private boolean isUserDefinedIdentifier = false;
     private boolean isSchemaType = false;
     private Node originalNode;
+
+    private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
 
     // This array has to be in order, without overlapping elements
     private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
@@ -31,7 +35,7 @@ public class SchemaNode {
         this.parent = parent;
         originalNode = node;
         Node.NodeType originalType = node.getType();
-        type = (node.isDirty() || !(originalType instanceof Token.TokenType)) ? null : (Token.TokenType) originalType;
+        type = (node.isDirty() || !(originalType instanceof TokenType)) ? null : (TokenType) originalType;
 
         identifierString = node.getClass().getName();
         range = CSTUtils.getNodeRange(node);
@@ -42,24 +46,24 @@ public class SchemaNode {
         
     }
 
-    public Token.TokenType getType() {
+    public TokenType getType() {
         return type;
     }
 
     // Return token type (if the node is a token), even if the node is dirty
-    public Token.TokenType getDirtyType() {
+    public TokenType getDirtyType() {
         Node.NodeType originalType = originalNode.getType();
-        if (originalType instanceof Token.TokenType)return (Token.TokenType)originalType;
+        if (originalType instanceof TokenType)return (TokenType)originalType;
         return null;
     }
 
-    public Token.TokenType setType(Token.TokenType type) {
+    public TokenType setType(TokenType type) {
         this.type = type;
         return type;
     }
 
     public void setUserDefinedIdentifier() {
-        setType(Token.TokenType.IDENTIFIER);
+        setType(TokenType.IDENTIFIER);
         this.isUserDefinedIdentifier = true;
     }
 
@@ -73,6 +77,28 @@ public class SchemaNode {
 
     public boolean isSchemaType() {
         return isSchemaType;
+    }
+
+    public boolean isIndexingElm() {
+        return (originalNode instanceof indexingElm);
+    }
+
+    public String getILScript() {
+        if (!isIndexingElm())return null;
+        indexingElm elmNode = (indexingElm)originalNode;
+        return elmNode.getILScript();
+    }
+
+    public boolean hasIndexingNode() {
+        return this.indexingNode != null;
+    }
+
+    public ai.vespa.schemals.parser.indexinglanguage.Node getIndexingNode() {
+        return this.indexingNode;
+    }
+
+    public void setIndexingNode(ai.vespa.schemals.parser.indexinglanguage.Node node) {
+        this.indexingNode = node;
     }
 
     public String getIdentifierString() {
