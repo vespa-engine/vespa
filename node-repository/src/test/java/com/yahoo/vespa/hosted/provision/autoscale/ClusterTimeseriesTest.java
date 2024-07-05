@@ -24,21 +24,21 @@ public class ClusterTimeseriesTest {
     public void test_empty() {
         ManualClock clock = new ManualClock();
         var timeseries = new ClusterTimeseries(cluster, List.of());
-        assertEquals(0.1, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals(0.1, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
     public void test_constant_rate_short() {
         var clock = new ManualClock();
         var timeseries = new ClusterTimeseries(cluster, queryRate(10, clock, t -> 50.0));
-        assertEquals(0.1, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals(0.1, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
     public void test_constant_rate_long() {
         var clock = new ManualClock();
         var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock, t -> 50.0));
-        assertEquals(0.0, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals(0.0, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class ClusterTimeseriesTest {
         snapshots.addAll(queryRate(1000, clock, t ->  50.0));
         snapshots.addAll(queryRate(10, clock, t -> 400.0));
         snapshots.addAll(queryRate(1000, clock, t ->  50.0));
-        assertEquals((400-50)/5.0/50.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals((400-50)/5.0/50.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
@@ -62,7 +62,7 @@ public class ClusterTimeseriesTest {
         snapshots.addAll(queryRate(1000, clock, t ->  50.0));
         snapshots.addAll(queryRate(10, clock, t -> 800.0));
         snapshots.addAll(queryRate(1000, clock, t ->  50.0));
-        assertEquals((800-50)/5.0/50.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals((800-50)/5.0/50.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class ClusterTimeseriesTest {
         var snapshots = new ArrayList<ClusterMetricSnapshot>();
         snapshots.addAll(queryRate(100, clock, t ->  (double)t));
         snapshots.addAll(queryRate(100, clock, t -> 100.0 - t));
-        assertEquals(1/5.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals(1/5.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class ClusterTimeseriesTest {
         var clock = new ManualClock();
         var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock,
                                                              t -> 10.0 + 100.0 * Math.sin(t)));
-        assertEquals(0.26, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals(0.26, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class ClusterTimeseriesTest {
         var clock = new ManualClock();
         var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock,
                                                                            t -> 1000.0 + 10.0 * Math.sin(t)));
-        assertEquals(0.0, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals(0.0, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     @Test
@@ -95,7 +95,7 @@ public class ClusterTimeseriesTest {
         var clock = new ManualClock();
         var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock,
                                                              t -> 10.0 + 100.0 * Math.sin(t) + 80.0 * Math.sin(10 * t)) );
-        assertEquals(1.765, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
+        assertEquals(1.765, timeseries.maxQueryGrowthRate(Duration.ofMinutes(5), clock.instant()), delta);
     }
 
     private List<ClusterMetricSnapshot> queryRate(int count, ManualClock clock, IntFunction<Double> rate) {
