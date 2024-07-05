@@ -103,6 +103,39 @@ public class SchemaNode {
         return parent.get(parentIndex - 1);
     }
 
+    public SchemaNode getNext() {
+        if (parent == null) return null;
+
+        int parentIndex = parent.indexOf(this);
+
+        if (parentIndex == -1) return null;
+        
+        if (parentIndex == parent.size() - 1) return parent.getNext();
+
+        return parent.get(parentIndex + 1);
+    }
+
+    private SchemaNode getSibling(int relativeIndex) {
+        if (parent == null)return null;
+
+        int parentIndex = parent.indexOf(this);
+
+        if (parentIndex == -1) return null; // invalid setup
+
+        int siblingIndex = parentIndex + relativeIndex;
+        if (siblingIndex < 0 || siblingIndex >= parent.size()) return null;
+        
+        return parent.get(siblingIndex);
+    }
+
+    public SchemaNode getPreviousSibling() {
+        return getSibling(-1);
+    }
+
+    public SchemaNode getNextSibling() {
+        return getSibling(1);
+    }
+
     public int indexOf(SchemaNode child) {
         return this.children.indexOf(child);
     }

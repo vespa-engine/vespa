@@ -59,6 +59,7 @@ public class SchemaSemanticTokens implements Visitor {
     private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
         put("ai.vespa.schemals.parser.ast.rootSchema", "namespace");
         put("ai.vespa.schemals.parser.ast.documentElm", "class");
+        put("ai.vespa.schemals.parser.ast.inheritsDocument", "class");
         put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
         put("ai.vespa.schemals.parser.ast.fieldsElm", "variable");
@@ -66,6 +67,7 @@ public class SchemaSemanticTokens implements Visitor {
         put("ai.vespa.schemals.parser.ast.structDefinitionElm", "variable");
         put("ai.vespa.schemals.parser.ast.structFieldDefinition", "variable");
         put("ai.vespa.schemals.parser.ast.rankProfile", "variable");
+        put("ai.vespa.schemals.parser.ast.inheritsRankProfile", "variable");
         put("ai.vespa.schemals.parser.ast.functionElm", "function");
     }};
 
@@ -73,8 +75,8 @@ public class SchemaSemanticTokens implements Visitor {
     private static Map<TokenType, Integer> tokenTypeMap;
     private static Map<String, Integer> identifierTypeMap;
 
-    private static Integer addTokenType(String name) {
-        Integer index = tokenTypes.indexOf(name);
+    private static int addTokenType(String name) {
+        int index = tokenTypes.indexOf(name);
         if (index == -1) {
             index = tokenTypes.size();
             tokenTypes.add(name);
@@ -90,17 +92,17 @@ public class SchemaSemanticTokens implements Visitor {
         tokenTypes.addAll(manualyRegisteredLSPNames);
 
         for (Map.Entry<TokenType, String> set : tokenTypeLSPNameMap.entrySet()) {
-            Integer index = addTokenType(set.getValue());
+            int index = addTokenType(set.getValue());
             tokenTypeMap.put(set.getKey(), index);
         }
 
-        Integer keywordIndex = addTokenType("keyword");
+        int keywordIndex = addTokenType("keyword");
         for (TokenType type : keywordTokens) {
             tokenTypeMap.put(type, keywordIndex);
         }
 
         for (Map.Entry<String, String> set : identifierTypeLSPNameMap.entrySet()) {
-            Integer index = addTokenType(set.getValue());
+            int index = addTokenType(set.getValue());
             identifierTypeMap.put(set.getKey(), index);
         }
 
@@ -123,11 +125,11 @@ public class SchemaSemanticTokens implements Visitor {
         private int tokenType;
         private Range range;
 
-        SemanticTokenMarker(Integer tokenType, SchemaNode node) {
+        SemanticTokenMarker(int tokenType, SchemaNode node) {
             this(tokenType, node.getRange());
         }
         
-        SemanticTokenMarker(Integer tokenType, Range range) {
+        SemanticTokenMarker(int tokenType, Range range) {
             this.tokenType = tokenType;
             this.range = range;
         }
@@ -147,7 +149,7 @@ public class SchemaSemanticTokens implements Visitor {
         }
 
         static ArrayList<Integer> concatCompactForm(ArrayList<SemanticTokenMarker> markers) {
-            ArrayList<Integer> ret = new ArrayList<Integer>(markers.size() * 5);
+            ArrayList<Integer> ret = new ArrayList<>(markers.size() * 5);
 
             if (markers.size() == 0) {
                 return ret;
