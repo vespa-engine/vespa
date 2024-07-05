@@ -204,6 +204,7 @@ FieldSearchSpecMap::addFieldsFromIndex(std::string_view rawIndex, StringFieldIdT
                 if ((rawIndex != index) && (spec.name().find(index) == 0)) {
                     vespalib::string modIndex(rawIndex);
                     modIndex.append(spec.name().substr(index.size()));
+                    // Note: Multiple raw index names might map to the same field id
                     fieldIdMap.add(modIndex, spec.id());
                 } else {
                     fieldIdMap.add(spec.name(),spec.id());
