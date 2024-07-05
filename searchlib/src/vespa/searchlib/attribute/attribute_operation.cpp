@@ -239,11 +239,12 @@ Operation::create(V vector) const {
         try {
             is >> value;
             if (!is.empty()) {
-                LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.", operand.data(), is.c_str());
+                LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.",
+                    std::string(operand).c_str(), is.c_str());
                 validOp = Type::BAD;
             }
             if (((validOp == Type::DIV) || (validOp == Type::MOD)) && (value == 0)) {
-                LOG(warning, "Division by zero is not acceptable (%s).", operand.data());
+                LOG(warning, "Division by zero is not acceptable (%s).", std::string(operand).c_str());
                 validOp = Type::BAD;
             }
         } catch (vespalib::IllegalArgumentException & e) {

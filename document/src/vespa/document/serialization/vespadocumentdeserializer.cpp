@@ -387,7 +387,7 @@ VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
                     }
                 } catch (const vespalib::Exception & e) {
                     LOG(warning, "Failed decoding field '%s' in legacy bodyfield -> Skipping it: %s",
-                                 entry.getName().data(), e.what());
+                                 entry.getName().c_str(), e.what());
                 }
             }
         }

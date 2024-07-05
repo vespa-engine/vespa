@@ -96,7 +96,7 @@ DocumentRetriever
     Field::Set::Builder attrBuilder;
     for (const Field* field : fields) {
         if ((field->getDataType().getId() == positionDataTypeId) || is_array_of_position_type(field->getDataType())) {
-            LOG(debug, "Field '%s' is a position field", field->getName().data());
+            LOG(debug, "Field '%s' is a position field", field->getName().c_str());
             const vespalib::string & zcurve_name = PositionDataType::getZCurveFieldName(field->getName());
             AttributeGuard::UP attr = attr_manager.getAttribute(zcurve_name);
             if (attr && attr->valid()) {
