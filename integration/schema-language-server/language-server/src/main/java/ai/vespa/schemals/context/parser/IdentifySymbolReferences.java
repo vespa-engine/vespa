@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.tree.SymbolReferenceNode;
@@ -34,7 +35,7 @@ public class IdentifySymbolReferences extends Identifier {
         if (
             node.getType() == TokenType.FIELDS &&
             parent != null &&
-            parent.getIdentifierString() == "ai.vespa.schemals.parser.ast.fieldsElm"
+            parent.instanceOf(fieldsElm.class)
         ) {
             for (int i = 2; i < parent.size(); i += 2) {
                 SchemaNode child = parent.get(i);

@@ -100,6 +100,14 @@ public class SchemaNode {
         this.indexingNode = node;
     }
 
+    public boolean instanceOf(Class<? extends Node> astClass) {
+        return astClass.isInstance(originalNode);
+    }
+
+    public Class<? extends Node> getIdentifierClass() {
+        return originalNode.getClass();
+    }
+
     public String getIdentifierString() {
         return identifierString;
     }

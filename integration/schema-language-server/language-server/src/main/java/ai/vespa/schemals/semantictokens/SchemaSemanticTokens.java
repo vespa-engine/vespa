@@ -19,8 +19,21 @@ import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.fieldSetElm;
+import ai.vespa.schemals.parser.ast.fieldsElm;
+import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsRankProfile;
+import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.structDefinitionElm;
+import ai.vespa.schemals.parser.ast.structFieldDefinition;
+import ai.vespa.schemals.parser.ast.structFieldElm;
 
 public class SchemaSemanticTokens implements Visitor {
 
@@ -58,24 +71,24 @@ public class SchemaSemanticTokens implements Visitor {
         put(TokenType.TENSOR_TYPE, "type");
     }};
     
-    private static final HashMap<String, String> identifierTypeLSPNameMap = new HashMap<String, String>() {{
-        put("ai.vespa.schemals.parser.ast.rootSchema", "namespace");
-        put("ai.vespa.schemals.parser.ast.documentElm", "class");
-        put("ai.vespa.schemals.parser.ast.inheritsDocument", "class");
-        put("ai.vespa.schemals.parser.ast.fieldElm", "variable");
-        put("ai.vespa.schemals.parser.ast.fieldSetElm", "variable");
-        put("ai.vespa.schemals.parser.ast.fieldsElm", "variable");
-        put("ai.vespa.schemals.parser.ast.structFieldElm", "variable");
-        put("ai.vespa.schemals.parser.ast.structDefinitionElm", "variable");
-        put("ai.vespa.schemals.parser.ast.structFieldDefinition", "variable");
-        put("ai.vespa.schemals.parser.ast.rankProfile", "variable");
-        put("ai.vespa.schemals.parser.ast.inheritsRankProfile", "variable");
-        put("ai.vespa.schemals.parser.ast.functionElm", "function");
+    private static final HashMap<Class<? extends Node>, String> identifierTypeLSPNameMap = new HashMap<Class<? extends Node>, String>() {{
+        put(rootSchema.class, "namespace");
+        put(documentElm.class, "class");
+        put(inheritsDocument.class, "class");
+        put(fieldElm.class, "variable");
+        put(fieldSetElm.class, "variable");
+        put(fieldsElm.class, "variable");
+        put(structFieldElm.class, "variable");
+        put(structDefinitionElm.class, "variable");
+        put(structFieldDefinition.class, "variable");
+        put(rankProfile.class, "variable");
+        put(inheritsRankProfile.class, "variable");
+        put(functionElm.class, "function");
     }};
 
     private static ArrayList<String> tokenTypes;
     private static Map<TokenType, Integer> tokenTypeMap;
-    private static Map<String, Integer> identifierTypeMap;
+    private static Map<Class<? extends Node>, Integer> identifierTypeMap;
 
     private static int addTokenType(String name) {
         int index = tokenTypes.indexOf(name);
@@ -89,7 +102,7 @@ public class SchemaSemanticTokens implements Visitor {
     static {
         tokenTypes = new ArrayList<String>();
         tokenTypeMap = new HashMap<TokenType, Integer>();
-        identifierTypeMap = new HashMap<String, Integer>();
+        identifierTypeMap = new HashMap<Class<? extends Node>, Integer>();
 
         tokenTypes.addAll(manualyRegisteredLSPNames);
 
@@ -103,7 +116,7 @@ public class SchemaSemanticTokens implements Visitor {
             tokenTypeMap.put(type, keywordIndex);
         }
 
-        for (Map.Entry<String, String> set : identifierTypeLSPNameMap.entrySet()) {
+        for (Map.Entry<Class<? extends Node>, String> set : identifierTypeLSPNameMap.entrySet()) {
             int index = addTokenType(set.getValue());
             identifierTypeMap.put(set.getKey(), index);
         }
@@ -187,8 +200,7 @@ public class SchemaSemanticTokens implements Visitor {
         } else if (type != null) {
             if (node instanceof SymbolNode) {
                 SchemaNode parent = node.getParent();
-                String parnetClassName = parent.getIdentifierString();
-                Integer tokenType = identifierTypeMap.get(parnetClassName);
+                Integer tokenType = identifierTypeMap.get(parent.getIdentifierClass());
                 
                 if (tokenType != null) {
                     ret.add(new SemanticTokenMarker(tokenType, node));

@@ -10,12 +10,14 @@ import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.ast.fieldsElm;
 
 public class SchemaDefinition {
 
-    private static HashMap<String, Token.TokenType> linkContexts = new HashMap<String, Token.TokenType>() {{
-        put("ai.vespa.schemals.parser.ast.fieldsElm", Token.TokenType.FIELD);
+    private static HashMap<Class<? extends Node>, Token.TokenType> linkContexts = new HashMap<Class<? extends Node>, Token.TokenType>() {{
+        put(fieldsElm.class, Token.TokenType.FIELD);
     }};
 
     public static ArrayList<Location> getDefinition(
@@ -37,7 +39,7 @@ public class SchemaDefinition {
             return ret;
         }
 
-        Token.TokenType tokenType = linkContexts.get(parent.getIdentifierString());
+        Token.TokenType tokenType = linkContexts.get(parent.getIdentifierClass());
         if (tokenType == null) {
             return ret;
         }
