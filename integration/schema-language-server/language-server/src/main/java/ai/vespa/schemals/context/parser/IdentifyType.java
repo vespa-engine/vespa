@@ -20,6 +20,11 @@ public class IdentifyType extends Identifier {
         super(logger);
     }
 
+    private boolean isPrimitiveType(SchemaNode node) {
+        ParsedType type = ParsedType.fromName(node.getText());
+        return type.getVariant() != Variant.UNKNOWN;
+    }
+
     private ArrayList<Diagnostic> validateType(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
@@ -37,55 +42,54 @@ public class IdentifyType extends Identifier {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
         SchemaNode parent = node.getParent();
+        // TODO: handle types in inputs and constants
+        if (node.getType() != TokenType.TYPE 
+            || parent == null 
+            || parent.indexOf(node) == -1 
+            || parent.indexOf(node) + 1 == parent.size())return ret;
+
+        int childIndex = parent.indexOf(node) + 1;
+
+        SchemaNode child = parent.get(childIndex);
+        // Check if it uses deprecated array
         if (
-            node.getType() == TokenType.TYPE &&
-            parent != null &&
-            parent.size() > parent.indexOf(node)
+            child.getClassLeafIdentifierString().equals("dataType") &&
+            child.size() > 1 &&
+            child.get(1).getText().equals("[]")
         ) {
-            int childIndex = parent.indexOf(node) + 1;
+            Range range = child.getRange();
 
-            if (parent.getClassLeafIdentifierString().equals("tensorTypeWithPrefix")) {
-                childIndex++;
-                if (childIndex >= parent.size() || parent.get(childIndex).getType() != TokenType.TENSOR_TYPE) {
-                    ret.add(new Diagnostic(node.getRange(), "Expected a tensor type", DiagnosticSeverity.Error, ""));
-                    return ret;
-                }
-            }
+            child = child.get(0);
 
-            SchemaNode child = parent.get(childIndex);
-            // Check if it uses deprecated array
-            if (
-                child.getClassLeafIdentifierString().equals("dataType") &&
-                child.size() > 1 &&
-                child.get(1).getText().equals("[]")
-            ) {
-                Range range = child.getRange();
-
-                child = child.get(0);
-
-                ret.add(new Diagnostic(range, "Data type syntax '" + child.getText() + "[]' is deprecated, use 'array<" + child.getText() + ">' instead.", DiagnosticSeverity.Warning,""));
-            }
-
-            // Check if type is valid
-            if (
-                child.size() > 2 &&
-                child.get(1).getType() == TokenType.LESSTHAN
-            ) {
-                TokenType firstChildType = child.get(0).getType();
-                if (
-                    firstChildType != TokenType.ANNOTATIONREFERENCE &&
-                    firstChildType != TokenType.REFERENCE
-                ) {
-                    for (int i = 2; i < child.size(); i += 2) {
-                        ret.addAll(validateType(child.get(i)));
-                    }
-                }
-            } else if (child.getType() != TokenType.TENSOR_TYPE) {
-                ret.addAll(validateType(child));
-                child.setType(null);
-            }
-
+            ret.add(new Diagnostic(range, "Data type syntax '" + child.getText() + "[]' is deprecated, use 'array<" + child.getText() + ">' instead.", DiagnosticSeverity.Warning,""));
         }
+
+        if (isPrimitiveType(child)) {
+            child.setSchemaType();
+            return ret;
+        }
+
+        Range range = child.getRange();
+        ret.add(new Diagnostic(range, ParsedType.fromName(child.getText()).toString(), DiagnosticSeverity.Error, ""));
+
+        // Check if type is valid
+        //if (
+        //    child.size() > 2 &&
+        //    child.get(1).getType() == TokenType.LESSTHAN
+        //) {
+        //    TokenType firstChildType = child.get(0).getType();
+        //    if (
+        //        firstChildType != TokenType.ANNOTATIONREFERENCE &&
+        //        firstChildType != TokenType.REFERENCE
+        //    ) {
+        //        for (int i = 2; i < child.size(); i += 2) {
+        //            ret.addAll(validateType(child.get(i)));
+        //        }
+        //    }
+        //} else if (child.getType() != TokenType.TENSOR_TYPE) {
+        //    ret.addAll(validateType(child));
+        //    child.setType(null);
+        //}
 
         return ret;
     }

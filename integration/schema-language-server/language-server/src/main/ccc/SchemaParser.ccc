@@ -192,6 +192,10 @@ INJECT indexingElm:
     }
 }
 
+/**
+ * The following stores feature list string at the AST node 
+ * for parsing later
+ */
 INJECT featureListElm:
 {
     private String featureListString = null;
@@ -201,6 +205,24 @@ INJECT featureListElm:
 
     public void setFeatureListString(String features) {
         this.featureListString = features;
+    }
+}
+
+/**
+ * Store a reference to the ParsedType in the AST to
+ * make type checking simpler
+ */
+INJECT dataType:
+    import com.yahoo.schema.parser.ParsedType;
+{
+    private ParsedType parsedType;
+
+    public void setParsedType(ParsedType pt) {
+        this.parsedType = pt;
+    }
+
+    public ParsedType getParsedType() {
+        return this.parsedType;
     }
 }
 
@@ -902,12 +924,46 @@ ParsedType dataType() :
     TensorType tensorType;
     ParsedType referenceType;
 }
-    (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> { return ParsedType.arrayOf(arrayType); } )
-        | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> { return ParsedType.wsetOf(wsetType); } )
-        | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() { return mapType; } )
-        | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType() { return mapType; } )
-        | SCAN(<TENSOR_TYPE>)                    => ( tensorType = tensorTypeElm("Field type") { return ParsedType.tensorType(tensorType); } )
-        | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> { return ParsedType.documentRef(referenceType); } )
+    (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> 
+            { 
+
+                ParsedType type = ParsedType.arrayOf(arrayType); 
+                thisProduction.setParsedType(type);
+                return type;
+            } 
+    )
+        | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> 
+            { 
+                ParsedType type = ParsedType.wsetOf(wsetType); 
+                thisProduction.setParsedType(type);
+                return type;
+            } 
+    )
+        | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() 
+            { 
+                thisProduction.setParsedType(mapType);
+                return mapType; 
+            } 
+    )
+        | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType() 
+            { 
+                thisProduction.setParsedType(mapType);
+                return mapType; 
+            } 
+    )
+        | SCAN(<TENSOR_TYPE>)                    => ( tensorType = tensorTypeElm("Field type") 
+            { 
+                ParsedType type = ParsedType.tensorType(tensorType); 
+                thisProduction.setParsedType(type);
+                return type;
+            } 
+    )
+        | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> 
+            { 
+                thisProduction.setParsedType(referenceType);
+                return ParsedType.documentRef(referenceType); 
+            } 
+    )
         | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
     )
     {
@@ -916,6 +972,7 @@ ParsedType dataType() :
             //deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
             type = ParsedType.arrayOf(type);
         }
+        thisProduction.setParsedType(type);
         return type;
     }
 ;
