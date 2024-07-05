@@ -14,6 +14,7 @@ import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolDefinitionNode;
 
 public class IdentifySymbolDefinition extends Identifier {
 
@@ -77,9 +78,9 @@ public class IdentifySymbolDefinition extends Identifier {
             
             } else {
 
-                child.setUserDefinedIdentifier();
+                SymbolDefinitionNode newNode = new SymbolDefinitionNode(child);
                 if (schemaIndex.findSymbol(document.getFileURI(), nodeType, child.getText()) == null) {
-                    Symbol symbol = new Symbol(nodeType, child);
+                    Symbol symbol = new Symbol(nodeType, newNode);
                     schemaIndex.insert(document.getFileURI(), symbol);
                 }
 

@@ -14,6 +14,8 @@ import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
@@ -176,14 +178,14 @@ public class SchemaSemanticTokens implements Visitor {
 
         TokenType type = node.getType();
 
-        if (node.isSchemaType()) {
+        if (node instanceof TypeNode) {
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
         } else if (type != null) {
-            if (node.isUserDefinedIdentifier()) {
+            if (node instanceof SymbolNode) {
                 SchemaNode parent = node.getParent();
                 String parnetClassName = parent.getIdentifierString();
                 Integer tokenType = identifierTypeMap.get(parnetClassName);

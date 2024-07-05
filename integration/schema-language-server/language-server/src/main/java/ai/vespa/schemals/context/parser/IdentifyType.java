@@ -9,9 +9,9 @@ import org.eclipse.lsp4j.Range;
 
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.TypeNode;
 
 public class IdentifyType extends Identifier {
 
@@ -27,7 +27,7 @@ public class IdentifyType extends Identifier {
         if (type.getVariant() == Variant.UNKNOWN) {
             ret.add(new Diagnostic(node.getRange(), "Invalid type"));
         } else {
-            node.setSchemaType();
+            new TypeNode(node);
         }
 
         return ret;

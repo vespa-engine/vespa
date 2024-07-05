@@ -9,7 +9,7 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.Symbol;
 import ai.vespa.schemals.tree.SchemaNode;
-
+import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.parser.Token;
 
 public class SchemaDefinition {
@@ -28,7 +28,7 @@ public class SchemaDefinition {
 
         SchemaNode node = document.getLeafNodeAtPosition(context.position);
 
-        if (node == null || !node.isUserDefinedIdentifier()) {
+        if (node == null || !(node instanceof SymbolNode)) {
             return ret;
         }
 

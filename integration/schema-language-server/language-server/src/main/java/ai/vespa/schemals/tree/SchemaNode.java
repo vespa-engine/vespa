@@ -16,8 +16,6 @@ public class SchemaNode {
     private TokenType type;
     private String identifierString;
     private SchemaNode parent;
-    private boolean isUserDefinedIdentifier = false;
-    private boolean isSchemaType = false;
     private Node originalNode;
 
     private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
@@ -46,6 +44,24 @@ public class SchemaNode {
         
     }
 
+    protected SchemaNode(SchemaNode tobeReplaced) {
+        type                = tobeReplaced.type;
+        parent              = tobeReplaced.parent;
+        identifierString    = tobeReplaced.identifierString;
+        originalNode        = tobeReplaced.originalNode;
+        children            = tobeReplaced.children;
+        range               = tobeReplaced.range;
+
+        for (SchemaNode child : children) {
+            child.parent = this;
+        }
+
+        int index = parent.indexOf(tobeReplaced);
+        if (index == -1) return; // Invalid setup
+
+        parent.children.set(index, this);
+    }
+
     public TokenType getType() {
         return type;
     }
@@ -60,23 +76,6 @@ public class SchemaNode {
     public TokenType setType(TokenType type) {
         this.type = type;
         return type;
-    }
-
-    public void setUserDefinedIdentifier() {
-        setType(TokenType.IDENTIFIER);
-        this.isUserDefinedIdentifier = true;
-    }
-
-    public boolean isUserDefinedIdentifier() {
-        return isUserDefinedIdentifier;
-    }
-
-    public void setSchemaType() {
-        this.isSchemaType = true;
-    }
-
-    public boolean isSchemaType() {
-        return isSchemaType;
     }
 
     public boolean isIndexingElm() {
@@ -203,6 +202,6 @@ public class SchemaNode {
     public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
 
     public String toString() {
-        return getText() + " [" + isSchemaType + "]";
+        return getText();
     }
 }

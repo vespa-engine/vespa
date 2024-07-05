@@ -7,9 +7,10 @@ import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifySymbolReferences extends Identifier {
 
@@ -49,7 +50,7 @@ public class IdentifySymbolReferences extends Identifier {
                     if (schemaIndex.findSymbol(document.getFileURI(), TokenType.FIELD, child.getText()) == null) {
                         ret.add(createNotFoundError(child, TokenType.FIELD));
                     } else {
-                        child.setUserDefinedIdentifier();
+                        new SymbolReferenceNode(child);
                     }
                 }
 
@@ -73,17 +74,16 @@ public class IdentifySymbolReferences extends Identifier {
 
             if (
                 previousNode != null &&
-                previousNode.isUserDefinedIdentifier() &&
+                previousNode instanceof SymbolNode &&
                 nextNode != null &&
                 typeSpecifierNode != null
             ) {
                 nextNode.setType(TokenType.IDENTIFIER);
-                logger.println("hei hei");
 
                 if (schemaIndex.findSymbol(document.getFileURI(), typeSpecifierNode.getType(), nextNode.getText()) == null) {
                     ret.add(createNotFoundError(nextNode, typeSpecifierNode.getType()));
                 } else {
-                    nextNode.setUserDefinedIdentifier();
+                    new SymbolReferenceNode(nextNode);
                 }
             }
         }
