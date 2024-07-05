@@ -17,6 +17,12 @@ import java.util.OptionalDouble;
  */
 public class ClusterTimeseries {
 
+    // The minimum increase in query rate that is considered significant growth.
+    private static final double SIGNIFICANT_GROWTH_FACTOR = 0.3;
+
+    // The minimum interval to consider when determining growth rate between snapshots.
+    private static final Duration GROWTH_RATE_MIN_INTERVAL = Duration.ofMinutes(5);
+
     private final ClusterSpec.Id cluster;
     private final List<ClusterMetricSnapshot> snapshots;
 
@@ -46,6 +52,9 @@ public class ClusterTimeseries {
     /**
      * The max query growth rate we can predict from this time-series as a fraction of the average traffic in the window
      *
+     * This considers query over all known snapshots, but snapshots are effectively bounded in time by the retention
+     * period of the metrics database.
+     *
      * @return the predicted max growth of the query rate, per minute as a fraction of the current load
      */
     public double maxQueryGrowthRate(Duration window, Instant now) {
@@ -62,10 +71,12 @@ public class ClusterTimeseries {
                         continue;
                 }
             }
+            // Find a subsequent snapshot where the query rate has increased significantly
             for (int end = start + 1; end < snapshots.size(); end++) {
-                if (queryRateAt(end) >= queryRateAt(start) * 1.3) {
-                    Duration duration = durationBetween(start, end);
-                    if (duration.toSeconds() == 0) continue;
+                Duration duration = durationBetween(start, end);
+                if (duration.toSeconds() == 0) continue;
+                if (duration.compareTo(GROWTH_RATE_MIN_INTERVAL) < 0) continue; // Too short period to be considered
+                if (significantGrowthBetween(start, end)) {
                     double growthRate = (queryRateAt(end) - queryRateAt(start)) / duration.toSeconds();
                     if (growthRate > maxGrowthRate)
                         maxGrowthRate = growthRate;
@@ -81,6 +92,10 @@ public class ClusterTimeseries {
         OptionalDouble queryRate = queryRate(window, now);
         if (queryRate.orElse(0) == 0) return 0.1; // Growth not expressible as a fraction of the current rate
         return maxGrowthRate * 60 / queryRate.getAsDouble();
+    }
+
+    private boolean significantGrowthBetween(int start, int end) {
+        return queryRateAt(end) >= queryRateAt(start) * (1 + SIGNIFICANT_GROWTH_FACTOR);
     }
 
     /**
