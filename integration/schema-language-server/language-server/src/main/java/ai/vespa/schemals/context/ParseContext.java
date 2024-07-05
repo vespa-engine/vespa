@@ -28,6 +28,7 @@ public class ParseContext {
             add(new IdentifySymbolReferences(context));
             add(new IdentifyDeprecatedToken(context));
             add(new IdentifyDirtyNodes(context));
+            add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
         }};
     }
