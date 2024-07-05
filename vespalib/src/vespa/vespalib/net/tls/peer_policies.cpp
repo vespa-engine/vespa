@@ -114,9 +114,9 @@ CredentialMatchPattern::create_exact_match(std::string_view str) {
     return std::make_shared<const ExactMatchPattern>(str);
 }
 
-RequiredPeerCredential::RequiredPeerCredential(Field field, vespalib::string must_match_pattern)
+RequiredPeerCredential::RequiredPeerCredential(Field field, std::string_view must_match_pattern)
     : _field(field),
-      _original_pattern(std::move(must_match_pattern)),
+      _original_pattern(must_match_pattern),
       _match_pattern(field == Field::SAN_URI ? CredentialMatchPattern::create_from_uri_glob(_original_pattern)
                                              : CredentialMatchPattern::create_from_dns_glob(_original_pattern))
 {

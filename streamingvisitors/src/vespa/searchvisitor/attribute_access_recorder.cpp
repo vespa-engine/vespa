@@ -16,27 +16,27 @@ AttributeAccessRecorder::AttributeAccessRecorder(std::unique_ptr<IAttributeConte
 AttributeAccessRecorder::~AttributeAccessRecorder() = default;
 
 void
-AttributeAccessRecorder::asyncForAttribute(const vespalib::string& name, std::unique_ptr<search::attribute::IAttributeFunctor> func) const
+AttributeAccessRecorder::asyncForAttribute(std::string_view name, std::unique_ptr<search::attribute::IAttributeFunctor> func) const
 {
     _ctx->asyncForAttribute(name, std::move(func));
 }
 
 const IAttributeVector*
-AttributeAccessRecorder::getAttribute(const string& name) const
+AttributeAccessRecorder::getAttribute(std::string_view name) const
 {
     auto ret = _ctx->getAttribute(name);
     if (ret != nullptr) {
-        _accessed_attributes.insert(name);
+        _accessed_attributes.insert(vespalib::string(name));
     }
     return ret;
 }
 
 const IAttributeVector*
-AttributeAccessRecorder::getAttributeStableEnum(const string& name) const
+AttributeAccessRecorder::getAttributeStableEnum(std::string_view name) const
 {
     auto ret = _ctx->getAttributeStableEnum(name);
     if (ret != nullptr) {
-        _accessed_attributes.insert(name);
+        _accessed_attributes.insert(vespalib::string(name));
     }
     return ret;
 }

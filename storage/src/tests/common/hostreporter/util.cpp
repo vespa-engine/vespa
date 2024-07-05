@@ -22,7 +22,7 @@ reporterToSlime(HostReporter &hostReporter, vespalib::Slime &slime) {
     stream << Object();
     hostReporter.report(stream);
     stream << End();
-    std::string jsonData(json.str());
+    std::string jsonData(json.view());
     size_t parsed = JsonFormat::decode(Memory(jsonData), slime);
 
     if (parsed == 0) {

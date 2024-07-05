@@ -936,7 +936,7 @@ TEST_F(ConformanceTest, testRemoveByGid)
     auto info = spi->getBucketInfo(bucket).getBucketInfo();
     EXPECT_EQ(2, info.getDocumentCount());
     std::vector<DocTypeGidAndTimestamp> ids;
-    ids.emplace_back(doc1->getId().getDocType(), doc1->getId().getGlobalId(), Timestamp(10));
+    ids.emplace_back(vespalib::string(doc1->getId().getDocType()), doc1->getId().getGlobalId(), Timestamp(10));
     assert_remove_by_gid(*spi, bucket, ids, 0, 2, "ignored removebygid");
     ids.back().timestamp = Timestamp(11);
     assert_remove_by_gid(*spi, bucket, ids, 1, 1, "removebygid");

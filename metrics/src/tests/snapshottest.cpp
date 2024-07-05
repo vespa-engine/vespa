@@ -21,14 +21,14 @@ struct SubSubMetricSet : public MetricSet {
     DoubleAverageMetric average2;
     SumMetric<DoubleAverageMetric> averageSum;
 
-    SubSubMetricSet(std::string_view name, MetricSet* owner = 0);
-    ~SubSubMetricSet();
+    explicit SubSubMetricSet(const vespalib::string & name, MetricSet* owner = 0);
+    ~SubSubMetricSet() override;
     MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                      metrics::MetricSet* owner, bool includeUnused) const override;
     void incValues();
 };
 
-SubSubMetricSet::SubSubMetricSet(std::string_view name, MetricSet* owner)
+SubSubMetricSet::SubSubMetricSet(const vespalib::string & name, MetricSet* owner)
     : MetricSet(name, {}, "", owner),
       incVal(1),
       count1("count1", {}, "", this),
@@ -58,9 +58,7 @@ SubSubMetricSet::clone(std::vector<Metric::UP> &ownerList,
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (SubSubMetricSet*) (new SubSubMetricSet(
-            getName(), owner))
-            ->assignValues(*this);
+    return (SubSubMetricSet*) (new SubSubMetricSet(getName(), owner))->assignValues(*this);
 }
 
 void
@@ -79,8 +77,8 @@ struct SubMetricSet : public MetricSet {
     SubSubMetricSet set2;
     SumMetric<SubSubMetricSet> setSum;
 
-    SubMetricSet(std::string_view name, MetricSet* owner = 0);
-    ~SubMetricSet();
+    explicit SubMetricSet(const vespalib::string & name, MetricSet* owner = nullptr);
+    ~SubMetricSet() override;
 
     MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                      metrics::MetricSet* owner, bool includeUnused) const override;
@@ -88,7 +86,7 @@ struct SubMetricSet : public MetricSet {
     void incValues();
 };
 
-SubMetricSet::SubMetricSet(std::string_view name, MetricSet* owner)
+SubMetricSet::SubMetricSet(const vespalib::string & name, MetricSet* owner)
     : MetricSet(name, {}, "", owner),
       set1("set1", this),
       set2("set2", this),
@@ -106,8 +104,7 @@ SubMetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (SubMetricSet*) (new SubMetricSet(getName(), owner))
-            ->assignValues(*this);
+    return (SubMetricSet*) (new SubMetricSet(getName(), owner))->assignValues(*this);
 }
 
 void
@@ -121,14 +118,14 @@ struct TestMetricSet : public MetricSet {
     SubMetricSet set2;
     SumMetric<SubMetricSet> setSum;
 
-    TestMetricSet(std::string_view name);
-    ~TestMetricSet();
+    TestMetricSet(const vespalib::string & name);
+    ~TestMetricSet() override;
 
     void incValues();
 };
 
 
-TestMetricSet::TestMetricSet(std::string_view name)
+TestMetricSet::TestMetricSet(const vespalib::string & name)
     : MetricSet(name, {}, "", nullptr),
       set1("set1", this),
       set2("set2", this),

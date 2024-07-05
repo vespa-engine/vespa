@@ -9,7 +9,7 @@ namespace search::expression {
 void
 CurrentIndexSetup::Usage::notify_unbound_struct_usage(std::string_view name)
 {
-    _unbound.insert(name);
+    _unbound.insert(vespalib::string(name));
 }
 
 CurrentIndexSetup::Usage::Usage()

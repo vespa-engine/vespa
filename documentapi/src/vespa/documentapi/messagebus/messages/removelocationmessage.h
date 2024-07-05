@@ -15,13 +15,13 @@ namespace documentapi {
  */
 class RemoveLocationMessage : public DocumentMessage {
 public:
-    RemoveLocationMessage(const document::BucketIdFactory& factory, document::select::Parser& parser, const string& documentSelection);
-    ~RemoveLocationMessage();
+    RemoveLocationMessage(const document::BucketIdFactory& factory, document::select::Parser& parser, string documentSelection);
+    ~RemoveLocationMessage() override;
 
     const string& getDocumentSelection() const { return _documentSelection; }
     const document::BucketId& getBucketId() const { return _bucketId; };
     const string &getBucketSpace() const { return _bucketSpace; }
-    void setBucketSpace(const string &value) { _bucketSpace = value; }
+    void setBucketSpace(string value) { _bucketSpace = std::move(value); }
     uint32_t getType() const override;
     string toString() const override { return "removelocationmessage"; }
 protected:

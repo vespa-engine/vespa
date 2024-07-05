@@ -138,7 +138,7 @@ baseFileName(const string &attrName)
 }
 
 AttributeVector::SP
-createAttribute(std::string_view attrName, const search::attribute::Config &cfg)
+createAttribute(vespalib::string attrName, const search::attribute::Config &cfg)
 {
     return search::AttributeFactory::createAttribute(baseFileName(attrName), cfg);
 }
@@ -757,7 +757,7 @@ AttributeTest::fillString(std::vector<string> & values, uint32_t numValues)
     for (uint32_t i = 0; i < numValues; ++i) {
         vespalib::asciistream ss;
         ss << "string" << (i < 10 ? "0" : "") << i;
-        values.emplace_back(ss.str());
+        values.emplace_back(ss.view());
     }
 }
 
@@ -2219,7 +2219,7 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
         config.collectionType().asString() <<
         (fs ? "-fs" : "") <<
         (compact ? "-compact" : "");
-    string name(ss.str());
+    string name(ss.view());
     Config cfg = config;
     cfg.setFastSearch(fs);
     cfg.setGrowStrategy(GrowStrategy::make(100, 0.5, 0));

@@ -84,7 +84,7 @@ get_search_environment_snapshot(VisitorEnvironment& v_env, const Parameters& par
     if ( !search_cluster.empty()) {
         auto schema = extract_schema(params);
         return schema.empty()
-            ? env.get_snapshot(search_cluster)
+            ? env.get_snapshot(vespalib::string(search_cluster))
             : env.get_snapshot(search_cluster + "/" + schema);
     }
     return {};
@@ -238,7 +238,7 @@ SearchVisitor::SummaryGenerator::get_streaming_docsums_state(std::string_view su
     }
     ds._args.highlightTerms(_highlight_terms);
     _docsumWriter->initState(_attr_manager, ds, state->get_resolve_class_info());
-    auto insres = _docsum_states.insert(std::make_pair(summary_class, std::move(state)));
+    auto insres = _docsum_states.insert(std::make_pair(vespalib::string(summary_class), std::move(state)));
     return *insres.first->second;
 }
 
@@ -481,7 +481,7 @@ SearchVisitor::init(const Parameters & params)
     if (params.lookup("location", valueRef)) {
         location = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Location = '%s'", location.c_str());
-        _summaryGenerator.set_location(valueRef);
+        _summaryGenerator.set_location(location);
     }
 
     if (_env) {

@@ -240,7 +240,7 @@ NodeState::print(std::ostream& out, bool verbose, const std::string& indent) con
     if (!verbose) {
         vespalib::asciistream tmp;
         serialize(tmp);
-        out << tmp.str();
+        out << tmp.view();
         return;
     }
     _state->print(out, verbose, indent);

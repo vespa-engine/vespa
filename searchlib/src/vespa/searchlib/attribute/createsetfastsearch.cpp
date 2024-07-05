@@ -23,7 +23,7 @@ using attribute::BasicType;
 
 
 AttributeVector::SP
-AttributeFactory::createSetFastSearch(string_view name, const Config & info)
+AttributeFactory::createSetFastSearch(vespalib::string name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::WSET);
     assert(info.fastSearch());

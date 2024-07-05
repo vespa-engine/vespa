@@ -37,10 +37,10 @@ VersionSpecification::initialize()
     buf << ".";
     if (_micro == UNSPECIFIED) { buf << "*"; } else { buf << _micro; }
 
-    if (_qualifier != "") {
+    if (!_qualifier.empty()) {
         buf << "." << _qualifier;
     }
-    _stringValue = buf.str();
+    _stringValue = buf.view();
 
     if ((_major < UNSPECIFIED) || (_minor < UNSPECIFIED) || (_micro < UNSPECIFIED) || !_qualifier.empty()) {
         verifySanity();
@@ -60,7 +60,7 @@ VersionSpecification::verifySanity()
     if (_micro < UNSPECIFIED)
         throw IllegalArgumentException("Negative micro in " + _stringValue);
 
-    if (_qualifier != "") {
+    if (!_qualifier.empty()) {
         for (size_t i = 0; i < _qualifier.length(); i++) {
             unsigned char c = _qualifier[i];
             if (! isalnum(c)) {
@@ -70,10 +70,13 @@ VersionSpecification::verifySanity()
     }
 }
 
-static int parseInteger(const VersionSpecification::string & input) __attribute__((noinline));
-static int parseInteger(const VersionSpecification::string & input)
-{
-    const char *s = input.c_str();
+namespace {
+
+int parseInteger(std::string_view input) __attribute__((noinline));
+
+int parseInteger(std::string_view input) {
+    std::string zeroTerm(input);
+    const char *s = zeroTerm.c_str();
     unsigned char firstDigit = s[0];
     if (!isdigit(firstDigit))
         throw IllegalArgumentException("integer must start with a digit");
@@ -88,6 +91,7 @@ static int parseInteger(const VersionSpecification::string & input)
     return ret;
 }
 
+}
 
 VersionSpecification::VersionSpecification(const string & versionString)
     : _major(UNSPECIFIED),
@@ -96,7 +100,7 @@ VersionSpecification::VersionSpecification(const string & versionString)
       _qualifier(),
       _stringValue()
 {
-    if (versionString != "") {
+    if (!versionString.empty()) {
         StringTokenizer components(versionString, ".", ""); // Split on dot
 
         if (components.size() > 0)
@@ -140,7 +144,7 @@ VersionSpecification::compareTo(const VersionSpecification& other) const
 }
 
 bool
-VersionSpecification::matches(int spec, int v) const
+VersionSpecification::matches(int spec, int v)
 {
     if (spec == VersionSpecification::UNSPECIFIED) return true;
     return (spec == v);

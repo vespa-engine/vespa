@@ -339,7 +339,7 @@ XmlAttribute::XmlAttribute(const std::string& name, const char * value, uint32_t
     vespalib::asciistream ost;
     if (flags & HEX) ost << vespalib::hex << "0x";
     ost << value;
-    _value = ost.str();
+    _value = ost.view();
     if (!isLegalName(name)) {
         throw vespalib::IllegalArgumentException("Name '" + name + "' contains "
                 "illegal XML characters and cannot be used as attribute name");

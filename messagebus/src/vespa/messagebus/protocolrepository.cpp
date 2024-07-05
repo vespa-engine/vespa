@@ -48,7 +48,7 @@ ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 }
 
 IProtocol *
-ProtocolRepository::getProtocol(const string &name)
+ProtocolRepository::getProtocol(std::string_view name)
 {
     const auto numProtocols = _numProtocols.load(std::memory_order_acquire);
     for (size_t i(0); i < numProtocols; i++) {

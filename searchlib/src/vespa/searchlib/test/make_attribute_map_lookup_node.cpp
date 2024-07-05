@@ -24,15 +24,15 @@ makeAttributeMapLookupNode(std::string_view attributeName)
     valueName << baseName << ".value" << attributeName.substr(rightBracePos + 1);
     if (rightBracePos != vespalib::string::npos && rightBracePos > leftBracePos) {
         if (attributeName[leftBracePos + 1] == '"' && attributeName[rightBracePos - 1] == '"') {
-            vespalib::string key = attributeName.substr(leftBracePos + 2, rightBracePos - leftBracePos - 3);
-            return std::make_unique<AttributeMapLookupNode>(attributeName, keyName.str(), valueName.str(), key, "");
+            vespalib::string key(attributeName.substr(leftBracePos + 2, rightBracePos - leftBracePos - 3));
+            return std::make_unique<AttributeMapLookupNode>(attributeName, keyName.view(), valueName.view(), key, "");
         } else if (attributeName.substr(leftBracePos + 1, indirectKeyMarker.size()) == indirectKeyMarker && attributeName[rightBracePos - 1] == ')') {
             auto startPos = leftBracePos + 1 + indirectKeyMarker.size();
-            vespalib::string keySourceAttributeName = attributeName.substr(startPos, rightBracePos - 1 - startPos);
-            return std::make_unique<AttributeMapLookupNode>(attributeName, keyName.str(), valueName.str(), "", keySourceAttributeName);
+            vespalib::string keySourceAttributeName(attributeName.substr(startPos, rightBracePos - 1 - startPos));
+            return std::make_unique<AttributeMapLookupNode>(attributeName, keyName.view(), valueName.view(), "", keySourceAttributeName);
         }
     }
-    return std::unique_ptr<AttributeNode>();
+    return {};
 }
 
 }

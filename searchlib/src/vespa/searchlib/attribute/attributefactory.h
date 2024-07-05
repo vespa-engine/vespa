@@ -18,12 +18,12 @@ private:
     using string_view = std::string_view;
     using Config = attribute::Config;
     using AttributeSP = std::shared_ptr<AttributeVector>;
-    static AttributeSP createArrayStd(string_view name, const Config & cfg);
-    static AttributeSP createArrayFastSearch(string_view name, const Config & cfg);
-    static AttributeSP createSetStd(string_view name, const Config & cfg);
-    static AttributeSP createSetFastSearch(string_view name, const Config & cfg);
-    static AttributeSP createSingleStd(string_view name, const Config & cfg);
-    static AttributeSP createSingleFastSearch(string_view name, const Config & cfg);
+    static AttributeSP createArrayStd(vespalib::string name, const Config & cfg);
+    static AttributeSP createArrayFastSearch(vespalib::string name, const Config & cfg);
+    static AttributeSP createSetStd(vespalib::string name, const Config & cfg);
+    static AttributeSP createSetFastSearch(vespalib::string name, const Config & cfg);
+    static AttributeSP createSingleStd(vespalib::string name, const Config & cfg);
+    static AttributeSP createSingleFastSearch(vespalib::string name, const Config & cfg);
 public:
     /**
      * Create an attribute vector with the given name based on the given config.

@@ -437,7 +437,7 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
     } else { \
         mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, period), briefValuePrinter, "snapper"); \
     } \
-    EXPECT_EQ(std::string(expected), briefValuePrinter.ost.str()) << dumpAllSnapshots(mm, "snapper"); \
+    EXPECT_EQ(std::string(expected), briefValuePrinter.ost.view()) << dumpAllSnapshots(mm, "snapper"); \
 }
 
 #define ASSERT_PROCESS_TIME(mm, time) \
@@ -598,7 +598,7 @@ TEST_F(MetricManagerTest, test_json_output)
         mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
     }
     jsonStream.finalize();
-    std::string jsonData(as.str());
+    std::string jsonData(as.view());
     // Parse it back
     using namespace vespalib::slime;
     vespalib::Slime slime;
@@ -687,7 +687,7 @@ struct MetricSnapshotTestFixture
             manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
         jsonStream.finalize();
-        return std::string(as.str());
+        return std::string(as.view());
     }
 
     std::string renderLastSnapshotAsText(const std::string& matchPattern = ".*") const
@@ -708,7 +708,7 @@ struct MetricSnapshotTestFixture
             MetricLockGuard lockGuard(manager.getMetricLock());
             manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
-        return std::string(os.str());
+        return std::string(os.view());
     }
 };
 

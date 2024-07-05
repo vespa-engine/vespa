@@ -1167,7 +1167,7 @@ void
 verifyCorrectDotProductExecutor(BlueprintFactory & factory, std::string_view attrName,
                                 std::string_view queryVector, std::string_view expected)
 {
-    ParameterList params = {{ParameterType::ATTRIBUTE, attrName}, {ParameterType::STRING, "vector"}};
+    ParameterList params = {{ParameterType::ATTRIBUTE, vespalib::string(attrName)}, {ParameterType::STRING, "vector"}};
     FtFeatureTest ft(factory, "value(0)");
     Test::setupForDotProductTest(ft);
     ft.getQueryEnv().getProperties().add("dotProduct.vector", queryVector);

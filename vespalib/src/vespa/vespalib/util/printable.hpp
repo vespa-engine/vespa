@@ -13,7 +13,7 @@ void print(const std::vector<T> & v, vespalib::asciistream& out, const AsciiPrin
     }
     vespalib::asciistream ost;
     ost << v[0];
-    bool newLineBetweenEntries = (ost.str().size() > 15);
+    bool newLineBetweenEntries = (ost.view().size() > 15);
     out << "[";
     for (size_t i=0; i<v.size(); ++i) {
         if (i != 0) out << ",";

@@ -59,7 +59,7 @@ public:
     unsigned int size()                    const { return _parameters.size(); }
     bool lookup(KeyT id, ValueRef & v) const;
     void set(KeyT id, const void * v, size_t sz) {
-        _parameters[id] = Value(v, sz);
+        _parameters[vespalib::string(id)] = Value(v, sz);
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
@@ -71,7 +71,7 @@ public:
     ParametersMap::const_iterator end() const { return _parameters.end(); }
     /// Convenience from earlier use.
     void set(KeyT id, std::string_view value) {
-        _parameters[id] = Value(value.data(), value.size());
+        _parameters[vespalib::string(id)] = Value(value.data(), value.size());
     }
     void set(KeyT id, int32_t value);
     void set(KeyT id, int64_t value);

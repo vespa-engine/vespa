@@ -663,7 +663,7 @@ PostingListAttributeTest::testPostingList(bool enable_only_bitvector, uint32_t n
         for (uint32_t i = 0; i < numUniqueValues; ++i) {
             vespalib::asciistream ss;
             ss << "string" << i;
-            values.push_back(ss.str());
+            values.emplace_back(ss.view());
             charValues.push_back(values.back().c_str());
         }
         {

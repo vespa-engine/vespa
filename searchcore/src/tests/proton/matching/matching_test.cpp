@@ -244,8 +244,8 @@ struct MyWorld {
 
         // config
         config.add(indexproperties::rank::FirstPhase::NAME, "attribute(a1)");
-        config.add(indexproperties::hitcollector::HeapSize::NAME, (vespalib::asciistream() << heapSize).str());
-        config.add(indexproperties::hitcollector::ArraySize::NAME, (vespalib::asciistream() << arraySize).str());
+        config.add(indexproperties::hitcollector::HeapSize::NAME, (vespalib::asciistream() << heapSize).view());
+        config.add(indexproperties::hitcollector::ArraySize::NAME, (vespalib::asciistream() << arraySize).view());
         config.add(indexproperties::summary::Feature::NAME, "matches(f1)");
         config.add(indexproperties::summary::Feature::NAME, "rankingExpression(\"reduce(tensor(x[3])(x),sum)\")");
         config.add(indexproperties::summary::Feature::NAME, "rankingExpression(\"tensor(x[3])(x)\")");

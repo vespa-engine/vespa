@@ -421,7 +421,7 @@ private:
         void setDocsumWriter(IDocsumWriter & docsumWriter) { _docsumWriter = & docsumWriter; }
         vespalib::ConstBufferRef fillSummary(search::AttributeVector::DocId lid, std::string_view summaryClass) override;
         void set_dump_features(bool dump_features) { _dump_features = dump_features; }
-        void set_location(const vespalib::string& location) { _location = location; }
+        void set_location(vespalib::string location) { _location = std::move(location); }
         void set_stack_dump(std::vector<char> stack_dump) { _stack_dump = std::move(stack_dump); }
         void add_summary_field(std::string_view field) { _summaryFields.emplace_back(field); }
         search::fef::Properties & highlightTerms() { return _highlight_terms;}

@@ -26,11 +26,11 @@ struct SimpleAndNot : AndNot {
     ~SimpleAndNot() override;
 };
 struct SimpleNear : Near {
-    SimpleNear(size_t dist) : Near(dist) {}
+    explicit SimpleNear(size_t dist) : Near(dist) {}
     ~SimpleNear() override;
 };
 struct SimpleONear : ONear {
-    SimpleONear(size_t dist) : ONear(dist) {}
+    explicit SimpleONear(size_t dist) : ONear(dist) {}
     ~SimpleONear() override;
 };
 struct SimpleOr : Or
@@ -38,8 +38,8 @@ struct SimpleOr : Or
     ~SimpleOr() override;
 };
 struct SimpleWeakAnd : WeakAnd {
-    SimpleWeakAnd(uint32_t targetNumHits, std::string_view view) :
-        WeakAnd(targetNumHits, view)
+    SimpleWeakAnd(uint32_t targetNumHits, vespalib::string view) :
+        WeakAnd(targetNumHits, vespalib::string(std::move(view)))
     {}
 };
 struct SimpleEquiv : Equiv {
@@ -48,35 +48,35 @@ struct SimpleEquiv : Equiv {
     ~SimpleEquiv() override;
 };
 struct SimplePhrase : Phrase {
-    SimplePhrase(std::string_view view, int32_t id, Weight weight)
-        : Phrase(view, id, weight) {}
+    SimplePhrase(vespalib::string view, int32_t id, Weight weight)
+        : Phrase(std::move(view), id, weight) {}
     ~SimplePhrase() override;
 };
 
 struct SimpleSameElement : SameElement {
-    SimpleSameElement(std::string_view view, int32_t id, Weight weight)
-        : SameElement(view, id, weight) {}
+    SimpleSameElement(vespalib::string view, int32_t id, Weight weight)
+        : SameElement(std::move(view), id, weight) {}
     ~SimpleSameElement() override;
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
-    SimpleWeightedSetTerm(uint32_t num_terms, std::string_view view, int32_t id, Weight weight)
-        : WeightedSetTerm(num_terms, view, id, weight) {}
+    SimpleWeightedSetTerm(uint32_t num_terms, vespalib::string view, int32_t id, Weight weight)
+        : WeightedSetTerm(num_terms, std::move(view), id, weight) {}
     ~SimpleWeightedSetTerm() override;
 };
 struct SimpleDotProduct : DotProduct {
-    SimpleDotProduct(uint32_t num_terms, std::string_view view, int32_t id, Weight weight)
-        : DotProduct(num_terms, view, id, weight) {}
+    SimpleDotProduct(uint32_t num_terms, vespalib::string view, int32_t id, Weight weight)
+        : DotProduct(num_terms, std::move(view), id, weight) {}
     ~SimpleDotProduct() override;
 };
 struct SimpleWandTerm : WandTerm {
-    SimpleWandTerm(uint32_t num_terms, std::string_view view, int32_t id, Weight weight,
+    SimpleWandTerm(uint32_t num_terms, vespalib::string view, int32_t id, Weight weight,
                    uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
-        : WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
+        : WandTerm(num_terms, std::move(view), id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
     ~SimpleWandTerm() override;
 };
 struct SimpleInTerm : InTerm {
-    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, std::string_view view, int32_t id, Weight weight)
-        : InTerm(std::move(terms), type, view, id, weight)
+    SimpleInTerm(std::unique_ptr<TermVector> terms, MultiTerm::Type type, vespalib::string view, int32_t id, Weight weight)
+        : InTerm(std::move(terms), type, std::move(view), id, weight)
     {
     }
     ~SimpleInTerm() override;
@@ -86,86 +86,74 @@ struct SimpleRank : Rank
     ~SimpleRank() override;
 };
 struct SimpleNumberTerm : NumberTerm {
-    SimpleNumberTerm(Type term, std::string_view view,
-                    int32_t id, Weight weight)
-        : NumberTerm(term, view, id, weight) {
+    SimpleNumberTerm(Type term, vespalib::string view, int32_t id, Weight weight)
+        : NumberTerm(term, std::move(view), id, weight) {
     }
     ~SimpleNumberTerm() override;
 };
 struct SimpleLocationTerm : LocationTerm {
-    SimpleLocationTerm(const Type &term, std::string_view view,
-                       int32_t id, Weight weight)
-        : LocationTerm(term, view, id, weight) {
+    SimpleLocationTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+        : LocationTerm(term, std::move(view), id, weight) {
     }
     ~SimpleLocationTerm() override;
 };
 struct SimplePrefixTerm : PrefixTerm {
-    SimplePrefixTerm(const Type &term, std::string_view view,
-                     int32_t id, Weight weight)
-        : PrefixTerm(term, view, id, weight) {
+    SimplePrefixTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+        : PrefixTerm(term, std::move(view), id, weight) {
     }
     ~SimplePrefixTerm() override;
 };
 struct SimpleRangeTerm : RangeTerm {
-    SimpleRangeTerm(const Type &term, std::string_view view,
-                    int32_t id, Weight weight)
-        : RangeTerm(term, view, id, weight) {
+    SimpleRangeTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+        : RangeTerm(term, std::move(view), id, weight) {
     }
     ~SimpleRangeTerm() override;
 };
 struct SimpleStringTerm : StringTerm {
-    SimpleStringTerm(const Type &term, std::string_view view,
-                     int32_t id, Weight weight)
-        : StringTerm(term, view, id, weight) {
+    SimpleStringTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+        : StringTerm(term, std::move(view), id, weight) {
     }
     ~SimpleStringTerm() override;
 };
 struct SimpleSubstringTerm : SubstringTerm {
-    SimpleSubstringTerm(const Type &term, std::string_view view,
-                     int32_t id, Weight weight)
-        : SubstringTerm(term, view, id, weight) {
+    SimpleSubstringTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+        : SubstringTerm(term, std::move(view), id, weight) {
     }
     ~SimpleSubstringTerm() override;
 };
 struct SimpleSuffixTerm : SuffixTerm {
-    SimpleSuffixTerm(const Type &term, std::string_view view,
-                     int32_t id, Weight weight)
-        : SuffixTerm(term, view, id, weight) {
+    SimpleSuffixTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+        : SuffixTerm(term, std::move(view), id, weight) {
     }
     ~SimpleSuffixTerm() override;
 };
 struct SimplePredicateQuery : PredicateQuery {
-    SimplePredicateQuery(PredicateQueryTerm::UP term,
-                         std::string_view view,
-                         int32_t id, Weight weight)
-        : PredicateQuery(std::move(term), view, id, weight) {
+    SimplePredicateQuery(PredicateQueryTerm::UP term, vespalib::string view, int32_t id, Weight weight)
+        : PredicateQuery(std::move(term), std::move(view), id, weight) {
     }
     ~SimplePredicateQuery() override;
 };
 struct SimpleRegExpTerm : RegExpTerm {
-    SimpleRegExpTerm(const Type &term, std::string_view view,
-                     int32_t id, Weight weight)
-        : RegExpTerm(term, view, id, weight) {
+    SimpleRegExpTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+        : RegExpTerm(term, std::move(view), id, weight) {
     }
     ~SimpleRegExpTerm() override;
 };
 struct SimpleNearestNeighborTerm : NearestNeighborTerm {
-    SimpleNearestNeighborTerm(std::string_view query_tensor_name, std::string_view field_name,
+    SimpleNearestNeighborTerm(std::string_view query_tensor_name, vespalib::string field_name,
                               int32_t id, Weight weight, uint32_t target_num_hits,
                               bool allow_approximate, uint32_t explore_additional_hits,
                               double distance_threshold)
-        : NearestNeighborTerm(query_tensor_name, field_name, id, weight,
+        : NearestNeighborTerm(query_tensor_name, std::move(field_name), id, weight,
                               target_num_hits, allow_approximate, explore_additional_hits,
                               distance_threshold)
     {}
     ~SimpleNearestNeighborTerm() override;
 };
 struct SimpleFuzzyTerm : FuzzyTerm {
-    SimpleFuzzyTerm(const Type &term, std::string_view view,
-                     int32_t id, Weight weight,
-                     uint32_t max_edit_distance, uint32_t prefix_lock_length,
-                     bool prefix_match)
-        : FuzzyTerm(term, view, id, weight, max_edit_distance, prefix_lock_length, prefix_match)
+    SimpleFuzzyTerm(const Type &term, vespalib::string view, int32_t id, Weight weight, uint32_t max_edit_distance,
+                    uint32_t prefix_lock_length, bool prefix_match)
+        : FuzzyTerm(term, std::move(view), id, weight, max_edit_distance, prefix_lock_length, prefix_match)
     {
     }
     ~SimpleFuzzyTerm() override;

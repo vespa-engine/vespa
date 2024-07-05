@@ -126,10 +126,10 @@ SearchIterator::transform_children(std::function<SearchIterator::UP(SearchIterat
 
 //-----------------------------------------------------------------------------
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
+void visit(vespalib::ObjectVisitor &self, std::string_view name,
            const search::queryeval::SearchIterator *obj)
 {
-    if (obj != 0) {
+    if (obj != nullptr) {
         self.openStruct(name, obj->getClassName());
         obj->visitMembers(self);
         self.closeStruct();
@@ -138,8 +138,7 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
     }
 }
 
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
-           const search::queryeval::SearchIterator &obj)
+void visit(vespalib::ObjectVisitor &self, std::string_view name, const search::queryeval::SearchIterator &obj)
 {
     visit(self, name, &obj);
 }

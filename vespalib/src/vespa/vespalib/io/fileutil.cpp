@@ -33,7 +33,7 @@ processStat(struct stat& filestats, bool result, std::string_view path) {
         asciistream ost;
         ost << "An IO error occured while statting '" << path << "'. "
             << "errno(" << errno << "): " << getErrorString(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
+        throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     LOG(debug, "stat(%s): Existed? %s, Plain file? %s, Directory? %s, Size: %" PRIu64,
         string(path).c_str(),
@@ -102,7 +102,7 @@ File::open(int flags, bool autoCreateDirectories) {
         asciistream ost;
         ost << "open(" << _filename << ", 0x" << hex << flags << dec
             << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
+        throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     if (_fd != -1) close();
     _fd = fd;
@@ -137,7 +137,7 @@ File::resize(off_t size)
     if (ftruncate(_fd, size) != 0) {
         asciistream ost;
         ost << "resize(" << _filename << ", " << size << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
+        throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     LOG(debug, "resize(%s): Resized to %" PRIu64 " bytes.", _filename.c_str(), size);
 }
@@ -162,7 +162,7 @@ File::write(const void *buf, size_t bufsize, off_t offset)
             asciistream ost;
             ost << "write(" << _fd << ", " << buf << ", " << left << ", " << offset
                 << "), Failed, errno(" << errno << "): " << safeStrerror(errno);
-            throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
+            throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
     return bufsize;
@@ -188,7 +188,7 @@ File::read(void *buf, size_t bufsize, off_t offset) const
             asciistream ost;
             ost << "read(" << _fd << ", " << buf << ", " << remaining << ", "
                 << offset << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-            throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
+            throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
     return bufsize - remaining;
@@ -306,14 +306,15 @@ string dirname(std::string_view name)
     } else if (found == 0) {
         return string("/");
     } else {
-        return name.substr(0, found);
+        return string(name.substr(0, found));
     }
 }
 
 namespace {
 
-void addStat(asciistream &os, const string & name)
+void addStat(asciistream &os, std::string_view name_view)
 {
+    std::string name(name_view);
     struct ::stat filestat;
     memset(&filestat, '\0', sizeof(filestat));
     int statres = ::stat(name.c_str(), &filestat);

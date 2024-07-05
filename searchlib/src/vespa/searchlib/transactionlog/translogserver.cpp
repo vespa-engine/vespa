@@ -240,11 +240,11 @@ Domain::SP
 TransLogServer::findDomain(std::string_view domainName) const
 {
     ReadGuard domainGuard(_domainMutex);
-    auto found(_domains.find(domainName));
+    auto found(_domains.find(vespalib::string(domainName)));
     if (found != _domains.end()) {
         return found->second;
     }
-    return DomainSP();
+    return {};
 }
 
 void

@@ -160,7 +160,7 @@ public:
             ost << _name.c_str() << " thread " << i;
             _threads.push_back(std::shared_ptr<Thread>(pool.startThread(
                     *_tickers[i],
-                    ost.str(),
+                    ost.view(),
                     _waitTime,
                     _maxProcessTime,
                     _ticksBeforeWait, std::nullopt)));

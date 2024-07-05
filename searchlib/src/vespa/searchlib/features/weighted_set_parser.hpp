@@ -17,7 +17,7 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
     // Note that we still handle '(' and ')' for backward compatibility.
     if (len >= 2 && ((input[0] == '{' && input[len - 1] == '}') ||
                      (input[0] == '(' && input[len - 1] == ')')) ) {
-        std::string_view s(input.c_str()+1, len - 2);
+        std::string_view s(input.data()+1, len - 2);
         while ( ! s.empty() ) {
             vespalib::string::size_type commaPos(s.find(','));
             std::string_view item(s.substr(0, commaPos));
@@ -25,7 +25,7 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
             if (colonPos != vespalib::string::npos) {
                 vespalib::string tmpKey(item.substr(0, colonPos));
                 vespalib::string::size_type start(tmpKey.find_first_not_of(' '));
-                std::string_view key(tmpKey.data() + start, colonPos - start);
+                vespalib::string key(tmpKey.data() + start, colonPos - start);
                 std::string_view value(item.substr(colonPos+1));
                 output.insert(key, value);
             } else {

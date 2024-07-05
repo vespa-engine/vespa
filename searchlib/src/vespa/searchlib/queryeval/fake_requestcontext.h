@@ -21,18 +21,18 @@ class FakeRequestContext : public IRequestContext
 {
 public:
     FakeRequestContext();
-    FakeRequestContext(attribute::IAttributeContext * context,
-                       vespalib::steady_time soft=vespalib::steady_time::max(),
-                       vespalib::steady_time hard=vespalib::steady_time::max());
+    explicit FakeRequestContext(attribute::IAttributeContext * context,
+                                vespalib::steady_time soft=vespalib::steady_time::max(),
+                                vespalib::steady_time hard=vespalib::steady_time::max());
     ~FakeRequestContext() override;
     const vespalib::Doom & getDoom() const override { return _doom; }
     vespalib::ThreadBundle & thread_bundle() const override { return vespalib::ThreadBundle::trivial(); }
-    const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {
+    const attribute::IAttributeVector *getAttribute(std::string_view name) const override {
         return _attributeContext
                    ? _attributeContext->getAttribute(name)
                    : nullptr;
     }
-    const attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override {
+    const attribute::IAttributeVector *getAttributeStableEnum(std::string_view name) const override {
         return _attributeContext
                    ? _attributeContext->getAttribute(name)
                    : nullptr;

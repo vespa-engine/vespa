@@ -19,6 +19,7 @@
 #include <algorithm>
 
 using vespalib::IllegalArgumentException;
+using namespace vespalib::make_string_short;
 
 namespace document {
 
@@ -86,22 +87,21 @@ ReplacementCharacters::ReplacementCharacters()
 
 static ReplacementCharacters _G_ForceInitialisation;
 
-const vespalib::string & StringUtil::escape(const vespalib::string & source, vespalib::string & destination,
-                                       char delimiter)
+const vespalib::string &
+StringUtil::escape(const vespalib::string & source, vespalib::string & destination, char delimiter)
 {
     size_t escapeCount(0);
-    for(size_t i(0), m(source.size()); i < m; i++) {
-        if (source[i] == delimiter) {
+    for (char c : source) {
+        if (c == delimiter) {
             escapeCount += 3;
         } else {
-            escapeCount += ReplacementCharacters::needEscape(source[i]);
+            escapeCount += ReplacementCharacters::needEscape(c);
         }
     }
     if (escapeCount > 0) {
         std::vector<char> dst;
         dst.reserve(source.size() + escapeCount);
-        for(size_t i(0), m(source.size()); i < m; i++) {
-            const char c = source[i];
+        for (char c : source) {
             if (c == delimiter) {
                 dst.push_back('\\');
                 dst.push_back('x');
@@ -127,15 +127,15 @@ const vespalib::string & StringUtil::escape(const vespalib::string & source, ves
     return source;
 }
 
-vespalib::string StringUtil::unescape(std::string_view source)
+vespalib::string
+StringUtil::unescape(std::string_view source)
 {
     vespalib::asciistream ost;
     for (unsigned int i=0; i<source.size(); ++i) {
         if (source[i] != '\\') { ost << source[i]; continue; }
         // Here we know we have an escape
         if (i+1 == source.size()) {
-            throw IllegalArgumentException("Found backslash at end of input",
-                                           VESPA_STRLOC);
+            throw IllegalArgumentException("Found backslash at end of input", VESPA_STRLOC);
         }
         if (source[i+1] != 'x') {
             switch (source[i+1]) {
@@ -146,8 +146,7 @@ vespalib::string StringUtil::unescape(std::string_view source)
             case 'r': ost << '\r'; break;
             case 'f': ost << '\f'; break;
             default:
-                throw IllegalArgumentException(
-                        vespalib::make_string("Illegal escape sequence \\%c found", source[i+1]), VESPA_STRLOC);
+                throw IllegalArgumentException(fmt("Illegal escape sequence \\%c found", source[i+1]), VESPA_STRLOC);
             }
             ++i;
             continue;
@@ -157,26 +156,24 @@ vespalib::string StringUtil::unescape(std::string_view source)
             throw IllegalArgumentException("Found \\x at end of input",
                                            VESPA_STRLOC);
         }
-        vespalib::string hexdigits = source.substr(i+2, 2);
-        char* endp(0);
+        vespalib::string hexdigits(source.substr(i+2, 2));
+        char* endp = nullptr;
         ost << static_cast<char>(strtol(hexdigits.c_str(), &endp, 16));
         if (*endp) {
-            throw IllegalArgumentException("Value "+hexdigits
-                                           + " is not a two digit hexadecimal number", VESPA_STRLOC);
+            throw IllegalArgumentException("Value "+hexdigits + " is not a two digit hexadecimal number", VESPA_STRLOC);
         }
         i+=3;
     }
     return ost.str();
 }
 
-void StringUtil::
-printAsHex(std::ostream& output, const void* source, unsigned int size,
-           unsigned int columnwidth, bool inlinePrintables,
-           const std::string& indent)
+void
+StringUtil::printAsHex(std::ostream& output, const void* source, unsigned int size, unsigned int columnwidth,
+                       bool inlinePrintables, const std::string& indent)
 {
     assert(columnwidth > 0);
     unsigned char wildChar = '.';
-    const unsigned char* start = reinterpret_cast<const unsigned char*>(source);
+    const auto * start = reinterpret_cast<const unsigned char*>(source);
     uint32_t posWidth = 1;
     for (uint32_t i=size; i>9; i /= 10) { ++posWidth; }
     std::vector<unsigned char> printables(static_cast<size_t>(columnwidth) + 1);

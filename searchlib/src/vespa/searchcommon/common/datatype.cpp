@@ -51,7 +51,7 @@ const char *datatype_str[] = { "BOOL",
 vespalib::string
 getTypeName(DataType type) {
     size_t typeAsNum = static_cast<size_t>(type);
-    if (typeAsNum > vespalib::arraysize(datatype_str)) {
+    if (typeAsNum >= vespalib::arraysize(datatype_str)) {
         vespalib::asciistream ost;
         ost << "UNKNOWN(" << typeAsNum << ")";
         return ost.str();
@@ -83,7 +83,7 @@ const char *collectiontype_str[] = { "SINGLE",
 vespalib::string
 getTypeName(CollectionType type) {
     size_t typeAsNum = static_cast<size_t>(type);
-    if (typeAsNum > vespalib::arraysize(collectiontype_str)) {
+    if (typeAsNum >= vespalib::arraysize(collectiontype_str)) {
         vespalib::asciistream ost;
         ost << "UNKNOWN(" << typeAsNum << ")";
         return ost.str();

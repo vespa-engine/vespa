@@ -4,17 +4,12 @@
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/helper/legacy.h>
 
-namespace {
-bool checkEmpty(const vespalib::string & configId) {
-    return configId.empty();
-}
-}
 namespace config {
 
 ConfigUri::ConfigUri(std::string_view configId)
     : _configId(legacyConfigId2ConfigId(configId)),
       _context(std::make_shared<ConfigContext>(*legacyConfigId2Spec(configId))),
-      _empty(checkEmpty(configId))
+      _empty(configId.empty())
 {
 }
 

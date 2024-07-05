@@ -400,8 +400,8 @@ RoutableFactories80::remove_location_message_factory(std::shared_ptr<const docum
         [type_repo = std::move(repo)](const protobuf::RemoveLocationRequest& src) {
             document::BucketIdFactory factory;
             document::select::Parser parser(*type_repo, factory);
-            auto msg = std::make_unique<RemoveLocationMessage>(factory, parser, get_raw_selection(src.selection()));
-            msg->setBucketSpace(get_bucket_space(src.bucket_space()));
+            auto msg = std::make_unique<RemoveLocationMessage>(factory, parser, string(get_raw_selection(src.selection())));
+            msg->setBucketSpace(vespalib::string(get_bucket_space(src.bucket_space())));
             return msg;
         }
     );
@@ -494,9 +494,9 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::create_visitor_message_fa
             msg->setInstanceId(src.instance_id());
             msg->setControlDestination(src.control_destination());
             msg->setDataDestination(src.data_destination());
-            msg->setDocumentSelection(get_raw_selection(src.selection()));
+            msg->setDocumentSelection(string(get_raw_selection(src.selection())));
             msg->setMaximumPendingReplyCount(src.max_pending_reply_count());
-            msg->setBucketSpace(get_bucket_space(src.bucket_space()));
+            msg->setBucketSpace(string(get_bucket_space(src.bucket_space())));
             msg->setBuckets(get_bucket_id_vector(src.buckets()));
             msg->setFromTimestamp(src.from_timestamp());
             msg->setToTimestamp(src.to_timestamp());
@@ -772,7 +772,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_list_message_f
         },
         [](const protobuf::GetBucketListRequest& src) {
             auto msg = std::make_unique<GetBucketListMessage>(get_bucket_id(src.bucket_id()));
-            msg->setBucketSpace(get_bucket_space(src.bucket_space()));
+            msg->setBucketSpace(string(get_bucket_space(src.bucket_space())));
             return msg;
         }
     );
@@ -868,8 +868,8 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::stat_bucket_message_facto
         [](const protobuf::StatBucketRequest& src) {
             auto msg = std::make_unique<StatBucketMessage>();
             msg->setBucketId(get_bucket_id(src.bucket_id()));
-            msg->setDocumentSelection(get_raw_selection(src.selection()));
-            msg->setBucketSpace(get_bucket_space(src.bucket_space()));
+            msg->setDocumentSelection(string(get_raw_selection(src.selection())));
+            msg->setBucketSpace(string(get_bucket_space(src.bucket_space())));
             return msg;
         }
     );

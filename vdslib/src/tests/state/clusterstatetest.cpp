@@ -23,7 +23,7 @@ namespace storage::lib {
                 + " format: " + std::string(e.what())); \
     } \
     EXPECT_EQ(vespalib::string(typestr) + " \"" + vespalib::string(result) + "\"", \
-              vespalib::string(typestr) + " \"" + ost.str() + "\"") << state->toString(true); \
+              vespalib::string(typestr) + " \"" + ost.view() + "\"") << state->toString(true); \
 }
 
 #define VERIFY2(serialized, result) { \

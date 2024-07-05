@@ -648,7 +648,7 @@ struct FixtureBase
     }
 
     bool assertTrace(const vespalib::string &exp) {
-        return EXPECT_EQUAL(exp, _tracer._os.str());
+        return EXPECT_EQUAL(exp, _tracer._os.view());
     }
 
     DocumentContext::List makeDummyDocs(uint32_t first, uint32_t count, uint64_t tsfirst) __attribute__((noinline));

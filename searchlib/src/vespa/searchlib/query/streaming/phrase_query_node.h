@@ -13,7 +13,7 @@ namespace search::streaming {
 class PhraseQueryNode : public MultiTerm
 {
 public:
-    PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, const string& index, uint32_t num_terms);
+    PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
     ~PhraseQueryNode() override;
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;

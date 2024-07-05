@@ -27,7 +27,7 @@ NameCollection::lookup(size_t id) const
 }
 
 size_t
-NameCollection::resolve(const vespalib::string& name)
+NameCollection::resolve(std::string_view name)
 {
     Guard guard(_lock);
     size_t nextId = _names_by_id.size();

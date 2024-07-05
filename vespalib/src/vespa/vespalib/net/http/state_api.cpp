@@ -15,7 +15,7 @@ namespace {
 
 struct ConfigRenderer : ComponentConfigProducer::Consumer {
     JSONStringer &json;
-    ConfigRenderer(JSONStringer &j) : json(j) {}
+    explicit ConfigRenderer(JSONStringer &j) : json(j) {}
     void add(const ComponentConfigProducer::Config &config) override {
         json.appendKey(config.name);
         json.beginObject();
@@ -62,9 +62,9 @@ vespalib::string get_param(const std::map<vespalib::string,vespalib::string> &pa
                            std::string_view param_name,
                            std::string_view default_value)
 {
-    auto maybe_value = params.find(param_name);
+    auto maybe_value = params.find(std::string(param_name));
     if (maybe_value == params.end()) {
-        return default_value;
+        return vespalib::string(default_value);
     }
     return maybe_value->second;
 }
@@ -89,7 +89,7 @@ vespalib::string respond_root(const JsonHandlerRepo &repo, const vespalib::strin
     }
     json.endArray();
     json.endObject();
-    return json.toString();
+    return json.str();
 }
 
 vespalib::string respond_health(const HealthProducer &healthProducer) {
@@ -97,7 +97,7 @@ vespalib::string respond_health(const HealthProducer &healthProducer) {
     json.beginObject();
     build_health_status(json, healthProducer);
     json.endObject();
-    return json.toString();
+    return json.str();
 }
 
 vespalib::string respond_json_metrics(const vespalib::string &consumer,
@@ -115,7 +115,7 @@ vespalib::string respond_json_metrics(const vespalib::string &consumer,
         }
     }
     json.endObject();
-    return json.toString();
+    return json.str();
 }
 
 JsonGetHandler::Response cap_check_and_respond_metrics(
@@ -151,7 +151,7 @@ vespalib::string respond_config(ComponentConfigProducer &componentConfigProducer
         json.endObject();
     }
     json.endObject();
-    return json.toString();
+    return json.str();
 }
 
 JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,

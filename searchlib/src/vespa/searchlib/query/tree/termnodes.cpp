@@ -9,8 +9,8 @@ using vespalib::IllegalArgumentException;
 using vespalib::make_string_short::fmt;
 namespace search::query {
 
-StringTerm::StringTerm(const Type &term, std::string_view view, int32_t id, Weight weight)
-    : QueryNodeMixinType(term, view, id, weight)
+StringTerm::StringTerm(const Type &term, vespalib::string view, int32_t id, Weight weight)
+    : QueryNodeMixinType(term, std::move(view), id, weight)
 {}
 
 NumberTerm::~NumberTerm() = default;
@@ -61,7 +61,10 @@ private:
 
 class WeightedIntegerTermVector final : public TermVector {
 public:
-    explicit WeightedIntegerTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
+    explicit WeightedIntegerTermVector(uint32_t sz)
+        : _terms(),
+          _scratchPad()
+    { _terms.reserve(sz); }
     void addTerm(std::string_view, Weight) override {
         // Will/should never happen
         assert(false);

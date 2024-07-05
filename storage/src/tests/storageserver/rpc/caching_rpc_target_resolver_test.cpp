@@ -18,7 +18,7 @@ public:
     uint32_t gen;
     MockMirror() : mappings(), gen(1) {}
     SpecList lookup(std::string_view pattern) const override {
-        auto itr = mappings.find(pattern);
+        auto itr = mappings.find(vespalib::string(pattern));
         if (itr != mappings.end()) {
             return itr->second;
         }

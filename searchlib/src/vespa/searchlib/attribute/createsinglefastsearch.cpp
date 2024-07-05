@@ -18,7 +18,7 @@ namespace search {
 using attribute::BasicType;
 
 AttributeVector::SP
-AttributeFactory::createSingleFastSearch(string_view name, const Config & info)
+AttributeFactory::createSingleFastSearch(vespalib::string name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     assert(info.fastSearch());

@@ -96,7 +96,7 @@ Field::calculateIdV7()
     ost << getName();
     ost << _dataType->getId();
 
-    int newId = vespalib::BobHash::hash(ost.str().data(), ost.str().length(), 0);
+    int newId = vespalib::BobHash::hash(ost.view().data(), ost.view().length(), 0);
     // Highest bit is reserved to tell 7-bit id's from 31-bit ones
     if (newId < 0) newId = -newId;
     validateId(newId);

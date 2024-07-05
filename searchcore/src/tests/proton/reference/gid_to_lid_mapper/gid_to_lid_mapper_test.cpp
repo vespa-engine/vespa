@@ -65,7 +65,7 @@ void assertGids(const GidMap &expGids, const GidMap &gids)
     EXPECT_EQUAL(expGids, gids);
 }
 
-void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, const vespalib::string &docId, uint32_t lid) {
+void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, std::string_view docId, uint32_t lid) {
     auto gids = collectGids(mapper);
     auto itr = gids.find(toGid(docId));
     uint32_t foundLid = (itr != gids.end()) ? itr->second : 0u;

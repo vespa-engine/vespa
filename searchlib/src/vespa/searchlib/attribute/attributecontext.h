@@ -26,16 +26,16 @@ private:
     mutable AttributeMap      _enumAttributes;
     mutable std::mutex        _cacheLock;
 
-    const IAttributeVector *getAttribute(AttributeMap & map, const string & name, bool stableEnum) const;
-    const IAttributeVector *getAttributeMtSafe(AttributeMap & map, const string & name, bool stableEnum) const;
+    const IAttributeVector *getAttribute(AttributeMap & map, std::string_view name, bool stableEnum) const;
+    const IAttributeVector *getAttributeMtSafe(AttributeMap & map, std::string_view name, bool stableEnum) const;
 public:
     explicit AttributeContext(const IAttributeManager & manager);
     ~AttributeContext() override;
 
     // Implements IAttributeContext
-    const attribute::IAttributeVector * getAttribute(const string & name) const override;
-    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
-    const attribute::IAttributeVector * getAttributeStableEnum(const string & name) const override;
+    const attribute::IAttributeVector * getAttribute(std::string_view name) const override;
+    void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const override;
+    const attribute::IAttributeVector * getAttributeStableEnum(std::string_view name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
     void releaseEnumGuards() override;
     void enableMultiThreadSafe() override { _mtSafe = true; }

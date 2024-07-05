@@ -22,7 +22,7 @@ public:
      * @param name the name of the attribute vector.
      * @return const view of the attribute vector or NULL if the attribute vector does not exists.
      **/
-    virtual const IAttributeVector * getAttribute(const string & name) const = 0;
+    virtual const IAttributeVector * getAttribute(std::string_view name) const = 0;
 
     /**
      * Returns the attribute vector with the given name.
@@ -31,7 +31,7 @@ public:
      * @param name the name of the attribute vector
      * @return const view of the attribute vector or NULL if the attribute vector does not exists.
      **/
-    virtual const IAttributeVector * getAttributeStableEnum(const string & name) const = 0;
+    virtual const IAttributeVector * getAttributeStableEnum(std::string_view name) const = 0;
 
     /**
      * Fill the given list with all attribute vectors registered.
@@ -49,11 +49,6 @@ public:
      * Must be called before multiple threads will access the context.
      */
     virtual void enableMultiThreadSafe() {}
-
-    /**
-     * Virtual destructor to allow safe subclassing.
-     **/
-    virtual ~IAttributeContext() = default;
 };
 
 }

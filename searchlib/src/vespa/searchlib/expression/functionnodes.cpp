@@ -510,7 +510,7 @@ StrCatFunctionNode::onExecute() const
         getArg(i).execute();
         getArg(i).getResult()->serialize(nos);
     }
-    static_cast<StringResultNode &>(updateResult()).set(os.str());
+    static_cast<StringResultNode &>(updateResult()).set(os.view());
     return true;
 }
 

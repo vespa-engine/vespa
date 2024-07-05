@@ -7,13 +7,13 @@ namespace search::query {
 
 Term::~Term() = default;
 
-Term::Term(std::string_view view, int32_t id, Weight weight) :
-    _view(view),
-    _id(id),
-    _weight(weight),
-    _ranked(true),
-    _position_data(true),
-    _prefix_match(false)
+Term::Term(const vespalib::string & view, int32_t id, Weight weight)
+    : _view(view),
+      _id(id),
+      _weight(weight),
+      _ranked(true),
+      _position_data(true),
+      _prefix_match(false)
 { }
 
 void Term::setStateFrom(const Term& other) {

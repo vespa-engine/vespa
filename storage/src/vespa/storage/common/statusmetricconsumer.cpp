@@ -131,12 +131,12 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
             _manager.visit(metricLock, *snapshot, metricJsonWriter, consumer);
             stream << End();
             stream.finalize();
-            out << jsonStreamData.str();
+            out << jsonStreamData.view();
         } else if (prometheus) {
             vespalib::asciistream ps;
             metrics::PrometheusWriter pw(ps);
             _manager.visit(metricLock, *snapshot, pw, consumer);
-            out << ps.str();
+            out << ps.view();
         } else {
             std::string pattern = path.getAttribute("pattern", ".*");
             metrics::TextWriter textWriter(out, snapshot->getPeriod(), pattern, verbosity > 0);

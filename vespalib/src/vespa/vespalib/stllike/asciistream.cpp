@@ -84,7 +84,7 @@ asciistream::~asciistream() = default;
 
 asciistream::asciistream(const asciistream & rhs) :
     _rPos(0),
-    _wbuf(rhs.str()),
+    _wbuf(rhs.view()),
     _rbuf(_wbuf.c_str(), _wbuf.size()),
     _base(rhs._base),
     _floatSpec(rhs._floatSpec),
@@ -646,7 +646,7 @@ asciistream::createFromFile(std::string_view fileName)
         if (actual != sz) {
             asciistream e;
             e << "Failed reading " << sz << " bytes from file " << fileName;
-            throw IoException(e.str() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
+            throw IoException(e.view() + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
         is << std::string_view(static_cast<const char *>(buf.get()), sz);
     }

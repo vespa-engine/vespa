@@ -94,7 +94,7 @@ public:
         _other = attr;
     }
 
-    AttributeGuard::UP getAttribute(const string &name) const override {
+    AttributeGuard::UP getAttribute(std::string_view name) const override {
         if (name == field) {
             return std::make_unique<AttributeGuard>(_attribute_vector);
         } else if (name == other) {
@@ -105,7 +105,7 @@ public:
     }
 
     std::unique_ptr<attribute::AttributeReadGuard>
-    getAttributeReadGuard(const string &name, bool stableEnumGuard) const override {
+    getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const override {
         if (name == field && _attribute_vector) {
             return _attribute_vector->makeReadGuard(stableEnumGuard);
         } else if (name == other && _other) {
@@ -123,7 +123,7 @@ public:
         return IAttributeContext::UP();
     }
 
-    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override {
+    std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const override {
         if (name == field) {
             return _attribute_vector;
         } else if (name == other) {
@@ -132,7 +132,7 @@ public:
         return {};
     }
 
-    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const override;
 };
 
 struct Result {
@@ -191,7 +191,7 @@ MyAttributeManager::MyAttributeManager(AttributeVector::SP attr)
 MyAttributeManager::~MyAttributeManager() = default;
 
 void
-MyAttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const {
+MyAttributeManager::asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const {
 
 }
 

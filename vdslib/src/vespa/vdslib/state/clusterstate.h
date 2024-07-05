@@ -33,9 +33,9 @@ public:
     ClusterState(const ClusterState&);
     // FIXME make ClusterState parsing not require null termination of string,
     // then move to std::string_view
-    explicit ClusterState(const vespalib::string& serialized);
+    explicit ClusterState(std::string_view serialized);
     ClusterState& operator=(const ClusterState& other) = delete;
-    ~ClusterState();
+    ~ClusterState() override;
 
     std::string getTextualDifference(const ClusterState& other) const;
     void serialize(vespalib::asciistream & out) const;

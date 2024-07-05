@@ -21,7 +21,7 @@ using attribute::BasicType;
 #define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector *>(new FLOATARRAY(T)(fname, info))
 
 AttributeVector::SP
-AttributeFactory::createArrayFastSearch(string_view name, const Config & info)
+AttributeFactory::createArrayFastSearch(vespalib::string name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::ARRAY);
     assert(info.fastSearch());

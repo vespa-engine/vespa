@@ -14,7 +14,7 @@ ConfigSnapshot
 AsciiConfigSnapshotReader::read()
 {
     ConfigDataBuffer buffer;
-    buffer.setEncodedString(_is.str());
+    buffer.setEncodedString(_is.view());
     JsonConfigFormatter formatter(true);
     formatter.decode(buffer);
     ConfigSnapshot snapshot;

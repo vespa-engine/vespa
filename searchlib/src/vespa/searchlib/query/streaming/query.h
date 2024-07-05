@@ -22,7 +22,7 @@ public:
     size_t depth() const override;
     size_t width() const override;
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
-    void setIndex(const vespalib::string & index) override { _index = index; }
+    void setIndex(vespalib::string index) override { _index = std::move(index); }
     const vespalib::string & getIndex() const override { return _index; }
     static std::unique_ptr<QueryConnector> create(ParseItem::ItemType type);
     virtual bool isFlattenable(ParseItem::ItemType type) const { (void) type; return false; }

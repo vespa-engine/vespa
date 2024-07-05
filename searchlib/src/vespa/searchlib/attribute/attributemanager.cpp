@@ -80,15 +80,15 @@ AttributeManager::AttributeManager()
 }
 
 
-AttributeManager::AttributeManager(const string & baseDir)
+AttributeManager::AttributeManager(string baseDir)
     :  _attributes(),
        _loadLock(),
-       _baseDir(baseDir),
+       _baseDir(std::move(baseDir)),
        _snapShot(),
        _interlock(std::make_shared<attribute::Interlock>())
 {
-    LOG(debug, "New attributeManager %p, baseDir %s", static_cast<const void *>(this), baseDir.c_str());
-    waitBaseDir(baseDir);
+    LOG(debug, "New attributeManager %p, baseDir %s", static_cast<const void *>(this), _baseDir.c_str());
+    waitBaseDir(_baseDir);
 }
 
 
@@ -121,7 +121,7 @@ uint64_t AttributeManager::getMemoryFootprint() const
 }
 
 const AttributeManager::VectorHolder *
-AttributeManager::findAndLoadAttribute(const string & name) const
+AttributeManager::findAndLoadAttribute(std::string_view name) const
 {
     const VectorHolder * loadedVector(nullptr);
     auto found = _attributes.find(name);
@@ -142,13 +142,13 @@ AttributeManager::findAndLoadAttribute(const string & name) const
 
 
 const AttributeManager::VectorHolder *
-AttributeManager::getAttributeRef(const string & name) const
+AttributeManager::getAttributeRef(std::string_view name) const
 {
     return findAndLoadAttribute(name);
 }
 
 AttributeGuard::UP
-AttributeManager::getAttribute(const string & name) const
+AttributeManager::getAttribute(std::string_view name) const
 {
     const VectorHolder * vh = findAndLoadAttribute(name);
     if ( vh != nullptr ) {
@@ -158,7 +158,7 @@ AttributeManager::getAttribute(const string & name) const
 }
 
 std::unique_ptr<attribute::AttributeReadGuard>
-AttributeManager::getAttributeReadGuard(const string &name, bool stableEnumGuard) const
+AttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const
 {
     const VectorHolder * vh = findAndLoadAttribute(name);
     if (vh != nullptr) {
@@ -197,7 +197,7 @@ AttributeManager::createContext() const
 }
 
 string
-AttributeManager::createBaseFileName(const string & name) const
+AttributeManager::createBaseFileName(std::string_view name) const
 {
     vespalib::string dir = getBaseDir();
     if ( ! getSnapshot().dirName.empty()) {
@@ -208,7 +208,7 @@ AttributeManager::createBaseFileName(const string & name) const
 }
 
 bool
-AttributeManager::addVector(const string & name, const Config & config)
+AttributeManager::addVector(std::string_view name, const Config & config)
 {
     bool retval = false;
     AttributeGuard::UP vector_owner(getAttribute(name));
@@ -220,7 +220,7 @@ AttributeManager::addVector(const string & name, const Config & config)
         {
             retval = true;
         } else {
-            LOG(error, "Attribute Vector '%s' has type conflict", name.c_str());
+            LOG(error, "Attribute Vector '%s' has type conflict", vector->getName().c_str());
         }
     } else {
         auto found = _attributes.find(name);
@@ -250,12 +250,12 @@ AttributeManager::addVector(const string & name, const Config & config)
 }
 
 void
-AttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<attribute::IAttributeFunctor>) const {
+AttributeManager::asyncForAttribute(std::string_view, std::unique_ptr<attribute::IAttributeFunctor>) const {
     throw std::runtime_error("search::AttributeManager::asyncForAttribute should never be called.");
 }
 
 std::shared_ptr<attribute::ReadableAttributeVector>
-AttributeManager::readable_attribute_vector(const string& name) const
+AttributeManager::readable_attribute_vector(std::string_view name) const
 {
     const auto* attr = findAndLoadAttribute(name);
     if (attr) {

@@ -21,10 +21,10 @@ public:
         static constexpr size_type npos = -1;
         vespalib::string name;
         size_type size;
-        Dimension(const vespalib::string &name_in) noexcept
-            : name(name_in), size(npos) {}
-        Dimension(const vespalib::string &name_in, size_type size_in) noexcept
-            : name(name_in), size(size_in) {}
+        Dimension(vespalib::string name_in) noexcept
+            : name(std::move(name_in)), size(npos) {}
+        Dimension(vespalib::string name_in, size_type size_in) noexcept
+            : name(std::move(name_in)), size(size_in) {}
         bool operator==(const Dimension &rhs) const noexcept {
             return ((name == rhs.name) && (size == rhs.size));
         }

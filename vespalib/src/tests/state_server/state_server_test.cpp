@@ -57,7 +57,7 @@ get_body_and_content_type(const JsonGetHandler &handler,
     net::ConnectionAuthContext dummy_ctx(net::tls::PeerCredentials(), net::tls::CapabilitySet::all());
     auto res = handler.get(host, path, params, dummy_ctx);
     if (res.ok()) {
-        return {res.payload(), res.content_type()};
+        return {vespalib::string(res.payload()), vespalib::string(res.content_type())};
     }
     return {};
 }

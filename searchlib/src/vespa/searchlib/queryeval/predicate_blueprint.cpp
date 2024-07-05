@@ -55,7 +55,7 @@ struct MyRangeHandler {
     uint64_t subquery_bitmap;
 
     void
-    handleRange(const string &label) {
+    handleRange(std::string_view label) {
         uint64_t feature = PredicateHash::hash64(label);
         auto iterator = interval_index.lookup(feature);
         if (iterator.valid()) {
@@ -64,7 +64,7 @@ struct MyRangeHandler {
         }
     }
     void
-    handleEdge(const string &label, uint32_t value) {
+    handleEdge(std::string_view label, uint32_t value) {
         uint64_t feature = PredicateHash::hash64(label);
         auto iterator = bounds_index.lookup(feature);
         if (iterator.valid()) {

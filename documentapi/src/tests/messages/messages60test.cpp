@@ -193,7 +193,7 @@ TEST_F(Messages60Test, testRemoveLocationMessage) {
             auto& ref = dynamic_cast<RemoveLocationMessage&>(*obj);
             EXPECT_EQ(string("id.group == \"mygroup\""), ref.getDocumentSelection());
             // FIXME add to wire format, currently hardcoded.
-            EXPECT_EQ(string(document::FixedBucketSpaces::default_space_name()), ref.getBucketSpace());
+            EXPECT_EQ(document::FixedBucketSpaces::default_space_name(), ref.getBucketSpace());
         }
     }
 }

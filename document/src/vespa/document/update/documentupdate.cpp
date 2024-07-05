@@ -41,7 +41,7 @@ deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, st
     stream >> version;
     const DocumentType * docType =  repo.getDocumentType(typestr);
     if (!docType) {
-        throw DocumentTypeNotFoundException(typestr, VESPA_STRLOC);
+        throw DocumentTypeNotFoundException(vespalib::string(typestr), VESPA_STRLOC);
     }
     return docType;
 }

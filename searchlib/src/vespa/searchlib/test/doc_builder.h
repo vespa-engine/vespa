@@ -38,7 +38,7 @@ public:
     const document::DocumentTypeRepo& get_repo() const noexcept { return *_repo; }
     std::shared_ptr<const document::DocumentTypeRepo> get_repo_sp() const noexcept { return _repo; }
     const document::DocumentType& get_document_type() const noexcept { return *_document_type; }
-    std::unique_ptr<document::Document> make_document(vespalib::string document_id);
+    std::unique_ptr<document::Document> make_document(vespalib::string document_id) const;
     const document::DataType &get_data_type(const vespalib::string &name) const;
     const DocumenttypesConfig& get_documenttypes_config() const noexcept { return *_document_types_config; }
     document::ArrayFieldValue make_array(std::string_view field_name);

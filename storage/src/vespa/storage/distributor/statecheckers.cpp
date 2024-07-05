@@ -103,7 +103,7 @@ SplitBucketStateChecker::generateMaxSizeExceededSplitOperation(const Context& c)
         << c.distributorConfig.getSplitSize()
         << ", " << c.distributorConfig.getSplitCount() << ")]";
 
-    so->setDetailedReason(ost.str());
+    so->setDetailedReason(ost.view());
     return Result::createStoredResult(std::move(so), MaintenancePriority::HIGH);
 
 }
@@ -431,7 +431,7 @@ JoinBucketsStateChecker::check(const Context &c) const
         << getTotalMetaCount(c) << " docs) is less than the configured limit of ("
         << c.distributorConfig.getJoinSize() << ", " << c.distributorConfig.getJoinCount() << ")";
 
-    op->setDetailedReason(ost.str());
+    op->setDetailedReason(ost.view());
 
     return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_LOW);
 }
@@ -591,7 +591,7 @@ public:
 
     const std::vector<uint16_t>& nodes() const noexcept { return _nodes; }
     uint8_t priority() const noexcept { return _priority; }
-    std::string_view reason() const { return _reason.str(); }
+    std::string_view reason() const { return _reason.view(); }
 
 private:
     void updatePriority(uint8_t pri) noexcept {
@@ -637,7 +637,7 @@ MergeNodes::~MergeNodes() = default;
 
 void
 MergeNodes::operator+=(const MergeNodes& other) {
-    _reason << other._reason.str();
+    _reason << other._reason.view();
     _problemFlags |= other._problemFlags;
     _nodes.reserve(_nodes.size() + other._nodes.size());
     _nodes.insert(_nodes.end(), other._nodes.begin(), other._nodes.end());
@@ -940,7 +940,7 @@ DeleteExtraCopiesStateChecker::check(const Context &c) const
         auto ro = std::make_unique<RemoveBucketOperation>(c.node_ctx, BucketAndNodes(c.getBucket(), removedCopies));
 
         ro->setPriority(c.distributorConfig.getMaintenancePriorities().deleteBucketCopy);
-        ro->setDetailedReason(reasons.str());
+        ro->setDetailedReason(reasons.view());
         return Result::createStoredResult(std::move(ro), MaintenancePriority::HIGH);
     }
 
@@ -1052,7 +1052,7 @@ BucketStateStateChecker::check(const Context &c) const
     } else {
         op->setPriority(c.distributorConfig.getMaintenancePriorities().activateWithExistingActive);
     }
-    op->setDetailedReason(reason.str());
+    op->setDetailedReason(reason.view());
     return Result::createStoredResult(std::move(op), MaintenancePriority::HIGHEST);
 }
 
@@ -1097,7 +1097,7 @@ GarbageCollectionStateChecker::check(const Context &c) const
                << vespalib::to_s(c.distributorConfig.getGarbageCollectionInterval()) << "]";
 
         op->setPriority(c.distributorConfig.getMaintenancePriorities().garbageCollection);
-        op->setDetailedReason(reason.str());
+        op->setDetailedReason(reason.view());
         return Result::createStoredResult(std::move(op), MaintenancePriority::VERY_LOW);
     } else {
         return Result::noMaintenanceNeeded();

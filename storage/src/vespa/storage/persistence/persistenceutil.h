@@ -88,7 +88,7 @@ public:
     }
 
     /** Utility function to be able to write a bit less in client. */
-    void fail(uint32_t result, const vespalib::string & message = "") {
+    void fail(uint32_t result, std::string_view message = "") {
         fail(api::ReturnCode((api::ReturnCode::Result)result, message));
     }
     /** Set the request to fail with the given failure. */

@@ -55,8 +55,7 @@ std::string_view Capability::name() const noexcept {
 
 string Capability::to_string() const {
     asciistream os;
-    // TODO asciistream should be made std::string_view-aware
-    os << "Capability(" << std::string_view(name().data(), name().length()) << ')';
+    os << "Capability(" << name() << ')';
     return os.str();
 }
 

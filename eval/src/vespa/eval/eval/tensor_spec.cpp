@@ -3,7 +3,6 @@
 #include "tensor_spec.h"
 #include "array_array_map.h"
 #include "function.h"
-#include "interpreted_function.h"
 #include "value.h"
 #include "value_codec.h"
 #include "value_type.h"
@@ -14,6 +13,7 @@
 #include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <ostream>
+#include <ranges>
 
 namespace vespalib::eval {
 
@@ -210,20 +210,17 @@ struct NormalizeTensorSpec {
                            TensorSpec::Address address;
                            for (const auto &dim : type.dimensions()) {
                                if (dim.is_mapped()) {
-                                   address.emplace(dim.name, *sparse_addr_iter++);
+                                   address.emplace(dim.name, vespalib::string(*sparse_addr_iter++));
                                }
                            }
                            REQUIRE(sparse_addr_iter == keys.end());
                            for (size_t i = 0; i < values.size(); ++i) {
                                size_t dense_key = i;
-                               for (auto dim = type.dimensions().rbegin();
-                                    dim != type.dimensions().rend();
-                                    ++dim)
-                               {
-                                   if (dim->is_indexed()) {
-                                       size_t label = dense_key % dim->size;
-                                       address.emplace(dim->name, label).first->second = TensorSpec::Label(label);
-                                       dense_key /= dim->size;
+                               for (const auto & dim : std::ranges::reverse_view(type.dimensions())) {
+                                   if (dim.is_indexed()) {
+                                       size_t label = dense_key % dim.size;
+                                       address.emplace(dim.name, label).first->second = TensorSpec::Label(label);
+                                       dense_key /= dim.size;
                                    }
                                }
                                result.add(address, values[i]);
@@ -236,15 +233,15 @@ struct NormalizeTensorSpec {
 } // namespace vespalib::eval::<unnamed>
 
 
-TensorSpec::TensorSpec(const vespalib::string &type_spec)
-    : _type(type_spec),
+TensorSpec::TensorSpec(vespalib::string type_spec) noexcept
+    : _type(std::move(type_spec)),
       _cells()
 { }
 
 TensorSpec::TensorSpec(const TensorSpec &) = default;
 TensorSpec & TensorSpec::operator = (const TensorSpec &) = default;
 
-TensorSpec::~TensorSpec() { }
+TensorSpec::~TensorSpec() = default;
 
 double
 TensorSpec::as_double() const

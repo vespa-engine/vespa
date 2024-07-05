@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace search { namespace attribute { class ImportedAttributeVector; } }
+namespace search::attribute { class ImportedAttributeVector; }
 
 namespace proton {
 
@@ -24,9 +24,9 @@ public:
     ImportedAttributesRepo();
     ~ImportedAttributesRepo();
     void add(const vespalib::string &name, std::shared_ptr<ImportedAttributeVector> attr);
-    const std::shared_ptr<ImportedAttributeVector> & get(const vespalib::string &name) const;
+    const std::shared_ptr<ImportedAttributeVector> & get(std::string_view name) const;
     void getAll(std::vector<std::shared_ptr<ImportedAttributeVector>> &result) const;
-    size_t size() const { return _repo.size(); }
+    size_t size() const noexcept { return _repo.size(); }
 };
 
 }

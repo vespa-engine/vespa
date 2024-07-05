@@ -22,7 +22,7 @@ std::shared_ptr<api::CreateVisitorCommand> getCommand(
     vespalib::asciistream ost;
     ost << name << " t=" << vespalib::count_ms(timeout) << " p=" << static_cast<unsigned int>(priority);
     // Piggyback name in document selection
-    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "", "", ost.str());
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "", "", ost.view());
     cmd->setQueueTimeout(timeout);
     cmd->setPriority(priority);
     return cmd;

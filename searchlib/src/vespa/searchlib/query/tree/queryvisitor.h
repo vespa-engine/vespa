@@ -33,7 +33,7 @@ class FuzzyTerm;
 class InTerm;
 
 struct QueryVisitor {
-    virtual ~QueryVisitor() {}
+    virtual ~QueryVisitor() = default;
 
     virtual void visit(And &) = 0;
     virtual void visit(AndNot &) = 0;

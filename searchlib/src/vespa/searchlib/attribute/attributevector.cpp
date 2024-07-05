@@ -286,7 +286,7 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget, std::string_view fileNam
 
 attribute::AttributeHeader
 AttributeVector::createAttributeHeader(std::string_view fileName) const {
-    return attribute::AttributeHeader(fileName,
+    return attribute::AttributeHeader(vespalib::string(fileName),
                                       getConfig().basicType(),
                                       getConfig().collectionType(),
                                       getConfig().tensorType(),
@@ -694,7 +694,7 @@ AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
     jstr.appendKey("path").appendString(getBaseFileName());
     jstr.endObject();
     vespalib::string eventName(fmt("%s.attribute.enumstore.%s", reason, stage));
-    EV_STATE(eventName.c_str(), jstr.toString().data());
+    EV_STATE(eventName.c_str(), jstr.str().data());
 }
 
 void

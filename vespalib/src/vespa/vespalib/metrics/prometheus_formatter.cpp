@@ -78,13 +78,15 @@ PrometheusFormatter::PrometheusFormatter(const vespalib::metrics::Snapshot& snap
 
 PrometheusFormatter::~PrometheusFormatter() = default;
 
-void PrometheusFormatter::emit_counter(asciistream& out, const CounterSnapshot& cs) const {
+void
+PrometheusFormatter::emit_counter(asciistream& out, const CounterSnapshot& cs) const {
     emit_prometheus_name(out, cs.name());
     emit_point_as_labels(out, cs.point());
     out << ' ' << cs.count() << ' ' << _timestamp_str << '\n';
 }
 
-const char* PrometheusFormatter::sub_metric_type_str(SubMetric m) noexcept {
+const char*
+PrometheusFormatter::sub_metric_type_str(SubMetric m) noexcept {
     switch (m) {
     case SubMetric::Count: return "count";
     case SubMetric::Sum:   return "sum";
@@ -94,7 +96,8 @@ const char* PrometheusFormatter::sub_metric_type_str(SubMetric m) noexcept {
     abort();
 }
 
-void PrometheusFormatter::emit_gauge(asciistream& out, const GaugeSnapshot& gs, SubMetric m) const {
+void
+PrometheusFormatter::emit_gauge(asciistream& out, const GaugeSnapshot& gs, SubMetric m) const {
     emit_prometheus_name(out, gs.name());
     out << '_' << sub_metric_type_str(m);
     emit_point_as_labels(out, gs.point());
@@ -108,7 +111,8 @@ void PrometheusFormatter::emit_gauge(asciistream& out, const GaugeSnapshot& gs, 
     out << ' ' << _timestamp_str << '\n';
 }
 
-void PrometheusFormatter::emit_counters(vespalib::asciistream& out) const {
+void
+PrometheusFormatter::emit_counters(vespalib::asciistream& out) const {
     std::vector<const CounterSnapshot*> ordered_counters;
     ordered_counters.reserve(_snapshot.counters().size());
     for (const auto& cs : _snapshot.counters()) {
@@ -122,7 +126,8 @@ void PrometheusFormatter::emit_counters(vespalib::asciistream& out) const {
     }
 }
 
-void PrometheusFormatter::emit_gauges(vespalib::asciistream& out) const {
+void
+PrometheusFormatter::emit_gauges(vespalib::asciistream& out) const {
     std::vector<std::pair<const GaugeSnapshot*, SubMetric>> ordered_gauges;
     ordered_gauges.reserve(_snapshot.gauges().size() * NumSubMetrics);
     for (const auto& gs : _snapshot.gauges()) {
@@ -143,7 +148,8 @@ void PrometheusFormatter::emit_gauges(vespalib::asciistream& out) const {
     }
 }
 
-vespalib::string PrometheusFormatter::as_text_formatted() const {
+vespalib::string
+PrometheusFormatter::as_text_formatted() const {
     asciistream out;
     emit_counters(out);
     emit_gauges(out);
