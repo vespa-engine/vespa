@@ -200,7 +200,7 @@ public class SchemaSemanticTokens implements Visitor {
         } else if (type != null) {
             if (node instanceof SymbolNode) {
                 SchemaNode parent = node.getParent();
-                Integer tokenType = identifierTypeMap.get(parent.getIdentifierClass());
+                Integer tokenType = identifierTypeMap.get(parent.getASTClass());
                 
                 if (tokenType != null) {
                     ret.add(new SemanticTokenMarker(tokenType, node));

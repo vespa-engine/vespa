@@ -39,7 +39,7 @@ public class SchemaDefinition {
             return ret;
         }
 
-        Token.TokenType tokenType = linkContexts.get(parent.getIdentifierClass());
+        Token.TokenType tokenType = linkContexts.get(parent.getASTClass());
         if (tokenType == null) {
             return ret;
         }

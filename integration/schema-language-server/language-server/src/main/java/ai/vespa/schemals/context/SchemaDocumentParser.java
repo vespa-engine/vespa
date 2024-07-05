@@ -6,42 +6,27 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
-import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
-import ai.vespa.schemals.context.parser.IdentifyDirtyNodes;
-import ai.vespa.schemals.context.parser.IdentifySymbolDefinition;
-import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
-import ai.vespa.schemals.context.parser.SwitchDeprecatedTokenTypes;
-import ai.vespa.schemals.context.parser.IdentifyType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 
-import com.yahoo.schema.parser.ParsedSchema;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
-import com.yahoo.tensor.functions.Diag;
-import com.yahoo.schema.parser.ParsedBlock;
-
-import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
-
-    public record ParseContext(String content, PrintStream logger, String fileURI, List<Identifier> identifiers) { }
-
     public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
         public static ParseResult parsingFailed(ArrayList<Diagnostic> diagnostics) {
             return new ParseResult(diagnostics, Optional.empty());
@@ -51,8 +36,6 @@ public class SchemaDocumentParser {
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
-
-    private List<Identifier> parseIdentifiers;
 
     private String fileURI = "";
     private String content = "";
@@ -71,32 +54,21 @@ public class SchemaDocumentParser {
         this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
 
-        this.parseIdentifiers = constructIdentifiers(logger, fileURI, schemaIndex);
-
         if (content != null) {
             updateFileContent(content);
         };
     }
 
-    public static List<Identifier> constructIdentifiers(PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
-        return new ArrayList<Identifier>() {{
-            add(new IdentifySymbolDefinition(logger, fileURI, schemaIndex));
-            add(new IdentifyType(logger));
-            add(new IdentifySymbolReferences(logger, fileURI, schemaIndex));
-            add(new IdentifyDeprecatedToken(logger));
-            add(new IdentifyDirtyNodes(logger));
-        }};
-    }
-
     public ParseContext getParseContext(String content) {
-        return new ParseContext(content, this.logger, this.fileURI, this.parseIdentifiers);
+        return new ParseContext(content, this.logger, this.fileURI, this.schemaIndex);
     }
 
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
 
-        var parsingResult = parseContent(getParseContext(content));
+        ParseContext context = getParseContext(content);
+        var parsingResult = parseContent(context);
 
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
@@ -107,7 +79,9 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        CSTUtils.printTree(logger, CST);
+        //CSTUtils.printTree(logger, CST);
+
+        logger.println("Found " + context.unresolvedTypeNodes().size() + " unresolved type nodes");
     }
 
     public String getFileURI() {
@@ -191,7 +165,7 @@ public class SchemaDocumentParser {
         SchemaParser parserStrict = new SchemaParser(context.logger(), context.fileURI(), sequence);
         parserStrict.setParserTolerant(false);
 
-        ArrayList<Diagnostic> errors = new ArrayList<Diagnostic>();
+        ArrayList<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
 
         try {
 
@@ -203,23 +177,13 @@ public class SchemaDocumentParser {
             Range range = CSTUtils.getNodeRange(node);
             String message = e.getMessage();
 
-            
-            Throwable cause = e.getCause();
-            if (
-                cause != null &&
-                cause instanceof com.yahoo.schema.parser.ParseException
-            ) {
-                context.logger().println(e);
-                context.logger().println(cause);
-            }
-
-            errors.add(new Diagnostic(range, message));
+            diagnostics.add(new Diagnostic(range, message));
 
 
         } catch (IllegalArgumentException e) {
             // Complex error, invalidate the whole document
 
-            errors.add(
+            diagnostics.add(
                 new Diagnostic(
                     new Range(
                         new Position(0, 0),
@@ -227,7 +191,7 @@ public class SchemaDocumentParser {
                     ),
                     e.getMessage())
                 );
-            return ParseResult.parsingFailed(errors);
+            return ParseResult.parsingFailed(diagnostics);
         }
 
         SchemaParser parserFaultTolerant = new SchemaParser(context.fileURI(), sequence);
@@ -242,11 +206,22 @@ public class SchemaDocumentParser {
         Node node = parserFaultTolerant.rootNode();
 
         var tolerantResult = parseCST(node, context);
-        errors.addAll(tolerantResult.diagnostics());
 
-        // CSTUtils.printTree(logger, CST);
+        for (TypeNode typeNode : context.unresolvedTypeNodes()) {
+            if (!context.schemaIndex().resolveTypeNode(typeNode)) {
+                diagnostics.add(new Diagnostic(
+                    typeNode.getRange(),
+                    "Unknown type " + typeNode.getText(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+        }
+        context.clearUnresolvedTypeNodes();
 
-        return new ParseResult(errors, tolerantResult.CST());
+        diagnostics.addAll(tolerantResult.diagnostics());
+
+        return new ParseResult(diagnostics, tolerantResult.CST());
     }
 
     private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {

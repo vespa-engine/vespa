@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Diagnostic;
 
 import com.yahoo.schema.Schema;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.context.Symbol;
@@ -28,8 +29,9 @@ import ai.vespa.schemals.tree.SymbolDefinitionNode;
 
 public class IdentifySymbolDefinition extends Identifier {
 
-    protected String fileURI;
-    protected SchemaIndex schemaIndex;
+    public IdentifySymbolDefinition(ParseContext context) {
+		super(context);
+	}
 
     private static final HashMap<TokenType, HashSet<Class<? extends Node>>> tokenParentClassPairs = new HashMap<TokenType, HashSet<Class<? extends Node>>>() {{
         put(TokenType.SCHEMA, new HashSet<Class<? extends Node>>() {{
@@ -59,12 +61,6 @@ public class IdentifySymbolDefinition extends Identifier {
         }});
     }};
 
-    public IdentifySymbolDefinition(PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
-        super(logger);
-        this.schemaIndex = schemaIndex;
-        this.fileURI = fileURI;
-    }
-
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
@@ -75,7 +71,7 @@ public class IdentifySymbolDefinition extends Identifier {
             parent != null &&
             parent.get(0) == node &&
             parentCNComp != null &&
-            parentCNComp.contains(parent.getIdentifierClass()) &&
+            parentCNComp.contains(parent.getASTClass()) &&
             parent.size() > 1
         ) {
             SchemaNode child = parent.get(1);
@@ -90,9 +86,9 @@ public class IdentifySymbolDefinition extends Identifier {
             } else {
 
                 SymbolDefinitionNode newNode = new SymbolDefinitionNode(child);
-                if (schemaIndex.findSymbol(fileURI, nodeType, child.getText()) == null) {
+                if (context.schemaIndex().findSymbol(context.fileURI(), nodeType, child.getText()) == null) {
                     Symbol symbol = new Symbol(nodeType, newNode);
-                    schemaIndex.insert(fileURI, symbol);
+                    context.schemaIndex().insert(context.fileURI(), symbol);
                 }
 
             }

@@ -1,41 +1,34 @@
 package ai.vespa.schemals.parser;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.context.SchemaDocumentParser.ParseContext;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.context.SchemaDocumentParser.ParseResult;
 import ai.vespa.schemals.context.SchemaIndex;
-import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.io.IOUtils;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.BeforeAll;
 import static org.junit.jupiter.api.Assertions.*;
 
-@TestInstance(Lifecycle.PER_CLASS)
 public class SchemaParserTest {
-
-    private PrintStream logger;
-    private SchemaIndex schemaIndex;
-
-    @BeforeAll
-    void setup() {
-        logger = System.out;
-        schemaIndex = new SchemaIndex(logger);
+    static long countErrors(List<Diagnostic> diagnostics) {
+        return diagnostics.stream()
+                          .filter(diag -> diag.getSeverity() == DiagnosticSeverity.Error)
+                          .count();
     }
 
     ParseResult parseString(String input, String fileName) throws Exception {
+        PrintStream logger = System.out;
+        SchemaIndex schemaIndex = new SchemaIndex(logger);
         schemaIndex.clearDocument(fileName);
-        var identifiers = SchemaDocumentParser.constructIdentifiers(logger, fileName, schemaIndex);
-        ParseContext context = new ParseContext(input, logger, fileName, identifiers);
+        ParseContext context = new ParseContext(input, logger, fileName, schemaIndex);
         return SchemaDocumentParser.parseContent(context);
     }
 
@@ -55,8 +48,9 @@ public class SchemaParserTest {
             Position start = diagnostic.getRange().getStart();
             testMessage += "\nDiagnostic: " + diagnostic.getMessage() + ", at position: (" + start.getLine() + ", " + start.getCharacter() + ")";
         }
-        assertEquals(0, parseResult.diagnostics().size(), testMessage);
+        assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
     }
+
 
     @Test
     void minimalSchemaParsed() throws Exception {
@@ -66,19 +60,18 @@ public class SchemaParserTest {
              "  }",
              "}");
         var parseResult = parseString(input);
-        assertEquals(0, parseResult.diagnostics().size());
+        assertEquals(0, countErrors(parseResult.diagnostics()));
         assertTrue(parseResult.CST().isPresent(), "Parsing should return CST root!");
     }
 
     @Test
     void parsingFatTest() throws Exception {
-        /*
         checkFileParses("../../../config-model/src/test/cfg/search/data/travel/schemas/TTData.sd");
         checkFileParses("../../../config-model/src/test/cfg/search/data/travel/schemas/TTEdge.sd");
         checkFileParses("../../../config-model/src/test/cfg/search/data/travel/schemas/TTPOI.sd");
         checkFileParses("../../../config-model/src/test/configmodel/types/other_doc.sd");
         checkFileParses("../../../config-model/src/test/configmodel/types/types.sd");
-        checkFileParses("../../../config-model/src/test/configmodel/types/type_with_doc_field.sd");
+        //checkFileParses("../../../config-model/src/test/configmodel/types/type_with_doc_field.sd");
         checkFileParses("../../../config-model/src/test/derived/advanced/advanced.sd");
         checkFileParses("../../../config-model/src/test/derived/annotationsimplicitstruct/annotationsimplicitstruct.sd");
         checkFileParses("../../../config-model/src/test/derived/annotationsinheritance2/annotationsinheritance2.sd");
@@ -97,9 +90,9 @@ public class SchemaParserTest {
         checkFileParses("../../../config-model/src/test/derived/attributes/attributes.sd");
         checkFileParses("../../../config-model/src/test/derived/combinedattributeandindexsearch/combinedattributeandindexsearch.sd");
         checkFileParses("../../../config-model/src/test/derived/complex/complex.sd");
-        checkFileParses("../../../config-model/src/test/derived/deriver/child.sd");
-        checkFileParses("../../../config-model/src/test/derived/deriver/grandparent.sd");
-        checkFileParses("../../../config-model/src/test/derived/deriver/parent.sd");
+        //checkFileParses("../../../config-model/src/test/derived/deriver/child.sd");
+        //checkFileParses("../../../config-model/src/test/derived/deriver/grandparent.sd");
+        //checkFileParses("../../../config-model/src/test/derived/deriver/parent.sd");
         checkFileParses("../../../config-model/src/test/derived/emptychild/child.sd");
         checkFileParses("../../../config-model/src/test/derived/emptychild/parent.sd");
         checkFileParses("../../../config-model/src/test/derived/emptydefault/emptydefault.sd");
@@ -133,18 +126,18 @@ public class SchemaParserTest {
         checkFileParses("../../../config-model/src/test/derived/inheritance/father.sd");
         checkFileParses("../../../config-model/src/test/derived/inheritance/grandparent.sd");
         checkFileParses("../../../config-model/src/test/derived/inheritance/mother.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritdiamond/child.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritdiamond/father.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritdiamond/grandparent.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritdiamond/mother.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritfromgrandparent/child.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritfromgrandparent/grandparent.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritfromgrandparent/parent.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritdiamond/child.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritdiamond/father.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritdiamond/grandparent.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritdiamond/mother.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritfromgrandparent/child.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritfromgrandparent/grandparent.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritfromgrandparent/parent.sd");
         checkFileParses("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritfromparent/child.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritfromparent/parent.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritstruct/child.sd");
-        checkFileParses("../../../config-model/src/test/derived/inheritstruct/parent.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritfromparent/child.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritfromparent/parent.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritstruct/child.sd");
+        //checkFileParses("../../../config-model/src/test/derived/inheritstruct/parent.sd");
         checkFileParses("../../../config-model/src/test/derived/integerattributetostringindex/integerattributetostringindex.sd");
         checkFileParses("../../../config-model/src/test/derived/language/language.sd");
         checkFileParses("../../../config-model/src/test/derived/lowercase/lowercase.sd");
@@ -207,7 +200,7 @@ public class SchemaParserTest {
         checkFileParses("../../../config-model/src/test/examples/casing.sd");
         checkFileParses("../../../config-model/src/test/examples/comment.sd");
         checkFileParses("../../../config-model/src/test/examples/documentidinsummary.sd");
-        checkFileParses("../../../config-model/src/test/examples/fieldoftypedocument.sd");
+        //checkFileParses("../../../config-model/src/test/examples/fieldoftypedocument.sd");
         checkFileParses("../../../config-model/src/test/examples/implicitsummaries_attribute.sd");
         checkFileParses("../../../config-model/src/test/examples/implicitsummaryfields.sd");
         checkFileParses("../../../config-model/src/test/examples/incorrectrankingexpressionfileref.sd");
@@ -247,6 +240,5 @@ public class SchemaParserTest {
         checkFileParses("../../../config-model/src/test/examples/struct.sd");
         checkFileParses("../../../config-model/src/test/examples/summaryfieldcollision.sd");
         checkFileParses("../../../config-model/src/test/examples/weightedset-summaryto.sd");
-        */
     }
 }
