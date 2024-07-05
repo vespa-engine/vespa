@@ -45,6 +45,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.INHERITS);
         add(TokenType.RANK_PROFILE);
         add(TokenType.SCHEMA);
+        add(TokenType.SEARCH);
         add(TokenType.STRUCT);
         add(TokenType.STRUCT_FIELD);
         add(TokenType.TYPE);
