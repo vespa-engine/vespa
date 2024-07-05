@@ -59,6 +59,13 @@ public class CSTUtils {
         return new Position(line, column);
     }
 
+    public static SchemaNode findFirstLeafChild(SchemaNode node) {
+        while (!node.isLeaf()) {
+            node = node.get(0);
+        }
+        return node;
+    }
+
     /* Returns the last non-dirty node before the supplied position */
     public static SchemaNode getLastCleanNode(SchemaNode node, Position pos) {
         for (int i = node.size() - 1; i >= 0; i--) {

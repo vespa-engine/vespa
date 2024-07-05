@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
@@ -14,12 +15,11 @@ import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyDirtyNodes extends Identifier {
 
+    public IdentifyDirtyNodes(ParseContext context) {
+		super(context);
+	}
 
-    public IdentifyDirtyNodes(PrintStream logger) {
-        super(logger);
-    }
-
-    private String getParseExceptionMessage(ParseException exception) {
+	private String getParseExceptionMessage(ParseException exception) {
 
         Throwable cause = exception.getCause();
 

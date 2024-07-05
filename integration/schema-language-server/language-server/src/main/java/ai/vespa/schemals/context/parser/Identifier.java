@@ -5,14 +5,15 @@ import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public abstract class Identifier {
 
-    protected PrintStream logger;
+    protected ParseContext context;
 
-    public Identifier(PrintStream logger) {
-        this.logger = logger;
+    public Identifier(ParseContext context) {
+        this.context = context;
     }
 
     public abstract ArrayList<Diagnostic> identify(SchemaNode node);

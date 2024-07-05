@@ -45,6 +45,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.INHERITS);
         add(TokenType.RANK_PROFILE);
         add(TokenType.SCHEMA);
+        add(TokenType.SEARCH);
         add(TokenType.STRUCT);
         add(TokenType.STRUCT_FIELD);
         add(TokenType.TYPE);
@@ -52,7 +53,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.RANK_PROPERTIES);
     }};
 
-    private static final ArrayList<String> manualyRegisteredLSPNames = new ArrayList<String>() {{
+    private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{
         add("type");
         add("comment");
     }};
@@ -63,12 +64,12 @@ public class SchemaSemanticTokens implements Visitor {
         put(TokenType.LONG, "number");
         put(TokenType.DOUBLEQUOTEDSTRING, "string");
         put(TokenType.SINGLEQUOTEDSTRING, "string");
-        put(TokenType.ARRAY, "type");
-        put(TokenType.WEIGHTEDSET, "type");
-        put(TokenType.MAP, "type");
-        put(TokenType.ANNOTATIONREFERENCE, "type");
-        put(TokenType.REFERENCE, "type");
-        put(TokenType.TENSOR_TYPE, "type");
+        //put(TokenType.ARRAY, "type");
+        //put(TokenType.WEIGHTEDSET, "type");
+        //put(TokenType.MAP, "type");
+        //put(TokenType.ANNOTATIONREFERENCE, "type");
+        //put(TokenType.REFERENCE, "type");
+        //put(TokenType.TENSOR_TYPE, "type");
     }};
     
     private static final HashMap<Class<? extends Node>, String> identifierTypeLSPNameMap = new HashMap<Class<? extends Node>, String>() {{
@@ -104,7 +105,7 @@ public class SchemaSemanticTokens implements Visitor {
         tokenTypeMap = new HashMap<TokenType, Integer>();
         identifierTypeMap = new HashMap<Class<? extends Node>, Integer>();
 
-        tokenTypes.addAll(manualyRegisteredLSPNames);
+        tokenTypes.addAll(manuallyRegisteredLSPNames);
 
         for (Map.Entry<TokenType, String> set : tokenTypeLSPNameMap.entrySet()) {
             int index = addTokenType(set.getValue());
@@ -193,14 +194,16 @@ public class SchemaSemanticTokens implements Visitor {
 
         if (node instanceof TypeNode) {
             Integer tokenType = tokenTypes.indexOf("type");
-            if (tokenType != null) {
-                ret.add(new SemanticTokenMarker(tokenType, node));
+            if (tokenType != -1) {
+                // this will leave <> uncolored, as we are only interested in marking the actual token
+                Range markerRange = CSTUtils.findFirstLeafChild(node).getRange();
+                ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
 
         } else if (type != null) {
             if (node instanceof SymbolNode) {
                 SchemaNode parent = node.getParent();
-                Integer tokenType = identifierTypeMap.get(parent.getIdentifierClass());
+                Integer tokenType = identifierTypeMap.get(parent.getASTClass());
                 
                 if (tokenType != null) {
                     ret.add(new SemanticTokenMarker(tokenType, node));

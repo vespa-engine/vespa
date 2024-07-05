@@ -4,8 +4,6 @@ import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.SymbolDefinitionNode;
 
 public class Symbol {
-
-
     private Token.TokenType type;
     private SymbolDefinitionNode identifierNode;
     private Symbol scope = null;
