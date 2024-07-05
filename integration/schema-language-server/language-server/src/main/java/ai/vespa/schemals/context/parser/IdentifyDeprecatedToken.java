@@ -2,12 +2,11 @@ package ai.vespa.schemals.context.parser;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -17,19 +16,21 @@ public class IdentifyDeprecatedToken extends Identifier {
         super(logger);
     }
 
-    private static final HashSet<TokenType> deprecatedTokens = new HashSet<TokenType>() {{
-        add(TokenType.ATTRIBUTE);
-        add(TokenType.ENABLE_BIT_VECTORS);
-        add(TokenType.INDEX);
-        add(TokenType.SUMMARY_TO);
+    private static final HashMap<TokenType, String> deprecatedTokens = new HashMap<TokenType, String>() {{
+        put(TokenType.ATTRIBUTE, "");
+        put(TokenType.ENABLE_BIT_VECTORS, "");
+        put(TokenType.INDEX, "");
+        put(TokenType.SUMMARY_TO, "");
+        put(TokenType.SEARCH, "Use schema insted.");
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        if (deprecatedTokens.contains(node.getType())) {
+        String message = deprecatedTokens.get(node.getType());
+        if (message != null) {
             ret.add(
-                new Diagnostic(node.getRange(), node.getText() + " is deprecated.", DiagnosticSeverity.Warning, "")
+                new Diagnostic(node.getRange(), node.getText() + " is deprecated. " + message, DiagnosticSeverity.Warning, "")
             );
         }
 

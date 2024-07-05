@@ -12,37 +12,50 @@ import com.yahoo.schema.Schema;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.context.Symbol;
-import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.fieldSetElm;
+import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.structDefinitionElm;
+import ai.vespa.schemals.parser.ast.structFieldDefinition;
+import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolDefinitionNode;
 
 public class IdentifySymbolDefinition extends Identifier {
 
     protected SchemaDocumentParser document;
     protected SchemaIndex schemaIndex;
 
-    private static final HashMap<TokenType, HashSet<String>> tokenParentClassPairs = new HashMap<TokenType, HashSet<String>>() {{
-        put(TokenType.SCHEMA, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.rootSchema");
+    private static final HashMap<TokenType, HashSet<Class<? extends Node>>> tokenParentClassPairs = new HashMap<TokenType, HashSet<Class<? extends Node>>>() {{
+        put(TokenType.SCHEMA, new HashSet<Class<? extends Node>>() {{
+            add(rootSchema.class);
         }});
-        put(TokenType.DOCUMENT, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.documentElm");
+        put(TokenType.DOCUMENT, new HashSet<Class<? extends Node>>() {{
+            add(documentElm.class);
         }});
-        put(TokenType.FIELD, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.fieldElm");
-            add("ai.vespa.schemals.parser.ast.structFieldDefinition");
+        put(TokenType.FIELD, new HashSet<Class<? extends Node>>() {{
+            add(fieldElm.class);
+            add(structFieldDefinition.class);
         }});
-        put(TokenType.FIELDSET, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.fieldSetElm");
+        put(TokenType.FIELDSET, new HashSet<Class<? extends Node>>() {{
+            add(fieldSetElm.class);
         }});
-        put(TokenType.STRUCT, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.structDefinitionElm");
+        put(TokenType.STRUCT, new HashSet<Class<? extends Node>>() {{
+            add(structDefinitionElm.class);
         }});
-        put(TokenType.STRUCT_FIELD, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.structFieldElm");
+        put(TokenType.STRUCT_FIELD, new HashSet<Class<? extends Node>>() {{
+            add(structFieldElm.class);
         }});
-        put(TokenType.RANK_PROFILE, new HashSet<String>() {{
-            add("ai.vespa.schemals.parser.ast.rankProfile");
+        put(TokenType.RANK_PROFILE, new HashSet<Class<? extends Node>>() {{
+            add(rankProfile.class);
+        }});
+        put(TokenType.FUNCTION, new HashSet<Class<? extends Node>>() {{
+            add(functionElm.class);
         }});
     }};
 
@@ -57,16 +70,17 @@ public class IdentifySymbolDefinition extends Identifier {
 
         SchemaNode parent = node.getParent();
         TokenType nodeType = node.getType();
-        HashSet<String> parentCNComp = tokenParentClassPairs.get(nodeType);
+        HashSet<Class<? extends Node>> parentCNComp = tokenParentClassPairs.get(nodeType);
         if (
             parent != null &&
             parent.get(0) == node &&
             parentCNComp != null &&
-            parentCNComp.contains(parent.getIdentifierString()) &&
+            parentCNComp.contains(parent.getIdentifierClass()) &&
             parent.size() > 1
         ) {
             SchemaNode child = parent.get(1);
 
+            // TODO: move this check to the ccc file
             if (
                 nodeType == TokenType.FIELD &&
                 Schema.isReservedName(child.getText().toLowerCase())
@@ -75,9 +89,9 @@ public class IdentifySymbolDefinition extends Identifier {
             
             } else {
 
-                child.setUserDefinedIdentifier();
+                SymbolDefinitionNode newNode = new SymbolDefinitionNode(child);
                 if (schemaIndex.findSymbol(document.getFileURI(), nodeType, child.getText()) == null) {
-                    Symbol symbol = new Symbol(nodeType, child);
+                    Symbol symbol = new Symbol(nodeType, newNode);
                     schemaIndex.insert(document.getFileURI(), symbol);
                 }
 

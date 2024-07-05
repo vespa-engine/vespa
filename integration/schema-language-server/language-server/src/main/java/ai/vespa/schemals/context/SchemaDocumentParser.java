@@ -15,6 +15,7 @@ import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
 import ai.vespa.schemals.context.parser.IdentifyDiryNodes;
 import ai.vespa.schemals.context.parser.IdentifySymbolDefinition;
 import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
+import ai.vespa.schemals.context.parser.SwitchDeprecatedTokenTypes;
 import ai.vespa.schemals.context.parser.IdentifyType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.ParseException;
@@ -62,10 +63,11 @@ public class SchemaDocumentParser {
         SchemaDocumentParser self = this;
 
         this.parseIdentifiers = new ArrayList<Identifier>() {{
+            add(new IdentifyDeprecatedToken(logger));
+            add(new SwitchDeprecatedTokenTypes(logger));
             add(new IdentifySymbolDefinition(logger, self, schemaIndex));
             add(new IdentifyType(logger));
             add(new IdentifySymbolReferences(logger, self, schemaIndex));
-            add(new IdentifyDeprecatedToken(logger));
             add(new IdentifyDiryNodes(logger));
         }};
 
