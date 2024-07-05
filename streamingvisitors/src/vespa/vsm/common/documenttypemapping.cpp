@@ -80,6 +80,8 @@ void DocumentTypeMapping::buildFieldMap(
             if ((elem.first[0] != '[') && (elem.first != "summaryfeatures") && (elem.first != "rankfeatures") && (elem.first != "ranklog") && (elem.first != "sddocname") && (elem.first != "documentid")) {
                 FieldPath fieldPath;
                 docType.buildFieldPath(fieldPath, fname);
+                // Note: Entries are overwritten, behavior depends on
+                // fieldList iteration order.
                 fieldMap[elem.second] = std::move(fieldPath);
                 validCount++;
                 LOG(spam, "Found %s -> %d in document", fname.c_str(), elem.second);
