@@ -10,7 +10,6 @@ import java.util.Map;
 import com.yahoo.schema.Schema;
 
 import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.Token;
 
 import ai.vespa.schemals.tree.TypeNode;
 
@@ -50,8 +49,8 @@ public class SchemaIndex {
         return createDBKey(fileURI, symbol.getType(), symbol.getShortIdentifier());
     }
 
-    private String createDBKey(String fileURI, Token.TokenType type, String identifier) {
-        return fileURI + ":" + type.name() + ":" + identifier;
+    private String createDBKey(String fileURI, TokenType type, String identifier) {
+        return fileURI + ":" + type.name() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
     }
 
     public void insert(String fileURI, Symbol symbol) {
@@ -61,7 +60,7 @@ public class SchemaIndex {
         );
     }
 
-    public Symbol findSymbol(String fileURI, Token.TokenType type, String identifier) {
+    public Symbol findSymbol(String fileURI, TokenType type, String identifier) {
         SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
         if (results == null) {
             return null;
@@ -81,21 +80,12 @@ public class SchemaIndex {
         return result;
     }
 
-    public boolean resolveTypeNode(TypeNode typeNode) {
+    public boolean resolveTypeNode(TypeNode typeNode, String fileURI) {
         // TODO: handle inheritance 
         // TODO: handle document types
         // TODO: handle name collision
         String typeName = typeNode.getParsedType().name();
-        int matched = 0;
-        for (Map.Entry<String, SchemaIndexItem> entry : database.entrySet()) {
-            Symbol symbol = entry.getValue().symbol;
-            if (symbol.getType() != TokenType.STRUCT) continue;
-            if (symbol.getShortIdentifier().equalsIgnoreCase(typeName)) {
-                matched += 1;
-            }
-        }
-
-        return matched == 1;
+        return findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null;
     }
 
     public void dumpIndex(PrintStream logger) {

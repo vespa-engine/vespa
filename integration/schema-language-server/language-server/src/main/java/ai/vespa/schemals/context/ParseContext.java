@@ -21,13 +21,14 @@ public class ParseContext {
         this.fileURI = fileURI;
         this.schemaIndex = schemaIndex;
         this.unresolvedTypeNodes = new ArrayList<>();
-        ParseContext self = this;
+        ParseContext context = this;
         this.identifiers = new ArrayList<>() {{
-            add(new IdentifyType(self));
-            add(new IdentifySymbolDefinition(self));
-            add(new IdentifySymbolReferences(self));
-            add(new IdentifyDeprecatedToken(self));
-            add(new IdentifyDirtyNodes(self));
+            add(new IdentifyType(context));
+            add(new IdentifySymbolDefinition(context));
+            add(new IdentifySymbolReferences(context));
+            add(new IdentifyDeprecatedToken(context));
+            add(new IdentifyDirtyNodes(context));
+            add(new IdentifyNamedDocument(context));
         }};
     }
 

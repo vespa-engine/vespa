@@ -78,8 +78,7 @@ public class SchemaDocumentParser {
         }
 
         CSTUtils.printTree(logger, CST);
-
-        logger.println("Found " + context.unresolvedTypeNodes().size() + " unresolved type nodes");
+        schemaIndex.dumpIndex(logger);
     }
 
     public String getFileURI() {
@@ -206,7 +205,7 @@ public class SchemaDocumentParser {
         var tolerantResult = parseCST(node, context);
 
         for (TypeNode typeNode : context.unresolvedTypeNodes()) {
-            if (!context.schemaIndex().resolveTypeNode(typeNode)) {
+            if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
                 diagnostics.add(new Diagnostic(
                     typeNode.getRange(),
                     "Unknown type " + typeNode.getText(),

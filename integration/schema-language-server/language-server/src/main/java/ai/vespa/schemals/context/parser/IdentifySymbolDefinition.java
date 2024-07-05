@@ -37,6 +37,9 @@ public class IdentifySymbolDefinition extends Identifier {
         put(TokenType.SCHEMA, new HashSet<Class<? extends Node>>() {{
             add(rootSchema.class);
         }});
+        put(TokenType.SEARCH, new HashSet<Class<? extends Node>>() {{
+            add(rootSchema.class);
+        }});
         put(TokenType.DOCUMENT, new HashSet<Class<? extends Node>>() {{
             add(documentElm.class);
         }});
