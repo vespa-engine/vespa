@@ -12,13 +12,13 @@ import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolReferences extends Identifier {
 
-    protected SchemaDocumentParser document;
     protected SchemaIndex schemaIndex;
+    protected String fileURI;
 
-    public IdentifySymbolReferences(PrintStream logger, SchemaDocumentParser document, SchemaIndex schemaIndex) {
+    public IdentifySymbolReferences(PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
         super(logger);
-        this.document = document;
         this.schemaIndex = schemaIndex;
+        this.fileURI = fileURI;
     }
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
@@ -39,7 +39,7 @@ public class IdentifySymbolReferences extends Identifier {
                 }
 
                 if (child.getText() != "") {
-                    if (schemaIndex.findSymbol(document.getFileURI(), Token.TokenType.FIELD, child.getText()) == null) {
+                    if (schemaIndex.findSymbol(this.fileURI, Token.TokenType.FIELD, child.getText()) == null) {
                         ret.add(new Diagnostic(child.getRange(), "Cannot find symbol: " + child.getText()));
                     } else {
                         child.setUserDefinedIdentifier();

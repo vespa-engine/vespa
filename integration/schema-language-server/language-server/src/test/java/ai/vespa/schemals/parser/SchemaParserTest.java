@@ -1,47 +1,61 @@
 package ai.vespa.schemals.parser;
 
-import com.yahoo.schema.parser.ParsedSchema;
+import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.context.SchemaDocumentParser.ParseContext;
+import ai.vespa.schemals.context.SchemaDocumentParser.ParseResult;
+import ai.vespa.schemals.context.SchemaIndex;
+import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.io.IOUtils;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.util.ArrayList;
 
+import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.BeforeAll;
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class SchemaParserTest {
-    ParsedSchema parseString(String input, String fileName) throws Exception {
-        CharSequence sequence = input;
-        PrintStream logger = System.out;
 
-        SchemaParser parserStrict = new SchemaParser(logger, fileName, sequence);
-        parserStrict.setParserTolerant(false);
+    private PrintStream logger;
+    private SchemaIndex schemaIndex;
 
-        ParsedSchema root = parserStrict.Root();
-        return root;
+    @BeforeAll
+    void setup() {
+        logger = System.out;
+        schemaIndex = new SchemaIndex(logger);
     }
 
-    ParsedSchema parseString(String input) throws Exception {
+    ParseResult parseString(String input, String fileName) throws Exception {
+        schemaIndex.clearDocument(fileName);
+        var identifiers = SchemaDocumentParser.constructIdentifiers(logger, fileName, schemaIndex);
+        ParseContext context = new ParseContext(input, logger, fileName, identifiers);
+        return SchemaDocumentParser.parseContent(context);
+    }
+
+    ParseResult parseString(String input) throws Exception {
         return parseString(input, "<FROMSTRING>");
     }
 
-    ParsedSchema parseFile(String fileName) throws Exception {
+    ParseResult parseFile(String fileName) throws Exception {
         File file = new File(fileName);
         return parseString(IOUtils.readFile(file), fileName);
     }
 
     void checkFileParses(String fileName) throws Exception {
-        try {
-            var schema = parseFile(fileName);
-            assertNotNull(schema);
-            assertNotNull(schema.name());
-            assertNotEquals("", schema.name());
-        } catch(ParseException pe) {
-            throw new ParseException("For file " + fileName + ": " + pe.getMessage());
-        } catch(IllegalArgumentException iae) {
-            throw new IllegalArgumentException("For file " + fileName + ": " + iae.getMessage());
+        String testMessage = "For file: " + fileName;
+        var parseResult = parseFile(fileName);
+        for (var diagnostic : parseResult.diagnostics()) {
+            Position start = diagnostic.getRange().getStart();
+            testMessage += "\nDiagnostic: " + diagnostic.getMessage() + ", at position: (" + start.getLine() + ", " + start.getCharacter() + ")";
         }
+        assertEquals(0, parseResult.diagnostics().size(), testMessage);
     }
 
     @Test
@@ -51,8 +65,9 @@ public class SchemaParserTest {
              "  document foo {",
              "  }",
              "}");
-        ParsedSchema schema = parseString(input);
-        assertEquals(schema.name(), "foo");
+        var parseResult = parseString(input);
+        assertEquals(0, parseResult.diagnostics().size());
+        assertTrue(parseResult.CST().isPresent(), "Parsing should return CST root!");
     }
 
     @Test

@@ -18,7 +18,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolDefinition extends Identifier {
 
-    protected SchemaDocumentParser document;
+    protected String fileURI;
     protected SchemaIndex schemaIndex;
 
     private static final HashMap<TokenType, HashSet<String>> tokenParentClassPairs = new HashMap<TokenType, HashSet<String>>() {{
@@ -46,10 +46,10 @@ public class IdentifySymbolDefinition extends Identifier {
         }});
     }};
 
-    public IdentifySymbolDefinition(PrintStream logger, SchemaDocumentParser document, SchemaIndex schemaIndex) {
+    public IdentifySymbolDefinition(PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
         super(logger);
-        this.document = document;
         this.schemaIndex = schemaIndex;
+        this.fileURI = fileURI;
     }
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
@@ -76,9 +76,9 @@ public class IdentifySymbolDefinition extends Identifier {
             } else {
 
                 child.setUserDefinedIdentifier();
-                if (schemaIndex.findSymbol(document.getFileURI(), nodeType, child.getText()) == null) {
+                if (schemaIndex.findSymbol(this.fileURI, nodeType, child.getText()) == null) {
                     Symbol symbol = new Symbol(nodeType, child);
-                    schemaIndex.insert(document.getFileURI(), symbol);
+                    schemaIndex.insert(this.fileURI, symbol);
                 }
 
             }
