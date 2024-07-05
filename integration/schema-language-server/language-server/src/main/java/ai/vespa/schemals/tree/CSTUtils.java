@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
+import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class CSTUtils {
 
@@ -107,6 +108,10 @@ public class CSTUtils {
         if (node.hasIndexingNode()) {
             ILUtils.printTree(logger, node.getIndexingNode(), indent + 1);
         }
+
+        if (node.hasFeatureListNode()) {
+            RankingExpressionUtils.printTree(logger, node.getFeatureListNode(), indent + 1);
+        }
     }
 
     public static void printTreeUpToPosition(PrintStream logger, Node node, Position pos) {
@@ -156,6 +161,10 @@ public class CSTUtils {
 
         if (node.isIndexingElm()) {
             ret += " [ILSCRIPT]";
+        }
+
+        if (node.isFeatureListElm()) {
+            ret += " [FEATURES]";
         }
 
         Range range = node.getRange();

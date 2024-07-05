@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
 
-import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.context.SchemaIndex;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
@@ -15,13 +14,13 @@ import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifySymbolReferences extends Identifier {
 
-    protected SchemaDocumentParser document;
     protected SchemaIndex schemaIndex;
+    protected String fileURI;
 
-    public IdentifySymbolReferences(PrintStream logger, SchemaDocumentParser document, SchemaIndex schemaIndex) {
+    public IdentifySymbolReferences(PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
         super(logger);
-        this.document = document;
         this.schemaIndex = schemaIndex;
+        this.fileURI = fileURI;
     }
 
     private Diagnostic createNotFoundError(SchemaNode node, TokenType type) {
@@ -48,7 +47,7 @@ public class IdentifySymbolReferences extends Identifier {
                 if (child.getText() != "") {
                     child.setType(TokenType.IDENTIFIER);
 
-                    if (schemaIndex.findSymbol(document.getFileURI(), TokenType.FIELD, child.getText()) == null) {
+                    if (schemaIndex.findSymbol(fileURI, TokenType.FIELD, child.getText()) == null) {
                         ret.add(createNotFoundError(child, TokenType.FIELD));
                     } else {
                         new SymbolReferenceNode(child);
@@ -81,7 +80,7 @@ public class IdentifySymbolReferences extends Identifier {
             ) {
                 nextNode.setType(TokenType.IDENTIFIER);
 
-                if (schemaIndex.findSymbol(document.getFileURI(), typeSpecifierNode.getType(), nextNode.getText()) == null) {
+                if (schemaIndex.findSymbol(fileURI, typeSpecifierNode.getType(), nextNode.getText()) == null) {
                     ret.add(createNotFoundError(nextNode, typeSpecifierNode.getType()));
                 } else {
                     new SymbolReferenceNode(nextNode);

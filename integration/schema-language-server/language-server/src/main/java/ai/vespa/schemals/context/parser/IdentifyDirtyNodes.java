@@ -12,10 +12,10 @@ import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
-public class IdentifyDiryNodes extends Identifier {
+public class IdentifyDirtyNodes extends Identifier {
 
 
-    public IdentifyDiryNodes(PrintStream logger) {
+    public IdentifyDirtyNodes(PrintStream logger) {
         super(logger);
     }
 

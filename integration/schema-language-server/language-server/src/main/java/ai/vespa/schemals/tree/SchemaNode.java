@@ -10,6 +10,7 @@ import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.parser.ast.featureListElm;
 
 public class SchemaNode {
 
@@ -19,6 +20,7 @@ public class SchemaNode {
     private Node originalNode;
 
     private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
+    private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
 
     // This array has to be in order, without overlapping elements
     private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
@@ -82,22 +84,44 @@ public class SchemaNode {
         return (originalNode instanceof indexingElm);
     }
 
+    public boolean isFeatureListElm() {
+        return (originalNode instanceof featureListElm);
+    }
+
     public String getILScript() {
         if (!isIndexingElm())return null;
         indexingElm elmNode = (indexingElm)originalNode;
         return elmNode.getILScript();
     }
 
+    public String getFeatureListString() {
+        if (!isFeatureListElm()) return null;
+        featureListElm elmNode = (featureListElm)originalNode;
+        return elmNode.getFeatureListString();
+    }
+
     public boolean hasIndexingNode() {
         return this.indexingNode != null;
+    }
+
+    public boolean hasFeatureListNode() {
+        return this.featureListNode != null;
     }
 
     public ai.vespa.schemals.parser.indexinglanguage.Node getIndexingNode() {
         return this.indexingNode;
     }
 
+    public ai.vespa.schemals.parser.rankingexpression.Node getFeatureListNode() {
+        return this.featureListNode;
+    }
+
     public void setIndexingNode(ai.vespa.schemals.parser.indexinglanguage.Node node) {
         this.indexingNode = node;
+    }
+
+    public void setFeatureListNode(ai.vespa.schemals.parser.rankingexpression.Node node) {
+        this.featureListNode = node;
     }
 
     public boolean instanceOf(Class<? extends Node> astClass) {

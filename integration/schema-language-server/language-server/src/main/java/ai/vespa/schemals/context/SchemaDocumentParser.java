@@ -3,6 +3,7 @@ package ai.vespa.schemals.context;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Position;
@@ -12,7 +13,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.context.parser.IdentifyDeprecatedToken;
-import ai.vespa.schemals.context.parser.IdentifyDiryNodes;
+import ai.vespa.schemals.context.parser.IdentifyDirtyNodes;
 import ai.vespa.schemals.context.parser.IdentifySymbolDefinition;
 import ai.vespa.schemals.context.parser.IdentifySymbolReferences;
 import ai.vespa.schemals.context.parser.SwitchDeprecatedTokenTypes;
@@ -23,8 +24,10 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
+import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 
 import com.yahoo.schema.parser.ParsedSchema;
+import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.functions.Diag;
 import com.yahoo.schema.parser.ParsedBlock;
 
@@ -33,20 +36,28 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
+import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
+
+    public record ParseContext(String content, PrintStream logger, String fileURI, List<Identifier> identifiers) { }
+
+    public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
+        public static ParseResult parsingFailed(ArrayList<Diagnostic> diagnostics) {
+            return new ParseResult(diagnostics, Optional.empty());
+        }
+    }
 
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
 
-    private ArrayList<Identifier> parseIdentifiers;
+    private List<Identifier> parseIdentifiers;
 
     private String fileURI = "";
     private String content = "";
     
     private SchemaNode CST;
-    private boolean faultySchema = true;
 
     public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
@@ -60,26 +71,41 @@ public class SchemaDocumentParser {
         this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
 
-        SchemaDocumentParser self = this;
-
-        this.parseIdentifiers = new ArrayList<Identifier>() {{
-            add(new IdentifyDeprecatedToken(logger));
-            add(new SwitchDeprecatedTokenTypes(logger));
-            add(new IdentifySymbolDefinition(logger, self, schemaIndex));
-            add(new IdentifyType(logger));
-            add(new IdentifySymbolReferences(logger, self, schemaIndex));
-            add(new IdentifyDiryNodes(logger));
-        }};
+        this.parseIdentifiers = constructIdentifiers(logger, fileURI, schemaIndex);
 
         if (content != null) {
-            this.content = content;
-            parseContent();
+            updateFileContent(content);
         };
+    }
+
+    public static List<Identifier> constructIdentifiers(PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
+        return new ArrayList<Identifier>() {{
+            add(new IdentifySymbolDefinition(logger, fileURI, schemaIndex));
+            add(new IdentifyType(logger));
+            add(new IdentifySymbolReferences(logger, fileURI, schemaIndex));
+            add(new IdentifyDeprecatedToken(logger));
+            add(new IdentifyDirtyNodes(logger));
+        }};
+    }
+
+    public ParseContext getParseContext(String content) {
+        return new ParseContext(content, this.logger, this.fileURI, this.parseIdentifiers);
     }
 
     public void updateFileContent(String content) {
         this.content = content;
-        parseContent();
+        schemaIndex.clearDocument(fileURI);
+
+        var parsingResult = parseContent(getParseContext(content));
+
+        diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
+
+        logger.println("Found " + parsingResult.diagnostics().size() + " errors during parsing");
+
+        if (parsingResult.CST().isPresent()) {
+            this.CST = parsingResult.CST().get();
+            lexer.setCST(CST);
+        }
 
         CSTUtils.printTree(logger, CST);
     }
@@ -91,11 +117,6 @@ public class SchemaDocumentParser {
     public String getFileName() {
         Integer splitPos = fileURI.lastIndexOf('/');
         return fileURI.substring(splitPos + 1);
-    }
-
-
-    public boolean isFaulty() {
-        return faultySchema;
     }
 
     public Position getPreviousStartOfWord(Position pos) {
@@ -164,46 +185,10 @@ public class SchemaDocumentParser {
         return node;
     }
 
-    private class ParserPayload {
-        int numOfLeadingChars = 0;
-        String source;
+    public static ParseResult parseContent(ParseContext context) {
+        CharSequence sequence = context.content();
 
-        ParserPayload(String source) {
-
-            this.source = source;
-
-            int firstSplit = source.indexOf(':') + 1;
-            if (firstSplit == 0) {
-                firstSplit = source.indexOf('{') + 1;
-            }
-
-            String sourceSubStr = source.substring(firstSplit);
-            int leadingChars = sourceSubStr.length() - sourceSubStr.stripLeading().length();
-
-            numOfLeadingChars = firstSplit + leadingChars;
-        }
-
-        String getLeadingChars() {
-            return source.substring(0, numOfLeadingChars);
-        }
-
-        Position getContentPosition() {
-            String leadingChars = getLeadingChars();
-            long numOfNewLines = leadingChars.chars().filter(ch -> ch == '\n').count();
-
-            int lastNewLine = leadingChars.lastIndexOf('\n');
-
-            return new Position((int)numOfNewLines, leadingChars.length() - lastNewLine - 1);
-        }
-
-    }
-
-    private ArrayList<Diagnostic> parseContent() {
-        CharSequence sequence = content;
-
-        logger.println("Parsing document: " + fileURI);
-
-        SchemaParser parserStrict = new SchemaParser(logger, getFileName(), sequence);
+        SchemaParser parserStrict = new SchemaParser(context.logger(), context.fileURI(), sequence);
         parserStrict.setParserTolerant(false);
 
         ArrayList<Diagnostic> errors = new ArrayList<Diagnostic>();
@@ -211,9 +196,7 @@ public class SchemaDocumentParser {
         try {
 
             parserStrict.Root();
-            faultySchema = false;
         } catch (ParseException e) {
-            faultySchema = true;
 
             Node.TerminalNode node = e.getToken();
 
@@ -224,54 +207,10 @@ public class SchemaDocumentParser {
             Throwable cause = e.getCause();
             if (
                 cause != null &&
-                cause instanceof com.yahoo.searchlib.rankingexpression.parser.ParseException &&
-                node instanceof Token
-            ) {
-                var parseCause = (com.yahoo.searchlib.rankingexpression.parser.ParseException) cause;
-                var tok = parseCause.currentToken.next;
-
-                Position relativeStartPosition = new Position(
-                    tok.beginLine - 1,
-                    tok.beginColumn - 1
-                );
-
-                Position relativeEndPosition = new Position(
-                    tok.endLine - 1,
-                    tok.endColumn - 1
-                );
-
-                if (relativeStartPosition.equals(relativeEndPosition)) {
-                    relativeEndPosition.setCharacter(relativeEndPosition.getCharacter() + 1);
-                }
-
-                logger.println(tok.beginColumn);
-                logger.println(tok.endColumn);
-
-                Token rootToken = (Token) node;
-                String source = rootToken.getSource();
-                
-                ParserPayload parserPayload = new ParserPayload(source);
-
-                Position parsingStartPosition = CSTUtils.addPositions(range.getStart(), parserPayload.getContentPosition());
-
-                Position absoluteStartPosition = CSTUtils.addPositions(parsingStartPosition, relativeStartPosition);
-                Position absoluteEndPosition = CSTUtils.addPositions(parsingStartPosition, relativeEndPosition);
-
-                range = new Range(
-                    absoluteStartPosition,
-                    absoluteEndPosition
-                );
-
-                message = parseCause.getMessage();
-
-            }
-
-            if (
-                cause != null &&
                 cause instanceof com.yahoo.schema.parser.ParseException
             ) {
-                logger.println(e);
-                logger.println(cause);
+                context.logger().println(e);
+                context.logger().println(cause);
             }
 
             errors.add(new Diagnostic(range, message));
@@ -284,17 +223,14 @@ public class SchemaDocumentParser {
                 new Diagnostic(
                     new Range(
                         new Position(0, 0),
-                        new Position((int)content.lines().count() - 1, 0)
+                        new Position((int)context.content().lines().count() - 1, 0)
                     ),
                     e.getMessage())
                 );
-
-            diagnosticsHandler.publishDiagnostics(fileURI, errors);
-            
-            return errors;
+            return ParseResult.parsingFailed(errors);
         }
 
-        SchemaParser parserFaultTolerant = new SchemaParser(getFileName(), sequence);
+        SchemaParser parserFaultTolerant = new SchemaParser(context.fileURI(), sequence);
         try {
             parserFaultTolerant.Root();
         } catch (ParseException e) {
@@ -304,75 +240,108 @@ public class SchemaDocumentParser {
         }
 
         Node node = parserFaultTolerant.rootNode();
-        errors.addAll(parseCST(node));
+
+        var tolerantResult = parseCST(node, context);
+        errors.addAll(tolerantResult.diagnostics());
 
         // CSTUtils.printTree(logger, CST);
 
-        diagnosticsHandler.publishDiagnostics(fileURI, errors);
-
-        lexer.setCST(CST);
-
-        return errors;
+        return new ParseResult(errors, tolerantResult.CST());
     }
 
-    private ArrayList<Diagnostic> traverseCST(SchemaNode node) {
+    private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {
 
         ArrayList<Diagnostic> ret = new ArrayList<>();
         
-        for (Identifier identifier : parseIdentifiers) {
+        for (Identifier identifier : context.identifiers()) {
             ret.addAll(identifier.identify(node));
         }
 
         if (node.isIndexingElm()) {
             Range nodeRange = node.getRange();
-            var indexingNode = parseIndexingScript(node.getILScript(), nodeRange.getEnd(), ret);
+            var indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
 
             if (indexingNode != null) {
                 node.setIndexingNode(indexingNode);
             }
         }
 
+        if (node.isFeatureListElm()) {
+            Range nodeRange = node.getRange();
+            String nodeString = node.get(0).get(0).toString();
+            Position featureListStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
+            var featureListNode = parseFeatureList(context, node.getFeatureListString(), featureListStart, ret);
+
+            if (featureListNode != null) {
+                node.setFeatureListNode(featureListNode);
+            }
+        }
+
         for (int i = 0; i < node.size(); i++) {
-            ret.addAll(traverseCST(node.get(i)));
+            ret.addAll(traverseCST(node.get(i), context));
         }
 
         return ret;
     }
 
-    private ArrayList<Diagnostic> parseCST(Node node) {
-        schemaIndex.clearDocument(fileURI);
-        CST = new SchemaNode(node);
+    private static ParseResult parseCST(Node node, ParseContext context) {
+        var CST = new SchemaNode(node);
         if (node == null) {
-            return new ArrayList<Diagnostic>();
+            return ParseResult.parsingFailed(new ArrayList<>());
         }
-        return traverseCST(CST);
+        var errors = traverseCST(CST, context);
+        return new ParseResult(errors, Optional.of(CST));
     }
 
-    private ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(String script, Position scriptStart, ArrayList<Diagnostic> diagnostics) {
+    private static ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(ParseContext context, String script, Position scriptStart, ArrayList<Diagnostic> diagnostics) {
         if (script == null) return null;
 
         CharSequence sequence = script;
-        IndexingParser parser = new IndexingParser(logger, getFileName(), sequence);
+        IndexingParser parser = new IndexingParser(context.logger(), context.fileURI(), sequence);
         parser.setParserTolerant(false);
 
         try {
-            logger.println("Trying to parse indexing script: " + script);
-            Expression indexingExpression = parser.root();
+            context.logger().println("Trying to parse indexing script: " + script);
+            parser.root();
             // TODO: Verify expression
             return parser.rootNode();
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
-            logger.println("Encountered parsing error in parsing ILScript");
+            context.logger().println("Encountered parsing error in parsing feature list");
             Range range = ILUtils.getNodeRange(pe.getToken());
             range.setStart(CSTUtils.addPositions(scriptStart, range.getStart()));
             range.setEnd(CSTUtils.addPositions(scriptStart, range.getEnd()));
 
             diagnostics.add(new Diagnostic(range, pe.getMessage()));
         } catch(IllegalArgumentException ex) {
-            logger.println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
+            context.logger().println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
         }
 
         return null;
     }
+
+    private static ai.vespa.schemals.parser.rankingexpression.Node parseFeatureList(ParseContext context, String featureListString, Position listStart, ArrayList<Diagnostic> diagnostics) {
+        if (featureListString == null)return null;
+        CharSequence sequence = featureListString;
+
+        RankingExpressionParser parser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
+        parser.setParserTolerant(false);
+
+        try {
+            parser.featureList();
+            return parser.rootNode();
+        } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
+            Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
+            range.setStart(CSTUtils.addPositions(listStart, range.getStart()));
+            range.setEnd(CSTUtils.addPositions(listStart, range.getEnd()));
+
+            diagnostics.add(new Diagnostic(range, pe.getMessage()));
+        } catch(IllegalArgumentException ex) {
+            // TODO: diagnostics
+        }
+
+        return null;
+    }
+
 
     /*
      * If necessary, the following methods can be sped up by

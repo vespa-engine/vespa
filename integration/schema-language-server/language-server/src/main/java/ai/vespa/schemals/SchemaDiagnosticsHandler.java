@@ -13,7 +13,7 @@ public class SchemaDiagnosticsHandler {
     private PrintStream logger;
     private LanguageClient client;
 
-    SchemaDiagnosticsHandler(PrintStream logger) {
+    public SchemaDiagnosticsHandler(PrintStream logger) {
         this.logger = logger;
     }
 

@@ -1,7 +1,7 @@
 PARSER_CLASS=IndexingParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser.indexinglanguage;
 FAULT_TOLERANT=true;
-/*
+/* Legacy JavaCC options
 options {
     CACHE_TOKENS = false;
     DEBUG_PARSER = false;
@@ -111,7 +111,7 @@ SKIP :
     " " | "\t" | "\r" | "\f"
 ;
 
-SPECIAL_TOKEN :
+UNPARSED :
  
     <COMMENT: "#" (~["\n","\r"])* >
 ;
