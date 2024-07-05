@@ -18,6 +18,7 @@ import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
@@ -1601,7 +1602,7 @@ public class ParseTestCase {
                 "url.all:http://www.newsadvance.com/servlet/Satellite?pagename=LNA/MGArticle/IMD_BasicArticle&c=MGArticle&cid=1031782787014&path=!mgnetwork!diversions",
                 Query.Type.ALL);
         tester.assertParsed(
-                "AND ull:http ull:www ull:neue ull:oz ull:de ull:information ull:pub ull:Boulevard ull:index ull:html ull:file ull:a ull:3 ull:s ull:4 ull:file s:\"37 iptc bdt 20050607 294 dpa 9001170 txt\" s:\"3 dir\" s:\"26 opt DPA parsed boulevard\" s:\"7 bereich\" s:\"9 Boulevard\"",
+                "AND ull:http ull:www ull:neue ull:oz ull:de ull:information ull:pub ull:Boulevard ull:index ull:html ull:file ull:a ull:3 s:\"4 file\" s:\"37 iptc bdt 20050607 294 dpa 9001170 txt\" s:\"3 dir\" s:\"26 opt DPA parsed boulevard\" s:\"7 bereich\" s:\"9 Boulevard\"",
                 "ull:http://www.neue-oz.de/information/pub_Boulevard/index.html?file=a:3:{s:4:\"file\";s:37:\"iptc-bdt-20050607-294-dpa_9001170.txt\";s:3:\"dir\";s:26:\"/opt/DPA/parsed/boulevard/\";s:7:\"bereich\";s:9:\"Boulevard\";}",
                 Query.Type.ALL);
     }
@@ -2613,6 +2614,13 @@ public class ParseTestCase {
         tester.assertParsed(emoji2, emoji2, Query.Type.ANY);
         tester.assertParsed("AND " + emoji1 + " " + emoji2, emoji1 + emoji2, Query.Type.ANY);
         tester.assertParsed("AND " + emoji1 + " foo " + emoji2, emoji1 + "foo" + emoji2, Query.Type.ANY);
+    }
+
+    @Test
+    void testMap() {
+        tester.assertParsed("str_map.key:key1", "str_map.key:key1", Query.Type.ALL);
+        tester.assertParsed("str_map.value:value1", "str_map.value:value1", Query.Type.ALL);
+        tester.assertParsed("str_map:{key:key1 value:value1}", "str_map:{key:key1 value:value1}", Query.Type.ALL);
     }
 
 }
