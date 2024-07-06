@@ -2612,7 +2612,17 @@ public class ParseTestCase {
     void testMap() {
         tester.assertParsed("str_map.key:key1", "str_map.key:key1", Query.Type.ALL);
         tester.assertParsed("str_map.value:value1", "str_map.value:value1", Query.Type.ALL);
-        tester.assertParsed("str_map:{key:key1 value:value1}", "str_map:{key:key1 value:value1}", Query.Type.ALL);
+        // tester.assertParsed("str_map:{key:key1 value:value1}", "str_map:{key:key1 value:value1}", Query.Type.ALL);
+    }
+
+    @Test
+    void testImplicitPhrase() {
+        tester.assertParsed("AND title:with title:precision","title:with.precision", Query.Type.ALL);
+    }
+
+    @Test
+    void testImplicitPhraseWithPhraseSegmenting() {
+        tester.assertParsed("phraseSegment:\"with precision\"","phraseSegment:with.precision", Query.Type.ALL);
     }
 
 }

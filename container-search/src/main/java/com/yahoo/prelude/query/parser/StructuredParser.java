@@ -93,8 +93,8 @@ abstract class StructuredParser extends AbstractParser {
             item = number();
             if (item == null)
                 item = phrase(indexPath + indexName);
-            if (item == null && indexName != null && tokens.currentIs(LCURLYBRACKET))
-                item = sameElement(indexPath + indexName);
+            //if (item == null && indexName != null && tokens.currentIs(LCURLYBRACKET))
+            //    item = sameElement(indexPath + indexName);
             if (item == null && indexName != null && wordsAhead())
                 item = phrase(indexPath + indexName);
 
@@ -672,8 +672,7 @@ abstract class StructuredParser extends AbstractParser {
                 if (addStartOfHostMarker) {
                     composite.addItem(MarkerWordItem.createStartOfHost());
                 }
-                if (firstWord instanceof IntItem) {
-                    IntItem asInt = (IntItem) firstWord;
+                if (firstWord instanceof IntItem asInt) {
                     firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(), true, asInt.getOrigin());
                 }
                 composite.addItem(firstWord);
@@ -683,9 +682,8 @@ abstract class StructuredParser extends AbstractParser {
                 return composite;
             }
         } else {
-            if (firstWord != null && firstWord instanceof TermItem && (starAfterFirst || starBeforeFirst)) {
+            if (firstWord != null && firstWord instanceof TermItem firstTerm && (starAfterFirst || starBeforeFirst)) {
                 // prefix, suffix or substring
-                TermItem firstTerm = (TermItem) firstWord;
                 if (starAfterFirst) {
                     if (starBeforeFirst) {
                         return new SubstringItem(firstTerm.stringValue(), true);
