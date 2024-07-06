@@ -124,7 +124,7 @@ TEST("require that buffer can grow some, but not unbound") {
 
 TEST("Control Change size") {
     EXPECT_EQUAL(32u, sizeof(ChangeTemplate<NumericChangeData<long>>));
-    EXPECT_EQUAL(80u, sizeof(ChangeTemplate<StringChangeData>));
+    EXPECT_EQUAL(16u + sizeof(vespalib::string), sizeof(ChangeTemplate<StringChangeData>));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

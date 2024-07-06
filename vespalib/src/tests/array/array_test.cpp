@@ -110,7 +110,6 @@ TEST("test basic array functionality")
     testArray<vespalib::string>("7", "9");
     const char * longS1 = "more than 48 bytes bytes that are needed to avoid the small string optimisation in vespalib::string";
     const char * longS2 = "even more more than 48 bytes bytes that are needed to avoid the small string optimisation in vespalib::string";
-    EXPECT_EQUAL(64ul, sizeof(vespalib::string));
     EXPECT_TRUE(strlen(longS1) > sizeof(vespalib::string));
     EXPECT_TRUE(strlen(longS2) > sizeof(vespalib::string));
     testArray<vespalib::string>(longS1, longS2);

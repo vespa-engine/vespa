@@ -8,33 +8,35 @@ namespace proton {
 
 namespace {
 
-void setupDebugging(std::vector<uint32_t> & debugLidList)
+void
+setupDebugging(std::vector<uint32_t> & debugLidList)
 {
     vespalib::string lidList = getenv("VESPA_PROTON_DEBUG_FEED_LID_LIST");
     vespalib::StringTokenizer lidTokenizer(lidList);
-    for (size_t i(0); i < lidTokenizer.size(); i++) {
-        vespalib::asciistream is(lidTokenizer[i]);
+    for (auto token : lidTokenizer) {
+        vespalib::asciistream is(token);
         uint32_t lid(0);
         is >> lid;
         debugLidList.push_back(lid);
     }
 }
 
-void setupDebugging(std::vector<document::DocumentId> & debugLidList)
+void
+setupDebugging(std::vector<document::DocumentId> & debugLidList)
 {
     vespalib::string lidList = getenv("VESPA_PROTON_DEBUG_FEED_DOCID_LIST");
     vespalib::StringTokenizer lidTokenizer(lidList);
-    for (size_t i(0); i < lidTokenizer.size(); i++) {
-        debugLidList.push_back(document::DocumentId(lidTokenizer[i]));
+    for (auto i : lidTokenizer) {
+        debugLidList.emplace_back(i);
     }
 }
 
 }
 
-FeedDebugger::FeedDebugger() :
-    _enableDebugging(false),
-    _debugLidList(),
-    _debugDocIdList()
+FeedDebugger::FeedDebugger()
+    : _enableDebugging(false),
+      _debugLidList(),
+      _debugDocIdList()
 {
     setupDebugging(_debugLidList);
     setupDebugging(_debugDocIdList);
@@ -46,14 +48,14 @@ FeedDebugger::~FeedDebugger() = default;
 ns_log::Logger::LogLevel
 FeedDebugger::getDebugDebuggerInternal(uint32_t lid, const document::DocumentId * docid) const
 {
-    for(size_t i(0), m(_debugLidList.size()); i < m; i++) {
-        if (lid == _debugLidList[i]) {
+    for(unsigned int candidate : _debugLidList) {
+        if (lid == candidate) {
             return ns_log::Logger::info;
         }
     }
-    if (docid != NULL) {
-        for(size_t i(0), m(_debugDocIdList.size()); i < m; i++) {
-            if (*docid == _debugDocIdList[i]) {
+    if (docid != nullptr) {
+        for (const auto & i : _debugDocIdList) {
+            if (*docid == i) {
                 return ns_log::Logger::info;
             }
         }
