@@ -68,6 +68,16 @@ chomp(vespalib::string & s) noexcept {
     }
 }
 
+vespalib::string
+safe_char_2_string(const char * p) {
+    return (p != nullptr) ? vespalib::string(p) : vespalib::string("");
+}
+
+vespalib::string
+safe_char_2_string(const char * p, size_t sz) {
+    return (p != nullptr) ? vespalib::string(p, sz) : vespalib::string("");
+}
+
 }
 
 namespace std {

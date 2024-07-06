@@ -166,4 +166,11 @@ bool
 ReturnCode::operator!=(const ReturnCode& code) const {
     return (_result != code._result) || (getMessage() != code.getMessage());
 }
+
+std::string_view
+ReturnCode::getMessage() const noexcept {
+    return _message
+           ? _message->operator std::string_view()
+           : "";
+}
 }

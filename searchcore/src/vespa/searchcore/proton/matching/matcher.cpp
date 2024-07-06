@@ -236,7 +236,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
       // collateral time
         GroupingContext groupingContext(metaStore.getValidLids(), _now_ref, request.getTimeOfDoom(),
                                         request.groupSpec.data(), request.groupSpec.size());
-        SessionId sessionId(request.sessionId.data(), request.sessionId.size());
+        SessionId sessionId = vespalib::safe_char_2_string(request.sessionId.data(), request.sessionId.size());
         bool shouldCacheSearchSession = false;
         bool shouldCacheGroupingSession = false;
         if (!sessionId.empty()) {
@@ -377,7 +377,7 @@ Matcher::get_matching_elements(const DocsumRequest &req, ISearchContext &search_
 
 std::pair<std::shared_ptr<SearchSession>, bool>
 Matcher::lookupSearchSession(SessionManager &session_manager, const Request & req) {
-    SessionId sessionId(req.sessionId.data(), req.sessionId.size());
+    SessionId sessionId = vespalib::safe_char_2_string(req.sessionId.data(), req.sessionId.size());
     if (!sessionId.empty()) {
         const Properties &cache_props = req.propertiesMap.cacheProperties();
         if (cache_props.lookup("query").found()) {

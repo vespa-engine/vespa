@@ -8,7 +8,13 @@ namespace vespalib {
 vespalib::string
 Memory::make_string() const
 {
-    return vespalib::string(data, size);
+    const char *p = data;
+    size_t sz = size;
+    if (data == nullptr) {
+        p = "";
+        sz = 0;
+    }
+    return  vespalib::string(p, sz);
 }
 
 std::ostream &
