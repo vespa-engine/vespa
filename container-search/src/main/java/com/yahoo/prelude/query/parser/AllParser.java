@@ -72,7 +72,7 @@ public class AllParser extends SimpleParser {
 
             current = positiveItem();
             if (current == null)
-                current = indexableItem().getFirst();
+                current = indexableItem("").getFirst();
             if (current == null)
                 current = compositeItem();
 
@@ -158,7 +158,7 @@ public class AllParser extends SimpleParser {
         try {
             if ( ! tokens.skip(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
-            var itemAndExplicitIndex = indexableItem();
+            var itemAndExplicitIndex = indexableItem("");
 
             item = itemAndExplicitIndex.getFirst();
             boolean explicitIndex = itemAndExplicitIndex.getSecond();
