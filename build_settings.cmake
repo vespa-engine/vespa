@@ -111,13 +111,17 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
 endif()
 
 # C and C++ compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} -DXXH_INLINE_ALL -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -fno-inline -fno-inline-functions -Wno-error=inline -fno-omit-frame-pointer ${C_WARN_OPTS} -fPIC ${VESPA_CXX_ABI_FLAGS} -DXXH_INLINE_ALL -DBOOST_DISABLE_ASSERTS ${VESPA_CPU_ARCH_FLAGS} ${EXTRA_C_FLAGS}")
 # AddressSanitizer/ThreadSanitizer work for both GCC and Clang
 if (VESPA_USE_SANITIZER)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_USE_SANITIZER}")
     if (VESPA_USE_SANITIZER MATCHES "undefined")
         # Many false positives when checking vptr due to limited visibility
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-sanitize=vptr")
+    endif()
+    if (VESPA_USE_SANITIZER MATCHES "address")
+        # Many false positives when checking vptr due to limited visibility
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize-address-use-odr-indicator")
     endif()
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
