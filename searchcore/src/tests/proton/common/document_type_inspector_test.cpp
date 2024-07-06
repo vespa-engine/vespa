@@ -7,6 +7,8 @@
 using namespace document;
 using namespace proton;
 
+namespace document_type_inspector_test {
+
 template <class Type>
 void
 addFields(Type &type, bool fieldF3IsString, bool hasFieldF4, bool hasFieldF5)
@@ -126,4 +128,6 @@ TEST_F("require that struct addition is detected", Fixture(false, false))
     EXPECT_FALSE(inspector.hasUnchangedField("smap.value.f2"));
     EXPECT_FALSE(inspector.hasUnchangedField("map.key"));
     EXPECT_FALSE(inspector.hasUnchangedField("map.value"));
+}
+
 }

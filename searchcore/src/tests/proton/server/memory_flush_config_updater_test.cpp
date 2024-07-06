@@ -8,6 +8,8 @@ using namespace proton;
 using vespa::config::search::core::ProtonConfig;
 using vespalib::HwInfo;
 
+namespace memory_flush_config_updater_test {
+
 ProtonConfig::Flush::Memory
 getConfig(int64_t maxMemory, int64_t eachMaxMemory, int64_t maxTlsSize,
           double conservativeMemoryLimitFactor = 0.5,
@@ -235,4 +237,6 @@ TEST_F("require that more disk bloat is allowed while node state is retired or m
     TEST_DO(f.assertStrategyDiskConfig((0.8 - ((0.3/0.7)*(1 - DEFAULT_DISK_BLOAT))) / 0.8, 1.0));
     f.notifyDiskMemUsage(belowLimit(), belowLimit());
     TEST_DO(f.assertStrategyDiskConfig(DEFAULT_DISK_BLOAT, DEFAULT_DISK_BLOAT));
+}
+
 }

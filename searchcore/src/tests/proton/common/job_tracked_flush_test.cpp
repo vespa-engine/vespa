@@ -18,6 +18,8 @@ using vespalib::makeLambdaTask;
 using vespalib::Gate;
 using vespalib::ThreadStackExecutor;
 
+namespace job_tracked_flush_test {
+
 struct MyFlushTask : public searchcorespi::FlushTask
 {
     Gate &_execGate;
@@ -130,4 +132,6 @@ TEST_F("require that nullptr flush task is not tracked", Fixture)
 {
     FlushTask::UP task = f._trackedFlush.initFlush(0, std::make_shared<search::FlushToken>());
     EXPECT_TRUE(task.get() == nullptr);
+}
+
 }
