@@ -46,6 +46,8 @@ using document::config_builder::Array;
 using document::config_builder::Map;
 using document::config_builder::Struct;
 using document::config_builder::Wset;
+using search::AttributeFactory;
+using search::AttributeVector;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
@@ -74,7 +76,7 @@ std::vector<char> as_vector(vespalib::ConstArrayRef<char> value) {
 
 }
 
-namespace search {
+namespace attribute_updater_test {
 
 using AttributePtr = AttributeVector::SP;
 using WeightedInt = AttributeVector::WeightedInt;

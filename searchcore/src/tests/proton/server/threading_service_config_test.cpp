@@ -9,6 +9,8 @@ using namespace proton;
 using ProtonConfig = vespa::config::search::core::ProtonConfig;
 using ProtonConfigBuilder = vespa::config::search::core::ProtonConfigBuilder;
 
+namespace threading_service_config_test {
+
 struct Fixture {
     ProtonConfig cfg;
     Fixture(uint32_t master_task_limit = 2000, int32_t task_limit = 500)
@@ -59,4 +61,6 @@ TEST_FF("require that config can be somewhat updated", Fixture(), Fixture(3000, 
     assertConfig(3000u, 1000u, cfg2);
     cfg1.update(cfg2);
     assertConfig(3000u, 1000u, cfg1);
+}
+
 }

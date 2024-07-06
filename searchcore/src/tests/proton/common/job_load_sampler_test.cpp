@@ -6,6 +6,8 @@
 
 using namespace proton;
 
+namespace job_load_sampler_test {
+
 constexpr double EPS = 0.000001;
 
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
@@ -98,4 +100,6 @@ TEST_F("require that multiple jobs that starts and ends in several intervals get
     EXPECT_APPROX(1.4, f.sample(40), EPS);
     f.end(45);
     EXPECT_APPROX(0.5, f.sample(50), EPS);
+}
+
 }

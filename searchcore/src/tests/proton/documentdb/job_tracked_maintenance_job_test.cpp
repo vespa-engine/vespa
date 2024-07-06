@@ -16,6 +16,8 @@ using GateUP = std::unique_ptr<Gate>;
 using GateVector = std::vector<GateUP>;
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
+namespace job_tracked_maintenance_job_test {
+
 GateVector
 getGateVector(size_t size)
 {
@@ -142,4 +144,6 @@ TEST_F("require that stop calls are sent to underlying jobs", Fixture)
     EXPECT_FALSE(f._myJob->stopped());
     f._trackedJob->stop();
     EXPECT_TRUE(f._myJob->stopped());
+}
+
 }

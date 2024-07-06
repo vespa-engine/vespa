@@ -26,6 +26,8 @@ using document::config_builder::Struct;
 
 using ConfigSP = shared_ptr<DocumentDBConfig>;
 
+namespace documentdbconfig_test {
+
 namespace {
 
 const int32_t doc_type_id = 787121340;
@@ -219,4 +221,6 @@ TEST_F("require that makeDelayedAttributeAspectConfig works, field removed with 
 {
     auto removed = DocumentDBConfig::makeDelayedAttributeAspectConfig(f.noAttrCfg, *f.attrCfg);
     TEST_DO(f.assertNotDelayedConfig(*removed));
+}
+
 }

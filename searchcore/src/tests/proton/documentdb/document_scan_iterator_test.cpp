@@ -19,6 +19,8 @@ using Timestamp = DocumentMetaStore::Timestamp;
 using LidSet = std::set<uint32_t>;
 using LidVector = std::vector<uint32_t>;
 
+namespace document_scan_iterator_test {
+
 struct Fixture
 {
     DocumentMetaStore _metaStore;
@@ -81,4 +83,6 @@ TEST_F("require that only lids > lid limit are returned", Fixture)
 {
     f.add({1,2,3,4,5,6,7,8});
     assertLidSet({5,6,7,8}, f.scan(4, 4));
+}
+
 }

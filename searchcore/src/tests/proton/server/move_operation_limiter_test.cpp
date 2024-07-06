@@ -7,6 +7,8 @@
 
 using namespace proton;
 
+namespace move_operation_limiter_test {
+
 struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
     bool blocked;
     MyBlockableMaintenanceJob()
@@ -106,4 +108,6 @@ TEST_F("require that destructor callback has reference to limiter via shared ptr
     f.clearLimiter();
     f.endOp();
     EXPECT_FALSE(f.job.blocked);
+}
+
 }

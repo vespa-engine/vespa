@@ -9,6 +9,8 @@
 using namespace proton;
 using namespace searchcorespi;
 
+namespace documentdb_job_trackers_test {
+
 constexpr double EPS = 0.000001;
 
 using FTT = IFlushTarget::Type;
@@ -111,4 +113,6 @@ TEST_F("require that un-known flush targets are not tracked", Fixture)
     IFlushTarget::List output = f._trackers.trackFlushTargets(input);
     EXPECT_EQUAL(1u, output.size());
     EXPECT_EQUAL(&*output[0].get(), &*input[0]);
+}
+
 }
