@@ -431,7 +431,7 @@ private:
             _bufferSize = StackSize;
             if (s) {
                 memcpy(_stack, s, _sz);
-            }
+	    }
             _stack[_sz] = '\0';
         } else {
             init_slower(s);
@@ -527,6 +527,8 @@ static inline string stringify(uint64_t number) noexcept
 }
 
 void chomp(vespalib::string & s) noexcept;
+
+vespalib::string safe_char_2_string(const char * p);
 
 } // namespace vespalib
 
