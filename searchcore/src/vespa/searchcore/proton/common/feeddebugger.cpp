@@ -11,7 +11,7 @@ namespace {
 void
 setupDebugging(std::vector<uint32_t> & debugLidList)
 {
-    vespalib::string lidList = getenv("VESPA_PROTON_DEBUG_FEED_LID_LIST");
+    vespalib::string lidList = vespalib::safe_char_2_string(getenv("VESPA_PROTON_DEBUG_FEED_LID_LIST"));
     vespalib::StringTokenizer lidTokenizer(lidList);
     for (auto token : lidTokenizer) {
         vespalib::asciistream is(token);
@@ -24,7 +24,7 @@ setupDebugging(std::vector<uint32_t> & debugLidList)
 void
 setupDebugging(std::vector<document::DocumentId> & debugLidList)
 {
-    vespalib::string lidList = getenv("VESPA_PROTON_DEBUG_FEED_DOCID_LIST");
+    vespalib::string lidList = vespalib::safe_char_2_string(getenv("VESPA_PROTON_DEBUG_FEED_DOCID_LIST"));
     vespalib::StringTokenizer lidTokenizer(lidList);
     for (auto i : lidTokenizer) {
         debugLidList.emplace_back(i);
