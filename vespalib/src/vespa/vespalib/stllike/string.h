@@ -431,6 +431,8 @@ private:
             _bufferSize = StackSize;
             if (s) {
                 memcpy(_stack, s, _sz);
+	    } else {
+                abort();
 	    }
             _stack[_sz] = '\0';
         } else {
