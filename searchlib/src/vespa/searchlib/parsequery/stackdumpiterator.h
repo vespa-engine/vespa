@@ -43,7 +43,7 @@ private:
     std::string_view _curr_index_name;
     /** The term in the current item */
     std::string_view _curr_term;
-    int64_t             _curr_integer_term;
+    int64_t          _curr_integer_term;
 
     /* extra arguments */
     uint32_t _extraIntArg1;
