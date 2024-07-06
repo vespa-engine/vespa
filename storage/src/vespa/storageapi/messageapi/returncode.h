@@ -75,11 +75,7 @@ public:
     ReturnCode(ReturnCode &&) noexcept = default;
     ReturnCode & operator = (ReturnCode &&) noexcept;
 
-    std::string_view getMessage() const {
-        return _message
-               ? _message->operator std::string_view()
-               : std::string_view();
-    }
+    std::string_view getMessage() const noexcept;
 
     Result getResult() const { return _result; }
 

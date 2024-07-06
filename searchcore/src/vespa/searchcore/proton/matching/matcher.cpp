@@ -236,7 +236,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
       // collateral time
         GroupingContext groupingContext(metaStore.getValidLids(), _now_ref, request.getTimeOfDoom(),
                                         request.groupSpec.data(), request.groupSpec.size());
-        SessionId sessionId(request.sessionId.data(), request.sessionId.size());
+        SessionId sessionId = vespalib::safe_char_2_string(request.sessionId.data(), request.sessionId.size());
         bool shouldCacheSearchSession = false;
         bool shouldCacheGroupingSession = false;
         if (!sessionId.empty()) {
