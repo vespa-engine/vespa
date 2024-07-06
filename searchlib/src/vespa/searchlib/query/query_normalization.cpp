@@ -40,7 +40,7 @@ fold(std::string_view s) {
     for (; curr < end;) {
         uint32_t c_ucs4 = *curr;
         if (c_ucs4 < 0x80) {
-            folded.append(Fast_NormalizeWordFolder::lowercase_and_fold_ascii(*curr++));
+            folded += Fast_NormalizeWordFolder::lowercase_and_fold_ascii(*curr++);
         } else {
             c_ucs4 = Fast_UnicodeUtil::GetUTF8CharNonAscii(curr);
             const char *repl = Fast_NormalizeWordFolder::ReplacementString(c_ucs4);
@@ -66,7 +66,7 @@ lowercase(std::string_view s) {
     for (; curr < end;) {
         uint32_t c_ucs4 = *curr;
         if (c_ucs4 < 0x80) {
-            folded.append(static_cast<char>(Fast_NormalizeWordFolder::lowercase_ascii(*curr++)));
+            folded += static_cast<char>(Fast_NormalizeWordFolder::lowercase_ascii(*curr++));
         } else {
             c_ucs4 = Fast_NormalizeWordFolder::lowercase(Fast_UnicodeUtil::GetUTF8CharNonAscii(curr));
             char tmp[6];

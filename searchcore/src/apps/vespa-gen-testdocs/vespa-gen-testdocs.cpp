@@ -134,7 +134,7 @@ StringGenerator::rand_string(string &res,
     
     res.clear();
     for (uint32_t i = 0; i < len; ++i) {
-        res.append('a' + _rnd.lrand48() % ('z' - 'a' + 1));
+        res += 'a' + _rnd.lrand48() % ('z' - 'a' + 1);
     }
 }
     

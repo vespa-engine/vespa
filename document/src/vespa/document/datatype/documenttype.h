@@ -27,9 +27,8 @@ public:
     class FieldSet {
     public:
         using Fields = std::set<vespalib::string>;
-        FieldSet(const vespalib::string & name, Fields fields,
-                 const DocumentType & doc_type);
-
+        FieldSet(const vespalib::string & name, Fields fields, const DocumentType & doc_type);
+        ~FieldSet();
         FieldSet(const FieldSet&) = default;
         FieldSet(FieldSet&&) noexcept = default;
         FieldSet& operator=(const FieldSet&) = default;

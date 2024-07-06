@@ -334,7 +334,7 @@ QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const noexcept
             T hh = d.fromstr(q, qend, &err);
             bool hasUpperLimit(q != err);
             if (*err == ';') {
-                err = const_cast<char *>(_term.end() - 1);
+                err = const_cast<char *>(_term.data() + _term.size() - 1);
             }
             valid = (*err == last) && ((last == ']') || (last == '>'));
             if (hasUpperLimit) {

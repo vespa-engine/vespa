@@ -2,7 +2,6 @@
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/socket.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <thread>
@@ -23,13 +22,13 @@ vespalib::string read_msg(SocketHandle &socket) {
         if (c == '\n') {
             return msg;
         }
-        msg.append(c);
+        msg += c;
     }
 }
 
 void write_msg(SocketHandle &socket, const vespalib::string &msg) {
-    for (size_t i = 0; i < msg.size(); ++i) {
-        ssize_t ret = socket.write(&msg[i], 1);
+    for (const char & c : msg) {
+        ssize_t ret = socket.write(&c, 1);
         if (ret != 1) {
             fprintf(stderr, "error during write message\n");
             return;
@@ -53,7 +52,7 @@ int main(int, char **) {
     }
     fprintf(stderr, "running socket test server at host %s\n", HostName::get().c_str());
     auto list = SocketAddress::resolve(0);
-    if (list.size() > 0) {
+    if (!list.empty()) {
         fprintf(stderr, "all local addresses:\n");
         for (const auto &addr: list) {
             fprintf(stderr, "  %s\n", addr.spec().c_str());

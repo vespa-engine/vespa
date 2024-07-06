@@ -67,7 +67,7 @@ bool is_unsupported(const vespalib::string &expression) {
         return true;
     }
     for (const auto &prefix: unsupported) {
-        if (starts_with(expression, prefix)) {
+        if (expression.starts_with(prefix)) {
             return true;
         }
     }

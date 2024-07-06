@@ -33,7 +33,7 @@ LowercaseConverter::onConvert(const ConstBufferRef & src) const
         c = Fast_NormalizeWordFolder::lowercase_and_fold(c);
         w.putChar(c);
     }
-    return {_buffer.begin(), _buffer.size()};
+    return {_buffer.data(), _buffer.size()};
 }
 
 SortInfo::SortInfo(std::string_view field, bool ascending, BlobConverter::SP converter) noexcept

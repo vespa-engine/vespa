@@ -7,13 +7,6 @@ namespace vespalib {
 
 template <uint32_t StackSize>
 void
-small_string<StackSize>::append_from_reserved(size_type sz) noexcept {
-    assert(size() + sz <= capacity());
-    _resize(size() + sz);
-}
-
-template <uint32_t StackSize>
-void
 small_string<StackSize>::_reserveBytes(size_type newBufferSize) noexcept {
     if (isAllocated()) {
          _buf = (char *) realloc(_buf, newBufferSize);
@@ -101,6 +94,17 @@ void small_string<StackSize>::init_slower(const void *s) noexcept
     assert(_buf);
     memcpy(_buf, s, _sz);
     _buf[_sz] = '\0';
+}
+
+template <uint32_t StackSize>
+void small_string<StackSize>::shrink_to_fit() noexcept {
+    if (empty()) {
+        reset();
+    } else if (isAllocated()) {
+        // This is just a very simple variant to temporarily support std::string interface.
+        // Will only live a very short time
+        *this = string(*this);
+    }
 }
 
 template <uint32_t StackSize>

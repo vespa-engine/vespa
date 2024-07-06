@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <iterator>
 #include <cassert>
 #include <algorithm>
 #include <ostream>
@@ -174,7 +173,7 @@ Metric::getPath() const
         return getName();
     } else {
         vespalib::string path(_owner->getPath());
-        path.append('.');
+        path += '.';
         path.append(getName());
         return path;
     }

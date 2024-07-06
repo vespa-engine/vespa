@@ -26,16 +26,17 @@ FieldCollection build_field_collection(const std::set<vespalib::string> &fields,
             builder.add(&doc_type.getField(field_name));
         }
     }
-    return FieldCollection(doc_type, builder.build());
+    return {doc_type, builder.build()};
 }
 } // namespace <unnamed>
 
-DocumentType::FieldSet::FieldSet(const vespalib::string & name, Fields fields,
-                                 const DocumentType & doc_type)
+DocumentType::FieldSet::FieldSet(const vespalib::string & name, Fields fields, const DocumentType & doc_type)
     : _name(name),
       _fields(fields),
       _field_collection(build_field_collection(fields, doc_type))
 {}
+
+DocumentType::FieldSet::~FieldSet() = default;
 
 DocumentType::DocumentType(string_view name, int32_t id)
     : StructuredDataType(name, id),

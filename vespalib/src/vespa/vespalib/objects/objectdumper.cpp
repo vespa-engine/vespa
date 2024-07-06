@@ -86,7 +86,7 @@ ObjectDumper::visitFloat(std::string_view name, double value)
 void
 ObjectDumper::visitString(std::string_view name, std::string_view value)
 {
-    addLine(string(name).append(": '").append(value).append('\''));
+    addLine(string(name).append(": '").append(value).append("'"));
 }
 
 void

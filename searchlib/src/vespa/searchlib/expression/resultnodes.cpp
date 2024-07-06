@@ -148,7 +148,7 @@ FloatResultNode::onCmp(const Identifiable & b) const
 }
 
 void StringResultNode::setMin() { _value.clear(); }
-void StringResultNode::setMax() { _value.clear(); _value.append(char(-1)); }
+void StringResultNode::setMax() { _value.clear(); _value += (char(-1)); }
 void RawResultNode::setMin() { _value.clear(); }
 void RawResultNode::setMax() { _value.push_back(-1); }
 void FloatResultNode::setMin() { _value = -std::numeric_limits<double>::max(); }

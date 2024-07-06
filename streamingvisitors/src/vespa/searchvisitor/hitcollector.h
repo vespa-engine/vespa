@@ -48,7 +48,7 @@ private:
                 -1 : ((getRankScore() < b.getRankScore()) ? 1 : cmpDocId(b));
         }
         int cmpSort(const Hit & b) const noexcept {
-            int diff = _sortBlob.compare(b._sortBlob.c_str(), b._sortBlob.size());
+            int diff = memcmp(_sortBlob.data(), b._sortBlob.data(), b._sortBlob.size());
             return (diff == 0) ? cmpDocId(b) : diff;
         }
 

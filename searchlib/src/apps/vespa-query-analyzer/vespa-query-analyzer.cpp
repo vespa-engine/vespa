@@ -38,11 +38,7 @@ int rel_diff(double a, double b, double e, double m) {
 
 void apply_diff(vespalib::string &str, int diff, char small, char big, int len) {
     for (int i = 0; i < diff && i < len; ++i) {
-        if (diff + i >= len * 2) {
-            str.append(big);
-        } else {
-            str.append(small);
-        }
+        str += ((diff + i >= len * 2) ? big :small);
     }
 }
 
@@ -54,8 +50,8 @@ struct Matcher : vespalib::slime::ObjectTraverser {
     Path path;
     Paths result;
     F match;
-    ~Matcher();
-    Matcher(F match_in) noexcept : path(), result(), match(match_in) {}
+    ~Matcher() override;
+    explicit Matcher(F match_in) noexcept : path(), result(), match(match_in) {}
     void search(const Inspector &node) {
         if (path.empty() && match(path, node)) {
             result.push_back(path);
@@ -160,7 +156,7 @@ struct Sample {
     double self_time_ms = 0.0;
     double total_time_ms = 0.0;
     size_t count = 0;
-    Sample(const Inspector &sample) {
+    explicit Sample(const Inspector &sample) {
         auto name = sample["name"].asString().make_stringview();
         if (ends_with(name, "/init")) {
             type = Type::INIT;
@@ -315,7 +311,7 @@ struct Node {
     double            ms_self_limit = 0.0;
     double            ms_limit = 0.0;
     std::vector<Node> children;
-    Node(const Inspector &obj) {
+    explicit Node(const Inspector &obj) {
         extract(type, obj["[type]"]);
         type = strip_name(type);
         id = obj["id"].asLong();
@@ -354,6 +350,7 @@ struct Node {
             }
         }
     }
+    Node(const Node &);
     ~Node();
     vespalib::string name() const {
         vespalib::string res = type;
@@ -541,6 +538,7 @@ struct Node {
         print_separator();
     }
 };
+Node::Node(const Node &) = default;
 Node::~Node() = default;
 
 void each_sample_list(const Inspector &list, auto f) {

@@ -84,7 +84,8 @@ private:
             void fini(uint32_t next) {
                 _hash = next;
                 _ref_cnt = npos;
-                _str.reset();
+                _str.clear();
+                _str.shrink_to_fit();
             }
             [[nodiscard]] VESPA_DLL_LOCAL vespalib::string as_string() const;
             VESPA_DLL_LOCAL void add_ref();

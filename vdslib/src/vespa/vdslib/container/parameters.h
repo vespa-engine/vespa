@@ -31,7 +31,7 @@ public:
       Value() = default;
       explicit Value(std::string_view s) noexcept : vespalib::string(s) { }
       explicit Value(const vespalib::string & s) noexcept : vespalib::string(s) { }
-      Value(const void *v, size_t sz) noexcept : vespalib::string(v, sz) { }
+      Value(const void *v, size_t sz) noexcept : vespalib::string(static_cast<const char *>(v), sz) { }
       size_t length() const noexcept { return size() - 1; }
     };
     using ValueRef = std::string_view;

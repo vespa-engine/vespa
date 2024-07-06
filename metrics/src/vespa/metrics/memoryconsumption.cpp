@@ -20,19 +20,6 @@ MemoryConsumption::MemoryConsumption()
 MemoryConsumption::~MemoryConsumption() = default;
 
 uint32_t
-MemoryConsumption::getStringMemoryUsage(const std::string& s, uint32_t& uniqueCount) {
-    ++_totalStringCount;
-    const char* internalString = s.c_str();
-    if (_seenStrings->find(internalString) != _seenStrings->end()) {
-        return 0;
-    }
-    ++uniqueCount;
-    _seenStrings->insert(internalString);
-    return s.capacity();
-}
-
-
-uint32_t
 MemoryConsumption::getStringMemoryUsage(const vespalib::string& s, uint32_t& uniqueCount) {
     ++_totalStringCount;
     const char* internalString = s.c_str();

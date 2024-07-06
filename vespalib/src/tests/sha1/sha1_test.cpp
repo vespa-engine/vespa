@@ -19,8 +19,8 @@ struct Digest {
         const char *sym = "0123456789ABCDEF";
         vespalib::string res;
         for (size_t i = 0; i < 20; ++i) {
-            res.append(sym[(buf[i] >> 4) & 0xf]);
-            res.append(sym[buf[i] & 0xf]);
+            res += sym[(buf[i] >> 4) & 0xf];
+            res += sym[buf[i] & 0xf];
         }
         return ("0x" + res);
     }

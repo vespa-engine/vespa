@@ -13,6 +13,8 @@ JsonStreamException::JsonStreamException(std::string_view reason, std::string_vi
       _reason(reason)
 { }
 
-JsonStreamException::~JsonStreamException() { }
+JsonStreamException::JsonStreamException(const JsonStreamException &) = default;
+JsonStreamException & JsonStreamException::operator = (const JsonStreamException &) = default;
+JsonStreamException::~JsonStreamException() = default;
 
 }

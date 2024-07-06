@@ -196,7 +196,7 @@ TEST("require that we can read all data written to file")
 
     vespalib::string chunk;
     for (offset = 0; offset < 10000; offset += text.size()) {
-        chunk.assign(content.begin() + offset, text.size());
+        chunk.assign(content.data() + offset, text.size());
         ASSERT_EQUAL(text, chunk);
     }
 }
