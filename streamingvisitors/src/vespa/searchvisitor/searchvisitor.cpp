@@ -1189,7 +1189,7 @@ SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const S
         uint32_t fieldId = finfo._field;
         if (isPosition) {
             std::string_view org = PositionDataType::cutZCurveFieldName(finfoGuard->getName());
-            fieldId = _fieldsUnion.find(vespalib::string(org))->second;
+            fieldId = _fieldsUnion.find(org)->second;
         }
         const StorageDocument::SubDocument & subDoc = document.getComplexField(fieldId);
         auto & attrV = const_cast<AttributeVector & >(*finfoGuard);
