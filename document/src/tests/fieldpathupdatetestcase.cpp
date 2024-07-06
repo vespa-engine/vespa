@@ -203,7 +203,7 @@ TEST_F(FieldPathUpdateTestCase, testApplyRemoveEntireListField)
     }
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
-    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strarray", ""));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("strarray"));
     docUp.applyTo(*doc);
     EXPECT_TRUE(!doc->hasValue("strarray"));
 }
@@ -828,7 +828,7 @@ TEST_F(FieldPathUpdateTestCase, testSerializeRemove)
 
     DocumentUpdate docUp(*_repo, *_foobar_type, DocumentId("id:ns:foobar::barbar:foofoo"));
 
-    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("structmap{ribbit}", std::string()));
+    docUp.addFieldPathUpdate(std::make_unique<RemoveFieldPathUpdate>("structmap{ribbit}"));
 
     testSerialize(*_repo, docUp);
 }
@@ -937,8 +937,8 @@ TEST_F(FieldPathUpdateTestCase, update_can_have_removes_for_both_existent_and_no
     doc->setValue("structmap", mfv);
 
     DocumentUpdate update(*_repo, *_foobar_type, doc_id);
-    auto update1 = std::make_unique<RemoveFieldPathUpdate>("structmap{coolmovie}", "");
-    auto update2 = std::make_unique<RemoveFieldPathUpdate>("structmap{no such key}", "");
+    auto update1 = std::make_unique<RemoveFieldPathUpdate>("structmap{coolmovie}");
+    auto update2 = std::make_unique<RemoveFieldPathUpdate>("structmap{no such key}");
     update.addFieldPathUpdate(std::move(update1));
     update.addFieldPathUpdate(std::move(update2));
     update.applyTo(*doc);

@@ -14,7 +14,8 @@ public:
     RemoveFieldPathUpdate & operator =(RemoveFieldPathUpdate &&) noexcept = default;
     RemoveFieldPathUpdate(const RemoveFieldPathUpdate &) = delete;
     RemoveFieldPathUpdate & operator =(const RemoveFieldPathUpdate &) = delete;
-    RemoveFieldPathUpdate(string_view fieldPath, string_view whereClause = string_view());
+    RemoveFieldPathUpdate(string_view fieldPath) : RemoveFieldPathUpdate(fieldPath, "") {}
+    RemoveFieldPathUpdate(string_view fieldPath, string_view whereClause);
     ~RemoveFieldPathUpdate() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
