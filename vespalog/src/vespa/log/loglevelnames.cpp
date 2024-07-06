@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <string.h>
 #include <vespa/log/log.h>
-
+#include <cstring>
 namespace ns_log {
 
 enum Logger::LogLevel
@@ -28,7 +27,7 @@ const char *Logger::logLevelNames[] = {
     "event",
     "debug",
     "spam",
-    0 // converting NUM_LOGLEVELS gives null pointer
+    "null" // converting NUM_LOGLEVELS gives null pointer
 };
 
 } // namespace
