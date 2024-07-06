@@ -141,10 +141,10 @@ public final class Tokenizer {
                 addToken(LSQUAREBRACKET, "[", i, i + 1);
             } else if (c == ']' || c == '\uFF3D') {
                 addToken(RSQUAREBRACKET, "]", i, i + 1);
-            } else if (c == '{') {
-                addToken(LCURLYBRACKET, "{", i, i + 1);
-            } else if (c == '}') {
-                addToken(RCURLYBRACKET, "}", i, i + 1);
+            //} else if (c == '{') {
+            //    addToken(LCURLYBRACKET, "{", i, i + 1);
+            //} else if (c == '}') {
+            //    addToken(RCURLYBRACKET, "}", i, i + 1);
             } else if (c == ';' || c == '\uFF1B') {
                 addToken(SEMICOLON, ";", i, i + 1);
             } else if (c == '>' || c == '\uFF1E') {
