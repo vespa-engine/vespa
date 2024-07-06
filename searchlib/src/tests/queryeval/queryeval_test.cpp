@@ -653,7 +653,7 @@ TEST(QueryEvalTest, test_dump)
 
 TEST(QueryEvalTest, test_field_spec) {
     EXPECT_EQ(8u, sizeof(FieldSpecBase));
-    EXPECT_EQ(72u, sizeof(FieldSpec));
+    EXPECT_EQ(8u + sizeof(vespalib::string), sizeof(FieldSpec));
 }
 
 

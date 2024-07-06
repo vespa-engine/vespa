@@ -363,7 +363,7 @@ TEST_F(Messages60Test, testRemoveDocumentMessage) {
 
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(sizeof(TestAndSetMessage) + 104, sizeof(RemoveDocumentMessage));
+    EXPECT_EQ(sizeof(TestAndSetMessage) + 40 + sizeof(vespalib::string), sizeof(RemoveDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {

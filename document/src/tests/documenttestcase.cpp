@@ -47,10 +47,10 @@ TEST(DocumentTest, testSizeOf)
     EXPECT_EQ(24u, sizeof(vespalib::alloc::Alloc));
     EXPECT_EQ(24u, sizeof(ByteBuffer));
     EXPECT_EQ(32u, sizeof(vespalib::GrowableByteBuffer));
-    EXPECT_EQ(88ul, sizeof(IdString));
-    EXPECT_EQ(104ul, sizeof(DocumentId));
-    EXPECT_EQ(256ul, sizeof(Document));
-    EXPECT_EQ(80ul, sizeof(NumericDataType));
+    EXPECT_EQ(24u + sizeof(vespalib::string), sizeof(IdString));
+    EXPECT_EQ(40ul + sizeof(vespalib::string), sizeof(DocumentId));
+    EXPECT_EQ(192ul + sizeof(vespalib::string), sizeof(Document));
+    EXPECT_EQ(16ul + sizeof(vespalib::string), sizeof(NumericDataType));
     EXPECT_EQ(24ul, sizeof(LongFieldValue));
     EXPECT_EQ(104ul, sizeof(StructFieldValue));
     EXPECT_EQ(24ul, sizeof(StructuredFieldValue));

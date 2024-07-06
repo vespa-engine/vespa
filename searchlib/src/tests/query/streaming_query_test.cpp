@@ -924,9 +924,9 @@ TEST(StreamingQueryTest, weighted_set_term)
 
 TEST(StreamingQueryTest, control_the_size_of_query_terms)
 {
-    EXPECT_EQ(112u, sizeof(QueryTermSimple));
-    EXPECT_EQ(128u, sizeof(QueryTermUCS4));
-    EXPECT_EQ(272u, sizeof(QueryTerm));
+    EXPECT_EQ(48u + sizeof(vespalib::string), sizeof(QueryTermSimple));
+    EXPECT_EQ(64u + sizeof(vespalib::string), sizeof(QueryTermUCS4));
+    EXPECT_EQ(144u + 2*sizeof(vespalib::string), sizeof(QueryTerm));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

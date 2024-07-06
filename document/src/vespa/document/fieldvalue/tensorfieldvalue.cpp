@@ -62,9 +62,7 @@ TensorFieldValue::TensorFieldValue(TensorFieldValue &&rhs)
 }
 
 
-TensorFieldValue::~TensorFieldValue()
-{
-}
+TensorFieldValue::~TensorFieldValue() = default;
 
 
 TensorFieldValue &

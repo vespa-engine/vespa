@@ -152,13 +152,15 @@ verifyFastValueSize(TensorSpec spec, uint32_t elems, size_t expected) {
 TEST(FastValueTest, document_fast_value_memory_usage) {
     EXPECT_EQ(232, sizeof(FastValue<float,true>));
     FastValue<float,true> test(ValueType::from_spec("tensor<float>(country{})"), 1, 1, 1);
-    EXPECT_EQ(412, test.get_memory_usage().allocatedBytes());
+    constexpr size_t BASE_SZ = 348 + sizeof(vespalib::string);
+    EXPECT_EQ(BASE_SZ, test.get_memory_usage().allocatedBytes());
 
-    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 1, 412);
-    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 10, 792);
-    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 20, 1280);
-    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 50, 2296);
-    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 100, 4288);
+
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 1, BASE_SZ);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 10, BASE_SZ + 380);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 20, BASE_SZ + 868);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 50, BASE_SZ + 1884);
+    verifyFastValueSize(TensorSpec("tensor<float>(country{})"), 100, BASE_SZ + 3876);
 }
 
 using SA = std::vector<std::string_view>;
