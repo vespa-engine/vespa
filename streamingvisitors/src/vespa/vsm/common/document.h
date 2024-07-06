@@ -21,7 +21,7 @@ using IndexFieldMapT = vespalib::hash_map<vespalib::string, FieldIdTList>;
 /// A type to represent all the fields contained in all the indexs in an all the document types.
 using DocumentTypeIndexFieldMapT = vespalib::hash_map<vespalib::string, IndexFieldMapT>;
 /// A type to represent a map from fieldname to fieldid.
-using StringFieldIdTMapT = std::map<vespalib::string, FieldIdT>;
+using StringFieldIdTMapT = std::map<vespalib::string, FieldIdT, std::less<>>;
 
 class StringFieldIdTMap
 {
