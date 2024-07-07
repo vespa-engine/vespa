@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "string.hpp"
+#include "string.h"
+#include "small_string.hpp"
 #include <istream>
 #include <ostream>
 #include <algorithm>
