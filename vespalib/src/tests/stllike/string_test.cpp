@@ -449,7 +449,7 @@ TEST("starts_with has expected semantics for std::string_view") {
     EXPECT_FALSE(ar.starts_with("oobar"));
 }
 
-TEST("test allowed nullptr construction") {
+TEST("test allowed nullptr construction - legal, but not legitimate use.") {
     EXPECT_TRUE(vespalib::string(nullptr, 0).empty());
     EXPECT_TRUE(std::string(nullptr, 0).empty());
     EXPECT_TRUE(std::string_view(nullptr, 0).empty());
