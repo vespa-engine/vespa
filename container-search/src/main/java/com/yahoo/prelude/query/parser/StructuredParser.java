@@ -88,11 +88,11 @@ abstract class StructuredParser extends AbstractParser {
                 explicitIndex = true;
             else
                 indexName = this.defaultIndex;
-            setSubmodeFromIndex(indexPath + indexName, indexFacts);
+            setSubmodeFromIndex(indexName == null ? null : indexPath + indexName, indexFacts);
 
             item = number();
             if (item == null)
-                item = phrase(indexPath + indexName);
+                item = phrase(indexName == null ? null : indexPath + indexName);
             //if (item == null && indexName != null && tokens.currentIs(LCURLYBRACKET))
             //    item = sameElement(indexPath + indexName);
             if (item == null && indexName != null) {
