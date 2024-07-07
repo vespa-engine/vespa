@@ -17,7 +17,7 @@ import java.util.Optional;
  */
 public class SameElementItem extends NonReducibleCompositeItem {
 
-    private final String fieldName;
+    private String fieldName;
 
     public SameElementItem(String commonPath) {
         Validator.ensureNonEmpty("Field name", commonPath);
@@ -49,7 +49,7 @@ public class SameElementItem extends NonReducibleCompositeItem {
     @Override
     protected void adding(Item item) {
         super.adding(item);
-        //TODO See if we can require only SimpleIndexedItem instead of TermItem
+        // TODO: See if we can require only SimpleIndexedItem instead of TermItem
         Validator.ensureInstanceOf("Child item", item, TermItem.class);
         Validator.ensureNotInstanceOf("Child item", item, WordAlternativesItem.class);
         TermItem asTerm = (TermItem) item;
@@ -78,6 +78,11 @@ public class SameElementItem extends NonReducibleCompositeItem {
     }
 
     public String getFieldName() { return fieldName; }
+
+    @Override
+    public void setIndexName(String index) {
+        fieldName = index;
+    }
 
     @Override
     public boolean equals(Object other) {
