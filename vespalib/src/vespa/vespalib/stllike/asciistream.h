@@ -44,7 +44,6 @@ public:
     asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
     asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (std::string_view v)    { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (short v)    { return *this << static_cast<long long>(v); }
     asciistream & operator << (unsigned short v)   { return *this << static_cast<unsigned long long>(v); }
     asciistream & operator << (int v)    { return *this << static_cast<long long>(v); }
@@ -66,7 +65,6 @@ public:
     asciistream & operator >> (char & v);
     asciistream & operator >> (signed char & v);
     asciistream & operator >> (unsigned char & v);
-    asciistream & operator >> (std::string & v);
     asciistream & operator >> (string & v);
     asciistream & operator >> (short & v);
     asciistream & operator >> (unsigned short & v);

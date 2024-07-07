@@ -29,7 +29,6 @@ public:
     virtual Deserializer & get(int64_t & value);
 
 
-    Deserializer & get(std::string & value);
     Deserializer & operator >> (bool & value)     { return get(value); }
     Deserializer & operator >> (uint8_t & value)  { return get(value); }
     Deserializer & operator >> (int8_t  & value)  { return get(value); }
