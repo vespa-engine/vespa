@@ -55,7 +55,7 @@ public class AnyParser extends SimpleParser {
             if ( ! tokens.skipMultiple(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
 
-            item = indexableItem().getFirst();
+            item = indexableItem("").getFirst();
 
             if (item == null) {
                 item = compositeItem();
@@ -156,7 +156,7 @@ public class AnyParser extends SimpleParser {
                 root = addNotFilter(root, item);
             }
             if (item == null) {
-                item = indexableItem().getFirst();
+                item = indexableItem("").getFirst();
                 root = addRankFilter(root, item);
             }
 

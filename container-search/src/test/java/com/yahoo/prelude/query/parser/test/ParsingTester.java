@@ -117,7 +117,7 @@ public class ParsingTester {
                               Language language, Linguistics linguistics) {
         Item root = parseQuery(toParse, filter, language, mode, linguistics);
         if (parsed == null) {
-            assertTrue(root instanceof NullItem, "root is " + root);
+            assertInstanceOf(NullItem.class, root, "root is " + root);
         } else {
             assertNotNull(root, "Got null from parsing " + toParse);
             assertEquals(parsed, root.toString(), "Parse of '" + toParse + "'");

@@ -4,7 +4,7 @@ package com.yahoo.prelude.query;
 import java.util.Objects;
 
 /**
- * An substring which also provides access to the full (query) string it is a substring of.
+ * A substring which also provides access to the full (query) string it is a substring of.
  * This is a value object.
  *
  * @author bratseth
