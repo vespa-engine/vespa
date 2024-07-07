@@ -741,8 +741,7 @@ abstract class StructuredParser extends AbstractParser {
     /**
      * Skips one or multiple phrase separators
      *
-     * @return true if the item we land at after skipping zero or more is
-     *         a phrase word
+     * @return true if the item we land at after skipping zero or more is a phrase word
      */
     private boolean skipToNextPhraseWord(boolean quoted) {
         boolean skipped = false;
@@ -791,11 +790,16 @@ abstract class StructuredParser extends AbstractParser {
                 if (tokens.skipMultipleNoIgnore(DOLLAR)) {
                     skipped = true;
                 }
-                ;
                 if (tokens.skipMultipleNoIgnore(STAR)) {
                     skipped = true;
                 }
                 if (tokens.skipMultipleNoIgnore(COLON)) {
+                    skipped = true;
+                }
+                if (tokens.skipMultipleNoIgnore(LCURLYBRACKET)) {
+                    skipped = true;
+                }
+                if (tokens.skipMultipleNoIgnore(RCURLYBRACKET)) {
                     skipped = true;
                 }
                 if (quoted) {
@@ -810,28 +814,19 @@ abstract class StructuredParser extends AbstractParser {
                     skipped = true;
                 }
             }
-        } while (skipped && !tokens.currentIsNoIgnore(WORD)
-                && !tokens.currentIsNoIgnore(NUMBER) && !URLModeWordChar());
+        } while (skipped && !tokens.currentIsNoIgnore(WORD) && !tokens.currentIsNoIgnore(NUMBER) && !URLModeWordChar());
 
-        return tokens.currentIsNoIgnore(WORD)
-                || tokens.currentIsNoIgnore(NUMBER) || URLModePhraseChar();
+        return tokens.currentIsNoIgnore(WORD) || tokens.currentIsNoIgnore(NUMBER) || URLModePhraseChar();
     }
 
     private boolean URLModeWordChar() {
-        if (!submodes.url) {
-            return false;
-        }
-        return tokens.currentIsNoIgnore(UNDERSCORE)
-                || tokens.currentIsNoIgnore(MINUS);
+        if (!submodes.url) return false;
+        return tokens.currentIsNoIgnore(UNDERSCORE) || tokens.currentIsNoIgnore(MINUS);
     }
 
     private boolean URLModePhraseChar() {
-        if (!submodes.url) {
-            return false;
-        }
-        return !(tokens.currentIsNoIgnore(RBRACE)
-                || tokens.currentIsNoIgnore(SPACE));
+        if (!submodes.url) return false;
+        return !(tokens.currentIsNoIgnore(RBRACE) || tokens.currentIsNoIgnore(SPACE));
     }
-
 
 }
