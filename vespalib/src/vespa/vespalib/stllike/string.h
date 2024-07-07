@@ -33,7 +33,7 @@ public:
     using const_reverse_iterator = const char *;
     static constexpr size_type npos = static_cast<size_type>(-1);
     constexpr small_string() noexcept : _buf(_stack), _sz(0), _bufferSize(StackSize) { _stack[0] = '\0'; }
-    small_string(const char * s) noexcept : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
+    small_string(const char * s) noexcept;
     small_string(const void * s, size_type sz) noexcept : _buf(_stack), _sz(sz) { init(s); }
     small_string(const std::string & s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
     explicit small_string(std::string_view s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
@@ -427,13 +427,13 @@ private:
     [[nodiscard]] const char * buffer() const noexcept { return _buf; }
     VESPA_DLL_LOCAL void appendAlloc(const void * s, size_type sz) noexcept __attribute__((noinline));
     void init(const void *s) noexcept {
-        if (__builtin_expect(_sz < StackSize, true)) {
+        if (_sz < StackSize) [[likely]] {
             _bufferSize = StackSize;
-            if (s) {
+            if (s) [[likely]] {
                 memcpy(_stack, s, _sz);
-	    } else {
+            } else if (_sz != 0) [[unlikely]] {
                 abort();
-	    }
+            }
             _stack[_sz] = '\0';
         } else {
             init_slower(s);
@@ -455,10 +455,10 @@ private:
 
 template <uint32_t StackSize>
 template<typename Iterator>
-small_string<StackSize>::small_string(Iterator s, Iterator e) noexcept :
-    _buf(_stack),
-    _sz(0),
-    _bufferSize(StackSize)
+small_string<StackSize>::small_string(Iterator s, Iterator e) noexcept
+    : _buf(_stack),
+      _sz(0),
+      _bufferSize(StackSize)
 {
     _stack[0] = '\0';
     for(; s != e; s++) {
