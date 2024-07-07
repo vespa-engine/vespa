@@ -201,7 +201,7 @@ TEST_F(Messages60Test, testRemoveLocationMessage) {
 TEST_F(Messages60Test, testGetDocumentMessage) {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
-    EXPECT_EQ(280u, sizeof(GetDocumentMessage));
+    EXPECT_EQ(152u + 2 *sizeof(vespalib::string), sizeof(GetDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -263,7 +263,6 @@ TEST_F(Messages60Test, testPutDocumentMessage) {
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQ(64u, sizeof(vespalib::string));
     EXPECT_EQ(sizeof(vespalib::string), sizeof(TestAndSetCondition));
     EXPECT_EQ(112u, sizeof(DocumentMessage));
     EXPECT_EQ(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
