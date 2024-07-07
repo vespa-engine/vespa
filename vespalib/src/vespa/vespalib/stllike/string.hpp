@@ -5,6 +5,20 @@
 
 namespace vespalib {
 
+namespace {
+
+size_t strict_strlen(const char * s) {
+    assert(s != nullptr);
+    return strlen(s);
+}
+
+}
+
+template <uint32_t StackSize>
+small_string<StackSize>::small_string(const char * s) noexcept
+    : small_string(s, strict_strlen(s))
+{ }
+
 template <uint32_t StackSize>
 void
 small_string<StackSize>::_reserveBytes(size_type newBufferSize) noexcept {
@@ -88,7 +102,8 @@ void small_string<StackSize>::assign_slower(const void * s, size_type sz) noexce
 
 template <uint32_t StackSize>
 void small_string<StackSize>::init_slower(const void *s) noexcept
-{   
+{
+    assert(s != nullptr);
     _bufferSize = _sz+1;
     _buf = (char *) malloc(_bufferSize);
     assert(_buf);
