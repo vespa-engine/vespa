@@ -62,7 +62,7 @@ private:
         private:
             uint32_t _hash;
             uint32_t _ref_cnt;
-            vespalib::string _str;
+            vespalib::vespa_string _str;
         public:
             explicit Entry(uint32_t next) noexcept
                 : _hash(next), _ref_cnt(npos), _str() {}
@@ -72,7 +72,7 @@ private:
             Entry & operator =(Entry &&) noexcept = delete;
             ~Entry();
             [[nodiscard]] constexpr uint32_t hash() const noexcept { return _hash; }
-            [[nodiscard]] constexpr const vespalib::string &str() const noexcept { return _str; }
+            [[nodiscard]] constexpr const std::string_view view() const noexcept { return _str; }
             [[nodiscard]] constexpr bool is_free() const noexcept { return (_ref_cnt == npos); }
             uint32_t init(const AltKey &key) {
                 uint32_t next = _hash;
@@ -105,7 +105,7 @@ private:
             explicit Equal(const EntryVector &entries_in) : entries(entries_in) {}
             Equal(const Equal &rhs) = default;
             bool operator()(const Key &a, const Key &b) const { return (a.idx == b.idx); }
-            bool operator()(const Key &a, const AltKey &b) const { return ((a.hash == b.hash) && (entries[a.idx].str() == b.str)); }
+            bool operator()(const Key &a, const AltKey &b) const { return ((a.hash == b.hash) && (entries[a.idx].view() == b.str)); }
         };
         using HashType = hashtable<Key,Key,Hash,Equal,Identity,hashtable_base::and_modulator>;
 
