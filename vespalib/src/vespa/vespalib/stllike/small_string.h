@@ -486,4 +486,6 @@ template<uint32_t StackSize>
 small_string<StackSize>
 operator + (const char * a, const small_string<StackSize> & b) noexcept;
 
+using vespa_string = small_string<48>;
+
 }
