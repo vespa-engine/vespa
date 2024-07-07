@@ -29,8 +29,6 @@ public class Token {
         RBRACE("\")\""),
         LSQUAREBRACKET("\"[\""),
         RSQUAREBRACKET("\"]\""),
-        LCURLYBRACKET("\"{\""),
-        RCURLYBRACKET("\"}\""),
         SEMICOLON("\";\""),
         GREATER("\">\""),
         SMALLER("\"<\""),
