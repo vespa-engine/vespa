@@ -65,7 +65,7 @@ public class AdvancedParser extends StructuredParser {
         boolean expectingOperator = false;
 
         do {
-            item = indexableItem().getFirst();
+            item = indexableItem("").getFirst();
             if (item == null) {
                 item = compositeItem();
                 itemIsComposite = true;
