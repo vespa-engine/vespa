@@ -10,8 +10,10 @@ import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
@@ -70,7 +72,7 @@ public class AllParser extends SimpleParser {
 
             current = positiveItem();
             if (current == null)
-                current = indexableItem("").getFirst();
+                current = indexableItem().getFirst();
             if (current == null)
                 current = compositeItem();
 
@@ -156,7 +158,7 @@ public class AllParser extends SimpleParser {
         try {
             if ( ! tokens.skip(MINUS)) return null;
             if (tokens.currentIsNoIgnore(SPACE)) return null;
-            var itemAndExplicitIndex = indexableItem("");
+            var itemAndExplicitIndex = indexableItem();
 
             item = itemAndExplicitIndex.getFirst();
             boolean explicitIndex = itemAndExplicitIndex.getSecond();
