@@ -13,7 +13,6 @@ import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
-import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
@@ -73,30 +72,32 @@ abstract class StructuredParser extends AbstractParser {
     /**
      * Returns an item and whether it had an explicit index ('indexname:' prefix).
      *
-     * @param indexPath the index name prefix this is in the context of, only non-empty if this is
-     *                  inside a sameElement. The path includes the index name and the trailing dot.
      * @return an item and whether it has an explicit index, or a Pair with the first element null if none
      */
-    protected Pair<Item, Boolean> indexableItem(String indexPath) {
+    protected Pair<Item, Boolean> indexableItem() {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
             boolean explicitIndex = false;
-            String indexName = indexPrefix(indexPath);
+            String indexName = indexPrefix();
             if (indexName != null)
                 explicitIndex = true;
             else
                 indexName = this.defaultIndex;
-            setSubmodeFromIndex(indexPath + indexName, indexFacts);
+            setSubmodeFromIndex(indexName, indexFacts);
 
             item = number();
-            if (item == null)
-                item = phrase(indexPath + indexName);
-            //if (item == null && indexName != null && tokens.currentIs(LCURLYBRACKET))
-            //    item = sameElement(indexPath + indexName);
-            if (item == null && indexName != null && wordsAhead())
-                item = phrase(indexPath + indexName);
+
+            if (item == null) {
+                item = phrase(indexName);
+            }
+
+            if (item == null && indexName != null) {
+                if (wordsAhead()) {
+                    item = phrase(indexName);
+                }
+            }
 
             submodes.reset();
 
@@ -163,9 +164,9 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    private String indexPrefix(String indexPath) {
+    private String indexPrefix() {
         int position = tokens.getPosition();
-        String index = null;
+        String item = null;
 
         try {
             List<Token> firstWord = new ArrayList<>();
@@ -202,33 +203,25 @@ abstract class StructuredParser extends AbstractParser {
             if ( ! tokens.skipNoIgnore(COLON))
                 return null;
 
-            index = concatenate(firstWord) + concatenate(secondWord);
+            item = concatenate(firstWord) + concatenate(secondWord);
 
-            String fullIndex = indexFacts.getCanonicName(indexPath + index);
-            if (indexPath.isEmpty()) {
-                index = fullIndex;
-            }
-            else { // replace index (the last path element) by the dealiased value
-                int lastDot = fullIndex.lastIndexOf('.');
-                if (lastDot > 0)
-                    index = fullIndex.substring(lastDot + 1);
-            }
+            item = indexFacts.getCanonicName(item);
 
-            if ( ! indexFacts.isIndex(fullIndex)) { // Only if this really is an index
-                // Marker for the "finally" block
-                index = null;
+            if ( ! indexFacts.isIndex(item)) { // Only if this really is an index
+                // Marker for the finally block
+                item = null;
                 return null;
             } else {
                 if (nothingAhead(false)) {
                     // correct index syntax, correct name, but followed by noise. Let's skip this.
                     nothingAhead(true);
                     position = tokens.getPosition();
-                    index = indexPrefix(indexPath);
+                    item = indexPrefix();
                 }
             }
-            return index;
+            return item;
         } finally {
-            if (index == null) {
+            if (item == null) {
                 tokens.setPosition(position);
             }
         }
@@ -518,9 +511,11 @@ abstract class StructuredParser extends AbstractParser {
 
     private StringBuilder getStringContents(Item item) {
         if (item instanceof TermItem) {
-            return new StringBuilder(((TermItem) item).stringValue());
+            return new StringBuilder(
+                    ((TermItem) item).stringValue());
         } else if (item instanceof SegmentItem) {
-            return new StringBuilder(((SegmentItem) item).getRawWord());
+            return new StringBuilder(
+                    ((SegmentItem) item).getRawWord());
         } else {
             throw new RuntimeException("Parser bug. Unexpected item type, send stack trace in a bug ticket to the Vespa team.");
         }
@@ -528,7 +523,7 @@ abstract class StructuredParser extends AbstractParser {
 
 
     /**
-     * A phrase or word, either marked by quotes or by non-spaces between
+     * An phrase or word, either marked by quotes or by non-spaces between
      * words or by a combination.
      *
      * @param indexName the index name which preceeded this phrase, or null if none
@@ -547,19 +542,6 @@ abstract class StructuredParser extends AbstractParser {
                 tokens.setPosition(position);
             }
         }
-    }
-
-    private Item sameElement(String indexName) {
-        var same = new SameElementItem(indexName);
-
-        while (tokens.hasNext() && ! tokens.currentIs(RCURLYBRACKET)) {
-            Item item = indexableItem(indexName + ".").getFirst();
-            if (item != null)
-                same.addItem(item);
-            else
-                tokens.skip();
-        }
-        return same;
     }
 
     /** Returns a word, a phrase, or another composite */
@@ -623,7 +605,8 @@ abstract class StructuredParser extends AbstractParser {
                 if (addStartOfHostMarker) {
                     composite.addItem(MarkerWordItem.createStartOfHost());
                 }
-                if (firstWord instanceof IntItem asInt) {
+                if (firstWord instanceof IntItem) {
+                    IntItem asInt = (IntItem) firstWord;
                     firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(),
                                              true, asInt.getOrigin());
                 }
@@ -672,7 +655,8 @@ abstract class StructuredParser extends AbstractParser {
                 if (addStartOfHostMarker) {
                     composite.addItem(MarkerWordItem.createStartOfHost());
                 }
-                if (firstWord instanceof IntItem asInt) {
+                if (firstWord instanceof IntItem) {
+                    IntItem asInt = (IntItem) firstWord;
                     firstWord = new WordItem(asInt.stringValue(), asInt.getIndexName(), true, asInt.getOrigin());
                 }
                 composite.addItem(firstWord);
@@ -682,8 +666,9 @@ abstract class StructuredParser extends AbstractParser {
                 return composite;
             }
         } else {
-            if (firstWord != null && firstWord instanceof TermItem firstTerm && (starAfterFirst || starBeforeFirst)) {
+            if (firstWord != null && firstWord instanceof TermItem && (starAfterFirst || starBeforeFirst)) {
                 // prefix, suffix or substring
+                TermItem firstTerm = (TermItem) firstWord;
                 if (starAfterFirst) {
                     if (starBeforeFirst) {
                         return new SubstringItem(firstTerm.stringValue(), true);
