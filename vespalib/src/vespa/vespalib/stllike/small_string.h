@@ -90,7 +90,7 @@ public:
         std::swap(*this, rhs);
     }
     operator std::string () const noexcept { return {c_str(), size()}; }
-    operator std::string_view () const noexcept { return {c_str(), size()}; }
+    constexpr operator std::string_view () const noexcept { return {c_str(), size()}; }
     [[nodiscard]] char at(size_t i) const noexcept { return buffer()[i]; }
     char & at(size_t i) noexcept { return buffer()[i]; }
     const char & operator [] (size_t i) const noexcept { return buffer()[i]; }

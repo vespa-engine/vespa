@@ -124,7 +124,7 @@ SharedStringRepo::Partition::find_leaked_entries(size_t my_idx) const
         if (!_entries[i].is_free()) {
             size_t id = (((i << PART_BITS) | my_idx) + 1);
             LOG(warning, "leaked string id: %zu (part: %zu/%d, string: '%s')\n",
-                id, my_idx, NUM_PARTS, _entries[i].str().c_str());
+                id, my_idx, NUM_PARTS, vespalib::string(_entries[i].view()).c_str());
         }
     }
 }

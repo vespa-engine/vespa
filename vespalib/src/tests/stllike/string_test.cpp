@@ -337,7 +337,7 @@ TEST("testString") {
 }
 
 TEST("require that vespalib::resize works") {
-    vespalib::string s("abcdefghijk");
+    string s("abcdefghijk");
     EXPECT_EQUAL(11u, s.size());
     s.resize(5);
     EXPECT_EQUAL(5u, s.size());
