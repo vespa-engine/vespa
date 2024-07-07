@@ -37,6 +37,20 @@ class PrometheusWriter : public MetricVisitor {
         vespalib::ConstArrayRef<std::string_view> labels;
         I64OrDouble                                  value;
 
+#if !defined(__cpp_aggregate_paren_init)
+        // P0960R3 is supported by gcc >= 10, Clang >= 16 and AppleClang >= 16
+
+        TimeSeriesSample(vespalib::ConstArrayRef<std::string_view> metric_path_in,
+                         std::string_view aggr_in,
+                         vespalib::ConstArrayRef<std::string_view> labels_in,
+                         I64OrDouble value_in) noexcept
+            : metric_path(std::move(metric_path_in)),
+              aggr(std::move(aggr_in)),
+              labels(std::move(labels_in)),
+              value(std::move(value_in))
+        {
+        }
+#endif
         bool operator<(const TimeSeriesSample& rhs) const noexcept;
     };
 
