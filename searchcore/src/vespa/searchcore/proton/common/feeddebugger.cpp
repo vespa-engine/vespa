@@ -48,14 +48,14 @@ FeedDebugger::~FeedDebugger() = default;
 ns_log::Logger::LogLevel
 FeedDebugger::getDebugDebuggerInternal(uint32_t lid, const document::DocumentId * docid) const
 {
-    for(unsigned int candidate : _debugLidList) {
+    for (unsigned int candidate : _debugLidList) {
         if (lid == candidate) {
             return ns_log::Logger::info;
         }
     }
     if (docid != nullptr) {
-        for (const auto & i : _debugDocIdList) {
-            if (*docid == i) {
+        for (const auto & candidate : _debugDocIdList) {
+            if (*docid == candidate) {
                 return ns_log::Logger::info;
             }
         }
