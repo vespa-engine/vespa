@@ -13,7 +13,7 @@ import ai.vespa.schemals.context.SchemaDocumentParser;
 
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
-
+import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.TypeNode;
 
 public class SchemaIndex {
@@ -111,6 +111,13 @@ public class SchemaIndex {
         }
 
         return false;
+    }
+
+    public boolean resolveAnnotationReferenceNode(AnnotationReferenceNode annotationReferenceNode, String fileURI) {
+        // TODO: inheritance
+        String annotationName = annotationReferenceNode.getText().toLowerCase();
+
+        return findSymbol(fileURI, TokenType.ANNOTATION, annotationName.toLowerCase()) != null;
     }
 
     public void dumpIndex(PrintStream logger) {

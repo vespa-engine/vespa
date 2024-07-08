@@ -23,7 +23,7 @@ import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
-
+import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.TypeNode;
@@ -301,6 +301,18 @@ public class SchemaDocumentParser {
             }
         }
         context.clearUnresolvedTypeNodes();
+
+        for (AnnotationReferenceNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
+            if (!context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI())) {
+                diagnostics.add(new Diagnostic(
+                    annotationReferenceNode.getRange(),
+                    "Unknown annotation: " + annotationReferenceNode.getText(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+        }
+        context.clearUnresolvedAnnotationReferenceNodes();
 
         diagnostics.addAll(tolerantResult.diagnostics());
 

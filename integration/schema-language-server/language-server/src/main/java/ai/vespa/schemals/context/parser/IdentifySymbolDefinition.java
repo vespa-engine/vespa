@@ -12,6 +12,8 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.annotationElm;
+import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
@@ -60,6 +62,11 @@ public class IdentifySymbolDefinition extends Identifier {
         }});
         put(TokenType.FUNCTION, new HashSet<Class<? extends Node>>() {{
             add(functionElm.class);
+        }});
+
+        put(TokenType.ANNOTATION, new HashSet<Class<? extends Node>>() {{
+            add(annotationOutside.class);
+            add(annotationElm.class);
         }});
     }};
 

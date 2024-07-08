@@ -38,6 +38,7 @@ import ai.vespa.schemals.parser.ast.structFieldElm;
 public class SchemaSemanticTokens implements Visitor {
 
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
+        add(TokenType.ANNOTATION);
         add(TokenType.DOCUMENT);
         add(TokenType.FIELD);
         add(TokenType.FIELDSET); 
