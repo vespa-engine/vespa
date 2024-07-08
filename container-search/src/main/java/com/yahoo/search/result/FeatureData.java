@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,18 +32,20 @@ public class FeatureData implements Inspectable, JsonProducer {
     // WARNING: Not thread safe but using a shared empty. Take care if adding mutating methods.
     private static final FeatureData empty = new FeatureData(Value.empty());
 
+    /** If not null: The source of all the values of this. */
     private final Inspector value;
 
+    /** The lazily computed feature names of this */
     private Set<String> featureNames = null;
 
-    /** Cached decoded values */
+    /** If "value" is null: The content of this. If "value" is non-null: Lazily decoded values. */
     private Map<String, Double> decodedDoubles = null;
     private Map<String, Tensor> decodedTensors = null;
 
     private String jsonForm = null;
 
     public FeatureData(Inspector value) {
-        this.value = value;
+        this.value = Objects.requireNonNull(value);
     }
 
     public static FeatureData empty() { return empty; }
