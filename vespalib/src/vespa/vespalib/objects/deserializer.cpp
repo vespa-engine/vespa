@@ -36,11 +36,5 @@ Deserializer & Deserializer::get(int64_t & value)
     value = v;
     return *this;
 }
-Deserializer & Deserializer::get(std::string & value)
-{
-    string v;
-    get(v);
-    value = v;
-    return *this;
-}
+
 }
