@@ -39,9 +39,7 @@ public class SchemaDocumentScheduler {
         }
 
 
-        logger.println(fileURI + " changed, Updating descendants:");
         for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
-            logger.println("    " + descendantURI);
             if (openDocuments.containsKey(descendantURI)) {
                 openDocuments.get(descendantURI).reparseContent();
             }

@@ -98,7 +98,7 @@ public class SchemaIndex {
 
     public boolean resolveTypeNode(TypeNode typeNode, String fileURI) {
         // TODO: handle document reference
-        // TODO: handle name collision
+        // TODO: handle name collision (diamond etc.)
         String typeName = typeNode.getParsedType().name().toLowerCase();
 
         List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
@@ -145,8 +145,9 @@ public class SchemaIndex {
         return null;
     }
 
-    public void registerDocumentInheritance(String childURI, String parentURI) {
-        this.documentInheritanceGraph.addInherits(childURI, parentURI);
+    public boolean tryRegisterDocumentInheritance(String childURI, String parentURI) {
+        this.logger.println("Register inheritance: " + childURI + " -> " + parentURI);
+        return this.documentInheritanceGraph.addInherits(childURI, parentURI);
     }
 
     public List<String> getAllDocumentDescendants(String fileURI) {

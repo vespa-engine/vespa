@@ -35,9 +35,23 @@ public class DocumentInheritanceGraph {
         documentParents.remove(fileURI);
     }
 
-    public void addInherits(String childURI, String parentURI) {
+    /*
+     * Try to register a new inheritance relationship such that
+     * childURI inherits from parentURI
+     *
+     * @return boolean indicating success. Inheritance is unsuccessful if the relationship would create a cycle 
+     * in the inheritance graph.
+     */
+    public boolean addInherits(String childURI, String parentURI) {
         createNodeIfNotExists(childURI);
         createNodeIfNotExists(parentURI);
+
+        List<String> existingAncestors = getAllDocumentAncestorURIs(parentURI);
+
+        if (existingAncestors.contains(childURI)) {
+            // childURI cannot inherit from parentURI if parentURI directly or indirectly inherits from childURI (cycle)
+            return false;
+        }
 
         List<String> parentList = documentParents.get(childURI);
         if (!parentList.contains(parentURI)) {
@@ -50,6 +64,7 @@ public class DocumentInheritanceGraph {
             parentChildren.add(childURI);
         }
 
+        return true;
     }
 
     public List<String> getAllDocumentAncestorURIs(String fileURI) {

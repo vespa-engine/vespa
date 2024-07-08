@@ -247,7 +247,16 @@ public class SchemaDocumentParser {
                     ""
                 ));
             } else {
-                context.schemaIndex().registerDocumentInheritance(context.fileURI(), parent.getFileURI());
+                if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), parent.getFileURI())) {
+                    // Inheritance cycle
+                    // TODO: quickfix
+                    diagnostics.add(new Diagnostic(
+                        schemaDocumentNameNode.getRange(),
+                        "Cannot inherit from " + schemaDocumentName + " because " + schemaDocumentName + " inherits from this document. This would cause an inheritance cycle and is not allowed.",
+                        DiagnosticSeverity.Error,
+                        ""
+                    ));
+                }
             }
         }
 
