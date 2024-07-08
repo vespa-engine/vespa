@@ -112,9 +112,8 @@
             </goals>
             <phase>generate-sources</phase>
             <configuration>
-              <executable>python3</executable>
+              <executable>${project.basedir}/src/main/python/buildDocs.sh</executable>
               <arguments>
-                <argument>buildDocs.py</argument>
                 <argument>${project.basedir}/target/generated-resources/hover</argument>
               </arguments>
               <workingDirectory>src/main/python/</workingDirectory>
