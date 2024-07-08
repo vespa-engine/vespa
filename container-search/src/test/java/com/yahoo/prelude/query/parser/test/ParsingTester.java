@@ -114,7 +114,7 @@ public class ParsingTester {
      * @return the produced root
      */
     public Item assertParsed(String parsed, String toParse, String filter, Query.Type mode,
-                              Language language, Linguistics linguistics) {
+                             Language language, Linguistics linguistics) {
         Item root = parseQuery(toParse, filter, language, mode, linguistics);
         if (parsed == null) {
             assertInstanceOf(NullItem.class, root, "root is " + root);
