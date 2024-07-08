@@ -36,12 +36,21 @@ class Node:
     
     def closeNoteNode(self):
 
+        singleQuote = False
+
         for i, child in enumerate(self.children):
             if type(child) == str:
 
-                childSplitted = child.split("content=\"")
 
-                includeFile = childSplitted[0].split("include")[1].strip().split(".")[0]
+                childSplitted = child.split("content=\"")
+                if (len(childSplitted) == 1):
+                    childSplitted = child.split("content='")
+                    singleQuote = True
+
+                includeSplit = childSplitted[0].split("include")
+                if len(includeSplit) <= 1:
+                    return
+                includeFile = includeSplit[1].strip().split(".")[0]
                 
                 self.children[i] = f"*{includeFile.upper()}:* " + "".join(childSplitted[1:])
 
@@ -50,7 +59,9 @@ class Node:
         for i, child in reversed(list(enumerate(self.children))):
             if type(child) == str:
 
-                self.children[i] = "".join(child.split("\"")[:-1])
+                splitChar = "'" if singleQuote else "\""
+                
+                self.children[i] = "".join(child.split(splitChar)[:-1])
 
                 break
     
@@ -58,10 +69,6 @@ class Node:
 
         if (self.tag == "note"):
             return self.closeNoteNode()
-
-        #TODO: remove this, only used for debugging
-        if (self.tag != "parent"):
-            return
 
         noteNode = None
 

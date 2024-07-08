@@ -10,6 +10,17 @@ SCHEMA_URL = "/reference/schema-reference.html"
 
 LINK_BASE_URL = "https://docs.vespa.ai/en"
 
+REPLACE_FILENAME_MAP = {
+    "EXPRESSION": [ "EXPRESSION_SL", "EXPRESSION_ML" ],
+    "RANK_FEATURES": [ "RANKFEATURES_SL", "RANKFEATURES_ML" ],
+    "FUNCTION (INLINE)? [NAME]": [ "FUNCTION" ],
+    "SUMMARY_FEATURES": [ "SUMMARYFEATURES_SL", "SUMMARYFEATURES_ML", "SUMMARYFEATURES_ML_INHERITS" ],
+    "MATCH_FEATURES": [ "MATCHFEATURES_SL", "MATCHFEATURES_ML", "MATCHFEATURES_SL_INHERITS" ],
+    "IMPORT FIELD": [ "IMPORT" ]
+}
+
+# TODO: fix dictionary and attribute and index
+
 def fetchFile(file_url: str) -> str:
     data = requests.get(f"{URL_PREFIX}{file_url}")
     if data.status_code != 200:
@@ -43,8 +54,18 @@ def main():
 
     for tag in tags:
 
-        with open(f"{targetPath}/{convertToToken(tag.AST.getName())}.md", "w") as file:
-            file.write(tag.AST.toMarkdown())
+        filename = convertToToken(tag.AST.getName())
+        data = tag.AST.toMarkdown()
+
+        if filename in REPLACE_FILENAME_MAP:
+            for fn in REPLACE_FILENAME_MAP[filename]:
+                 writeToFile(f"{targetPath}/{fn}.md", data)
+        else:
+            writeToFile(f"{targetPath}/{filename}.md", data)
+
+def writeToFile(filepath: str, data: str):
+    with open(filepath, "w") as file:
+        file.write(data)
 
 def convertToToken(name):
     return name.upper().replace("-", "_")
