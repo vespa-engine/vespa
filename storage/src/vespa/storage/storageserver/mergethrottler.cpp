@@ -852,7 +852,7 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString() << " sent to node "
             << _component.getIndex()
             << ", which is not in its forwarding chain";
-        LOG(error, "%s", oss.view().data());
+        LOG(error, "%s", oss.c_str());
     } else if (mergeCmd.getChain().size() >= nodeSeq.unordered_nodes().size()) {
         // Chain is full but we haven't seen the merge! This means
         // the node has probably gone down with a merge it previously
@@ -860,12 +860,12 @@ MergeThrottler::validateNewMerge(
         oss << mergeCmd.toString()
             << " is not in node's internal state, but has a "
             << "full chain, meaning it cannot be forwarded.";
-        LOG(debug, "%s", oss.view().data());
+        LOG(debug, "%s", oss.c_str());
     } else if (nodeSeq.chain_contains_this_node()) {
         oss << mergeCmd.toString()
             << " is not in node's internal state, but contains "
             << "this node in its non-full chain. This should not happen!";
-        LOG(error, "%s", oss.view().data());
+        LOG(error, "%s", oss.c_str());
     } else {
         valid = true;
     }
