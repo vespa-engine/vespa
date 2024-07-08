@@ -3,7 +3,7 @@ package ai.vespa.schemals;
 import ai.vespa.schemals.completion.SchemaCompletion;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
-import ai.vespa.schemals.context.SchemaIndex;
+import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.definition.SchemaDefinition;
 import ai.vespa.schemals.hover.SchemaHover;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;

@@ -1,6 +1,5 @@
 package ai.vespa.schemals.context.parser;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,15 +9,14 @@ import org.eclipse.lsp4j.Diagnostic;
 import com.yahoo.schema.Schema;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.context.SchemaIndex;
-import ai.vespa.schemals.context.Symbol;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
@@ -37,8 +35,12 @@ public class IdentifySymbolDefinition extends Identifier {
         put(TokenType.SCHEMA, new HashSet<Class<? extends Node>>() {{
             add(rootSchema.class);
         }});
+        put(TokenType.SEARCH, new HashSet<Class<? extends Node>>() {{
+            add(rootSchema.class);
+        }});
         put(TokenType.DOCUMENT, new HashSet<Class<? extends Node>>() {{
             add(documentElm.class);
+            add(namedDocument.class);
         }});
         put(TokenType.FIELD, new HashSet<Class<? extends Node>>() {{
             add(fieldElm.class);

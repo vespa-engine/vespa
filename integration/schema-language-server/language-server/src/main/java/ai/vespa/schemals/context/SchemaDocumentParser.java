@@ -2,8 +2,10 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -13,6 +15,8 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
+import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
@@ -39,6 +43,7 @@ public class SchemaDocumentParser {
 
     private String fileURI = "";
     private String content = "";
+    private String schemaDocumentIdentifier = null;
     
     private SchemaNode CST;
 
@@ -63,12 +68,35 @@ public class SchemaDocumentParser {
         return new ParseContext(content, this.logger, this.fileURI, this.schemaIndex);
     }
 
+    public void reparseContent() {
+        if (this.content != null) {
+            updateFileContent(this.content);
+        }
+    }
+
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
+        schemaIndex.registerSchema(fileURI, this);
 
         ParseContext context = getParseContext(content);
         var parsingResult = parseContent(context);
+
+        Symbol schemaIdentifier = schemaIndex.findSchemaIdentifierSymbol(fileURI);
+
+        if (schemaIdentifier != null) {
+            schemaDocumentIdentifier = schemaIdentifier.getShortIdentifier();
+
+            if (!getFileName().equals(schemaDocumentIdentifier + ".sd")) {
+                // TODO: quickfix
+                parsingResult.diagnostics().add(new Diagnostic(
+                    schemaIdentifier.getNode().getRange(),
+                    "Schema " + schemaDocumentIdentifier + " should be defined in a file with the name: " + schemaDocumentIdentifier + ".sd. File name is: " + getFileName(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+        }
 
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
@@ -79,7 +107,12 @@ public class SchemaDocumentParser {
 
         CSTUtils.printTree(logger, CST);
 
-        logger.println("Found " + context.unresolvedTypeNodes().size() + " unresolved type nodes");
+        //schemaIndex.dumpIndex(logger);
+
+    }
+
+    public String getSchemaIdentifier() {
+        return schemaDocumentIdentifier;
     }
 
     public String getFileURI() {
@@ -205,8 +238,60 @@ public class SchemaDocumentParser {
 
         var tolerantResult = parseCST(node, context);
 
+        Set<String> documentInheritanceURIs = new HashSet<>();
+        for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
+            String schemaDocumentName = schemaDocumentNameNode.getText();
+            SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
+            if (parent == null) {
+                diagnostics.add(new Diagnostic(
+                    schemaDocumentNameNode.getRange(),
+                    "Unknown document " + schemaDocumentName,
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            } else {
+                if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), parent.getFileURI())) {
+                    // Inheritance cycle
+                    // TODO: quickfix
+                    diagnostics.add(new Diagnostic(
+                        schemaDocumentNameNode.getRange(),
+                        "Cannot inherit from " + schemaDocumentName + " because " + schemaDocumentName + " inherits from this document. This would cause an inheritance cycle and is not allowed.",
+                        DiagnosticSeverity.Error,
+                        ""
+                    ));
+                } else {
+                    documentInheritanceURIs.add(parent.getFileURI());
+                }
+            }
+        }
+
+        if (context.inheritsSchemaNode() != null) {
+            String inheritsSchemaName = context.inheritsSchemaNode().getText();
+            SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
+            if (parent == null) {
+                diagnostics.add(new Diagnostic(
+                    context.inheritsSchemaNode().getRange(),
+                    "Unknown schema " + inheritsSchemaName,
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            } else if (!documentInheritanceURIs.contains(parent.getFileURI())) {
+                // TODO: Quickfix
+                diagnostics.add(new Diagnostic(
+                    context.inheritsSchemaNode().getRange(),
+                    "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            } else {
+                context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
+            }
+        }
+
+        context.clearUnresolvedInheritanceNodes();
+
         for (TypeNode typeNode : context.unresolvedTypeNodes()) {
-            if (!context.schemaIndex().resolveTypeNode(typeNode)) {
+            if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
                 diagnostics.add(new Diagnostic(
                     typeNode.getRange(),
                     "Unknown type " + typeNode.getText(),
