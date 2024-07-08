@@ -22,7 +22,7 @@ AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
             if ( ! ret) {
                 LOG(warning, "Cannot apply fastsearch hint on attribute %s of type array<%s>. "
                     "Falling back to normal. You should correct your .sd file.",
-                    name.data(), cfg.basicType().asString());
+                    name.c_str(), cfg.basicType().asString());
                 ret = createArrayStd(name, cfg);
             }
         } else {
@@ -35,7 +35,7 @@ AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
             if ( ! ret) {
                 LOG(warning, "Cannot apply fastsearch hint on attribute %s of type set<%s>. "
                     "Falling back to normal. You should correct your .sd file.",
-                    name.data(), cfg.basicType().asString());
+                    name.c_str(), cfg.basicType().asString());
                 ret = createSetStd(name, cfg);
             }
         } else {
@@ -47,7 +47,7 @@ AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
             if ( ! ret) {
                 LOG(warning, "Cannot apply fastsearch hint on attribute %s of type %s. "
                     "Falling back to normal. You should correct your .sd file.",
-                    name.data(), cfg.basicType().asString());
+                    name.c_str(), cfg.basicType().asString());
                 ret = createSingleStd(name, cfg);
             }
         } else {

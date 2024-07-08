@@ -14,7 +14,7 @@ AbstractCountMetric::logWarning(const char* msg, const char * op) const
 {
     vespalib::asciistream ost;
     ost << msg << " in count metric " << getPath() << " op " << op << ". Resetting it.";
-    LOG(warning, "%s", ost.view().data());
+    LOG(warning, "%s", ost.c_str());
 }
 
 template class CountMetric<uint64_t, true>;

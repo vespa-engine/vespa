@@ -221,7 +221,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List& targetList,
             }
             oss << fv[i]->getName();
         }
-        LOG(debug, "getFlushTargets(): %zu sorted targets: [%s]", fv.size(), oss.view().data());
+        LOG(debug, "getFlushTargets(): %zu sorted targets: [%s]", fv.size(), oss.c_str());
     }
     return fv;
 }

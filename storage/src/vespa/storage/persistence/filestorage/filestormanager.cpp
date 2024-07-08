@@ -520,7 +520,7 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
                 << ", but storage bucket database contains "
                 << entry->getBucketInfo().toString();
 
-            LOG(debug, "Rejecting bucket delete: %s", ost.view().data());
+            LOG(debug, "Rejecting bucket delete: %s", ost.c_str());
             std::shared_ptr<api::StorageReply> reply = cmd->makeReply();
             static_cast<api::DeleteBucketReply&>(*reply).setBucketInfo(entry->getBucketInfo());
             reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, ost.view()));
