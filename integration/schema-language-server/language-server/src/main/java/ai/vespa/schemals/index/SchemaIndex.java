@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context;
+package ai.vespa.schemals.index;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.yahoo.schema.Schema;
+
+import ai.vespa.schemals.context.SchemaDocumentParser;
 
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
@@ -23,6 +25,8 @@ public class SchemaIndex {
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
 
+    private DocumentInheritanceGraph documentInheritanceGraph;
+
     public class SchemaIndexItem {
         String fileURI;
         Symbol symbol;
@@ -35,6 +39,7 @@ public class SchemaIndex {
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
+        this.documentInheritanceGraph = new DocumentInheritanceGraph(this.logger);
     }
     
     public void clearDocument(String fileURI) {
@@ -131,6 +136,10 @@ public class SchemaIndex {
             }
         }
         return null;
+    }
+
+    public void setDocumentInheritanceList(String fileURI, List<String> inheritsURIs) {
+        this.documentInheritanceGraph.setInherits(fileURI, inheritsURIs);
     }
 
 }

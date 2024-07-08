@@ -1,6 +1,5 @@
 package ai.vespa.schemals.context.parser;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,9 +9,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import com.yahoo.schema.Schema;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.context.SchemaIndex;
-import ai.vespa.schemals.context.Symbol;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.documentElm;

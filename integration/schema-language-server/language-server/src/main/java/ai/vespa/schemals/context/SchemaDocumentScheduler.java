@@ -16,6 +16,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+import ai.vespa.schemals.index.SchemaIndex;
 
 public class SchemaDocumentScheduler {
 

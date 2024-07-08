@@ -5,6 +5,8 @@ import java.io.PrintStream;
 import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
 
+import ai.vespa.schemals.index.SchemaIndex;
+
 public class EventContextCreator {
     public final PrintStream logger;
     public final SchemaDocumentScheduler scheduler;

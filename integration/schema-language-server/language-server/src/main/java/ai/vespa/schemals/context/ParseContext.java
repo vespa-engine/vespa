@@ -9,6 +9,8 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.SchemaNode;
 
+import ai.vespa.schemals.index.SchemaIndex;
+
 public class ParseContext { 
     private String content;
     private PrintStream logger;

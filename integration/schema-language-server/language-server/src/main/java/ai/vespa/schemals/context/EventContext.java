@@ -2,6 +2,8 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 
+import ai.vespa.schemals.index.SchemaIndex;
+
 public class EventContext {
 
     public final PrintStream logger;

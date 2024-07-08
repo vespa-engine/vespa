@@ -8,7 +8,6 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifySymbolReferences extends Identifier {

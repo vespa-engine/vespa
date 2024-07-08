@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.Range;
 
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;

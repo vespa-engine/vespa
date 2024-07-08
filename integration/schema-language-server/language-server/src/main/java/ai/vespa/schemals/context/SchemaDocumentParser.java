@@ -13,6 +13,8 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
+import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
@@ -27,7 +29,7 @@ import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
-    public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST, List<SchemaDocumentParser> inheritsList) {
+    public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST, List<String> inheritsList) {
         public static ParseResult parsingFailed(ArrayList<Diagnostic> diagnostics) {
             return new ParseResult(diagnostics, Optional.empty(), new ArrayList<>());
         }
@@ -42,8 +44,6 @@ public class SchemaDocumentParser {
     private String schemaDocumentIdentifier = null;
     
     private SchemaNode CST;
-
-    private List<SchemaDocumentParser> inheritsList = new ArrayList<>();
 
     public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
@@ -90,8 +90,7 @@ public class SchemaDocumentParser {
             }
         }
 
-        inheritsList.clear();
-        inheritsList.addAll(parsingResult.inheritsList());
+        schemaIndex.setDocumentInheritanceList(fileURI, parsingResult.inheritsList());
 
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
@@ -233,7 +232,7 @@ public class SchemaDocumentParser {
 
         var tolerantResult = parseCST(node, context);
 
-        List<SchemaDocumentParser> inheritsList = new ArrayList<>();
+        List<String> inheritsList = new ArrayList<>();
 
         for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
             String schemaDocumentName = schemaDocumentNameNode.getText();
@@ -246,7 +245,7 @@ public class SchemaDocumentParser {
                     ""
                 ));
             } else {
-                inheritsList.add(parent);
+                inheritsList.add(parent.getFileURI());
             }
         }
 
