@@ -35,13 +35,13 @@ public class FeatureData implements Inspectable, JsonProducer {
     /** If not null: The source of all the values of this. */
     private final Inspector value;
 
+    /** If "value" is null: The content of this. If "value" is non-null: Lazily decoded values. */
+    private Map<String, Tensor> values = null;
+
     /** The lazily computed feature names of this */
     private Set<String> featureNames = null;
 
-    /** If "value" is null: The content of this. If "value" is non-null: Lazily decoded values. */
-    private Map<String, Double> decodedDoubles = null;
-    private Map<String, Tensor> decodedTensors = null;
-
+    /** The lazily computed json form of this */
     private String jsonForm = null;
 
     public FeatureData(Inspector value) {
@@ -91,16 +91,16 @@ public class FeatureData implements Inspectable, JsonProducer {
      *                                  (that is, if it is a tensor with nonzero rank)
      */
     public Double getDouble(String featureName) {
-        if (decodedDoubles == null)
-            decodedDoubles = new HashMap<>();
+        if (values == null)
+            values = new HashMap<>();
 
-        Double value = decodedDoubles.get(featureName);
-        if (value != null) return value;
+        Tensor value = values.get(featureName);
+        if (value != null) return value.asDouble();
 
-        value = decodeDouble(featureName);
-        if (value != null)
-            decodedDoubles.put(featureName, value);
-        return value;
+        Double doubleValue = decodeDouble(featureName);
+        if (doubleValue != null)
+            values.put(featureName, Tensor.from(doubleValue));
+        return doubleValue;
     }
 
     private Double decodeDouble(String featureName) {
@@ -119,15 +119,15 @@ public class FeatureData implements Inspectable, JsonProducer {
      * This will return any feature value: Scalars are returned as a rank 0 tensor.
      */
     public Tensor getTensor(String featureName) {
-        if (decodedTensors == null)
-            decodedTensors = new HashMap<>();
+        if (values == null)
+            values = new HashMap<>();
 
-        Tensor value = decodedTensors.get(featureName);
+        Tensor value = values.get(featureName);
         if (value != null) return value;
 
         value = decodeTensor(featureName);
         if (value != null)
-            decodedTensors.put(featureName, value);
+            values.put(featureName, value);
         return value;
     }
 
