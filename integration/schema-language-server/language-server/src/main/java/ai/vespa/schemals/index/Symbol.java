@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context;
+package ai.vespa.schemals.index;
 
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.tree.SymbolDefinitionNode;

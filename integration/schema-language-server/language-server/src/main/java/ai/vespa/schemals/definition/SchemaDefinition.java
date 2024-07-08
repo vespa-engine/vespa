@@ -7,7 +7,7 @@ import org.eclipse.lsp4j.Location;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.context.Symbol;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.parser.Node;

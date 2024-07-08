@@ -3,6 +3,7 @@ package ai.vespa.schemals.context;
 import java.io.PrintStream;
 
 import org.eclipse.lsp4j.Position;
+import ai.vespa.schemals.index.SchemaIndex;
 
 public class EventPositionContext extends EventContext {
     public final Position position;

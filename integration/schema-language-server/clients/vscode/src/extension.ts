@@ -57,7 +57,10 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log(r?.data)
 				return r
 			}
-		}
+		},
+        synchronize: {
+            fileEvents: vscode.workspace.createFileSystemWatcher("**/*.sd")
+        }
 	};
 
 	client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions)
