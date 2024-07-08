@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "doctype_gid_and_timestamp.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace storage::spi {
 

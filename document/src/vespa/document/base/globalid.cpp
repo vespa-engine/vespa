@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cassert>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.base.globalid");

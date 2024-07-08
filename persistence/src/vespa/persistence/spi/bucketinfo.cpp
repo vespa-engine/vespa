@@ -2,6 +2,7 @@
 
 #include "bucketinfo.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace storage::spi {
 

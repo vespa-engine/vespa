@@ -4,6 +4,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/arraysize.h>
+#include <ostream>
 
 namespace search::index::schema {
 

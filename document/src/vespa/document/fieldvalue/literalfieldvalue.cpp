@@ -3,6 +3,7 @@
 #include "literalfieldvalue.hpp"
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 using namespace vespalib::xml;
 

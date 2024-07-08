@@ -2,6 +2,7 @@
 
 #include "bucket.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace document {
 
