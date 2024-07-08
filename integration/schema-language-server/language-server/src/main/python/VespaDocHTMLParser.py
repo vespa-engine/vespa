@@ -1,14 +1,10 @@
 from html.parser import HTMLParser
 from dataclasses import dataclass
+from urllib.parse import urljoin
 
-WANTED_IDS = [
-    "schema",
-    "document",
-    "struct",
-    "field",
-    "fieldset",
-    "rank-profile",
-    "fieldset"
+EXCLUDED_IDS = [
+    "syntax",
+    "elements"
 ]
 
 class Node:
@@ -26,7 +22,7 @@ class Node:
         for attrTuple in attrs:
             attr = list(attrTuple)
             if attr[0] == "href":
-                attr[1] = linkPrefix + attr[1]
+                attr[1] = urljoin(linkPrefix, attr[1])
             
             self.attrs.append(attr)
         
@@ -206,6 +202,12 @@ class Node:
         
         return ret
 
+    def getName(self):
+        if (self.tag != "parent"):
+            raise Exception("The getFilename method should only be called on the parent Node")
+
+        return self.children[0].getContentStr()
+
 
 @dataclass
 class Tag:
@@ -258,7 +260,7 @@ class VespaDocHTMLParser(HTMLParser):
 
                 self.stopReading()
 
-                if attr[1] in WANTED_IDS:
+                if tag == "h2" and attr[1] not in EXCLUDED_IDS:
                     self.startReading(attr[1])
         
         if (self.currentReadingTag is not None):

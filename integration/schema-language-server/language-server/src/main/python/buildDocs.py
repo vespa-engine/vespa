@@ -43,9 +43,8 @@ def main():
 
     for tag in tags:
 
-        with open(f"{targetPath}/{convertToToken(tag.id)}.md", "w") as file:
+        with open(f"{targetPath}/{convertToToken(tag.AST.getName())}.md", "w") as file:
             file.write(tag.AST.toMarkdown())
-
 
 def convertToToken(name):
     return name.upper().replace("-", "_")
