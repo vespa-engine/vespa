@@ -526,6 +526,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
+            "monitoring-jwt", false,
+            List.of("olaa"), "2024-07-05", "2025-01-01",
+            "Whether a monitoring JWT should be issued by the controller",
+            "Takes effect immediately",
+            TENANT_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
