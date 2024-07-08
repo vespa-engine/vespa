@@ -29,9 +29,9 @@ import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
-    public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST, List<String> inheritsList) {
+    public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
         public static ParseResult parsingFailed(ArrayList<Diagnostic> diagnostics) {
-            return new ParseResult(diagnostics, Optional.empty(), new ArrayList<>());
+            return new ParseResult(diagnostics, Optional.empty());
         }
     }
 
@@ -89,8 +89,6 @@ public class SchemaDocumentParser {
                 ));
             }
         }
-
-        schemaIndex.setDocumentInheritanceList(fileURI, parsingResult.inheritsList());
 
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
@@ -232,8 +230,6 @@ public class SchemaDocumentParser {
 
         var tolerantResult = parseCST(node, context);
 
-        List<String> inheritsList = new ArrayList<>();
-
         for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
             String schemaDocumentName = schemaDocumentNameNode.getText();
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
@@ -245,7 +241,7 @@ public class SchemaDocumentParser {
                     ""
                 ));
             } else {
-                inheritsList.add(parent.getFileURI());
+                context.schemaIndex().registerDocumentInheritance(context.fileURI(), parent.getFileURI());
             }
         }
 
@@ -265,7 +261,7 @@ public class SchemaDocumentParser {
 
         diagnostics.addAll(tolerantResult.diagnostics());
 
-        return new ParseResult(diagnostics, tolerantResult.CST(), inheritsList);
+        return new ParseResult(diagnostics, tolerantResult.CST());
     }
 
     private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {
@@ -309,7 +305,7 @@ public class SchemaDocumentParser {
             return ParseResult.parsingFailed(new ArrayList<>());
         }
         var errors = traverseCST(CST, context);
-        return new ParseResult(errors, Optional.of(CST), new ArrayList<>());
+        return new ParseResult(errors, Optional.of(CST));
     }
 
     private static ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(ParseContext context, String script, Position scriptStart, ArrayList<Diagnostic> diagnostics) {

@@ -54,6 +54,7 @@ public class SchemaIndex {
         }
 
         openSchemas.remove(fileURI);
+        documentInheritanceGraph.removeDocument(fileURI);
     }
 
     private String createDBKey(String fileURI, Symbol symbol) {
@@ -96,11 +97,17 @@ public class SchemaIndex {
     }
 
     public boolean resolveTypeNode(TypeNode typeNode, String fileURI) {
-        // TODO: handle inheritance 
-        // TODO: handle document types
+        // TODO: handle document reference
         // TODO: handle name collision
-        String typeName = typeNode.getParsedType().name();
-        return findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null;
+        String typeName = typeNode.getParsedType().name().toLowerCase();
+
+        List<String> inheritanceList = documentInheritanceGraph.getAllInheritedDocumentURIs(fileURI);
+
+        for (var parentURI : inheritanceList) {
+            if (findSymbol(parentURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
+        }
+
+        return false;
     }
 
     public void dumpIndex(PrintStream logger) {
@@ -138,8 +145,7 @@ public class SchemaIndex {
         return null;
     }
 
-    public void setDocumentInheritanceList(String fileURI, List<String> inheritsURIs) {
-        this.documentInheritanceGraph.setInherits(fileURI, inheritsURIs);
+    public void registerDocumentInheritance(String childURI, String parentURI) {
+        this.documentInheritanceGraph.addInherits(childURI, parentURI);
     }
-
 }
