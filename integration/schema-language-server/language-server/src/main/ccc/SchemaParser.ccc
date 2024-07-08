@@ -216,10 +216,12 @@ INJECT dataType:
     import com.yahoo.schema.parser.ParsedType;
 {
     private ParsedType parsedType;
+    public boolean isArrayOldStyle = false;
 
     public void setParsedType(ParsedType pt) {
         this.parsedType = pt;
     }
+
 
     public ParsedType getParsedType() {
         return this.parsedType;
@@ -972,6 +974,7 @@ ParsedType dataType() :
             //deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
             type = ParsedType.arrayOf(type);
         }
+        thisProduction.isArrayOldStyle = isArrayOldStyle;
         thisProduction.setParsedType(type);
         return type;
     }

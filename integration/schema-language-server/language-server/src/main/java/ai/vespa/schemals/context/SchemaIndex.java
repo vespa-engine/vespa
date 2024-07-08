@@ -7,8 +7,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.yahoo.schema.Schema;
+
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.Token;
+
+import ai.vespa.schemals.tree.TypeNode;
 
 public class SchemaIndex {
 
@@ -77,4 +81,26 @@ public class SchemaIndex {
         return result;
     }
 
+    public boolean resolveTypeNode(TypeNode typeNode) {
+        // TODO: handle inheritance 
+        // TODO: handle document types
+        // TODO: handle name collision
+        String typeName = typeNode.getParsedType().name();
+        int matched = 0;
+        for (Map.Entry<String, SchemaIndexItem> entry : database.entrySet()) {
+            Symbol symbol = entry.getValue().symbol;
+            if (symbol.getType() != TokenType.STRUCT) continue;
+            if (symbol.getShortIdentifier().equalsIgnoreCase(typeName)) {
+                matched += 1;
+            }
+        }
+
+        return matched == 1;
+    }
+
+    public void dumpIndex(PrintStream logger) {
+        for (Map.Entry<String, SchemaIndexItem> entry : database.entrySet()) {
+            logger.println(entry.getKey() + " -> " + entry.getValue().toString());
+        }
+    }
 }

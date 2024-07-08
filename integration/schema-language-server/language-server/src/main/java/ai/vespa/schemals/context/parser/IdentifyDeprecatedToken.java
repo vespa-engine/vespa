@@ -7,21 +7,21 @@ import java.util.HashMap;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyDeprecatedToken extends Identifier {
-    
-    public IdentifyDeprecatedToken(PrintStream logger) {
-        super(logger);
-    }
+    public IdentifyDeprecatedToken(ParseContext context) {
+		super(context);
+	}
 
-    private static final HashMap<TokenType, String> deprecatedTokens = new HashMap<TokenType, String>() {{
+	private static final HashMap<TokenType, String> deprecatedTokens = new HashMap<TokenType, String>() {{
         put(TokenType.ATTRIBUTE, "");
         put(TokenType.ENABLE_BIT_VECTORS, "");
         put(TokenType.INDEX, "");
         put(TokenType.SUMMARY_TO, "");
-        put(TokenType.SEARCH, "Use schema insted.");
+        put(TokenType.SEARCH, "Use schema instead.");
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {

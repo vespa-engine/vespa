@@ -1,11 +1,10 @@
 package ai.vespa.schemals.context.parser;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
 
-import ai.vespa.schemals.context.SchemaIndex;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -14,16 +13,11 @@ import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifySymbolReferences extends Identifier {
 
-    protected SchemaIndex schemaIndex;
-    protected String fileURI;
+    public IdentifySymbolReferences(ParseContext context) {
+		super(context);
+	}
 
-    public IdentifySymbolReferences(PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
-        super(logger);
-        this.schemaIndex = schemaIndex;
-        this.fileURI = fileURI;
-    }
-
-    private Diagnostic createNotFoundError(SchemaNode node, TokenType type) {
+	private Diagnostic createNotFoundError(SchemaNode node, TokenType type) {
         return new Diagnostic(node.getRange(), "Cannot find symbol: " + node.getText() + " of type " + type);
     }
 
@@ -34,7 +28,7 @@ public class IdentifySymbolReferences extends Identifier {
         if (
             node.getType() == TokenType.FIELDS &&
             parent != null &&
-            parent.instanceOf(fieldsElm.class)
+            parent.isASTInstance(fieldsElm.class)
         ) {
             for (int i = 2; i < parent.size(); i += 2) {
                 SchemaNode child = parent.get(i);
@@ -47,7 +41,7 @@ public class IdentifySymbolReferences extends Identifier {
                 if (child.getText() != "") {
                     child.setType(TokenType.IDENTIFIER);
 
-                    if (schemaIndex.findSymbol(fileURI, TokenType.FIELD, child.getText()) == null) {
+                    if (context.schemaIndex().findSymbol(context.fileURI(), TokenType.FIELD, child.getText()) == null) {
                         ret.add(createNotFoundError(child, TokenType.FIELD));
                     } else {
                         new SymbolReferenceNode(child);
@@ -80,7 +74,7 @@ public class IdentifySymbolReferences extends Identifier {
             ) {
                 nextNode.setType(TokenType.IDENTIFIER);
 
-                if (schemaIndex.findSymbol(fileURI, typeSpecifierNode.getType(), nextNode.getText()) == null) {
+                if (context.schemaIndex().findSymbol(context.fileURI(), typeSpecifierNode.getType(), nextNode.getText()) == null) {
                     ret.add(createNotFoundError(nextNode, typeSpecifierNode.getType()));
                 } else {
                     new SymbolReferenceNode(nextNode);

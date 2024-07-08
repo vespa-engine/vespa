@@ -17,7 +17,7 @@ public class SchemaNode {
     private TokenType type;
     private String identifierString;
     private SchemaNode parent;
-    private Node originalNode;
+    protected Node originalNode;
 
     private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
@@ -124,11 +124,11 @@ public class SchemaNode {
         this.featureListNode = node;
     }
 
-    public boolean instanceOf(Class<? extends Node> astClass) {
+    public boolean isASTInstance(Class<? extends Node> astClass) {
         return astClass.isInstance(originalNode);
     }
 
-    public Class<? extends Node> getIdentifierClass() {
+    public Class<? extends Node> getASTClass() {
         return originalNode.getClass();
     }
 
