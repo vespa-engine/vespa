@@ -91,27 +91,8 @@ public class FeatureData implements Inspectable, JsonProducer {
      *                                  (that is, if it is a tensor with nonzero rank)
      */
     public Double getDouble(String featureName) {
-        if (values == null)
-            values = new HashMap<>();
-
-        Tensor value = values.get(featureName);
-        if (value != null) return value.asDouble();
-
-        Double doubleValue = decodeDouble(featureName);
-        if (doubleValue != null)
-            values.put(featureName, Tensor.from(doubleValue));
-        return doubleValue;
-    }
-
-    private Double decodeDouble(String featureName) {
-        Inspector featureValue = getInspector(featureName);
-        if ( ! featureValue.valid()) return null;
-
-        return switch (featureValue.type()) {
-            case DOUBLE -> featureValue.asDouble();
-            case DATA -> throw new IllegalArgumentException("Feature '" + featureName + "' is a tensor, not a double");
-            default -> throw new IllegalStateException("Unexpected feature value type " + featureValue.type());
-        };
+        Tensor value = getTensor(featureName);
+        return value == null ? null : value.asDouble();
     }
 
     /**
