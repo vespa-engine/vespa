@@ -71,6 +71,8 @@ public class DocumentInheritanceGraph {
      * List includes the queried node (will be last)
      */
     public List<String> getAllDocumentAncestorURIs(String fileURI) {
+        createNodeIfNotExists(fileURI);
+
         List<String> result = new ArrayList<>();
         Set<String> visited = new HashSet<>();
         getAllDocumentAncestorURIsImpl(fileURI, result, visited);
@@ -84,6 +86,8 @@ public class DocumentInheritanceGraph {
      * List includes the queried node (will be first)
      */
     public List<String> getAllDocumentDescendantURIs(String fileURI) {
+        createNodeIfNotExists(fileURI);
+
         List<String> result = new ArrayList<>();
         Set<String> visited = new HashSet<>();
         getAllDocumentDescendantURIsImpl(fileURI, result, visited);
