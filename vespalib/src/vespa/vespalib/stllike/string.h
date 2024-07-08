@@ -10,7 +10,7 @@
 
 namespace vespalib {
 
-using string = small_string<48>;
+using string = std::string;
 
 inline bool contains(std::string_view text, std::string_view key) noexcept {
     return text.find(key) != std::string_view::npos;
@@ -47,7 +47,7 @@ static inline string stringify(uint64_t number) noexcept
     } while (number > 0);
     string retval;
     while (numdigits > 0) {
-        retval.append(digits[--numdigits]);
+        retval += digits[--numdigits];
     }
     return retval;
 }
