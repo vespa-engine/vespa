@@ -132,11 +132,11 @@ public class FeatureData implements Inspectable, JsonProducer {
         Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
-        switch (featureValue.type()) {
-            case DOUBLE: return Tensor.from(featureValue.asDouble());
-            case DATA: return TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(featureValue.asData()));
-            default: throw new IllegalStateException("Unexpected feature value type " + featureValue.type());
-        }
+        return switch (featureValue.type()) {
+            case DOUBLE -> Tensor.from(featureValue.asDouble());
+            case DATA -> TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(featureValue.asData()));
+            default -> throw new IllegalStateException("Unexpected feature value type " + featureValue.type());
+        };
     }
 
     private Inspector getInspector(String featureName) {

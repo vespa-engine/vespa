@@ -35,19 +35,15 @@ public class JSONDebugSearcher extends Searcher {
             execution.fill(r);
             for (Iterator<Hit> i = r.hits().deepIterator(); i.hasNext();) {
                 Hit h = i.next();
-                if (h instanceof FastHit) {
-                    FastHit hit = (FastHit) h;
+                if (h instanceof FastHit hit) {
                     Object o = hit.getField(propertyName);
-                    if (o instanceof JSONString) {
-                        JSONString j = (JSONString) o;
+                    if (o instanceof JSONString j) {
                         r.getQuery().trace(JSON_FIELD + j.getContent(), false, 5);
                     }
-                    if (o instanceof StructuredData) {
-                        StructuredData d = (StructuredData) o;
+                    if (o instanceof StructuredData d) {
                         r.getQuery().trace(STRUCT_FIELD + d.toJson(), false, 5);
                     }
-                    if (o instanceof FeatureData) {
-                        FeatureData d = (FeatureData) o;
+                    if (o instanceof FeatureData d) {
                         r.getQuery().trace(FEATURE_FIELD + d.toJson(), false, 5);
                     }
                 }

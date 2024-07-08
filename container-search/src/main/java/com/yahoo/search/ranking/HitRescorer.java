@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.ranking;
 
-import com.yahoo.search.result.FeatureData;
-import com.yahoo.search.result.Hit;
 import com.yahoo.tensor.Tensor;
 
 import java.util.List;
