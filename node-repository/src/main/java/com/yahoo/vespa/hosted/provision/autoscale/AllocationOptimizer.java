@@ -28,6 +28,10 @@ public class AllocationOptimizer {
     private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
     private static final int maximumNodes = 150;
 
+    // A lower bound on the number of vCPUs to suggest. Flavors with fewer vCPUs than this are rarely good for
+    // anything but testing.
+    private static final int minimumSuggestedVcpus = 2;
+
     private final NodeRepository nodeRepository;
 
     public AllocationOptimizer(NodeRepository nodeRepository) {
@@ -60,11 +64,7 @@ public class AllocationOptimizer {
         else
             limits = atLeast(minimumNodes, limits).fullySpecified(model.current().clusterSpec(), nodeRepository, model.application().id());
         List<AllocatableResources> bestAllocations = new ArrayList<>();
-        var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
-                                         ? nodeRepository.flavors().getFlavors().stream().map(Flavor::resources).toList()
-                                         : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
-                                                         .map(hostResources -> maxResourcesOf(hostResources, model))
-                                                         .toList();
+        List<NodeResources> availableRealHostResources = availableRealHostResources(model);
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
@@ -102,6 +102,17 @@ public class AllocationOptimizer {
                 })
                 .limit(3)
                 .toList();
+    }
+
+    private List<NodeResources> availableRealHostResources(ClusterModel model) {
+        if (nodeRepository.zone().cloud().dynamicProvisioning()) {
+            return nodeRepository.flavors().getFlavors().stream().map(Flavor::resources)
+                                 .filter(r -> r.vcpu() >= minimumSuggestedVcpus)
+                                 .toList();
+        }
+        return nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
+                             .map(hostResources -> maxResourcesOf(hostResources, model))
+                             .toList();
     }
 
     /** Returns the max resources of a host one node may allocate. */
