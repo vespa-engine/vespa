@@ -32,12 +32,20 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content) {
-        if (openDocuments.containsKey(fileURI)) {
+        if (!openDocuments.containsKey(fileURI)) {
+            openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content));
+        } else {
             openDocuments.get(fileURI).updateFileContent(content);
-            return;
         }
 
-        openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content));
+
+        logger.println(fileURI + " changed, Updating descendants:");
+        for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
+            logger.println("    " + descendantURI);
+            if (openDocuments.containsKey(descendantURI)) {
+                openDocuments.get(descendantURI).reparseContent();
+            }
+        }
     }
 
     public void openDocument(TextDocumentItem document) {

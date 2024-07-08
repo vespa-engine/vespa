@@ -16,14 +16,9 @@ public class SchemaWorkspaceService implements WorkspaceService {
 
     @Override
     public void didChangeConfiguration(DidChangeConfigurationParams didChangeConfigurationParams) {
-        this.logger.println("WORKSPACE: Configuration change!");
     }
 
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams didChangeWatchedFilesParams) {
-        this.logger.println("WORKSPACE: Watched files change!");
-        for (var changeEvent : didChangeWatchedFilesParams.getChanges()) {
-            this.logger.println("    File changed: " + changeEvent.getUri());
-        }
     }
 }

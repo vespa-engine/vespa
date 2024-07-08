@@ -17,53 +17,113 @@ public class DocumentInheritanceGraph {
 
     private PrintStream logger;
 
-    private HashMap<String, List<String>> documentInherits;
+    private HashMap<String, List<String>> documentParents = new HashMap<>();
+    private HashMap<String, List<String>> documentChildren = new HashMap<>();
 
     public DocumentInheritanceGraph(PrintStream logger) {
         this.logger = logger;
-        documentInherits = new HashMap<>();
     }
 
-    public void removeDocument(String fileURI) {
-        documentInherits.remove(fileURI);
+    public void clearInheritsList(String fileURI) {
+        if (!nodeExists(fileURI)) return;
+
+        // Remove myself from my parents children
+        for (String parent : documentParents.get(fileURI)) {
+            documentChildren.get(parent).remove(fileURI);
+        }
+
+        documentParents.remove(fileURI);
     }
 
     public void addInherits(String childURI, String parentURI) {
         createNodeIfNotExists(childURI);
         createNodeIfNotExists(parentURI);
 
-        List<String> parentList = documentInherits.get(childURI);
-        if (parentList.contains(parentURI)) return;
-        parentList.add(parentURI);
+        List<String> parentList = documentParents.get(childURI);
+        if (!parentList.contains(parentURI)) {
+            parentList.add(parentURI);
+        }
+
+        List<String> parentChildren = documentChildren.get(parentURI);
+
+        if (!parentChildren.contains(childURI)) {
+            parentChildren.add(childURI);
+        }
 
     }
 
-    public List<String> getAllInheritedDocumentURIs(String fileURI) {
+    public List<String> getAllDocumentAncestorURIs(String fileURI) {
         List<String> result = new ArrayList<>();
         Set<String> visited = new HashSet<>();
-        getAllInheritedDocumentURIsImpl(fileURI, result, visited);
+        getAllDocumentAncestorURIsImpl(fileURI, result, visited);
         return result;
     }
 
+    public List<String> getAllDocumentDescendantURIs(String fileURI) {
+        List<String> result = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        getAllDocumentDescendantURIsImpl(fileURI, result, visited);
+        return result;
+    }
+    
     /*
      * Recursive search upwards through the inheritance graph to
      * retreive all ancestors of the given node.
      */
-    private void getAllInheritedDocumentURIsImpl(String fileURI, List<String> result, Set<String> visited) {
-        if (!documentInherits.containsKey(fileURI)) return;
+    private void getAllDocumentAncestorURIsImpl(String fileURI, List<String> result, Set<String> visited) {
+        if (!documentParents.containsKey(fileURI)) return;
         if (visited.contains(fileURI)) return;
 
         visited.add(fileURI);
 
-        for (String parentURI : documentInherits.get(fileURI)) {
-            getAllInheritedDocumentURIsImpl(parentURI, result, visited);
+        for (String parentURI : documentParents.get(fileURI)) {
+            getAllDocumentAncestorURIsImpl(parentURI, result, visited);
         }
         result.add(fileURI);
     }
 
-    private void createNodeIfNotExists(String fileURI) {
-        if (!documentInherits.containsKey(fileURI)) {
-            documentInherits.put(fileURI, new ArrayList<>());
+    /*
+     * Recursive search downwards through the inheritance graph to 
+     * retrieve all who directly or indirectly inherits the given node
+     */
+    private void getAllDocumentDescendantURIsImpl(String fileURI, List<String> result, Set<String> visited) {
+        if (!documentChildren.containsKey(fileURI)) return;
+        if (visited.contains(fileURI)) return;
+
+        visited.add(fileURI);
+
+        for (String childURI : getChildren(fileURI)) {
+            getAllDocumentDescendantURIsImpl(childURI, result, visited);
         }
+
+        result.add(fileURI);
+    }
+
+    private boolean nodeExists(String fileURI) {
+        return documentParents.containsKey(fileURI) && documentChildren.containsKey(fileURI);
+    }
+
+    private void createNodeIfNotExists(String fileURI) {
+        if (!documentParents.containsKey(fileURI)) {
+            documentParents.put(fileURI, new ArrayList<>());
+        }
+
+        if (!documentChildren.containsKey(fileURI)) {
+            documentChildren.put(fileURI, new ArrayList<>());
+        }
+    }
+
+    private List<String> getChildren(String fileURI) {
+        List<String> childrenList = documentChildren.getOrDefault(fileURI, new ArrayList<>());
+
+        List<String> correctList = new ArrayList<>();
+        for (String childURI : childrenList) {
+            if (documentParents.get(childURI).contains(fileURI)) {
+                correctList.add(childURI);
+            }
+        }
+
+        documentChildren.put(fileURI, correctList);
+        return correctList;
     }
 }

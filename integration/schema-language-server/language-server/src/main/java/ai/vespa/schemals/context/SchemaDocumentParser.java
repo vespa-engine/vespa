@@ -66,6 +66,12 @@ public class SchemaDocumentParser {
         return new ParseContext(content, this.logger, this.fileURI, this.schemaIndex);
     }
 
+    public void reparseContent() {
+        if (this.content != null) {
+            updateFileContent(this.content);
+        }
+    }
+
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
@@ -97,9 +103,9 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        CSTUtils.printTree(logger, CST);
+        //CSTUtils.printTree(logger, CST);
 
-        schemaIndex.dumpIndex(logger);
+        //schemaIndex.dumpIndex(logger);
 
     }
 
