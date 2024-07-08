@@ -93,13 +93,10 @@ abstract class StructuredParser extends AbstractParser {
             item = number();
             if (item == null)
                 item = phrase(indexName == null ? null : indexPath + indexName);
-            //if (item == null && indexName != null && tokens.currentIs(LCURLYBRACKET))
-            //    item = sameElement(indexPath + indexName);
-            if (item == null && indexName != null) {
-                if (wordsAhead()) {
-                    item = phrase(indexName);
-                }
-            }
+            if (item == null && indexName != null && tokens.currentIs(LCURLYBRACKET))
+                item = sameElement(indexPath + indexName);
+            if (item == null && indexName != null && wordsAhead())
+                item = phrase(indexName);
 
             submodes.reset();
 
@@ -166,70 +163,7 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    private String indexPrefix(String ignored) {
-        int position = tokens.getPosition();
-        String item = null;
-
-        try {
-            List<Token> firstWord = new ArrayList<>();
-            List<Token> secondWord = new ArrayList<>();
-
-            tokens.skip(LSQUAREBRACKET);
-
-            if ( ! tokens.currentIs(WORD) && ! tokens.currentIs(NUMBER) && ! tokens.currentIs(UNDERSCORE)) {
-                return null;
-            }
-
-            firstWord.add(tokens.next());
-
-            while (tokens.currentIsNoIgnore(UNDERSCORE)
-                   || tokens.currentIsNoIgnore(WORD)
-                   || tokens.currentIsNoIgnore(NUMBER)) {
-                firstWord.add(tokens.next());
-            }
-
-            while (tokens.currentIsNoIgnore(DOT)) {
-                secondWord.add(tokens.next());
-                if (tokens.currentIsNoIgnore(WORD) || tokens.currentIsNoIgnore(NUMBER)) {
-                    secondWord.add(tokens.next());
-                } else {
-                    return null;
-                }
-                while (tokens.currentIsNoIgnore(UNDERSCORE)
-                       || tokens.currentIsNoIgnore(WORD)
-                       || tokens.currentIsNoIgnore(NUMBER)) {
-                    secondWord.add(tokens.next());
-                }
-            }
-
-            if ( ! tokens.skipNoIgnore(COLON))
-                return null;
-
-            item = concatenate(firstWord) + concatenate(secondWord);
-
-            item = indexFacts.getCanonicName(item);
-
-            if ( ! indexFacts.isIndex(item)) { // Only if this really is an index
-                // Marker for the finally block
-                item = null;
-                return null;
-            } else {
-                if (nothingAhead(false)) {
-                    // correct index syntax, correct name, but followed by noise. Let's skip this.
-                    nothingAhead(true);
-                    position = tokens.getPosition();
-                    item = indexPrefix("");
-                }
-            }
-            return item;
-        } finally {
-            if (item == null) {
-                tokens.setPosition(position);
-            }
-        }
-    }
-
-    private String indexPrefixNEW(String indexPath) {
+    private String indexPrefix(String indexPath) {
         int position = tokens.getPosition();
         String index = null;
 
@@ -807,8 +741,7 @@ abstract class StructuredParser extends AbstractParser {
     /**
      * Skips one or multiple phrase separators
      *
-     * @return true if the item we land at after skipping zero or more is
-     *         a phrase word
+     * @return true if the item we land at after skipping zero or more is a phrase word
      */
     private boolean skipToNextPhraseWord(boolean quoted) {
         boolean skipped = false;
@@ -857,11 +790,16 @@ abstract class StructuredParser extends AbstractParser {
                 if (tokens.skipMultipleNoIgnore(DOLLAR)) {
                     skipped = true;
                 }
-                ;
                 if (tokens.skipMultipleNoIgnore(STAR)) {
                     skipped = true;
                 }
                 if (tokens.skipMultipleNoIgnore(COLON)) {
+                    skipped = true;
+                }
+                if (tokens.skipMultipleNoIgnore(LCURLYBRACKET)) {
+                    skipped = true;
+                }
+                if (tokens.skipMultipleNoIgnore(RCURLYBRACKET)) {
                     skipped = true;
                 }
                 if (quoted) {
@@ -876,28 +814,19 @@ abstract class StructuredParser extends AbstractParser {
                     skipped = true;
                 }
             }
-        } while (skipped && !tokens.currentIsNoIgnore(WORD)
-                && !tokens.currentIsNoIgnore(NUMBER) && !URLModeWordChar());
+        } while (skipped && !tokens.currentIsNoIgnore(WORD) && !tokens.currentIsNoIgnore(NUMBER) && !URLModeWordChar());
 
-        return tokens.currentIsNoIgnore(WORD)
-                || tokens.currentIsNoIgnore(NUMBER) || URLModePhraseChar();
+        return tokens.currentIsNoIgnore(WORD) || tokens.currentIsNoIgnore(NUMBER) || URLModePhraseChar();
     }
 
     private boolean URLModeWordChar() {
-        if (!submodes.url) {
-            return false;
-        }
-        return tokens.currentIsNoIgnore(UNDERSCORE)
-                || tokens.currentIsNoIgnore(MINUS);
+        if (!submodes.url) return false;
+        return tokens.currentIsNoIgnore(UNDERSCORE) || tokens.currentIsNoIgnore(MINUS);
     }
 
     private boolean URLModePhraseChar() {
-        if (!submodes.url) {
-            return false;
-        }
-        return !(tokens.currentIsNoIgnore(RBRACE)
-                || tokens.currentIsNoIgnore(SPACE));
+        if (!submodes.url) return false;
+        return !(tokens.currentIsNoIgnore(RBRACE) || tokens.currentIsNoIgnore(SPACE));
     }
-
 
 }

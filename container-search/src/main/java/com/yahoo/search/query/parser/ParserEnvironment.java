@@ -18,8 +18,8 @@ public final class ParserEnvironment {
 
     /** these flags are only for how the weakAnd parser handles implicit AND/SAND items */
     public record ParserSettings(boolean keepImplicitAnds,
-                                     boolean markSegmentAnds,
-                                     boolean keepSegmentAnds)
+                                 boolean markSegmentAnds,
+                                 boolean keepSegmentAnds)
     {
         public ParserSettings() {
             this(/*keepImplicitAnds    = */ true,
