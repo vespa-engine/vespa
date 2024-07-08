@@ -19,6 +19,7 @@ public class ParseContext {
     private List<SchemaNode> unresolvedInheritanceNodes;
     private List<TypeNode> unresolvedTypeNodes;
     private SchemaIndex schemaIndex;
+    private SchemaNode inheritsSchemaNode;
 
     public ParseContext(String content, PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
         this.content = content;
@@ -28,6 +29,7 @@ public class ParseContext {
         this.unresolvedInheritanceNodes = new ArrayList<>();
         this.unresolvedTypeNodes = new ArrayList<>();
         ParseContext context = this;
+        this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>() {{
             add(new IdentifyType(context));
             add(new IdentifyDocumentInheritance(context));
@@ -37,6 +39,7 @@ public class ParseContext {
             add(new IdentifyDirtyNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
+            add(new IdentifySchemaInheritance(context));
         }};
     }
 
@@ -86,5 +89,13 @@ public class ParseContext {
 
     public void clearUnresolvedInheritanceNodes() {
         this.unresolvedInheritanceNodes.clear();
+    }
+
+    public SchemaNode inheritsSchemaNode() {
+        return this.inheritsSchemaNode;
+    }
+
+    public void setInheritsSchemaNode(SchemaNode schemaNode) {
+        this.inheritsSchemaNode = schemaNode;
     }
 }

@@ -27,6 +27,9 @@ public class SchemaIndex {
 
     private DocumentInheritanceGraph documentInheritanceGraph;
 
+    // Schema inheritance. Can only inherit one schema
+    private HashMap<String, String> schemaInherits = new HashMap<String, String>();
+
     public class SchemaIndexItem {
         String fileURI;
         Symbol symbol;
@@ -157,5 +160,9 @@ public class SchemaIndex {
         List<String> descendants = this.documentInheritanceGraph.getAllDocumentDescendantURIs(fileURI);
         descendants.remove(fileURI);
         return descendants;
+    }
+
+    public void setSchemaInherits(String childURI, String parentURI) {
+        schemaInherits.put(childURI, parentURI);
     }
 }

@@ -2,8 +2,10 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -103,9 +105,9 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        //CSTUtils.printTree(logger, CST);
+        CSTUtils.printTree(logger, CST);
 
-        schemaIndex.dumpIndex(logger);
+        //schemaIndex.dumpIndex(logger);
 
     }
 
@@ -236,6 +238,7 @@ public class SchemaDocumentParser {
 
         var tolerantResult = parseCST(node, context);
 
+        Set<String> documentInheritanceURIs = new HashSet<>();
         for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
             String schemaDocumentName = schemaDocumentNameNode.getText();
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
@@ -256,7 +259,32 @@ public class SchemaDocumentParser {
                         DiagnosticSeverity.Error,
                         ""
                     ));
+                } else {
+                    documentInheritanceURIs.add(parent.getFileURI());
                 }
+            }
+        }
+
+        if (context.inheritsSchemaNode() != null) {
+            String inheritsSchemaName = context.inheritsSchemaNode().getText();
+            SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
+            if (parent == null) {
+                diagnostics.add(new Diagnostic(
+                    context.inheritsSchemaNode().getRange(),
+                    "Unknown schema " + inheritsSchemaName,
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            } else if (!documentInheritanceURIs.contains(parent.getFileURI())) {
+                // TODO: Quickfix
+                diagnostics.add(new Diagnostic(
+                    context.inheritsSchemaNode().getRange(),
+                    "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            } else {
+                context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
             }
         }
 
