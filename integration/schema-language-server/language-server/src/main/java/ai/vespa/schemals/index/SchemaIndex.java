@@ -39,7 +39,7 @@ public class SchemaIndex {
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
-        this.documentInheritanceGraph = new DocumentInheritanceGraph(this.logger);
+        this.documentInheritanceGraph = new DocumentInheritanceGraph();
     }
     
     public void clearDocument(String fileURI) {
@@ -111,9 +111,13 @@ public class SchemaIndex {
     }
 
     public void dumpIndex(PrintStream logger) {
+        logger.println(" === INDEX === ");
         for (Map.Entry<String, SchemaIndexItem> entry : database.entrySet()) {
             logger.println(entry.getKey() + " -> " + entry.getValue().toString());
         }
+
+        logger.println(" === INHERITANCE === ");
+        documentInheritanceGraph.dumpAllEdges(logger);
     }
 
     public Symbol findSchemaIdentifierSymbol(String fileURI) {
@@ -146,7 +150,6 @@ public class SchemaIndex {
     }
 
     public boolean tryRegisterDocumentInheritance(String childURI, String parentURI) {
-        this.logger.println("Register inheritance: " + childURI + " -> " + parentURI);
         return this.documentInheritanceGraph.addInherits(childURI, parentURI);
     }
 

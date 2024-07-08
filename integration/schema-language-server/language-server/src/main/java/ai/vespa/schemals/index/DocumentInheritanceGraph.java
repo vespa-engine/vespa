@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /*
@@ -15,14 +16,10 @@ import java.util.Set;
  */
 public class DocumentInheritanceGraph {
 
-    private PrintStream logger;
-
     private HashMap<String, List<String>> documentParents = new HashMap<>();
     private HashMap<String, List<String>> documentChildren = new HashMap<>();
 
-    public DocumentInheritanceGraph(PrintStream logger) {
-        this.logger = logger;
-    }
+    public DocumentInheritanceGraph() { }
 
     public void clearInheritsList(String fileURI) {
         if (!nodeExists(fileURI)) return;
@@ -67,6 +64,12 @@ public class DocumentInheritanceGraph {
         return true;
     }
 
+    /*
+     * Gets a list of all direct or indirect inheritance ancestors.
+     * The returned list is in a topological order, i.e. the older ancestors
+     * come earler in the list.
+     * List includes the queried node (will be last)
+     */
     public List<String> getAllDocumentAncestorURIs(String fileURI) {
         List<String> result = new ArrayList<>();
         Set<String> visited = new HashSet<>();
@@ -74,11 +77,41 @@ public class DocumentInheritanceGraph {
         return result;
     }
 
+    /*
+     * Gets a list of all direct or indirect inheritance ancestors.
+     * The returned list is in a topological order, i.e. the older descendants
+     * come earler in the list.
+     * List includes the queried node (will be first)
+     */
     public List<String> getAllDocumentDescendantURIs(String fileURI) {
         List<String> result = new ArrayList<>();
         Set<String> visited = new HashSet<>();
         getAllDocumentDescendantURIsImpl(fileURI, result, visited);
         return result;
+    }
+
+    private String getFileName(String fileURI) {
+        Integer splitPos = fileURI.lastIndexOf('/');
+        return fileURI.substring(splitPos + 1);
+    }
+
+    public void dumpAllEdges(PrintStream logger) {
+        for (Map.Entry<String, List<String>> entry : documentParents.entrySet()) {
+            String childURI = entry.getKey();
+            logger.println(getFileName(childURI) + " inherits from:");
+            for (String parentURI : entry.getValue()) {
+                logger.println("    " + getFileName(parentURI));
+            }
+        }
+
+        for (String parentURI : documentChildren.keySet()) {
+            logger.println(getFileName(parentURI) + " has children:");
+            for (String childURI : getChildren(parentURI)) {
+                logger.println("    " + getFileName(childURI));
+            }
+        }
+        logger.println();
+
     }
     
     /*
@@ -107,11 +140,12 @@ public class DocumentInheritanceGraph {
 
         visited.add(fileURI);
 
+        result.add(fileURI);
+
         for (String childURI : getChildren(fileURI)) {
             getAllDocumentDescendantURIsImpl(childURI, result, visited);
         }
 
-        result.add(fileURI);
     }
 
     private boolean nodeExists(String fileURI) {

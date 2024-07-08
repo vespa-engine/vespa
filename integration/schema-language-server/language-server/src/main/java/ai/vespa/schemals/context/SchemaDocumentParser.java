@@ -105,7 +105,7 @@ public class SchemaDocumentParser {
 
         //CSTUtils.printTree(logger, CST);
 
-        //schemaIndex.dumpIndex(logger);
+        schemaIndex.dumpIndex(logger);
 
     }
 
