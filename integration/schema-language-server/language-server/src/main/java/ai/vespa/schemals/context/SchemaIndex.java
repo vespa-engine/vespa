@@ -122,4 +122,15 @@ public class SchemaIndex {
         return null;
     }
 
+    public SchemaDocumentParser findSchemaDocumentWithName(String name) {
+        for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
+            SchemaDocumentParser schemaDocumentParser = entry.getValue();
+            String schemaIdentifier = schemaDocumentParser.getSchemaIdentifier();
+            if (schemaIdentifier != null && schemaIdentifier.equalsIgnoreCase(name)) {
+                return schemaDocumentParser;
+            }
+        }
+        return null;
+    }
+
 }

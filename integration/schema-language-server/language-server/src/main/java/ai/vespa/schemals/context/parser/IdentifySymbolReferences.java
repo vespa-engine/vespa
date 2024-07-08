@@ -57,31 +57,6 @@ public class IdentifySymbolReferences extends Identifier {
             }
         }
 
-        if (node.getType() == TokenType.INHERITS) {
-            SchemaNode nextNode = node.getNext();
-            SchemaNode previousNode = node.getPrevious();
-            if (previousNode != null && !previousNode.isLeaf()) {
-                previousNode = previousNode.getPrevious();
-            }
-
-            SchemaNode typeSpecifierNode = (previousNode == null) ? null : previousNode.getPrevious();
-
-            if (
-                previousNode != null &&
-                previousNode instanceof SymbolNode &&
-                nextNode != null &&
-                typeSpecifierNode != null
-            ) {
-                nextNode.setType(TokenType.IDENTIFIER);
-
-                if (context.schemaIndex().findSymbol(context.fileURI(), typeSpecifierNode.getType(), nextNode.getText()) == null) {
-                    ret.add(createNotFoundError(nextNode, typeSpecifierNode.getType()));
-                } else {
-                    new SymbolReferenceNode(nextNode);
-                }
-            }
-        }
-
         return ret;
     }
 }

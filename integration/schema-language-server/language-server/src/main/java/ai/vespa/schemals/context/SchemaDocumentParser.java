@@ -27,9 +27,9 @@ import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
-    public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
+    public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST, List<SchemaDocumentParser> inheritsList) {
         public static ParseResult parsingFailed(ArrayList<Diagnostic> diagnostics) {
-            return new ParseResult(diagnostics, Optional.empty());
+            return new ParseResult(diagnostics, Optional.empty(), new ArrayList<>());
         }
     }
 
@@ -90,6 +90,9 @@ public class SchemaDocumentParser {
             }
         }
 
+        inheritsList.clear();
+        inheritsList.addAll(parsingResult.inheritsList());
+
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
         if (parsingResult.CST().isPresent()) {
@@ -101,6 +104,10 @@ public class SchemaDocumentParser {
 
         schemaIndex.dumpIndex(logger);
 
+    }
+
+    public String getSchemaIdentifier() {
+        return schemaDocumentIdentifier;
     }
 
     public String getFileURI() {
@@ -226,6 +233,25 @@ public class SchemaDocumentParser {
 
         var tolerantResult = parseCST(node, context);
 
+        List<SchemaDocumentParser> inheritsList = new ArrayList<>();
+
+        for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
+            String schemaDocumentName = schemaDocumentNameNode.getText();
+            SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
+            if (parent == null) {
+                diagnostics.add(new Diagnostic(
+                    schemaDocumentNameNode.getRange(),
+                    "Unknown document " + schemaDocumentName,
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            } else {
+                inheritsList.add(parent);
+            }
+        }
+
+        context.clearUnresolvedInheritanceNodes();
+
         for (TypeNode typeNode : context.unresolvedTypeNodes()) {
             if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
                 diagnostics.add(new Diagnostic(
@@ -240,7 +266,7 @@ public class SchemaDocumentParser {
 
         diagnostics.addAll(tolerantResult.diagnostics());
 
-        return new ParseResult(diagnostics, tolerantResult.CST());
+        return new ParseResult(diagnostics, tolerantResult.CST(), inheritsList);
     }
 
     private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {
@@ -284,7 +310,7 @@ public class SchemaDocumentParser {
             return ParseResult.parsingFailed(new ArrayList<>());
         }
         var errors = traverseCST(CST, context);
-        return new ParseResult(errors, Optional.of(CST));
+        return new ParseResult(errors, Optional.of(CST), new ArrayList<>());
     }
 
     private static ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(ParseContext context, String script, Position scriptStart, ArrayList<Diagnostic> diagnostics) {
