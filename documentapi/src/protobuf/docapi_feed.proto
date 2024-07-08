@@ -32,6 +32,9 @@ message PutDocumentRequest {
     TestAndSetCondition condition              = 2;
     bool                create_if_missing      = 3;
     uint64              force_assign_timestamp = 4;
+    // When a Put is sent to a client as part of visiting, this value may be set
+    // to indicate the timestamp of the underlying persisted document.
+    uint64              persisted_timestamp    = 5;
 }
 
 message PutDocumentResponse {
@@ -61,6 +64,9 @@ message UpdateDocumentResponse {
 message RemoveDocumentRequest {
     DocumentId          document_id = 1;
     TestAndSetCondition condition   = 2;
+    // When a Remove is sent to a client as part of visiting, this value may be set
+    // to indicate the timestamp of the underlying persisted tombstone.
+    uint64              persisted_timestamp = 3;
 }
 
 message RemoveDocumentResponse {
