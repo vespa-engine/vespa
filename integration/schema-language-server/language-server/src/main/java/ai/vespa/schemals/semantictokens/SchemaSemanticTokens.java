@@ -301,6 +301,10 @@ public class SchemaSemanticTokens implements Visitor {
 
     public static SemanticTokens getSemanticTokens(EventContext context) {
 
+        if (context.document == null) {
+            return new SemanticTokens(new ArrayList<>());
+        }
+
         SchemaNode node = context.document.getRootNode();
         if (node == null) {
             return new SemanticTokens(new ArrayList<>());
