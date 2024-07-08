@@ -48,7 +48,7 @@ XmlStatusReporter::reportStatus(std::ostream& out,
     out << "<?xml version=\"1.0\"?>\n";
     vespalib::XmlOutputStream xos(out);
     initXmlReport(xos, path);
-    std::string_view failure = reportXmlStatus(xos, path);
+    std::string failure = reportXmlStatus(xos, path);
     if (!failure.empty()) {
         using namespace vespalib::xml;
         xos << XmlContent("Failed to report XML status: " + failure);
