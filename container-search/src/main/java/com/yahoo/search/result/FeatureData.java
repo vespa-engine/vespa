@@ -16,6 +16,7 @@ import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpre
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,9 +34,9 @@ public class FeatureData implements Inspectable, JsonProducer {
     private static final FeatureData empty = new FeatureData(Value.empty());
 
     /** If not null: The source of all the values of this. */
-    private final Inspector value;
+    private final Inspector encodedValues;
 
-    /** If "value" is null: The content of this. If "value" is non-null: Lazily decoded values. */
+    /** If encodedValues is null: The content of this. If encodedValues is non-null: Lazily decoded values. */
     private Map<String, Tensor> values = null;
 
     /** The lazily computed feature names of this */
@@ -44,8 +45,14 @@ public class FeatureData implements Inspectable, JsonProducer {
     /** The lazily computed json form of this */
     private String jsonForm = null;
 
-    public FeatureData(Inspector value) {
-        this.value = Objects.requireNonNull(value);
+    public FeatureData(Inspector encodedValues) {
+        this.encodedValues = Objects.requireNonNull(encodedValues);
+    }
+
+    /** Creates a feature data from a map of values. This transfers ownership of the map to this object. */
+    public FeatureData(Map<String, Tensor> values) {
+        this.encodedValues = null;
+        this.values = values;
     }
 
     public static FeatureData empty() { return empty; }
@@ -56,15 +63,15 @@ public class FeatureData implements Inspectable, JsonProducer {
      * <code>com.yahoo.tensor.serialization.TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(featureValue.asData()))</code>
      */
     @Override
-    public Inspector inspect() { return value; }
+    public Inspector inspect() {
+        if (encodedValues == null)
+            throw new IllegalStateException("FeatureData not created from an inspector cannot be inspected");
+        return encodedValues;
+    }
 
     @Override
     public String toJson() {
-        if (this == empty) return "{}";
-        if (jsonForm != null) return jsonForm;
-
-        jsonForm = writeJson(new StringBuilder()).toString();
-        return jsonForm;
+        return toJson(false, false);
     }
 
     public String toJson(boolean tensorShortForm) {
@@ -72,16 +79,39 @@ public class FeatureData implements Inspectable, JsonProducer {
     }
 
     public String toJson(boolean tensorShortForm, boolean tensorDirectValues) {
-        if (this == empty) return "{}";
-        if (jsonForm != null) return jsonForm;
-
-        jsonForm = JsonRender.render(value, new Encoder(new StringBuilder(), true, tensorShortForm, tensorDirectValues)).toString();
-        return jsonForm;
+        return writeJson(tensorShortForm, tensorDirectValues, new StringBuilder()).toString();
     }
 
     @Override
     public StringBuilder writeJson(StringBuilder target) {
-        return JsonRender.render(value, new Encoder(target, true, false, false));
+        return JsonRender.render(encodedValues, new Encoder(target, true, false, false));
+    }
+
+    private StringBuilder writeJson(boolean tensorShortForm, boolean tensorDirectValues, StringBuilder target) {
+        if (this == empty) return target.append("{}");
+        if (jsonForm != null) return target.append(jsonForm);
+
+        if (encodedValues != null)
+            return JsonRender.render(encodedValues, new Encoder(target, true, tensorShortForm, tensorDirectValues));
+        else
+            return writeJson(values, tensorShortForm, tensorDirectValues, target);
+    }
+
+    private StringBuilder writeJson(Map<String, Tensor> values, boolean tensorShortForm, boolean tensorDirectValues, StringBuilder target) {
+        target.append("{");
+        for (Map.Entry<String, Tensor> entry : values.entrySet()) {
+            target.append("\"").append(entry.getKey()).append("\":");
+            if (entry.getValue().type().rank() == 0) {
+                target.append(entry.getValue().asDouble());
+            } else {
+                byte[] encodedTensor = JsonFormat.encode(entry.getValue(), tensorShortForm, tensorDirectValues);
+                target.append(new String(encodedTensor, StandardCharsets.UTF_8));
+            }
+            target.append(",");
+        }
+        if (!values.isEmpty()) target.setLength(target.length() - 1); // remove last comma
+        target.append("}");
+        return target;
     }
 
     /**
@@ -106,7 +136,8 @@ public class FeatureData implements Inspectable, JsonProducer {
         Tensor value = values.get(featureName);
         if (value != null) return value;
 
-        value = decodeTensor(featureName);
+        if (encodedValues != null)
+            value = decodeTensor(featureName);
         if (value != null)
             values.put(featureName, value);
         return value;
@@ -124,26 +155,27 @@ public class FeatureData implements Inspectable, JsonProducer {
     }
 
     private Inspector getInspector(String featureName) {
-        Inspector featureValue = value.field(featureName);
+        Inspector featureValue = encodedValues.field(featureName);
         if (featureValue.valid()) return featureValue;
 
         // Try to wrap by rankingExpression(name)
-        return value.field(wrapInRankingExpression(featureName));
+        return encodedValues.field(wrapInRankingExpression(featureName));
     }
 
     /** Returns the names of the features available in this */
     public Set<String> featureNames() {
         if (this == empty) return Set.of();
         if (featureNames != null) return featureNames;
+        if (encodedValues == null) return values.keySet();
 
-        featureNames = new HashSet<>();
-        value.fields().forEach(field -> featureNames.add(field.getKey()));
+        featureNames = new LinkedHashSet<>();
+        encodedValues.fields().forEach(field -> featureNames.add(field.getKey()));
         return featureNames;
     }
 
     @Override
     public String toString() {
-        if (value.type() == Type.EMPTY) return "";
+        if (encodedValues != null && encodedValues.type() == Type.EMPTY) return "";
         return toJson();
     }
 
