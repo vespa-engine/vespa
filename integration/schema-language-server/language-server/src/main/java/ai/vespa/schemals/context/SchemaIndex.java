@@ -9,6 +9,7 @@ import java.util.Map;
 
 import com.yahoo.schema.Schema;
 
+import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 
 import ai.vespa.schemals.tree.TypeNode;
@@ -18,6 +19,9 @@ public class SchemaIndex {
     private PrintStream logger;
     
     private HashMap<String, SchemaIndexItem> database = new HashMap<String, SchemaIndexItem>();
+
+    // Map fileURI -> SchemaDocumentParser
+    private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
 
     public class SchemaIndexItem {
         String fileURI;
@@ -43,6 +47,8 @@ public class SchemaIndex {
                 iterator.remove();
             }
         }
+
+        openSchemas.remove(fileURI);
     }
 
     private String createDBKey(String fileURI, Symbol symbol) {
@@ -51,6 +57,10 @@ public class SchemaIndex {
 
     private String createDBKey(String fileURI, TokenType type, String identifier) {
         return fileURI + ":" + type.name() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
+    }
+
+    public void registerSchema(String fileURI, SchemaDocumentParser schemaDocumentParser) {
+        openSchemas.put(fileURI, schemaDocumentParser);
     }
 
     public void insert(String fileURI, Symbol symbol) {
@@ -93,4 +103,23 @@ public class SchemaIndex {
             logger.println(entry.getKey() + " -> " + entry.getValue().toString());
         }
     }
+
+    public Symbol findSchemaIdentifierSymbol(String fileURI) {
+        // TODO: handle duplicates?
+        TokenType[] schemaIdentifierTypes = new TokenType[] {
+            TokenType.SCHEMA,
+            TokenType.SEARCH,
+            TokenType.DOCUMENT
+        };
+
+        for (TokenType tokenType : schemaIdentifierTypes) {
+            var result = findSymbolsWithType(fileURI, tokenType);
+
+            if (result.isEmpty()) continue;
+            return result.get(0);
+        }
+
+        return null;
+    }
+
 }

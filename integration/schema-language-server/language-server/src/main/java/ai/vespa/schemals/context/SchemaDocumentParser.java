@@ -39,8 +39,11 @@ public class SchemaDocumentParser {
 
     private String fileURI = "";
     private String content = "";
+    private String schemaDocumentIdentifier = null;
     
     private SchemaNode CST;
+
+    private List<SchemaDocumentParser> inheritsList = new ArrayList<>();
 
     public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
@@ -66,9 +69,26 @@ public class SchemaDocumentParser {
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
+        schemaIndex.registerSchema(fileURI, this);
 
         ParseContext context = getParseContext(content);
         var parsingResult = parseContent(context);
+
+        Symbol schemaIdentifier = schemaIndex.findSchemaIdentifierSymbol(fileURI);
+
+        if (schemaIdentifier != null) {
+            schemaDocumentIdentifier = schemaIdentifier.getShortIdentifier();
+
+            if (!getFileName().equals(schemaDocumentIdentifier + ".sd")) {
+                // TODO: quickfix
+                parsingResult.diagnostics().add(new Diagnostic(
+                    schemaIdentifier.getNode().getRange(),
+                    "Schema " + schemaDocumentIdentifier + " should be defined in a file with the name: " + schemaDocumentIdentifier + ".sd. File name is: " + getFileName(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+        }
 
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
@@ -77,8 +97,10 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        //CSTUtils.printTree(logger, CST);
-        //schemaIndex.dumpIndex(logger);
+        CSTUtils.printTree(logger, CST);
+
+        schemaIndex.dumpIndex(logger);
+
     }
 
     public String getFileURI() {
