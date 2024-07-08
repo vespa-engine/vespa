@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <array>
+#include <ostream>
 
 namespace vespalib::net::tls {
 

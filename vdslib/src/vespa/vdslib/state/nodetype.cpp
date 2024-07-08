@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
+#include <ostream>
 
 namespace storage::lib {
 

@@ -4,6 +4,7 @@
 #include "spantreevisitor.h"
 #include "alternatespanlist.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace document {
 
