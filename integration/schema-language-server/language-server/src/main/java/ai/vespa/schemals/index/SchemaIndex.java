@@ -14,13 +14,15 @@ import ai.vespa.schemals.context.SchemaDocumentParser;
 
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.AnnotationReferenceNode;
+import ai.vespa.schemals.tree.SymbolDefinitionNode;
+import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.tree.TypeNode;
 
 public class SchemaIndex {
 
     private PrintStream logger;
     
-    private HashMap<String, SchemaIndexItem> database = new HashMap<String, SchemaIndexItem>();
+    private HashMap<String, Symbol> symbolDefinitionsDB = new HashMap<String, Symbol>();
 
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
@@ -29,16 +31,6 @@ public class SchemaIndex {
 
     // Schema inheritance. Can only inherit one schema
     private HashMap<String, String> schemaInherits = new HashMap<String, String>();
-
-    public class SchemaIndexItem {
-        String fileURI;
-        Symbol symbol;
-        
-        public SchemaIndexItem(String fileURI, Symbol symbol) {
-            this.fileURI = fileURI;
-            this.symbol = symbol;
-        }
-    }
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
@@ -47,11 +39,11 @@ public class SchemaIndex {
     
     public void clearDocument(String fileURI) {
 
-        Iterator<Map.Entry<String, SchemaIndexItem>> iterator = database.entrySet().iterator();
+        Iterator<Map.Entry<String, Symbol>> iterator = symbolDefinitionsDB.entrySet().iterator();
 
         while (iterator.hasNext()) {
-            Map.Entry<String, SchemaIndexItem> entry = iterator.next();
-            if (entry.getValue().fileURI.equals(fileURI)) {
+            Map.Entry<String, Symbol> entry = iterator.next();
+            if (entry.getValue().getFileURI().equals(fileURI)) {
                 iterator.remove();
             }
         }
@@ -73,10 +65,11 @@ public class SchemaIndex {
         documentInheritanceGraph.createNodeIfNotExists(fileURI);
     }
 
-    public void insert(String fileURI, Symbol symbol) {
-        database.put(
+    public void insertSymbol(String fileURI, SymbolDefinitionNode node) {
+        Symbol symbol = new Symbol(node, fileURI);
+        symbolDefinitionsDB.put(
             createDBKey(fileURI, symbol),
-            new SchemaIndexItem(fileURI, symbol)
+            symbol
         );
     }
 
@@ -84,7 +77,7 @@ public class SchemaIndex {
     * Searches for the given symbol ONLY in document pointed to by fileURI
     */
     public Symbol findSymbolInFile(String fileURI, TokenType type, String identifier) {
-        SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
+        Symbol results = symbolDefinitionsDB.get(createDBKey(fileURI, type, identifier));
 
         if (results == null) {
             // Edge case for when a document is defined without explicitly stating the name.
@@ -93,7 +86,7 @@ public class SchemaIndex {
             }
             return null;
         }
-        return results.symbol;
+        return results;
     }
 
     /*
@@ -112,11 +105,11 @@ public class SchemaIndex {
 
     public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, TokenType type) {
         List<Symbol> result = new ArrayList<>();
-        for (var entry : database.entrySet()) {
-            SchemaIndexItem item = entry.getValue();
-            if (!item.fileURI.equals(fileURI)) continue;
-            if (item.symbol.getType() != type) continue;
-            result.add(item.symbol);
+        for (var entry : symbolDefinitionsDB.entrySet()) {
+            Symbol item = entry.getValue();
+            if (!item.getFileURI().equals(fileURI)) continue;
+            if (item.getType() != type) continue;
+            result.add(item);
         }
 
         return result;
@@ -140,7 +133,7 @@ public class SchemaIndex {
 
     public void dumpIndex(PrintStream logger) {
         logger.println(" === INDEX === ");
-        for (Map.Entry<String, SchemaIndexItem> entry : database.entrySet()) {
+        for (Map.Entry<String, Symbol> entry : symbolDefinitionsDB.entrySet()) {
             logger.println(entry.getKey() + " -> " + entry.getValue().toString());
         }
 
@@ -210,6 +203,6 @@ public class SchemaIndex {
     }
 
     public int numEntries() {
-        return this.database.size();
+        return this.symbolDefinitionsDB.size();
     }
 }

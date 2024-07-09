@@ -398,6 +398,8 @@ public class SchemaDocumentParser {
                     DiagnosticSeverity.Error,
                     ""
                 ));
+            } else {
+                
             }
         }
 

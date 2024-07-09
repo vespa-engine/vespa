@@ -73,8 +73,7 @@ public class IdentifySymbolDefinition extends Identifier {
 
         SymbolDefinitionNode newNode = new SymbolDefinitionNode(node, tokenType);
         if (context.schemaIndex().findSymbolInFile(context.fileURI(), tokenType, node.getText()) == null) {
-            Symbol symbol = new Symbol(newNode, context.fileURI());
-            context.schemaIndex().insert(context.fileURI(), symbol);
+            context.schemaIndex().insertSymbol(context.fileURI(), newNode);
         }
 
         return ret;
