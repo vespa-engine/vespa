@@ -32,12 +32,15 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content) {
-        if (!openDocuments.containsKey(fileURI)) {
-            openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content));
-        } else {
-            openDocuments.get(fileURI).updateFileContent(content);
-        }
+        updateFile(fileURI, content, null);
+    }
 
+    public void updateFile(String fileURI, String content, Integer version) {
+        if (!openDocuments.containsKey(fileURI)) {
+            openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content, version));
+        } else {
+            openDocuments.get(fileURI).updateFileContent(content, version);
+        }
 
         for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
             if (openDocuments.containsKey(descendantURI)) {
@@ -48,7 +51,7 @@ public class SchemaDocumentScheduler {
 
     public void openDocument(TextDocumentItem document) {
         logger.println("Opening document: " + document.getUri());
-        updateFile(document.getUri(), document.getText());
+        updateFile(document.getUri(), document.getText(), document.getVersion());
     }
 
     /*
