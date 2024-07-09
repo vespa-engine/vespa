@@ -61,6 +61,18 @@ public:
     nbostream & operator >> (char & v)     { read1(&v); return *this; }
     nbostream & operator << (bool v)       { write1(&v); return *this; }
     nbostream & operator >> (bool & v)     { read1(&v); return *this; }
+    nbostream & operator << (const std::string & v)      { uint32_t sz(v.size()); (*this) << sz; write(v.c_str(), sz); return *this; }
+    nbostream & operator >> (std::string & v) {
+        uint32_t sz;
+        (*this) >> sz;
+        if (__builtin_expect(left() >= sz, true)) {
+            v.assign(&_rbuf[_rp], sz);
+            _rp += sz;
+        } else {
+            fail(eof);
+        }
+        return *this;
+     }
     nbostream & operator << (const char * v) { uint32_t sz(strlen(v)); (*this) << sz; write(v, sz); return *this; }
     nbostream & operator << (std::string_view v) { uint32_t sz(v.size()); (*this) << sz; write(v.data(), sz); return *this; }
     nbostream & operator << (const vespalib::string & v) { uint32_t sz(v.size()); (*this) << sz; write(v.c_str(), sz); return *this; }

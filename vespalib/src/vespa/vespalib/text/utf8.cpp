@@ -214,6 +214,7 @@ Utf8Writer<Target>::putChar(uint32_t codepoint)
 }
 
 template class Utf8Writer<vespalib::string>;
+template class Utf8Writer<std::string>;
 
 template <typename T>
 T Utf8::filter_invalid_sequences(const T& input) noexcept
@@ -229,5 +230,6 @@ T Utf8::filter_invalid_sequences(const T& input) noexcept
 }
 
 template vespalib::string Utf8::filter_invalid_sequences(const vespalib::string&);
+template std::string Utf8::filter_invalid_sequences(const std::string&);
 
 } // namespace

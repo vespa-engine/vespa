@@ -18,6 +18,8 @@ struct Memory
     Memory() noexcept : data(nullptr), size(0) {}
     Memory(const char *d, size_t s) noexcept : data(d), size(s) {}
     Memory(const char *str) noexcept : data(str), size(strlen(str)) {}
+    Memory(const std::string &str) noexcept
+        : data(str.data()), size(str.size()) {}
     Memory(const vespalib::string &str) noexcept
         : data(str.data()), size(str.size()) {}
     Memory(std::string_view str_ref) noexcept
