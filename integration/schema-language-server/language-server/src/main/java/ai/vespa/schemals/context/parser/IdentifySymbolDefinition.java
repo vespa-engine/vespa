@@ -34,6 +34,7 @@ public class IdentifySymbolDefinition extends Identifier {
 	}
 
     private static final HashMap<Class<? extends Node>, TokenType> identifierTypeMap = new HashMap<Class<? extends Node>, TokenType>() {{
+        put(annotationElm.class, TokenType.ANNOTATION);
         put(rootSchema.class, TokenType.SCHEMA);
         put(documentElm.class, TokenType.DOCUMENT);
         put(namedDocument.class, TokenType.DOCUMENT);
