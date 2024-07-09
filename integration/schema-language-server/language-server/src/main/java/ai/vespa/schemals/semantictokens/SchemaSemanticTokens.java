@@ -197,8 +197,8 @@ public class SchemaSemanticTokens implements Visitor {
 
         } else {
             
-            for (int i = 0; i < node.size(); i++) {
-                ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
+            for (SchemaNode child : node) {
+                ArrayList<SemanticTokenMarker> markers = traverseCST(child, logger);
                 ret.addAll(markers);
             }
         }

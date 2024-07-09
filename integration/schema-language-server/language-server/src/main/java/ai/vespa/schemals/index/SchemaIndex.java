@@ -1,5 +1,8 @@
 package ai.vespa.schemals.index;
 
+import static ai.vespa.schemals.parser.Token.TokenType.DOCUMENT;
+import static ai.vespa.schemals.parser.Token.TokenType.SCHEMA;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,15 +80,37 @@ public class SchemaIndex {
         );
     }
 
-    public Symbol findSymbol(String fileURI, TokenType type, String identifier) {
+    /*
+     * Searches for the given symbol ONLY in document pointed to by fileURI
+     */
+    public Symbol findSymbolInDocument(String fileURI, TokenType type, String identifier) {
         SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
+
         if (results == null) {
+            // Edge case for when a document is defined without explicitly stating the name.
+            if (type == DOCUMENT) {
+                return findSymbolInDocument(fileURI, SCHEMA, identifier);
+            }
             return null;
         }
         return results.symbol;
     }
 
-    public List<Symbol> findSymbolsWithType(String fileURI, TokenType type) {
+    /*
+     * Search for a user defined identifier symbol. Also search in inherited documents.
+     */
+    public Symbol findSymbol(String fileURI, TokenType type, String identifier) {
+        // TODO: handle name collision (diamond etc.)
+        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+
+        for (var parentURI : inheritanceList) {
+            Symbol result = findSymbolInDocument(parentURI, type, identifier);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, TokenType type) {
         List<Symbol> result = new ArrayList<>();
         for (var entry : database.entrySet()) {
             SchemaIndexItem item = entry.getValue();
@@ -99,28 +124,15 @@ public class SchemaIndex {
 
     public boolean resolveTypeNode(TypeNode typeNode, String fileURI) {
         // TODO: handle document reference
-        // TODO: handle name collision (diamond etc.)
         String typeName = typeNode.getParsedType().name().toLowerCase();
 
-        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
-
-        for (var parentURI : inheritanceList) {
-            if (findSymbol(parentURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
-        }
-
-        return false;
+        return findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null;
     }
 
     public boolean resolveAnnotationReferenceNode(AnnotationReferenceNode annotationReferenceNode, String fileURI) {
         String annotationName = annotationReferenceNode.getText().toLowerCase();
 
-        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
-
-        for (var parentURI : inheritanceList) {
-            if (findSymbol(parentURI, TokenType.ANNOTATION, annotationName.toLowerCase()) != null) return true;
-        }
-
-        return false;
+        return findSymbol(fileURI, TokenType.ANNOTATION, annotationName) != null;
     }
 
     public void dumpIndex(PrintStream logger) {
@@ -142,7 +154,7 @@ public class SchemaIndex {
         };
 
         for (TokenType tokenType : schemaIdentifierTypes) {
-            var result = findSymbolsWithType(fileURI, tokenType);
+            var result = findSymbolsWithTypeInDocument(fileURI, tokenType);
 
             if (result.isEmpty()) continue;
             return result.get(0);

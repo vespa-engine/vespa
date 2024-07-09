@@ -24,7 +24,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
 
     // This array has to be in order, without overlapping elements
-    private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
+    protected ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
 
     private Range range;
 

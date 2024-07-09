@@ -44,7 +44,7 @@ public class SchemaDefinition {
             return ret;
         }
 
-        Symbol refersTo = context.schemaIndex.findSymbol(document.getFileURI(), tokenType, node.getText());
+        Symbol refersTo = context.schemaIndex.findSymbolInDocument(document.getFileURI(), tokenType, node.getText());
         
         if (refersTo == null) {
             return ret;

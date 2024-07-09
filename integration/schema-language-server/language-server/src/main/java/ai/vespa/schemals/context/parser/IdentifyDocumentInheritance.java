@@ -21,9 +21,7 @@ public class IdentifyDocumentInheritance extends Identifier {
         ArrayList<Diagnostic> ret = new ArrayList<>();
         if (!node.isASTInstance(inheritsDocument.class))return ret;
 
-        for (int i = 0; i < node.size(); i++) {
-            SchemaNode child = node.get(i);
-
+        for (SchemaNode child : node) {
             if (!child.isASTInstance(identifierStr.class)) continue;
 
             this.context.addUnresolvedInheritanceNode(child);

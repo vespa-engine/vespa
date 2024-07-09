@@ -18,6 +18,8 @@ import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -54,8 +56,8 @@ public class IdentifySymbolDefinition extends Identifier {
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
-        boolean isIdentifier = node.getClassLeafIdentifierString().equals("identifierStr");
-        boolean isIdentifierWithDash = node.getClassLeafIdentifierString().equals("identifierWithDashStr");
+        boolean isIdentifier = node.isASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
 
         if (!isIdentifier && !isIdentifierWithDash) return ret;
 
@@ -70,7 +72,7 @@ public class IdentifySymbolDefinition extends Identifier {
         if (tokenType == null) return ret;
 
         SymbolDefinitionNode newNode = new SymbolDefinitionNode(node, tokenType);
-        if (context.schemaIndex().findSymbol(context.fileURI(), tokenType, node.getText()) == null) {
+        if (context.schemaIndex().findSymbolInDocument(context.fileURI(), tokenType, node.getText()) == null) {
             Symbol symbol = new Symbol(newNode);
             context.schemaIndex().insert(context.fileURI(), symbol);
         }

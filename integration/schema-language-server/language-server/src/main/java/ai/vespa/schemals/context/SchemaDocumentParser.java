@@ -18,6 +18,7 @@ import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.SchemaParser;
+import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
@@ -27,6 +28,7 @@ import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.tree.SymbolReferenceNode;
 import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -119,7 +121,7 @@ public class SchemaDocumentParser {
 
         CSTUtils.printTree(logger, CST);
 
-        schemaIndex.dumpIndex(logger);
+        //schemaIndex.dumpIndex(logger);
 
     }
 
@@ -206,9 +208,7 @@ public class SchemaDocumentParser {
             return null;
         }
 
-        for (int i = 0; i < node.size(); i++) {
-            SchemaNode child = node.get(i);
-
+        for (SchemaNode child : node) {
             if (CSTUtils.positionInRange(child.getRange(), pos)) {
                 return getNodeAtPosition(child, pos, onlyLeaf, findNearest);
             }
@@ -267,7 +267,50 @@ public class SchemaDocumentParser {
 
         var tolerantResult = parseCST(node, context);
 
+        diagnostics.addAll(resolveInheritances(context));
+
+        for (TypeNode typeNode : context.unresolvedTypeNodes()) {
+            if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
+                diagnostics.add(new Diagnostic(
+                    typeNode.getRange(),
+                    "Unknown type " + typeNode.getText(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+        }
+        context.clearUnresolvedTypeNodes();
+
+        for (AnnotationReferenceNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
+            if (!context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI())) {
+                diagnostics.add(new Diagnostic(
+                    annotationReferenceNode.getRange(),
+                    "Unknown annotation: " + annotationReferenceNode.getText(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+        }
+        context.clearUnresolvedAnnotationReferenceNodes();
+
+        if (tolerantResult.CST().isPresent()) {
+            diagnostics.addAll(resolveSymbolReferences(context, tolerantResult.CST().get()));
+        }
+
+        diagnostics.addAll(tolerantResult.diagnostics());
+
+        return new ParseResult(diagnostics, tolerantResult.CST());
+    }
+
+    /*
+     * Assuming first parsing step is done, use the list of unresolved inheritance
+     * declarations to register the inheritance at index.
+     * @return List of diagnostic found during inheritance handling
+     * */
+    private static List<Diagnostic> resolveInheritances(ParseContext context) {
+        List<Diagnostic> diagnostics = new ArrayList<>();
         Set<String> documentInheritanceURIs = new HashSet<>();
+
         for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
             String schemaDocumentName = schemaDocumentNameNode.getText();
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
@@ -319,33 +362,34 @@ public class SchemaDocumentParser {
 
         context.clearUnresolvedInheritanceNodes();
 
-        for (TypeNode typeNode : context.unresolvedTypeNodes()) {
-            if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
+        return diagnostics;
+    }
+
+    private static List<Diagnostic> resolveSymbolReferences(ParseContext context, SchemaNode CST) {
+        List<Diagnostic> diagnostics = new ArrayList<>();
+        resolveSymbolReferencesImpl(CST, context, diagnostics);
+        return diagnostics;
+    }
+
+    /*
+     * Traverse the CST, yet again, to find symbol references and look them up in the index
+     */
+    private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+        if (node instanceof SymbolReferenceNode) {
+            TokenType referencedType = ((SymbolReferenceNode)node).getSymbolType();
+            if (context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()) == null) {
                 diagnostics.add(new Diagnostic(
-                    typeNode.getRange(),
-                    "Unknown type " + typeNode.getText(),
+                    node.getRange(),
+                    "Undefined symbol " + node.getText(),
                     DiagnosticSeverity.Error,
                     ""
                 ));
             }
         }
-        context.clearUnresolvedTypeNodes();
 
-        for (AnnotationReferenceNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
-            if (!context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI())) {
-                diagnostics.add(new Diagnostic(
-                    annotationReferenceNode.getRange(),
-                    "Unknown annotation: " + annotationReferenceNode.getText(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            }
+        for (SchemaNode child : node) {
+            resolveSymbolReferencesImpl(child, context, diagnostics);
         }
-        context.clearUnresolvedAnnotationReferenceNodes();
-
-        diagnostics.addAll(tolerantResult.diagnostics());
-
-        return new ParseResult(diagnostics, tolerantResult.CST());
     }
 
     private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {
@@ -376,8 +420,8 @@ public class SchemaDocumentParser {
             }
         }
 
-        for (int i = 0; i < node.size(); i++) {
-            ret.addAll(traverseCST(node.get(i), context));
+        for (SchemaNode child : node) {
+            ret.addAll(traverseCST(child, context));
         }
 
         return ret;
