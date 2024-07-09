@@ -81,7 +81,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex);
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
-        this.workspaceService = new SchemaWorkspaceService(this.logger);
+        this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler);
     }    
 
     @Override

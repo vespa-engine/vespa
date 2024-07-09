@@ -128,6 +128,12 @@ public class SchemaIndex {
 
         logger.println(" === INHERITANCE === ");
         documentInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === TRACKED FILES === ");
+        for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
+            SchemaDocumentParser document = entry.getValue();
+            logger.println(document.toString());
+        }
     }
 
     public Symbol findSchemaIdentifierSymbol(String fileURI) {
@@ -175,13 +181,5 @@ public class SchemaIndex {
 
     public void setSchemaInherits(String childURI, String parentURI) {
         schemaInherits.put(childURI, parentURI);
-    }
-
-    public void printTrackedFiles() {
-        logger.println("Schema tracked files:");
-        for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
-            SchemaDocumentParser document = entry.getValue();
-            logger.println(document.toString());
-        }
     }
 }

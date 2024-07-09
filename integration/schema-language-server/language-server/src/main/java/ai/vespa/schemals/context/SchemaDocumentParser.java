@@ -119,7 +119,7 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        CSTUtils.printTree(logger, CST);
+        // CSTUtils.printTree(logger, CST);
 
         //schemaIndex.dumpIndex(logger);
 

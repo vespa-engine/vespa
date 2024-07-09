@@ -52,7 +52,7 @@ public class SchemaRename {
 
         workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
 
-        context.schemaIndex.printTrackedFiles();
+        context.schemaIndex.dumpIndex(context.logger);
 
         return workspaceEdits.exportEdits();
     }

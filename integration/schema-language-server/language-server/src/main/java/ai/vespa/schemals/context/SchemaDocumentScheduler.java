@@ -74,18 +74,27 @@ public class SchemaDocumentScheduler {
     public void closeDocument(String fileURI) {
         logger.println("Closing document: " + fileURI);
         workspaceDocuments.get(fileURI).setIsOpen(false);
+
+        File file = new File(URI.create(fileURI));
+        if (!file.exists()) {
+            cleanUpDocumnet(fileURI);
+        }
     }
 
-    public boolean removeDocument(String fileURI) {
+    private void cleanUpDocumnet(String fileURI) {
         logger.println("Removing document: "+ fileURI);
-        boolean wasOpen = workspaceDocuments.get(fileURI).getIsOpen();
-        closeDocument(fileURI);
+
         schemaIndex.clearDocument(fileURI);
         workspaceDocuments.remove(fileURI);
 
-        return wasOpen;
-
         // TODO: more places to remove references
+    }
+
+    public boolean removeDocument(String fileURI) {
+        boolean wasOpen = workspaceDocuments.get(fileURI).getIsOpen();
+        closeDocument(fileURI);
+        cleanUpDocumnet(fileURI);
+        return wasOpen;
     }
 
     public SchemaDocumentParser getDocument(String fileURI) {
