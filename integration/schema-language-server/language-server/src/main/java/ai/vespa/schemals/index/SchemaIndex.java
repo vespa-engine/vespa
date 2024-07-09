@@ -149,6 +149,10 @@ public class SchemaIndex {
         return null;
     }
 
+    public SchemaDocumentParser findSchemaDocumentWithFileURI(String fileURI) {
+        return openSchemas.get(fileURI);
+    }
+
     public boolean tryRegisterDocumentInheritance(String childURI, String parentURI) {
         return this.documentInheritanceGraph.addInherits(childURI, parentURI);
     }

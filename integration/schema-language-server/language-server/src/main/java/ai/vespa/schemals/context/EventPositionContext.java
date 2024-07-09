@@ -3,6 +3,8 @@ package ai.vespa.schemals.context;
 import java.io.PrintStream;
 
 import org.eclipse.lsp4j.Position;
+
+import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
 
 public class EventPositionContext extends EventContext {
@@ -20,10 +22,11 @@ public class EventPositionContext extends EventContext {
         PrintStream logger,
         SchemaDocumentScheduler scheduler,
         SchemaIndex schemaIndex,
+        SchemaMessageHandler messageHandler,
         String fileURI,
         Position position
     ) {
-        super(logger, scheduler, schemaIndex, fileURI);
+        super(logger, scheduler, schemaIndex, messageHandler, fileURI);
         this.position = position;
     }
 

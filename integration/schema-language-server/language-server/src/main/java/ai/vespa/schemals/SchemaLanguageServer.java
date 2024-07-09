@@ -51,6 +51,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     private SchemaIndex schemaIndex;
     //private LanguageClient client;
     private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
+    private SchemaMessageHandler schemaMessageHandler;
 
     private PrintStream logger;
     private int errorCode = 1;
@@ -76,9 +77,10 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.schemaIndex = new SchemaIndex(logger);
         this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler(logger);
+        this.schemaMessageHandler = new SchemaMessageHandler(logger);
         this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex);
 
-        this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex);
+        this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
         this.workspaceService = new SchemaWorkspaceService(this.logger);
     }    
 
@@ -137,6 +139,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     public void connect(LanguageClient languageClient) {
         this.client = languageClient;
         this.schemaDiagnosticsHandler.connectClient(languageClient);
+        this.schemaMessageHandler.connectClient(languageClient);
     }
 
     void startWatchingFiles() {

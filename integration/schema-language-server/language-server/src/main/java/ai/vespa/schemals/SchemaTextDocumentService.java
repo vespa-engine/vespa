@@ -59,9 +59,9 @@ public class SchemaTextDocumentService implements TextDocumentService {
     private PrintStream logger;
     private EventContextCreator eventContextCreator;
 
-    public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler, SchemaIndex schemaIndex) {
+    public SchemaTextDocumentService(PrintStream logger, SchemaDocumentScheduler schemaDocumentScheduler, SchemaIndex schemaIndex, SchemaMessageHandler schemaMessageHandler) {
         this.logger = logger;
-        eventContextCreator = new EventContextCreator(logger, schemaDocumentScheduler, schemaIndex);
+        eventContextCreator = new EventContextCreator(logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
     }
 
     @Override

@@ -139,8 +139,13 @@ public class SchemaDocumentParser {
         return new VersionedTextDocumentIdentifier(fileURI, version);
     }
 
+    public String getFilePath() {
+        int splitPos = fileURI.lastIndexOf('/');
+        return fileURI.substring(0, splitPos + 1);
+    }
+
     public String getFileName() {
-        Integer splitPos = fileURI.lastIndexOf('/');
+        int splitPos = fileURI.lastIndexOf('/');
         return fileURI.substring(splitPos + 1);
     }
 
