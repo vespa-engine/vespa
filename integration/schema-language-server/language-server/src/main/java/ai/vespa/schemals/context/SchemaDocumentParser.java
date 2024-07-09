@@ -390,16 +390,23 @@ public class SchemaDocumentParser {
      */
     private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         if (node instanceof SymbolReferenceNode) {
-            TokenType referencedType = ((SymbolReferenceNode)node).getSymbolType();
-            if (context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()) == null) {
+            SymbolReferenceNode referenceNode = (SymbolReferenceNode)node;
+            TokenType referencedType = referenceNode.getSymbolType();
+            Symbol symbol = context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText());
+
+            if (symbol == null) {
+
                 diagnostics.add(new Diagnostic(
                     node.getRange(),
                     "Undefined symbol " + node.getText(),
                     DiagnosticSeverity.Error,
                     ""
                 ));
+
             } else {
-                
+
+                context.schemaIndex().insertSymbolReference(symbol, context.fileURI(), referenceNode);
+
             }
         }
 

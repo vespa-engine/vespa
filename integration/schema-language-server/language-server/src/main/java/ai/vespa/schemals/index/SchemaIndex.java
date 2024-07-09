@@ -16,6 +16,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.SymbolDefinitionNode;
 import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.tree.SymbolReferenceNode;
 import ai.vespa.schemals.tree.TypeNode;
 
 public class SchemaIndex {
@@ -23,6 +24,7 @@ public class SchemaIndex {
     private PrintStream logger;
     
     private HashMap<String, Symbol> symbolDefinitionsDB = new HashMap<String, Symbol>();
+    private HashMap<String, List<Symbol>> symbolReferencesDB = new HashMap<>();
 
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
@@ -48,15 +50,25 @@ public class SchemaIndex {
             }
         }
 
+        Iterator<Map.Entry<String, List<Symbol>>> refIterator = symbolReferencesDB.entrySet().iterator();
+
+        while (refIterator.hasNext()) {
+            Map.Entry<String, List<Symbol>> entry = refIterator.next();
+            if (entry.getKey().startsWith(fileURI)) {
+                refIterator.remove();
+            }
+        }
+
         openSchemas.remove(fileURI);
         documentInheritanceGraph.clearInheritsList(fileURI);
     }
 
-    private String createDBKey(String fileURI, Symbol symbol) {
-        return createDBKey(fileURI, symbol.getType(), symbol.getShortIdentifier());
+    private String createDBKey(Symbol symbol) {
+        return createDBKey(symbol.getFileURI(), symbol.getType(), symbol.getShortIdentifier());
     }
 
     private String createDBKey(String fileURI, TokenType type, String identifier) {
+        // Some logic in this file depends on that the key beginsWith the fileURI
         return fileURI + ":" + type.name().toLowerCase() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
     }
 
@@ -68,7 +80,7 @@ public class SchemaIndex {
     public void insertSymbol(String fileURI, SymbolDefinitionNode node) {
         Symbol symbol = new Symbol(node, fileURI);
         symbolDefinitionsDB.put(
-            createDBKey(fileURI, symbol),
+            createDBKey(symbol),
             symbol
         );
     }
@@ -135,6 +147,11 @@ public class SchemaIndex {
         logger.println(" === INDEX === ");
         for (Map.Entry<String, Symbol> entry : symbolDefinitionsDB.entrySet()) {
             logger.println(entry.getKey() + " -> " + entry.getValue().toString());
+        }
+
+        logger.println(" === REFERENCE INDEX === ");
+        for (Map.Entry<String, List<Symbol>> entry : symbolReferencesDB.entrySet()) {
+            logger.println(entry.getKey() + " -> " + entry.getValue().size() + " references");
         }
 
         logger.println(" === INHERITANCE === ");
@@ -204,5 +221,23 @@ public class SchemaIndex {
 
     public int numEntries() {
         return this.symbolDefinitionsDB.size();
+    }
+
+    public void insertSymbolReference(Symbol refersTo, String fileURI, SymbolReferenceNode node) {
+        String dbKey = createDBKey(refersTo);
+        List<Symbol> references = symbolReferencesDB.get(dbKey);
+
+        Symbol symbol = new Symbol(node, fileURI);
+
+        if (references != null) {
+            references.add(symbol);
+            return;
+        }
+
+        references = new ArrayList<>() {{
+            add(symbol);
+        }};
+
+        symbolReferencesDB.put(dbKey, references);
     }
 }
