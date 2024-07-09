@@ -62,7 +62,7 @@ public class SchemaDocumentScheduler {
         if (workspaceDocuments.containsKey(fileURI)) return;
 
         try {
-            logger.println("Opening document: " + fileURI);
+            logger.println("Adding document: " + fileURI);
             String content = readFromURI(fileURI);
             updateFile(fileURI, content);
         } catch(IOException ex) {
@@ -77,6 +77,7 @@ public class SchemaDocumentScheduler {
     }
 
     public boolean removeDocument(String fileURI) {
+        logger.println("Removing document: "+ fileURI);
         boolean wasOpen = workspaceDocuments.get(fileURI).getIsOpen();
         closeDocument(fileURI);
         schemaIndex.clearDocument(fileURI);

@@ -176,4 +176,12 @@ public class SchemaIndex {
     public void setSchemaInherits(String childURI, String parentURI) {
         schemaInherits.put(childURI, parentURI);
     }
+
+    public void printTrackedFiles() {
+        logger.println("Schema tracked files:");
+        for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
+            SchemaDocumentParser document = entry.getValue();
+            logger.println(document.toString());
+        }
+    }
 }

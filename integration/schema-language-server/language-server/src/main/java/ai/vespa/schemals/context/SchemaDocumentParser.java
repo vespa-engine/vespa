@@ -479,4 +479,9 @@ public class SchemaDocumentParser {
         }
         return null;
     }
+
+    public String toString() {
+        String openString = getIsOpen() ? " [OPEN]" : "";
+        return getFileURI() + openString;
+    }
 }
