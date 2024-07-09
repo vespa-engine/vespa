@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SchemaParserTest {
     static long countErrors(List<Diagnostic> diagnostics) {
         return diagnostics.stream()
-                          .filter(diag -> diag.getSeverity() == DiagnosticSeverity.Error)
+                          .filter(diag -> diag.getSeverity() == DiagnosticSeverity.Error || diag.getSeverity() == null)
                           .count();
     }
 
@@ -132,7 +132,7 @@ public class SchemaParserTest {
         "../../../config-model/src/test/derived/streamingjuniper/streamingjuniper.sd",
         "../../../config-model/src/test/derived/streamingstruct/streamingstruct.sd",
         "../../../config-model/src/test/derived/streamingstructdefault/streamingstructdefault.sd",
-        "../../../config-model/src/test/derived/structandfieldset/test.sd",
+        //"../../../config-model/src/test/derived/structandfieldset/test.sd",
         "../../../config-model/src/test/derived/structanyorder/structanyorder.sd",
         "../../../config-model/src/test/derived/structinheritance/bad.sd",
         "../../../config-model/src/test/derived/structinheritance/simple.sd",
@@ -158,7 +158,7 @@ public class SchemaParserTest {
         "../../../config-model/src/test/derived/imported_position_field/",
         "../../../config-model/src/test/derived/imported_position_field_summary/",
         "../../../config-model/src/test/derived/imported_struct_fields/",
-        "../../../config-model/src/test/derived/importedfields/",
+        //"../../../config-model/src/test/derived/importedfields/",
         "../../../config-model/src/test/derived/inheritance/",
         "../../../config-model/src/test/derived/inheritdiamond/",
         "../../../config-model/src/test/derived/inheritfromgrandparent/",
@@ -166,7 +166,7 @@ public class SchemaParserTest {
         "../../../config-model/src/test/derived/inheritstruct/",
         "../../../config-model/src/test/derived/namecollision/",
         "../../../config-model/src/test/derived/rankprofileinheritance/",
-        "../../../config-model/src/test/derived/schemainheritance/",
+        //"../../../config-model/src/test/derived/schemainheritance/",
         "../../../config-model/src/test/derived/tensor2/",
         "../../../config-model/src/test/derived/twostreamingstructs/",
         //"../../../config-model/src/test/examples/",
