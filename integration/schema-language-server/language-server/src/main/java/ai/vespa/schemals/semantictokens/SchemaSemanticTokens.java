@@ -64,12 +64,6 @@ public class SchemaSemanticTokens implements Visitor {
         put(TokenType.LONG, "number");
         put(TokenType.DOUBLEQUOTEDSTRING, "string");
         put(TokenType.SINGLEQUOTEDSTRING, "string");
-        //put(TokenType.ARRAY, "type");
-        //put(TokenType.WEIGHTEDSET, "type");
-        //put(TokenType.MAP, "type");
-        //put(TokenType.ANNOTATIONREFERENCE, "type");
-        //put(TokenType.REFERENCE, "type");
-        //put(TokenType.TENSOR_TYPE, "type");
     }};
     
     private static final HashMap<Class<? extends Node>, String> identifierTypeLSPNameMap = new HashMap<Class<? extends Node>, String>() {{

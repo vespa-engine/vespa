@@ -234,6 +234,6 @@ public class SchemaNode {
     public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
 
     public String toString() {
-        return getText();
+        return getText() + "[" + getType() + "]";
     }
 }

@@ -78,6 +78,10 @@ public class IdentifySymbolDefinition extends Identifier {
         ) {
             SchemaNode child = parent.get(1);
 
+            while (child.size() > 0) {
+                child = child.get(0);
+            }
+
             // TODO: move this check to the ccc file
             if (
                 nodeType == TokenType.FIELD &&

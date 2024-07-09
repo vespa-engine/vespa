@@ -18,6 +18,7 @@ import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.Registration;
 import org.eclipse.lsp4j.RegistrationParams;
+import org.eclipse.lsp4j.RenameOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.WorkspaceServerCapabilities;
@@ -91,6 +92,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setCompletionProvider(completionOptions);
         initializeResult.getCapabilities().setHoverProvider(true);
         initializeResult.getCapabilities().setDefinitionProvider(true);
+        initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
 
         for (var folder : initializeParams.getWorkspaceFolders()) {
