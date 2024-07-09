@@ -64,8 +64,10 @@ public class Json implements Iterable<Json> {
 
     public int length() { return inspector.children(); }
     public boolean has(String field) { return inspector.field(field).valid(); }
-    public boolean isPresent() { return inspector.valid(); }
+    public boolean isPresent() { return inspector.type() != Type.NIX; }
     public boolean isMissing() { return !isPresent(); }
+    /** @return true if the JSON field was present but its value was 'null' */
+    public boolean isExplicitNull() { return isMissing() && inspector.valid(); }
 
     public Optional<String> asOptionalString() { return Optional.ofNullable(asString(null)); }
     public String asString() { requireType(STRING); return inspector.asString(); }

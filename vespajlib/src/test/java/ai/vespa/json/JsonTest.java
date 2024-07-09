@@ -3,10 +3,12 @@ package ai.vespa.json;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -186,5 +188,20 @@ class JsonTest {
                 .build();
         var jsonObjectCopy = Json.Builder.fromObject(jsonObject).build();
         assertEquals(jsonObject.toJson(false), jsonObjectCopy.toJson(false));
+    }
+
+    @Test
+    void handles_null_fields() {
+        var json = Json.of("{\"foo\": null}");
+        var foo = json.f("foo");
+        var bar = json.f("bar");
+
+        assertTrue(foo.isMissing());
+        assertFalse(foo.isPresent());
+        assertFalse(foo.isObject());
+        assertFalse(foo.isArray());
+        assertEquals(Optional.empty(), foo.asOptionalString());
+        assertTrue(foo.isExplicitNull());
+        assertFalse(bar.isExplicitNull());
     }
 }
