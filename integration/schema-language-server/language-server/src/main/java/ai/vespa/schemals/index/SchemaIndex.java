@@ -126,7 +126,10 @@ public class SchemaIndex {
         // TODO: handle document reference
         String typeName = typeNode.getParsedType().name().toLowerCase();
 
-        return findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null;
+        // Probably struct
+        if (findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
+        if (findSymbol(fileURI, TokenType.DOCUMENT, typeName.toLowerCase()) != null) return true;
+        return false;
     }
 
     public boolean resolveAnnotationReferenceNode(AnnotationReferenceNode annotationReferenceNode, String fileURI) {
