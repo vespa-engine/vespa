@@ -7,11 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.yahoo.schema.Schema;
-
 import ai.vespa.schemals.context.SchemaDocumentParser;
 
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.TypeNode;

@@ -145,8 +145,20 @@ public class SchemaNode {
         return range;
     }
 
+    public SchemaNode getParent(int levels) {
+        if (levels == 0) {
+            return this;
+        }
+
+        if (parent == null) {
+            return null;
+        }
+
+        return parent.getParent(levels - 1);
+    }
+
     public SchemaNode getParent() {
-        return parent;
+        return getParent(1);
     }
 
     public SchemaNode getPrevious() {
@@ -213,6 +225,14 @@ public class SchemaNode {
         return children.size() == 0;
     }
 
+    public SchemaNode findFirstLeaf() {
+        SchemaNode ret = this;
+        while (ret.size() > 0) {
+            ret = ret.get(0);
+        }
+        return ret;
+    }
+
     public boolean isDirty() {
         return originalNode.isDirty();
     }
@@ -234,6 +254,6 @@ public class SchemaNode {
     public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
 
     public String toString() {
-        return getText();
+        return getText() + "[" + getType() + "]";
     }
 }

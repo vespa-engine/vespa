@@ -1,14 +1,19 @@
 package ai.vespa.schemals.context.parser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
+import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolDefinitionNode;
 import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifySymbolReferences extends Identifier {
@@ -17,45 +22,30 @@ public class IdentifySymbolReferences extends Identifier {
 		super(context);
 	}
 
-	private Diagnostic createNotFoundError(SchemaNode node, TokenType type) {
-        return new Diagnostic(node.getRange(), "Cannot find symbol: " + node.getText() + " of type " + type, DiagnosticSeverity.Error, "");
-    }
+    private static final HashMap<Class<? extends Node>, TokenType> identifierTypeMap = new HashMap<Class<? extends Node>, TokenType>() {{
+        put(inheritsDocument.class, TokenType.DOCUMENT);
+        put(fieldsElm.class, TokenType.FIELD);
+        put(rootSchema.class, TokenType.SCHEMA);
+    }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<>();
+        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
+
+        if (node instanceof SymbolDefinitionNode) return ret;
+
+        boolean isIdentifier = node.getClassLeafIdentifierString().equals("identifierStr");
+
+        if (!isIdentifier) return ret;
 
         SchemaNode parent = node.getParent();
-        if (
-            node.getType() == TokenType.FIELDS &&
-            parent != null &&
-            parent.isASTInstance(fieldsElm.class)
-        ) {
-            for (int i = 2; i < parent.size(); i += 2) {
-                SchemaNode child = parent.get(i);
+        if (parent == null) return ret;
 
-                if (child.getType() == TokenType.COMMA) {
-                    ret.add(new Diagnostic(child.getRange(), "Unexcpeted ',', expected an identifier."));
-                    break;
-                }
+        TokenType tokenType = identifierTypeMap.get(parent.getASTClass());
+        if (tokenType == null) return ret;
 
-                if (child.getText() != "") {
-                    child.setType(TokenType.IDENTIFIER);
+        SymbolReferenceNode newNode = new SymbolReferenceNode(node, tokenType);
 
-                    if (context.schemaIndex().findSymbol(context.fileURI(), TokenType.FIELD, child.getText()) == null) {
-                        ret.add(createNotFoundError(child, TokenType.FIELD));
-                    } else {
-                        new SymbolReferenceNode(child);
-                    }
-                }
-
-                if (i + 1 < parent.size()) {
-                    if (parent.get(i + 1).getType() != TokenType.COMMA) {
-                        ret.add(new Diagnostic(parent.get(i + 1).getRange(), "Unexpected token, expected ','"));
-                        break;
-                    }
-                }
-            }
-        }
+        // TODO: verify that the symbol is defined
 
         return ret;
     }

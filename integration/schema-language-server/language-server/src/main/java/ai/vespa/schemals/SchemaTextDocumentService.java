@@ -4,6 +4,8 @@ import ai.vespa.schemals.completion.SchemaCompletion;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.rename.SchemaPrepareRename;
+import ai.vespa.schemals.rename.SchemaRename;
 import ai.vespa.schemals.definition.SchemaDefinition;
 import ai.vespa.schemals.hover.SchemaHover;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
@@ -33,6 +35,10 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
+import org.eclipse.lsp4j.PrepareRenameDefaultBehavior;
+import org.eclipse.lsp4j.PrepareRenameParams;
+import org.eclipse.lsp4j.PrepareRenameResult;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SemanticTokens;
@@ -45,6 +51,7 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 public class SchemaTextDocumentService implements TextDocumentService {
@@ -112,8 +119,19 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<WorkspaceEdit> rename(RenameParams renameParams) {
-        return null;
+    public CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> prepareRename(PrepareRenameParams params) {
+
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            return SchemaPrepareRename.prepareRename(eventContextCreator.createContext(params));
+        });
+	}
+
+    @Override
+    public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
+
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            return SchemaRename.rename(eventContextCreator.createContext(params), params.getNewName());
+        });
     }
 
     @Override

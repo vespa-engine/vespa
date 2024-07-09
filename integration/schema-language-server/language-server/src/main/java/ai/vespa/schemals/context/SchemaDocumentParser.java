@@ -11,7 +11,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
-
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
@@ -26,6 +26,7 @@ import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -42,6 +43,7 @@ public class SchemaDocumentParser {
     private SchemaIndex schemaIndex;
 
     private String fileURI = "";
+    private Integer version;
     private String content = "";
     private String schemaDocumentIdentifier = null;
     
@@ -50,18 +52,23 @@ public class SchemaDocumentParser {
     public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
-        this(logger, diagnosticsHandler, schemaIndex, fileURI, null);
-    }
-    
-    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
+    }
+    
+    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content) {
+        this(logger, diagnosticsHandler, schemaIndex, fileURI);
 
         if (content != null) {
             updateFileContent(content);
         };
+    }
+
+    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content, Integer version) {
+        this(logger, diagnosticsHandler, schemaIndex, fileURI, content);
+        this.version = version;
     }
 
     public ParseContext getParseContext(String content) {
@@ -70,8 +77,13 @@ public class SchemaDocumentParser {
 
     public void reparseContent() {
         if (this.content != null) {
-            updateFileContent(this.content);
+            updateFileContent(this.content, this.version);
         }
+    }
+
+    public void updateFileContent(String content, Integer version) {
+        this.version = version;
+        updateFileContent(content);
     }
 
     public void updateFileContent(String content) {
@@ -117,6 +129,14 @@ public class SchemaDocumentParser {
 
     public String getFileURI() {
         return fileURI;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public VersionedTextDocumentIdentifier getVersionedTextDocumentIdentifier() {
+        return new VersionedTextDocumentIdentifier(fileURI, version);
     }
 
     public String getFileName() {
@@ -166,6 +186,15 @@ public class SchemaDocumentParser {
         return getNodeAtPosition(CST, pos, false, false);
     }
 
+    public SymbolNode getSymbolAtPosition(Position pos) {
+        SchemaNode node = getNodeAtPosition(pos);
+
+        while (node != null && !(node instanceof SymbolNode)) {
+            node = node.getParent();
+        }
+
+        return (SymbolNode)node;
+    }
 
     private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
         if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
