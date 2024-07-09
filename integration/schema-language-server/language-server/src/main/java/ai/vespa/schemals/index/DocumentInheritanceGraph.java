@@ -4,6 +4,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,6 +95,22 @@ public class DocumentInheritanceGraph {
         return result;
     }
 
+    /*
+     * Returns a list of all registered documents in topological order
+     */
+    public List<String> getAllDocumentsTopoOrder() {
+        Set<String> visited = new HashSet<>();
+
+        List<String> result = new LinkedList<>();
+        for (String fileURI : documentParents.keySet()) {
+            if (visited.contains(fileURI)) continue;
+
+            getAllDocumentAncestorURIsImpl(fileURI, result, visited);
+        }
+
+        return result;
+    }
+
     private String getFileName(String fileURI) {
         Integer splitPos = fileURI.lastIndexOf('/');
         return fileURI.substring(splitPos + 1);
@@ -117,6 +134,7 @@ public class DocumentInheritanceGraph {
         logger.println();
 
     }
+
     
     /*
      * Recursive search upwards through the inheritance graph to

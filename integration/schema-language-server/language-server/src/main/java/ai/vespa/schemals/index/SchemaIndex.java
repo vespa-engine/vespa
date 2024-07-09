@@ -114,10 +114,15 @@ public class SchemaIndex {
     }
 
     public boolean resolveAnnotationReferenceNode(AnnotationReferenceNode annotationReferenceNode, String fileURI) {
-        // TODO: inheritance
         String annotationName = annotationReferenceNode.getText().toLowerCase();
 
-        return findSymbol(fileURI, TokenType.ANNOTATION, annotationName.toLowerCase()) != null;
+        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+
+        for (var parentURI : inheritanceList) {
+            if (findSymbol(parentURI, TokenType.ANNOTATION, annotationName.toLowerCase()) != null) return true;
+        }
+
+        return false;
     }
 
     public void dumpIndex(PrintStream logger) {
@@ -167,6 +172,10 @@ public class SchemaIndex {
         List<String> descendants = this.documentInheritanceGraph.getAllDocumentDescendantURIs(fileURI);
         descendants.remove(fileURI);
         return descendants;
+    }
+
+    public List<String> getAllDocumentsInInheritanceOrder() {
+        return this.documentInheritanceGraph.getAllDocumentsTopoOrder();
     }
 
     public void setSchemaInherits(String childURI, String parentURI) {

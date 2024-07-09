@@ -93,11 +93,14 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setDefinitionProvider(true);
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
 
+        this.schemaDocumentScheduler.setReparseDescendants(false);
         for (var folder : initializeParams.getWorkspaceFolders()) {
             for (String fileURI : findSchemaFiles(folder.getUri())) {
                 this.schemaDocumentScheduler.openDocument(fileURI);
             }
         }
+        this.schemaDocumentScheduler.reparseInInheritanceOrder();
+        this.schemaDocumentScheduler.setReparseDescendants(true);
 
         return CompletableFuture.supplyAsync(()->initializeResult);
     }
