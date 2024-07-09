@@ -30,8 +30,8 @@ public class IdentifyNamedDocument extends Identifier {
         Range identifierRange = node.get(1).getRange();
         String documentName = node.get(1).getText();
 
-        if (context.schemaIndex().findSymbol(context.fileURI(), TokenType.SCHEMA, documentName) == null
-         && context.schemaIndex().findSymbol(context.fileURI(), TokenType.SEARCH, documentName) == null) {
+        if (context.schemaIndex().findSymbolInFile(context.fileURI(), TokenType.SCHEMA, documentName) == null
+         && context.schemaIndex().findSymbolInFile(context.fileURI(), TokenType.SEARCH, documentName) == null) {
             // TODO: Quickfix
             ret.add(new Diagnostic(identifierRange, "Invalid document name \"" + documentName + "\". The document name must match the containing schema's name."));
         }

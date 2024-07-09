@@ -6,17 +6,20 @@ import ai.vespa.schemals.tree.SymbolDefinitionNode;
 public class Symbol {
     private SymbolDefinitionNode identifierNode;
     private Symbol scope = null;
+    private String fileURI;
 
-    public Symbol(SymbolDefinitionNode identifierNode) {
+    public Symbol(SymbolDefinitionNode identifierNode, String fileURI) {
         this.identifierNode = identifierNode;
+        this.fileURI = fileURI;
     }
 
-    public Symbol(SymbolDefinitionNode identifierNode, Symbol scope) {
-        this(identifierNode);
+    public Symbol(SymbolDefinitionNode identifierNode, String fileURI, Symbol scope) {
+        this(identifierNode, fileURI);
         this.scope = scope;
     }
 
     public TokenType getType() { return identifierNode.getSymbolType(); }
+    public String getFileURI() { return fileURI; }
     public SymbolDefinitionNode getNode() { return identifierNode; }
     public String getShortIdentifier() { return identifierNode.getText(); }
 

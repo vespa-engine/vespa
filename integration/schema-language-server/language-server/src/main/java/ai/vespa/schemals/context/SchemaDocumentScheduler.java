@@ -23,7 +23,7 @@ public class SchemaDocumentScheduler {
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
-    private HashMap<String, SchemaDocumentParser> openDocuments = new HashMap<String, SchemaDocumentParser>();
+    private HashMap<String, SchemaDocumentParser> workspaceDocuments = new HashMap<String, SchemaDocumentParser>();
 
     public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex) {
         this.logger = logger;
@@ -36,15 +36,15 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content, Integer version) {
-        if (!openDocuments.containsKey(fileURI)) {
-            openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content, version));
+        if (!workspaceDocuments.containsKey(fileURI)) {
+            workspaceDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content, version));
         } else {
-            openDocuments.get(fileURI).updateFileContent(content, version);
+            workspaceDocuments.get(fileURI).updateFileContent(content, version);
         }
 
         for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
-            if (openDocuments.containsKey(descendantURI)) {
-                openDocuments.get(descendantURI).reparseContent();
+            if (workspaceDocuments.containsKey(descendantURI)) {
+                workspaceDocuments.get(descendantURI).reparseContent();
             }
         }
     }
@@ -58,8 +58,8 @@ public class SchemaDocumentScheduler {
      * Will read the file from disk if not already opened.
      * Does nothing if the document is already open (and thus managed by the client)
      */
-    public void openDocument(String fileURI) {
-        if (openDocuments.containsKey(fileURI)) return;
+    public void addDocument(String fileURI) {
+        if (workspaceDocuments.containsKey(fileURI)) return;
 
         try {
             logger.println("Opening document: " + fileURI);
@@ -68,15 +68,27 @@ public class SchemaDocumentScheduler {
         } catch(IOException ex) {
             this.logger.println("Failed to read file: " + fileURI);
         }
+
     }
 
     public void closeDocument(String fileURI) {
         logger.println("Closing document: " + fileURI);
-        openDocuments.remove(fileURI);
+        workspaceDocuments.get(fileURI).setIsOpen(false);
+    }
+
+    public boolean removeDocument(String fileURI) {
+        boolean wasOpen = workspaceDocuments.get(fileURI).getIsOpen();
+        closeDocument(fileURI);
+        schemaIndex.clearDocument(fileURI);
+        workspaceDocuments.remove(fileURI);
+
+        return wasOpen;
+
+        // TODO: more places to remove references
     }
 
     public SchemaDocumentParser getDocument(String fileURI) {
-        return openDocuments.get(fileURI);
+        return workspaceDocuments.get(fileURI);
     }
 
     private String readFromURI(String fileURI) throws IOException {

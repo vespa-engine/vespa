@@ -44,6 +44,7 @@ public class SchemaDocumentParser {
 
     private String fileURI = "";
     private Integer version;
+    private boolean isOpen = false;
     private String content = "";
     private String schemaDocumentIdentifier = null;
     
@@ -69,6 +70,7 @@ public class SchemaDocumentParser {
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content, Integer version) {
         this(logger, diagnosticsHandler, schemaIndex, fileURI, content);
         this.version = version;
+        isOpen = true;
     }
 
     public ParseContext getParseContext(String content) {
@@ -121,6 +123,13 @@ public class SchemaDocumentParser {
 
         //schemaIndex.dumpIndex(logger);
 
+    }
+
+    public boolean getIsOpen() { return isOpen; }
+
+    boolean setIsOpen(boolean value) {
+        isOpen = value;
+        return isOpen;
     }
 
     public String getSchemaIdentifier() {

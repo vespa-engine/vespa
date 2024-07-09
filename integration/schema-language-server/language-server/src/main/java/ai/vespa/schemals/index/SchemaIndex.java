@@ -62,7 +62,7 @@ public class SchemaIndex {
     }
 
     private String createDBKey(String fileURI, TokenType type, String identifier) {
-        return fileURI + ":" + type.name() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
+        return fileURI + ":" + type.name().toLowerCase() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
     }
 
     public void registerSchema(String fileURI, SchemaDocumentParser schemaDocumentParser) {
@@ -76,7 +76,7 @@ public class SchemaIndex {
         );
     }
 
-    public Symbol findSymbol(String fileURI, TokenType type, String identifier) {
+    public Symbol findSymbolInFile(String fileURI, TokenType type, String identifier) {
         SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
         if (results == null) {
             return null;
@@ -104,10 +104,20 @@ public class SchemaIndex {
         List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
 
         for (var parentURI : inheritanceList) {
-            if (findSymbol(parentURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
+            if (findSymbolInFile(parentURI, TokenType.STRUCT, typeName) != null) return true;
         }
 
         return false;
+    }
+
+    public Symbol findSymbolDefinition(String fileURI, TokenType symbolType, String identifier) {
+        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+
+        for (var parentURI : inheritanceList) {
+            Symbol results = findSymbolInFile(parentURI, symbolType, identifier);
+            if (results != null) return results;
+        }
+        return null;
     }
 
     public void dumpIndex(PrintStream logger) {

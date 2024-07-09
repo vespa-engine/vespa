@@ -99,7 +99,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         for (var folder : initializeParams.getWorkspaceFolders()) {
             for (String fileURI : findSchemaFiles(folder.getUri())) {
-                this.schemaDocumentScheduler.openDocument(fileURI);
+                this.schemaDocumentScheduler.addDocument(fileURI);
             }
         }
 
