@@ -3,6 +3,7 @@ package ai.vespa.schemals.context.parser;
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Token.TokenType;
@@ -17,7 +18,7 @@ public class IdentifySymbolReferences extends Identifier {
 	}
 
 	private Diagnostic createNotFoundError(SchemaNode node, TokenType type) {
-        return new Diagnostic(node.getRange(), "Cannot find symbol: " + node.getText() + " of type " + type);
+        return new Diagnostic(node.getRange(), "Cannot find symbol: " + node.getText() + " of type " + type, DiagnosticSeverity.Error, "");
     }
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {

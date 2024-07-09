@@ -70,6 +70,7 @@ public class SchemaIndex {
 
     public void registerSchema(String fileURI, SchemaDocumentParser schemaDocumentParser) {
         openSchemas.put(fileURI, schemaDocumentParser);
+        documentInheritanceGraph.createNodeIfNotExists(fileURI);
     }
 
     public void insert(String fileURI, Symbol symbol) {
@@ -168,6 +169,10 @@ public class SchemaIndex {
         return this.documentInheritanceGraph.addInherits(childURI, parentURI);
     }
 
+    public List<String> getAllDocumentAncestorURIs(String fileURI) {
+        return this.documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+    }
+
     public List<String> getAllDocumentDescendants(String fileURI) {
         List<String> descendants = this.documentInheritanceGraph.getAllDocumentDescendantURIs(fileURI);
         descendants.remove(fileURI);
@@ -180,5 +185,9 @@ public class SchemaIndex {
 
     public void setSchemaInherits(String childURI, String parentURI) {
         schemaInherits.put(childURI, parentURI);
+    }
+
+    public int numEntries() {
+        return this.database.size();
     }
 }
