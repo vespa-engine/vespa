@@ -1,24 +1,22 @@
 package ai.vespa.schemals.index;
 
-import ai.vespa.schemals.parser.Token;
+import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SymbolDefinitionNode;
 
 public class Symbol {
-    private Token.TokenType type;
     private SymbolDefinitionNode identifierNode;
     private Symbol scope = null;
 
-    public Symbol(Token.TokenType type, SymbolDefinitionNode identifierNode) {
-        this.type = type;
+    public Symbol(SymbolDefinitionNode identifierNode) {
         this.identifierNode = identifierNode;
     }
 
-    public Symbol(Token.TokenType type, SymbolDefinitionNode identifierNode, Symbol scope) {
-        this(type, identifierNode);
+    public Symbol(SymbolDefinitionNode identifierNode, Symbol scope) {
+        this(identifierNode);
         this.scope = scope;
     }
 
-    public Token.TokenType getType() { return type; }
+    public TokenType getType() { return identifierNode.getSymbolType(); }
     public SymbolDefinitionNode getNode() { return identifierNode; }
     public String getShortIdentifier() { return identifierNode.getText(); }
 
