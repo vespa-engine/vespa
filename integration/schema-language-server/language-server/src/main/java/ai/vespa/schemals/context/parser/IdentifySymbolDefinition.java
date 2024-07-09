@@ -58,7 +58,7 @@ public class IdentifySymbolDefinition extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null || parent.size() <= 1) return ret;
 
-        // TODO: This will prevent inheritance from beeing marked as a symbol definition
+        // Prevent inheritance from beeing marked as a definition
         if (parent.indexOf(node) >= 3) return ret;
 
         HashMap<Class<? extends Node>, TokenType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
