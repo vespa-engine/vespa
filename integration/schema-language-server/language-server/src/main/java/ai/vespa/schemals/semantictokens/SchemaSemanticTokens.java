@@ -196,7 +196,7 @@ public class SchemaSemanticTokens implements Visitor {
 
         } else if (type != null) {
             if (node instanceof SymbolNode) {
-                SchemaNode parent = node.getParent();
+                SchemaNode parent = node.getParent(2);
                 Integer tokenType = identifierTypeMap.get(parent.getASTClass());
                 
                 if (tokenType != null) {

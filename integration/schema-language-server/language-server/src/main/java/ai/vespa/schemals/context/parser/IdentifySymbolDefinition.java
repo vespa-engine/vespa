@@ -67,37 +67,39 @@ public class IdentifySymbolDefinition extends Identifier {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
         SchemaNode parent = node.getParent();
+        if (parent == null || parent.get(0) != node) return ret;
+
         TokenType nodeType = node.getType();
         HashSet<Class<? extends Node>> parentCNComp = tokenParentClassPairs.get(nodeType);
         if (
-            parent != null &&
-            parent.get(0) == node &&
-            parentCNComp != null &&
-            parentCNComp.contains(parent.getASTClass()) &&
-            parent.size() > 1
+            parentCNComp == null ||
+            !parentCNComp.contains(parent.getASTClass()) ||
+            parent.size() <= 1
         ) {
-            SchemaNode child = parent.get(1);
+            return ret;
+        }
+        
+        SchemaNode child = parent.get(1);
 
-            while (child.size() > 0) {
-                child = child.get(0);
+        while (child.size() > 0) {
+            child = child.get(0);
+        }
+
+        // TODO: move this check to the ccc file
+        if (
+            nodeType == TokenType.FIELD &&
+            Schema.isReservedName(child.getText().toLowerCase())
+        ) {
+            ret.add(new Diagnostic(child.getRange(), "Reserved name '" + child.getText() + "' can not be used as a field name."));
+        
+        } else {
+
+            SymbolDefinitionNode newNode = new SymbolDefinitionNode(child);
+            if (context.schemaIndex().findSymbol(context.fileURI(), nodeType, child.getText()) == null) {
+                Symbol symbol = new Symbol(nodeType, newNode);
+                context.schemaIndex().insert(context.fileURI(), symbol);
             }
 
-            // TODO: move this check to the ccc file
-            if (
-                nodeType == TokenType.FIELD &&
-                Schema.isReservedName(child.getText().toLowerCase())
-            ) {
-                ret.add(new Diagnostic(child.getRange(), "Reserved name '" + child.getText() + "' can not be used as a field name."));
-            
-            } else {
-
-                SymbolDefinitionNode newNode = new SymbolDefinitionNode(child);
-                if (context.schemaIndex().findSymbol(context.fileURI(), nodeType, child.getText()) == null) {
-                    Symbol symbol = new Symbol(nodeType, newNode);
-                    context.schemaIndex().insert(context.fileURI(), symbol);
-                }
-
-            }
         }
 
         return ret;

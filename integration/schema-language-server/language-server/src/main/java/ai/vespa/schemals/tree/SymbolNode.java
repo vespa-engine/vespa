@@ -8,8 +8,4 @@ public class SymbolNode extends SchemaNode {
         super(node);
         setType(TokenType.IDENTIFIER);
     }
-
-    public String getClassLeafIdentifierString() {
-        return getText() + " I am a symbol :)";
-    }
 }
