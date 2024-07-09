@@ -83,7 +83,7 @@ public class SchemaParserTest {
 
         scheduler.setReparseDescendants(false);
         for (String schemaURI : schemaFiles) {
-            scheduler.openDocument(schemaURI);
+            scheduler.addDocument(schemaURI);
         }
         scheduler.reparseInInheritanceOrder();
         //scheduler.setReparseDescendants(true);

@@ -66,7 +66,7 @@ public class SchemaRename {
 
         // CASES: rename schema / document, field, struct, funciton
 
-        Symbol symbol = context.schemaIndex.findSymbolDefinition(context.document.getFileURI(), node.getSymbolType(), node.getText());
+        Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), node.getSymbolType(), node.getText());
         if (symbol == null) {
             context.logger.println("Could not find the symbol definition");
             return null;
