@@ -194,27 +194,27 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
 
-        } else if (type != null) {
-            if (node instanceof SymbolNode) {
-                SchemaNode parent = node.getParent(2);
-                Integer tokenType = identifierTypeMap.get(parent.getASTClass());
-                
-                if (tokenType != null) {
-                    ret.add(new SemanticTokenMarker(tokenType, node));
-                }
+        } if (node instanceof SymbolNode) {
+            SchemaNode parent = node.getParent();
+            Integer tokenType = identifierTypeMap.get(parent.getASTClass());
+            
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
 
-            } else {
-                Integer tokenType = tokenTypeMap.get(type);
-                if (tokenType != null) {
-                    ret.add(new SemanticTokenMarker(tokenType, node));
-                }
+        } else if (type != null) {
+            Integer tokenType = tokenTypeMap.get(type);
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
+        } else {
+            for (int i = 0; i < node.size(); i++) {
+                ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
+                ret.addAll(markers);
             }
         }
 
-        for (int i = 0; i < node.size(); i++) {
-            ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
-            ret.addAll(markers);
-        }
 
         return ret;
     }

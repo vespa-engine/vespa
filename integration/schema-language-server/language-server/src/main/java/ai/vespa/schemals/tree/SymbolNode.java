@@ -6,6 +6,5 @@ public class SymbolNode extends SchemaNode {
 
     public SymbolNode(SchemaNode node) {
         super(node);
-        setType(TokenType.IDENTIFIER);
     }
 }

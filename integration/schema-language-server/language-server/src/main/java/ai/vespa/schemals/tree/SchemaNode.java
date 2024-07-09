@@ -225,6 +225,14 @@ public class SchemaNode {
         return children.size() == 0;
     }
 
+    public SchemaNode findFirstLeaf() {
+        SchemaNode ret = this;
+        while (ret.size() > 0) {
+            ret = ret.get(0);
+        }
+        return ret;
+    }
+
     public boolean isDirty() {
         return originalNode.isDirty();
     }

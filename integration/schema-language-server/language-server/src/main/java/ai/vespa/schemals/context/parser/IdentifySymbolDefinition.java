@@ -78,12 +78,9 @@ public class IdentifySymbolDefinition extends Identifier {
         ) {
             return ret;
         }
-        
-        SchemaNode child = parent.get(1);
 
-        while (child.size() > 0) {
-            child = child.get(0);
-        }
+        // TODO: Just check ofr indentifierStr and simplify the logic
+        SchemaNode child = parent.get(1);
 
         // TODO: move this check to the ccc file
         if (

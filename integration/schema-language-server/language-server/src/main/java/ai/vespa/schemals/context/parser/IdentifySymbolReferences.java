@@ -32,10 +32,6 @@ public class IdentifySymbolReferences extends Identifier {
             for (int i = 2; i < parent.size(); i += 2) {
                 SchemaNode child = parent.get(i);
 
-                while (child.size() > 0) {
-                    child = child.get(0);
-                }
-
                 if (child.getType() == TokenType.COMMA) {
                     ret.add(new Diagnostic(child.getRange(), "Unexcpeted ',', expected an identifier."));
                     break;

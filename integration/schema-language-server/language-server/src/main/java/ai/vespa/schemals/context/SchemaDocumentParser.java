@@ -26,6 +26,7 @@ import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -166,6 +167,15 @@ public class SchemaDocumentParser {
         return getNodeAtPosition(CST, pos, false, false);
     }
 
+    public SymbolNode getSymbolAtPosition(Position pos) {
+        SchemaNode node = getNodeAtPosition(pos);
+
+        while (node != null && !(node instanceof SymbolNode)) {
+            node = node.getParent();
+        }
+
+        return (SymbolNode)node;
+    }
 
     private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
         if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
