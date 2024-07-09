@@ -1,3 +1,4 @@
 effective-pom.xml
 debug.log
 .settings/
+__pycache__
