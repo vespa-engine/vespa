@@ -8030,6 +8030,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.data.access.Inspector)",
+      "public void <init>(java.util.Map)",
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",

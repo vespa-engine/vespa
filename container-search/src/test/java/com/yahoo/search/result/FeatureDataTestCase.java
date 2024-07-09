@@ -8,6 +8,9 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +30,7 @@ public class FeatureDataTestCase {
         features.setDouble("scalar2", 2.5);
         Tensor tensor1 = Tensor.from("tensor(x[3]):[1.5, 2, 2.5]");
         features.setData("tensor1", TypedBinaryFormat.encode(tensor1));
-        Tensor tensor2 = Tensor.from(0.5);
+        Tensor tensor2 = Tensor.from("tensor(key{}):{a:0.5, b:1.5}");
         features.setData("tensor2", TypedBinaryFormat.encode(tensor2));
 
         FeatureData featureData = new FeatureData(new SlimeAdapter(features));
@@ -54,9 +57,18 @@ public class FeatureDataTestCase {
                         "\"scalar1\":1.5," +
                         "\"scalar2\":2.5," +
                         "\"tensor1\":{\"type\":\"tensor(x[3])\",\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.5},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":2.5}]}," +
-                        "\"tensor2\":{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":0.5}]}" +
+                        "\"tensor2\":{\"type\":\"tensor(key{})\",\"cells\":[{\"address\":{\"key\":\"a\"},\"value\":0.5},{\"address\":{\"key\":\"b\"},\"value\":1.5}]}" +
                         "}";
         assertEquals(expectedJson, featureData.toJson());
+
+        Map<String, Tensor> featureMap = new LinkedHashMap<>();
+        for (String featureName : featureData.featureNames())
+            featureMap.put(featureName, featureData.getTensor(featureName));
+        FeatureData fromMap = new FeatureData(featureMap);
+        assertEquals(featureData, fromMap);
+        assertEquals(featureData.toJson(), fromMap.toJson());
+        assertEquals(featureData.toJson(true, false), fromMap.toJson(true, false));
+        assertEquals(featureData.toJson(true, true), fromMap.toJson(true, true));
     }
 
 }
