@@ -46,7 +46,7 @@ public class FieldsCompletionProvider implements CompletionProvider {
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
-        List<Symbol> fieldSymbols = context.schemaIndex.findSymbolsWithType(context.document.getFileURI(), TokenType.FIELD);
+        List<Symbol> fieldSymbols = context.schemaIndex.findSymbolsWithTypeInDocument(context.document.getFileURI(), TokenType.FIELD);
 
         return fieldSymbols.stream()
                            .map(symbol -> CompletionUtils.constructBasic(symbol.getShortIdentifier()))

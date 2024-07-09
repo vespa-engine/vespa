@@ -1,6 +1,7 @@
 
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.common.Utils;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
@@ -97,11 +98,14 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
 
+        this.schemaDocumentScheduler.setReparseDescendants(false);
         for (var folder : initializeParams.getWorkspaceFolders()) {
-            for (String fileURI : findSchemaFiles(folder.getUri())) {
+            for (String fileURI : Utils.findSchemaFiles(folder.getUri(), this.logger)) {
                 this.schemaDocumentScheduler.addDocument(fileURI);
             }
         }
+        this.schemaDocumentScheduler.reparseInInheritanceOrder();
+        this.schemaDocumentScheduler.setReparseDescendants(true);
 
         return CompletableFuture.supplyAsync(()->initializeResult);
     }
@@ -154,31 +158,4 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.client.registerCapability(new RegistrationParams(Collections.singletonList(registration)));
     }
 
-    List<String> findSchemaFiles(String workspaceFolderUri) {
-        String glob = "glob:**/*.sd";
-        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
-
-        // TODO: Exclude known heavy directories like .git
-        List<String> filePaths = new ArrayList<>();
-        try {
-            Files.walkFileTree(Paths.get(URI.create(workspaceFolderUri)), new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                    if (pathMatcher.matches(path)) {
-                        filePaths.add(path.toUri().toString());
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exception) throws IOException {
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch(IOException ex) {
-            logger.println("IOException caught when walking file tree: " + ex.getMessage());
-        }
-
-        return filePaths;
-    }
 }

@@ -1,5 +1,8 @@
 package ai.vespa.schemals.index;
 
+import static ai.vespa.schemals.parser.Token.TokenType.DOCUMENT;
+import static ai.vespa.schemals.parser.Token.TokenType.SCHEMA;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,7 +13,7 @@ import java.util.Map;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 
 import ai.vespa.schemals.parser.Token.TokenType;
-
+import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.TypeNode;
 
 public class SchemaIndex {
@@ -67,6 +70,7 @@ public class SchemaIndex {
 
     public void registerSchema(String fileURI, SchemaDocumentParser schemaDocumentParser) {
         openSchemas.put(fileURI, schemaDocumentParser);
+        documentInheritanceGraph.createNodeIfNotExists(fileURI);
     }
 
     public void insert(String fileURI, Symbol symbol) {
@@ -76,15 +80,37 @@ public class SchemaIndex {
         );
     }
 
+    /*
+    * Searches for the given symbol ONLY in document pointed to by fileURI
+    */
     public Symbol findSymbolInFile(String fileURI, TokenType type, String identifier) {
         SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
+
         if (results == null) {
+            // Edge case for when a document is defined without explicitly stating the name.
+            if (type == DOCUMENT) {
+                return findSymbolInFile(fileURI, SCHEMA, identifier);
+            }
             return null;
         }
         return results.symbol;
     }
 
-    public List<Symbol> findSymbolsWithType(String fileURI, TokenType type) {
+    /*
+     * Search for a user defined identifier symbol. Also search in inherited documents.
+     */
+    public Symbol findSymbol(String fileURI, TokenType type, String identifier) {
+        // TODO: handle name collision (diamond etc.)
+        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+
+        for (var parentURI : inheritanceList) {
+            Symbol result = findSymbolInFile(parentURI, type, identifier);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, TokenType type) {
         List<Symbol> result = new ArrayList<>();
         for (var entry : database.entrySet()) {
             SchemaIndexItem item = entry.getValue();
@@ -98,26 +124,18 @@ public class SchemaIndex {
 
     public boolean resolveTypeNode(TypeNode typeNode, String fileURI) {
         // TODO: handle document reference
-        // TODO: handle name collision (diamond etc.)
         String typeName = typeNode.getParsedType().name().toLowerCase();
 
-        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
-
-        for (var parentURI : inheritanceList) {
-            if (findSymbolInFile(parentURI, TokenType.STRUCT, typeName) != null) return true;
-        }
-
+        // Probably struct
+        if (findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
+        if (findSymbol(fileURI, TokenType.DOCUMENT, typeName.toLowerCase()) != null) return true;
         return false;
     }
 
-    public Symbol findSymbolDefinition(String fileURI, TokenType symbolType, String identifier) {
-        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+    public boolean resolveAnnotationReferenceNode(AnnotationReferenceNode annotationReferenceNode, String fileURI) {
+        String annotationName = annotationReferenceNode.getText().toLowerCase();
 
-        for (var parentURI : inheritanceList) {
-            Symbol results = findSymbolInFile(parentURI, symbolType, identifier);
-            if (results != null) return results;
-        }
-        return null;
+        return findSymbol(fileURI, TokenType.ANNOTATION, annotationName) != null;
     }
 
     public void dumpIndex(PrintStream logger) {
@@ -145,7 +163,7 @@ public class SchemaIndex {
         };
 
         for (TokenType tokenType : schemaIdentifierTypes) {
-            var result = findSymbolsWithType(fileURI, tokenType);
+            var result = findSymbolsWithTypeInDocument(fileURI, tokenType);
 
             if (result.isEmpty()) continue;
             return result.get(0);
@@ -173,13 +191,25 @@ public class SchemaIndex {
         return this.documentInheritanceGraph.addInherits(childURI, parentURI);
     }
 
+    public List<String> getAllDocumentAncestorURIs(String fileURI) {
+        return this.documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+    }
+
     public List<String> getAllDocumentDescendants(String fileURI) {
         List<String> descendants = this.documentInheritanceGraph.getAllDocumentDescendantURIs(fileURI);
         descendants.remove(fileURI);
         return descendants;
     }
 
+    public List<String> getAllDocumentsInInheritanceOrder() {
+        return this.documentInheritanceGraph.getAllDocumentsTopoOrder();
+    }
+
     public void setSchemaInherits(String childURI, String parentURI) {
         schemaInherits.put(childURI, parentURI);
+    }
+
+    public int numEntries() {
+        return this.database.size();
     }
 }

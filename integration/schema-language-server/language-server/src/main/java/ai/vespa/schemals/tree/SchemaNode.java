@@ -1,6 +1,7 @@
 package ai.vespa.schemals.tree;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.eclipse.lsp4j.Range;
 
@@ -12,7 +13,7 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
-public class SchemaNode {
+public class SchemaNode implements Iterable<SchemaNode> {
 
     private TokenType type;
     private String identifierString;
@@ -23,7 +24,7 @@ public class SchemaNode {
     private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
 
     // This array has to be in order, without overlapping elements
-    private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
+    protected ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
 
     private Range range;
 
@@ -256,4 +257,9 @@ public class SchemaNode {
     public String toString() {
         return getText() + "[" + getType() + "]";
     }
+
+	@Override
+	public Iterator<SchemaNode> iterator() {
+        return this.children.iterator();
+	}
 }

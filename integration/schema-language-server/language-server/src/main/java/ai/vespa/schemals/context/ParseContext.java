@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import ai.vespa.schemals.context.parser.*;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.tree.TypeNode;
+import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.index.SchemaIndex;
@@ -18,6 +19,7 @@ public class ParseContext {
     private List<Identifier> identifiers;
     private List<SchemaNode> unresolvedInheritanceNodes;
     private List<TypeNode> unresolvedTypeNodes;
+    private List<AnnotationReferenceNode> unresolvedAnnotationReferenceNodes;
     private SchemaIndex schemaIndex;
     private SchemaNode inheritsSchemaNode;
 
@@ -28,10 +30,12 @@ public class ParseContext {
         this.schemaIndex = schemaIndex;
         this.unresolvedInheritanceNodes = new ArrayList<>();
         this.unresolvedTypeNodes = new ArrayList<>();
+        this.unresolvedAnnotationReferenceNodes = new ArrayList<>();
         ParseContext context = this;
         this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>() {{
             add(new IdentifyType(context));
+            add(new IdentifyAnnotationReference(context));
             add(new IdentifyDocumentInheritance(context));
             add(new IdentifySymbolDefinition(context));
             add(new IdentifySymbolReferences(context));
@@ -67,6 +71,10 @@ public class ParseContext {
         return this.unresolvedTypeNodes;
     }
 
+    public List<AnnotationReferenceNode> unresolvedAnnotationReferenceNodes() {
+        return this.unresolvedAnnotationReferenceNodes;
+    }
+
     public SchemaIndex schemaIndex() {
         return this.schemaIndex;
     }
@@ -79,12 +87,20 @@ public class ParseContext {
         this.unresolvedTypeNodes.add(node);
     }
 
+    public void addUnresolvedAnnotationReferenceNode(AnnotationReferenceNode node) {
+        this.unresolvedAnnotationReferenceNodes.add(node);
+    }
+
     public void addUnresolvedInheritanceNode(SchemaNode nameNode) {
         this.unresolvedInheritanceNodes.add(nameNode);
     }
 
     public void clearUnresolvedTypeNodes() {
         this.unresolvedTypeNodes.clear();
+    }
+
+    public void clearUnresolvedAnnotationReferenceNodes() {
+        this.unresolvedAnnotationReferenceNodes.clear();
     }
 
     public void clearUnresolvedInheritanceNodes() {

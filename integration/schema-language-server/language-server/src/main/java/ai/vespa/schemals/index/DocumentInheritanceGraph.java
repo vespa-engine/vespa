@@ -4,9 +4,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
  * This class is responsible for managing inheritance relationships among documents
@@ -30,6 +32,16 @@ public class DocumentInheritanceGraph {
         }
 
         documentParents.remove(fileURI);
+    }
+
+    public void createNodeIfNotExists(String fileURI) {
+        if (!documentParents.containsKey(fileURI)) {
+            documentParents.put(fileURI, new ArrayList<>());
+        }
+
+        if (!documentChildren.containsKey(fileURI)) {
+            documentChildren.put(fileURI, new ArrayList<>());
+        }
     }
 
     /*
@@ -71,6 +83,8 @@ public class DocumentInheritanceGraph {
      * List includes the queried node (will be last)
      */
     public List<String> getAllDocumentAncestorURIs(String fileURI) {
+        createNodeIfNotExists(fileURI);
+
         List<String> result = new ArrayList<>();
         Set<String> visited = new HashSet<>();
         getAllDocumentAncestorURIsImpl(fileURI, result, visited);
@@ -84,9 +98,27 @@ public class DocumentInheritanceGraph {
      * List includes the queried node (will be first)
      */
     public List<String> getAllDocumentDescendantURIs(String fileURI) {
+        createNodeIfNotExists(fileURI);
+
         List<String> result = new ArrayList<>();
         Set<String> visited = new HashSet<>();
         getAllDocumentDescendantURIsImpl(fileURI, result, visited);
+        return result;
+    }
+
+    /*
+     * Returns a list of all registered documents in topological order
+     */
+    public List<String> getAllDocumentsTopoOrder() {
+        Set<String> visited = new HashSet<>();
+
+        List<String> result = new LinkedList<>();
+        for (String fileURI : documentParents.keySet()) {
+            if (visited.contains(fileURI)) continue;
+
+            getAllDocumentAncestorURIsImpl(fileURI, result, visited);
+        }
+
         return result;
     }
 
@@ -106,13 +138,14 @@ public class DocumentInheritanceGraph {
 
         for (String parentURI : documentChildren.keySet()) {
             logger.println(getFileName(parentURI) + " has children:");
-            for (String childURI : getChildren(parentURI)) {
+            for (String childURI : getValidChildren(parentURI)) {
                 logger.println("    " + getFileName(childURI));
             }
         }
         logger.println();
 
     }
+
     
     /*
      * Recursive search upwards through the inheritance graph to
@@ -142,7 +175,7 @@ public class DocumentInheritanceGraph {
 
         result.add(fileURI);
 
-        for (String childURI : getChildren(fileURI)) {
+        for (String childURI : getValidChildren(fileURI)) {
             getAllDocumentDescendantURIsImpl(childURI, result, visited);
         }
 
@@ -152,27 +185,10 @@ public class DocumentInheritanceGraph {
         return documentParents.containsKey(fileURI) && documentChildren.containsKey(fileURI);
     }
 
-    private void createNodeIfNotExists(String fileURI) {
-        if (!documentParents.containsKey(fileURI)) {
-            documentParents.put(fileURI, new ArrayList<>());
-        }
-
-        if (!documentChildren.containsKey(fileURI)) {
-            documentChildren.put(fileURI, new ArrayList<>());
-        }
-    }
-
-    private List<String> getChildren(String fileURI) {
-        List<String> childrenList = documentChildren.getOrDefault(fileURI, new ArrayList<>());
-
-        List<String> correctList = new ArrayList<>();
-        for (String childURI : childrenList) {
-            if (documentParents.get(childURI).contains(fileURI)) {
-                correctList.add(childURI);
-            }
-        }
-
-        documentChildren.put(fileURI, correctList);
-        return correctList;
+    private List<String> getValidChildren(String fileURI) {
+        return documentChildren.getOrDefault(fileURI, new ArrayList<>())
+                               .stream()
+                               .filter(childURI -> documentParents.get(childURI).contains(fileURI))
+                               .collect(Collectors.toList());
     }
 }

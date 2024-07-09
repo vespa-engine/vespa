@@ -24,6 +24,7 @@ public class SchemaDocumentScheduler {
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
     private HashMap<String, SchemaDocumentParser> workspaceDocuments = new HashMap<String, SchemaDocumentParser>();
+    private boolean reparseDescendants = true;
 
     public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex) {
         this.logger = logger;
@@ -42,9 +43,11 @@ public class SchemaDocumentScheduler {
             workspaceDocuments.get(fileURI).updateFileContent(content, version);
         }
 
-        for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
-            if (workspaceDocuments.containsKey(descendantURI)) {
-                workspaceDocuments.get(descendantURI).reparseContent();
+        if (reparseDescendants) {
+            for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
+                if (workspaceDocuments.containsKey(descendantURI)) {
+                    workspaceDocuments.get(descendantURI).reparseContent();
+                }
             }
         }
     }
@@ -99,6 +102,18 @@ public class SchemaDocumentScheduler {
 
     public SchemaDocumentParser getDocument(String fileURI) {
         return workspaceDocuments.get(fileURI);
+    }
+
+    public void reparseInInheritanceOrder() {
+        for (String fileURI : schemaIndex.getAllDocumentsInInheritanceOrder()) {
+            if (workspaceDocuments.containsKey(fileURI)) {
+                workspaceDocuments.get(fileURI).reparseContent();
+            }
+        }
+    }
+
+    public void setReparseDescendants(boolean reparseDescendants) {
+        this.reparseDescendants = reparseDescendants;
     }
 
     private String readFromURI(String fileURI) throws IOException {

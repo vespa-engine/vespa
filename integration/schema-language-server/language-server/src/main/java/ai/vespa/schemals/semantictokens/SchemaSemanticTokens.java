@@ -25,6 +25,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 public class SchemaSemanticTokens implements Visitor {
 
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
+        add(TokenType.ANNOTATION);
         add(TokenType.DOCUMENT);
         add(TokenType.FIELD);
         add(TokenType.FIELDSET); 
@@ -196,8 +197,8 @@ public class SchemaSemanticTokens implements Visitor {
 
         } else {
             
-            for (int i = 0; i < node.size(); i++) {
-                ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
+            for (SchemaNode child : node) {
+                ArrayList<SemanticTokenMarker> markers = traverseCST(child, logger);
                 ret.addAll(markers);
             }
         }

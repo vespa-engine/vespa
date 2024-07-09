@@ -27,9 +27,7 @@ public class IdentifyDocumentlessSchema extends Identifier {
         }
 
         // Look for document definition inside
-        for (int i = 0; i < node.size(); ++i) {
-            SchemaNode child = node.get(i);
-
+        for (SchemaNode child : node) {
             if (!child.isASTInstance(rootSchemaItem.class)) continue;
             if (child.size() == 0) continue;
             if (child.get(0).isASTInstance(documentElm.class)) return ret; // Found document
