@@ -19,21 +19,8 @@ import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.ast.documentElm;
-import ai.vespa.schemals.parser.ast.fieldElm;
-import ai.vespa.schemals.parser.ast.fieldSetElm;
-import ai.vespa.schemals.parser.ast.fieldsElm;
-import ai.vespa.schemals.parser.ast.functionElm;
-import ai.vespa.schemals.parser.ast.inheritsDocument;
-import ai.vespa.schemals.parser.ast.inheritsRankProfile;
-import ai.vespa.schemals.parser.ast.rankProfile;
-import ai.vespa.schemals.parser.ast.rootSchema;
-import ai.vespa.schemals.parser.ast.structDefinitionElm;
-import ai.vespa.schemals.parser.ast.structFieldDefinition;
-import ai.vespa.schemals.parser.ast.structFieldElm;
 
 public class SchemaSemanticTokens implements Visitor {
 
@@ -183,6 +170,7 @@ public class SchemaSemanticTokens implements Visitor {
         TokenType type = node.getType();
 
         if (node instanceof TypeNode) {
+
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != -1) {
                 // this will leave <> uncolored, as we are only interested in marking the actual token
@@ -191,6 +179,7 @@ public class SchemaSemanticTokens implements Visitor {
             }
 
         } if (node instanceof SymbolNode) {
+
             SymbolNode symbolNode = (SymbolNode) node;
             Integer tokenType = identifierTypeMap.get(symbolNode.getSymbolType());
             
@@ -199,12 +188,14 @@ public class SchemaSemanticTokens implements Visitor {
             }
 
         } else if (type != null) {
+
             Integer tokenType = tokenTypeMap.get(type);
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
         } else {
+            
             for (int i = 0; i < node.size(); i++) {
                 ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
                 ret.addAll(markers);
