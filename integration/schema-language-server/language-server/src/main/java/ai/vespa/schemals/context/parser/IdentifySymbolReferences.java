@@ -10,6 +10,7 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -33,7 +34,7 @@ public class IdentifySymbolReferences extends Identifier {
 
         if (node instanceof SymbolDefinitionNode) return ret;
 
-        boolean isIdentifier = node.getClassLeafIdentifierString().equals("identifierStr");
+        boolean isIdentifier = node.isASTInstance(identifierStr.class);
 
         if (!isIdentifier) return ret;
 
@@ -44,6 +45,8 @@ public class IdentifySymbolReferences extends Identifier {
         if (tokenType == null) return ret;
 
         SymbolReferenceNode newNode = new SymbolReferenceNode(node, tokenType);
+
+        ret.add(new Diagnostic(newNode.getRange(), "CONVERTED", DiagnosticSeverity.Information, ""));
 
         // TODO: verify that the symbol is defined
 

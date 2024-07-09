@@ -260,6 +260,18 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
 	@Override
 	public Iterator<SchemaNode> iterator() {
-        return this.children.iterator();
+        return new Iterator<SchemaNode>() {
+            int currentIndex = 0;
+
+			@Override
+			public boolean hasNext() {
+                return currentIndex < children.size();
+			}
+
+			@Override
+			public SchemaNode next() {
+                return children.get(currentIndex++);
+			}
+        };
 	}
 }

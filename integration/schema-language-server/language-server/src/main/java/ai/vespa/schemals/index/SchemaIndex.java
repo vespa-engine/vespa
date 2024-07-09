@@ -128,7 +128,12 @@ public class SchemaIndex {
 
         // Probably struct
         if (findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
-        if (findSymbol(fileURI, TokenType.DOCUMENT, typeName.toLowerCase()) != null) return true;
+
+        // If its not struct it could be document. The document can be defined anywhere
+        for (String documentURI : openSchemas.keySet()) {
+            if (findSymbol(documentURI, TokenType.DOCUMENT, typeName.toLowerCase()) != null) return true;
+        }
+
         return false;
     }
 

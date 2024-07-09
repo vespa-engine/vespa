@@ -121,7 +121,7 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        // CSTUtils.printTree(logger, CST);
+        CSTUtils.printTree(logger, CST);
 
         //schemaIndex.dumpIndex(logger);
 
@@ -434,8 +434,8 @@ public class SchemaDocumentParser {
             }
         }
 
-        for (SchemaNode child : node) {
-            ret.addAll(traverseCST(child, context));
+        for (int i = 0; i < node.size(); ++i) {
+            ret.addAll(traverseCST(node.get(i), context));
         }
 
         return ret;

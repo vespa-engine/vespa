@@ -35,15 +35,18 @@ public class ParseContext {
         this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>() {{
             add(new IdentifyType(context));
-            add(new IdentifyAnnotationReference(context));
-            add(new IdentifyDocumentInheritance(context));
             add(new IdentifySymbolDefinition(context));
             add(new IdentifySymbolReferences(context));
+            add(new IdentifyAnnotationReference(context));
+
+            add(new IdentifyDocumentInheritance(context));
+            add(new IdentifyStructInheritance(context));
+            add(new IdentifySchemaInheritance(context));
+
             add(new IdentifyDeprecatedToken(context));
             add(new IdentifyDirtyNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
-            add(new IdentifySchemaInheritance(context));
         }};
     }
 
