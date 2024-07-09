@@ -43,7 +43,7 @@ public class IdentifySymbolReferences extends Identifier {
                     if (context.schemaIndex().findSymbol(context.fileURI(), TokenType.FIELD, child.getText()) == null) {
                         ret.add(createNotFoundError(child, TokenType.FIELD));
                     } else {
-                        new SymbolReferenceNode(child);
+                        new SymbolReferenceNode(child, TokenType.FIELD);
                     }
                 }
 
