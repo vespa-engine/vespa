@@ -385,6 +385,22 @@ public class SchemaDocumentParser {
                 ""
             ));
         }
+
+
+        // Look for redeclarations
+        Set<String> fieldsSeen = new HashSet<>();
+
+        for (Symbol fieldSymbol : context.schemaIndex().getAllStructFieldSymbols(myStructDefinitionNode.getSymbol())) {
+            if (fieldsSeen.contains(fieldSymbol.getShortIdentifier())) {
+                diagnostics.add(new Diagnostic(
+                    fieldSymbol.getNode().getRange(),
+                    "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+            fieldsSeen.add(fieldSymbol.getShortIdentifier().toLowerCase());
+        }
     }
 
     private static Optional<String> resolveDocumentInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
