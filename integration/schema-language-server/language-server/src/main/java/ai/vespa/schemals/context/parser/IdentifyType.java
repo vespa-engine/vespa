@@ -51,6 +51,23 @@ public class IdentifyType extends Identifier {
             }
         }
 
+        if (parsedType.getVariant() == Variant.MAP) {
+            SchemaNode keyTypeNode = node.get(0).get(2);
+
+            if (keyTypeNode != null && keyTypeNode.isASTInstance(dataType.class)) {
+                ParsedType keyParsedType = ((dataType)keyTypeNode.getOriginalNode()).getParsedType();
+                if (keyParsedType.getVariant() != Variant.BUILTIN) {
+                    // TODO: quickfix
+                    ret.add(new Diagnostic(
+                        keyTypeNode.getRange(),
+                        "Map key type must be a primitive type",
+                        DiagnosticSeverity.Error,
+                        ""
+                    ));
+                }
+            }
+        }
+
         if (parsedType.getVariant() != Variant.UNKNOWN) {
             return ret;
         }

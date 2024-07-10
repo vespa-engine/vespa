@@ -25,13 +25,19 @@ public class SchemaHover {
             return null;
         }
 
-        List<Symbol> fieldDefs = context.schemaIndex.getAllStructFieldSymbols(node.getSymbol());
+        Symbol structDefinitionSymbol = context.schemaIndex.findSymbol(node.getSymbol().getFileURI(), SymbolType.STRUCT, node.getSymbol().getLongIdentifier());
+        List<Symbol> fieldDefs = context.schemaIndex.getAllStructFieldSymbols(structDefinitionSymbol);
 
         String result = "### struct " + node.getText() + "\n";
         for (Symbol fieldDef : fieldDefs) {
             result += "    field " + fieldDef.getShortIdentifier() + " type " +  
-                fieldDef.getNode().getNextSibling().getNextSibling().getText()
-                + "\n";
+                fieldDef.getNode().getNextSibling().getNextSibling().getText();
+
+            if (!fieldDef.isInScope(structDefinitionSymbol)) {
+                result += " (inherited from " + fieldDef.getScopeIdentifier() + ")";
+            }
+
+            result += "\n";
         }
 
         if (result.isEmpty())result = "no fields found";
