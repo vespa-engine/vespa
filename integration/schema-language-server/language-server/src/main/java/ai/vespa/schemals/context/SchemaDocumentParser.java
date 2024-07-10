@@ -121,8 +121,8 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing: " + fileURI);
 
-        // logger.println("======== CST for file: " + fileURI + " ========");
-        // CSTUtils.printTree(logger, CST);
+        logger.println("======== CST for file: " + fileURI + " ========");
+        CSTUtils.printTree(logger, CST);
 
         schemaIndex.dumpIndex(logger);
 
@@ -333,7 +333,7 @@ public class SchemaDocumentParser {
                     documentInheritanceURIs.add(parent.getFileURI());
                 }
 
-                schemaDocumentNameNode.setSymbolStatus(SymbolStatus.REFERENCE);
+                context.schemaIndex().insertSymbolReference(context.fileURI(), schemaDocumentNameNode);
             }
         }
 
@@ -351,7 +351,8 @@ public class SchemaDocumentParser {
                     ));
                     context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
                 }
-                context.inheritsSchemaNode().setSymbolStatus(SymbolStatus.REFERENCE);
+                context.schemaIndex().insertSymbolReference(context.fileURI(), context.inheritsSchemaNode());
+
             }
         }
 
@@ -382,7 +383,6 @@ public class SchemaDocumentParser {
                     ""
                 ));
             } else {
-                node.setSymbolStatus(SymbolStatus.REFERENCE);
                 context.schemaIndex().insertSymbolReference(referencedSymbol, context.fileURI(), node);
             }
         }

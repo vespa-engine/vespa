@@ -130,7 +130,8 @@ public class SchemaIndex {
         // Probably struct
         if (findSymbol(fileURI, SymbolType.STRUCT, typeName.toLowerCase()) != null) {
             typeNode.setSymbolType(SymbolType.STRUCT);
-            typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            // typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            insertSymbolReference(fileURI, typeNode);
             return true;
         }
 
@@ -139,7 +140,8 @@ public class SchemaIndex {
             if (findSymbolInFile(documentURI, SymbolType.DOCUMENT, typeName.toLowerCase()) != null || 
                   findSymbolInFile(documentURI, SymbolType.SCHEMA, typeName.toLowerCase()) != null) {
                 typeNode.setSymbolType(SymbolType.DOCUMENT);
-                typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+                // typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+                insertSymbolReference(fileURI, typeNode);
                 return true;
             }
         }
@@ -150,8 +152,10 @@ public class SchemaIndex {
     public boolean resolveAnnotationReferenceNode(SchemaNode annotationReferenceNode, String fileURI) {
         String annotationName = annotationReferenceNode.getText().toLowerCase();
 
-        if (findSymbol(fileURI, SymbolType.ANNOTATION, annotationName) != null) {
-            annotationReferenceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+        Symbol referencedSymbol = findSymbol(fileURI, SymbolType.ANNOTATION, annotationName);
+        if (referencedSymbol != null) {
+            // annotationReferenceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            insertSymbolReference(referencedSymbol, fileURI, annotationReferenceNode);
             return true;
         }
 
@@ -252,21 +256,29 @@ public class SchemaIndex {
     }
 
     public void insertSymbolReference(Symbol refersTo, String fileURI, SchemaNode node) {
+        node.setSymbolStatus(SymbolStatus.REFERENCE);
 
         String dbKey = createDBKey(refersTo);
         ArrayList<Symbol> references = symbolReferencesDB.get(dbKey);
 
         Symbol symbol = node.getSymbol();
 
-        if (references != null) {
-            references.add(symbol);
+        if (references == null) {
+            references = new ArrayList<>() {{
+                add(symbol);
+            }};
+    
+            symbolReferencesDB.put(dbKey, references);
             return;
         }
 
-        references = new ArrayList<>() {{
-            add(symbol);
-        }};
+        if (!references.contains(symbol)) {
+            references.add(symbol);
+        }
+    }
 
-        symbolReferencesDB.put(dbKey, references);
+    public void insertSymbolReference(String fileURI, SchemaNode node) {
+        Symbol referencedSymbol = findSymbol(fileURI, node.getSymbol().getType(), node.getText());
+        insertSymbolReference(referencedSymbol, fileURI, node);
     }
 }

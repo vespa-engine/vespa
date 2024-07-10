@@ -28,7 +28,7 @@ public class SchemaRename {
             if (!documentEdits.containsKey(symbol.getFileURI())) {
                 SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
                 SchemaTextDocumentEdit documentEdit = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
-                documentEdits.put(symbol.getFileURI(), documentEdit);
+                documentEdits.put(documentEdit.getFileURI(), documentEdit);
             }
 
             SchemaTextDocumentEdit documentEdit = documentEdits.get(symbol.getFileURI());
@@ -39,6 +39,8 @@ public class SchemaRename {
     }
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
+        
+        context.logger.println("\n\n\n\n\n\n RENAME!");
 
         SchemaNode node = context.document.getSymbolAtPosition(context.position);
         if (node == null || !node.hasSymbol()) {
@@ -94,7 +96,6 @@ public class SchemaRename {
         context.logger.println(documentSymbol);
 
         if (documentSymbol != null && documentSymbol.getType() == SymbolType.DOCUMENT) {
-            context.logger.println("Found a document match!");
             symbolOccurances.add(documentSymbol);
             ArrayList<Symbol> documentReferences = context.schemaIndex.findSymbolReferences(documentSymbol);
             symbolOccurances.addAll(documentReferences);
@@ -111,6 +112,8 @@ public class SchemaRename {
         }
 
         ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, symbolOccurances, newName);
+
+        context.logger.println("Number of symbols: " + symbolOccurances.size());
 
         for (int i = 0; i < documentEdits.size(); i++) {
             if (documentEdits.get(i).getFileURI().equals(document.getFileURI())) {

@@ -3,6 +3,7 @@ package ai.vespa.schemals.tree;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Token;
@@ -268,7 +269,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
 
     public String toString() {
-        return getText() + "[" + getType() + "]";
+        Position pos = getRange().getStart();
+        return getText() + "[" + getType() + "] at " + pos.getLine() + ":" + pos.getCharacter();
     }
 
 	@Override

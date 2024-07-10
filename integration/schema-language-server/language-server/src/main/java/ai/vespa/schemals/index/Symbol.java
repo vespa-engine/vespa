@@ -8,7 +8,6 @@ import ai.vespa.schemals.context.SchemaDocumentParser;
 public class Symbol {
     private SchemaNode identifierNode;
 
-    private Symbol scope = null;
     private String fileURI;
     private SymbolType type;
     private SymbolStatus status;
@@ -18,11 +17,6 @@ public class Symbol {
         this.fileURI = fileURI;
         this.type = type;
         this.status = SymbolStatus.UNRESOLVED;
-    }
-
-    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
-        this(identifierNode, type, fileURI);
-        this.scope = scope;
     }
 
     public String getFileURI() { return fileURI; }
@@ -42,10 +36,37 @@ public class Symbol {
     public String getShortIdentifier() { return identifierNode.getText(); }
 
     public String getLongIdentifier() {
-        if (scope == null) {
-            return getShortIdentifier();
+        return getShortIdentifier();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
         }
-        return scope.getLongIdentifier() + "." + getShortIdentifier();
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Symbol other = (Symbol) obj;
+        return (
+            this.fileURI.equals(other.fileURI) &&
+            this.type == other.type &&
+            this.getNode() != null &&
+            other.getNode() != null &&
+            this.getNode().getRange() != null &&
+            other.getNode().getRange() != null &&
+            this.getNode().getRange().equals(other.getNode().getRange())
+        );
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((this.fileURI == null) ? 0 : this.fileURI.hashCode());
+        result = prime * result + ((this.type == null) ? 0 : this.type.hashCode());
+        result = prime * result + ((this.getNode() == null || this.getNode().getRange() == null) ? 0 : this.getNode().getRange().hashCode());
+        return result;
     }
 
     public enum SymbolStatus {
@@ -67,6 +88,7 @@ public class Symbol {
         FUNCTION,
         TYPE_UNKNOWN
     }
+
     public String toString() {
         Position pos = getNode().getRange().getStart();
         String fileName = SchemaDocumentParser.fileNameFromPath(fileURI);
