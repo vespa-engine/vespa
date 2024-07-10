@@ -1,6 +1,8 @@
 package ai.vespa.schemals.index;
 
 import ai.vespa.schemals.tree.SchemaNode;
+
+import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
@@ -45,6 +47,10 @@ public class Symbol {
             return getShortIdentifier();
         }
         return scope.getLongIdentifier() + "." + getShortIdentifier();
+    }
+
+    public Location getLocation() {
+        return new Location(fileURI, identifierNode.getRange());
     }
 
     @Override

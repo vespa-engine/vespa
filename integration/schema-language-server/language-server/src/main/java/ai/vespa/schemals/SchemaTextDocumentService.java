@@ -4,6 +4,7 @@ import ai.vespa.schemals.completion.SchemaCompletion;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.references.SchemaReferences;
 import ai.vespa.schemals.rename.SchemaPrepareRename;
 import ai.vespa.schemals.rename.SchemaRename;
 import ai.vespa.schemals.definition.SchemaDefinition;
@@ -89,8 +90,10 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<List<? extends Location>> references(ReferenceParams referenceParams) {
-        return null;
+    public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            return SchemaReferences.getReferences(eventContextCreator.createContext(params));
+        });
     }
 
     @Override

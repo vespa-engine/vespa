@@ -95,6 +95,10 @@ public class SchemaIndex {
         return null;
     }
 
+    public Symbol findSymbol(Symbol symbol) {
+        return findSymbol(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
+    }
+
     /**
      * Finds symbol references in the schema index for the given symbol.
      *

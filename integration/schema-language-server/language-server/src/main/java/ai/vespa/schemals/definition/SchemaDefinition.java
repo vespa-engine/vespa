@@ -44,7 +44,7 @@ public class SchemaDefinition {
             return ret;
         }
 
-        ret.add(new Location(result.getFileURI(), result.getNode().getRange()));
+        ret.add(result.getLocation());
         return ret;
     }
 }
