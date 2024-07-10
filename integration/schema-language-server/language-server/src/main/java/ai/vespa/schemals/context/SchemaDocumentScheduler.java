@@ -54,7 +54,9 @@ public class SchemaDocumentScheduler {
 
     public void openDocument(TextDocumentItem document) {
         logger.println("Opening document: " + document.getUri());
+        
         updateFile(document.getUri(), document.getText(), document.getVersion());
+        workspaceDocuments.get(document.getUri()).setIsOpen(true);
     }
 
     /*
@@ -91,6 +93,8 @@ public class SchemaDocumentScheduler {
         workspaceDocuments.remove(fileURI);
 
         // TODO: more places to remove references
+
+        schemaIndex.dumpIndex(logger);
     }
 
     public boolean removeDocument(String fileURI) {

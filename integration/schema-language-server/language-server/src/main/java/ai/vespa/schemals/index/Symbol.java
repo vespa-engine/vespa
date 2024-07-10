@@ -21,8 +21,14 @@ public class Symbol {
         this.scope = scope;
     }
 
-    public TokenType getType() { return identifierNode.getSymbolType(); }
     public String getFileURI() { return fileURI; }
+    
+    public String setFileURI(String fileURI) {
+        this.fileURI = fileURI;
+        return fileURI;
+    }
+    
+    public TokenType getType() { return identifierNode.getSymbolType(); }
     public SymbolNode getNode() { return identifierNode; }
     public String getShortIdentifier() { return identifierNode.getText(); }
 

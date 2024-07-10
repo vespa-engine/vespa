@@ -9,16 +9,15 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 public class SchemaWorkspaceEdit {
-    private ArrayList<SchemaTextDocumentEdit> textDocumentEdits;
-    private ArrayList<ResourceOperation> resourceOperations;
+
+    ArrayList<Either<TextDocumentEdit, ResourceOperation>> edits;
 
     public SchemaWorkspaceEdit() {
-        textDocumentEdits = new ArrayList<>();
-        resourceOperations = new ArrayList<>();
+        edits = new ArrayList<>();
     }
 
     public void addTextDocumentEdit(SchemaTextDocumentEdit textDocumentEdit) {
-        textDocumentEdits.add(textDocumentEdit);
+        edits.add(Either.forLeft(textDocumentEdit.exportTextDocumentEdit()));
     }
 
     public void addTextDocumentEdits(List<SchemaTextDocumentEdit> textDocumentEdits) {
@@ -28,24 +27,14 @@ public class SchemaWorkspaceEdit {
     }
 
     public void addResourceOperation(ResourceOperation resourceOperation) {
-        resourceOperations.add(resourceOperation);
+        edits.add(Either.forRight(resourceOperation));
     }
 
     public WorkspaceEdit exportEdits() {
-        ArrayList<Either<TextDocumentEdit, ResourceOperation>> ret = new ArrayList<>();
-
-        for (int i = 0; i < textDocumentEdits.size(); i++) {
-            ret.add(Either.forLeft(textDocumentEdits.get(i).exportTextDocumentEdit()));
-        }
-
-        for (int i = 0; i < resourceOperations.size(); i++) {
-            ret.add(Either.forRight(resourceOperations.get(i)));
-        }
-
-        if (ret.size() == 0) {
+        if (edits.size() == 0) {
             return null;
         }
 
-        return new WorkspaceEdit(ret);
+        return new WorkspaceEdit(edits);
     }
 }

@@ -20,6 +20,10 @@ public class SchemaTextDocumentEdit {
         textEdits.add(textEdit);
     }
 
+    public String getFileURI() {
+        return versionedTextDocumentIdentifier.getUri();
+    }
+
     public TextDocumentEdit exportTextDocumentEdit() {
         return new TextDocumentEdit(versionedTextDocumentIdentifier, textEdits);
     }
