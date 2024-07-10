@@ -2608,10 +2608,12 @@ public class ParseTestCase {
     }
 
     @Test
-    void testMap() {
+    void testSameElement() {
         tester.assertParsed("str_map.key:key1", "str_map.key:key1", Query.Type.ALL);
         tester.assertParsed("str_map.value:value1", "str_map.value:value1", Query.Type.ALL);
         tester.assertParsed("str_map:{key:key1 value:value1}", "str_map:{key:key1 value:value1}", Query.Type.ALL);
+        tester.assertParsed("map", "str_map:{", Query.Type.ALL);
+        tester.assertParsed("map", "str_map:{.", Query.Type.ALL);
     }
 
     @Test
