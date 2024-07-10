@@ -184,7 +184,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/streamingjuniper/streamingjuniper.sd",
             "../../../config-model/src/test/derived/streamingstruct/streamingstruct.sd",
             "../../../config-model/src/test/derived/streamingstructdefault/streamingstructdefault.sd",
-            //"../../../config-model/src/test/derived/structandfieldset/test.sd",
+            "../../../config-model/src/test/derived/structandfieldset/test.sd",
             "../../../config-model/src/test/derived/structanyorder/structanyorder.sd",
             //"../../../config-model/src/test/derived/structinheritance/bad.sd", // TODO: check that there actually is an error
             "../../../config-model/src/test/derived/structinheritance/simple.sd",

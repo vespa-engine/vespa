@@ -458,13 +458,21 @@ public class SchemaDocumentParser {
                             node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
                         }
                     }
-                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD_IN_STRUCT) {
-                    diagnostics.add(new Diagnostic(
-                        node.getRange(),
-                        "Subfield of subfield is not supported " + parentField.getText(),
-                        DiagnosticSeverity.Information,
-                        ""
-                    ));
+                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD_IN_STRUCT && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                    Optional<Symbol> parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
+                    if (parentFieldDefinition.isPresent()) {
+                        Optional<Symbol> structReference = findStructFieldStruct(parentFieldDefinition.get());
+
+                        if (structReference.isPresent()) {
+                            Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.get().getLongIdentifier());
+                            if (structDefinition != null) {
+                                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
+                            }
+                            if (referencedSymbol.isPresent()) {
+                                node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
+                            }
+                        }
+                    }
                 }
             } else {
                 referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()));

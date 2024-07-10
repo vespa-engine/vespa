@@ -124,6 +124,18 @@ public class SchemaIndex {
         return results;
     }
 
+    public Optional<Symbol> findDefinitionOfReference(Symbol reference) {
+        for (var entry : symbolReferencesDB.entrySet()) {
+            for (Symbol registeredReference : entry.getValue()) {
+                if (registeredReference == reference) {
+                    String key = entry.getKey();
+                    return Optional.ofNullable(symbolDefinitionsDB.get(key));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, SymbolType type) {
         List<Symbol> result = new ArrayList<>();
         for (var entry : symbolDefinitionsDB.entrySet()) {
@@ -143,29 +155,6 @@ public class SchemaIndex {
                                   .collect(Collectors.toList());
     }
 
-    /*
-     * Given a Symbol pointing to the definition of a field which may be of type struct, array<struct> or similar, 
-     * return the definition of the struct or empty if the field is not of type struct
-     */
-    public Optional<Symbol> findStructFieldStruct(Symbol fieldDefinition) {
-        if (fieldDefinition.getType() != SymbolType.FIELD && fieldDefinition.getType() != SymbolType.FIELD_IN_STRUCT) {
-            return Optional.empty();
-        }
-
-        if (fieldDefinition.getStatus() != SymbolStatus.DEFINITION) {
-            return Optional.empty();
-        }
-
-        SchemaNode definitionNode = fieldDefinition.getNode();
-
-        SchemaNode dataTypeNode = definitionNode.getNextSibling().getNextSibling();
-
-        if (!dataTypeNode.isASTInstance(dataType.class)) {
-            return Optional.empty();
-        }
-
-        return Optional.empty();
-    }
 
     public boolean resolveTypeNode(SchemaNode typeNode, String fileURI) {
         // TODO: handle document reference
