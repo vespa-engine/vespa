@@ -7,7 +7,7 @@ import ai.vespa.schemals.context.SchemaDocumentParser;
 
 public class Symbol {
     private SchemaNode identifierNode;
-
+    private Symbol scope = null;
     private String fileURI;
     private SymbolType type;
     private SymbolStatus status;
@@ -17,6 +17,11 @@ public class Symbol {
         this.fileURI = fileURI;
         this.type = type;
         this.status = SymbolStatus.UNRESOLVED;
+    }
+
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
+        this(identifierNode, type, fileURI);
+        this.scope = scope;
     }
 
     public String getFileURI() { return fileURI; }
@@ -36,7 +41,10 @@ public class Symbol {
     public String getShortIdentifier() { return identifierNode.getText(); }
 
     public String getLongIdentifier() {
-        return getShortIdentifier();
+        if (scope == null) {
+            return getShortIdentifier();
+        }
+        return scope.getLongIdentifier() + "." + getShortIdentifier();
     }
 
     @Override

@@ -7,6 +7,8 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 
+import ai.vespa.schemals.context.EventContext;
+
 public class SchemaTextDocumentEdit {
     private ArrayList<TextEdit> textEdits;
     private VersionedTextDocumentIdentifier versionedTextDocumentIdentifier;
@@ -28,8 +30,8 @@ public class SchemaTextDocumentEdit {
         return new TextDocumentEdit(versionedTextDocumentIdentifier, textEdits);
     }
 
-    public WorkspaceEdit exportWorkspaceEdit() {
-        SchemaWorkspaceEdit ret = new SchemaWorkspaceEdit();
+    public WorkspaceEdit exportWorkspaceEdit(EventContext context) {
+        SchemaWorkspaceEdit ret = new SchemaWorkspaceEdit(context);
         ret.addTextDocumentEdit(this);
         return ret.exportEdits();
     }
