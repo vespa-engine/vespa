@@ -71,6 +71,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.symbolAtNode = new Symbol(this, type, fileURI);
     }
 
+    public void setSymbol(SymbolType type, String fileURI, Symbol scope) {
+        this.symbolAtNode = new Symbol(this, type, fileURI, scope);
+    }
+
     public void setSymbolType(SymbolType newType) {
         if (!this.hasSymbol()) return;
         this.symbolAtNode.setType(newType);

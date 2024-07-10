@@ -66,7 +66,7 @@ public class SchemaIndex {
     }
 
     private String createDBKey(Symbol symbol) {
-        return createDBKey(symbol.getFileURI(), symbol.getType(), symbol.getShortIdentifier());
+        return createDBKey(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
     }
 
     private String createDBKey(String fileURI, SymbolType type, String identifier) {

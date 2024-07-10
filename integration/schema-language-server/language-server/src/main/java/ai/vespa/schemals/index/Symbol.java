@@ -60,7 +60,8 @@ public class Symbol {
         FIELDSET,
         STRUCT_FIELD,
         FUNCTION,
-        TYPE_UNKNOWN
+        TYPE_UNKNOWN,
+        FIELD_IN_STRUCT
     }
     public String toString() {
         Position pos = getNode().getRange().getStart();

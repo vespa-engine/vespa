@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.Schema;
 
@@ -43,10 +44,8 @@ public class IdentifySymbolDefinition extends Identifier {
         put(documentElm.class, SymbolType.DOCUMENT);
         put(namedDocument.class, SymbolType.DOCUMENT);
         put(fieldElm.class, SymbolType.FIELD);
-        put(structFieldDefinition.class, SymbolType.FIELD);
         put(fieldSetElm.class, SymbolType.FIELDSET);
         put(structDefinitionElm.class, SymbolType.STRUCT);
-        put(structFieldElm.class, SymbolType.STRUCT_FIELD);
         put(functionElm.class, SymbolType.FUNCTION);
     }};
 
@@ -70,15 +69,35 @@ public class IdentifySymbolDefinition extends Identifier {
 
         HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
-        if (symbolType == null) return ret;
+        if (symbolType != null) {
 
-        node.setSymbol(symbolType, context.fileURI());
+            node.setSymbol(symbolType, context.fileURI());
 
-        if (context.schemaIndex().findSymbolInFile(context.fileURI(), symbolType, node.getText()) == null) {
-            node.setSymbolStatus(SymbolStatus.DEFINITION);
-            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-        } else {
-            node.setSymbolStatus(SymbolStatus.INVALID);
+            if (context.schemaIndex().findSymbolInFile(context.fileURI(), symbolType, node.getText()) == null) {
+                node.setSymbolStatus(SymbolStatus.DEFINITION);
+                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+            } else {
+                node.setSymbolStatus(SymbolStatus.INVALID);
+            }
+
+            return ret;
+        }
+
+        if (parent.isASTInstance(structFieldDefinition.class) && parent.getParent() != null) {
+            // Custom logic to find the scope
+
+            SchemaNode parentDefinitionNode = parent.getParent().get(1);
+
+            if (parentDefinitionNode.hasSymbol() && parentDefinitionNode.getSymbol().getType() == SymbolType.STRUCT) {
+                Symbol scope = parentDefinitionNode.getSymbol();
+                node.setSymbol(SymbolType.FIELD_IN_STRUCT, context.fileURI(), scope);
+                node.setSymbolStatus(SymbolStatus.DEFINITION);
+                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+            } else {
+                ret.add(new Diagnostic(node.getRange(), "Invalid field definition in struct", DiagnosticSeverity.Warning, ""));
+            }
+
+            return ret;
         }
 
         return ret;
