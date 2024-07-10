@@ -2,6 +2,8 @@ package ai.vespa.schemals.index;
 
 /**
  * StructInheritanceNode
+ * Its purpose is to provide a weaker check on equality and hashcode to consider two nodes equal when they reference
+ * the same underlying symbol in the CST.
  */
 public class StructInheritanceNode {
 

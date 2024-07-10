@@ -340,7 +340,7 @@ public class SchemaDocumentParser {
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
             if (parent != null) {
                 if (!documentInheritanceURIs.contains(parent.getFileURI())) {
-                    // TODO: Quickfix
+                    // TODO: quickfix
                     diagnostics.add(new Diagnostic(
                         context.inheritsSchemaNode().getRange(),
                         "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
@@ -392,6 +392,7 @@ public class SchemaDocumentParser {
 
         for (Symbol fieldSymbol : context.schemaIndex().getAllStructFieldSymbols(myStructDefinitionNode.getSymbol())) {
             if (fieldsSeen.contains(fieldSymbol.getShortIdentifier())) {
+                // TODO: quickfix
                 diagnostics.add(new Diagnostic(
                     fieldSymbol.getNode().getRange(),
                     "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
