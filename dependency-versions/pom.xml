@@ -65,7 +65,7 @@
         <apache.httpcore5.vespa.version>5.2.5</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
         <asm.vespa.version>9.7</asm.vespa.version>
-        <assertj.vespa.version>3.26.0</assertj.vespa.version>
+        <assertj.vespa.version>3.26.3</assertj.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <aws-sdk.vespa.version>1.12.759</aws-sdk.vespa.version>
