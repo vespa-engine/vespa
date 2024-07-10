@@ -4,6 +4,7 @@ vespa_add_library(vespalog
     exceptions.cpp
     loglevelnames.cpp
     log.cpp
+    logf.cpp
     bufferedlogger.cpp
     log-target-fd.cpp
     log-target-file.cpp
