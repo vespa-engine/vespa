@@ -30,12 +30,6 @@ public class SchemaTextDocumentEdit {
         return new TextDocumentEdit(versionedTextDocumentIdentifier, textEdits);
     }
 
-    public WorkspaceEdit exportWorkspaceEdit(EventContext context) {
-        SchemaWorkspaceEdit ret = new SchemaWorkspaceEdit(context);
-        ret.addTextDocumentEdit(this);
-        return ret.exportEdits();
-    }
-
     public String toString() {
         return "DocumentEdits(" + versionedTextDocumentIdentifier.getUri() + " : " + versionedTextDocumentIdentifier.getVersion() + " : " + textEdits.size();
     }

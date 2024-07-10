@@ -39,8 +39,6 @@ public class SchemaRename {
     }
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
-        
-        context.logger.println("\n\n\n\n\n\n RENAME!");
 
         SchemaNode node = context.document.getSymbolAtPosition(context.position);
         if (node == null || !node.hasSymbol()) {
@@ -79,7 +77,7 @@ public class SchemaRename {
             return renameSchema(context, document, symbol, symbolOccurances, node.getText(), newName);
         }
 
-        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit(context);
+        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
 
         ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, symbolOccurances, newName);
 
@@ -89,7 +87,7 @@ public class SchemaRename {
     }
 
     private static WorkspaceEdit renameSchema(EventContext context, SchemaDocumentParser document, Symbol symbol, ArrayList<Symbol> symbolOccurances, String oldName, String newName) {
-        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit(context);
+        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
 
         Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), SymbolType.DOCUMENT, oldName);
 
