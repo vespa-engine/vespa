@@ -65,6 +65,7 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
 
                                var hfb = ai.djl.huggingface.tokenizers.HuggingFaceTokenizer.builder()
                                        .optTokenizerPath(tokenizerDir)
+                                       .optWithOverflowingTokens(true)
                                        .optAddSpecialTokens(b.addSpecialTokens != null ? b.addSpecialTokens : true);
                                if (b.maxLength != null) {
                                    hfb.optMaxLength(b.maxLength);
