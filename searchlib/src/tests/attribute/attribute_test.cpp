@@ -942,7 +942,7 @@ AttributeTest::testSingle()
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             ptr->updateStat(true);
-            EXPECT_EQ(116088u + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
+            EXPECT_EQ(116048u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(52684u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
@@ -952,7 +952,7 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(344408u + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
+            EXPECT_EQ(344368u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(104300u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
@@ -1135,7 +1135,7 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(405720u + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
+            EXPECT_EQ(405680u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(306352u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
@@ -1145,7 +1145,7 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(655928u + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
+            EXPECT_EQ(655888u + sizeof_large_string_entry + sizeof_initial_string_change_vector, ptr->getStatus().getAllocated());
             EXPECT_EQ(357988u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
