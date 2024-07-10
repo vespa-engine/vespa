@@ -1,9 +1,14 @@
 package ai.vespa.schemals.index;
 
 import ai.vespa.schemals.tree.SchemaNode;
+import org.eclipse.lsp4j.Position;
+
+import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.parser.Token.TokenType;
 
 public class Symbol {
     private SchemaNode identifierNode;
+
     private Symbol scope = null;
     private String fileURI;
     private SymbolType type;
@@ -26,7 +31,9 @@ public class Symbol {
     public void setStatus(SymbolStatus status) { this.status = status; }
     public SymbolStatus getStatus() { return status; }
     public String getFileURI() { return fileURI; }
+
     public SchemaNode getNode() { return identifierNode; }
+
     public String getShortIdentifier() { return identifierNode.getText(); }
 
     public String getLongIdentifier() {
@@ -54,5 +61,10 @@ public class Symbol {
         STRUCT_FIELD,
         FUNCTION,
         TYPE_UNKNOWN
+    }
+    public String toString() {
+        Position pos = getNode().getRange().getStart();
+        String fileName = SchemaDocumentParser.fileNameFromPath(fileURI);
+        return "Symbol('" + getShortIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")";
     }
 }

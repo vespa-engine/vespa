@@ -13,6 +13,9 @@ import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
+import ai.vespa.schemals.parser.ast.identifierWithDashStr;
+import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -29,19 +32,25 @@ public class IdentifySymbolReferences extends Identifier {
         put(inheritsStruct.class, SymbolType.STRUCT);
     }};
 
+    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(inheritsRankProfile.class, SymbolType.RANK_PROFILE);
+    }};
+
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
         if (node.hasSymbol()) return ret;
 
         boolean isIdentifier = node.isASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
 
-        if (!isIdentifier) return ret;
+        if (!isIdentifier && !isIdentifierWithDash) return ret;
 
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
-        SymbolType symbolType = identifierTypeMap.get(parent.getASTClass());
+        HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
+        SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType == null) return ret;
 
         node.setSymbol(symbolType, context.fileURI());

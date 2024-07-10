@@ -71,7 +71,9 @@ public class SchemaDocumentParser {
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content, Integer version) {
         this(logger, diagnosticsHandler, schemaIndex, fileURI, content);
         this.version = version;
-        isOpen = true;
+        if (version != null) {
+            isOpen = true;
+        }
     }
 
     public ParseContext getParseContext(String content) {
@@ -147,7 +149,7 @@ public class SchemaDocumentParser {
     }
 
     public VersionedTextDocumentIdentifier getVersionedTextDocumentIdentifier() {
-        return new VersionedTextDocumentIdentifier(fileURI, version);
+        return new VersionedTextDocumentIdentifier(fileURI, null);
     }
 
     public String getFilePath() {
@@ -155,9 +157,13 @@ public class SchemaDocumentParser {
         return fileURI.substring(0, splitPos + 1);
     }
 
+    public static String fileNameFromPath(String path) {
+        int splitPos = path.lastIndexOf('/');
+        return path.substring(splitPos + 1);
+    }
+
     public String getFileName() {
-        int splitPos = fileURI.lastIndexOf('/');
-        return fileURI.substring(splitPos + 1);
+        return fileNameFromPath(fileURI);
     }
 
     public Position getPreviousStartOfWord(Position pos) {
@@ -368,7 +374,8 @@ public class SchemaDocumentParser {
         if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
             // dataType is handled separately
             SymbolType referencedType = node.getSymbol().getType();
-            if (context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()) == null) {
+            Symbol referencedSymbol = context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText());
+            if (referencedSymbol == null) {
                 diagnostics.add(new Diagnostic(
                     node.getRange(),
                     "Undefined symbol " + node.getText(),
@@ -377,6 +384,7 @@ public class SchemaDocumentParser {
                 ));
             } else {
                 node.setSymbolStatus(SymbolStatus.REFERENCE);
+                context.schemaIndex().insertSymbolReference(referencedSymbol, context.fileURI(), node);
             }
         }
 

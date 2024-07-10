@@ -8,11 +8,12 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 
 public class SchemaTextDocumentEdit {
-    private ArrayList<TextEdit> textEdits = new ArrayList<>();
+    private ArrayList<TextEdit> textEdits;
     private VersionedTextDocumentIdentifier versionedTextDocumentIdentifier;
 
     public SchemaTextDocumentEdit(VersionedTextDocumentIdentifier versionedTextDocumentIdentifier) {
         this.versionedTextDocumentIdentifier = versionedTextDocumentIdentifier;
+        textEdits = new ArrayList<>();
     }
 
     public void add(TextEdit textEdit) {
@@ -27,5 +28,9 @@ public class SchemaTextDocumentEdit {
         SchemaWorkspaceEdit ret = new SchemaWorkspaceEdit();
         ret.addTextDocumentEdit(this);
         return ret.exportEdits();
+    }
+
+    public String toString() {
+        return "DocumentEdits(" + versionedTextDocumentIdentifier.getUri() + " : " + versionedTextDocumentIdentifier.getVersion() + " : " + textEdits.size();
     }
 }

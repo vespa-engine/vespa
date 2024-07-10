@@ -1,5 +1,9 @@
 package ai.vespa.schemals.rename;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.RenameFile;
 import org.eclipse.lsp4j.ResourceOperation;
@@ -18,59 +22,46 @@ import ai.vespa.schemals.workspaceEdit.SchemaWorkspaceEdit;
 
 public class SchemaRename {
 
-    private static WorkspaceEdit renameFunction(EventPositionContext context, SchemaDocumentParser document, SchemaNode node, String newName) {
-        // TODO: find references
+    public static ArrayList<SchemaTextDocumentEdit> createTextDocumentEditsFromSymbols(EventContext context, List<Symbol> symbols, String newName) {
+        HashMap<String, SchemaTextDocumentEdit> documentEdits = new HashMap<>();
 
-        SchemaTextDocumentEdit documentEdits = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
-        documentEdits.add(new TextEdit(node.getRange(), newName));
-        return documentEdits.exportWorkspaceEdit();
+        for (Symbol symbol : symbols) {
 
-    }
+            if (!documentEdits.containsKey(symbol.getFileURI())) {
+                SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
+                SchemaTextDocumentEdit documentEdit = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
+                documentEdits.put(symbol.getFileURI(), documentEdit);
+            }
 
-    // private static void renameFile(EventContext context, String newFileURI) {
-    //     context.scheduler.closeDocument(context.document.getFileURI());
-    //     context.scheduler.openDocument(newFileURI);
-    // }
-
-    private static WorkspaceEdit renameSchema(EventPositionContext context, SchemaDocumentParser document, SchemaNode node, String newName) {
-        String newFileURI = document.getFilePath() + newName + ".sd";
-
-        // TODO: send a message to the user explaining the error
-        SchemaDocumentParser nameCollistionDocument = context.schemaIndex.findSchemaDocumentWithFileURI(newFileURI);
-        if (nameCollistionDocument != null) {
-            context.messageHandler.sendMessage(MessageType.Error, "Cannot rename schema to '" + newName + "' since the name is already taken.");
-
-            return null;
+            SchemaTextDocumentEdit documentEdit = documentEdits.get(symbol.getFileURI());
+            documentEdit.add(new TextEdit(symbol.getNode().getRange(), newName));
         }
 
-        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
-        SchemaTextDocumentEdit documentEdits = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
-
-        documentEdits.add(new TextEdit(node.getRange(), newName));
-
-        workspaceEdits.addTextDocumentEdit(documentEdits);
-
-        workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
-
-        context.schemaIndex.dumpIndex(context.logger);
-
-        return workspaceEdits.exportEdits();
+        return new ArrayList<SchemaTextDocumentEdit>(documentEdits.values());
     }
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
 
         SchemaNode node = context.document.getSymbolAtPosition(context.position);
-        if (node == null) {
+        if (node == null || !node.hasSymbol()) {
             return null;
         }
 
         // CASES: rename schema / document, field, struct, funciton
 
-        Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), node.getSymbol().getType(), node.getText());
+        SymbolType type = node.getSymbol().getType();
+        if (type == SymbolType.DOCUMENT) {
+            type = SymbolType.SCHEMA;
+        }
+
+        Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), type, node.getText());
         if (symbol == null) {
-            context.logger.println("Could not find the symbol definition");
+            // TODO: later maybe search for schema symbol in the document. And use that insted, if the symbol type is DOCUMENT
+            context.messageHandler.sendMessage(MessageType.Error, "Could not find the symbol definition for: " + node.getText());
             return null;
         }
+
+        context.logger.println("Symbol: " + symbol);
 
         SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
         if (document == null) {
@@ -78,16 +69,41 @@ public class SchemaRename {
             return null;
         }
 
-        SymbolType type = symbol.getType();
+        context.schemaIndex.dumpIndex(context.logger);
 
-        if (type == SymbolType.FUNCTION) {
-            return renameFunction(context, document, symbol.getNode(), newName);
-        }
+        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
+
+        ArrayList<Symbol> symbolOccurances = context.schemaIndex.findSymbolReferences(symbol);
+        symbolOccurances.add(symbol);
 
         if (type == SymbolType.SCHEMA) {
-            return renameSchema(context, document, symbol.getNode(), newName);
+            Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), SymbolType.DOCUMENT, node.getText());
+
+            context.logger.println(documentSymbol);
+
+            if (documentSymbol != null && documentSymbol.getType() == SymbolType.DOCUMENT) {
+                context.logger.println("Found a document match!");
+                symbolOccurances.add(documentSymbol);
+                ArrayList<Symbol> documentReferences = context.schemaIndex.findSymbolReferences(documentSymbol);
+                symbolOccurances.addAll(documentReferences);
+            }
+
+            String newFileURI = document.getFilePath() + newName + ".sd";
+
+            // Check for name collision
+            SchemaDocumentParser nameCollitionDocument = context.schemaIndex.findSchemaDocumentWithFileURI(newFileURI);
+            if (nameCollitionDocument != null) {
+                context.messageHandler.sendMessage(MessageType.Error, "Cannot rename schema to '" + newName + "' since the name is already taken.");
+
+                return null;
+            }
+
+            workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
         }
+
+        ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, symbolOccurances, newName);
+        workspaceEdits.addTextDocumentEdits(documentEdits);
         
-        return null;
+        return workspaceEdits.exportEdits();
     }
 }

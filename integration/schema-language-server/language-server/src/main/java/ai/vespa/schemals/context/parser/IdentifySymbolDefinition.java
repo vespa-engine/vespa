@@ -75,8 +75,8 @@ public class IdentifySymbolDefinition extends Identifier {
         node.setSymbol(symbolType, context.fileURI());
 
         if (context.schemaIndex().findSymbolInFile(context.fileURI(), symbolType, node.getText()) == null) {
-            context.schemaIndex().insert(context.fileURI(), node.getSymbol());
             node.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
         } else {
             node.setSymbolStatus(SymbolStatus.INVALID);
         }

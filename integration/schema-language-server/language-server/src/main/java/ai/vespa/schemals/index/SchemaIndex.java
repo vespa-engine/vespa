@@ -16,7 +16,8 @@ public class SchemaIndex {
 
     private PrintStream logger;
     
-    private HashMap<String, SchemaIndexItem> database = new HashMap<String, SchemaIndexItem>();
+    private HashMap<String, Symbol> symbolDefinitionsDB = new HashMap<String, Symbol>();
+    private HashMap<String, ArrayList<Symbol>> symbolReferencesDB = new HashMap<>();
 
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
@@ -25,16 +26,6 @@ public class SchemaIndex {
 
     // Schema inheritance. Can only inherit one schema
     private HashMap<String, String> schemaInherits = new HashMap<String, String>();
-
-    public class SchemaIndexItem {
-        String fileURI;
-        Symbol symbol;
-        
-        public SchemaIndexItem(String fileURI, Symbol symbol) {
-            this.fileURI = fileURI;
-            this.symbol = symbol;
-        }
-    }
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
@@ -43,12 +34,21 @@ public class SchemaIndex {
     
     public void clearDocument(String fileURI) {
 
-        Iterator<Map.Entry<String, SchemaIndexItem>> iterator = database.entrySet().iterator();
+        Iterator<Map.Entry<String, Symbol>> iterator = symbolDefinitionsDB.entrySet().iterator();
 
         while (iterator.hasNext()) {
-            Map.Entry<String, SchemaIndexItem> entry = iterator.next();
-            if (entry.getValue().fileURI.equals(fileURI)) {
+            Map.Entry<String, Symbol> entry = iterator.next();
+            if (entry.getValue().getFileURI().equals(fileURI)) {
                 iterator.remove();
+            }
+        }
+
+        Iterator<Map.Entry<String, ArrayList<Symbol>>> refIterator = symbolReferencesDB.entrySet().iterator();
+
+        while (refIterator.hasNext()) {
+            Map.Entry<String, ArrayList<Symbol>> entry = refIterator.next();
+            if (entry.getKey().startsWith(fileURI)) {
+                refIterator.remove();
             }
         }
 
@@ -56,8 +56,8 @@ public class SchemaIndex {
         documentInheritanceGraph.clearInheritsList(fileURI);
     }
 
-    private String createDBKey(String fileURI, Symbol symbol) {
-        return createDBKey(fileURI, symbol.getType(), symbol.getShortIdentifier());
+    private String createDBKey(Symbol symbol) {
+        return createDBKey(symbol.getFileURI(), symbol.getType(), symbol.getShortIdentifier());
     }
 
     private String createDBKey(String fileURI, SymbolType type, String identifier) {
@@ -69,23 +69,16 @@ public class SchemaIndex {
         documentInheritanceGraph.createNodeIfNotExists(fileURI);
     }
 
-    public void insert(String fileURI, Symbol symbol) {
-        database.put(
-            createDBKey(fileURI, symbol),
-            new SchemaIndexItem(fileURI, symbol)
-        );
-    }
-
     /*
     * Searches for the given symbol ONLY in document pointed to by fileURI
     */
     public Symbol findSymbolInFile(String fileURI, SymbolType type, String identifier) {
-        SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
+        Symbol result = symbolDefinitionsDB.get(createDBKey(fileURI, type, identifier));
 
-        if (results == null) {
+        if (result == null) {
             return null;
         }
-        return results.symbol;
+        return result;
     }
 
     /*
@@ -102,13 +95,29 @@ public class SchemaIndex {
         return null;
     }
 
+    /**
+     * Finds symbol references in the schema index for the given symbol.
+     *
+     * @param symbol The symbol to find references for.
+     * @return A list of symbol references found in the schema index.
+     */
+    public ArrayList<Symbol> findSymbolReferences(Symbol symbol) {
+        ArrayList<Symbol> results = symbolReferencesDB.get(createDBKey(symbol));
+
+        if (results == null) {
+            results = new ArrayList<>();
+        }
+
+        return results;
+    }
+
     public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, SymbolType type) {
         List<Symbol> result = new ArrayList<>();
-        for (var entry : database.entrySet()) {
-            SchemaIndexItem item = entry.getValue();
-            if (!item.fileURI.equals(fileURI)) continue;
-            if (item.symbol.getType() != type) continue;
-            result.add(item.symbol);
+        for (var entry : symbolDefinitionsDB.entrySet()) {
+            Symbol item = entry.getValue();
+            if (!item.getFileURI().equals(fileURI)) continue;
+            if (item.getType() != type) continue;
+            result.add(item);
         }
 
         return result;
@@ -151,8 +160,22 @@ public class SchemaIndex {
 
     public void dumpIndex(PrintStream logger) {
         logger.println(" === INDEX === ");
-        for (Map.Entry<String, SchemaIndexItem> entry : database.entrySet()) {
+        for (Map.Entry<String, Symbol> entry : symbolDefinitionsDB.entrySet()) {
             logger.println(entry.getKey() + " -> " + entry.getValue().toString());
+        }
+
+        logger.println(" === REFERENCE INDEX === ");
+        for (Map.Entry<String, ArrayList<Symbol>> entry : symbolReferencesDB.entrySet()) {
+            String references = "";
+
+            for (int i = 0; i < entry.getValue().size(); i++) {
+                if (i > 0) {
+                    references += ", ";
+                }
+                references += entry.getValue().get(i).toString();
+            }
+
+            logger.println(entry.getKey() + " -> " + references);
         }
 
         logger.println(" === INHERITANCE === ");
@@ -220,6 +243,30 @@ public class SchemaIndex {
     }
 
     public int numEntries() {
-        return this.database.size();
+        return this.symbolDefinitionsDB.size();
+    }
+
+    public void insertSymbolDefinition(Symbol symbol) {
+        String dbKey = createDBKey(symbol);
+        symbolDefinitionsDB.put(dbKey, symbol);
+    }
+
+    public void insertSymbolReference(Symbol refersTo, String fileURI, SchemaNode node) {
+
+        String dbKey = createDBKey(refersTo);
+        ArrayList<Symbol> references = symbolReferencesDB.get(dbKey);
+
+        Symbol symbol = node.getSymbol();
+
+        if (references != null) {
+            references.add(symbol);
+            return;
+        }
+
+        references = new ArrayList<>() {{
+            add(symbol);
+        }};
+
+        symbolReferencesDB.put(dbKey, references);
     }
 }
