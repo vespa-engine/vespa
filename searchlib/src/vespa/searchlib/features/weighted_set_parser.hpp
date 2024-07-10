@@ -25,6 +25,9 @@ WeightedSetParser::parse(const vespalib::string &input, OutputType &output)
             if (colonPos != vespalib::string::npos) {
                 vespalib::string tmpKey(item.substr(0, colonPos));
                 vespalib::string::size_type start(tmpKey.find_first_not_of(' '));
+                if (start == vespalib::string::npos) {
+                    start = colonPos; // Spaces only => empty key
+                }
                 vespalib::string key(tmpKey.data() + start, colonPos - start);
                 std::string_view value(item.substr(colonPos+1));
                 output.insert(key, value);
