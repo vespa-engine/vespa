@@ -237,6 +237,34 @@ public class StateChangeTest extends FleetControllerTest {
         assertEquals(1, ctrl.getCluster().getNodeInfo(new Node(NodeType.STORAGE, 0)).getPrematureCrashCount());
     }
 
+    // If a node reports a new start timestamp, it means it has restarted quickly enough to not trigger an
+    // explicit Down-edge. We have to bump the state version to introduce a distinct edge in the cluster's
+    // history between the old availability-state and the new.
+    @Test
+    void node_reporting_new_start_timestamp_publishes_new_state_version() throws Exception {
+        FleetControllerOptions.Builder builder = defaultOptions()
+                .setNodeStateRequestTimeoutMS(60 * 60 * 1000)
+                .setMinTimeBetweenNewSystemStates(0)
+                .setMaxInitProgressTime(50000)
+                .enableTwoPhaseClusterStateActivation(false);
+
+        initialize(builder);
+        ctrl.tick();
+        assertEquals("version:2 distributor:10 storage:10", ctrl.getSystemState().toString());
+
+        communicator.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setStartTimestamp(12345678), "");
+        ctrl.tick();
+        assertEquals("version:3 distributor:10 storage:10 .0.t:12345678", ctrl.getSystemState().toString());
+
+        communicator.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setStartTimestamp(12345679), "");
+        ctrl.tick();
+        assertEquals("version:4 distributor:10 storage:10 .0.t:12345679", ctrl.getSystemState().toString());
+
+        communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, 2), new NodeState(NodeType.STORAGE, State.UP).setStartTimestamp(12345680), "");
+        ctrl.tick();
+        assertEquals("version:5 distributor:10 .2.t:12345680 storage:10 .0.t:12345679", ctrl.getSystemState().toString());
+    }
+
     private void tick(int timeMs) throws Exception {
         timer.advanceTime(timeMs);
         ctrl.tick();
