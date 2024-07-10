@@ -64,6 +64,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.STRUCT_FIELD, "variable");
         put(SymbolType.RANK_PROFILE, "variable");
         put(SymbolType.FUNCTION, "function");
+        put(SymbolType.FIELD_IN_STRUCT, "property");
     }};
 
     private static ArrayList<String> tokenTypes;

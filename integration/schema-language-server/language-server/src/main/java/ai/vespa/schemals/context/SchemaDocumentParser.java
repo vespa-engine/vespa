@@ -438,25 +438,91 @@ public class SchemaDocumentParser {
      */
     private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+            Optional<Symbol> referencedSymbol = Optional.empty();
             // dataType is handled separately
+
             SymbolType referencedType = node.getSymbol().getType();
-            Symbol referencedSymbol = context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText());
-            if (referencedSymbol == null) {
+            if (referencedType == SymbolType.SUBFIELD) {
+                SchemaNode parentField = node.getPreviousSibling();
+
+                if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                    Symbol fieldDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD, parentField.getText());
+                    Optional<Symbol> structReference = findStructFieldStruct(fieldDefinition);
+
+                    if (structReference.isPresent()) {
+                        Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.get().getLongIdentifier());
+                        if (structDefinition != null) {
+                            referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
+                        }
+                        if (referencedSymbol.isPresent()) {
+                            node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
+                        }
+                    }
+                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD_IN_STRUCT) {
+                    diagnostics.add(new Diagnostic(
+                        node.getRange(),
+                        "Subfield of subfield is not supported " + parentField.getText(),
+                        DiagnosticSeverity.Information,
+                        ""
+                    ));
+                }
+            } else {
+                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()));
+            }
+
+            if (referencedSymbol.isPresent()) {
+                node.setSymbolStatus(SymbolStatus.REFERENCE);
+                context.schemaIndex().insertSymbolReference(referencedSymbol.get(), context.fileURI(), node);
+            } else {
                 diagnostics.add(new Diagnostic(
                     node.getRange(),
                     "Undefined symbol " + node.getText(),
                     DiagnosticSeverity.Error,
                     ""
                 ));
-            } else {
-                node.setSymbolStatus(SymbolStatus.REFERENCE);
-                context.schemaIndex().insertSymbolReference(referencedSymbol, context.fileURI(), node);
             }
         }
 
         for (SchemaNode child : node) {
             resolveSymbolReferencesImpl(child, context, diagnostics);
         }
+    }
+    /*
+     * Given a Symbol pointing to the definition of a field which may be of type struct, array<struct> or similar, 
+     * return the symbol referencing the struct or empty if the field is not of type struct
+     */
+    private static Optional<Symbol> findStructFieldStruct(Symbol fieldDefinition) {
+        if (fieldDefinition.getType() != SymbolType.FIELD && fieldDefinition.getType() != SymbolType.FIELD_IN_STRUCT) {
+            return Optional.empty();
+        }
+
+        if (fieldDefinition.getStatus() != SymbolStatus.DEFINITION) {
+            return Optional.empty();
+        }
+
+        SchemaNode definitionNode = fieldDefinition.getNode();
+
+        SchemaNode dataTypeNode = definitionNode.getNextSibling().getNextSibling();
+
+        if (!dataTypeNode.isASTInstance(dataType.class)) {
+            return Optional.empty();
+        }
+
+        return findStructInDataType(dataTypeNode);
+
+    }
+
+    private static Optional<Symbol> findStructInDataType(SchemaNode dataTypeNode) {
+        if (dataTypeNode.isASTInstance(dataType.class) && dataTypeNode.hasSymbol() && dataTypeNode.getSymbol().getType() == SymbolType.STRUCT) {
+            return Optional.of(dataTypeNode.getSymbol());
+        }
+
+        for (SchemaNode child : dataTypeNode) {
+            Optional<Symbol> childResult = findStructInDataType(child);
+            if (childResult.isPresent()) return childResult;
+        }
+
+        return Optional.empty();
     }
 
     private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {

@@ -8,9 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import java.util.Optional;
+
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaIndex {
@@ -138,6 +141,30 @@ public class SchemaIndex {
                                   .stream()
                                   .filter(symbol -> symbol.isInScope(scope))
                                   .collect(Collectors.toList());
+    }
+
+    /*
+     * Given a Symbol pointing to the definition of a field which may be of type struct, array<struct> or similar, 
+     * return the definition of the struct or empty if the field is not of type struct
+     */
+    public Optional<Symbol> findStructFieldStruct(Symbol fieldDefinition) {
+        if (fieldDefinition.getType() != SymbolType.FIELD && fieldDefinition.getType() != SymbolType.FIELD_IN_STRUCT) {
+            return Optional.empty();
+        }
+
+        if (fieldDefinition.getStatus() != SymbolStatus.DEFINITION) {
+            return Optional.empty();
+        }
+
+        SchemaNode definitionNode = fieldDefinition.getNode();
+
+        SchemaNode dataTypeNode = definitionNode.getNextSibling().getNextSibling();
+
+        if (!dataTypeNode.isASTInstance(dataType.class)) {
+            return Optional.empty();
+        }
+
+        return Optional.empty();
     }
 
     public boolean resolveTypeNode(SchemaNode typeNode, String fileURI) {

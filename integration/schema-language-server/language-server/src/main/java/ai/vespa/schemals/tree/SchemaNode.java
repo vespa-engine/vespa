@@ -15,6 +15,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
 
 public class SchemaNode implements Iterable<SchemaNode> {
 
@@ -37,7 +38,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this(node, null);
     }
     
-    private SchemaNode(Node node, SchemaNode parent) {
+    public SchemaNode(Node node, SchemaNode parent) {
         this.parent = parent;
         originalNode = node;
         Node.NodeType originalType = node.getType();
@@ -154,6 +155,22 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return originalNode;
     }
 
+    public void setNewStartCharacter(int startCharacter) {
+        int currentOffset = originalNode.getBeginOffset();
+        int characterDelta = startCharacter - range.getStart().getCharacter();
+
+        originalNode.setBeginOffset(currentOffset + characterDelta);
+        this.range = CSTUtils.getNodeRange(originalNode);
+    }
+
+    public void setNewEndCharacter(int endCharacter) {
+        int currentOffset = originalNode.getEndOffset();
+        int characterDelta = endCharacter - range.getEnd().getCharacter();
+
+        originalNode.setEndOffset(currentOffset + characterDelta);
+        this.range = CSTUtils.getNodeRange(originalNode);
+    }
+
     public String getClassLeafIdentifierString() {
         int lastIndex = identifierString.lastIndexOf('.');
         return identifierString.substring(lastIndex + 1);
@@ -177,6 +194,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     public SchemaNode getParent() {
         return getParent(1);
+    }
+
+    public void insertChildAfter(int index, SchemaNode child) {
+        this.children.add(index+1, child);
     }
 
     public SchemaNode getPrevious() {
