@@ -29,7 +29,7 @@ def fetchFile(file_url: str) -> str:
     return data.text
 
 def main():
-    print("Downlaoding docs...")
+    print("Downloading docs...")
 
     targetPath: pathlib.Path = pathlib.Path()
 

@@ -10,7 +10,10 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SymbolDefinitionNode;
@@ -28,24 +31,28 @@ public class IdentifySymbolReferences extends Identifier {
         put(rootSchema.class, TokenType.SCHEMA);
     }};
 
+    private static final HashMap<Class<? extends Node>, TokenType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, TokenType>() {{
+        put(inheritsRankProfile.class, TokenType.RANK_PROFILE);
+    }};
+
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
         if (node instanceof SymbolDefinitionNode) return ret;
 
-        boolean isIdentifier = node.getClassLeafIdentifierString().equals("identifierStr");
+        boolean isIdentifier = node.isASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
 
-        if (!isIdentifier) return ret;
+        if (!isIdentifier && !isIdentifierWithDash) return ret;
 
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
-        TokenType tokenType = identifierTypeMap.get(parent.getASTClass());
+        HashMap<Class<? extends Node>, TokenType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
+        TokenType tokenType = searchMap.get(parent.getASTClass());
         if (tokenType == null) return ret;
 
         SymbolReferenceNode newNode = new SymbolReferenceNode(node, tokenType);
-
-        // TODO: verify that the symbol is defined
 
         return ret;
     }

@@ -24,7 +24,7 @@ public class SchemaIndex {
     private PrintStream logger;
     
     private HashMap<String, Symbol> symbolDefinitionsDB = new HashMap<String, Symbol>();
-    private HashMap<String, List<Symbol>> symbolReferencesDB = new HashMap<>();
+    private HashMap<String, ArrayList<Symbol>> symbolReferencesDB = new HashMap<>();
 
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
@@ -50,10 +50,10 @@ public class SchemaIndex {
             }
         }
 
-        Iterator<Map.Entry<String, List<Symbol>>> refIterator = symbolReferencesDB.entrySet().iterator();
+        Iterator<Map.Entry<String, ArrayList<Symbol>>> refIterator = symbolReferencesDB.entrySet().iterator();
 
         while (refIterator.hasNext()) {
-            Map.Entry<String, List<Symbol>> entry = refIterator.next();
+            Map.Entry<String, ArrayList<Symbol>> entry = refIterator.next();
             if (entry.getKey().startsWith(fileURI)) {
                 refIterator.remove();
             }
@@ -115,6 +115,22 @@ public class SchemaIndex {
         return null;
     }
 
+    /**
+     * Finds symbol references in the schema index for the given symbol.
+     *
+     * @param symbol The symbol to find references for.
+     * @return A list of symbol references found in the schema index.
+     */
+    public ArrayList<Symbol> findSymbolReferences(Symbol symbol) {
+        ArrayList<Symbol> results = symbolReferencesDB.get(createDBKey(symbol));
+
+        if (results == null) {
+            results = new ArrayList<>();
+        }
+
+        return results;
+    }
+
     public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, TokenType type) {
         List<Symbol> result = new ArrayList<>();
         for (var entry : symbolDefinitionsDB.entrySet()) {
@@ -150,7 +166,7 @@ public class SchemaIndex {
         }
 
         logger.println(" === REFERENCE INDEX === ");
-        for (Map.Entry<String, List<Symbol>> entry : symbolReferencesDB.entrySet()) {
+        for (Map.Entry<String, ArrayList<Symbol>> entry : symbolReferencesDB.entrySet()) {
             logger.println(entry.getKey() + " -> " + entry.getValue().size() + " references");
         }
 
@@ -225,7 +241,7 @@ public class SchemaIndex {
 
     public void insertSymbolReference(Symbol refersTo, String fileURI, SymbolReferenceNode node) {
         String dbKey = createDBKey(refersTo);
-        List<Symbol> references = symbolReferencesDB.get(dbKey);
+        ArrayList<Symbol> references = symbolReferencesDB.get(dbKey);
 
         Symbol symbol = new Symbol(node, fileURI);
 

@@ -72,7 +72,9 @@ public class SchemaDocumentParser {
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content, Integer version) {
         this(logger, diagnosticsHandler, schemaIndex, fileURI, content);
         this.version = version;
-        isOpen = true;
+        if (version != null) {
+            isOpen = true;
+        }
     }
 
     public ParseContext getParseContext(String content) {
@@ -121,7 +123,7 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        // CSTUtils.printTree(logger, CST);
+        CSTUtils.printTree(logger, CST);
 
         //schemaIndex.dumpIndex(logger);
 
@@ -147,7 +149,7 @@ public class SchemaDocumentParser {
     }
 
     public VersionedTextDocumentIdentifier getVersionedTextDocumentIdentifier() {
-        return new VersionedTextDocumentIdentifier(fileURI, version);
+        return new VersionedTextDocumentIdentifier(fileURI, null);
     }
 
     public String getFilePath() {

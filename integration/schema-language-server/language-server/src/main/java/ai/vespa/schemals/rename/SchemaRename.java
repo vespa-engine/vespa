@@ -1,5 +1,9 @@
 package ai.vespa.schemals.rename;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.RenameFile;
 import org.eclipse.lsp4j.ResourceOperation;
@@ -17,20 +21,23 @@ import ai.vespa.schemals.workspaceEdit.SchemaWorkspaceEdit;
 
 public class SchemaRename {
 
-    private static WorkspaceEdit renameFunction(EventPositionContext context, SchemaDocumentParser document, SymbolNode node, String newName) {
+    public static ArrayList<SchemaTextDocumentEdit> createTextDocumentEditsFromSymbols(EventContext context, List<Symbol> symbols, String newName) {
+        HashMap<String, SchemaTextDocumentEdit> documentEdits = new HashMap<>();
 
-        // TODO: find references
+        for (Symbol symbol : symbols) {
 
-        SchemaTextDocumentEdit documentEdits = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
-        documentEdits.add(new TextEdit(node.getRange(), newName));
-        return documentEdits.exportWorkspaceEdit();
+            if (!documentEdits.containsKey(symbol.getFileURI())) {
+                SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
+                SchemaTextDocumentEdit documentEdit = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
+                documentEdits.put(symbol.getFileURI(), documentEdit);
+            }
 
+            SchemaTextDocumentEdit documentEdit = documentEdits.get(symbol.getFileURI());
+            documentEdit.add(new TextEdit(symbol.getNode().getRange(), newName));
+        }
+
+        return new ArrayList<SchemaTextDocumentEdit>(documentEdits.values());
     }
-
-    // private static void renameFile(EventContext context, String newFileURI) {
-    //     context.scheduler.closeDocument(context.document.getFileURI());
-    //     context.scheduler.openDocument(newFileURI);
-    // }
 
     private static WorkspaceEdit renameSchema(EventPositionContext context, SchemaDocumentParser document, SymbolNode node, String newName) {
         String newFileURI = document.getFilePath() + newName + ".sd";
@@ -66,11 +73,18 @@ public class SchemaRename {
 
         // CASES: rename schema / document, field, struct, funciton
 
-        Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), node.getSymbolType(), node.getText());
+        TokenType type = node.getSymbolType();
+        if (type == TokenType.DOCUMENT) {
+            type = TokenType.SCHEMA;
+        }
+
+        Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), type, node.getText());
         if (symbol == null) {
             context.logger.println("Could not find the symbol definition");
             return null;
         }
+
+        context.logger.println("Symbol: " + symbol);
 
         SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
         if (document == null) {
@@ -78,16 +92,24 @@ public class SchemaRename {
             return null;
         }
 
-        TokenType type = symbol.getType();
+        context.logger.println("fileURI: " + document.getFileURI());
 
-        if (type == TokenType.FUNCTION) {
-            return renameFunction(context, document, symbol.getNode(), newName);
-        }
+        ArrayList<Symbol> references = context.schemaIndex.findSymbolReferences(symbol);
+        references.add(symbol);
 
-        if (type == TokenType.SCHEMA) {
-            return renameSchema(context, document, symbol.getNode(), newName);
-        }
+        context.logger.println("SymbolsToReplace: " + references.size());
+
+        context.schemaIndex.dumpIndex(context.logger);
+
+        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
+        ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, references, newName);
+
+        workspaceEdits.addTextDocumentEdits(documentEdits);
+
+        // if (type == TokenType.SCHEMA) {
+        //     return renameSchema(context, document, symbol.getNode(), newName);
+        // }
         
-        return null;
+        return workspaceEdits.exportEdits();
     }
 }
