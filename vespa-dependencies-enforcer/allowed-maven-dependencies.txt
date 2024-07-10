@@ -171,7 +171,6 @@ org.glassfish.jaxb:txw2:${jaxb.runtime.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}
-org.iq80.snappy:snappy:0.4
 org.json:json:${org.json.vespa.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}
