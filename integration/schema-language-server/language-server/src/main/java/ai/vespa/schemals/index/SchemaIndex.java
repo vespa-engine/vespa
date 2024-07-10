@@ -297,8 +297,21 @@ public class SchemaIndex {
     // TODO: move these things to somewhere else?
 
     public List<Symbol> getAllStructFieldSymbols(Symbol structSymbol) {
-        List<StructInheritanceNode> ancestorList = structInheritanceGraph.getAllAncestors(getStructInheritanceKey(structSymbol));
-        return new ArrayList<>();
+        if (structSymbol.getStatus() != SymbolStatus.DEFINITION) {
+            structSymbol = findSymbol(structSymbol.getFileURI(), SymbolType.STRUCT, structSymbol.getLongIdentifier());
+        }
+        List<Symbol> result = new ArrayList<>();
+        for (StructInheritanceNode structDefinitionNode : structInheritanceGraph.getAllAncestors(getStructInheritanceKey(structSymbol))) {
+            Symbol structDefSymbol = structDefinitionNode.getSymbol();
+            
+            List<Symbol> possibleFieldDefinitions = findSymbolsInScope(structDefSymbol);
+
+            for (Symbol fieldDef : possibleFieldDefinitions) {
+                if (fieldDef.getType() == SymbolType.FIELD_IN_STRUCT)result.add(fieldDef);
+            }
+            
+        }
+        return result;
     }
 
     public StructInheritanceNode getStructInheritanceKey(Symbol structSymbol) {
