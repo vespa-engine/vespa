@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -22,16 +23,16 @@ public class SchemaIndex {
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
 
-    private InheritanceGraph documentInheritanceGraph;
-    private InheritanceGraph structInheritanceGraph;
+    private InheritanceGraph<String> documentInheritanceGraph;
+    private InheritanceGraph<StructInheritanceNode> structInheritanceGraph;
 
     // Schema inheritance. Can only inherit one schema
     private HashMap<String, String> schemaInherits = new HashMap<String, String>();
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
-        this.documentInheritanceGraph = new InheritanceGraph();
-        this.structInheritanceGraph = new InheritanceGraph();
+        this.documentInheritanceGraph = new InheritanceGraph<>();
+        this.structInheritanceGraph = new InheritanceGraph<>();
     }
     
     public void clearDocument(String fileURI) {
@@ -132,6 +133,13 @@ public class SchemaIndex {
         return result;
     }
 
+    public List<Symbol> findSymbolsInScope(Symbol scope) {
+        return symbolDefinitionsDB.values()
+                                  .stream()
+                                  .filter(symbol -> symbol.isInScope(scope))
+                                  .collect(Collectors.toList());
+    }
+
     public boolean resolveTypeNode(SchemaNode typeNode, String fileURI) {
         // TODO: handle document reference
         String typeName = typeNode.getSymbol().getShortIdentifier();
@@ -187,8 +195,11 @@ public class SchemaIndex {
             logger.println(entry.getKey() + " -> " + references);
         }
 
-        logger.println(" === INHERITANCE === ");
+        logger.println(" === DOCUMENT INHERITANCE === ");
         documentInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === STRUCT INHERITANCE === ");
+        structInheritanceGraph.dumpAllEdges(logger);
 
         logger.println(" === TRACKED FILES === ");
         for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
@@ -285,13 +296,18 @@ public class SchemaIndex {
 
     // TODO: move these things to somewhere else?
 
-    public String getStructInheritanceKey(Symbol structSymbol) {
-        return structSymbol.getFileURI() + ":" + structSymbol.getShortIdentifier();
+    public List<Symbol> getAllStructFieldSymbols(Symbol structSymbol) {
+        List<StructInheritanceNode> ancestorList = structInheritanceGraph.getAllAncestors(getStructInheritanceKey(structSymbol));
+        return new ArrayList<>();
+    }
+
+    public StructInheritanceNode getStructInheritanceKey(Symbol structSymbol) {
+        return new StructInheritanceNode(structSymbol);
     }
 
     public boolean tryRegisterStructInheritance(Symbol childSymbol, Symbol parentSymbol) {
-        String childNode = getStructInheritanceKey(childSymbol);
-        String parentNode = getStructInheritanceKey(parentSymbol);
+        StructInheritanceNode childNode = getStructInheritanceKey(childSymbol);
+        StructInheritanceNode parentNode = getStructInheritanceKey(parentSymbol);
 
         return structInheritanceGraph.addInherits(childNode, parentNode);
     }

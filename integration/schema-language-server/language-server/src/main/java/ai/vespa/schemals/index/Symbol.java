@@ -32,6 +32,12 @@ public class Symbol {
     public SymbolStatus getStatus() { return status; }
     public String getFileURI() { return fileURI; }
 
+    // TODO: not quite sure if this kind of equality check is good
+    public boolean isInScope(Symbol scope) {
+        if (scope == null || this.scope == null) return false;
+        return this.scope == scope;
+    }
+
     public SchemaNode getNode() { return identifierNode; }
 
     public String getShortIdentifier() { return identifierNode.getText(); }
