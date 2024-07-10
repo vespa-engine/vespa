@@ -50,6 +50,7 @@ public class EuclideanDistanceTestCase {
         Map<String, TensorType> map = new HashMap<>();
         public TensorType getType(Name name) { return getType(name.name()); }
         public TensorType getType(String name) { return map.get(name); }
+        public String resolveBinding(String name) { return name; }
     }
 
     @Test

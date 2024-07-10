@@ -1570,7 +1570,8 @@
       "public void put(java.lang.String, com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.TensorType getType(java.lang.String)",
       "public com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
-      "public com.yahoo.tensor.Tensor getTensor(java.lang.String)"
+      "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",
+      "public java.lang.String resolveBinding(java.lang.String)"
     ],
     "fields" : [ ]
   },
@@ -1599,7 +1600,8 @@
     ],
     "methods" : [
       "public abstract com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
-      "public abstract com.yahoo.tensor.TensorType getType(java.lang.String)"
+      "public abstract com.yahoo.tensor.TensorType getType(java.lang.String)",
+      "public abstract java.lang.String resolveBinding(java.lang.String)"
     ],
     "fields" : [ ]
   },
@@ -1685,7 +1687,7 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public final com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)"
     ],
     "fields" : [ ]
@@ -1809,6 +1811,7 @@
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public final com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public int hashCode()"
     ],
@@ -2920,6 +2923,7 @@
     "methods" : [
       "public static com.yahoo.tensor.functions.ToStringContext empty()",
       "public abstract java.lang.String getBinding(java.lang.String)",
+      "public java.lang.String resolveBinding(java.lang.String)",
       "public java.util.Optional typeContext()",
       "public abstract com.yahoo.tensor.functions.ToStringContext parent()"
     ],

@@ -30,6 +30,7 @@ public class Application {
     private final ApplicationPackage applicationPackage;
     private final Map<String, Schema> schemas;
     private final DocumentModel documentModel;
+    private final RankProfileRegistry rankProfileRegistry;
 
     public Application(ApplicationPackage applicationPackage,
                        List<Schema> schemas,
@@ -41,6 +42,7 @@ public class Application {
                        Set<Class<? extends Processor>> processorsToSkip,
                        DeployLogger logger) {
         this.applicationPackage = applicationPackage;
+        this.rankProfileRegistry = rankProfileRegistry;
 
         Map<String, Schema> schemaMap = new LinkedHashMap<>();
         for (Schema schema : schemas) {
@@ -86,6 +88,8 @@ public class Application {
     }
 
     public ApplicationPackage applicationPackage() { return applicationPackage; }
+
+    public RankProfileRegistry rankProfileRegistry() { return rankProfileRegistry; }
 
     /** Returns an unmodifiable list of the schemas of this application */
     public Map<String, Schema> schemas() { return schemas; }

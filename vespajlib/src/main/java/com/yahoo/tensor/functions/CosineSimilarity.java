@@ -2,6 +2,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.Tensor;
@@ -10,10 +11,12 @@ import com.yahoo.tensor.TensorType.Dimension;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Convenience for cosine similarity between vectors.
- * cosine_similarity(a, b, mydim) == sum(a*b, mydim) / sqrt(sum(a*a, mydim) * sum(b*b, mydim))
+ * cosine_similarity(a, b, mydim) == sum(a*b, mydim) / sqrt(sum(a*a, mydim) * sum(b*b, mydim)).
+ *
  * @author arnej
  */
 public class CosineSimilarity<NAMETYPE extends Name> extends TensorFunction<NAMETYPE> {
@@ -45,18 +48,18 @@ public class CosineSimilarity<NAMETYPE extends Name> extends TensorFunction<NAME
     public TensorType type(TypeContext<NAMETYPE> context) {
         TensorType t1 = arg1.toPrimitive().type(context);
         TensorType t2 = arg2.toPrimitive().type(context);
-        var d1 = t1.dimension(dimension);
-        var d2 = t2.dimension(dimension);
+        var resolvedDimension = context.resolveBinding(dimension);
+        var d1 = t1.dimension(resolvedDimension);
+        var d2 = t2.dimension(resolvedDimension);
         if (d1.isEmpty() || d2.isEmpty()
             || d1.get().type() != Dimension.Type.indexedBound
             || d2.get().type() != Dimension.Type.indexedBound
             || ! d1.get().size().equals(d2.get().size()))
         {
             throw new IllegalArgumentException("cosine_similarity expects both arguments to have the '"
-                                               + dimension + "' dimension with same size, but input types were "
+                                               + resolvedDimension + "' dimension with same size, but input types were "
                                                + t1 + " and " + t2);
         }
-        // Finds the type this produces by first converting it to a primitive function
         return toPrimitive().type(context);
     }
 
@@ -83,7 +86,7 @@ public class CosineSimilarity<NAMETYPE extends Name> extends TensorFunction<NAME
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
-        return "cosine_similarity(" + arg1.toString(context) + ", " + arg2.toString(context) + ", " + dimension + ")";
+        return "cosine_similarity(" + arg1.toString(context) + ", " + arg2.toString(context) + ", " + context.resolveBinding(dimension) + ")";
     }
 
     @Override

@@ -183,6 +183,11 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
                 return context.getType(name);
         }
 
+        @Override
+        public String resolveBinding(String name) {
+            return context.resolveBinding(name);
+        }
+
     }
 
     /** A context which adds the bindings of the generate dimension names to the given context. */

@@ -288,9 +288,9 @@ public class RawRankProfile {
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> e : functions.entrySet()) {
                 String propertyName = RankingExpression.propertyName(e.getKey());
                 if (! context.serializedFunctions().containsKey(propertyName)) {
-
                     String expressionString = e.getValue().function().getBody().getRoot().toString(context).toString();
                     context.addFunctionSerialization(propertyName, expressionString);
+
                     e.getValue().function().argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
                             .forEach(argumentType -> context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue()));
                 }
