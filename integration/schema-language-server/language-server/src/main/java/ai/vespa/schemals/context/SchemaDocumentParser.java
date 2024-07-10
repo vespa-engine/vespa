@@ -372,8 +372,7 @@ public class SchemaDocumentParser {
     private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
             // dataType is handled separately
-            SymbolType referencedType = node.getSymbol().getType();
-            Symbol referencedSymbol = context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText());
+            Symbol referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
             if (referencedSymbol == null) {
                 diagnostics.add(new Diagnostic(
                     node.getRange(),
@@ -382,7 +381,7 @@ public class SchemaDocumentParser {
                     ""
                 ));
             } else {
-                context.schemaIndex().insertSymbolReference(referencedSymbol, context.fileURI(), node);
+                context.schemaIndex().insertSymbolReference(referencedSymbol, node.getSymbol());
             }
         }
 
