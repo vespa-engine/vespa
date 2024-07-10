@@ -23,11 +23,12 @@ public class MapEvaluationContext<NAMETYPE extends Name> implements EvaluationCo
     }
 
     @Override
-    public TensorType getType(NAMETYPE name) {
-        return getType(name.name());
-    }
+    public TensorType getType(NAMETYPE name) { return getType(name.name()); }
 
     @Override
     public Tensor getTensor(String name) { return bindings.get(name); }
+
+    @Override
+    public String resolveBinding(String name) { return name; }
 
 }

@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The <i>rename</i> tensor function returns a tensor where some dimensions are assigned new names.
@@ -71,18 +72,16 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return type(argument.type(context));
-    }
-
-    private TensorType type(TensorType type) {
-        return TypeResolver.rename(type, fromDimensions, toDimensions);
+        List<String> resolvedFromDimensions = fromDimensions.stream().map(d -> context.resolveBinding(d)).toList();
+        List<String> resolvedToDimensions = toDimensions.stream().map(d -> context.resolveBinding(d)).toList();
+        return TypeResolver.rename(argument.type(context), resolvedFromDimensions, resolvedToDimensions);
     }
 
     @Override
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor tensor = argument.evaluate(context);
 
-        TensorType renamedType = type(tensor.type());
+        TensorType renamedType = TypeResolver.rename(tensor.type(), fromDimensions, toDimensions);
 
         // an array which lists the index of each label in the renamed type
         int[] toIndexes = new int[tensor.type().dimensions().size()];
@@ -118,12 +117,12 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         return true;
     }
 
-    private String toVectorString(List<String> elements) {
+    private String toVectorString(List<String> elements, ToStringContext<NAMETYPE> context) {
         if (elements.size() == 1)
-            return elements.get(0);
+            return context.resolveBinding(elements.get(0));
         StringBuilder b = new StringBuilder("(");
         for (String element : elements)
-            b.append(element).append(", ");
+            b.append(context.resolveBinding(element)).append(", ");
         b.setLength(b.length() - 2);
         b.append(")");
         return b.toString();
@@ -132,7 +131,7 @@ public class Rename<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
         return "rename(" + argument.toString(context) + ", " +
-                       toVectorString(fromDimensions) + ", " + toVectorString(toDimensions) + ")";
+                       toVectorString(fromDimensions, context) + ", " + toVectorString(toDimensions, context) + ")";
     }
 
     @Override

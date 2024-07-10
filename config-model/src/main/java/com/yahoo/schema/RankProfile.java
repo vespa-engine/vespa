@@ -1184,7 +1184,6 @@ public class RankProfile implements Cloneable {
                                               Map<String, RankingExpressionFunction> inlineFunctions,
                                               ExpressionTransforms expressionTransforms) {
         if (function == null) return null;
-
         RankProfileTransformContext context = new RankProfileTransformContext(this,
                                                                               queryProfiles,
                                                                               featureTypes,

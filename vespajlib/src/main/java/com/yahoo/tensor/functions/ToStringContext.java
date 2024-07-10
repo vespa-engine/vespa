@@ -18,6 +18,12 @@ public interface ToStringContext<NAMETYPE extends Name> {
     /** Returns the name an identifier is bound to, or null if not bound in this context */
     String getBinding(String name);
 
+    /** Returns the name an identifier is bound to, or the input name if none */
+    default String resolveBinding(String name) {
+        String binding = getBinding(name);
+        return binding == null ? name : binding;
+    }
+
     /**
      * Returns the context used to resolve types in this, if present.
      * In some functions serialization depends on type information.

@@ -48,7 +48,7 @@ public class XwPlusB<NAMETYPE extends Name> extends CompositeTensorFunction<NAME
         return "xw_plus_b(" + x.toString(context) + ", " +
                w.toString(context) + ", " +
                b.toString(context) + ", " +
-               dimension + ")";
+               context.resolveBinding(dimension) + ")";
     }
 
     @Override

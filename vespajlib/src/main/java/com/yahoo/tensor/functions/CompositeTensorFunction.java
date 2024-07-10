@@ -17,7 +17,7 @@ public abstract class CompositeTensorFunction<NAMETYPE extends Name> extends Ten
 
     /** Finds the type this produces by first converting it to a primitive function */
     @Override
-    public final TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext<NAMETYPE> context) {
         return toPrimitive().type(context);
     }
 

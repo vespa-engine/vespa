@@ -46,7 +46,7 @@ public class Softmax<NAMETYPE extends Name> extends CompositeTensorFunction<NAME
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
-        return "softmax(" + argument.toString(context) + ", " + dimension + ")";
+        return "softmax(" + argument.toString(context) + ", " + context.resolveBinding(dimension) + ")";
     }
 
     @Override

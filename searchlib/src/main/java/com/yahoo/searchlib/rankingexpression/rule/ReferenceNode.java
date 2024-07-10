@@ -88,7 +88,6 @@ public final class ReferenceNode extends CompositeNode {
             if ( needSerialization ) {
                 ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
                 functionName = instance.getName();
-
                 context.addFunctionSerialization(RankingExpression.propertyName(functionName), instance.getExpressionString());
                 for (Map.Entry<String, TensorType> argumentType : function.argumentTypes().entrySet())
                     context.addArgumentTypeSerialization(functionName, argumentType.getKey(), argumentType.getValue());

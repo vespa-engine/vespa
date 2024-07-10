@@ -87,19 +87,20 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
-        return "reduce(" + argument.toString(context) + ", " + aggregator + commaSeparated(dimensions) + ")";
+        return "reduce(" + argument.toString(context) + ", " + aggregator + commaSeparatedNames(dimensions, context) + ")";
     }
 
-    static String commaSeparated(List<String> list) {
+    static <NAMETYPE extends Name> String commaSeparatedNames(List<String> list, ToStringContext<NAMETYPE> context) {
         StringBuilder b = new StringBuilder();
         for (String element  : list)
-            b.append(", ").append(element);
+            b.append(", ").append(context.resolveBinding(element));
         return b.toString();
     }
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return outputType(argument.type(context), dimensions);
+        List<String> resolvedDimensions = dimensions.stream().map(d -> context.resolveBinding(d)).toList();
+        return outputType(argument.type(context), resolvedDimensions);
     }
 
     @Override

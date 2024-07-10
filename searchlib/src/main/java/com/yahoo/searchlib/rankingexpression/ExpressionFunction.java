@@ -216,7 +216,7 @@ public class ExpressionFunction {
      * An instance of a serialization of this function, using a particular serialization context (by {@link
      * ExpressionFunction#expand})
      */
-    public class Instance {
+    public static class Instance {
 
         private final String name;
         private final String expressionString;

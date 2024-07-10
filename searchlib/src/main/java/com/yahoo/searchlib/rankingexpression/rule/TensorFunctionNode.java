@@ -59,8 +59,7 @@ public class TensorFunctionNode extends CompositeNode {
     }
 
     private static ScalarFunction<Reference> transform(ScalarFunction<Reference> input,
-                                                       Function<ExpressionNode, ExpressionNode> transformer)
-    {
+                                                       Function<ExpressionNode, ExpressionNode> transformer) {
         if (input instanceof ExpressionScalarFunction wrapper) {
             ExpressionNode transformed = transformer.apply(wrapper.expression);
             return new ExpressionScalarFunction(transformed);
@@ -411,6 +410,12 @@ public class TensorFunctionNode extends CompositeNode {
         public TensorType getType(Reference name) {
             return delegate.getType(name);
         }
+
+        @Override
+        public String resolveBinding(String argument) {
+            return delegate.resolveBinding(argument);
+        }
+
     }
 
     private static Context asContext(EvaluationContext<Reference> generic) {
