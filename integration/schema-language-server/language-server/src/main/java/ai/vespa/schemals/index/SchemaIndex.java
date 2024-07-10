@@ -1,8 +1,5 @@
 package ai.vespa.schemals.index;
 
-import static ai.vespa.schemals.parser.Token.TokenType.DOCUMENT;
-import static ai.vespa.schemals.parser.Token.TokenType.SCHEMA;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,10 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
-
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.tree.AnnotationReferenceNode;
-import ai.vespa.schemals.tree.TypeNode;
+import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaIndex {
 
@@ -64,7 +59,7 @@ public class SchemaIndex {
         return createDBKey(fileURI, symbol.getType(), symbol.getShortIdentifier());
     }
 
-    private String createDBKey(String fileURI, TokenType type, String identifier) {
+    private String createDBKey(String fileURI, SymbolType type, String identifier) {
         return fileURI + ":" + type.name().toLowerCase() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
     }
 
@@ -83,13 +78,13 @@ public class SchemaIndex {
     /*
     * Searches for the given symbol ONLY in document pointed to by fileURI
     */
-    public Symbol findSymbolInFile(String fileURI, TokenType type, String identifier) {
+    public Symbol findSymbolInFile(String fileURI, SymbolType type, String identifier) {
         SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
 
         if (results == null) {
             // Edge case for when a document is defined without explicitly stating the name.
-            if (type == DOCUMENT) {
-                return findSymbolInFile(fileURI, SCHEMA, identifier);
+            if (type == SymbolType.DOCUMENT) {
+                return findSymbolInFile(fileURI, SymbolType.SCHEMA, identifier);
             }
             return null;
         }
@@ -99,7 +94,7 @@ public class SchemaIndex {
     /*
      * Search for a user defined identifier symbol. Also search in inherited documents.
      */
-    public Symbol findSymbol(String fileURI, TokenType type, String identifier) {
+    public Symbol findSymbol(String fileURI, SymbolType type, String identifier) {
         // TODO: handle name collision (diamond etc.)
         List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
 
@@ -110,7 +105,7 @@ public class SchemaIndex {
         return null;
     }
 
-    public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, TokenType type) {
+    public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, SymbolType type) {
         List<Symbol> result = new ArrayList<>();
         for (var entry : database.entrySet()) {
             SchemaIndexItem item = entry.getValue();
@@ -122,25 +117,31 @@ public class SchemaIndex {
         return result;
     }
 
-    public boolean resolveTypeNode(TypeNode typeNode, String fileURI) {
+    public boolean resolveTypeNode(SchemaNode typeNode, String fileURI) {
         // TODO: handle document reference
-        String typeName = typeNode.getParsedType().name().toLowerCase();
+        String typeName = typeNode.getSymbol().getShortIdentifier();
 
         // Probably struct
-        if (findSymbol(fileURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
+        if (findSymbol(fileURI, SymbolType.STRUCT, typeName.toLowerCase()) != null) {
+            typeNode.setSymbolType(SymbolType.STRUCT);
+            return true;
+        }
 
         // If its not struct it could be document. The document can be defined anywhere
         for (String documentURI : openSchemas.keySet()) {
-            if (findSymbol(documentURI, TokenType.DOCUMENT, typeName.toLowerCase()) != null) return true;
+            if (findSymbol(documentURI, SymbolType.DOCUMENT, typeName.toLowerCase()) != null) {
+                typeNode.setSymbolType(SymbolType.DOCUMENT);
+                return true;
+            }
         }
 
         return false;
     }
 
-    public boolean resolveAnnotationReferenceNode(AnnotationReferenceNode annotationReferenceNode, String fileURI) {
+    public boolean resolveAnnotationReferenceNode(SchemaNode annotationReferenceNode, String fileURI) {
         String annotationName = annotationReferenceNode.getText().toLowerCase();
 
-        return findSymbol(fileURI, TokenType.ANNOTATION, annotationName) != null;
+        return findSymbol(fileURI, SymbolType.ANNOTATION, annotationName) != null;
     }
 
     public void dumpIndex(PrintStream logger) {
@@ -161,13 +162,12 @@ public class SchemaIndex {
 
     public Symbol findSchemaIdentifierSymbol(String fileURI) {
         // TODO: handle duplicates?
-        TokenType[] schemaIdentifierTypes = new TokenType[] {
-            TokenType.SCHEMA,
-            TokenType.SEARCH,
-            TokenType.DOCUMENT
+        SymbolType[] schemaIdentifierTypes = new SymbolType[] {
+            SymbolType.SCHEMA,
+            SymbolType.DOCUMENT
         };
 
-        for (TokenType tokenType : schemaIdentifierTypes) {
+        for (SymbolType tokenType : schemaIdentifierTypes) {
             var result = findSymbolsWithTypeInDocument(fileURI, tokenType);
 
             if (result.isEmpty()) continue;

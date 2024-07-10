@@ -6,12 +6,12 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 
 import ai.vespa.schemals.context.EventPositionContext;
-import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaPrepareRename {
 
     public static Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior> prepareRename(EventPositionContext context) {
-        SymbolNode node = context.document.getSymbolAtPosition(context.position);
+        SchemaNode node = context.document.getSymbolAtPosition(context.position);
 
         if (node == null) {
             return null;

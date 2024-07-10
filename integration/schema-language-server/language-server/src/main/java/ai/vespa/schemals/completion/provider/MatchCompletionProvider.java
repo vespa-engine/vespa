@@ -1,6 +1,5 @@
 package ai.vespa.schemals.completion.provider;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.CompletionItem;

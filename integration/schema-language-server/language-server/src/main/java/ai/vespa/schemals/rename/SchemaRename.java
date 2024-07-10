@@ -10,15 +10,15 @@ import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.tree.SymbolNode;
+import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.workspaceEdit.SchemaTextDocumentEdit;
 import ai.vespa.schemals.workspaceEdit.SchemaWorkspaceEdit;
 
 public class SchemaRename {
 
-    private static WorkspaceEdit renameFunction(EventPositionContext context, SchemaDocumentParser document, SymbolNode node, String newName) {
-
+    private static WorkspaceEdit renameFunction(EventPositionContext context, SchemaDocumentParser document, SchemaNode node, String newName) {
         // TODO: find references
 
         SchemaTextDocumentEdit documentEdits = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
@@ -32,10 +32,10 @@ public class SchemaRename {
     //     context.scheduler.openDocument(newFileURI);
     // }
 
-    private static WorkspaceEdit renameSchema(EventPositionContext context, SchemaDocumentParser document, SymbolNode node, String newName) {
+    private static WorkspaceEdit renameSchema(EventPositionContext context, SchemaDocumentParser document, SchemaNode node, String newName) {
         String newFileURI = document.getFilePath() + newName + ".sd";
 
-        // TODO: send a message tot he user explaining the error
+        // TODO: send a message to the user explaining the error
         SchemaDocumentParser nameCollistionDocument = context.schemaIndex.findSchemaDocumentWithFileURI(newFileURI);
         if (nameCollistionDocument != null) {
             context.messageHandler.sendMessage(MessageType.Error, "Cannot rename schema to '" + newName + "' since the name is already taken.");
@@ -59,14 +59,14 @@ public class SchemaRename {
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
 
-        SymbolNode node = context.document.getSymbolAtPosition(context.position);
+        SchemaNode node = context.document.getSymbolAtPosition(context.position);
         if (node == null) {
             return null;
         }
 
         // CASES: rename schema / document, field, struct, funciton
 
-        Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), node.getSymbolType(), node.getText());
+        Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), node.getSymbol().getType(), node.getText());
         if (symbol == null) {
             context.logger.println("Could not find the symbol definition");
             return null;
@@ -78,13 +78,13 @@ public class SchemaRename {
             return null;
         }
 
-        TokenType type = symbol.getType();
+        SymbolType type = symbol.getType();
 
-        if (type == TokenType.FUNCTION) {
+        if (type == SymbolType.FUNCTION) {
             return renameFunction(context, document, symbol.getNode(), newName);
         }
 
-        if (type == TokenType.SCHEMA) {
+        if (type == SymbolType.SCHEMA) {
             return renameSchema(context, document, symbol.getNode(), newName);
         }
         

@@ -1,26 +1,28 @@
 package ai.vespa.schemals.index;
 
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.tree.SymbolDefinitionNode;
+import ai.vespa.schemals.tree.SchemaNode;
 
 public class Symbol {
-    private SymbolDefinitionNode identifierNode;
+    private SchemaNode identifierNode;
     private Symbol scope = null;
     private String fileURI;
+    private SymbolType type;
 
-    public Symbol(SymbolDefinitionNode identifierNode, String fileURI) {
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
         this.identifierNode = identifierNode;
         this.fileURI = fileURI;
+        this.type = type;
     }
 
-    public Symbol(SymbolDefinitionNode identifierNode, String fileURI, Symbol scope) {
-        this(identifierNode, fileURI);
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
+        this(identifierNode, type, fileURI);
         this.scope = scope;
     }
 
-    public TokenType getType() { return identifierNode.getSymbolType(); }
+    public void setType(SymbolType type) { this.type = type; }
+    public SymbolType getType() { return type; }
     public String getFileURI() { return fileURI; }
-    public SymbolDefinitionNode getNode() { return identifierNode; }
+    public SchemaNode getNode() { return identifierNode; }
     public String getShortIdentifier() { return identifierNode.getText(); }
 
     public String getLongIdentifier() {
@@ -28,5 +30,18 @@ public class Symbol {
             return getShortIdentifier();
         }
         return scope.getLongIdentifier() + "." + getShortIdentifier();
+    }
+
+    public enum SymbolType {
+        SCHEMA,
+        DOCUMENT,
+        FIELD,
+        STRUCT,
+        ANNOTATION,
+        RANK_PROFILE,
+        FIELDSET,
+        STRUCT_FIELD,
+        FUNCTION,
+        TYPE_UNKNOWN
     }
 }

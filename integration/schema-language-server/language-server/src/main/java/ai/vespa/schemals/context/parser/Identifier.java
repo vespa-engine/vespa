@@ -1,6 +1,5 @@
 package ai.vespa.schemals.context.parser;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;

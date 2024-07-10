@@ -9,6 +9,8 @@ import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
@@ -18,13 +20,15 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private TokenType type;
     private String identifierString;
     private SchemaNode parent;
-    protected Node originalNode;
+    private Symbol symbolAtNode;
+
+    private Node originalNode;
 
     private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
 
     // This array has to be in order, without overlapping elements
-    protected ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
+    private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
 
     private Range range;
 
@@ -44,25 +48,6 @@ public class SchemaNode implements Iterable<SchemaNode> {
         for (Node child : node) {
             children.add(new SchemaNode(child, this));
         }
-        
-    }
-
-    protected SchemaNode(SchemaNode tobeReplaced) {
-        type                = tobeReplaced.type;
-        parent              = tobeReplaced.parent;
-        identifierString    = tobeReplaced.identifierString;
-        originalNode        = tobeReplaced.originalNode;
-        children            = tobeReplaced.children;
-        range               = tobeReplaced.range;
-
-        for (SchemaNode child : children) {
-            child.parent = this;
-        }
-
-        int index = parent.indexOf(tobeReplaced);
-        if (index == -1) return; // Invalid setup
-
-        parent.children.set(index, this);
     }
 
     public TokenType getType() {
@@ -79,6 +64,24 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public TokenType setType(TokenType type) {
         this.type = type;
         return type;
+    }
+
+    public void setSymbol(SymbolType type, String fileURI) {
+        this.symbolAtNode = new Symbol(this, type, fileURI);
+    }
+
+    public void setSymbolType(SymbolType newType) {
+        if (!this.hasSymbol()) return;
+        this.symbolAtNode.setType(newType);
+    }
+
+    public boolean hasSymbol() {
+        return this.symbolAtNode != null;
+    }
+
+    public Symbol getSymbol() {
+        if (!hasSymbol()) throw new IllegalArgumentException("getSymbol called on node without a symbol!");
+        return this.symbolAtNode;
     }
 
     public boolean isIndexingElm() {
@@ -135,6 +138,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     public String getIdentifierString() {
         return identifierString;
+    }
+
+    public Node getOriginalNode() {
+        return originalNode;
     }
 
     public String getClassLeafIdentifierString() {

@@ -10,7 +10,6 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifySchemaInheritance extends Identifier {
 
@@ -28,7 +27,7 @@ public class IdentifySchemaInheritance extends Identifier {
         if (node.getPreviousSibling() == null) return ret;
         if (node.getPreviousSibling().getType() != TokenType.INHERITS) return ret;
 
-        if (!(node instanceof SymbolReferenceNode)) {
+        if (!node.hasSymbol()) {
             ret.add(new Diagnostic(node.getRange(), "Should be symbol reference", DiagnosticSeverity.Warning, ""));
         }
 

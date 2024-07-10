@@ -9,7 +9,6 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifyStructInheritance extends Identifier {
 
@@ -24,7 +23,7 @@ public class IdentifyStructInheritance extends Identifier {
         if (!node.isASTInstance(identifierStr.class)) return ret;
         if (node.getParent() == null || !node.getParent().isASTInstance(inheritsStruct.class)) return ret;
 
-        if (!(node instanceof SymbolReferenceNode)) {
+        if (!node.hasSymbol()) {
             ret.add(new Diagnostic(node.getRange(), "Should be reference", DiagnosticSeverity.Warning, ""));
         }
 

@@ -9,10 +9,10 @@ import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.TypeNode;
 
 public class IdentifyType extends Identifier {
     public IdentifyType(ParseContext context) {
@@ -26,14 +26,14 @@ public class IdentifyType extends Identifier {
             return ret;
         }
 
-        TypeNode replacedNode = new TypeNode(node); // Will maintain tree
+        dataType originalNode = (dataType)node.getOriginalNode();
 
-        ParsedType parsedType = replacedNode.getParsedType();
+        ParsedType parsedType = originalNode.getParsedType();
 
-        if (replacedNode.isArrayOldStyle()) {
-            String nodeText = replacedNode.get(0).getText();
+        if (originalNode.isArrayOldStyle) {
+            String nodeText = node.get(0).getText();
             ret.add(new Diagnostic(
-                replacedNode.getRange(), 
+                node.getRange(), 
                 "Data type syntax '" + nodeText + "[]' is deprecated, use 'array<" + nodeText + ">' instead.", 
                 DiagnosticSeverity.Warning,""
             ));
@@ -41,9 +41,9 @@ public class IdentifyType extends Identifier {
         }
 
         if (parsedType.getVariant() == Variant.ANN_REFERENCE) {
-            if (!isInsideAnnotationBody(replacedNode)) {
+            if (!isInsideAnnotationBody(node)) {
                 ret.add(new Diagnostic(
-                    replacedNode.getRange(),
+                    node.getRange(),
                     "annotationreference should only be used inside an annotation",
                     DiagnosticSeverity.Error,
                     ""
@@ -55,7 +55,9 @@ public class IdentifyType extends Identifier {
             return ret;
         }
 
-        this.context.addUnresolvedTypeNode(replacedNode);
+        node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+
+        this.context.addUnresolvedTypeNode(node);
         return ret;
     }
 

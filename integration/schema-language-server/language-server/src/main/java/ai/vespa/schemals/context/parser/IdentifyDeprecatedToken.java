@@ -25,6 +25,7 @@ public class IdentifyDeprecatedToken extends Identifier {
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
+        // TODO: semantic context
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         String message = deprecatedTokens.get(node.getType());

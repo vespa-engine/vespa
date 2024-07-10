@@ -17,6 +17,7 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ParseException;
@@ -24,12 +25,8 @@ import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
-import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolNode;
-import ai.vespa.schemals.tree.SymbolReferenceNode;
-import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
@@ -202,14 +199,14 @@ public class SchemaDocumentParser {
         return getNodeAtPosition(CST, pos, false, false);
     }
 
-    public SymbolNode getSymbolAtPosition(Position pos) {
+    public SchemaNode getSymbolAtPosition(Position pos) {
         SchemaNode node = getNodeAtPosition(pos);
 
-        while (node != null && !(node instanceof SymbolNode)) {
+        while (node != null && !node.hasSymbol()) {
             node = node.getParent();
         }
 
-        return (SymbolNode)node;
+        return node;
     }
 
     private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
@@ -283,7 +280,7 @@ public class SchemaDocumentParser {
 
         diagnostics.addAll(resolveInheritances(context));
 
-        for (TypeNode typeNode : context.unresolvedTypeNodes()) {
+        for (SchemaNode typeNode : context.unresolvedTypeNodes()) {
             if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
                 diagnostics.add(new Diagnostic(
                     typeNode.getRange(),
@@ -295,7 +292,7 @@ public class SchemaDocumentParser {
         }
         context.clearUnresolvedTypeNodes();
 
-        for (AnnotationReferenceNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
+        for (SchemaNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
             if (!context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI())) {
                 diagnostics.add(new Diagnostic(
                     annotationReferenceNode.getRange(),
@@ -389,8 +386,8 @@ public class SchemaDocumentParser {
      * Traverse the CST, yet again, to find symbol references and look them up in the index
      */
     private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
-        if (node instanceof SymbolReferenceNode) {
-            TokenType referencedType = ((SymbolReferenceNode)node).getSymbolType();
+        if (node.hasSymbol()) {
+            SymbolType referencedType = node.getSymbol().getType();
             if (context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()) == null) {
                 diagnostics.add(new Diagnostic(
                     node.getRange(),
