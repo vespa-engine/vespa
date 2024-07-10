@@ -14,6 +14,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
@@ -99,7 +100,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return (originalNode instanceof featureListElm);
     }
 
-    public String getILScript() {
+    public SubLanguageData getILScript() {
         if (!isIndexingElm())return null;
         indexingElm elmNode = (indexingElm)originalNode;
         return elmNode.getILScript();
