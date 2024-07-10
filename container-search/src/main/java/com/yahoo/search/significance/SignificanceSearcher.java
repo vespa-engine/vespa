@@ -8,6 +8,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.WordItem;
@@ -160,18 +161,13 @@ public class SignificanceSearcher extends Searcher {
             var documentFrequency = significanceModel.documentFrequency(word);
             long N                = documentFrequency.corpusSize();
             long nq_i             = documentFrequency.frequency();
-            double idf            = calculateIDF(N, nq_i);
-            log.log(Level.FINE, () -> "Setting IDF for " + word + " to " + idf);
-            wi.setSignificance(idf);
+            log.log(Level.FINE, () -> "Setting document frequency for " + word + " to {frequency: " + nq_i + ", count: " + N + "}");
+            wi.setDocumentFrequency(new DocumentFrequency(nq_i, N));
         } else if (root instanceof CompositeItem ci) {
             for (int i = 0; i < ci.getItemCount(); i++) {
                 setIDF(ci.getItem(i), significanceModel);
             }
         }
-    }
-
-    public static double calculateIDF(long N, long nq_i) {
-        return Math.log(1 + (N - nq_i + 0.5) / (nq_i + 0.5));
     }
 }
 
