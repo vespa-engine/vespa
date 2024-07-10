@@ -27,7 +27,12 @@ public class CSTUtils {
 
     public static Range getNodeRange(Node node) {
         TokenSource tokenSource = node.getTokenSource();
-        return getRangeFromOffsets(tokenSource, node.getBeginOffset(), node.getEndOffset());
+        try {
+            return getRangeFromOffsets(tokenSource, node.getBeginOffset(), node.getEndOffset());
+        } catch(Exception e) {
+            // TODO: something happens when offsets are bad
+        }        
+        return new Range(new Position(0, 0), new Position(0, 0));
     }
 
 

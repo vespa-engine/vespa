@@ -429,10 +429,10 @@ public class SchemaDocumentParser {
     }
 
     private static ParseResult parseCST(Node node, ParseContext context) {
-        var CST = new SchemaNode(node);
         if (node == null) {
             return ParseResult.parsingFailed(new ArrayList<>());
         }
+        SchemaNode CST = new SchemaNode(node);
         var errors = traverseCST(CST, context);
         return new ParseResult(errors, Optional.of(CST));
     }
