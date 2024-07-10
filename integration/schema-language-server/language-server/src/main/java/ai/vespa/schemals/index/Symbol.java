@@ -1,23 +1,27 @@
 package ai.vespa.schemals.index;
 
+import ai.vespa.schemals.tree.SchemaNode;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.tree.SymbolNode;
 
 public class Symbol {
-    private SymbolNode identifierNode;
+    private SchemaNode identifierNode;
+
     private Symbol scope = null;
     private String fileURI;
+    private SymbolType type;
+    private SymbolStatus status;
 
-    public Symbol(SymbolNode identifierNode, String fileURI) {
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
         this.identifierNode = identifierNode;
         this.fileURI = fileURI;
+        this.type = type;
+        this.status = SymbolStatus.UNRESOLVED;
     }
 
-    public Symbol(SymbolNode identifierNode, String fileURI, Symbol scope) {
-        this(identifierNode, fileURI);
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
+        this(identifierNode, type, fileURI);
         this.scope = scope;
     }
 
@@ -28,8 +32,13 @@ public class Symbol {
         return fileURI;
     }
     
-    public TokenType getType() { return identifierNode.getSymbolType(); }
-    public SymbolNode getNode() { return identifierNode; }
+    public void setType(SymbolType type) { this.type = type; }
+    public SymbolType getType() { return type; }
+    public void setStatus(SymbolStatus status) { this.status = status; }
+    public SymbolStatus getStatus() { return status; }
+
+    public SchemaNode getNode() { return identifierNode; }
+
     public String getShortIdentifier() { return identifierNode.getText(); }
 
     public String getLongIdentifier() {
@@ -39,6 +48,25 @@ public class Symbol {
         return scope.getLongIdentifier() + "." + getShortIdentifier();
     }
 
+    public enum SymbolStatus {
+        DEFINITION,
+        REFERENCE,
+        UNRESOLVED,
+        INVALID
+    }
+
+    public enum SymbolType {
+        SCHEMA,
+        DOCUMENT,
+        FIELD,
+        STRUCT,
+        ANNOTATION,
+        RANK_PROFILE,
+        FIELDSET,
+        STRUCT_FIELD,
+        FUNCTION,
+        TYPE_UNKNOWN
+    }
     public String toString() {
         Position pos = getNode().getRange().getStart();
         String fileName = SchemaDocumentParser.fileNameFromPath(fileURI);

@@ -4,20 +4,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsStruct;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolDefinitionNode;
-import ai.vespa.schemals.tree.SymbolReferenceNode;
 
 public class IdentifySymbolReferences extends Identifier {
 
@@ -25,20 +25,21 @@ public class IdentifySymbolReferences extends Identifier {
 		super(context);
 	}
 
-    private static final HashMap<Class<? extends Node>, TokenType> identifierTypeMap = new HashMap<Class<? extends Node>, TokenType>() {{
-        put(inheritsDocument.class, TokenType.DOCUMENT);
-        put(fieldsElm.class, TokenType.FIELD);
-        put(rootSchema.class, TokenType.SCHEMA);
+    private static final HashMap<Class<? extends Node>, SymbolType> identifierTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(inheritsDocument.class, SymbolType.DOCUMENT);
+        put(fieldsElm.class, SymbolType.FIELD);
+        put(rootSchema.class, SymbolType.SCHEMA);
+        put(inheritsStruct.class, SymbolType.STRUCT);
     }};
 
-    private static final HashMap<Class<? extends Node>, TokenType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, TokenType>() {{
-        put(inheritsRankProfile.class, TokenType.RANK_PROFILE);
+    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(inheritsRankProfile.class, SymbolType.RANK_PROFILE);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
-        if (node instanceof SymbolDefinitionNode) return ret;
+        if (node.hasSymbol()) return ret;
 
         boolean isIdentifier = node.isASTInstance(identifierStr.class);
         boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
@@ -48,11 +49,12 @@ public class IdentifySymbolReferences extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
-        HashMap<Class<? extends Node>, TokenType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
-        TokenType tokenType = searchMap.get(parent.getASTClass());
-        if (tokenType == null) return ret;
+        HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
+        SymbolType symbolType = searchMap.get(parent.getASTClass());
+        if (symbolType == null) return ret;
 
-        SymbolReferenceNode newNode = new SymbolReferenceNode(node, tokenType);
+        node.setSymbol(symbolType, context.fileURI());
+        node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         return ret;
     }

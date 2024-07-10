@@ -5,8 +5,9 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationRefDataType;
-import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyAnnotationReference extends Identifier {
@@ -25,8 +26,9 @@ public class IdentifyAnnotationReference extends Identifier {
 
         SchemaNode annotationIdentifier = node.get(2);
 
-        AnnotationReferenceNode replacedNode = new AnnotationReferenceNode(annotationIdentifier);
-        context.addUnresolvedAnnotationReferenceNode(replacedNode);
+        annotationIdentifier.setSymbol(SymbolType.ANNOTATION, context.fileURI());
+
+        context.addUnresolvedAnnotationReferenceNode(annotationIdentifier);
         return ret;
 	}
 }

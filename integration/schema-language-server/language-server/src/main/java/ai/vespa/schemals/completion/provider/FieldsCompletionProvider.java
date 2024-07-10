@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Position;
 import ai.vespa.schemals.completion.utils.CompletionUtils;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.context.SchemaDocumentLexer.LexicalToken;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -46,7 +47,7 @@ public class FieldsCompletionProvider implements CompletionProvider {
 
 	@Override
 	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
-        List<Symbol> fieldSymbols = context.schemaIndex.findSymbolsWithTypeInDocument(context.document.getFileURI(), TokenType.FIELD);
+        List<Symbol> fieldSymbols = context.schemaIndex.findSymbolsWithTypeInDocument(context.document.getFileURI(), SymbolType.FIELD);
 
         return fieldSymbols.stream()
                            .map(symbol -> CompletionUtils.constructBasic(symbol.getShortIdentifier()))

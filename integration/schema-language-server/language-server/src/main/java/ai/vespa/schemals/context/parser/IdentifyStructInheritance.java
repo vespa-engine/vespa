@@ -6,14 +6,13 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.ast.identifierStr;
-import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsStruct;
 import ai.vespa.schemals.tree.SchemaNode;
 
-public class IdentifyDocumentInheritance extends Identifier {
+public class IdentifyStructInheritance extends Identifier {
 
-	public IdentifyDocumentInheritance(ParseContext context) {
+	public IdentifyStructInheritance(ParseContext context) {
 		super(context);
 	}
 
@@ -22,14 +21,21 @@ public class IdentifyDocumentInheritance extends Identifier {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
         if (!node.isASTInstance(identifierStr.class)) return ret;
-        if (node.getParent() == null || !node.getParent().isASTInstance(inheritsDocument.class)) return ret;
+        if (node.getParent() == null || !node.getParent().isASTInstance(inheritsStruct.class)) return ret;
 
         if (!node.hasSymbol()) {
-            ret.add(new Diagnostic(node.getRange(), "Should be symbol", DiagnosticSeverity.Warning, ""));
+            ret.add(new Diagnostic(node.getRange(), "Should be reference", DiagnosticSeverity.Warning, ""));
         }
 
-        this.context.addUnresolvedInheritanceNode(node);
+        ret.add(new Diagnostic(
+            node.getRange(),
+            "Inherits struct",
+            DiagnosticSeverity.Information,
+            ""
+        ));
 
         return ret;
 	}
+
+    
 }

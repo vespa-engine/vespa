@@ -6,7 +6,6 @@ import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.completion.provider.*;
 import ai.vespa.schemals.context.EventPositionContext;
-import ai.vespa.schemals.tree.CSTUtils;
 
 public class SchemaCompletion {
 

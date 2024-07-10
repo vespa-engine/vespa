@@ -1,4 +1,3 @@
-
 package ai.vespa.schemals;
 
 import ai.vespa.schemals.common.Utils;

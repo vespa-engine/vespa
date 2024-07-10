@@ -175,8 +175,8 @@ public class CSTUtils {
             ret += " [FEATURES]";
         }
 
-        if (node instanceof SymbolReferenceNode) {
-            ret += " [REF]";
+        if (node.hasSymbol()) {
+            ret += " [SYMBOL " + node.getSymbol().getType().toString() + "]";
         }
 
         Range range = node.getRange();

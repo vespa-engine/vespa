@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.RenameFile;
-import org.eclipse.lsp4j.ResourceOperation;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 
@@ -14,9 +13,8 @@ import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol;
-import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.workspaceEdit.SchemaTextDocumentEdit;
 import ai.vespa.schemals.workspaceEdit.SchemaWorkspaceEdit;
 
@@ -42,16 +40,16 @@ public class SchemaRename {
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
 
-        SymbolNode node = context.document.getSymbolAtPosition(context.position);
-        if (node == null) {
+        SchemaNode node = context.document.getSymbolAtPosition(context.position);
+        if (node == null || !node.hasSymbol()) {
             return null;
         }
 
         // CASES: rename schema / document, field, struct, funciton
 
-        TokenType type = node.getSymbolType();
-        if (type == TokenType.DOCUMENT) {
-            type = TokenType.SCHEMA;
+        SymbolType type = node.getSymbol().getType();
+        if (type == SymbolType.DOCUMENT) {
+            type = SymbolType.SCHEMA;
         }
 
         Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), type, node.getText());
@@ -75,7 +73,7 @@ public class SchemaRename {
         ArrayList<Symbol> symbolOccurances = context.schemaIndex.findSymbolReferences(symbol);
         symbolOccurances.add(symbol);
         
-        if (type == TokenType.SCHEMA) {
+        if (type == SymbolType.SCHEMA) {
             return renameSchema(context, document, symbol, symbolOccurances, node.getText(), newName);
         }
 
@@ -91,11 +89,11 @@ public class SchemaRename {
     private static WorkspaceEdit renameSchema(EventContext context, SchemaDocumentParser document, Symbol symbol, ArrayList<Symbol> symbolOccurances, String oldName, String newName) {
         SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
 
-        Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), TokenType.DOCUMENT, oldName);
+        Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), SymbolType.DOCUMENT, oldName);
 
         context.logger.println(documentSymbol);
 
-        if (documentSymbol != null && documentSymbol.getType() == TokenType.DOCUMENT) {
+        if (documentSymbol != null && documentSymbol.getType() == SymbolType.DOCUMENT) {
             context.logger.println("Found a document match!");
             symbolOccurances.add(documentSymbol);
             ArrayList<Symbol> documentReferences = context.schemaIndex.findSymbolReferences(documentSymbol);

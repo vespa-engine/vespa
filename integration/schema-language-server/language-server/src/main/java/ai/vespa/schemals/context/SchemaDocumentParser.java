@@ -17,19 +17,18 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
-import ai.vespa.schemals.tree.AnnotationReferenceNode;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolNode;
-import ai.vespa.schemals.tree.SymbolReferenceNode;
-import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
@@ -122,9 +121,10 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing: " + fileURI);
 
+        // logger.println("======== CST for file: " + fileURI + " ========");
         // CSTUtils.printTree(logger, CST);
 
-        //schemaIndex.dumpIndex(logger);
+        schemaIndex.dumpIndex(logger);
 
     }
 
@@ -207,14 +207,14 @@ public class SchemaDocumentParser {
         return getNodeAtPosition(CST, pos, false, false);
     }
 
-    public SymbolNode getSymbolAtPosition(Position pos) {
+    public SchemaNode getSymbolAtPosition(Position pos) {
         SchemaNode node = getNodeAtPosition(pos);
 
-        while (node != null && !(node instanceof SymbolNode)) {
+        while (node != null && !node.hasSymbol()) {
             node = node.getParent();
         }
 
-        return (SymbolNode)node;
+        return node;
     }
 
     private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
@@ -288,27 +288,13 @@ public class SchemaDocumentParser {
 
         diagnostics.addAll(resolveInheritances(context));
 
-        for (TypeNode typeNode : context.unresolvedTypeNodes()) {
-            if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
-                diagnostics.add(new Diagnostic(
-                    typeNode.getRange(),
-                    "Unknown type " + typeNode.getText(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            }
+        for (SchemaNode typeNode : context.unresolvedTypeNodes()) {
+            context.schemaIndex().resolveTypeNode(typeNode, context.fileURI());
         }
         context.clearUnresolvedTypeNodes();
 
-        for (AnnotationReferenceNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
-            if (!context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI())) {
-                diagnostics.add(new Diagnostic(
-                    annotationReferenceNode.getRange(),
-                    "Unknown annotation: " + annotationReferenceNode.getText(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            }
+        for (SchemaNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
+            context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI());
         }
         context.clearUnresolvedAnnotationReferenceNodes();
 
@@ -333,14 +319,7 @@ public class SchemaDocumentParser {
         for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
             String schemaDocumentName = schemaDocumentNameNode.getText();
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
-            if (parent == null) {
-                diagnostics.add(new Diagnostic(
-                    schemaDocumentNameNode.getRange(),
-                    "Unknown document " + schemaDocumentName,
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            } else {
+            if (parent != null) {
                 if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), parent.getFileURI())) {
                     // Inheritance cycle
                     // TODO: quickfix
@@ -353,29 +332,26 @@ public class SchemaDocumentParser {
                 } else {
                     documentInheritanceURIs.add(parent.getFileURI());
                 }
+
+                schemaDocumentNameNode.setSymbolStatus(SymbolStatus.REFERENCE);
             }
         }
 
         if (context.inheritsSchemaNode() != null) {
             String inheritsSchemaName = context.inheritsSchemaNode().getText();
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
-            if (parent == null) {
-                diagnostics.add(new Diagnostic(
-                    context.inheritsSchemaNode().getRange(),
-                    "Unknown schema " + inheritsSchemaName,
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            } else if (!documentInheritanceURIs.contains(parent.getFileURI())) {
-                // TODO: Quickfix
-                diagnostics.add(new Diagnostic(
-                    context.inheritsSchemaNode().getRange(),
-                    "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            } else {
-                context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
+            if (parent != null) {
+                if (!documentInheritanceURIs.contains(parent.getFileURI())) {
+                    // TODO: Quickfix
+                    diagnostics.add(new Diagnostic(
+                        context.inheritsSchemaNode().getRange(),
+                        "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
+                        DiagnosticSeverity.Error,
+                        ""
+                    ));
+                    context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
+                }
+                context.inheritsSchemaNode().setSymbolStatus(SymbolStatus.REFERENCE);
             }
         }
 
@@ -394,24 +370,20 @@ public class SchemaDocumentParser {
      * Traverse the CST, yet again, to find symbol references and look them up in the index
      */
     private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
-        if (node instanceof SymbolReferenceNode) {
-            SymbolReferenceNode referenceNode = (SymbolReferenceNode)node;
-            TokenType referencedType = referenceNode.getSymbolType();
-            Symbol symbol = context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText());
-
-            if (symbol == null) {
-
+        if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+            // dataType is handled separately
+            SymbolType referencedType = node.getSymbol().getType();
+            Symbol referencedSymbol = context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText());
+            if (referencedSymbol == null) {
                 diagnostics.add(new Diagnostic(
                     node.getRange(),
                     "Undefined symbol " + node.getText(),
                     DiagnosticSeverity.Error,
                     ""
                 ));
-
             } else {
-
-                context.schemaIndex().insertSymbolReference(symbol, context.fileURI(), referenceNode);
-
+                node.setSymbolStatus(SymbolStatus.REFERENCE);
+                context.schemaIndex().insertSymbolReference(referencedSymbol, context.fileURI(), node);
             }
         }
 
@@ -448,8 +420,8 @@ public class SchemaDocumentParser {
             }
         }
 
-        for (SchemaNode child : node) {
-            ret.addAll(traverseCST(child, context));
+        for (int i = 0; i < node.size(); ++i) {
+            ret.addAll(traverseCST(node.get(i), context));
         }
 
         return ret;
