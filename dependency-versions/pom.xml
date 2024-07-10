@@ -134,7 +134,7 @@
         <org.json.vespa.version>20240303</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
         <prometheus.client.vespa.version>0.16.0</prometheus.client.vespa.version>
-        <plexus-archiver.vespa.version>4.9.2</plexus-archiver.vespa.version>
+        <plexus-archiver.vespa.version>4.10.0</plexus-archiver.vespa.version>
         <plexus-interpolation.vespa.version>1.27</plexus-interpolation.vespa.version>
         <plexus-io.vespa.version>3.5.0</plexus-io.vespa.version>
         <plexus-utils.vespa.version>4.0.1</plexus-utils.vespa.version>
