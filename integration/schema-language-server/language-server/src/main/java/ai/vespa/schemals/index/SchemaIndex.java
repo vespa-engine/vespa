@@ -22,14 +22,16 @@ public class SchemaIndex {
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
 
-    private DocumentInheritanceGraph documentInheritanceGraph;
+    private InheritanceGraph documentInheritanceGraph;
+    private InheritanceGraph structInheritanceGraph;
 
     // Schema inheritance. Can only inherit one schema
     private HashMap<String, String> schemaInherits = new HashMap<String, String>();
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
-        this.documentInheritanceGraph = new DocumentInheritanceGraph();
+        this.documentInheritanceGraph = new InheritanceGraph();
+        this.structInheritanceGraph = new InheritanceGraph();
     }
     
     public void clearDocument(String fileURI) {
@@ -38,7 +40,14 @@ public class SchemaIndex {
 
         while (iterator.hasNext()) {
             Map.Entry<String, Symbol> entry = iterator.next();
-            if (entry.getValue().getFileURI().equals(fileURI)) {
+            Symbol currentSymbol = entry.getValue();
+            if (currentSymbol.getFileURI().equals(fileURI)) {
+
+                // TODO: it's ugly
+                if (currentSymbol.getType() == SymbolType.STRUCT) {
+                    structInheritanceGraph.clearInheritsList(getStructInheritanceKey(currentSymbol));
+                }
+
                 iterator.remove();
             }
         }
@@ -86,7 +95,7 @@ public class SchemaIndex {
      */
     public Symbol findSymbol(String fileURI, SymbolType type, String identifier) {
         // TODO: handle name collision (diamond etc.)
-        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+        List<String> inheritanceList = documentInheritanceGraph.getAllAncestors(fileURI);
 
         for (var parentURI : inheritanceList) {
             Symbol result = findSymbolInFile(parentURI, type, identifier);
@@ -225,17 +234,17 @@ public class SchemaIndex {
     }
 
     public List<String> getAllDocumentAncestorURIs(String fileURI) {
-        return this.documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+        return this.documentInheritanceGraph.getAllAncestors(fileURI);
     }
 
     public List<String> getAllDocumentDescendants(String fileURI) {
-        List<String> descendants = this.documentInheritanceGraph.getAllDocumentDescendantURIs(fileURI);
+        List<String> descendants = this.documentInheritanceGraph.getAllDescendants(fileURI);
         descendants.remove(fileURI);
         return descendants;
     }
 
     public List<String> getAllDocumentsInInheritanceOrder() {
-        return this.documentInheritanceGraph.getAllDocumentsTopoOrder();
+        return this.documentInheritanceGraph.getTopoOrdering();
     }
 
     public void setSchemaInherits(String childURI, String parentURI) {
@@ -249,6 +258,10 @@ public class SchemaIndex {
     public void insertSymbolDefinition(Symbol symbol) {
         String dbKey = createDBKey(symbol);
         symbolDefinitionsDB.put(dbKey, symbol);
+
+        if (symbol.getType() == SymbolType.STRUCT) {
+            structInheritanceGraph.createNodeIfNotExists(getStructInheritanceKey(symbol));
+        }
     }
 
     public void insertSymbolReference(Symbol refersTo, String fileURI, SchemaNode node) {
@@ -268,5 +281,18 @@ public class SchemaIndex {
         }};
 
         symbolReferencesDB.put(dbKey, references);
+    }
+
+    // TODO: move these things to somewhere else?
+
+    public String getStructInheritanceKey(Symbol structSymbol) {
+        return structSymbol.getFileURI() + ":" + structSymbol.getShortIdentifier();
+    }
+
+    public boolean tryRegisterStructInheritance(Symbol childSymbol, Symbol parentSymbol) {
+        String childNode = getStructInheritanceKey(childSymbol);
+        String parentNode = getStructInheritanceKey(parentSymbol);
+
+        return structInheritanceGraph.addInherits(childNode, parentNode);
     }
 }

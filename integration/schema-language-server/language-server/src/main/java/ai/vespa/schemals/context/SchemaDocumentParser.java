@@ -12,6 +12,10 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
+
+import com.google.protobuf.Option;
+import com.yahoo.tensor.functions.Diag;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
@@ -317,24 +321,17 @@ public class SchemaDocumentParser {
         List<Diagnostic> diagnostics = new ArrayList<>();
         Set<String> documentInheritanceURIs = new HashSet<>();
 
-        for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
-            String schemaDocumentName = schemaDocumentNameNode.getText();
-            SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
-            if (parent != null) {
-                if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), parent.getFileURI())) {
-                    // Inheritance cycle
-                    // TODO: quickfix
-                    diagnostics.add(new Diagnostic(
-                        schemaDocumentNameNode.getRange(),
-                        "Cannot inherit from " + schemaDocumentName + " because " + schemaDocumentName + " inherits from this document. This would cause an inheritance cycle and is not allowed.",
-                        DiagnosticSeverity.Error,
-                        ""
-                    ));
-                } else {
-                    documentInheritanceURIs.add(parent.getFileURI());
-                }
+        for (SchemaNode inheritanceNode : context.unresolvedInheritanceNodes()) {
+            if (inheritanceNode.getSymbol().getType() == SymbolType.DOCUMENT) {
+                resolveDocumentInheritance(inheritanceNode, context, diagnostics).ifPresent(
+                    parentURI -> documentInheritanceURIs.add(parentURI)
+                );
+            }
+        }
 
-                schemaDocumentNameNode.setSymbolStatus(SymbolStatus.REFERENCE);
+        for (SchemaNode inheritanceNode : context.unresolvedInheritanceNodes()) {
+            if (inheritanceNode.getSymbol().getType() == SymbolType.STRUCT) {
+                resolveStructInheritance(inheritanceNode, context, diagnostics);
             }
         }
 
@@ -359,6 +356,58 @@ public class SchemaDocumentParser {
         context.clearUnresolvedInheritanceNodes();
 
         return diagnostics;
+    }
+
+    private static void resolveStructInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
+        SchemaNode myStructDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
+        String inheritedIdentifier = inheritanceNode.getText();
+
+        if (myStructDefinitionNode == null) {
+            return;
+        }
+
+        if (!myStructDefinitionNode.hasSymbol()) {
+            return;
+        }
+
+        Symbol parentSymbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, inheritedIdentifier);
+        if (parentSymbol == null) {
+            // Handled elsewhere
+            return;
+        }
+
+        if (!context.schemaIndex().tryRegisterStructInheritance(myStructDefinitionNode.getSymbol(), parentSymbol)) {
+            // TODO: get the chain?
+            diagnostics.add(new Diagnostic(
+                inheritanceNode.getRange(), 
+                "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this struct.",
+                DiagnosticSeverity.Error, 
+                ""
+            ));
+        }
+    }
+
+    private static Optional<String> resolveDocumentInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
+        String schemaDocumentName = inheritanceNode.getText();
+        SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
+        if (parent == null) {
+            // Handled in resolve symbol references
+            return Optional.empty();
+        }
+        if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), parent.getFileURI())) {
+            // Inheritance cycle
+            // TODO: quickfix, get the chain?
+            diagnostics.add(new Diagnostic(
+                inheritanceNode.getRange(),
+                "Cannot inherit from " + schemaDocumentName + " because " + schemaDocumentName + " inherits from this document.",
+                DiagnosticSeverity.Error,
+                ""
+            ));
+            return Optional.empty();
+        }
+
+        inheritanceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+        return Optional.of(parent.getFileURI());
     }
 
     private static List<Diagnostic> resolveSymbolReferences(ParseContext context, SchemaNode CST) {

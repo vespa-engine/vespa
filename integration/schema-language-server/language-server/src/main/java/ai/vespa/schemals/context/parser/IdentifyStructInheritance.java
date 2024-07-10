@@ -27,12 +27,7 @@ public class IdentifyStructInheritance extends Identifier {
             ret.add(new Diagnostic(node.getRange(), "Should be reference", DiagnosticSeverity.Warning, ""));
         }
 
-        ret.add(new Diagnostic(
-            node.getRange(),
-            "Inherits struct",
-            DiagnosticSeverity.Information,
-            ""
-        ));
+        context.addUnresolvedInheritanceNode(node);
 
         return ret;
 	}
