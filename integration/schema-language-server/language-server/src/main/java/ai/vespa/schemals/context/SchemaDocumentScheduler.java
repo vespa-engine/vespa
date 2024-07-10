@@ -23,7 +23,8 @@ public class SchemaDocumentScheduler {
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
-    private HashMap<String, SchemaDocumentParser> openDocuments = new HashMap<String, SchemaDocumentParser>();
+    private HashMap<String, SchemaDocumentParser> workspaceDocuments = new HashMap<String, SchemaDocumentParser>();
+    private boolean reparseDescendants = true;
 
     public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex) {
         this.logger = logger;
@@ -32,48 +33,87 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content) {
-        if (!openDocuments.containsKey(fileURI)) {
-            openDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content));
+        updateFile(fileURI, content, null);
+    }
+
+    public void updateFile(String fileURI, String content, Integer version) {
+        if (!workspaceDocuments.containsKey(fileURI)) {
+            workspaceDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content, version));
         } else {
-            openDocuments.get(fileURI).updateFileContent(content);
+            workspaceDocuments.get(fileURI).updateFileContent(content, version);
         }
 
-
-        for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
-            if (openDocuments.containsKey(descendantURI)) {
-                openDocuments.get(descendantURI).reparseContent();
+        if (reparseDescendants) {
+            for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
+                if (workspaceDocuments.containsKey(descendantURI)) {
+                    workspaceDocuments.get(descendantURI).reparseContent();
+                }
             }
         }
     }
 
     public void openDocument(TextDocumentItem document) {
         logger.println("Opening document: " + document.getUri());
-        updateFile(document.getUri(), document.getText());
+        
+        updateFile(document.getUri(), document.getText(), document.getVersion());
+        workspaceDocuments.get(document.getUri()).setIsOpen(true);
     }
 
     /*
      * Will read the file from disk if not already opened.
      * Does nothing if the document is already open (and thus managed by the client)
      */
-    public void openDocument(String fileURI) {
-        if (openDocuments.containsKey(fileURI)) return;
+    public void addDocument(String fileURI) {
+        if (workspaceDocuments.containsKey(fileURI)) return;
 
         try {
-            logger.println("Opening document: " + fileURI);
+            logger.println("Adding document: " + fileURI);
             String content = readFromURI(fileURI);
             updateFile(fileURI, content);
         } catch(IOException ex) {
             this.logger.println("Failed to read file: " + fileURI);
         }
+
     }
 
     public void closeDocument(String fileURI) {
         logger.println("Closing document: " + fileURI);
-        openDocuments.remove(fileURI);
+        workspaceDocuments.get(fileURI).setIsOpen(false);
+
+        File file = new File(URI.create(fileURI));
+        if (!file.exists()) {
+            cleanUpDocumnet(fileURI);
+        }
+    }
+
+    private void cleanUpDocumnet(String fileURI) {
+        logger.println("Removing document: "+ fileURI);
+
+        schemaIndex.clearDocument(fileURI);
+        workspaceDocuments.remove(fileURI);
+    }
+
+    public boolean removeDocument(String fileURI) {
+        boolean wasOpen = workspaceDocuments.get(fileURI).getIsOpen();
+        closeDocument(fileURI);
+        cleanUpDocumnet(fileURI);
+        return wasOpen;
     }
 
     public SchemaDocumentParser getDocument(String fileURI) {
-        return openDocuments.get(fileURI);
+        return workspaceDocuments.get(fileURI);
+    }
+
+    public void reparseInInheritanceOrder() {
+        for (String fileURI : schemaIndex.getAllDocumentsInInheritanceOrder()) {
+            if (workspaceDocuments.containsKey(fileURI)) {
+                workspaceDocuments.get(fileURI).reparseContent();
+            }
+        }
+    }
+
+    public void setReparseDescendants(boolean reparseDescendants) {
+        this.reparseDescendants = reparseDescendants;
     }
 
     private String readFromURI(String fileURI) throws IOException {

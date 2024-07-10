@@ -1,6 +1,6 @@
-
 package ai.vespa.schemals;
 
+import ai.vespa.schemals.common.Utils;
 import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
@@ -18,6 +18,7 @@ import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.Registration;
 import org.eclipse.lsp4j.RegistrationParams;
+import org.eclipse.lsp4j.RenameOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.WorkspaceServerCapabilities;
@@ -50,6 +51,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     private SchemaIndex schemaIndex;
     //private LanguageClient client;
     private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
+    private SchemaMessageHandler schemaMessageHandler;
 
     private PrintStream logger;
     private int errorCode = 1;
@@ -75,10 +77,11 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.schemaIndex = new SchemaIndex(logger);
         this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler(logger);
+        this.schemaMessageHandler = new SchemaMessageHandler(logger);
         this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex);
 
-        this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex);
-        this.workspaceService = new SchemaWorkspaceService(this.logger);
+        this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
+        this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler);
     }    
 
     @Override
@@ -91,13 +94,17 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setCompletionProvider(completionOptions);
         initializeResult.getCapabilities().setHoverProvider(true);
         initializeResult.getCapabilities().setDefinitionProvider(true);
+        initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
         initializeResult.getCapabilities().setSemanticTokensProvider(SchemaSemanticTokens.getSemanticTokensRegistrationOptions());
 
+        this.schemaDocumentScheduler.setReparseDescendants(false);
         for (var folder : initializeParams.getWorkspaceFolders()) {
-            for (String fileURI : findSchemaFiles(folder.getUri())) {
-                this.schemaDocumentScheduler.openDocument(fileURI);
+            for (String fileURI : Utils.findSchemaFiles(folder.getUri(), this.logger)) {
+                this.schemaDocumentScheduler.addDocument(fileURI);
             }
         }
+        this.schemaDocumentScheduler.reparseInInheritanceOrder();
+        this.schemaDocumentScheduler.setReparseDescendants(true);
 
         return CompletableFuture.supplyAsync(()->initializeResult);
     }
@@ -135,6 +142,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     public void connect(LanguageClient languageClient) {
         this.client = languageClient;
         this.schemaDiagnosticsHandler.connectClient(languageClient);
+        this.schemaMessageHandler.connectClient(languageClient);
     }
 
     void startWatchingFiles() {
@@ -149,31 +157,4 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.client.registerCapability(new RegistrationParams(Collections.singletonList(registration)));
     }
 
-    List<String> findSchemaFiles(String workspaceFolderUri) {
-        String glob = "glob:**/*.sd";
-        final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
-
-        // TODO: Exclude known heavy directories like .git
-        List<String> filePaths = new ArrayList<>();
-        try {
-            Files.walkFileTree(Paths.get(URI.create(workspaceFolderUri)), new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                    if (pathMatcher.matches(path)) {
-                        filePaths.add(path.toUri().toString());
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exception) throws IOException {
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch(IOException ex) {
-            logger.println("IOException caught when walking file tree: " + ex.getMessage());
-        }
-
-        return filePaths;
-    }
 }

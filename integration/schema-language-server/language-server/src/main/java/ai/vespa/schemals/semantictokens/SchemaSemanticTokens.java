@@ -14,30 +14,19 @@ import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolNode;
-import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.ast.documentElm;
-import ai.vespa.schemals.parser.ast.fieldElm;
-import ai.vespa.schemals.parser.ast.fieldSetElm;
-import ai.vespa.schemals.parser.ast.fieldsElm;
-import ai.vespa.schemals.parser.ast.functionElm;
-import ai.vespa.schemals.parser.ast.inheritsDocument;
-import ai.vespa.schemals.parser.ast.inheritsRankProfile;
-import ai.vespa.schemals.parser.ast.rankProfile;
-import ai.vespa.schemals.parser.ast.rootSchema;
-import ai.vespa.schemals.parser.ast.structDefinitionElm;
-import ai.vespa.schemals.parser.ast.structFieldDefinition;
-import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.parser.ast.dataType;
 
 public class SchemaSemanticTokens implements Visitor {
 
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
+        add(TokenType.ANNOTATION);
         add(TokenType.DOCUMENT);
         add(TokenType.FIELD);
         add(TokenType.FIELDSET); 
@@ -64,32 +53,22 @@ public class SchemaSemanticTokens implements Visitor {
         put(TokenType.LONG, "number");
         put(TokenType.DOUBLEQUOTEDSTRING, "string");
         put(TokenType.SINGLEQUOTEDSTRING, "string");
-        //put(TokenType.ARRAY, "type");
-        //put(TokenType.WEIGHTEDSET, "type");
-        //put(TokenType.MAP, "type");
-        //put(TokenType.ANNOTATIONREFERENCE, "type");
-        //put(TokenType.REFERENCE, "type");
-        //put(TokenType.TENSOR_TYPE, "type");
     }};
     
-    private static final HashMap<Class<? extends Node>, String> identifierTypeLSPNameMap = new HashMap<Class<? extends Node>, String>() {{
-        put(rootSchema.class, "namespace");
-        put(documentElm.class, "class");
-        put(inheritsDocument.class, "class");
-        put(fieldElm.class, "variable");
-        put(fieldSetElm.class, "variable");
-        put(fieldsElm.class, "variable");
-        put(structFieldElm.class, "variable");
-        put(structDefinitionElm.class, "variable");
-        put(structFieldDefinition.class, "variable");
-        put(rankProfile.class, "variable");
-        put(inheritsRankProfile.class, "variable");
-        put(functionElm.class, "function");
+    private static final HashMap<SymbolType, String> identifierTypeLSPNameMap = new HashMap<SymbolType, String>() {{
+        put(SymbolType.SCHEMA, "namespace");
+        put(SymbolType.DOCUMENT, "class");
+        put(SymbolType.FIELD, "variable");
+        put(SymbolType.FIELDSET, "variable");
+        put(SymbolType.STRUCT, "variable");
+        put(SymbolType.STRUCT_FIELD, "variable");
+        put(SymbolType.RANK_PROFILE, "variable");
+        put(SymbolType.FUNCTION, "function");
     }};
 
     private static ArrayList<String> tokenTypes;
     private static Map<TokenType, Integer> tokenTypeMap;
-    private static Map<Class<? extends Node>, Integer> identifierTypeMap;
+    private static Map<SymbolType, Integer> identifierTypeMap;
 
     private static int addTokenType(String name) {
         int index = tokenTypes.indexOf(name);
@@ -103,7 +82,7 @@ public class SchemaSemanticTokens implements Visitor {
     static {
         tokenTypes = new ArrayList<String>();
         tokenTypeMap = new HashMap<TokenType, Integer>();
-        identifierTypeMap = new HashMap<Class<? extends Node>, Integer>();
+        identifierTypeMap = new HashMap<SymbolType, Integer>();
 
         tokenTypes.addAll(manuallyRegisteredLSPNames);
 
@@ -117,7 +96,7 @@ public class SchemaSemanticTokens implements Visitor {
             tokenTypeMap.put(type, keywordIndex);
         }
 
-        for (Map.Entry<Class<? extends Node>, String> set : identifierTypeLSPNameMap.entrySet()) {
+        for (Map.Entry<SymbolType, String> set : identifierTypeLSPNameMap.entrySet()) {
             int index = addTokenType(set.getValue());
             identifierTypeMap.put(set.getKey(), index);
         }
@@ -192,7 +171,8 @@ public class SchemaSemanticTokens implements Visitor {
 
         TokenType type = node.getType();
 
-        if (node instanceof TypeNode) {
+        if (node.isASTInstance(dataType.class) && !node.hasSymbol()) {
+
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != -1) {
                 // this will leave <> uncolored, as we are only interested in marking the actual token
@@ -200,27 +180,31 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
 
-        } else if (type != null) {
-            if (node instanceof SymbolNode) {
-                SchemaNode parent = node.getParent();
-                Integer tokenType = identifierTypeMap.get(parent.getASTClass());
-                
-                if (tokenType != null) {
-                    ret.add(new SemanticTokenMarker(tokenType, node));
-                }
+        } 
 
-            } else {
-                Integer tokenType = tokenTypeMap.get(type);
-                if (tokenType != null) {
-                    ret.add(new SemanticTokenMarker(tokenType, node));
-                }
+        if (node.hasSymbol() && 
+                (node.getSymbol().getStatus() == SymbolStatus.REFERENCE || node.getSymbol().getStatus() == SymbolStatus.DEFINITION)) {
+            Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
+            
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
+        } else if (type != null) {
+
+            Integer tokenType = tokenTypeMap.get(type);
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
+        } else {
+            
+            for (SchemaNode child : node) {
+                ArrayList<SemanticTokenMarker> markers = traverseCST(child, logger);
+                ret.addAll(markers);
             }
         }
 
-        for (int i = 0; i < node.size(); i++) {
-            ArrayList<SemanticTokenMarker> markers = traverseCST(node.get(i), logger);
-            ret.addAll(markers);
-        }
 
         return ret;
     }

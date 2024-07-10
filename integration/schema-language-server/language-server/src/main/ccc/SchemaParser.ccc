@@ -763,7 +763,17 @@ ParsedField fieldElm() :
     ParsedType type;
 }
 
-    <FIELD> name = identifierStr <TYPE> type = dataType()
+    <FIELD> name = identifierStr
+    {
+        if (Schema.isReservedName(name.toLowerCase())) {
+            lastConsumedToken.addParseException(new ParseException(
+                "Reserved name '" + lastConsumedToken.toString() + "' can not be used as a field name.",
+                lastConsumedToken,
+                parsingStack
+            ));
+        }
+    }
+    <TYPE> type = dataType()
     {
         field = new ParsedField(name, type);
     }

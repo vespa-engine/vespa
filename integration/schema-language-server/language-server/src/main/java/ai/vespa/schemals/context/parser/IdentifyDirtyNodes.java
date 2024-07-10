@@ -55,7 +55,7 @@ public class IdentifyDirtyNodes extends Identifier {
             parseException == null &&
             illegalArgumentException == null
         ) {
-            ret.add(new Diagnostic(node.getRange(), "Dirty Node"));
+            ret.add(new Diagnostic(node.getRange(), "Invalid syntax."));
         }
 
         return ret;

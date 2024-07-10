@@ -106,10 +106,11 @@ public class CSTUtils {
     }
 
     public static void printTree(PrintStream logger, SchemaNode node, Integer indent) {
+
         logger.println(new String(new char[indent]).replace("\0", "\t") + schemaNodeString(node));
 
-        for (int i = 0; i < node.size(); i++) {
-            printTree(logger, node.get(i), indent + 1);
+        for (SchemaNode child : node) {
+            printTree(logger, child, indent + 1);
         }
 
         if (node.hasIndexingNode()) {
@@ -153,8 +154,8 @@ public class CSTUtils {
         }
 
 
-        for (int i = 0; i < node.size(); i++) {
-            printTreeUpToPosition(logger, node.get(i), pos, indent + 1);
+        for (SchemaNode child : node) {
+            printTreeUpToPosition(logger, child, pos, indent + 1);
         }
     }
 
@@ -172,6 +173,10 @@ public class CSTUtils {
 
         if (node.isFeatureListElm()) {
             ret += " [FEATURES]";
+        }
+
+        if (node.hasSymbol()) {
+            ret += " [SYMBOL " + node.getSymbol().getType().toString() + " " + node.getSymbol().getStatus().toString() + "]";
         }
 
         Range range = node.getRange();

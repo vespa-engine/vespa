@@ -103,8 +103,8 @@ public class SchemaDocumentLexer {
         if (node.getDirtyType() != null) {
             tokens.add(new LexicalToken(node.getDirtyType(), node.getRange(), node.isDirty()));
         }
-        for (int i = 0; i < node.size(); i++) {
-            collectAllTokens(node.get(i));
+        for (SchemaNode child : node) {
+            collectAllTokens(child);
         }
     }
 }

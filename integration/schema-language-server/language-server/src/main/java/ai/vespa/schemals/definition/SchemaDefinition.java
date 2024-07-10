@@ -8,16 +8,16 @@ import org.eclipse.lsp4j.Location;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolNode;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 
 public class SchemaDefinition {
 
-    private static HashMap<Class<? extends Node>, Token.TokenType> linkContexts = new HashMap<Class<? extends Node>, Token.TokenType>() {{
-        put(fieldsElm.class, Token.TokenType.FIELD);
+    private static HashMap<Class<? extends Node>, SymbolType> linkContexts = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(fieldsElm.class, SymbolType.FIELD);
     }};
 
     public static ArrayList<Location> getDefinition(
@@ -30,7 +30,7 @@ public class SchemaDefinition {
 
         SchemaNode node = document.getLeafNodeAtPosition(context.position);
 
-        if (node == null || !(node instanceof SymbolNode)) {
+        if (node == null || !node.hasSymbol()) {
             return ret;
         }
 
@@ -39,12 +39,12 @@ public class SchemaDefinition {
             return ret;
         }
 
-        Token.TokenType tokenType = linkContexts.get(parent.getASTClass());
-        if (tokenType == null) {
+        SymbolType symbolType = linkContexts.get(parent.getASTClass());
+        if (symbolType == null) {
             return ret;
         }
 
-        Symbol refersTo = context.schemaIndex.findSymbol(document.getFileURI(), tokenType, node.getText());
+        Symbol refersTo = context.schemaIndex.findSymbolInFile(document.getFileURI(), symbolType, node.getText());
         
         if (refersTo == null) {
             return ret;

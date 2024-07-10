@@ -1,23 +1,30 @@
 package ai.vespa.schemals.tree;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
+import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
-public class SchemaNode {
+public class SchemaNode implements Iterable<SchemaNode> {
 
     private TokenType type;
     private String identifierString;
     private SchemaNode parent;
-    protected Node originalNode;
+    private Symbol symbolAtNode;
+
+    private Node originalNode;
 
     private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
@@ -43,25 +50,6 @@ public class SchemaNode {
         for (Node child : node) {
             children.add(new SchemaNode(child, this));
         }
-        
-    }
-
-    protected SchemaNode(SchemaNode tobeReplaced) {
-        type                = tobeReplaced.type;
-        parent              = tobeReplaced.parent;
-        identifierString    = tobeReplaced.identifierString;
-        originalNode        = tobeReplaced.originalNode;
-        children            = tobeReplaced.children;
-        range               = tobeReplaced.range;
-
-        for (SchemaNode child : children) {
-            child.parent = this;
-        }
-
-        int index = parent.indexOf(tobeReplaced);
-        if (index == -1) return; // Invalid setup
-
-        parent.children.set(index, this);
     }
 
     public TokenType getType() {
@@ -78,6 +66,29 @@ public class SchemaNode {
     public TokenType setType(TokenType type) {
         this.type = type;
         return type;
+    }
+
+    public void setSymbol(SymbolType type, String fileURI) {
+        this.symbolAtNode = new Symbol(this, type, fileURI);
+    }
+
+    public void setSymbolType(SymbolType newType) {
+        if (!this.hasSymbol()) return;
+        this.symbolAtNode.setType(newType);
+    }
+
+    public void setSymbolStatus(SymbolStatus newStatus) {
+        if (!this.hasSymbol()) return;
+        this.symbolAtNode.setStatus(newStatus);
+    }
+
+    public boolean hasSymbol() {
+        return this.symbolAtNode != null;
+    }
+
+    public Symbol getSymbol() {
+        if (!hasSymbol()) throw new IllegalArgumentException("getSymbol called on node without a symbol!");
+        return this.symbolAtNode;
     }
 
     public boolean isIndexingElm() {
@@ -136,6 +147,10 @@ public class SchemaNode {
         return identifierString;
     }
 
+    public Node getOriginalNode() {
+        return originalNode;
+    }
+
     public String getClassLeafIdentifierString() {
         int lastIndex = identifierString.lastIndexOf('.');
         return identifierString.substring(lastIndex + 1);
@@ -145,8 +160,20 @@ public class SchemaNode {
         return range;
     }
 
+    public SchemaNode getParent(int levels) {
+        if (levels == 0) {
+            return this;
+        }
+
+        if (parent == null) {
+            return null;
+        }
+
+        return parent.getParent(levels - 1);
+    }
+
     public SchemaNode getParent() {
-        return parent;
+        return getParent(1);
     }
 
     public SchemaNode getPrevious() {
@@ -213,6 +240,14 @@ public class SchemaNode {
         return children.size() == 0;
     }
 
+    public SchemaNode findFirstLeaf() {
+        SchemaNode ret = this;
+        while (ret.size() > 0) {
+            ret = ret.get(0);
+        }
+        return ret;
+    }
+
     public boolean isDirty() {
         return originalNode.isDirty();
     }
@@ -234,6 +269,24 @@ public class SchemaNode {
     public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
 
     public String toString() {
-        return getText();
+        Position pos = getRange().getStart();
+        return getText() + "[" + getType() + "] at " + pos.getLine() + ":" + pos.getCharacter();
     }
+
+	@Override
+	public Iterator<SchemaNode> iterator() {
+        return new Iterator<SchemaNode>() {
+            int currentIndex = 0;
+
+			@Override
+			public boolean hasNext() {
+                return currentIndex < children.size();
+			}
+
+			@Override
+			public SchemaNode next() {
+                return children.get(currentIndex++);
+			}
+        };
+	}
 }

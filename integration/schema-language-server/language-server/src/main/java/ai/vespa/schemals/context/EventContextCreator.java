@@ -5,21 +5,25 @@ import java.io.PrintStream;
 import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
 
+import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
 
 public class EventContextCreator {
     public final PrintStream logger;
     public final SchemaDocumentScheduler scheduler;
     public final SchemaIndex schemaIndex;
+    public final SchemaMessageHandler messageHandler;
 
     public EventContextCreator(
         PrintStream logger,
         SchemaDocumentScheduler scheduler,
-        SchemaIndex schemaIndex
+        SchemaIndex schemaIndex,
+        SchemaMessageHandler messageHandler
     ) {
         this.logger = logger;
         this.scheduler = scheduler;
         this.schemaIndex = schemaIndex;
+        this.messageHandler = messageHandler;
     }
 
     public EventPositionContext createContext(TextDocumentPositionParams params) {
@@ -27,13 +31,14 @@ public class EventContextCreator {
             logger,
             scheduler,
             schemaIndex,
+            messageHandler,
             params.getTextDocument().getUri(),
             params.getPosition()
         );
     }
 
     public EventContext createContext(SemanticTokensParams params) {
-        return new EventContext(logger, scheduler, schemaIndex, params.getTextDocument().getUri());
+        return new EventContext(logger, scheduler, schemaIndex, messageHandler, params.getTextDocument().getUri());
     }
 
 }

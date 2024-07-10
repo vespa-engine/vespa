@@ -10,12 +10,18 @@ import com.yahoo.schema.Schema;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.annotationElm;
+import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.namedDocument;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -23,7 +29,6 @@ import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SymbolDefinitionNode;
 
 public class IdentifySymbolDefinition extends Identifier {
 
@@ -31,69 +36,49 @@ public class IdentifySymbolDefinition extends Identifier {
 		super(context);
 	}
 
-    private static final HashMap<TokenType, HashSet<Class<? extends Node>>> tokenParentClassPairs = new HashMap<TokenType, HashSet<Class<? extends Node>>>() {{
-        put(TokenType.SCHEMA, new HashSet<Class<? extends Node>>() {{
-            add(rootSchema.class);
-        }});
-        put(TokenType.SEARCH, new HashSet<Class<? extends Node>>() {{
-            add(rootSchema.class);
-        }});
-        put(TokenType.DOCUMENT, new HashSet<Class<? extends Node>>() {{
-            add(documentElm.class);
-            add(namedDocument.class);
-        }});
-        put(TokenType.FIELD, new HashSet<Class<? extends Node>>() {{
-            add(fieldElm.class);
-            add(structFieldDefinition.class);
-        }});
-        put(TokenType.FIELDSET, new HashSet<Class<? extends Node>>() {{
-            add(fieldSetElm.class);
-        }});
-        put(TokenType.STRUCT, new HashSet<Class<? extends Node>>() {{
-            add(structDefinitionElm.class);
-        }});
-        put(TokenType.STRUCT_FIELD, new HashSet<Class<? extends Node>>() {{
-            add(structFieldElm.class);
-        }});
-        put(TokenType.RANK_PROFILE, new HashSet<Class<? extends Node>>() {{
-            add(rankProfile.class);
-        }});
-        put(TokenType.FUNCTION, new HashSet<Class<? extends Node>>() {{
-            add(functionElm.class);
-        }});
+    private static final HashMap<Class<? extends Node>, SymbolType> identifierTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(annotationElm.class, SymbolType.ANNOTATION);
+        put(annotationOutside.class, SymbolType.ANNOTATION);
+        put(rootSchema.class, SymbolType.SCHEMA);
+        put(documentElm.class, SymbolType.DOCUMENT);
+        put(namedDocument.class, SymbolType.DOCUMENT);
+        put(fieldElm.class, SymbolType.FIELD);
+        put(structFieldDefinition.class, SymbolType.FIELD);
+        put(fieldSetElm.class, SymbolType.FIELDSET);
+        put(structDefinitionElm.class, SymbolType.STRUCT);
+        put(structFieldElm.class, SymbolType.STRUCT_FIELD);
+        put(functionElm.class, SymbolType.FUNCTION);
+    }};
+
+    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(rankProfile.class, SymbolType.RANK_PROFILE);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
+        boolean isIdentifier = node.isASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
+
+        if (!isIdentifier && !isIdentifierWithDash) return ret;
+
         SchemaNode parent = node.getParent();
-        TokenType nodeType = node.getType();
-        HashSet<Class<? extends Node>> parentCNComp = tokenParentClassPairs.get(nodeType);
-        if (
-            parent != null &&
-            parent.get(0) == node &&
-            parentCNComp != null &&
-            parentCNComp.contains(parent.getASTClass()) &&
-            parent.size() > 1
-        ) {
-            SchemaNode child = parent.get(1);
+        if (parent == null || parent.size() <= 1) return ret;
 
-            // TODO: move this check to the ccc file
-            if (
-                nodeType == TokenType.FIELD &&
-                Schema.isReservedName(child.getText().toLowerCase())
-            ) {
-                ret.add(new Diagnostic(child.getRange(), "Reserved name '" + child.getText() + "' can not be used as a field name."));
-            
-            } else {
+        // Prevent inheritance from beeing marked as a definition
+        if (parent.indexOf(node) >= 3) return ret;
 
-                SymbolDefinitionNode newNode = new SymbolDefinitionNode(child);
-                if (context.schemaIndex().findSymbol(context.fileURI(), nodeType, child.getText()) == null) {
-                    Symbol symbol = new Symbol(nodeType, newNode);
-                    context.schemaIndex().insert(context.fileURI(), symbol);
-                }
+        HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
+        SymbolType symbolType = searchMap.get(parent.getASTClass());
+        if (symbolType == null) return ret;
 
-            }
+        node.setSymbol(symbolType, context.fileURI());
+
+        if (context.schemaIndex().findSymbolInFile(context.fileURI(), symbolType, node.getText()) == null) {
+            node.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+        } else {
+            node.setSymbolStatus(SymbolStatus.INVALID);
         }
 
         return ret;

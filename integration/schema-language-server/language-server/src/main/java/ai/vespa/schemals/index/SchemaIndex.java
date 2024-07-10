@@ -7,20 +7,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.yahoo.schema.Schema;
-
 import ai.vespa.schemals.context.SchemaDocumentParser;
-
-import ai.vespa.schemals.parser.Token;
-import ai.vespa.schemals.parser.Token.TokenType;
-
-import ai.vespa.schemals.tree.TypeNode;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaIndex {
 
     private PrintStream logger;
     
-    private HashMap<String, SchemaIndexItem> database = new HashMap<String, SchemaIndexItem>();
+    private HashMap<String, Symbol> symbolDefinitionsDB = new HashMap<String, Symbol>();
+    private HashMap<String, ArrayList<Symbol>> symbolReferencesDB = new HashMap<>();
 
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
@@ -29,16 +26,6 @@ public class SchemaIndex {
 
     // Schema inheritance. Can only inherit one schema
     private HashMap<String, String> schemaInherits = new HashMap<String, String>();
-
-    public class SchemaIndexItem {
-        String fileURI;
-        Symbol symbol;
-        
-        public SchemaIndexItem(String fileURI, Symbol symbol) {
-            this.fileURI = fileURI;
-            this.symbol = symbol;
-        }
-    }
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
@@ -47,12 +34,21 @@ public class SchemaIndex {
     
     public void clearDocument(String fileURI) {
 
-        Iterator<Map.Entry<String, SchemaIndexItem>> iterator = database.entrySet().iterator();
+        Iterator<Map.Entry<String, Symbol>> iterator = symbolDefinitionsDB.entrySet().iterator();
 
         while (iterator.hasNext()) {
-            Map.Entry<String, SchemaIndexItem> entry = iterator.next();
-            if (entry.getValue().fileURI.equals(fileURI)) {
+            Map.Entry<String, Symbol> entry = iterator.next();
+            if (entry.getValue().getFileURI().equals(fileURI)) {
                 iterator.remove();
+            }
+        }
+
+        Iterator<Map.Entry<String, ArrayList<Symbol>>> refIterator = symbolReferencesDB.entrySet().iterator();
+
+        while (refIterator.hasNext()) {
+            Map.Entry<String, ArrayList<Symbol>> entry = refIterator.next();
+            if (entry.getKey().startsWith(fileURI)) {
+                refIterator.remove();
             }
         }
 
@@ -60,54 +56,107 @@ public class SchemaIndex {
         documentInheritanceGraph.clearInheritsList(fileURI);
     }
 
-    private String createDBKey(String fileURI, Symbol symbol) {
-        return createDBKey(fileURI, symbol.getType(), symbol.getShortIdentifier());
+    private String createDBKey(Symbol symbol) {
+        return createDBKey(symbol.getFileURI(), symbol.getType(), symbol.getShortIdentifier());
     }
 
-    private String createDBKey(String fileURI, TokenType type, String identifier) {
-        return fileURI + ":" + type.name() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
+    private String createDBKey(String fileURI, SymbolType type, String identifier) {
+        return fileURI + ":" + type.name().toLowerCase() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
     }
 
     public void registerSchema(String fileURI, SchemaDocumentParser schemaDocumentParser) {
         openSchemas.put(fileURI, schemaDocumentParser);
+        documentInheritanceGraph.createNodeIfNotExists(fileURI);
     }
 
-    public void insert(String fileURI, Symbol symbol) {
-        database.put(
-            createDBKey(fileURI, symbol),
-            new SchemaIndexItem(fileURI, symbol)
-        );
-    }
+    /*
+    * Searches for the given symbol ONLY in document pointed to by fileURI
+    */
+    public Symbol findSymbolInFile(String fileURI, SymbolType type, String identifier) {
+        Symbol result = symbolDefinitionsDB.get(createDBKey(fileURI, type, identifier));
 
-    public Symbol findSymbol(String fileURI, TokenType type, String identifier) {
-        SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
-        if (results == null) {
+        if (result == null) {
             return null;
         }
-        return results.symbol;
+        return result;
     }
 
-    public List<Symbol> findSymbolsWithType(String fileURI, TokenType type) {
+    /*
+     * Search for a user defined identifier symbol. Also search in inherited documents.
+     */
+    public Symbol findSymbol(String fileURI, SymbolType type, String identifier) {
+        // TODO: handle name collision (diamond etc.)
+        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+
+        for (var parentURI : inheritanceList) {
+            Symbol result = findSymbolInFile(parentURI, type, identifier);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    /**
+     * Finds symbol references in the schema index for the given symbol.
+     *
+     * @param symbol The symbol to find references for.
+     * @return A list of symbol references found in the schema index.
+     */
+    public ArrayList<Symbol> findSymbolReferences(Symbol symbol) {
+        ArrayList<Symbol> results = symbolReferencesDB.get(createDBKey(symbol));
+
+        if (results == null) {
+            results = new ArrayList<>();
+        }
+
+        return results;
+    }
+
+    public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, SymbolType type) {
         List<Symbol> result = new ArrayList<>();
-        for (var entry : database.entrySet()) {
-            SchemaIndexItem item = entry.getValue();
-            if (!item.fileURI.equals(fileURI)) continue;
-            if (item.symbol.getType() != type) continue;
-            result.add(item.symbol);
+        for (var entry : symbolDefinitionsDB.entrySet()) {
+            Symbol item = entry.getValue();
+            if (!item.getFileURI().equals(fileURI)) continue;
+            if (item.getType() != type) continue;
+            result.add(item);
         }
 
         return result;
     }
 
-    public boolean resolveTypeNode(TypeNode typeNode, String fileURI) {
+    public boolean resolveTypeNode(SchemaNode typeNode, String fileURI) {
         // TODO: handle document reference
-        // TODO: handle name collision (diamond etc.)
-        String typeName = typeNode.getParsedType().name().toLowerCase();
+        String typeName = typeNode.getSymbol().getShortIdentifier();
 
-        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+        // Probably struct
+        if (findSymbol(fileURI, SymbolType.STRUCT, typeName.toLowerCase()) != null) {
+            typeNode.setSymbolType(SymbolType.STRUCT);
+            // typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            insertSymbolReference(fileURI, typeNode);
+            return true;
+        }
 
-        for (var parentURI : inheritanceList) {
-            if (findSymbol(parentURI, TokenType.STRUCT, typeName.toLowerCase()) != null) return true;
+        // If its not struct it could be document. The document can be defined anywhere
+        for (String documentURI : openSchemas.keySet()) {
+            if (findSymbolInFile(documentURI, SymbolType.DOCUMENT, typeName.toLowerCase()) != null || 
+                  findSymbolInFile(documentURI, SymbolType.SCHEMA, typeName.toLowerCase()) != null) {
+                typeNode.setSymbolType(SymbolType.DOCUMENT);
+                // typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+                insertSymbolReference(fileURI, typeNode);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean resolveAnnotationReferenceNode(SchemaNode annotationReferenceNode, String fileURI) {
+        String annotationName = annotationReferenceNode.getText().toLowerCase();
+
+        Symbol referencedSymbol = findSymbol(fileURI, SymbolType.ANNOTATION, annotationName);
+        if (referencedSymbol != null) {
+            // annotationReferenceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            insertSymbolReference(referencedSymbol, fileURI, annotationReferenceNode);
+            return true;
         }
 
         return false;
@@ -115,24 +164,43 @@ public class SchemaIndex {
 
     public void dumpIndex(PrintStream logger) {
         logger.println(" === INDEX === ");
-        for (Map.Entry<String, SchemaIndexItem> entry : database.entrySet()) {
+        for (Map.Entry<String, Symbol> entry : symbolDefinitionsDB.entrySet()) {
             logger.println(entry.getKey() + " -> " + entry.getValue().toString());
+        }
+
+        logger.println(" === REFERENCE INDEX === ");
+        for (Map.Entry<String, ArrayList<Symbol>> entry : symbolReferencesDB.entrySet()) {
+            String references = "";
+
+            for (int i = 0; i < entry.getValue().size(); i++) {
+                if (i > 0) {
+                    references += ", ";
+                }
+                references += entry.getValue().get(i).toString();
+            }
+
+            logger.println(entry.getKey() + " -> " + references);
         }
 
         logger.println(" === INHERITANCE === ");
         documentInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === TRACKED FILES === ");
+        for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
+            SchemaDocumentParser document = entry.getValue();
+            logger.println(document.toString());
+        }
     }
 
     public Symbol findSchemaIdentifierSymbol(String fileURI) {
         // TODO: handle duplicates?
-        TokenType[] schemaIdentifierTypes = new TokenType[] {
-            TokenType.SCHEMA,
-            TokenType.SEARCH,
-            TokenType.DOCUMENT
+        SymbolType[] schemaIdentifierTypes = new SymbolType[] {
+            SymbolType.SCHEMA,
+            SymbolType.DOCUMENT
         };
 
-        for (TokenType tokenType : schemaIdentifierTypes) {
-            var result = findSymbolsWithType(fileURI, tokenType);
+        for (SymbolType tokenType : schemaIdentifierTypes) {
+            var result = findSymbolsWithTypeInDocument(fileURI, tokenType);
 
             if (result.isEmpty()) continue;
             return result.get(0);
@@ -152,8 +220,16 @@ public class SchemaIndex {
         return null;
     }
 
+    public SchemaDocumentParser findSchemaDocumentWithFileURI(String fileURI) {
+        return openSchemas.get(fileURI);
+    }
+
     public boolean tryRegisterDocumentInheritance(String childURI, String parentURI) {
         return this.documentInheritanceGraph.addInherits(childURI, parentURI);
+    }
+
+    public List<String> getAllDocumentAncestorURIs(String fileURI) {
+        return this.documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
     }
 
     public List<String> getAllDocumentDescendants(String fileURI) {
@@ -162,7 +238,47 @@ public class SchemaIndex {
         return descendants;
     }
 
+    public List<String> getAllDocumentsInInheritanceOrder() {
+        return this.documentInheritanceGraph.getAllDocumentsTopoOrder();
+    }
+
     public void setSchemaInherits(String childURI, String parentURI) {
         schemaInherits.put(childURI, parentURI);
+    }
+
+    public int numEntries() {
+        return this.symbolDefinitionsDB.size();
+    }
+
+    public void insertSymbolDefinition(Symbol symbol) {
+        String dbKey = createDBKey(symbol);
+        symbolDefinitionsDB.put(dbKey, symbol);
+    }
+
+    public void insertSymbolReference(Symbol refersTo, String fileURI, SchemaNode node) {
+        node.setSymbolStatus(SymbolStatus.REFERENCE);
+
+        String dbKey = createDBKey(refersTo);
+        ArrayList<Symbol> references = symbolReferencesDB.get(dbKey);
+
+        Symbol symbol = node.getSymbol();
+
+        if (references == null) {
+            references = new ArrayList<>() {{
+                add(symbol);
+            }};
+    
+            symbolReferencesDB.put(dbKey, references);
+            return;
+        }
+
+        if (!references.contains(symbol)) {
+            references.add(symbol);
+        }
+    }
+
+    public void insertSymbolReference(String fileURI, SchemaNode node) {
+        Symbol referencedSymbol = findSymbol(fileURI, node.getSymbol().getType(), node.getText());
+        insertSymbolReference(referencedSymbol, fileURI, node);
     }
 }

@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import ai.vespa.schemals.context.parser.*;
 import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.tree.TypeNode;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.index.SchemaIndex;
@@ -17,7 +16,8 @@ public class ParseContext {
     private String fileURI;
     private List<Identifier> identifiers;
     private List<SchemaNode> unresolvedInheritanceNodes;
-    private List<TypeNode> unresolvedTypeNodes;
+    private List<SchemaNode> unresolvedTypeNodes;
+    private List<SchemaNode> unresolvedAnnotationReferenceNodes;
     private SchemaIndex schemaIndex;
     private SchemaNode inheritsSchemaNode;
 
@@ -28,18 +28,24 @@ public class ParseContext {
         this.schemaIndex = schemaIndex;
         this.unresolvedInheritanceNodes = new ArrayList<>();
         this.unresolvedTypeNodes = new ArrayList<>();
+        this.unresolvedAnnotationReferenceNodes = new ArrayList<>();
         ParseContext context = this;
         this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>() {{
             add(new IdentifyType(context));
-            add(new IdentifyDocumentInheritance(context));
+
             add(new IdentifySymbolDefinition(context));
             add(new IdentifySymbolReferences(context));
+            add(new IdentifyAnnotationReference(context));
+
+            add(new IdentifyDocumentInheritance(context));
+            add(new IdentifyStructInheritance(context));
+            add(new IdentifySchemaInheritance(context));
+
             add(new IdentifyDeprecatedToken(context));
             add(new IdentifyDirtyNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
-            add(new IdentifySchemaInheritance(context));
         }};
     }
 
@@ -63,8 +69,12 @@ public class ParseContext {
         return this.unresolvedInheritanceNodes;
     }
 
-    public List<TypeNode> unresolvedTypeNodes() {
+    public List<SchemaNode> unresolvedTypeNodes() {
         return this.unresolvedTypeNodes;
+    }
+
+    public List<SchemaNode> unresolvedAnnotationReferenceNodes() {
+        return this.unresolvedAnnotationReferenceNodes;
     }
 
     public SchemaIndex schemaIndex() {
@@ -75,8 +85,12 @@ public class ParseContext {
         this.identifiers.add(identifier);
     }
 
-    public void addUnresolvedTypeNode(TypeNode node) {
+    public void addUnresolvedTypeNode(SchemaNode node) {
         this.unresolvedTypeNodes.add(node);
+    }
+
+    public void addUnresolvedAnnotationReferenceNode(SchemaNode node) {
+        this.unresolvedAnnotationReferenceNodes.add(node);
     }
 
     public void addUnresolvedInheritanceNode(SchemaNode nameNode) {
@@ -85,6 +99,10 @@ public class ParseContext {
 
     public void clearUnresolvedTypeNodes() {
         this.unresolvedTypeNodes.clear();
+    }
+
+    public void clearUnresolvedAnnotationReferenceNodes() {
+        this.unresolvedAnnotationReferenceNodes.clear();
     }
 
     public void clearUnresolvedInheritanceNodes() {
