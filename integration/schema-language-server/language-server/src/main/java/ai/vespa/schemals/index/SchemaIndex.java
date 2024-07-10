@@ -257,6 +257,7 @@ public class SchemaIndex {
 
     public void insertSymbolReference(Symbol refersTo, String fileURI, SchemaNode node) {
         node.setSymbolStatus(SymbolStatus.REFERENCE);
+        if (refersTo == null) return;
 
         String dbKey = createDBKey(refersTo);
         ArrayList<Symbol> references = symbolReferencesDB.get(dbKey);
