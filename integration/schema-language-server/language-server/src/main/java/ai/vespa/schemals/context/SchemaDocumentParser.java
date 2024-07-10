@@ -123,7 +123,7 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        CSTUtils.printTree(logger, CST);
+        // CSTUtils.printTree(logger, CST);
 
         //schemaIndex.dumpIndex(logger);
 
@@ -157,9 +157,13 @@ public class SchemaDocumentParser {
         return fileURI.substring(0, splitPos + 1);
     }
 
+    public static String fileNameFromPath(String path) {
+        int splitPos = path.lastIndexOf('/');
+        return path.substring(splitPos + 1);
+    }
+
     public String getFileName() {
-        int splitPos = fileURI.lastIndexOf('/');
-        return fileURI.substring(splitPos + 1);
+        return fileNameFromPath(fileURI);
     }
 
     public Position getPreviousStartOfWord(Position pos) {

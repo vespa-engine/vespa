@@ -1,5 +1,8 @@
 package ai.vespa.schemals.index;
 
+import org.eclipse.lsp4j.Position;
+
+import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.tree.SymbolNode;
 
@@ -31,6 +34,8 @@ public class Symbol {
     }
 
     public String toString() {
-        return getShortIdentifier();
+        Position pos = getNode().getRange().getStart();
+        String fileName = SchemaDocumentParser.fileNameFromPath(fileURI);
+        return "Symbol('" + getShortIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")";
     }
 }

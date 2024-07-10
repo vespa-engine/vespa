@@ -167,7 +167,16 @@ public class SchemaIndex {
 
         logger.println(" === REFERENCE INDEX === ");
         for (Map.Entry<String, ArrayList<Symbol>> entry : symbolReferencesDB.entrySet()) {
-            logger.println(entry.getKey() + " -> " + entry.getValue().size() + " references");
+            String references = "";
+
+            for (int i = 0; i < entry.getValue().size(); i++) {
+                if (i > 0) {
+                    references += ", ";
+                }
+                references += entry.getValue().get(i).toString();
+            }
+
+            logger.println(entry.getKey() + " -> " + references);
         }
 
         logger.println(" === INHERITANCE === ");

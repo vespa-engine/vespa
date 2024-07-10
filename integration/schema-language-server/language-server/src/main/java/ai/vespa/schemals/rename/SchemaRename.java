@@ -39,31 +39,6 @@ public class SchemaRename {
         return new ArrayList<SchemaTextDocumentEdit>(documentEdits.values());
     }
 
-    private static WorkspaceEdit renameSchema(EventPositionContext context, SchemaDocumentParser document, SymbolNode node, String newName) {
-        String newFileURI = document.getFilePath() + newName + ".sd";
-
-        // TODO: send a message tot he user explaining the error
-        SchemaDocumentParser nameCollistionDocument = context.schemaIndex.findSchemaDocumentWithFileURI(newFileURI);
-        if (nameCollistionDocument != null) {
-            context.messageHandler.sendMessage(MessageType.Error, "Cannot rename schema to '" + newName + "' since the name is already taken.");
-
-            return null;
-        }
-
-        SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
-        SchemaTextDocumentEdit documentEdits = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
-
-        documentEdits.add(new TextEdit(node.getRange(), newName));
-
-        workspaceEdits.addTextDocumentEdit(documentEdits);
-
-        workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
-
-        context.schemaIndex.dumpIndex(context.logger);
-
-        return workspaceEdits.exportEdits();
-    }
-
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
 
         SymbolNode node = context.document.getSymbolAtPosition(context.position);
@@ -80,7 +55,8 @@ public class SchemaRename {
 
         Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), type, node.getText());
         if (symbol == null) {
-            context.logger.println("Could not find the symbol definition");
+            // TODO: later maybe search for schema symbol in the document. And use that insted, if the symbol type is DOCUMENT
+            context.messageHandler.sendMessage(MessageType.Error, "Could not find the symbol definition for: " + node.getText());
             return null;
         }
 
@@ -92,23 +68,40 @@ public class SchemaRename {
             return null;
         }
 
-        context.logger.println("fileURI: " + document.getFileURI());
-
-        ArrayList<Symbol> references = context.schemaIndex.findSymbolReferences(symbol);
-        references.add(symbol);
-
-        context.logger.println("SymbolsToReplace: " + references.size());
-
         context.schemaIndex.dumpIndex(context.logger);
 
         SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
-        ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, references, newName);
 
+        ArrayList<Symbol> symbolOccurances = context.schemaIndex.findSymbolReferences(symbol);
+        symbolOccurances.add(symbol);
+
+        if (type == TokenType.SCHEMA) {
+            Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), TokenType.DOCUMENT, node.getText());
+
+            context.logger.println(documentSymbol);
+
+            if (documentSymbol != null && documentSymbol.getType() == TokenType.DOCUMENT) {
+                context.logger.println("Found a document match!");
+                symbolOccurances.add(documentSymbol);
+                ArrayList<Symbol> documentReferences = context.schemaIndex.findSymbolReferences(documentSymbol);
+                symbolOccurances.addAll(documentReferences);
+            }
+
+            String newFileURI = document.getFilePath() + newName + ".sd";
+
+            // Check for name collision
+            SchemaDocumentParser nameCollistionDocument = context.schemaIndex.findSchemaDocumentWithFileURI(newFileURI);
+            if (nameCollistionDocument != null) {
+                context.messageHandler.sendMessage(MessageType.Error, "Cannot rename schema to '" + newName + "' since the name is already taken.");
+
+                return null;
+            }
+
+            workspaceEdits.addResourceOperation(new RenameFile(document.getFileURI(), newFileURI));
+        }
+
+        ArrayList<SchemaTextDocumentEdit> documentEdits = createTextDocumentEditsFromSymbols(context, symbolOccurances, newName);
         workspaceEdits.addTextDocumentEdits(documentEdits);
-
-        // if (type == TokenType.SCHEMA) {
-        //     return renameSchema(context, document, symbol.getNode(), newName);
-        // }
         
         return workspaceEdits.exportEdits();
     }
