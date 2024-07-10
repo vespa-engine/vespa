@@ -121,10 +121,10 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing: " + fileURI);
 
-        logger.println("======== CST for file: " + fileURI + " ========");
-        CSTUtils.printTree(logger, CST);
+        // logger.println("======== CST for file: " + fileURI + " ========");
+        // CSTUtils.printTree(logger, CST);
 
-        schemaIndex.dumpIndex(logger);
+        // schemaIndex.dumpIndex(logger);
 
     }
 

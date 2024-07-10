@@ -59,8 +59,6 @@ public class SchemaRename {
             return null;
         }
 
-        context.logger.println("Symbol: " + symbol);
-
         SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
         if (document == null) {
             context.logger.println("Symbol has a fileURI to a file not in index!");
@@ -90,8 +88,6 @@ public class SchemaRename {
         SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
 
         Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), SymbolType.DOCUMENT, oldName);
-
-        context.logger.println(documentSymbol);
 
         if (documentSymbol != null && documentSymbol.getType() == SymbolType.DOCUMENT) {
             symbolOccurances.add(documentSymbol);

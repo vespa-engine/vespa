@@ -91,10 +91,6 @@ public class SchemaDocumentScheduler {
 
         schemaIndex.clearDocument(fileURI);
         workspaceDocuments.remove(fileURI);
-
-        // TODO: more places to remove references
-
-        schemaIndex.dumpIndex(logger);
     }
 
     public boolean removeDocument(String fileURI) {
