@@ -17,6 +17,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
@@ -170,7 +171,7 @@ public class SchemaSemanticTokens implements Visitor {
 
         TokenType type = node.getType();
 
-        if (node.isASTInstance(dataType.class)) {
+        if (node.isASTInstance(dataType.class) && !node.hasSymbol()) {
 
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != -1) {
@@ -181,7 +182,8 @@ public class SchemaSemanticTokens implements Visitor {
 
         } 
 
-        if (node.hasSymbol()) {
+        if (node.hasSymbol() && 
+                (node.getSymbol().getStatus() == SymbolStatus.REFERENCE || node.getSymbol().getStatus() == SymbolStatus.DEFINITION)) {
             Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
             
             if (tokenType != null) {

@@ -10,6 +10,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.indexingElm;
@@ -73,6 +74,11 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public void setSymbolType(SymbolType newType) {
         if (!this.hasSymbol()) return;
         this.symbolAtNode.setType(newType);
+    }
+
+    public void setSymbolStatus(SymbolStatus newStatus) {
+        if (!this.hasSymbol()) return;
+        this.symbolAtNode.setStatus(newStatus);
     }
 
     public boolean hasSymbol() {

@@ -6,11 +6,13 @@ import java.util.HashMap;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
+import ai.vespa.schemals.parser.ast.inheritsStruct;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -24,6 +26,7 @@ public class IdentifySymbolReferences extends Identifier {
         put(inheritsDocument.class, SymbolType.DOCUMENT);
         put(fieldsElm.class, SymbolType.FIELD);
         put(rootSchema.class, SymbolType.SCHEMA);
+        put(inheritsStruct.class, SymbolType.STRUCT);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
@@ -42,6 +45,7 @@ public class IdentifySymbolReferences extends Identifier {
         if (symbolType == null) return ret;
 
         node.setSymbol(symbolType, context.fileURI());
+        node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         return ret;
     }

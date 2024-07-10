@@ -7,11 +7,13 @@ public class Symbol {
     private Symbol scope = null;
     private String fileURI;
     private SymbolType type;
+    private SymbolStatus status;
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
         this.identifierNode = identifierNode;
         this.fileURI = fileURI;
         this.type = type;
+        this.status = SymbolStatus.UNRESOLVED;
     }
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
@@ -21,6 +23,8 @@ public class Symbol {
 
     public void setType(SymbolType type) { this.type = type; }
     public SymbolType getType() { return type; }
+    public void setStatus(SymbolStatus status) { this.status = status; }
+    public SymbolStatus getStatus() { return status; }
     public String getFileURI() { return fileURI; }
     public SchemaNode getNode() { return identifierNode; }
     public String getShortIdentifier() { return identifierNode.getText(); }
@@ -30,6 +34,13 @@ public class Symbol {
             return getShortIdentifier();
         }
         return scope.getLongIdentifier() + "." + getShortIdentifier();
+    }
+
+    public enum SymbolStatus {
+        DEFINITION,
+        REFERENCE,
+        UNRESOLVED,
+        INVALID
     }
 
     public enum SymbolType {

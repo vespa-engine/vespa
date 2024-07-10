@@ -10,6 +10,7 @@ import com.yahoo.schema.Schema;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token.TokenType;
@@ -75,6 +76,9 @@ public class IdentifySymbolDefinition extends Identifier {
 
         if (context.schemaIndex().findSymbolInFile(context.fileURI(), symbolType, node.getText()) == null) {
             context.schemaIndex().insert(context.fileURI(), node.getSymbol());
+            node.setSymbolStatus(SymbolStatus.DEFINITION);
+        } else {
+            node.setSymbolStatus(SymbolStatus.INVALID);
         }
 
         return ret;

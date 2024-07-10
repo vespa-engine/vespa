@@ -17,9 +17,11 @@ import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
@@ -118,9 +120,10 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
+        logger.println("======== CST for file: " + fileURI + " ========");
         CSTUtils.printTree(logger, CST);
 
-        //schemaIndex.dumpIndex(logger);
+        schemaIndex.dumpIndex(logger);
 
     }
 
@@ -281,26 +284,12 @@ public class SchemaDocumentParser {
         diagnostics.addAll(resolveInheritances(context));
 
         for (SchemaNode typeNode : context.unresolvedTypeNodes()) {
-            if (!context.schemaIndex().resolveTypeNode(typeNode, context.fileURI())) {
-                diagnostics.add(new Diagnostic(
-                    typeNode.getRange(),
-                    "Unknown type " + typeNode.getText(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            }
+            context.schemaIndex().resolveTypeNode(typeNode, context.fileURI());
         }
         context.clearUnresolvedTypeNodes();
 
         for (SchemaNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
-            if (!context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI())) {
-                diagnostics.add(new Diagnostic(
-                    annotationReferenceNode.getRange(),
-                    "Unknown annotation: " + annotationReferenceNode.getText(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            }
+            context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI());
         }
         context.clearUnresolvedAnnotationReferenceNodes();
 
@@ -325,14 +314,7 @@ public class SchemaDocumentParser {
         for (SchemaNode schemaDocumentNameNode : context.unresolvedInheritanceNodes()) {
             String schemaDocumentName = schemaDocumentNameNode.getText();
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
-            if (parent == null) {
-                diagnostics.add(new Diagnostic(
-                    schemaDocumentNameNode.getRange(),
-                    "Unknown document " + schemaDocumentName,
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            } else {
+            if (parent != null) {
                 if (!context.schemaIndex().tryRegisterDocumentInheritance(context.fileURI(), parent.getFileURI())) {
                     // Inheritance cycle
                     // TODO: quickfix
@@ -345,29 +327,26 @@ public class SchemaDocumentParser {
                 } else {
                     documentInheritanceURIs.add(parent.getFileURI());
                 }
+
+                schemaDocumentNameNode.setSymbolStatus(SymbolStatus.REFERENCE);
             }
         }
 
         if (context.inheritsSchemaNode() != null) {
             String inheritsSchemaName = context.inheritsSchemaNode().getText();
             SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
-            if (parent == null) {
-                diagnostics.add(new Diagnostic(
-                    context.inheritsSchemaNode().getRange(),
-                    "Unknown schema " + inheritsSchemaName,
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            } else if (!documentInheritanceURIs.contains(parent.getFileURI())) {
-                // TODO: Quickfix
-                diagnostics.add(new Diagnostic(
-                    context.inheritsSchemaNode().getRange(),
-                    "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            } else {
-                context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
+            if (parent != null) {
+                if (!documentInheritanceURIs.contains(parent.getFileURI())) {
+                    // TODO: Quickfix
+                    diagnostics.add(new Diagnostic(
+                        context.inheritsSchemaNode().getRange(),
+                        "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
+                        DiagnosticSeverity.Error,
+                        ""
+                    ));
+                    context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
+                }
+                context.inheritsSchemaNode().setSymbolStatus(SymbolStatus.REFERENCE);
             }
         }
 
@@ -386,7 +365,8 @@ public class SchemaDocumentParser {
      * Traverse the CST, yet again, to find symbol references and look them up in the index
      */
     private static void resolveSymbolReferencesImpl(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
-        if (node.hasSymbol()) {
+        if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+            // dataType is handled separately
             SymbolType referencedType = node.getSymbol().getType();
             if (context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()) == null) {
                 diagnostics.add(new Diagnostic(
@@ -395,6 +375,8 @@ public class SchemaDocumentParser {
                     DiagnosticSeverity.Error,
                     ""
                 ));
+            } else {
+                node.setSymbolStatus(SymbolStatus.REFERENCE);
             }
         }
 

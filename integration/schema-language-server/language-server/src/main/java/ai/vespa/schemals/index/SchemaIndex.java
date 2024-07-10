@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -82,10 +83,6 @@ public class SchemaIndex {
         SchemaIndexItem results = database.get(createDBKey(fileURI, type, identifier));
 
         if (results == null) {
-            // Edge case for when a document is defined without explicitly stating the name.
-            if (type == SymbolType.DOCUMENT) {
-                return findSymbolInFile(fileURI, SymbolType.SCHEMA, identifier);
-            }
             return null;
         }
         return results.symbol;
@@ -124,13 +121,16 @@ public class SchemaIndex {
         // Probably struct
         if (findSymbol(fileURI, SymbolType.STRUCT, typeName.toLowerCase()) != null) {
             typeNode.setSymbolType(SymbolType.STRUCT);
+            typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
             return true;
         }
 
         // If its not struct it could be document. The document can be defined anywhere
         for (String documentURI : openSchemas.keySet()) {
-            if (findSymbol(documentURI, SymbolType.DOCUMENT, typeName.toLowerCase()) != null) {
+            if (findSymbolInFile(documentURI, SymbolType.DOCUMENT, typeName.toLowerCase()) != null || 
+                  findSymbolInFile(documentURI, SymbolType.SCHEMA, typeName.toLowerCase()) != null) {
                 typeNode.setSymbolType(SymbolType.DOCUMENT);
+                typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
                 return true;
             }
         }
@@ -141,7 +141,12 @@ public class SchemaIndex {
     public boolean resolveAnnotationReferenceNode(SchemaNode annotationReferenceNode, String fileURI) {
         String annotationName = annotationReferenceNode.getText().toLowerCase();
 
-        return findSymbol(fileURI, SymbolType.ANNOTATION, annotationName) != null;
+        if (findSymbol(fileURI, SymbolType.ANNOTATION, annotationName) != null) {
+            annotationReferenceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            return true;
+        }
+
+        return false;
     }
 
     public void dumpIndex(PrintStream logger) {
