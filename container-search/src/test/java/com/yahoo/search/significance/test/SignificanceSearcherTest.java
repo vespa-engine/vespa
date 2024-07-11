@@ -14,6 +14,7 @@ import com.yahoo.language.significance.SignificanceModel;
 import com.yahoo.language.significance.SignificanceModelRegistry;
 import com.yahoo.language.significance.impl.DefaultSignificanceModelRegistry;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -31,6 +32,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 
 import static com.yahoo.test.JunitCompat.assertEquals;
@@ -157,13 +159,12 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
         Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
-        assertEquals(helloSignificanceValue, w0.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
     }
 
     @Test
@@ -178,13 +179,12 @@ public class SignificanceSearcherTest {
         q1.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
         Result r = createExecution(searcher).search(q1);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
-        assertEquals(helloSignificanceValue, w0.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
 
         Query q2 = new Query("?query=hello&ranking.significance.useModel=false");
         q2.getRanking().setProfile("significance-ranking");
@@ -196,7 +196,11 @@ public class SignificanceSearcherTest {
         Result r2 = createExecution(searcher).search(q2);
         root = (AndItem) r2.getQuery().getModel().getQueryTree().getRoot();
         WordItem w1 = (WordItem) root.getItem(0);
-        assertEquals(0.0, w1.getSignificance());
+        assertEquals(Optional.empty(), w1.getDocumentFrequency());
+    }
+
+    private static Optional<DocumentFrequency> makeDocumentFrequency(com.yahoo.language.significance.DocumentFrequency source) {
+        return Optional.of(new DocumentFrequency(source.frequency(), source.corpusSize()));
     }
 
     @Test
@@ -214,11 +218,8 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("Hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
-
-        var worldFrequency = model.documentFrequency("world");
-        var worldSignificanceValue = SignificanceSearcher.calculateIDF(worldFrequency.corpusSize(), worldFrequency.frequency());
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("Hello"));
+        var worldDocumentFrequency = makeDocumentFrequency(model.documentFrequency("world"));
 
         Result r = createExecution(searcher).search(q);
 
@@ -226,8 +227,8 @@ public class SignificanceSearcherTest {
         WordItem w0 = (WordItem) root.getItem(0);
         WordItem w1 = (WordItem) root.getItem(1);
 
-        assertEquals(helloSignificanceValue, w0.getSignificance());
-        assertEquals(worldSignificanceValue, w1.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
+        assertEquals(worldDocumentFrequency, w1.getDocumentFrequency());
 
     }
 
@@ -256,14 +257,8 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
-
-        var testFrequency = model.documentFrequency("test");
-        var testSignificanceValue = SignificanceSearcher.calculateIDF(testFrequency.corpusSize(), testFrequency.frequency());
-
-
-
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
+        var testDocumentFrequency = makeDocumentFrequency(model.documentFrequency("test"));
         Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
@@ -271,9 +266,9 @@ public class SignificanceSearcherTest {
         WordItem w1 = (WordItem) ((AndItem) root.getItem(1)).getItem(0);
         WordItem w3 = (WordItem) ((AndItem) ((AndItem) root.getItem(2)).getItem(0)).getItem(0);
 
-        assertEquals(helloSignificanceValue, w0.getSignificance());
-        assertEquals(testSignificanceValue, w1.getSignificance());
-        assertEquals(SignificanceSearcher.calculateIDF(16, 2), w3.getSignificance());
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
+        assertEquals(testDocumentFrequency, w1.getDocumentFrequency());
+        assertEquals(Optional.of(new DocumentFrequency(2, 16)), w3.getDocumentFrequency());
 
     }
 
@@ -323,14 +318,12 @@ public class SignificanceSearcherTest {
         q.getModel().getQueryTree().setRoot(root);
 
         SignificanceModel model = significanceModelRegistry.getModel(Language.ENGLISH).get();
-        var helloFrequency = model.documentFrequency("hello");
-        var helloSignificanceValue = SignificanceSearcher.calculateIDF(helloFrequency.corpusSize(), helloFrequency.frequency());
+        var helloDocumentFrequency = makeDocumentFrequency(model.documentFrequency("hello"));
         Result r = createExecution(searcher).search(q);
 
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
-        assertEquals(helloSignificanceValue, w0.getSignificance());
-
+        assertEquals(helloDocumentFrequency, w0.getDocumentFrequency());
 
         Query q2 = new Query();
         q2.getModel().setLanguage(Language.FRENCH);
