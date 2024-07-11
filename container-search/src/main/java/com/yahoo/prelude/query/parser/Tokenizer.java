@@ -7,6 +7,7 @@ import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Substring;
+import com.yahoo.search.query.parser.ParserEnvironment.ParserSettings;
 
 import java.util.List;
 import java.util.Set;
@@ -29,6 +30,8 @@ public final class Tokenizer {
 
     /** Whether to recognize tokens also as substrings of other tokens, needed for cjk */
     private boolean substringSpecialTokens = false;
+
+    private ParserSettings parserSettings = new ParserSettings();
 
     private final CharacterClasses characterClasses;
 
@@ -54,6 +57,10 @@ public final class Tokenizer {
     /** Sets whether to recognize tokens also as substrings of other tokens, needed for cjk. Default false. */
     public void setSubstringSpecialTokens(boolean substringSpecialTokens) {
         this.substringSpecialTokens = substringSpecialTokens;
+    }
+
+    public void setParserSettings(ParserSettings parserSettings) {
+        this.parserSettings = parserSettings;
     }
 
     /**
@@ -112,6 +119,8 @@ public final class Tokenizer {
             } else if (characterClasses.isLetterOrDigit(c) || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
                 i = consumeWordOrNumber(i, currentIndex);
             } else if (Character.isWhitespace(c)) {
+                addToken(SPACE, " ", i, i + 1);
+            } else if ((c == '\u3001' || c == '\u3002') && ! parserSettings.keepIdeographicPunctuation()) {
                 addToken(SPACE, " ", i, i + 1);
             } else if (c == '"' || c == '\u201C' || c == '\u201D'
                     || c == '\u201E' || c == '\u201F' || c == '\u2039'

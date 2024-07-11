@@ -16,15 +16,17 @@ import com.yahoo.search.searchchain.Execution;
  */
 public final class ParserEnvironment {
 
-    /** these flags are only for how the weakAnd parser handles implicit AND/SAND items */
+    /** flags to enable backwards-compatibility modes in query parsing */
     public record ParserSettings(boolean keepImplicitAnds,
                                  boolean markSegmentAnds,
-                                 boolean keepSegmentAnds)
+                                 boolean keepSegmentAnds,
+                                 boolean keepIdeographicPunctuation)
     {
         public ParserSettings() {
             this(/*keepImplicitAnds    = */ true,
                  /*markSegmentAnds     = */ false,
-                 /*keepSegmentAnds     = */ false);
+                 /*keepSegmentAnds     = */ false,
+                 /*ideographicPunct    = */ false);
         }
     }
 
