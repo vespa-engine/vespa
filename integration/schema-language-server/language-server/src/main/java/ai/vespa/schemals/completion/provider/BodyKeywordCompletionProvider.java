@@ -138,17 +138,17 @@ public class BodyKeywordCompletionProvider implements CompletionProvider {
 
         SchemaNode searchNode = last;
 
-        if (searchNode.getType() == TokenType.RBRACE) {
+        if (searchNode.getSchemaType() == TokenType.RBRACE) {
             if (searchNode.getParent() == null || searchNode.getParent().getParent() == null)return null;
             searchNode = searchNode.getParent().getParent();
         }
 
-        if (searchNode.getType() == TokenType.NL) {
+        if (searchNode.getSchemaType() == TokenType.NL) {
             if (searchNode.getParent() == null)return null;
             searchNode = searchNode.getParent();
         }
 
-        if (searchNode.getType() == TokenType.LBRACE) {
+        if (searchNode.getSchemaType() == TokenType.LBRACE) {
             if (searchNode.getParent() == null || searchNode.getParent().getParent() == null)return null;
             searchNode = searchNode.getParent().getParent();
         }

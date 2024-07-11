@@ -21,7 +21,7 @@ public class IdentifyDocumentlessSchema extends Identifier {
         ArrayList<Diagnostic> ret = new ArrayList<>();
         if (!node.isASTInstance(rootSchema.class))return ret;
 
-        if (node.size() < 2 || node.get(1).isDirty()) {
+        if (node.size() < 2 || node.get(1).getIsDirty()) {
             // Schema has bad syntax. Missing mandatory document would not be helpful
             return ret;
         }

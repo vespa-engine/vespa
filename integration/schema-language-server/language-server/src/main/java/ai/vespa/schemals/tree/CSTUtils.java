@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
@@ -81,7 +82,7 @@ public class CSTUtils {
         }
 
         Range range = node.getRange();
-        if (!positionLT(pos, range.getStart()) && !node.isDirty()) {
+        if (!positionLT(pos, range.getStart()) && !node.getIsDirty()) {
             return node;
         }
 
@@ -121,11 +122,11 @@ public class CSTUtils {
         }
 
         if (node.hasIndexingNode()) {
-            ILUtils.printTree(logger, node.getIndexingNode(), indent + 1);
+            ILUtils.printTree(logger, node.getOriginalIndexingNode(), indent + 1);
         }
 
         if (node.hasRankExpressionNode()) {
-            RankingExpressionUtils.printTree(logger, node.getRankExpressionNode(), indent + 1);
+            RankingExpressionUtils.printTree(logger, node.getOriginalRankExpressionNode(), indent + 1);
         }
     }
 
@@ -156,7 +157,7 @@ public class CSTUtils {
 
         Range range = node.getRange();
         if (!positionLT(pos, range.getStart())) {
-            node.isDirty();
+            node.getIsDirty();
             logger.println(new String(new char[indent]).replace("\0", "\t") + schemaNodeString(node));
         }
 
@@ -170,20 +171,22 @@ public class CSTUtils {
 
         String ret = node.getClassLeafIdentifierString();
 
-        if (node.isDirty()) {
+        if (node.getIsDirty()) {
             ret += " [DIRTY]";
         }
 
-        if (node.isIndexingElm()) {
+        if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
             ret += " [ILSCRIPT]";
         }
 
-        if (node.isFeatureListElm()) {
-            ret += " [FEATURES]";
-        }
-
-        if (node.isExpression()) {
-            ret += " [EXPRESSION]";
+        if (node.containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) {
+            ret += " [RANK_EXPRESSION";
+            if (node.containsExpressionData()) {
+                ret += " (EXPRESSSION)";
+            } else {
+                ret += " (FEATURE LIST)";
+            }
+            ret += "]";
         }
 
         if (node.hasSymbol()) {

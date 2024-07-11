@@ -28,7 +28,7 @@ public class IdentifyDeprecatedToken extends Identifier {
         // TODO: semantic context
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        String message = deprecatedTokens.get(node.getType());
+        String message = deprecatedTokens.get(node.getSchemaType());
         if (message != null) {
             ret.add(
                 new Diagnostic(node.getRange(), node.getText() + " is deprecated. " + message, DiagnosticSeverity.Warning, "")

@@ -23,9 +23,9 @@ public class SwitchDeprecatedTokenTypes extends Identifier {
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        TokenType newType = swicthTokenTypeMap.get(node.getType());
+        TokenType newType = swicthTokenTypeMap.get(node.getSchemaType());
         if (newType != null) {
-            node.setType(newType);
+            node.setSchemaType(newType);
         } 
 
         return ret;

@@ -169,7 +169,7 @@ public class SchemaSemanticTokens implements Visitor {
     private static ArrayList<SemanticTokenMarker> traverseCST(SchemaNode node, PrintStream logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
-        TokenType type = node.getType();
+        TokenType type = node.getSchemaType();
 
         if (node.isASTInstance(dataType.class) && !node.hasSymbol()) {
 

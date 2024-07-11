@@ -1,6 +1,5 @@
 package ai.vespa.schemals.schemadocument;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -28,7 +27,7 @@ public class SchemaRankExpressionParser {
 
     private static Position findExpressionOffset(SchemaNode node) {
 
-        boolean isMultiline = multilineTokens.contains(node.findFirstLeaf().getType());
+        boolean isMultiline = multilineTokens.contains(node.findFirstLeaf().getSchemaType());
 
         char splitChar = isMultiline ? '{' : ':';
 
@@ -48,7 +47,11 @@ public class SchemaRankExpressionParser {
         );
     }
 
-    static ai.vespa.schemals.parser.rankingexpression.Node parseRankingExpression(ParseContext context, SchemaNode node, ArrayList<Diagnostic> diagnostics) {
+    static SchemaNode wrapNodes(ai.vespa.schemals.parser.rankingexpression.Node rootNode) {
+        return new SchemaNode(rootNode);
+    }
+
+    static SchemaNode parseRankingExpression(ParseContext context, SchemaNode node, ArrayList<Diagnostic> diagnostics) {
         String expressionString = node.getRankExpressionString();
         Position expressionOffset = findExpressionOffset(node);
 
@@ -61,13 +64,13 @@ public class SchemaRankExpressionParser {
         parser.setParserTolerant(false);
 
         try {
-            if (node.isExpression()) {
+            if (node.containsExpressionData()) {
                 parser.expression();
             } else {
                 parser.featureList();
             }
 
-            return parser.rootNode();
+            return wrapNodes(parser.rootNode());
         } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
 
             Range range = RankingExpressionUtils.getNodeRange(pe.getToken());

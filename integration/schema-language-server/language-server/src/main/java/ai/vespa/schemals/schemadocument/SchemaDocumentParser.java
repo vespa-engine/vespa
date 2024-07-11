@@ -23,12 +23,11 @@ import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
-import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
-import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
     public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
@@ -397,24 +396,25 @@ public class SchemaDocumentParser {
             ret.addAll(identifier.identify(node));
         }
 
-        if (node.isIndexingElm()) {
+        if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
             Range nodeRange = node.getRange();
             var indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
 
-            if (indexingNode != null) {
-                node.setIndexingNode(indexingNode);
-            }
+            // if (indexingNode != null) {
+            //     node.setIndexingNode(indexingNode);
+            // }
         }
 
-        if (node.isFeatureListElm() || node.isExpression()) {
+        if (node.containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) {
             // Range nodeRange = node.getRange();
             // String nodeString = node.get(0).get(0).getText();
             // Position rankExpressionStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
 
-            var rankExpressionNode = SchemaRankExpressionParser.parseRankingExpression(context, node, ret);
+            SchemaNode rankExpressionNode = SchemaRankExpressionParser.parseRankingExpression(context, node, ret);
 
             if (rankExpressionNode != null) {
-                node.setRankExpressionNode(rankExpressionNode);
+                // node.setRankExpressionNode(rankExpressionNode);
+                context.logger().println(rankExpressionNode);
             }
         }
 

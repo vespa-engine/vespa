@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.Node.NodeType;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -16,57 +17,129 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
+import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
 public class SchemaNode implements Iterable<SchemaNode> {
 
-    private TokenType type;
+    public enum LanguageType {
+        SCHEMA,
+        INDEXING,
+        RANK_EXPRESSION
+    }
+
+    private LanguageType language;
     private String identifierString;
-    private SchemaNode parent;
+    private Range range;
+    private boolean isDirty = false;
+
     private Symbol symbolAtNode;
-
-    private Node originalNode;
-
-    private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
-    private ai.vespa.schemals.parser.rankingexpression.Node rankExpressionNode;
-
+    
     // This array has to be in order, without overlapping elements
     private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
+    private SchemaNode parent;
+    
+    private Node originalSchemaNode;
+    private ai.vespa.schemals.parser.indexinglanguage.Node originalIndexingNode;
+    private ai.vespa.schemals.parser.rankingexpression.Node originalRankExpressionNode;
 
-    private Range range;
+    // Special features for nodes in the Schema language
+    private TokenType schemaType;
 
-    public SchemaNode(Node node) {
-        this(node, null);
+    private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
+        this.language = language;
+        this.range = range;
+        this.identifierString = identifierString;
+        this.isDirty = isDirty;
     }
     
-    private SchemaNode(Node node, SchemaNode parent) {
-        this.parent = parent;
-        originalNode = node;
-        Node.NodeType originalType = node.getType();
-        type = (node.isDirty() || !(originalType instanceof TokenType)) ? null : (TokenType) originalType;
+    public SchemaNode(Node node) {
+        this(
+            LanguageType.SCHEMA,
+            CSTUtils.getNodeRange(node),
+            node.getClass().getName(),
+            node.isDirty()
+        );
 
-        identifierString = node.getClass().getName();
-        range = CSTUtils.getNodeRange(node);
+        this.originalSchemaNode = node;
+        this.schemaType = calculateSchemaType();
 
-        for (Node child : node) {
-            children.add(new SchemaNode(child, this));
+        for (var child : node) {
+            SchemaNode newNode = new SchemaNode(child);
+            newNode.setParent(this);
+            children.add(newNode);
         }
     }
 
-    public TokenType getType() {
-        return type;
+    public SchemaNode(ai.vespa.schemals.parser.indexinglanguage.Node node) {
+        this(
+            LanguageType.INDEXING,
+            ILUtils.getNodeRange(node),
+            node.getClass().getName(),
+            node.isDirty()
+        );
+
+        this.originalIndexingNode = node;
+
+        for (var child : node) {
+            SchemaNode newNode = new SchemaNode(child);
+            newNode.setParent(this);
+            children.add(newNode);
+        }
+
+    }
+
+    public SchemaNode(ai.vespa.schemals.parser.rankingexpression.Node node) {
+        this(
+            LanguageType.RANK_EXPRESSION,
+            RankingExpressionUtils.getNodeRange(node),
+            node.getClass().getName(),
+            node.isDirty()
+        );
+
+        this.originalRankExpressionNode = node;
+
+        for (var child : node) {
+            SchemaNode newNode = new SchemaNode(child);
+            newNode.setParent(this);
+            children.add(newNode);
+        }
+
+    }
+
+    private void setParent(SchemaNode parent) {
+        this.parent = parent;
+    }
+
+    private TokenType calculateSchemaType() {
+        if (language != LanguageType.SCHEMA) return null;
+        if (isDirty) return null;
+
+        NodeType nodeType = originalSchemaNode.getType();
+        if (!(nodeType instanceof TokenType)) return null;
+        return (TokenType)nodeType;
+    }
+
+    public TokenType getSchemaType() {
+        
+        return schemaType;
     }
 
     // Return token type (if the node is a token), even if the node is dirty
     public TokenType getDirtyType() {
-        Node.NodeType originalType = originalNode.getType();
+        if (language != LanguageType.SCHEMA) return null;
+        Node.NodeType originalType = originalSchemaNode.getType();
         if (originalType instanceof TokenType)return (TokenType)originalType;
         return null;
     }
 
-    public TokenType setType(TokenType type) {
-        this.type = type;
+    public TokenType setSchemaType(TokenType type) {
+        if (language != LanguageType.SCHEMA) return null;
+
+        this.schemaType = type;
+        
         return type;
     }
 
@@ -93,76 +166,72 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return this.symbolAtNode;
     }
 
-    public boolean isIndexingElm() {
-        return (originalNode instanceof indexingElm);
+    public boolean containsOtherLanguageData(LanguageType language) {
+        if (this.language != LanguageType.SCHEMA) return false;
+
+        return (
+            (language == LanguageType.INDEXING && originalSchemaNode instanceof indexingElm) ||
+            (language == LanguageType.RANK_EXPRESSION && (
+                (originalSchemaNode instanceof featureListElm) ||
+                (originalSchemaNode instanceof expression)  
+            ))
+        );
     }
 
-    public boolean isFeatureListElm() {
-        return (originalNode instanceof featureListElm);
-    }
+    public boolean containsExpressionData() {
+        if (this.language != LanguageType.SCHEMA) return false;
 
-    public boolean isExpression() {
-        return (originalNode instanceof expression);
+        return (originalSchemaNode instanceof expression);
     }
 
     public SubLanguageData getILScript() {
-        if (!isIndexingElm())return null;
-        indexingElm elmNode = (indexingElm)originalNode;
+        if (!containsOtherLanguageData(LanguageType.INDEXING)) return null;
+        indexingElm elmNode = (indexingElm)originalSchemaNode;
         return elmNode.getILScript();
     }
 
     public String getRankExpressionString() {
-        if (isFeatureListElm()) {
-            featureListElm elmNode = (featureListElm)originalNode;
+        if (!containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) return null;
+
+        if (originalSchemaNode instanceof featureListElm) {
+            featureListElm elmNode = (featureListElm)originalSchemaNode;
             return elmNode.getFeatureListString();
         }
 
-        if (isExpression()) {
-            expression expressionNode = (expression)originalNode;
-            return expressionNode.getExpressionString();
-        }
-
-        return null;
+        expression expressionNode = (expression)originalSchemaNode;
+        return expressionNode.getExpressionString();
     }
 
     public boolean hasIndexingNode() {
-        return this.indexingNode != null;
+        return false; // this.indexingNode != null;
     }
 
     public boolean hasRankExpressionNode() {
-        return this.rankExpressionNode != null;
+        return false; // this.rankExpressionNode != null;
     }
 
-    public ai.vespa.schemals.parser.indexinglanguage.Node getIndexingNode() {
-        return this.indexingNode;
+    public Node getOriginalSchemaNode() {
+        return originalSchemaNode;
     }
 
-    public ai.vespa.schemals.parser.rankingexpression.Node getRankExpressionNode() {
-        return this.rankExpressionNode;
+    public ai.vespa.schemals.parser.indexinglanguage.Node getOriginalIndexingNode() {
+        return this.originalIndexingNode;
     }
 
-    public void setIndexingNode(ai.vespa.schemals.parser.indexinglanguage.Node node) {
-        this.indexingNode = node;
-    }
-
-    public void setRankExpressionNode(ai.vespa.schemals.parser.rankingexpression.Node node) {
-        this.rankExpressionNode = node;
+    public ai.vespa.schemals.parser.rankingexpression.Node getOriginalRankExpressionNode() {
+        return this.originalRankExpressionNode;
     }
 
     public boolean isASTInstance(Class<? extends Node> astClass) {
-        return astClass.isInstance(originalNode);
+        return astClass.isInstance(originalSchemaNode);
     }
 
     public Class<? extends Node> getASTClass() {
-        return originalNode.getClass();
+        return originalSchemaNode.getClass();
     }
 
     public String getIdentifierString() {
         return identifierString;
-    }
-
-    public Node getOriginalNode() {
-        return originalNode;
     }
 
     public String getClassLeafIdentifierString() {
@@ -247,7 +316,20 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public String getText() {
-        return originalNode.getSource();
+        
+        if (language == LanguageType.SCHEMA) {
+            return originalSchemaNode.getSource();
+        }
+
+        if (language == LanguageType.INDEXING) {
+            return originalIndexingNode.getSource();
+        }
+
+        if (language == LanguageType.RANK_EXPRESSION) {
+            return originalRankExpressionNode.getSource();
+        }
+
+        return null;
     }
 
     public boolean isLeaf() {
@@ -262,29 +344,47 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return ret;
     }
 
-    public boolean isDirty() {
-        return originalNode.isDirty();
+    public boolean getIsDirty() {
+        return isDirty;
     }
 
     public IllegalArgumentException getIllegalArgumentException() {
-        if (originalNode instanceof Token) {
-            return ((Token)originalNode).getIllegalArguemntException();
+
+        if (language == LanguageType.SCHEMA) {
+            if (originalSchemaNode instanceof Token) {
+                return ((Token)originalSchemaNode).getIllegalArguemntException();
+            }
         }
+
+        // if (language == LanguageType.INDEXING) {
+        //     if (originalIndexingNode instanceof ai.vespa.schemals.parser.indexinglanguage.Token) {
+        //         return ((ai.vespa.schemals.parser.indexinglanguage.Token)originalIndexingNode)
+        //     }
+        // }
+
         return null;
     }
 
     public ParseExceptionSource getParseExceptionSource() {
-        if (originalNode instanceof Token) {
-            return ((Token)originalNode).getParseExceptionSource();
+        if (language == LanguageType.SCHEMA) {
+            if (originalSchemaNode instanceof Token) {
+                return ((Token)originalSchemaNode).getParseExceptionSource();
+            }
         }
         return null;
     }
 
-    public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
+    public TokenSource getTokenSource() {
+        if (language == LanguageType.SCHEMA) {
+            return originalSchemaNode.getTokenSource();
+        }
+
+        return null;
+    }
 
     public String toString() {
         Position pos = getRange().getStart();
-        return getText() + "[" + getType() + "] at " + pos.getLine() + ":" + pos.getCharacter();
+        return getText() + "[" + getSchemaType() + "] at " + pos.getLine() + ":" + pos.getCharacter();
     }
 
 	@Override

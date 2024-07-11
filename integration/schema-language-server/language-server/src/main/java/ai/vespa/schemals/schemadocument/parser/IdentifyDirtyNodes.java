@@ -50,7 +50,7 @@ public class IdentifyDirtyNodes extends Identifier {
 
 
         if (
-            node.isDirty() &&
+            node.getIsDirty() &&
             node.isLeaf() &&
             parseException == null &&
             illegalArgumentException == null

@@ -26,7 +26,7 @@ public class IdentifyType extends Identifier {
             return ret;
         }
 
-        dataType originalNode = (dataType)node.getOriginalNode();
+        dataType originalNode = (dataType)node.getOriginalSchemaNode();
 
         ParsedType parsedType = originalNode.getParsedType();
 

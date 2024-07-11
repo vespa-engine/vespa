@@ -25,7 +25,7 @@ public class IdentifySchemaInheritance extends Identifier {
         if (node.getParent() == null) return ret;
         if (!node.getParent().isASTInstance(rootSchema.class)) return ret;
         if (node.getPreviousSibling() == null) return ret;
-        if (node.getPreviousSibling().getType() != TokenType.INHERITS) return ret;
+        if (node.getPreviousSibling().getSchemaType() != TokenType.INHERITS) return ret;
 
         if (!node.hasSymbol()) {
             ret.add(new Diagnostic(node.getRange(), "Should be symbol reference", DiagnosticSeverity.Warning, ""));

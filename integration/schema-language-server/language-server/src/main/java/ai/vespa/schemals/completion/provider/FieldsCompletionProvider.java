@@ -29,8 +29,8 @@ public class FieldsCompletionProvider implements CompletionProvider {
         // Skip previously declared fields in the list
         // to get to the start where we can determine the pattern fields: ...
         while (last != null && 
-                last.getType() == TokenType.IDENTIFIER && 
-                (last.getPrevious() != null && last.getPrevious().getType() == TokenType.COMMA)) {
+                last.getSchemaType() == TokenType.IDENTIFIER && 
+                (last.getPrevious() != null && last.getPrevious().getSchemaType() == TokenType.COMMA)) {
             last = last.getPrevious().getPrevious();
         }
 
@@ -42,7 +42,7 @@ public class FieldsCompletionProvider implements CompletionProvider {
 
         // Has to be on the same line
         if (match != null && match.range().getStart().getLine() == context.position.getLine())return true;
-        return (last != null && last.getType() == TokenType.FIELDS && last.getRange().getStart().getLine() == context.position.getLine());
+        return (last != null && last.getSchemaType() == TokenType.FIELDS && last.getRange().getStart().getLine() == context.position.getLine());
 	}
 
 	@Override
