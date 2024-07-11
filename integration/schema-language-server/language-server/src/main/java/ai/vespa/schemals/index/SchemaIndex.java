@@ -14,6 +14,8 @@ import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.mapDataType;
+import ai.vespa.schemals.parser.indexinglanguage.ast.value;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaIndex {
@@ -165,6 +167,40 @@ public class SchemaIndex {
                                   .stream()
                                   .filter(symbol -> symbol.isInScope(scope))
                                   .collect(Collectors.toList());
+    }
+
+    /**
+     * When someone write something.value, find the definition value points to
+     * @param fieldDefinitionSymbol The symbol having map as a data type
+     * */
+    public Optional<Symbol> findMapValueDefinition(Symbol fieldDefinitionSymbol) {
+        Symbol rawValueSymbol = findSymbol(fieldDefinitionSymbol.getFileURI(), SymbolType.MAP_VALUE, fieldDefinitionSymbol.getLongIdentifier() + ".value");
+        if (rawValueSymbol != null) return Optional.of(rawValueSymbol);
+
+        if (fieldDefinitionSymbol.getType() == SymbolType.FIELD || fieldDefinitionSymbol.getType() == SymbolType.FIELD_IN_STRUCT) {
+            SchemaNode dataTypeNode = fieldDefinitionSymbol.getNode().getNextSibling().getNextSibling();
+            if (dataTypeNode == null || !dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
+            if (dataTypeNode.get(0) == null || !dataTypeNode.get(0).isASTInstance(mapDataType.class)) return Optional.empty();
+
+            SchemaNode valueNode = dataTypeNode.get(0).get(4);
+            if (!valueNode.hasSymbol()) return Optional.empty();
+
+            switch(valueNode.getSymbol().getStatus()) {
+                case DEFINITION:
+                    return Optional.of(valueNode.getSymbol());
+                case REFERENCE:
+                    return findDefinitionOfReference(valueNode.getSymbol());
+                case INVALID:
+                    return Optional.empty();
+                case UNRESOLVED:
+                    // TODO: figure out if this can happen
+                    return Optional.empty();
+            }
+        } else {
+            throw new UnsupportedOperationException("findMapValueDefinition unsupported for type " + fieldDefinitionSymbol.getType().toString());
+        }
+
+        return Optional.empty();
     }
 
 

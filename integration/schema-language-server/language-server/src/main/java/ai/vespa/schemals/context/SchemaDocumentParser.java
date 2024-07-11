@@ -452,6 +452,10 @@ public class SchemaDocumentParser {
 
                 } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD_IN_STRUCT && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
                     parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
+                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.MAP_VALUE && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                    parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
+                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.STRUCT && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                    parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
                 }
 
                 if (parentFieldDefinition.isPresent()) {
@@ -495,8 +499,19 @@ public class SchemaDocumentParser {
      * @return the definition of the field inside the struct if found 
      */
     private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context) {
-        if (fieldDefinition.getType() != SymbolType.FIELD && fieldDefinition.getType() != SymbolType.FIELD_IN_STRUCT) return Optional.empty();
+        if (fieldDefinition.getType() != SymbolType.FIELD 
+            && fieldDefinition.getType() != SymbolType.FIELD_IN_STRUCT 
+            && fieldDefinition.getType() != SymbolType.MAP_VALUE
+            && fieldDefinition.getType() != SymbolType.STRUCT) return Optional.empty();
         if (fieldDefinition.getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
+
+        if (fieldDefinition.getType() == SymbolType.MAP_VALUE) {
+            return resolveMapValueReference(node, fieldDefinition, context);
+        }
+
+        if (fieldDefinition.getType() == SymbolType.STRUCT) {
+            return resolveFieldInStructReference(node, fieldDefinition, context);
+        }
 
         SchemaNode dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
         if (!dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
@@ -510,24 +525,13 @@ public class SchemaDocumentParser {
             // TODO: fix struct inheritance
             Symbol structReference = dataTypeNode.getSymbol();
             Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.getLongIdentifier());
-
-            if (structDefinition != null) {
-                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
-            }
-            if (referencedSymbol.isPresent()) {
-                node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
-            }
-            return referencedSymbol;
+            return resolveFieldInStructReference(node, structDefinition, context);
         }
 
         dataType originalNode = (dataType)dataTypeNode.getOriginalNode();
 
         if (originalNode.getParsedType().getVariant() == Variant.MAP) {
-            if (node.getText().equals("key")) {
-            }
-
-            if (node.getText().equals("value")) {
-            }
+            return resolveMapValueReference(node, fieldDefinition, context);
         } else if (originalNode.getParsedType().getVariant() == Variant.ARRAY) {
             if (dataTypeNode.size() < 3 || !dataTypeNode.get(2).isASTInstance(dataType.class)) return Optional.empty();
 
@@ -540,10 +544,34 @@ public class SchemaDocumentParser {
             if (structDefinition != null) {
                 referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
             }
-            if (referencedSymbol.isPresent()) {
-                node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
-            }
+            referencedSymbol.ifPresent(symbol -> node.setSymbolType(SymbolType.FIELD_IN_STRUCT));
             return referencedSymbol;
+        }
+        return referencedSymbol;
+    }
+
+    private static Optional<Symbol> resolveFieldInStructReference(SchemaNode node, Symbol structDefinition, ParseContext context) {
+        Optional<Symbol> referencedSymbol = Optional.empty();
+        referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
+        referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
+        return referencedSymbol;
+    }
+
+    private static Optional<Symbol> resolveMapValueReference(SchemaNode node, Symbol mapValueDefinition, ParseContext context) {
+        Optional<Symbol> referencedSymbol = Optional.empty();
+        if (node.getText().equals("key")) {
+            referencedSymbol = Optional.ofNullable(
+                context.schemaIndex().findSymbol(context.fileURI(), SymbolType.MAP_KEY, mapValueDefinition.getLongIdentifier() + ".key")
+            );
+
+            referencedSymbol.ifPresent(symbol -> node.setSymbolType(SymbolType.MAP_KEY));
+        }
+        if (node.getText().equals("value")) {
+            // For value there are two cases: either the map value is a primitive value with its own definition
+            // or it is a reference to a struct
+            referencedSymbol = context.schemaIndex().findMapValueDefinition(mapValueDefinition);
+
+            referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
         }
         return referencedSymbol;
     }

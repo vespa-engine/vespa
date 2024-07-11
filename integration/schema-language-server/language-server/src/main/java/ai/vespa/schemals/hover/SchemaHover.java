@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Hover;
@@ -26,9 +27,14 @@ public class SchemaHover {
         }
 
         Symbol structDefinitionSymbol = context.schemaIndex.findSymbol(node.getSymbol().getFileURI(), SymbolType.STRUCT, node.getSymbol().getLongIdentifier());
+        if (structDefinitionSymbol == null) {
+            Optional<Symbol> res = context.schemaIndex.findDefinitionOfReference(node.getSymbol());
+            if (res.isEmpty()) return null;
+            structDefinitionSymbol = res.get();
+        }
         List<Symbol> fieldDefs = context.schemaIndex.getAllStructFieldSymbols(structDefinitionSymbol);
 
-        String result = "### struct " + node.getText() + "\n";
+        String result = "### struct " + structDefinitionSymbol.getLongIdentifier() + "\n";
         for (Symbol fieldDef : fieldDefs) {
             result += "    field " + fieldDef.getShortIdentifier() + " type " +  
                 fieldDef.getNode().getNextSibling().getNextSibling().getText();
