@@ -414,6 +414,14 @@ public class SchemaDocumentParser {
 
         if (myRankProfileDefinitionNode == null) return;
         if (!myRankProfileDefinitionNode.hasSymbol() || myRankProfileDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;
+
+        if (inheritedIdentifier.equals("default")) {
+            // TODO: mechanism for inheriting default rank profile. 
+            // Workaround now: 
+            inheritanceNode.setSymbolStatus(SymbolStatus.INVALID);
+            return;
+        }
+
         Symbol parentSymbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.RANK_PROFILE, inheritedIdentifier);
 
         if (parentSymbol == null) {

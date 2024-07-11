@@ -139,10 +139,10 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/array_of_struct_attribute/test.sd",
             "../../../config-model/src/test/derived/arrays/arrays.sd",
             "../../../config-model/src/test/derived/attributeprefetch/attributeprefetch.sd",
-            // "../../../config-model/src/test/derived/attributerank/attributerank.sd",
+             "../../../config-model/src/test/derived/attributerank/attributerank.sd",
             "../../../config-model/src/test/derived/attributes/attributes.sd",
             "../../../config-model/src/test/derived/combinedattributeandindexsearch/combinedattributeandindexsearch.sd",
-            // "../../../config-model/src/test/derived/complex/complex.sd",
+            "../../../config-model/src/test/derived/complex/complex.sd",
             "../../../config-model/src/test/derived/emptydefault/emptydefault.sd",
             "../../../config-model/src/test/derived/exactmatch/exactmatch.sd",
             "../../../config-model/src/test/derived/fieldset/test.sd",
@@ -167,7 +167,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/music3/music3.sd",
             "../../../config-model/src/test/derived/nearestneighbor/test.sd",
             "../../../config-model/src/test/derived/newrank/newrank.sd",
-            // "../../../config-model/src/test/derived/nuwa/newsindex.sd",
+             "../../../config-model/src/test/derived/nuwa/newsindex.sd",
             "../../../config-model/src/test/derived/orderilscripts/orderilscripts.sd",
             "../../../config-model/src/test/derived/position_array/position_array.sd",
             "../../../config-model/src/test/derived/position_attribute/position_attribute.sd",
@@ -180,7 +180,7 @@ public class SchemaParserTest {
             // "../../../config-model/src/test/derived/rankprofilemodularity/test.sd",
             "../../../config-model/src/test/derived/rankprofiles/rankprofiles.sd",
             "../../../config-model/src/test/derived/rankproperties/rankproperties.sd",
-            // "../../../config-model/src/test/derived/ranktypes/ranktypes.sd",
+            "../../../config-model/src/test/derived/ranktypes/ranktypes.sd",
             "../../../config-model/src/test/derived/reference_fields/ad.sd",
             "../../../config-model/src/test/derived/reference_fields/campaign.sd",
             "../../../config-model/src/test/derived/renamedfeatures/foo.sd",
@@ -191,13 +191,13 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/streamingstructdefault/streamingstructdefault.sd",
             "../../../config-model/src/test/derived/structandfieldset/test.sd",
             "../../../config-model/src/test/derived/structanyorder/structanyorder.sd",
-            //"../../../config-model/src/test/derived/structinheritance/bad.sd", // TODO: check that there actually is an error
             "../../../config-model/src/test/derived/structinheritance/simple.sd",
             "../../../config-model/src/test/derived/tensor/tensor.sd",
             "../../../config-model/src/test/derived/tokenization/tokenization.sd",
             "../../../config-model/src/test/derived/types/types.sd",
             "../../../config-model/src/test/derived/uri_array/uri_array.sd",
             "../../../config-model/src/test/derived/uri_wset/uri_wset.sd",
+            "../../../config-model/src/test/configmodel/types/types.sd",
 
             /*
              * CUSTOM TESTS
@@ -243,7 +243,8 @@ public class SchemaParserTest {
     @TestFactory
     Stream<DynamicTest> generateBadFileTests() {
         BadFileTestCase[] tests = new BadFileTestCase[] {
-            new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1)
+            new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1),
+            new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1), // TODO: check that the error is correct
         };
 
         return Arrays.stream(tests)
