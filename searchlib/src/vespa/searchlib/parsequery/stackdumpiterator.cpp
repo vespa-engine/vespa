@@ -16,12 +16,6 @@ namespace search {
 
 std::string_view SimpleQueryStackDumpIterator::DEFAULT_INDEX = "default";
 
-namespace {
-
-std::string_view EMPTY = "";
-
-}
-
 SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(std::string_view buf)
     : _buf(buf.begin()),
       _bufEnd(buf.end()),
@@ -32,8 +26,8 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(std::string_view buf)
       _currWeight(100),
       _currUniqueId(0),
       _currArity(0),
-      _curr_index_name(EMPTY),
-      _curr_term(EMPTY),
+      _curr_index_name(),
+      _curr_term(),
       _curr_integer_term(0),
       _extraIntArg1(0),
       _extraIntArg2(0),
@@ -150,7 +144,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_ANY:
         _currArity = readCompressedPositiveInt(p);
         _curr_index_name = std::string_view();
-        _curr_term = EMPTY;
+        _curr_term = std::string_view();
         break;
 
     case ParseItem::ITEM_NEAR:
@@ -158,19 +152,19 @@ bool SimpleQueryStackDumpIterator::readNext() {
         _currArity = readCompressedPositiveInt(p);
         _extraIntArg1 = readCompressedPositiveInt(p);
         _curr_index_name = std::string_view();
-        _curr_term = EMPTY;
+        _curr_term = std::string_view();
         break;
 
     case ParseItem::ITEM_WEAK_AND:
         _currArity = readCompressedPositiveInt(p);
         _extraIntArg1 = readCompressedPositiveInt(p); // targetNumHits
         _curr_index_name = read_string_view(p);
-        _curr_term = EMPTY;
+        _curr_term = std::string_view();
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
         _currArity = readCompressedPositiveInt(p);
         _curr_index_name = read_string_view(p);
-        _curr_term = EMPTY;
+        _curr_term = std::string_view();
         break;
 
     case ParseItem::ITEM_PURE_WEIGHTED_STRING:
@@ -184,7 +178,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_WORD_ALTERNATIVES:
         _curr_index_name = read_string_view(p);
         _currArity = readCompressedPositiveInt(p);
-        _curr_term = EMPTY;
+        _curr_term = std::string_view();
         break;
     case ParseItem::ITEM_NUMTERM:
     case ParseItem::ITEM_GEO_LOCATION_TERM:
@@ -279,7 +273,7 @@ SimpleQueryStackDumpIterator::readComplexTerm(const char *& p) {
         _extraDoubleArg4 = read_value<double>(p); // scoreThreshold
         _extraDoubleArg5 = read_value<double>(p); // thresholdBoostFactor
     }
-    _curr_term = EMPTY;
+    _curr_term = std::string_view();
 }
 
 void
@@ -303,7 +297,7 @@ SimpleQueryStackDumpIterator::read_string_in(const char*& p)
     uint32_t num_terms = readCompressedPositiveInt(p);
     _currArity = 0;
     _curr_index_name = read_string_view(p);
-    _curr_term = EMPTY;
+    _curr_term = std::string_view();
     auto terms = std::make_unique<StringTermVector>(num_terms);
     for (uint32_t i = 0; i < num_terms; ++i) {
         terms->addTerm(read_string_view(p));
@@ -317,7 +311,7 @@ SimpleQueryStackDumpIterator::read_numeric_in(const char*& p)
     uint32_t num_terms = readCompressedPositiveInt(p);
     _currArity = 0;
     _curr_index_name = read_string_view(p);
-    _curr_term = EMPTY;
+    _curr_term = std::string_view();
     auto terms = std::make_unique<IntegerTermVector>(num_terms);
     for (uint32_t i = 0; i < num_terms; ++i) {
         terms->addTerm(read_value<int64_t>(p));
