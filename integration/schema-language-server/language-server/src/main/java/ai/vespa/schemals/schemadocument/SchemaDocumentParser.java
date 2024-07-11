@@ -411,7 +411,7 @@ public class SchemaDocumentParser {
             // String nodeString = node.get(0).get(0).getText();
             // Position rankExpressionStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
 
-            var rankExpressionNode = parseRankingExpression(context, node, ret);
+            var rankExpressionNode = SchemaRankExpressionParser.parseRankingExpression(context, node, ret);
 
             if (rankExpressionNode != null) {
                 node.setRankExpressionNode(rankExpressionNode);
@@ -456,39 +456,6 @@ public class SchemaDocumentParser {
             diagnostics.add(new Diagnostic(range, pe.getMessage()));
         } catch(IllegalArgumentException ex) {
             context.logger().println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
-        }
-
-        return null;
-    }
-
-    private static ai.vespa.schemals.parser.rankingexpression.Node parseRankingExpression(ParseContext context, SchemaNode node, ArrayList<Diagnostic> diagnostics) {
-        String expressionString = node.getRankExpressionString();
-        Position expressionStart = node.getRange().getStart();
-        
-        if (expressionString == null)return null;
-        CharSequence sequence = expressionString;
-
-        RankingExpressionParser parser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
-        parser.setParserTolerant(false);
-
-        try {
-            if (node.isExpression()) {
-                parser.expression();
-            } else {
-                parser.featureList();
-            }
-
-            return parser.rootNode();
-        } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
-
-            Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
-            
-            range = CSTUtils.addPositionToRange(range, expressionStart);
-
-            diagnostics.add(new Diagnostic(range, pe.getMessage()));
-
-        } catch(IllegalArgumentException ex) {
-            // TODO: diagnostics
         }
 
         return null;

@@ -59,10 +59,10 @@ public class CSTUtils {
         return new Position(line, column);
     }
 
-    public static Range addPositionToRange(Range lhs, Position rhs) {
+    public static Range addPositionToRange(Position lhs, Range rhs) {
         return new Range(
-            addPositions(lhs.getStart(), rhs),
-            addPositions(lhs.getEnd(), rhs)
+            addPositions(lhs, rhs.getStart()),
+            addPositions(lhs, rhs.getEnd())
         );
     }
 
@@ -180,6 +180,10 @@ public class CSTUtils {
 
         if (node.isFeatureListElm()) {
             ret += " [FEATURES]";
+        }
+
+        if (node.isExpression()) {
+            ret += " [EXPRESSION]";
         }
 
         if (node.hasSymbol()) {
