@@ -1,11 +1,11 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.context.SchemaDocumentParser;
-import ai.vespa.schemals.context.SchemaDocumentScheduler;
 import ai.vespa.schemals.common.Utils;
-import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.context.SchemaDocumentParser.ParseResult;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser.ParseResult;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.io.IOUtils;

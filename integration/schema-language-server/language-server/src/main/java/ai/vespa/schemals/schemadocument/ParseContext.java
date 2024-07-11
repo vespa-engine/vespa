@@ -1,13 +1,13 @@
-package ai.vespa.schemals.context;
+package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
 
-import ai.vespa.schemals.context.parser.*;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.parser.*;
 
 public class ParseContext { 
     private String content;

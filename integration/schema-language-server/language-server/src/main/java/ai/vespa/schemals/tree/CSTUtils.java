@@ -59,6 +59,13 @@ public class CSTUtils {
         return new Position(line, column);
     }
 
+    public static Range addPositionToRange(Range lhs, Position rhs) {
+        return new Range(
+            addPositions(lhs.getStart(), rhs),
+            addPositions(lhs.getEnd(), rhs)
+        );
+    }
+
     public static SchemaNode findFirstLeafChild(SchemaNode node) {
         while (!node.isLeaf()) {
             node = node.get(0);
@@ -117,8 +124,8 @@ public class CSTUtils {
             ILUtils.printTree(logger, node.getIndexingNode(), indent + 1);
         }
 
-        if (node.hasFeatureListNode()) {
-            RankingExpressionUtils.printTree(logger, node.getFeatureListNode(), indent + 1);
+        if (node.hasRankExpressionNode()) {
+            RankingExpressionUtils.printTree(logger, node.getRankExpressionNode(), indent + 1);
         }
     }
 

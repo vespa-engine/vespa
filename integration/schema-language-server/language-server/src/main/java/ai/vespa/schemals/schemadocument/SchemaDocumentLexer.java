@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context;
+package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
 import java.util.ArrayList;

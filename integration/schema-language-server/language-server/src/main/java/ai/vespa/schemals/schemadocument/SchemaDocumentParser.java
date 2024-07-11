@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context;
+package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -14,7 +14,6 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
-import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -25,6 +24,7 @@ import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
@@ -119,8 +119,8 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing: " + fileURI);
 
-        // logger.println("======== CST for file: " + fileURI + " ========");
-        // CSTUtils.printTree(logger, CST);
+        logger.println("======== CST for file: " + fileURI + " ========");
+        CSTUtils.printTree(logger, CST);
 
         // schemaIndex.dumpIndex(logger);
 
@@ -406,14 +406,15 @@ public class SchemaDocumentParser {
             }
         }
 
-        if (node.isFeatureListElm()) {
-            Range nodeRange = node.getRange();
-            String nodeString = node.get(0).get(0).toString();
-            Position featureListStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
-            var featureListNode = parseFeatureList(context, node.getFeatureListString(), featureListStart, ret);
+        if (node.isFeatureListElm() || node.isExpression()) {
+            // Range nodeRange = node.getRange();
+            // String nodeString = node.get(0).get(0).getText();
+            // Position rankExpressionStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
 
-            if (featureListNode != null) {
-                node.setFeatureListNode(featureListNode);
+            var rankExpressionNode = parseRankingExpression(context, node, ret);
+
+            if (rankExpressionNode != null) {
+                node.setRankExpressionNode(rankExpressionNode);
             }
         }
 
@@ -460,22 +461,32 @@ public class SchemaDocumentParser {
         return null;
     }
 
-    private static ai.vespa.schemals.parser.rankingexpression.Node parseFeatureList(ParseContext context, String featureListString, Position listStart, ArrayList<Diagnostic> diagnostics) {
-        if (featureListString == null)return null;
-        CharSequence sequence = featureListString;
+    private static ai.vespa.schemals.parser.rankingexpression.Node parseRankingExpression(ParseContext context, SchemaNode node, ArrayList<Diagnostic> diagnostics) {
+        String expressionString = node.getRankExpressionString();
+        Position expressionStart = node.getRange().getStart();
+        
+        if (expressionString == null)return null;
+        CharSequence sequence = expressionString;
 
         RankingExpressionParser parser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
         parser.setParserTolerant(false);
 
         try {
-            parser.featureList();
+            if (node.isExpression()) {
+                parser.expression();
+            } else {
+                parser.featureList();
+            }
+
             return parser.rootNode();
         } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
+
             Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
-            range.setStart(CSTUtils.addPositions(listStart, range.getStart()));
-            range.setEnd(CSTUtils.addPositions(listStart, range.getEnd()));
+            
+            range = CSTUtils.addPositionToRange(range, expressionStart);
 
             diagnostics.add(new Diagnostic(range, pe.getMessage()));
+
         } catch(IllegalArgumentException ex) {
             // TODO: diagnostics
         }

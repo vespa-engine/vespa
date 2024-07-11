@@ -16,6 +16,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
 public class SchemaNode implements Iterable<SchemaNode> {
@@ -28,7 +29,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private Node originalNode;
 
     private ai.vespa.schemals.parser.indexinglanguage.Node indexingNode;
-    private ai.vespa.schemals.parser.rankingexpression.Node featureListNode;
+    private ai.vespa.schemals.parser.rankingexpression.Node rankExpressionNode;
 
     // This array has to be in order, without overlapping elements
     private ArrayList<SchemaNode> children = new ArrayList<SchemaNode>();
@@ -100,40 +101,52 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return (originalNode instanceof featureListElm);
     }
 
+    public boolean isExpression() {
+        return (originalNode instanceof expression);
+    }
+
     public SubLanguageData getILScript() {
         if (!isIndexingElm())return null;
         indexingElm elmNode = (indexingElm)originalNode;
         return elmNode.getILScript();
     }
 
-    public String getFeatureListString() {
-        if (!isFeatureListElm()) return null;
-        featureListElm elmNode = (featureListElm)originalNode;
-        return elmNode.getFeatureListString();
+    public String getRankExpressionString() {
+        if (isFeatureListElm()) {
+            featureListElm elmNode = (featureListElm)originalNode;
+            return elmNode.getFeatureListString();
+        }
+
+        if (isExpression()) {
+            expression expressionNode = (expression)originalNode;
+            return expressionNode.getExpressionString();
+        }
+
+        return null;
     }
 
     public boolean hasIndexingNode() {
         return this.indexingNode != null;
     }
 
-    public boolean hasFeatureListNode() {
-        return this.featureListNode != null;
+    public boolean hasRankExpressionNode() {
+        return this.rankExpressionNode != null;
     }
 
     public ai.vespa.schemals.parser.indexinglanguage.Node getIndexingNode() {
         return this.indexingNode;
     }
 
-    public ai.vespa.schemals.parser.rankingexpression.Node getFeatureListNode() {
-        return this.featureListNode;
+    public ai.vespa.schemals.parser.rankingexpression.Node getRankExpressionNode() {
+        return this.rankExpressionNode;
     }
 
     public void setIndexingNode(ai.vespa.schemals.parser.indexinglanguage.Node node) {
         this.indexingNode = node;
     }
 
-    public void setFeatureListNode(ai.vespa.schemals.parser.rankingexpression.Node node) {
-        this.featureListNode = node;
+    public void setRankExpressionNode(ai.vespa.schemals.parser.rankingexpression.Node node) {
+        this.rankExpressionNode = node;
     }
 
     public boolean isASTInstance(Class<? extends Node> astClass) {
