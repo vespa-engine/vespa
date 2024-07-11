@@ -193,6 +193,8 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/types/types.sd",
             "../../../config-model/src/test/derived/uri_array/uri_array.sd",
             "../../../config-model/src/test/derived/uri_wset/uri_wset.sd",
+
+            //"src/test/sdfiles/single/structinfieldset.sd"
         };
 
         return Arrays.stream(filePaths)
