@@ -55,6 +55,10 @@ public class SchemaIndex {
                     structInheritanceGraph.clearInheritsList(getSymbolInheritanceKey(currentSymbol));
                 }
 
+                if (currentSymbol.getType() == SymbolType.RANK_PROFILE) {
+                    rankProfileInheritanceGraph.clearInheritsList(getSymbolInheritanceKey(currentSymbol));
+                }
+
                 iterator.remove();
             }
         }
