@@ -15,6 +15,7 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.google.protobuf.Option;
+import com.yahoo.schema.parser.ParsedType.Variant;
 import com.yahoo.tensor.functions.Diag;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
@@ -125,10 +126,10 @@ public class SchemaDocumentParser {
 
         logger.println("Parsing: " + fileURI);
 
-        // logger.println("======== CST for file: " + fileURI + " ========");
-        // CSTUtils.printTree(logger, CST);
+        logger.println("======== CST for file: " + fileURI + " ========");
+        CSTUtils.printTree(logger, CST);
 
-        // schemaIndex.dumpIndex(logger);
+        schemaIndex.dumpIndex(logger);
 
     }
 
@@ -443,35 +444,18 @@ public class SchemaDocumentParser {
             SymbolType referencedType = node.getSymbol().getType();
             if (referencedType == SymbolType.SUBFIELD) {
                 SchemaNode parentField = node.getPreviousSibling();
+                Optional<Symbol> parentFieldDefinition = Optional.empty();
 
+                // Two cases for where the parent field is defined. Either inside a struct or "global". 
                 if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                    Symbol fieldDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD, parentField.getText());
-                    Optional<Symbol> structReference = findStructFieldStruct(fieldDefinition);
+                    parentFieldDefinition = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD, parentField.getText()));
 
-                    if (structReference.isPresent()) {
-                        Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.get().getLongIdentifier());
-                        if (structDefinition != null) {
-                            referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
-                        }
-                        if (referencedSymbol.isPresent()) {
-                            node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
-                        }
-                    }
                 } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD_IN_STRUCT && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                    Optional<Symbol> parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
-                    if (parentFieldDefinition.isPresent()) {
-                        Optional<Symbol> structReference = findStructFieldStruct(parentFieldDefinition.get());
+                    parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
+                }
 
-                        if (structReference.isPresent()) {
-                            Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.get().getLongIdentifier());
-                            if (structDefinition != null) {
-                                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
-                            }
-                            if (referencedSymbol.isPresent()) {
-                                node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
-                            }
-                        }
-                    }
+                if (parentFieldDefinition.isPresent()) {
+                    referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context);
                 }
             } else {
                 referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(node.getSymbol()));
@@ -494,6 +478,80 @@ public class SchemaDocumentParser {
             resolveSymbolReferencesImpl(child, context, diagnostics);
         }
     }
+
+    /**
+     * This finds the definition of a field inside a struct, where the struct is used as a type for some parent field
+     * It solves the case where we have 
+     * struct foo { field bar }
+     * field baz type foo {}
+     * And try to access baz.bar
+     *
+     * In this case baz is the parent field and bar is the subfield
+     *
+     * @param node the node pointing to the subfield declaration 
+     * @param fieldDefinition the symbol where the parent field is *defined*
+     * @param context 
+     *
+     * @return the definition of the field inside the struct if found 
+     */
+    private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context) {
+        if (fieldDefinition.getType() != SymbolType.FIELD && fieldDefinition.getType() != SymbolType.FIELD_IN_STRUCT) return Optional.empty();
+        if (fieldDefinition.getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
+
+        SchemaNode dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
+        if (!dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
+
+        Optional<Symbol> referencedSymbol = Optional.empty();
+
+        if (dataTypeNode.hasSymbol()) {
+            // TODO: handle annotation reference and document reference?
+            if (!isStructReference(dataTypeNode)) return Optional.empty();
+
+            // TODO: fix struct inheritance
+            Symbol structReference = dataTypeNode.getSymbol();
+            Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.getLongIdentifier());
+
+            if (structDefinition != null) {
+                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
+            }
+            if (referencedSymbol.isPresent()) {
+                node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
+            }
+            return referencedSymbol;
+        }
+
+        dataType originalNode = (dataType)dataTypeNode.getOriginalNode();
+
+        if (originalNode.getParsedType().getVariant() == Variant.MAP) {
+            if (node.getText().equals("key")) {
+            }
+
+            if (node.getText().equals("value")) {
+            }
+        } else if (originalNode.getParsedType().getVariant() == Variant.ARRAY) {
+            if (dataTypeNode.size() < 3 || !dataTypeNode.get(2).isASTInstance(dataType.class)) return Optional.empty();
+
+            SchemaNode innerType = dataTypeNode.get(2);
+            if (!isStructReference(innerType)) return Optional.empty();
+
+            Symbol structReference = innerType.getSymbol();
+            Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.getLongIdentifier());
+
+            if (structDefinition != null) {
+                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
+            }
+            if (referencedSymbol.isPresent()) {
+                node.setSymbolType(SymbolType.FIELD_IN_STRUCT);
+            }
+            return referencedSymbol;
+        }
+        return referencedSymbol;
+    }
+
+    private static boolean isStructReference(SchemaNode node) {
+        return node != null && node.hasSymbol() && node.getSymbol().getType() == SymbolType.STRUCT && node.getSymbol().getStatus() == SymbolStatus.REFERENCE;
+    }
+
     /*
      * Given a Symbol pointing to the definition of a field which may be of type struct, array<struct> or similar, 
      * return the symbol referencing the struct or empty if the field is not of type struct

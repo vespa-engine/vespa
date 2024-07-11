@@ -71,11 +71,24 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public void setSymbol(SymbolType type, String fileURI) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
         this.symbolAtNode = new Symbol(this, type, fileURI);
     }
 
     public void setSymbol(SymbolType type, String fileURI, Symbol scope) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
         this.symbolAtNode = new Symbol(this, type, fileURI, scope);
+    }
+
+    public void setSymbol(SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
+        this.symbolAtNode = new Symbol(this, type, fileURI, scope, shortIdentifier);
     }
 
     public void setSymbolType(SymbolType newType) {

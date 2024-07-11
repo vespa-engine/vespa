@@ -1,9 +1,11 @@
 package ai.vespa.schemals.semantictokens;
 
 import java.io.PrintStream;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -24,6 +26,21 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.dataType;
 
 public class SchemaSemanticTokens implements Visitor {
+
+    private static final List<SymbolType> userDefinedSymbolTypes = new ArrayList<SymbolType>() {{
+        add(SymbolType.SCHEMA);
+        add(SymbolType.DOCUMENT);
+        add(SymbolType.FIELD);
+        add(SymbolType.STRUCT);
+        add(SymbolType.ANNOTATION);
+        add(SymbolType.RANK_PROFILE);
+        add(SymbolType.FIELDSET);
+        add(SymbolType.STRUCT_FIELD);
+        add(SymbolType.FUNCTION);
+        add(SymbolType.TYPE_UNKNOWN);
+        add(SymbolType.FIELD_IN_STRUCT);
+        add(SymbolType.SUBFIELD);
+    }};
 
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
         add(TokenType.ANNOTATION);
@@ -172,7 +189,8 @@ public class SchemaSemanticTokens implements Visitor {
 
         TokenType type = node.getType();
 
-        if (node.isASTInstance(dataType.class) && !node.hasSymbol()) {
+        // TODO: this became a bit ugly with the map stuff
+        if (node.isASTInstance(dataType.class) && (!node.hasSymbol() || node.getSymbol().getType() == SymbolType.MAP_KEY || node.getSymbol().getType() == SymbolType.MAP_VALUE)) {
 
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != -1) {
@@ -184,7 +202,7 @@ public class SchemaSemanticTokens implements Visitor {
         } 
 
         if (node.hasSymbol() && 
-                (node.getSymbol().getStatus() == SymbolStatus.REFERENCE || node.getSymbol().getStatus() == SymbolStatus.DEFINITION)) {
+                (node.getSymbol().getStatus() == SymbolStatus.REFERENCE || node.getSymbol().getStatus() == SymbolStatus.DEFINITION) && userDefinedSymbolTypes.contains(node.getSymbol().getType())) {
             Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
             
             if (tokenType != null) {

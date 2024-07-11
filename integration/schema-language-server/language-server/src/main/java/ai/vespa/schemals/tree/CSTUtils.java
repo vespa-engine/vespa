@@ -1,10 +1,13 @@
 package ai.vespa.schemals.tree;
 
+import java.util.Optional;
 import java.io.PrintStream;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
@@ -84,6 +87,18 @@ public class CSTUtils {
         }
 
         return null;
+    }
+
+    /**
+     * @param node query node
+     * @return Closest symbol belonging to a parent node
+     */
+    public static Optional<Symbol> findNodeScope(SchemaNode node) {
+        while (node != null) {
+            if (node.hasSymbol()) return Optional.of(node.getSymbol());
+            node = node.getParent();
+        }
+        return Optional.empty();
     }
 
 

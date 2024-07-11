@@ -13,17 +13,23 @@ public class Symbol {
     private String fileURI;
     private SymbolType type;
     private SymbolStatus status;
+    private String shortIdentifier;
 
-    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
         this.identifierNode = identifierNode;
         this.fileURI = fileURI;
         this.type = type;
         this.status = SymbolStatus.UNRESOLVED;
+        this.scope = scope;
+        this.shortIdentifier = shortIdentifier;
+    }
+
+    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
+        this(identifierNode, type, fileURI, null, identifierNode.getText());
     }
 
     public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
-        this(identifierNode, type, fileURI);
-        this.scope = scope;
+        this(identifierNode, type, fileURI, scope, identifierNode.getText());
     }
 
     public String getFileURI() { return fileURI; }
@@ -51,7 +57,7 @@ public class Symbol {
 
     public SchemaNode getNode() { return identifierNode; }
 
-    public String getShortIdentifier() { return identifierNode.getText(); }
+    public String getShortIdentifier() { return shortIdentifier; }
 
     public String getLongIdentifier() {
         if (scope == null) {
@@ -113,7 +119,9 @@ public class Symbol {
         FUNCTION,
         TYPE_UNKNOWN,
         FIELD_IN_STRUCT,
-        SUBFIELD
+        SUBFIELD,
+        MAP_KEY,
+        MAP_VALUE
     }
 
     public String toString() {
