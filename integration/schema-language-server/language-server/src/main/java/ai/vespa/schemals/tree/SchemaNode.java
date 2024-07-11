@@ -17,6 +17,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 import ai.vespa.schemals.parser.ast.expression;
@@ -73,10 +74,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
         }
     }
 
-    public SchemaNode(ai.vespa.schemals.parser.indexinglanguage.Node node) {
+    public SchemaNode(ai.vespa.schemals.parser.indexinglanguage.Node node, Position rangeOffset) {
         this(
             LanguageType.INDEXING,
-            ILUtils.getNodeRange(node),
+            CSTUtils.addPositionToRange(rangeOffset, ILUtils.getNodeRange(node)),
             node.getClass().getName(),
             node.isDirty()
         );
@@ -84,17 +85,17 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.originalIndexingNode = node;
 
         for (var child : node) {
-            SchemaNode newNode = new SchemaNode(child);
+            SchemaNode newNode = new SchemaNode(child, rangeOffset);
             newNode.setParent(this);
             children.add(newNode);
         }
 
     }
 
-    public SchemaNode(ai.vespa.schemals.parser.rankingexpression.Node node) {
+    public SchemaNode(ai.vespa.schemals.parser.rankingexpression.Node node, Position rangeOffset) {
         this(
             LanguageType.RANK_EXPRESSION,
-            RankingExpressionUtils.getNodeRange(node),
+            CSTUtils.addPositionToRange(rangeOffset, RankingExpressionUtils.getNodeRange(node)),
             node.getClass().getName(),
             node.isDirty()
         );
@@ -102,7 +103,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.originalRankExpressionNode = node;
 
         for (var child : node) {
-            SchemaNode newNode = new SchemaNode(child);
+            SchemaNode newNode = new SchemaNode(child, rangeOffset);
             newNode.setParent(this);
             children.add(newNode);
         }
@@ -111,6 +112,11 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     private void setParent(SchemaNode parent) {
         this.parent = parent;
+    }
+
+    public void addChild(SchemaNode child) {
+        child.setParent(this);
+        this.children.add(child);
     }
 
     private TokenType calculateSchemaType() {
@@ -162,7 +168,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public Symbol getSymbol() {
-        if (!hasSymbol()) throw new IllegalArgumentException("getSymbol called on node without a symbol!");
+        if (!hasSymbol()) throw new IllegalArgumentException("get Symbol called on node without a symbol!");
         return this.symbolAtNode;
     }
 
@@ -381,6 +387,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
         return null;
     }
+
+    public LanguageType getLanguageType() { return language; }
 
     public String toString() {
         Position pos = getRange().getStart();

@@ -47,10 +47,6 @@ public class SchemaRankExpressionParser {
         );
     }
 
-    static SchemaNode wrapNodes(ai.vespa.schemals.parser.rankingexpression.Node rootNode) {
-        return new SchemaNode(rootNode);
-    }
-
     static SchemaNode parseRankingExpression(ParseContext context, SchemaNode node, ArrayList<Diagnostic> diagnostics) {
         String expressionString = node.getRankExpressionString();
         Position expressionOffset = findExpressionOffset(node);
@@ -70,7 +66,7 @@ public class SchemaRankExpressionParser {
                 parser.featureList();
             }
 
-            return wrapNodes(parser.rootNode());
+            return new SchemaNode(parser.rootNode(), expressionStart);
         } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
 
             Range range = RankingExpressionUtils.getNodeRange(pe.getToken());

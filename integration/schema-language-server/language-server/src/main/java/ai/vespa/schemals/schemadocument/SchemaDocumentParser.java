@@ -398,11 +398,10 @@ public class SchemaDocumentParser {
 
         if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
             Range nodeRange = node.getRange();
-            var indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
-
-            // if (indexingNode != null) {
-            //     node.setIndexingNode(indexingNode);
-            // }
+            SchemaNode indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
+            if (indexingNode != null) {
+                node.addChild(indexingNode);
+            }
         }
 
         if (node.containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) {
@@ -413,8 +412,8 @@ public class SchemaDocumentParser {
             SchemaNode rankExpressionNode = SchemaRankExpressionParser.parseRankingExpression(context, node, ret);
 
             if (rankExpressionNode != null) {
-                // node.setRankExpressionNode(rankExpressionNode);
-                context.logger().println(rankExpressionNode);
+                node.addChild(rankExpressionNode);
+
             }
         }
 
@@ -434,7 +433,7 @@ public class SchemaDocumentParser {
         return new ParseResult(errors, Optional.of(CST));
     }
 
-    private static ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(ParseContext context, SubLanguageData script, Position indexingStart, ArrayList<Diagnostic> diagnostics) {
+    private static SchemaNode parseIndexingScript(ParseContext context, SubLanguageData script, Position indexingStart, ArrayList<Diagnostic> diagnostics) {
         if (script == null) return null;
 
         CharSequence sequence = script.content();
@@ -446,7 +445,7 @@ public class SchemaDocumentParser {
         try {
             parser.root();
             // TODO: Verify expression
-            return parser.rootNode();
+            return new SchemaNode(parser.rootNode(), indexingStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
             context.logger().println("Encountered parsing error in parsing feature list");
             Range range = ILUtils.getNodeRange(pe.getToken());
