@@ -159,6 +159,7 @@ public class SearchHandler extends LoggingRequestHandler {
             handle(HttpRequest.createTestRequest("/search/" +
                                                  "?timeout=2s" +
                                                  "&ranking.profile=unranked" +
+                                                 "&warmup=true" +
                                                  "&metrics.ignore=true" +
                                                  "&yql=select+*+from+sources+*+where+true+limit+0;",
                                                  com.yahoo.jdisc.http.HttpRequest.Method.GET,
