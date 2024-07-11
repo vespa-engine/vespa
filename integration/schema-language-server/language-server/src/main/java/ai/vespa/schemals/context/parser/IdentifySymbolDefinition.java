@@ -2,18 +2,13 @@ package ai.vespa.schemals.context.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import org.eclipse.lsp4j.Diagnostic;
 
-import com.yahoo.schema.Schema;
-
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.documentElm;

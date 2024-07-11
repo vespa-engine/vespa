@@ -204,6 +204,10 @@ public class SchemaIndex {
         }
     }
 
+    public void dumpIndex() {
+        dumpIndex(logger);
+    }
+
     public Symbol findSchemaIdentifierSymbol(String fileURI) {
         // TODO: handle duplicates?
         SymbolType[] schemaIdentifierTypes = new SymbolType[] {

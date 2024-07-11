@@ -149,7 +149,7 @@ public class CSTUtils {
 
         Range range = node.getRange();
         if (!positionLT(pos, range.getStart())) {
-            boolean dirty = node.isDirty();
+            node.isDirty();
             logger.println(new String(new char[indent]).replace("\0", "\t") + schemaNodeString(node));
         }
 

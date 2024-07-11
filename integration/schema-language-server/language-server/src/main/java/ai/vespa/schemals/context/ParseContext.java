@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 import ai.vespa.schemals.context.parser.*;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.index.SchemaIndex;

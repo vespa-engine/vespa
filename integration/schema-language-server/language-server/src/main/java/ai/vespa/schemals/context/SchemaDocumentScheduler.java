@@ -1,11 +1,8 @@
 package ai.vespa.schemals.context;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.util.HashMap;
@@ -13,7 +10,6 @@ import java.util.HashMap;
 import org.eclipse.lsp4j.TextDocumentItem;
 
 import com.yahoo.io.IOUtils;
-import com.yahoo.io.reader.NamedReader;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.index.SchemaIndex;
