@@ -7,6 +7,8 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 
+import ai.vespa.schemals.context.EventContext;
+
 public class SchemaTextDocumentEdit {
     private ArrayList<TextEdit> textEdits;
     private VersionedTextDocumentIdentifier versionedTextDocumentIdentifier;
@@ -20,14 +22,12 @@ public class SchemaTextDocumentEdit {
         textEdits.add(textEdit);
     }
 
-    public TextDocumentEdit exportTextDocumentEdit() {
-        return new TextDocumentEdit(versionedTextDocumentIdentifier, textEdits);
+    public String getFileURI() {
+        return versionedTextDocumentIdentifier.getUri();
     }
 
-    public WorkspaceEdit exportWorkspaceEdit() {
-        SchemaWorkspaceEdit ret = new SchemaWorkspaceEdit();
-        ret.addTextDocumentEdit(this);
-        return ret.exportEdits();
+    public TextDocumentEdit exportTextDocumentEdit() {
+        return new TextDocumentEdit(versionedTextDocumentIdentifier, textEdits);
     }
 
     public String toString() {

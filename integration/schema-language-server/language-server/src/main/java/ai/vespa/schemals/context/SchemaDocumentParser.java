@@ -24,10 +24,10 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
-import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.dataType;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
@@ -75,9 +75,6 @@ public class SchemaDocumentParser {
     public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content, Integer version) {
         this(logger, diagnosticsHandler, schemaIndex, fileURI, content);
         this.version = version;
-        if (version != null) {
-            isOpen = true;
-        }
     }
 
     public ParseContext getParseContext(String content) {
@@ -126,16 +123,18 @@ public class SchemaDocumentParser {
             lexer.setCST(CST);
         }
 
-        logger.println("======== CST for file: " + fileURI + " ========");
-        CSTUtils.printTree(logger, CST);
+        logger.println("Parsing: " + fileURI);
 
-        schemaIndex.dumpIndex(logger);
+        // logger.println("======== CST for file: " + fileURI + " ========");
+        // CSTUtils.printTree(logger, CST);
+
+        // schemaIndex.dumpIndex(logger);
 
     }
 
     public boolean getIsOpen() { return isOpen; }
 
-    boolean setIsOpen(boolean value) {
+    public boolean setIsOpen(boolean value) {
         isOpen = value;
         return isOpen;
     }
@@ -349,7 +348,7 @@ public class SchemaDocumentParser {
                     ));
                     context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
                 }
-                context.inheritsSchemaNode().setSymbolStatus(SymbolStatus.REFERENCE);
+                context.schemaIndex().insertSymbolReference(context.fileURI(), context.inheritsSchemaNode());
             }
         }
 
@@ -424,6 +423,7 @@ public class SchemaDocumentParser {
         }
 
         inheritanceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+        context.schemaIndex().insertSymbolReference(context.fileURI(), inheritanceNode);
         return Optional.of(parent.getFileURI());
     }
 
@@ -440,7 +440,6 @@ public class SchemaDocumentParser {
         if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
             Optional<Symbol> referencedSymbol = Optional.empty();
             // dataType is handled separately
-
             SymbolType referencedType = node.getSymbol().getType();
             if (referencedType == SymbolType.SUBFIELD) {
                 SchemaNode parentField = node.getPreviousSibling();
@@ -475,12 +474,12 @@ public class SchemaDocumentParser {
                     }
                 }
             } else {
-                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), referencedType, node.getText()));
+                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(node.getSymbol()));
             }
 
             if (referencedSymbol.isPresent()) {
                 node.setSymbolStatus(SymbolStatus.REFERENCE);
-                context.schemaIndex().insertSymbolReference(referencedSymbol.get(), context.fileURI(), node);
+                context.schemaIndex().insertSymbolReference(referencedSymbol.get(), node.getSymbol());
             } else {
                 diagnostics.add(new Diagnostic(
                     node.getRange(),
@@ -577,12 +576,14 @@ public class SchemaDocumentParser {
         return new ParseResult(errors, Optional.of(CST));
     }
 
-    private static ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(ParseContext context, String script, Position scriptStart, ArrayList<Diagnostic> diagnostics) {
+    private static ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(ParseContext context, SubLanguageData script, Position indexingStart, ArrayList<Diagnostic> diagnostics) {
         if (script == null) return null;
 
-        CharSequence sequence = script;
+        CharSequence sequence = script.content();
         IndexingParser parser = new IndexingParser(context.logger(), context.fileURI(), sequence);
         parser.setParserTolerant(false);
+
+        Position scriptStart = PositionAddOffset(context.content(), indexingStart, script.leadingStripped());
 
         try {
             parser.root();
@@ -625,14 +626,13 @@ public class SchemaDocumentParser {
         return null;
     }
 
-
     /*
      * If necessary, the following methods can be sped up by
      * selecting an appropriate data structure.
      * */
-    private int positionToOffset(Position pos) {
+    private static int positionToOffset(String content, Position pos) {
         List<String> lines = content.lines().toList();
-        if (pos.getLine() >= lines.size())throw new IllegalArgumentException("Line " + pos.getLine() + " out of range for document " + fileURI);
+        if (pos.getLine() >= lines.size())throw new IllegalArgumentException("Line " + pos.getLine() + " out of range.");
 
         int lineCounter = 0;
         int offset = 0;
@@ -649,7 +649,11 @@ public class SchemaDocumentParser {
         return offset;
     }
 
-    private Position offsetToPosition(int offset) {
+    private int positionToOffset(Position pos) {
+        return positionToOffset(content, pos);
+    }
+
+    private static Position offsetToPosition(String content, int offset) {
         List<String> lines = content.lines().toList();
         int lineCounter = 0;
         for (String line : lines) {
@@ -661,6 +665,15 @@ public class SchemaDocumentParser {
             lineCounter += 1;
         }
         return null;
+    }
+
+    private Position offsetToPosition(int offset) {
+        return offsetToPosition(content, offset);
+    }
+
+    private static Position PositionAddOffset(String content, Position pos, int offset) {
+        int totalOffset = positionToOffset(content, pos) + offset;
+        return offsetToPosition(content, totalOffset);
     }
 
     public String toString() {

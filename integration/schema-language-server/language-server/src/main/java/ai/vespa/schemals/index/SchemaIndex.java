@@ -108,6 +108,20 @@ public class SchemaIndex {
         return null;
     }
 
+    public Symbol findSymbol(Symbol symbol) {
+        return findSymbol(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
+    }
+
+    private ArrayList<Symbol> findSymbolReferences(String dbKey) {
+        ArrayList<Symbol> results = symbolReferencesDB.get(dbKey);
+
+        if (results == null) {
+            results = new ArrayList<>();
+        }
+
+        return results;
+    }
+
     /**
      * Finds symbol references in the schema index for the given symbol.
      *
@@ -115,13 +129,11 @@ public class SchemaIndex {
      * @return A list of symbol references found in the schema index.
      */
     public ArrayList<Symbol> findSymbolReferences(Symbol symbol) {
-        ArrayList<Symbol> results = symbolReferencesDB.get(createDBKey(symbol));
+        return findSymbolReferences(createDBKey(symbol));
+    }
 
-        if (results == null) {
-            results = new ArrayList<>();
-        }
-
-        return results;
+    public ArrayList<Symbol> findDocumentSymbolReferences(Symbol schemaSymbol) {
+        return findSymbolReferences(createDBKey(schemaSymbol.getFileURI(), SymbolType.DOCUMENT, schemaSymbol.getLongIdentifier()));
     }
 
     public Optional<Symbol> findDefinitionOfReference(Symbol reference) {
@@ -163,7 +175,8 @@ public class SchemaIndex {
         // Probably struct
         if (findSymbol(fileURI, SymbolType.STRUCT, typeName.toLowerCase()) != null) {
             typeNode.setSymbolType(SymbolType.STRUCT);
-            typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            // typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            insertSymbolReference(fileURI, typeNode);
             return true;
         }
 
@@ -172,7 +185,8 @@ public class SchemaIndex {
             if (findSymbolInFile(documentURI, SymbolType.DOCUMENT, typeName.toLowerCase()) != null || 
                   findSymbolInFile(documentURI, SymbolType.SCHEMA, typeName.toLowerCase()) != null) {
                 typeNode.setSymbolType(SymbolType.DOCUMENT);
-                typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+                // typeNode.setSymbolStatus(SymbolStatus.REFERENCE);
+                insertSymbolReference(fileURI, typeNode);
                 return true;
             }
         }
@@ -183,8 +197,10 @@ public class SchemaIndex {
     public boolean resolveAnnotationReferenceNode(SchemaNode annotationReferenceNode, String fileURI) {
         String annotationName = annotationReferenceNode.getText().toLowerCase();
 
-        if (findSymbol(fileURI, SymbolType.ANNOTATION, annotationName) != null) {
-            annotationReferenceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+        Symbol referencedSymbol = findSymbol(fileURI, SymbolType.ANNOTATION, annotationName);
+        if (referencedSymbol != null) {
+            // annotationReferenceNode.setSymbolStatus(SymbolStatus.REFERENCE);
+            insertSymbolReference(referencedSymbol, annotationReferenceNode.getSymbol());
             return true;
         }
 
@@ -291,23 +307,49 @@ public class SchemaIndex {
         }
     }
 
-    public void insertSymbolReference(Symbol refersTo, String fileURI, SchemaNode node) {
+    private void insertSymbolReference(String dbKey, Symbol reference) {
+        reference.getNode().setSymbolStatus(SymbolStatus.REFERENCE);
 
-        String dbKey = createDBKey(refersTo);
-        ArrayList<Symbol> references = symbolReferencesDB.get(dbKey);
+        ArrayList<Symbol> content = symbolReferencesDB.get(dbKey);
 
-        Symbol symbol = node.getSymbol();
-
-        if (references != null) {
-            references.add(symbol);
+        if (content == null) {
+            content = new ArrayList<>() {{
+                add(reference);
+            }};
+    
+            symbolReferencesDB.put(dbKey, content);
             return;
         }
 
-        references = new ArrayList<>() {{
-            add(symbol);
-        }};
+        if (!content.contains(reference)) {
+            content.add(reference);
+        }
+    }
 
-        symbolReferencesDB.put(dbKey, references);
+    public void insertSymbolReference(Symbol definition, Symbol reference) {
+        if (definition == null) {
+            reference.getNode().setSymbolStatus(SymbolStatus.REFERENCE);
+            return;
+        }
+
+        String dbKey = createDBKey(definition);
+        insertSymbolReference(dbKey, reference);
+    }
+
+    private void insertDocumentSymbolReference(Symbol reference) {
+        Symbol schemaSymbol = findSymbol(reference.getFileURI(), SymbolType.SCHEMA, reference.getLongIdentifier());
+        String dbKey = createDBKey(schemaSymbol.getFileURI(), SymbolType.DOCUMENT, schemaSymbol.getLongIdentifier());
+        insertSymbolReference(dbKey, reference);
+    }
+
+    public void insertSymbolReference(String fileURI, SchemaNode node) {
+        Symbol referencedSymbol = findSymbol(fileURI, node.getSymbol().getType(), node.getText());
+
+        if (referencedSymbol == null && node.getSymbol().getType() == SymbolType.DOCUMENT) {
+            insertDocumentSymbolReference(node.getSymbol());
+        } else {
+            insertSymbolReference(referencedSymbol, node.getSymbol());
+        }
     }
 
     // TODO: move these things to somewhere else?

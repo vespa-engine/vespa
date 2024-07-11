@@ -3,6 +3,7 @@ package ai.vespa.schemals.tree;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.Token;
@@ -13,6 +14,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
@@ -103,7 +105,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return (originalNode instanceof featureListElm);
     }
 
-    public String getILScript() {
+    public SubLanguageData getILScript() {
         if (!isIndexingElm())return null;
         indexingElm elmNode = (indexingElm)originalNode;
         return elmNode.getILScript();
@@ -293,7 +295,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public TokenSource getTokenSource() { return originalNode.getTokenSource(); }
 
     public String toString() {
-        return getText() + "[" + getType() + "]";
+        Position pos = getRange().getStart();
+        return getText() + "[" + getType() + "] at " + pos.getLine() + ":" + pos.getCharacter();
     }
 
 	@Override
