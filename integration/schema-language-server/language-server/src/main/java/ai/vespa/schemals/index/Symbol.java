@@ -127,6 +127,6 @@ public class Symbol {
     public String toString() {
         Position pos = getNode().getRange().getStart();
         String fileName = SchemaDocumentParser.fileNameFromPath(fileURI);
-        return "Symbol('" + getShortIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")";
+        return "Symbol('" + getShortIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")@" + System.identityHashCode(this);
     }
 }

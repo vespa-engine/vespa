@@ -141,7 +141,7 @@ public class SchemaIndex {
     public Optional<Symbol> findDefinitionOfReference(Symbol reference) {
         for (var entry : symbolReferencesDB.entrySet()) {
             for (Symbol registeredReference : entry.getValue()) {
-                if (registeredReference == reference) {
+                if (registeredReference.equals(reference)) {
                     String key = entry.getKey();
                     return Optional.ofNullable(symbolDefinitionsDB.get(key));
                 }
@@ -167,6 +167,17 @@ public class SchemaIndex {
                                   .stream()
                                   .filter(symbol -> symbol.isInScope(scope))
                                   .collect(Collectors.toList());
+    }
+
+    public Optional<Symbol> findFieldInStruct(Symbol structDefinitionSymbol, String shortIdentifier) {
+        StructInheritanceNode inheritanceNode = getStructInheritanceKey(structDefinitionSymbol);
+
+        for (StructInheritanceNode node : structInheritanceGraph.getAllAncestors(inheritanceNode)) {
+            Symbol structSymbol = node.getSymbol();
+            Symbol result = findSymbol(structSymbol.getFileURI(), SymbolType.FIELD_IN_STRUCT, structSymbol.getLongIdentifier() + "." + shortIdentifier);
+            if (result != null)return Optional.of(result);
+        }
+        return Optional.empty();
     }
 
     /**

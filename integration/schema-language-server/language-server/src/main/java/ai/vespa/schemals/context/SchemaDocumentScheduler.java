@@ -82,11 +82,11 @@ public class SchemaDocumentScheduler {
 
         File file = new File(URI.create(fileURI));
         if (!file.exists()) {
-            cleanUpDocumnet(fileURI);
+            cleanUpDocument(fileURI);
         }
     }
 
-    private void cleanUpDocumnet(String fileURI) {
+    private void cleanUpDocument(String fileURI) {
         logger.println("Removing document: "+ fileURI);
 
         schemaIndex.clearDocument(fileURI);
@@ -96,7 +96,7 @@ public class SchemaDocumentScheduler {
     public boolean removeDocument(String fileURI) {
         boolean wasOpen = workspaceDocuments.get(fileURI).getIsOpen();
         closeDocument(fileURI);
-        cleanUpDocumnet(fileURI);
+        cleanUpDocument(fileURI);
         return wasOpen;
     }
 
