@@ -54,7 +54,6 @@ static inline string stringify(uint64_t number) noexcept
 
 void chomp(vespalib::string & s) noexcept;
 vespalib::string safe_char_2_string(const char * p);
-vespalib::string safe_char_2_string(const char * p, size_t sz);
 
 } // namespace vespalib
 

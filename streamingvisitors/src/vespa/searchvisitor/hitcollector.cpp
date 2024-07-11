@@ -23,7 +23,7 @@ HitCollector::Hit::Hit(vsm::StorageDocument::SP doc, uint32_t docId, const Match
      _score(score),
      _document(std::move(doc)),
      _matchData(),
-     _sortBlob(vespalib::safe_char_2_string(static_cast<const char *>(sortData), sortDataLen))
+     _sortBlob(static_cast<const char *>(sortData), sortDataLen)
 {
     _matchData.reserve(matchData.getNumTermFields());
     for (search::fef::TermFieldHandle handle = 0; handle < matchData.getNumTermFields(); ++handle) {

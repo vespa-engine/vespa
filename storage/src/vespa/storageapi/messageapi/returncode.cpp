@@ -171,6 +171,6 @@ std::string_view
 ReturnCode::getMessage() const noexcept {
     return _message
            ? _message->operator std::string_view()
-           : "";
+           : std::string_view();
 }
 }
