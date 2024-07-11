@@ -95,6 +95,20 @@ public class SchemaIndex {
         return null;
     }
 
+    public Symbol findSymbol(Symbol symbol) {
+        return findSymbol(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
+    }
+
+    private ArrayList<Symbol> findSymbolReferences(String dbKey) {
+        ArrayList<Symbol> results = symbolReferencesDB.get(dbKey);
+
+        if (results == null) {
+            results = new ArrayList<>();
+        }
+
+        return results;
+    }
+
     /**
      * Finds symbol references in the schema index for the given symbol.
      *
@@ -102,13 +116,11 @@ public class SchemaIndex {
      * @return A list of symbol references found in the schema index.
      */
     public ArrayList<Symbol> findSymbolReferences(Symbol symbol) {
-        ArrayList<Symbol> results = symbolReferencesDB.get(createDBKey(symbol));
+        return findSymbolReferences(createDBKey(symbol));
+    }
 
-        if (results == null) {
-            results = new ArrayList<>();
-        }
-
-        return results;
+    public ArrayList<Symbol> findDocumentSymbolReferences(Symbol schemaSymbol) {
+        return findSymbolReferences(createDBKey(schemaSymbol.getFileURI(), SymbolType.DOCUMENT, schemaSymbol.getLongIdentifier()));
     }
 
     public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, SymbolType type) {
@@ -155,7 +167,7 @@ public class SchemaIndex {
         Symbol referencedSymbol = findSymbol(fileURI, SymbolType.ANNOTATION, annotationName);
         if (referencedSymbol != null) {
             // annotationReferenceNode.setSymbolStatus(SymbolStatus.REFERENCE);
-            insertSymbolReference(referencedSymbol, fileURI, annotationReferenceNode);
+            insertSymbolReference(referencedSymbol, annotationReferenceNode.getSymbol());
             return true;
         }
 
@@ -255,30 +267,48 @@ public class SchemaIndex {
         symbolDefinitionsDB.put(dbKey, symbol);
     }
 
-    public void insertSymbolReference(Symbol refersTo, String fileURI, SchemaNode node) {
-        node.setSymbolStatus(SymbolStatus.REFERENCE);
+    private void insertSymbolReference(String dbKey, Symbol reference) {
+        reference.getNode().setSymbolStatus(SymbolStatus.REFERENCE);
 
-        String dbKey = createDBKey(refersTo);
-        ArrayList<Symbol> references = symbolReferencesDB.get(dbKey);
+        ArrayList<Symbol> content = symbolReferencesDB.get(dbKey);
 
-        Symbol symbol = node.getSymbol();
-
-        if (references == null) {
-            references = new ArrayList<>() {{
-                add(symbol);
+        if (content == null) {
+            content = new ArrayList<>() {{
+                add(reference);
             }};
     
-            symbolReferencesDB.put(dbKey, references);
+            symbolReferencesDB.put(dbKey, content);
             return;
         }
 
-        if (!references.contains(symbol)) {
-            references.add(symbol);
+        if (!content.contains(reference)) {
+            content.add(reference);
         }
+    }
+
+    public void insertSymbolReference(Symbol definition, Symbol reference) {
+        if (definition == null) {
+            reference.getNode().setSymbolStatus(SymbolStatus.REFERENCE);
+            return;
+        }
+
+        String dbKey = createDBKey(definition);
+        insertSymbolReference(dbKey, reference);
+    }
+
+    private void insertDocumentSymbolReference(Symbol reference) {
+        Symbol schemaSymbol = findSymbol(reference.getFileURI(), SymbolType.SCHEMA, reference.getLongIdentifier());
+        String dbKey = createDBKey(schemaSymbol.getFileURI(), SymbolType.DOCUMENT, schemaSymbol.getLongIdentifier());
+        insertSymbolReference(dbKey, reference);
     }
 
     public void insertSymbolReference(String fileURI, SchemaNode node) {
         Symbol referencedSymbol = findSymbol(fileURI, node.getSymbol().getType(), node.getText());
-        insertSymbolReference(referencedSymbol, fileURI, node);
+
+        if (referencedSymbol == null && node.getSymbol().getType() == SymbolType.DOCUMENT) {
+            insertDocumentSymbolReference(node.getSymbol());
+        }
+
+        insertSymbolReference(referencedSymbol, node.getSymbol());
     }
 }

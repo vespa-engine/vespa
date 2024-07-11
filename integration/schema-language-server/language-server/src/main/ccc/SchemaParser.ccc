@@ -84,7 +84,7 @@ INJECT SchemaParser:
      * @param multiline Whether or not to allow multi-line expressions.
      */
     @SuppressWarnings("deprecation")
-    private String newIndexingOperation(boolean multiline) throws ParseException {
+    private SubLanguageData newIndexingOperation(boolean multiline) throws ParseException {
         return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
@@ -94,7 +94,7 @@ INJECT SchemaParser:
      * @param multiline Whether or not to allow multi-line expressions.
      * @param linguistics What to use for tokenizing.
      */
-    private String newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+    private SubLanguageData newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
         // Find the CharStream to and set input to this stream, by converting it to a SimpleCharStream - Theodor
         // SimpleCharStream input = new SimpleCharStream("summary | index"); //lastConsumedToken.getTokenSource();
 
@@ -102,6 +102,13 @@ INJECT SchemaParser:
         String inputString = tokS.toString();
         int startSplit = lastConsumedToken.getEndOffset();
         int endSplit = startSplit;
+        int leadingStripped = 0;
+
+        if (multiline) {
+            leadingStripped = lastConsumedToken.getBeginOffset() ;
+        } else {
+            leadingStripped = startSplit - lastConsumedToken.getPrevious().getBeginOffset();
+        }
 
         Token tokenToAddExceptionsTo = lastConsumedToken;
 
@@ -133,20 +140,7 @@ INJECT SchemaParser:
 
         inputString = inputString.substring(startSplit, endSplit);
 
-        //SimpleCharStream input = new SimpleCharStream(inputString);
-
-        /*
-        try {
-            return IndexingOperation.fromStream(input, multiline, linguistics, embedders);
-        } catch (com.yahoo.schema.parser.ParseException e) {
-
-            ParseException exception = (ParseException) (new ParseException("Could not parse indexing language around: " + lastConsumedToken.getLocation()).initCause(e));
-
-            tokenToAddExceptionsTo.addParseException(exception, startSplit, endSplit);
-        }
-        return null;
-        */
-        return inputString;
+        return new SubLanguageData(inputString, leadingStripped);
     }
 
     /**
@@ -182,12 +176,12 @@ INJECT SchemaParser:
  */
 INJECT indexingElm:
 {
-    private String ILScript = null;
+    private SubLanguageData ILScript = null;
 
     public boolean hasILScript() { return ILScript != null; }
-    public String getILScript() { return ILScript; }
+    public SubLanguageData getILScript() { return ILScript; }
 
-    public void setILScript(String script) {
+    public void setILScript(SubLanguageData script) {
         this.ILScript = script;
     }
 }
@@ -1123,7 +1117,7 @@ void structFieldBodyElm(ParsedField field) : { }
  */
 void indexingElm(ParsedField field) : 
 {
-    String ILScript;
+    SubLanguageData ILScript;
 }
 
     ( <INDEXING> ( (<COLON> (ILScript = indexingOperationElm(field, false))) | (ILScript = indexingOperationElm(field, true)) ) )
@@ -1139,7 +1133,7 @@ void indexingElm(ParsedField field) :
  *
  * @param field The field to modify.
  */
-String indexingOperationElm(ParsedField field, boolean multiLine) : { }
+SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : { }
 
     {
         return newIndexingOperation(multiLine);

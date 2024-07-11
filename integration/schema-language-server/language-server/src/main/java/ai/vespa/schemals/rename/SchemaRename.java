@@ -89,11 +89,15 @@ public class SchemaRename {
 
         Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), SymbolType.DOCUMENT, oldName);
 
-        if (documentSymbol != null && documentSymbol.getType() == SymbolType.DOCUMENT) {
+        if (documentSymbol != null) {
             symbolOccurances.add(documentSymbol);
             ArrayList<Symbol> documentReferences = context.schemaIndex.findSymbolReferences(documentSymbol);
             symbolOccurances.addAll(documentReferences);
+        } else {
+            ArrayList<Symbol> documentReferences = context.schemaIndex.findDocumentSymbolReferences(symbol);
+            symbolOccurances.addAll(documentReferences);
         }
+
 
         String newFileURI = document.getFilePath() + newName + ".sd";
 

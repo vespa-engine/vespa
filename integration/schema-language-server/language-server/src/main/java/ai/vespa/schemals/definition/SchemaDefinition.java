@@ -26,31 +26,25 @@ public class SchemaDefinition {
 
         ArrayList<Location> ret = new ArrayList<Location>();
 
-        SchemaDocumentParser document = context.document;
-
-        SchemaNode node = document.getLeafNodeAtPosition(context.position);
+        SchemaNode node = context.document.getSymbolAtPosition(context.position);
 
         if (node == null || !node.hasSymbol()) {
             return ret;
         }
 
-        SchemaNode parent = node.getParent();
-        if (parent == null) {
+        Symbol search = node.getSymbol();
+
+        Symbol result = context.schemaIndex.findSymbol(context.document.getFileURI(), search.getType(), search.getLongIdentifier());
+
+        if (result == null && search.getType() == SymbolType.DOCUMENT) {
+            result = context.schemaIndex.findSymbol(context.document.getFileURI(), SymbolType.SCHEMA, search.getLongIdentifier()); 
+        }
+
+        if (result == null) {
             return ret;
         }
 
-        SymbolType symbolType = linkContexts.get(parent.getASTClass());
-        if (symbolType == null) {
-            return ret;
-        }
-
-        Symbol refersTo = context.schemaIndex.findSymbolInFile(document.getFileURI(), symbolType, node.getText());
-        
-        if (refersTo == null) {
-            return ret;
-        }
-
-        ret.add(new Location(document.getFileURI(), refersTo.getNode().getRange()));
+        ret.add(result.getLocation());
         return ret;
     }
 }
