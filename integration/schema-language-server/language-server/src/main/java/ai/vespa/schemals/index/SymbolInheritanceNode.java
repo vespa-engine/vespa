@@ -1,15 +1,15 @@
 package ai.vespa.schemals.index;
 
 /**
- * StructInheritanceNode
+ * {@link SymbolInheritanceNode}
  * Its purpose is to provide a weaker check on equality and hashcode to consider two nodes equal when they reference
  * the same underlying symbol in the CST.
  */
-public class StructInheritanceNode {
+public class SymbolInheritanceNode {
 
     private Symbol structDefinitionSymbol;
 
-    public StructInheritanceNode(Symbol structDefinitionSymbol) {
+    public SymbolInheritanceNode(Symbol structDefinitionSymbol) {
         this.structDefinitionSymbol = structDefinitionSymbol;
     }
 
@@ -20,7 +20,7 @@ public class StructInheritanceNode {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof StructInheritanceNode)) return false;
+        if (!(other instanceof SymbolInheritanceNode)) return false;
         return this.hashCode() == other.hashCode();
     }
 

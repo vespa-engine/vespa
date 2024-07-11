@@ -333,6 +333,10 @@ public class SchemaDocumentParser {
             if (inheritanceNode.getSymbol().getType() == SymbolType.STRUCT) {
                 resolveStructInheritance(inheritanceNode, context, diagnostics);
             }
+
+            if (inheritanceNode.getSymbol().getType() == SymbolType.RANK_PROFILE) {
+                resolveRankProfileInheritance(inheritanceNode, context, diagnostics);
+            }
         }
 
         if (context.inheritsSchemaNode() != null) {
@@ -402,6 +406,31 @@ public class SchemaDocumentParser {
             }
             fieldsSeen.add(fieldSymbol.getShortIdentifier().toLowerCase());
         }
+    }
+
+    private static void resolveRankProfileInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
+        SchemaNode myRankProfileDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
+        String inheritedIdentifier = inheritanceNode.getText();
+
+        if (myRankProfileDefinitionNode == null) return;
+        if (!myRankProfileDefinitionNode.hasSymbol() || myRankProfileDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;
+        Symbol parentSymbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.RANK_PROFILE, inheritedIdentifier);
+
+        if (parentSymbol == null) {
+            // Handled in resolve symbol ref
+            return;
+        }
+
+        if (!context.schemaIndex().tryRegisterRankProfileInheritance(myRankProfileDefinitionNode.getSymbol(), parentSymbol)) {
+            diagnostics.add(new Diagnostic(
+                inheritanceNode.getRange(),
+                "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this rank profile.", 
+                DiagnosticSeverity.Error,
+                ""
+            ));
+        }
+
+        // TODO: more validity checks on rank profile inheritance
     }
 
     private static Optional<String> resolveDocumentInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {

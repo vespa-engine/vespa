@@ -72,6 +72,12 @@ public class SchemaParserTest {
         assertEquals(0, countErrors(parseResult.diagnostics()), testMessage);
     }
 
+    void checkFileFails(String fileName, int expectedErrors) throws Exception {
+        var parseResult = parseFile(fileName);
+        String testMessage = "For file: " + fileName + constructDiagnosticMessage(parseResult.diagnostics(), 1);
+        assertEquals(expectedErrors, countErrors(parseResult.diagnostics()), testMessage);
+    }
+
     void checkDirectoryParses(String directoryPath) throws Exception {
         PrintStream logger = System.out;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
@@ -117,9 +123,8 @@ public class SchemaParserTest {
     }
 
     @TestFactory
-    Stream<DynamicTest> generateFileTests() {
+    Stream<DynamicTest> generateGoodFileTests() {
         String[] filePaths = new String[] {
-            //"../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd",
             "../../../config-model/src/test/derived/advanced/advanced.sd",
             "../../../config-model/src/test/derived/annotationsimplicitstruct/annotationsimplicitstruct.sd",
             "../../../config-model/src/test/derived/annotationsinheritance/annotationsinheritance.sd",
@@ -194,6 +199,9 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/uri_array/uri_array.sd",
             "../../../config-model/src/test/derived/uri_wset/uri_wset.sd",
 
+            /*
+             * CUSTOM TESTS
+             * */
             "src/test/sdfiles/single/structinfieldset.sd"
         };
 
@@ -202,7 +210,7 @@ public class SchemaParserTest {
     }
 
     @TestFactory
-    Stream<DynamicTest> generateDirectoryTests() {
+    Stream<DynamicTest> generateGoodDirectoryTests() {
         String[] directories = new String[] {
             "../../../config-model/src/test/cfg/search/data/travel/schemas/",
             //"../../../config-model/src/test/configmodel/types/",
@@ -229,4 +237,17 @@ public class SchemaParserTest {
         return Arrays.stream(directories)
                      .map(dir -> DynamicTest.dynamicTest(dir, () -> checkDirectoryParses(dir)));
     }
+
+    record BadFileTestCase(String filePath, int expectedErrors) {}
+
+    @TestFactory
+    Stream<DynamicTest> generateBadFileTests() {
+        BadFileTestCase[] tests = new BadFileTestCase[] {
+            new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1)
+        };
+
+        return Arrays.stream(tests)
+                     .map(testCase -> DynamicTest.dynamicTest(testCase.filePath(), () -> checkFileFails(testCase.filePath(), testCase.expectedErrors())));
+    }
+
 }

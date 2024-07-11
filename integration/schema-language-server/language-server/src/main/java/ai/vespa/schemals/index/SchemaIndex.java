@@ -15,7 +15,6 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.mapDataType;
-import ai.vespa.schemals.parser.indexinglanguage.ast.value;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaIndex {
@@ -29,7 +28,8 @@ public class SchemaIndex {
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
 
     private InheritanceGraph<String> documentInheritanceGraph;
-    private InheritanceGraph<StructInheritanceNode> structInheritanceGraph;
+    private InheritanceGraph<SymbolInheritanceNode> structInheritanceGraph;
+    private InheritanceGraph<SymbolInheritanceNode> rankProfileInheritanceGraph;
 
     // Schema inheritance. Can only inherit one schema
     private HashMap<String, String> schemaInherits = new HashMap<String, String>();
@@ -38,6 +38,7 @@ public class SchemaIndex {
         this.logger = logger;
         this.documentInheritanceGraph = new InheritanceGraph<>();
         this.structInheritanceGraph = new InheritanceGraph<>();
+        this.rankProfileInheritanceGraph = new InheritanceGraph<>();
     }
     
     public void clearDocument(String fileURI) {
@@ -51,7 +52,7 @@ public class SchemaIndex {
 
                 // TODO: it's ugly
                 if (currentSymbol.getType() == SymbolType.STRUCT) {
-                    structInheritanceGraph.clearInheritsList(getStructInheritanceKey(currentSymbol));
+                    structInheritanceGraph.clearInheritsList(getSymbolInheritanceKey(currentSymbol));
                 }
 
                 iterator.remove();
@@ -68,6 +69,7 @@ public class SchemaIndex {
         }
 
         openSchemas.remove(fileURI);
+        schemaInherits.remove(fileURI);
         documentInheritanceGraph.clearInheritsList(fileURI);
     }
 
@@ -170,9 +172,9 @@ public class SchemaIndex {
     }
 
     public Optional<Symbol> findFieldInStruct(Symbol structDefinitionSymbol, String shortIdentifier) {
-        StructInheritanceNode inheritanceNode = getStructInheritanceKey(structDefinitionSymbol);
+        SymbolInheritanceNode inheritanceNode = getSymbolInheritanceKey(structDefinitionSymbol);
 
-        for (StructInheritanceNode node : structInheritanceGraph.getAllAncestors(inheritanceNode)) {
+        for (SymbolInheritanceNode node : structInheritanceGraph.getAllAncestors(inheritanceNode)) {
             Symbol structSymbol = node.getSymbol();
             Symbol result = findSymbol(structSymbol.getFileURI(), SymbolType.FIELD_IN_STRUCT, structSymbol.getLongIdentifier() + "." + shortIdentifier);
             if (result != null)return Optional.of(result);
@@ -280,6 +282,9 @@ public class SchemaIndex {
         logger.println(" === STRUCT INHERITANCE === ");
         structInheritanceGraph.dumpAllEdges(logger);
 
+        logger.println(" === RANK PROFILE INHERITANCE === ");
+        rankProfileInheritanceGraph.dumpAllEdges(logger);
+
         logger.println(" === TRACKED FILES === ");
         for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
             SchemaDocumentParser document = entry.getValue();
@@ -350,7 +355,7 @@ public class SchemaIndex {
         symbolDefinitionsDB.put(dbKey, symbol);
 
         if (symbol.getType() == SymbolType.STRUCT) {
-            structInheritanceGraph.createNodeIfNotExists(getStructInheritanceKey(symbol));
+            structInheritanceGraph.createNodeIfNotExists(getSymbolInheritanceKey(symbol));
         }
     }
 
@@ -406,7 +411,7 @@ public class SchemaIndex {
             structSymbol = findSymbol(structSymbol.getFileURI(), SymbolType.STRUCT, structSymbol.getLongIdentifier());
         }
         List<Symbol> result = new ArrayList<>();
-        for (StructInheritanceNode structDefinitionNode : structInheritanceGraph.getAllAncestors(getStructInheritanceKey(structSymbol))) {
+        for (SymbolInheritanceNode structDefinitionNode : structInheritanceGraph.getAllAncestors(getSymbolInheritanceKey(structSymbol))) {
             Symbol structDefSymbol = structDefinitionNode.getSymbol();
             
             List<Symbol> possibleFieldDefinitions = findSymbolsInScope(structDefSymbol);
@@ -419,14 +424,21 @@ public class SchemaIndex {
         return result;
     }
 
-    public StructInheritanceNode getStructInheritanceKey(Symbol structSymbol) {
-        return new StructInheritanceNode(structSymbol);
+    public SymbolInheritanceNode getSymbolInheritanceKey(Symbol structSymbol) {
+        return new SymbolInheritanceNode(structSymbol);
     }
 
     public boolean tryRegisterStructInheritance(Symbol childSymbol, Symbol parentSymbol) {
-        StructInheritanceNode childNode = getStructInheritanceKey(childSymbol);
-        StructInheritanceNode parentNode = getStructInheritanceKey(parentSymbol);
+        SymbolInheritanceNode childNode = getSymbolInheritanceKey(childSymbol);
+        SymbolInheritanceNode parentNode = getSymbolInheritanceKey(parentSymbol);
 
         return structInheritanceGraph.addInherits(childNode, parentNode);
+    }
+
+    public boolean tryRegisterRankProfileInheritance(Symbol childSymbol, Symbol parentSymbol) {
+        SymbolInheritanceNode childNode = getSymbolInheritanceKey(childSymbol);
+        SymbolInheritanceNode parentNode = getSymbolInheritanceKey(parentSymbol);
+
+        return rankProfileInheritanceGraph.addInherits(childNode, parentNode);
     }
 }
