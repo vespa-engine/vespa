@@ -78,3 +78,6 @@ parserSettings.markSegmentAnds bool default=false
 
 ## keep segment-and items as-is in query parsing (overrides markSegmentAnds)
 parserSettings.keepSegmentAnds bool default=false
+
+## keep ideographic comma and full stop (default: replace with space)
+parserSettings.keepIdeographicPunctuation bool default=false

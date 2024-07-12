@@ -289,6 +289,7 @@ public abstract class AbstractParser implements CustomParser {
      */
     protected void tokenize(String query, String defaultIndexName, IndexFacts.Session indexFacts, Language language) {
         Tokenizer tokenizer = new Tokenizer(environment.getLinguistics());
+        tokenizer.setParserSettings(environment.getParserSettings());
         tokenizer.setSubstringSpecialTokens(language != null && language.isCjk());
         tokenizer.setSpecialTokens(environment.getSpecialTokens());
         tokens.initialize(tokenizer.tokenize(query, defaultIndexName, indexFacts));

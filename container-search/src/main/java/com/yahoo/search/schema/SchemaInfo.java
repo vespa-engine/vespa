@@ -49,8 +49,9 @@ public class SchemaInfo {
     private static ParserSettings extractLQP(QrSearchersConfig qrSearchersConfig) {
         var cfg = qrSearchersConfig.parserSettings();
         return new ParserSettings(cfg.keepImplicitAnds(),
-                                      cfg.markSegmentAnds(),
-                                      cfg.keepSegmentAnds());
+                                  cfg.markSegmentAnds(),
+                                  cfg.keepSegmentAnds(),
+                                  cfg.keepIdeographicPunctuation());
     }
 
     @Inject

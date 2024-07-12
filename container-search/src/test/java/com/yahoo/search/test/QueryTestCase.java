@@ -1033,27 +1033,46 @@ public class QueryTestCase {
     }
 
     private static void useParserSettings(Query query) {
-        var lqp = new ParserSettings(true, true, true);
+        var lqp = new ParserSettings(true, true, true, true);
         var schemaStub = SchemaInfo.createStub(lqp);
         var ctx = Execution.Context.createContextStub(schemaStub);
         query.getModel().getExecution().context().populateFrom(ctx);
     }
 
     private static void disableParserSettings(Query query) {
-        var lqp = new ParserSettings(false, false, false);
+        var lqp = new ParserSettings(false, false, false, false);
         var schemaStub = SchemaInfo.createStub(lqp);
         var ctx = Execution.Context.createContextStub(schemaStub);
         query.getModel().getExecution().context().populateFrom(ctx);
     }
 
     @Test
-    void testImplicitPhraseIsDefault() {
+    void testImplicitSegmentAnd() {
         Query query = new Query(httpEncode("?query=it's fine"));
         useParserSettings(query);
         assertEquals("WEAKAND(100) (SAND it s) fine", query.getModel().getQueryTree().toString());
         query = new Query(httpEncode("?query=it's fine"));
         disableParserSettings(query);
         assertEquals("WEAKAND(100) it s fine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testIdeographicPunctuation() {
+        Query query = new Query("?query=音、声");
+        useParserSettings(query);
+        assertEquals("WEAKAND(100) (AND 音 声)", query.getModel().getQueryTree().toString());
+
+        query = new Query("?query=ど。の");
+        useParserSettings(query);
+        assertEquals("WEAKAND(100) (AND ど の)", query.getModel().getQueryTree().toString());
+
+        query = new Query("?query=音、声");
+        disableParserSettings(query);
+        assertEquals("WEAKAND(100) 音 声", query.getModel().getQueryTree().toString());
+
+        query = new Query("?query=ど。の");
+        disableParserSettings(query);
+        assertEquals("WEAKAND(100) ど の", query.getModel().getQueryTree().toString());
     }
 
     @Test
