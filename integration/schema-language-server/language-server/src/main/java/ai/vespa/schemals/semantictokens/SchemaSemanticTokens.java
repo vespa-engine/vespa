@@ -40,6 +40,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.TYPE);
         add(TokenType.FUNCTION);
         add(TokenType.RANK_PROPERTIES);
+        add(TokenType.MATCHFEATURES_SL);
     }};
 
     private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{

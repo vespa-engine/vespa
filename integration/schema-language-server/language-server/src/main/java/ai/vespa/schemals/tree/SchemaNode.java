@@ -2,6 +2,7 @@ package ai.vespa.schemals.tree;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -28,7 +29,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public enum LanguageType {
         SCHEMA,
         INDEXING,
-        RANK_EXPRESSION
+        RANK_EXPRESSION,
+        CUSTOM
     }
 
     private LanguageType language;
@@ -46,6 +48,9 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private ai.vespa.schemals.parser.indexinglanguage.Node originalIndexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node originalRankExpressionNode;
 
+    // Special properties for node in the CUTOM language
+    private String contentString;
+
     // Special features for nodes in the Schema language
     private TokenType schemaType;
 
@@ -54,6 +59,12 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.range = range;
         this.identifierString = identifierString;
         this.isDirty = isDirty;
+    }
+
+    // To create tokens outside the other languages
+    public SchemaNode(Range range, String contentString, String identifierString) {
+        this(LanguageType.CUSTOM, range, identifierString, false);
+        this.contentString = contentString;
     }
     
     public SchemaNode(Node node) {
@@ -119,6 +130,20 @@ public class SchemaNode implements Iterable<SchemaNode> {
         this.children.add(child);
     }
 
+    public void addChildren(List<SchemaNode> children) {
+        for (SchemaNode child : children) {
+            addChild(child);
+        }
+    }
+
+    public void clearChildren() {
+        for (SchemaNode child : children) {
+            child.setParent(null);
+        }
+
+        children.clear();
+    }
+
     private TokenType calculateSchemaType() {
         if (language != LanguageType.SCHEMA) return null;
         if (isDirty) return null;
@@ -142,7 +167,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public TokenType setSchemaType(TokenType type) {
-        if (language != LanguageType.SCHEMA) return null;
+        if (language != LanguageType.SCHEMA && language != LanguageType.CUSTOM) return null;
 
         this.schemaType = type;
         
@@ -333,6 +358,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
         if (language == LanguageType.RANK_EXPRESSION) {
             return originalRankExpressionNode.getSource();
+        }
+
+        if (language == LanguageType.CUSTOM) {
+            return contentString;
         }
 
         return null;

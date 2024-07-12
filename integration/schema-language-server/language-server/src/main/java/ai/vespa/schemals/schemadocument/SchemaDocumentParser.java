@@ -19,6 +19,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.SubLanguageData;
+import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
@@ -391,10 +392,6 @@ public class SchemaDocumentParser {
     private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {
 
         ArrayList<Diagnostic> ret = new ArrayList<>();
-        
-        for (Identifier identifier : context.identifiers()) {
-            ret.addAll(identifier.identify(node));
-        }
 
         if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
             Range nodeRange = node.getRange();
@@ -409,12 +406,11 @@ public class SchemaDocumentParser {
             // String nodeString = node.get(0).get(0).getText();
             // Position rankExpressionStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
 
-            SchemaNode rankExpressionNode = SchemaRankExpressionParser.parseRankingExpression(context, node, ret);
+            SchemaRankExpressionParser.embedCST(context, node, ret);
+        }
 
-            if (rankExpressionNode != null) {
-                node.addChild(rankExpressionNode);
-
-            }
+        for (Identifier identifier : context.identifiers()) {
+            ret.addAll(identifier.identify(node));
         }
 
         for (int i = 0; i < node.size(); ++i) {
@@ -505,7 +501,7 @@ public class SchemaDocumentParser {
         return offsetToPosition(content, offset);
     }
 
-    private static Position PositionAddOffset(String content, Position pos, int offset) {
+    static Position PositionAddOffset(String content, Position pos, int offset) {
         int totalOffset = positionToOffset(content, pos) + offset;
         return offsetToPosition(content, totalOffset);
     }
