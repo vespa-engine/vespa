@@ -1,0 +1,31 @@
+schema rankprofilefuncs {
+    document rankprofilefuncs {
+    }
+
+    rank-profile profile1 {
+        function foo(){
+            expression: 1 + 2
+        }
+
+        function bar() {
+            expression: 2 + 2
+        }
+    }
+
+    rank-profile profile2 inherits profile1 {
+        function baz() {
+            expression: foo() + bar()
+        }
+    }
+
+    rank-profile profile3 inherits profile1 {
+        function inline void() {
+            expression: 0
+        }
+    }
+
+    # Error
+    # Multiple definitions of foo and bar
+    rank-profile profile4 inherits profile2, profile3 {
+    }
+}

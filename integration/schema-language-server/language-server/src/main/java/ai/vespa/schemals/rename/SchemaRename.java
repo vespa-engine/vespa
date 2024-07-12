@@ -3,6 +3,7 @@ package ai.vespa.schemals.rename;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.RenameFile;
@@ -55,8 +56,13 @@ public class SchemaRename {
         Symbol symbol = context.schemaIndex.findSymbol(context.document.getFileURI(), type, node.getText());
         if (symbol == null) {
             // TODO: later maybe search for schema symbol in the document. And use that insted, if the symbol type is DOCUMENT
-            context.messageHandler.sendMessage(MessageType.Error, "Could not find the symbol definition for: " + node.getText());
-            return null;
+            Optional<Symbol> result = context.schemaIndex.findDefinitionOfReference(node.getSymbol());
+
+            if (result.isEmpty()) {
+                context.messageHandler.sendMessage(MessageType.Error, "Could not find the symbol definition for: " + node.getText());
+                return null;
+            }
+            symbol = result.get();
         }
 
         SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());

@@ -209,6 +209,13 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
+        } else if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
+            Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
+
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
         } else if (type != null) {
 
             Integer tokenType = tokenTypeMap.get(type);

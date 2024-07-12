@@ -81,6 +81,12 @@ public class InheritanceGraph<NodeType> {
         return true;
     }
 
+    public List<NodeType> getAllParents(NodeType node) {
+        createNodeIfNotExists(node);
+
+        return parentsOfNode.get(node);
+    }
+
     /*
      * Gets a list of all direct or indirect inheritance ancestors.
      * The returned list is in a topological order, i.e. the older ancestors

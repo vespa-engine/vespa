@@ -3,12 +3,14 @@ package ai.vespa.schemals.index;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import java.util.Optional;
+import java.util.Set;
 
 import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -428,8 +430,63 @@ public class SchemaIndex {
         return result;
     }
 
-    public SymbolInheritanceNode getSymbolInheritanceKey(Symbol structSymbol) {
-        return new SymbolInheritanceNode(structSymbol);
+    public List<Symbol> getAllRankProfileParents(Symbol rankProfileSymbol) {
+        List<Symbol> result = new ArrayList<>();
+        if (rankProfileSymbol.getType() != SymbolType.RANK_PROFILE) return result;
+        if (rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) {
+            rankProfileSymbol = findSymbol(rankProfileSymbol);
+        }
+
+        if (rankProfileSymbol == null || rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) return result;
+
+        return rankProfileInheritanceGraph.getAllParents(getSymbolInheritanceKey(rankProfileSymbol))
+                                          .stream()
+                                          .map(node -> node.getSymbol())
+                                          .collect(Collectors.toList());
+    }
+
+    public List<Symbol> getAllRankProfileAncestorDefinitions(Symbol rankProfileSymbol) {
+        List<Symbol> result = new ArrayList<>();
+        if (rankProfileSymbol.getType() != SymbolType.RANK_PROFILE) return result;
+        if (rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) {
+            rankProfileSymbol = findSymbol(rankProfileSymbol);
+        }
+
+        if (rankProfileSymbol == null || rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) return result;
+
+        return rankProfileInheritanceGraph.getAllAncestors(getSymbolInheritanceKey(rankProfileSymbol))
+                                          .stream()
+                                          .map(node -> node.getSymbol())
+                                          .collect(Collectors.toList());
+    }
+
+    /*
+     * Search through ancestors and find all function definitions
+     * Only return the closest definitions when there are several candidates
+     */
+    public List<Symbol> getAllRankProfileFunctions(Symbol rankProfileDefinition) {
+        List<Symbol> result = new ArrayList<>();
+        List<Symbol> ancestorList = getAllRankProfileAncestorDefinitions(rankProfileDefinition);
+
+        Set<String> seen = new HashSet<>();
+        for (int i = ancestorList.size() - 1; i >= 0; --i) {
+            for (Map.Entry<String, Symbol> entry : symbolDefinitionsDB.entrySet()) {
+                Symbol symbol = entry.getValue();
+                if (symbol.getType() != SymbolType.FUNCTION) continue;
+                if (seen.contains(symbol.getShortIdentifier())) continue;
+
+                if (symbol.isInScope(ancestorList.get(i))) {
+                    result.add(symbol);
+                    seen.add(symbol.getShortIdentifier());
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public SymbolInheritanceNode getSymbolInheritanceKey(Symbol symbol) {
+        return new SymbolInheritanceNode(symbol);
     }
 
     public boolean tryRegisterStructInheritance(Symbol childSymbol, Symbol parentSymbol) {

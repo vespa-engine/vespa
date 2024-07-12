@@ -15,17 +15,14 @@ import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
 
-    private static Hover getSymbolHover(SchemaNode node, EventPositionContext context) {
-        if (node.getSymbol().getType() != SymbolType.STRUCT) {
-            return null;
-        }
-
+    private static Hover getStructHover(SchemaNode node, EventPositionContext context) {
         Symbol structDefinitionSymbol = context.schemaIndex.findSymbol(node.getSymbol().getFileURI(), SymbolType.STRUCT, node.getSymbol().getLongIdentifier());
         if (structDefinitionSymbol == null) {
             Optional<Symbol> res = context.schemaIndex.findDefinitionOfReference(node.getSymbol());
@@ -49,6 +46,20 @@ public class SchemaHover {
         if (result.isEmpty())result = "no fields found";
 
         return new Hover(new MarkupContent(MarkupKind.MARKDOWN, result));
+    }
+
+    private static Hover getSymbolHover(SchemaNode node, EventPositionContext context) {
+        switch(node.getSymbol().getType()) {
+            case STRUCT:
+                return getStructHover(node, context);
+            default:
+                break;
+        }
+
+        if (node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
+            return new Hover(new MarkupContent(MarkupKind.PLAINTEXT, "builtin"));
+        }
+        return null;
     }
 
     public static Hover getHover(EventPositionContext context) {

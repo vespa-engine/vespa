@@ -2,7 +2,7 @@ schema structinfieldset {
     document {
         struct person {
             field age type int {}
-            field name type string {}
+            field hmmmm type string {}
         }
 
         struct city {
@@ -15,6 +15,6 @@ schema structinfieldset {
     }
 
     fieldset myfieldset {
-        fields: oslo.citizens.age, drammen.house.key, drammen.house.value.name
-    }
+        fields: oslo.citizens.age, drammen.house.key, drammen.house.value.hmmmm
+   }
 }

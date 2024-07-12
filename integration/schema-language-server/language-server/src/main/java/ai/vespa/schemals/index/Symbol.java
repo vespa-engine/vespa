@@ -47,7 +47,7 @@ public class Symbol {
     // TODO: not quite sure if this kind of equality check is good
     public boolean isInScope(Symbol scope) {
         if (scope == null || this.scope == null) return false;
-        return this.scope == scope;
+        return this.scope.equals(scope);
     }
 
     public String getScopeIdentifier() {
@@ -104,7 +104,8 @@ public class Symbol {
         DEFINITION,
         REFERENCE,
         UNRESOLVED,
-        INVALID
+        INVALID,
+        BUILTIN_REFERENCE // reference to stuff like "default" that doesn't have a definition in our CSTs
     }
 
     public enum SymbolType {

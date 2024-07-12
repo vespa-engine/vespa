@@ -52,7 +52,6 @@ public class IdentifySymbolDefinition extends Identifier {
         put(fieldElm.class, SymbolType.FIELD);
         put(fieldSetElm.class, SymbolType.FIELDSET);
         put(structDefinitionElm.class, SymbolType.STRUCT);
-        put(functionElm.class, SymbolType.FUNCTION);
     }};
 
     private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
@@ -109,6 +108,21 @@ public class IdentifySymbolDefinition extends Identifier {
             }
         }
 
+        if (parent.isASTInstance(functionElm.class)) {
+            Optional<Symbol> scope = findRankProfileScope(node);
+            if (scope.isPresent()) {
+                node.setSymbol(SymbolType.FUNCTION, context.fileURI(), scope.get());
+
+                if (context.schemaIndex().findSymbol(node.getSymbol()) == null) {
+                    node.setSymbolStatus(SymbolStatus.DEFINITION);
+                    context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+                }
+            } else {
+                node.setSymbol(SymbolType.FUNCTION, context.fileURI());
+                node.setSymbolStatus(SymbolStatus.INVALID);
+            }
+        }
+
         return ret;
     }
 
@@ -138,6 +152,21 @@ public class IdentifySymbolDefinition extends Identifier {
             node.setSymbolStatus(SymbolStatus.DEFINITION);
             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
         }
+    }
+
+    private Optional<Symbol> findRankProfileScope(SchemaNode innerNode) {
+        while (innerNode != null) {
+            if (innerNode.isASTInstance(rankProfile.class)) break;
+            innerNode = innerNode.getParent();
+        }
+
+        if (innerNode == null || innerNode.size() < 2) return Optional.empty();
+
+        SchemaNode rankProfileDefinitionNode = innerNode.get(1);
+
+        if (!rankProfileDefinitionNode.hasSymbol() || rankProfileDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
+
+        return Optional.of(rankProfileDefinitionNode.getSymbol());
     }
 
     private Optional<Symbol> findMapScope(SchemaNode mapDataTypeNode) {

@@ -2,8 +2,10 @@ package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,6 +18,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import com.google.protobuf.Option;
 import com.yahoo.schema.parser.ParsedType.Variant;
+import com.yahoo.search.cluster.Hasher;
 import com.yahoo.tensor.functions.Diag;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
@@ -418,7 +421,7 @@ public class SchemaDocumentParser {
         if (inheritedIdentifier.equals("default")) {
             // TODO: mechanism for inheriting default rank profile. 
             // Workaround now: 
-            inheritanceNode.setSymbolStatus(SymbolStatus.INVALID);
+            inheritanceNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
             return;
         }
 
@@ -429,16 +432,46 @@ public class SchemaDocumentParser {
             return;
         }
 
-        if (!context.schemaIndex().tryRegisterRankProfileInheritance(myRankProfileDefinitionNode.getSymbol(), parentSymbol)) {
+        Symbol definitionSymbol = myRankProfileDefinitionNode.getSymbol();
+        if (!context.schemaIndex().tryRegisterRankProfileInheritance(definitionSymbol, parentSymbol)) {
             diagnostics.add(new Diagnostic(
                 inheritanceNode.getRange(),
                 "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this rank profile.", 
                 DiagnosticSeverity.Error,
                 ""
             ));
+
+            return;
         }
 
-        // TODO: more validity checks on rank profile inheritance
+        List<Symbol> parentDefinitions = context.schemaIndex().getAllRankProfileParents(definitionSymbol);
+
+        /*
+         * Look for colliding function names
+         * TODO: other stuff than functions
+         */
+        Map<String, String> seenFunctions = new HashMap<>();
+        for (Symbol parentDefinition : parentDefinitions) {
+            if (parentDefinition.equals(definitionSymbol)) continue;
+
+            List<Symbol> functionDefinitionsInParent = context.schemaIndex().getAllRankProfileFunctions(parentDefinition);
+
+            context.logger().println("PROFILE " + parentDefinition.getLongIdentifier());
+            for (Symbol func : functionDefinitionsInParent) {
+                context.logger().println("    FUNC: " + func.getLongIdentifier());
+                if (seenFunctions.containsKey(func.getShortIdentifier())) {
+                    // TODO: quickfix
+                    diagnostics.add(new Diagnostic(
+                        inheritanceNode.getRange(),
+                        "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + 
+                        " defines function " + func.getShortIdentifier() + " which is already defined in " + seenFunctions.get(func.getShortIdentifier()),
+                        DiagnosticSeverity.Error,
+                        ""
+                    ));
+                }
+                seenFunctions.put(func.getShortIdentifier(), parentDefinition.getLongIdentifier());
+            }
+        }
     }
 
     private static Optional<String> resolveDocumentInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
@@ -518,6 +551,11 @@ public class SchemaDocumentParser {
         for (SchemaNode child : node) {
             resolveSymbolReferencesImpl(child, context, diagnostics);
         }
+
+        //if (node.hasSymbol()) {
+        //    diagnostics.add(new Diagnostic(node.getRange(), node.getSymbol().getLongIdentifier(), DiagnosticSeverity.Information, node.getSymbol().getType().toString() + " " + node.getSymbol().getStatus().toString()));
+        //}
+
     }
 
     /**
@@ -620,7 +658,9 @@ public class SchemaDocumentParser {
 
     private static ArrayList<Diagnostic> traverseCST(SchemaNode node, ParseContext context) {
 
+
         ArrayList<Diagnostic> ret = new ArrayList<>();
+
         
         for (Identifier identifier : context.identifiers()) {
             ret.addAll(identifier.identify(node));
