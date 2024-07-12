@@ -13,6 +13,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -155,6 +156,52 @@ public class SchemaRankExpressionParser {
         return ret;
     }
 
+    private static final HashSet<Character> skipCharacters = new HashSet<>() {{
+        add(' ');
+        add('\t');
+        add('\r');
+        add('\f');
+    }};
+
+    private static SchemaNode parseIdentifierWithDash(ParseContext context, SchemaNode node, String text, int startSearch, int endSearch) {
+        context.logger().println(text);
+        context.logger().println(text.length());
+        context.logger().println(startSearch);
+        context.logger().println(endSearch);
+        String subString = text.substring(startSearch, endSearch);
+        int leadingSplitPos = 0;
+        while (
+            skipCharacters.contains(subString.charAt(leadingSplitPos)) &&
+            leadingSplitPos < subString.length() - 1
+        ) {
+            leadingSplitPos++;
+        }
+
+        int trailingSplitPos = subString.length() - 1;
+        while (
+            skipCharacters.contains(subString.charAt(trailingSplitPos)) &&
+            trailingSplitPos > 0
+        ) {
+            trailingSplitPos--;
+        }
+
+        Position subStringBeginPos = SchemaDocumentParser.PositionAddOffset(context.content(), node.getRange().getStart(), startSearch);
+
+        Range range = new Range(
+            SchemaDocumentParser.PositionAddOffset(context.content(), subStringBeginPos, leadingSplitPos),
+            SchemaDocumentParser.PositionAddOffset(context.content(), subStringBeginPos, trailingSplitPos)
+        );
+
+        String identifierString = TokenType.IDENTIFIER_WITH_DASH.toString().toUpperCase() + " [CUSTOM LANGUAGE]";
+
+        SchemaNode child = new SchemaNode(range, subString, identifierString);
+        SchemaNode parent = new SchemaNode(range, subString, "identifierWithDashStr [CUSTOM LANGUAGE]");
+
+        parent.addChild(child);
+        parent.setSimulatedASTClass(identifierWithDashStr.class);
+        return parent;
+    }
+
     private static ArrayList<SchemaNode> findPreChildren(ParseContext context, ExpressionMetaData metaData, SchemaNode node) {
         ArrayList<SchemaNode> children = new ArrayList<>();
 
@@ -164,8 +211,14 @@ public class SchemaRankExpressionParser {
             return null;
         }
 
+
         TokenType simplifiedType = simplifyTokenTypeMap.get(nodeType);
         if (simplifiedType == null) return null;
+
+        // Find the last token
+        char searchChar   = metaData.mulitline() ? '{' : ':';
+        TokenType charTokenType = metaData.mulitline() ? TokenType.LBRACE : TokenType.COLON;
+        int charPosition = metaData.preText().indexOf(searchChar, firstTokenString.length());
 
         if (!metaData.inherits()) {
             children.add(tokenFromRawText(context, node, simplifiedType, firstTokenString, 0, firstTokenString.length()));
@@ -188,11 +241,10 @@ public class SchemaRankExpressionParser {
                 spacePos + 1,
                 firstTokenString.length()
             ));
-        }
 
-        char searchChar = metaData.mulitline() ? '{' : ':';
-        TokenType charTokenType = metaData.mulitline() ? TokenType.RBRACE : TokenType.COLON;
-        int charPosition = metaData.preText().indexOf(searchChar, firstTokenString.length());
+            // We know at between the inherits and the charPosition it will be an IdentifierWithDashStr
+            children.add(parseIdentifierWithDash(context, node, metaData.preText(), firstTokenString.length(), charPosition));
+        }
 
         children.add(tokenFromRawText(context, node, charTokenType, "" + searchChar, charPosition, charPosition + 1));
 
@@ -205,8 +257,6 @@ public class SchemaRankExpressionParser {
 
         ExpressionMetaData metaData = findExpressionMetaData(node);
 
-        context.logger().println("hei hei");
-
         ArrayList<SchemaNode> newChildren = findPreChildren(context, metaData, node);
         if (newChildren == null) return;
 
@@ -214,6 +264,10 @@ public class SchemaRankExpressionParser {
 
         if (rankExpressionNode != null) {
             newChildren.add(rankExpressionNode);
+        }
+
+        if (metaData.mulitline()) {
+            newChildren.add(tokenFromRawText(context, node, TokenType.RBRACE, "}", node.getText().length() - 1, node.getText().length()));
         }
 
         node.clearChildren();

@@ -48,8 +48,9 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private ai.vespa.schemals.parser.indexinglanguage.Node originalIndexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node originalRankExpressionNode;
 
-    // Special properties for node in the CUTOM language
+    // Special properties for node in the CUSTOM language
     private String contentString;
+    private Class<? extends Node> simulatedSchimaClass;
 
     // Special features for nodes in the Schema language
     private TokenType schemaType;
@@ -253,11 +254,21 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return this.originalRankExpressionNode;
     }
 
+    public void setSimulatedASTClass(Class<? extends Node> astClass) {
+        if (language != LanguageType.CUSTOM) throw new IllegalArgumentException("Cannot set Simulated AST Class on a Schema node of type other than Custom");
+
+        simulatedSchimaClass = astClass;
+    }
+
     public boolean isASTInstance(Class<? extends Node> astClass) {
+        if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchimaClass);
+        
         return astClass.isInstance(originalSchemaNode);
     }
 
     public Class<? extends Node> getASTClass() {
+        if (language == LanguageType.CUSTOM) return simulatedSchimaClass;
+
         return originalSchemaNode.getClass();
     }
 
