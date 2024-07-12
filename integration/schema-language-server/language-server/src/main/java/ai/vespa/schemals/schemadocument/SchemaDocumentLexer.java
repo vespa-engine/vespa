@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context;
+package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -101,7 +101,7 @@ public class SchemaDocumentLexer {
     private void collectAllTokens(SchemaNode node) {
         if (node == null)return;
         if (node.getDirtyType() != null) {
-            tokens.add(new LexicalToken(node.getDirtyType(), node.getRange(), node.isDirty()));
+            tokens.add(new LexicalToken(node.getDirtyType(), node.getRange(), node.getIsDirty()));
         }
         for (SchemaNode child : node) {
             collectAllTokens(child);

@@ -4,6 +4,8 @@ import java.io.PrintStream;
 
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventContext {
 

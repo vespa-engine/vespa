@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.TextDocumentPositionParams;
 
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventContextCreator {
     public final PrintStream logger;

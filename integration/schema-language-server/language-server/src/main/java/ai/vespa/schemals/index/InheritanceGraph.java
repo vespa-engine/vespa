@@ -10,11 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.google.protobuf.TextFormat.Parser;
-
-import ai.vespa.schemals.parser.Node.NodeType;
-
-
 /*
  * This class is responsible for managing inheritance relationships among documents
  * Each node is identified by a file URI

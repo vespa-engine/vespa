@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context.parser;
+package ai.vespa.schemals.schemadocument.parser;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
+import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -50,7 +50,7 @@ public class IdentifyDirtyNodes extends Identifier {
 
 
         if (
-            node.isDirty() &&
+            node.getIsDirty() &&
             node.isLeaf() &&
             parseException == null &&
             illegalArgumentException == null

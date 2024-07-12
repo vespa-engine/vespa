@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context.parser;
+package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,7 +9,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.tensor.functions.Diag;
 
-import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
@@ -18,9 +18,9 @@ import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
-import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolReferences extends Identifier {
@@ -97,10 +97,10 @@ public class IdentifySymbolReferences extends Identifier {
 
             identifierStr newASTNode = new identifierStr();
             newASTNode.setTokenSource(identifierNode.getTokenSource());
-            newASTNode.setBeginOffset(identifierNode.getOriginalNode().getBeginOffset());
-            newASTNode.setEndOffset(identifierNode.getOriginalNode().getEndOffset());
+            newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
+            newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
 
-            SchemaNode newNode = new SchemaNode(newASTNode, parent);
+            SchemaNode newNode = new SchemaNode(newASTNode);
             newNode.setNewStartCharacter(newStart);
             newNode.setNewEndCharacter(newEnd);
 

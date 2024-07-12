@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context.parser;
+package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,12 +12,11 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
-import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.dataType;
@@ -35,6 +34,7 @@ import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolDefinition extends Identifier {
@@ -145,7 +145,7 @@ public class IdentifySymbolDefinition extends Identifier {
         } else if (node.getParent().indexOf(node) == 4) {
             // Map value type
             // Should only define a new type if this guy is not a reference to something else
-            dataType dataTypeNode = (dataType)node.getOriginalNode();
+            dataType dataTypeNode = (dataType)node.getOriginalSchemaNode();
             if (dataTypeNode.getParsedType().getVariant() == Variant.UNKNOWN) return;
 
             node.setSymbol(SymbolType.MAP_VALUE, context.fileURI(), scope.get(), "value");

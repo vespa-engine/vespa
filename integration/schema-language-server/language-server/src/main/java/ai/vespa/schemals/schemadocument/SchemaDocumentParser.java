@@ -1,4 +1,4 @@
-package ai.vespa.schemals.context;
+package ai.vespa.schemals.schemadocument;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -22,23 +22,23 @@ import com.yahoo.search.cluster.Hasher;
 import com.yahoo.tensor.functions.Diag;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
-import ai.vespa.schemals.context.parser.Identifier;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
-import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.SubLanguageData;
+import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.dataType;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
-import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
+import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
-import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class SchemaDocumentParser {
     public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
@@ -606,7 +606,7 @@ public class SchemaDocumentParser {
         }
 
 
-        dataType originalNode = (dataType)dataTypeNode.getOriginalNode();
+        dataType originalNode = (dataType)dataTypeNode.getOriginalSchemaNode();
         if (originalNode.getParsedType().getVariant() == Variant.MAP) {
             return resolveMapValueReference(node, fieldDefinition, context);
         } else if (originalNode.getParsedType().getVariant() == Variant.ARRAY) {
@@ -661,29 +661,24 @@ public class SchemaDocumentParser {
 
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        
+        if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
+            Range nodeRange = node.getRange();
+            SchemaNode indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
+            if (indexingNode != null) {
+                node.addChild(indexingNode);
+            }
+        }
+
+        if (node.containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) {
+            // Range nodeRange = node.getRange();
+            // String nodeString = node.get(0).get(0).getText();
+            // Position rankExpressionStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
+
+            SchemaRankExpressionParser.embedCST(context, node, ret);
+        }
+
         for (Identifier identifier : context.identifiers()) {
             ret.addAll(identifier.identify(node));
-        }
-
-        if (node.isIndexingElm()) {
-            Range nodeRange = node.getRange();
-            var indexingNode = parseIndexingScript(context, node.getILScript(), nodeRange.getStart(), ret);
-
-            if (indexingNode != null) {
-                node.setIndexingNode(indexingNode);
-            }
-        }
-
-        if (node.isFeatureListElm()) {
-            Range nodeRange = node.getRange();
-            String nodeString = node.get(0).get(0).toString();
-            Position featureListStart = CSTUtils.addPositions(nodeRange.getStart(), new Position(0, nodeString.length()));
-            var featureListNode = parseFeatureList(context, node.getFeatureListString(), featureListStart, ret);
-
-            if (featureListNode != null) {
-                node.setFeatureListNode(featureListNode);
-            }
         }
 
         for (int i = 0; i < node.size(); ++i) {
@@ -702,7 +697,7 @@ public class SchemaDocumentParser {
         return new ParseResult(errors, Optional.of(CST));
     }
 
-    private static ai.vespa.schemals.parser.indexinglanguage.Node parseIndexingScript(ParseContext context, SubLanguageData script, Position indexingStart, ArrayList<Diagnostic> diagnostics) {
+    private static SchemaNode parseIndexingScript(ParseContext context, SubLanguageData script, Position indexingStart, ArrayList<Diagnostic> diagnostics) {
         if (script == null) return null;
 
         CharSequence sequence = script.content();
@@ -714,7 +709,7 @@ public class SchemaDocumentParser {
         try {
             parser.root();
             // TODO: Verify expression
-            return parser.rootNode();
+            return new SchemaNode(parser.rootNode(), indexingStart);
         } catch(ai.vespa.schemals.parser.indexinglanguage.ParseException pe) {
             context.logger().println("Encountered parsing error in parsing feature list");
             Range range = ILUtils.getNodeRange(pe.getToken());
@@ -724,29 +719,6 @@ public class SchemaDocumentParser {
             diagnostics.add(new Diagnostic(range, pe.getMessage()));
         } catch(IllegalArgumentException ex) {
             context.logger().println("Encountered unknown error in parsing ILScript: " + ex.getMessage());
-        }
-
-        return null;
-    }
-
-    private static ai.vespa.schemals.parser.rankingexpression.Node parseFeatureList(ParseContext context, String featureListString, Position listStart, ArrayList<Diagnostic> diagnostics) {
-        if (featureListString == null)return null;
-        CharSequence sequence = featureListString;
-
-        RankingExpressionParser parser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
-        parser.setParserTolerant(false);
-
-        try {
-            parser.featureList();
-            return parser.rootNode();
-        } catch(ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
-            Range range = RankingExpressionUtils.getNodeRange(pe.getToken());
-            range.setStart(CSTUtils.addPositions(listStart, range.getStart()));
-            range.setEnd(CSTUtils.addPositions(listStart, range.getEnd()));
-
-            diagnostics.add(new Diagnostic(range, pe.getMessage()));
-        } catch(IllegalArgumentException ex) {
-            // TODO: diagnostics
         }
 
         return null;
@@ -797,7 +769,7 @@ public class SchemaDocumentParser {
         return offsetToPosition(content, offset);
     }
 
-    private static Position PositionAddOffset(String content, Position pos, int offset) {
+    static Position PositionAddOffset(String content, Position pos, int offset) {
         int totalOffset = positionToOffset(content, pos) + offset;
         return offsetToPosition(content, totalOffset);
     }

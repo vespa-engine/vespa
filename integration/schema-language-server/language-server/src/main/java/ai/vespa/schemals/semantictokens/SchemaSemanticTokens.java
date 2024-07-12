@@ -18,12 +18,12 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Visitor;
 import ai.vespa.schemals.context.EventContext;
-import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 
 public class SchemaSemanticTokens implements Visitor {
 
@@ -57,6 +57,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.TYPE);
         add(TokenType.FUNCTION);
         add(TokenType.RANK_PROPERTIES);
+        add(TokenType.MATCHFEATURES_SL);
     }};
 
     private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{
@@ -187,7 +188,7 @@ public class SchemaSemanticTokens implements Visitor {
     private static ArrayList<SemanticTokenMarker> traverseCST(SchemaNode node, PrintStream logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
-        TokenType type = node.getType();
+        TokenType type = node.getSchemaType();
 
         // TODO: this became a bit ugly with the map stuff
         if (node.isASTInstance(dataType.class) && (!node.hasSymbol() || node.getSymbol().getType() == SymbolType.MAP_KEY || node.getSymbol().getType() == SymbolType.MAP_VALUE)) {

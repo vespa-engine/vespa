@@ -203,6 +203,23 @@ INJECT featureListElm:
 }
 
 /**
+ * The following stores rank expression string at the AST node 
+ * for parsing later
+ */
+INJECT expression:
+
+{
+    private String expressionString = null;
+
+    public boolean hasExpressionString() { return expressionString != null; }
+    public String getExpressionString() { return expressionString; }
+
+    public void setExpressionString(String expression) {
+        this.expressionString = expression;
+    }
+}
+
+/**
  * Store a reference to the ParsedType in the AST to
  * make type checking simpler
  */
@@ -1994,7 +2011,6 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | fieldRankType(profile)
        | fieldWeight(profile)
        | fieldRankFilter(profile)
-       | firstPhase(profile)
        | matchPhase(profile)
        | diversityElm(profile)
        | functionElm(profile)
@@ -2954,7 +2970,10 @@ String expression() :
     ( <EXPRESSION_SL> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1); } |
       <EXPRESSION_ML> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                                      lastConsumedToken.toString().lastIndexOf("}")); } )
-    { return exp.trim(); }
+    {
+        thisProduction.setExpressionString(exp);
+        return exp;
+    }
 ;
 
 String identifierWithDashStr :

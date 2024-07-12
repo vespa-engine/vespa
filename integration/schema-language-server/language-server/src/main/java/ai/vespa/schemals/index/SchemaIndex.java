@@ -12,11 +12,11 @@ import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.Set;
 
-import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.mapDataType;
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaIndex {
@@ -209,10 +209,9 @@ public class SchemaIndex {
                     return Optional.of(valueNode.getSymbol());
                 case REFERENCE:
                     return findDefinitionOfReference(valueNode.getSymbol());
+                case BUILTIN_REFERENCE:
                 case INVALID:
-                    return Optional.empty();
-                case UNRESOLVED:
-                    // TODO: figure out if this can happen
+                case UNRESOLVED: 
                     return Optional.empty();
             }
         } else {
@@ -296,6 +295,10 @@ public class SchemaIndex {
             SchemaDocumentParser document = entry.getValue();
             logger.println(document.toString());
         }
+    }
+
+    public void dumpIndex() {
+        dumpIndex(logger);
     }
 
     public Symbol findSchemaIdentifierSymbol(String fileURI) {

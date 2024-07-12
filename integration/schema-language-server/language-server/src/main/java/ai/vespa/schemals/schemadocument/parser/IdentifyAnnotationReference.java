@@ -1,13 +1,13 @@
-package ai.vespa.schemals.context.parser;
+package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
 
-import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationRefDataType;
+import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyAnnotationReference extends Identifier {

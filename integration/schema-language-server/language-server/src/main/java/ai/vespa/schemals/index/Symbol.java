@@ -1,11 +1,10 @@
 package ai.vespa.schemals.index;
 
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
-
-import ai.vespa.schemals.context.SchemaDocumentParser;
 
 public class Symbol {
     private SchemaNode identifierNode;

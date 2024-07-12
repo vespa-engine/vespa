@@ -12,9 +12,9 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 
 import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventPositionContext;
-import ai.vespa.schemals.context.SchemaDocumentParser;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.workspaceEdit.SchemaTextDocumentEdit;
 import ai.vespa.schemals.workspaceEdit.SchemaWorkspaceEdit;
