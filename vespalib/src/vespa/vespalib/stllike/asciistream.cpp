@@ -371,16 +371,6 @@ void asciistream::eatNonWhite()
 }
 
 asciistream &
-asciistream::operator >> (std::string & v)
-{
-    eatWhite();
-    size_t start(_rPos);
-    eatNonWhite();
-    v.assign(&_rbuf[start], _rPos-start);
-    return *this;
-}
-
-asciistream &
 asciistream::operator >> (string & v)
 {
     eatWhite();
