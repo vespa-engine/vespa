@@ -97,10 +97,14 @@ public class SignificanceModelGenerator {
             Document document = put.getDocument();
             FieldValue fieldValue = document.getFieldValue(clientParameters.field);
             this.handleTokenization(fieldValue.toString());
+            if (i % 50000 == 0) {
+                System.out.println("Documents processed: " + i + ", unique words: " + documentFrequency.size());
+            }
             i++;
         }
 
         long pageCount = i - 1;
+        System.out.println("Total documents processed: " + pageCount + ", unique words: " + documentFrequency.size());
 
         SignificanceModelFile modelFile;
         if (Paths.get(clientParameters.outputFile).toFile().exists()) {
