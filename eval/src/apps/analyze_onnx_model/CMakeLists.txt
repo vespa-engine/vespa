@@ -7,5 +7,5 @@ vespa_add_executable(eval_analyze_onnx_model_app
     DEPENDS
     vespaeval
     EXTERNAL_DEPENDS
-    dl
+    ${CMAKE_DL_LIBS}
 )
