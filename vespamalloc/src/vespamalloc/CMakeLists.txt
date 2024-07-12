@@ -6,7 +6,7 @@ vespa_add_library(vespamalloc
     INSTALL lib64/vespa/malloc
     DEPENDS
     ${VESPA_ATOMIC_LIB}
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_library(vespamallocd
     SOURCES
@@ -15,7 +15,7 @@ vespa_add_library(vespamallocd
     INSTALL lib64/vespa/malloc
     DEPENDS
     ${VESPA_ATOMIC_LIB}
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_library(vespamallocdst16
     SOURCES
@@ -24,7 +24,7 @@ vespa_add_library(vespamallocdst16
     INSTALL lib64/vespa/malloc
     DEPENDS
     ${VESPA_ATOMIC_LIB}
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_library(vespamallocdst16_nl
     SOURCES
@@ -33,19 +33,19 @@ vespa_add_library(vespamallocdst16_nl
     INSTALL lib64/vespa/malloc
     DEPENDS
     ${VESPA_ATOMIC_LIB}
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_library(vespammap
     SOURCES
     $<TARGET_OBJECTS:vespamalloc_mmap>
     INSTALL lib64/vespa/malloc
     DEPENDS
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_library(vespa_load_as_huge
     SOURCES
     $<TARGET_OBJECTS:vespamalloc_load_as_huge>
     INSTALL lib64/vespa/malloc
     DEPENDS
-    dl
+    ${CMAKE_DL_LIBS}
 )

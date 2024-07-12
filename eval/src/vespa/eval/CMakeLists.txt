@@ -15,7 +15,7 @@ vespa_add_library(vespaeval
     onnxruntime
     ${VESPA_LLVM_LIB}
     EXTERNAL_DEPENDS
-    dl
+    ${CMAKE_DL_LIBS}
 )
 
 set(BLA_VENDOR OpenBLAS)

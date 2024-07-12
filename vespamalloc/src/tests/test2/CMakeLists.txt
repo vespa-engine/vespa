@@ -6,6 +6,6 @@ vespa_add_executable(vespamalloc_testgraph_app TEST
     ../../vespamalloc/util/traceutil.cpp
     ../../vespamalloc/util/callstack.cpp
     EXTERNAL_DEPENDS
-    dl
+    ${CMAKE_DL_LIBS}
 )
 vespa_add_test(NAME vespamalloc_testgraph_app NO_VALGRIND COMMAND vespamalloc_testgraph_app)
