@@ -9,6 +9,7 @@
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/featureset.h>
+#include <algorithm>
 
 namespace search::fef { class FeatureResolver; }
 
@@ -48,7 +49,11 @@ private:
                 -1 : ((getRankScore() < b.getRankScore()) ? 1 : cmpDocId(b));
         }
         int cmpSort(const Hit & b) const noexcept {
-            int diff = memcmp(_sortBlob.data(), b._sortBlob.data(), b._sortBlob.size());
+            auto min_size = std::min(_sortBlob.size(), b._sortBlob.size());
+            int diff = (min_size != 0u) ? memcmp(_sortBlob.data(), b._sortBlob.data(), min_size) : 0;
+            if (diff == 0) {
+                diff = (_sortBlob.size() == b._sortBlob.size()) ? 0 : ((_sortBlob.size() < b._sortBlob.size()) ? -1 : 1);
+            }
             return (diff == 0) ? cmpDocId(b) : diff;
         }
 
