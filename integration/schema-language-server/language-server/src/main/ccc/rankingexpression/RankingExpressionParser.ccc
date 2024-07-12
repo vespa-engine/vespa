@@ -6,6 +6,8 @@
 PARSER_CLASS=RankingExpressionParser;
 PARSER_PACKAGE=ai.vespa.schemals.parser.rankingexpression;
 FAULT_TOLERANT=true;
+SMART_NODE_CREATION=false;
+
 /* Legacy JavaCC options
 options {
     UNICODE_INPUT = true;

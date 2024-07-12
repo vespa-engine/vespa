@@ -54,6 +54,7 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     // Special features for nodes in the Schema language
     private TokenType schemaType;
+    private ai.vespa.schemals.parser.rankingexpression.Token.TokenType rankExpressionType;
 
     private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
         this.language = language;
@@ -113,6 +114,9 @@ public class SchemaNode implements Iterable<SchemaNode> {
         );
 
         this.originalRankExpressionNode = node;
+        if (node instanceof ai.vespa.schemals.parser.rankingexpression.Token) {
+            this.rankExpressionType = (ai.vespa.schemals.parser.rankingexpression.Token.TokenType) node.getType();
+        }
 
         for (var child : node) {
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
@@ -157,6 +161,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public TokenType getSchemaType() {
         
         return schemaType;
+    }
+
+    public ai.vespa.schemals.parser.rankingexpression.Token.TokenType getRankExpressionType() {
+        return rankExpressionType;
     }
 
     // Return token type (if the node is a token), even if the node is dirty
