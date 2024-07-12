@@ -47,6 +47,10 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.FUNCTION);
         add(TokenType.RANK_PROPERTIES);
         add(TokenType.MATCHFEATURES_SL);
+        add(TokenType.IMPORT);
+        add(TokenType.INPUTS);
+        add(TokenType.DOCUMENT_SUMMARY);
+        add(TokenType.AS);
     }};
 
     // Other
@@ -65,7 +69,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IF);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IN);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.F);
-        
+
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TRUE);
         add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FALSE);
 

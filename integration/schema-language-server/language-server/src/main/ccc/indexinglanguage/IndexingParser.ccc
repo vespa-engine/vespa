@@ -23,6 +23,7 @@ INJECT IndexingParser:
     import java.util.List;
     import java.util.ArrayList;
     import java.util.Map;
+    import java.util.HashMap;
     import java.util.LinkedHashMap;
 
     import com.yahoo.collections.Pair;
@@ -54,6 +55,7 @@ INJECT IndexingParser:
     public IndexingParser(PrintStream logger, String inputSource, CharSequence content) {
         this(inputSource, content);
         this.logger = logger;
+        this.embedders = new HashMap<String, Embedder>();
     }
 
     public IndexingParser setDefaultFieldName(String fieldName) {
@@ -408,7 +410,10 @@ Expression embedExp() :
       <EMBED> [ SCAN((identifierStr)+) => (embedderId = identifierStr()) ]
       ( SCAN((identifierStr)+) => (embedderArgument = identifierStr()) { embedderArguments.add(embedderArgument); } )*
     )
-    { return new EmbedExpression(embedders, embedderId, embedderArguments); }
+    {
+        // return new EmbedExpression(embedders, embedderId, embedderArguments);
+        return null;
+    }
 ;
 
 Expression exactExp() :
