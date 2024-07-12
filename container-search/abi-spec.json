@@ -7634,6 +7634,7 @@
       "protected void moreChildren()",
       "protected void renderHitGroupHead(com.yahoo.search.result.HitGroup)",
       "protected void renderErrors(java.util.Set)",
+      "protected boolean shouldRenderStacktraceOf(java.lang.Throwable)",
       "protected void renderCoverage()",
       "protected void renderHit(com.yahoo.search.result.Hit)",
       "protected boolean shouldRender(com.yahoo.search.result.Hit)",
