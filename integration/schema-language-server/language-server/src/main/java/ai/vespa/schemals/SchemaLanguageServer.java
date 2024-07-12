@@ -1,6 +1,6 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.common.Utils;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.semantictokens.SchemaSemanticTokens;
@@ -87,7 +87,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.schemaDocumentScheduler.setReparseDescendants(false);
         for (var folder : initializeParams.getWorkspaceFolders()) {
-            for (String fileURI : Utils.findSchemaFiles(folder.getUri(), this.logger)) {
+            for (String fileURI : FileUtils.findSchemaFiles(folder.getUri(), this.logger)) {
                 this.schemaDocumentScheduler.addDocument(fileURI);
             }
         }

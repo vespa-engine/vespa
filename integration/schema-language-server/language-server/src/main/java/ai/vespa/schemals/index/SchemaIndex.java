@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.Set;
 
+import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.index.InheritanceGraph.SearchResult;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
@@ -94,14 +96,10 @@ public class SchemaIndex {
 
     /*
     * Searches for the given symbol ONLY in document pointed to by fileURI
+    * Returns null if not found
     */
     public Symbol findSymbolInFile(String fileURI, SymbolType type, String identifier) {
-        Symbol result = symbolDefinitionsDB.get(createDBKey(fileURI, type, identifier));
-
-        if (result == null) {
-            return null;
-        }
-        return result;
+        return symbolDefinitionsDB.get(createDBKey(fileURI, type, identifier));
     }
 
     /*
@@ -111,7 +109,7 @@ public class SchemaIndex {
         // TODO: handle name collision (diamond etc.)
         List<String> inheritanceList = documentInheritanceGraph.getAllAncestors(fileURI);
 
-        for (var parentURI : inheritanceList) {
+        for (String parentURI : inheritanceList) {
             Symbol result = findSymbolInFile(parentURI, type, identifier);
             if (result != null) return result;
         }
@@ -120,6 +118,38 @@ public class SchemaIndex {
 
     public Symbol findSymbol(Symbol symbol) {
         return findSymbol(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
+    }
+
+    /**
+     * Same as above, but we look for symbols with the containing schema as their scope.
+     * @param identifierWithoutSchemaScope symbol identifier without schema prefix. This is to make inheritance work
+     * @return the required symbol definition or null if no symbol was found. 
+     * If multiple definitions exists, choose the one with the highest position in topological ordering. Note that this might be ambiguous.
+     */
+    public Symbol findSymbolWithSchemaScope(String fileURI, SymbolType type, String identifierWithoutSchemaScope) {
+        List<InheritanceGraph<String>.SearchResult<Symbol>> matches = documentInheritanceGraph.findFirstMatches(fileURI, 
+                (parentURI) -> findSymbolInFile(parentURI, type, FileUtils.schemaNameFromPath(parentURI) + "." + identifierWithoutSchemaScope));
+
+        if (matches.isEmpty()) return null;
+
+        return matches.get(0).result;
+    }
+
+    public Symbol findSymbolWithSchemaScope(Symbol symbol) {
+        return findSymbolWithSchemaScope(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
+    }
+
+    public List<Symbol> findAllSymbolsWithSchemaScope(String fileURI, SymbolType type, String identifierWithoutSchemaScope) {
+        List<Symbol> result = new ArrayList<>();
+
+        List<InheritanceGraph<String>.SearchResult<Symbol>> matches = documentInheritanceGraph.findFirstMatches(fileURI, 
+                (parentURI) -> findSymbolInFile(parentURI, type, FileUtils.schemaNameFromPath(parentURI) + "." + identifierWithoutSchemaScope));
+
+        for (var match : matches) {
+            result.add(match.result);
+        }
+
+        return result;
     }
 
     private ArrayList<Symbol> findSymbolReferences(String dbKey) {

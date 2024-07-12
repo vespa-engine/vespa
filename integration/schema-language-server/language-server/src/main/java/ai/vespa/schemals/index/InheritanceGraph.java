@@ -1,14 +1,22 @@
 package ai.vespa.schemals.index;
 
 import java.io.PrintStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.naming.directory.SearchResult;
+
 
 /*
  * This class is responsible for managing inheritance relationships among documents
@@ -20,6 +28,16 @@ public class InheritanceGraph<NodeType> {
 
     protected Map<NodeType, List<NodeType>> parentsOfNode = new HashMap<>();
     protected Map<NodeType, List<NodeType>> childrenOfNode = new HashMap<>();
+
+    public class SearchResult<ResultType> {
+        public NodeType node = null;
+        public ResultType result = null;
+
+        public SearchResult(NodeType node, ResultType result) {
+            this.node = node;
+            this.result = result;
+        }
+    }
 
     public InheritanceGraph() { }
 
@@ -128,6 +146,36 @@ public class InheritanceGraph<NodeType> {
         return result;
     }
 
+    /*
+     * Searches upwards for nodes where predicate(node) returns non null.
+     * If a match is found, parents of that node are not checked (unless they are reachable by some other path without matches).
+     */
+    public <T> List<SearchResult<T>> findFirstMatches(NodeType node, Function<NodeType, T> predicate) {
+        createNodeIfNotExists(node);
+
+        Set<NodeType> visited = new HashSet<>();
+        List<SearchResult<T>> result = new ArrayList<>();
+        findFirstMatchesImpl(node, result, visited, predicate);
+        return result;
+    }
+
+    private <T> void findFirstMatchesImpl(NodeType node, List<SearchResult<T>> result, Set<NodeType> visited, Function<NodeType, T> predicate) {
+        if (!parentsOfNode.containsKey(node)) return;
+        if (visited.contains(node)) return;
+
+        visited.add(node);
+
+        T match = predicate.apply(node);
+
+        if (match != null) {
+            result.add(new SearchResult<>(node, match));
+            return;
+        }
+
+        for (NodeType parent : parentsOfNode.get(node)) {
+            findFirstMatchesImpl(parent, result, visited, predicate);
+        }
+    }
     
     /*
      * Recursive search upwards through the inheritance graph to

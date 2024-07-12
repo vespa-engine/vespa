@@ -1,5 +1,6 @@
 package ai.vespa.schemals.index;
 
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -81,6 +82,7 @@ public class Symbol {
         return (
             this.fileURI.equals(other.fileURI) &&
             this.type == other.type &&
+            this.status == other.status &&
             this.getNode() != null &&
             other.getNode() != null &&
             this.getNode().getRange() != null &&
@@ -126,7 +128,7 @@ public class Symbol {
 
     public String toString() {
         Position pos = getNode().getRange().getStart();
-        String fileName = SchemaDocumentParser.fileNameFromPath(fileURI);
+        String fileName = FileUtils.fileNameFromPath(fileURI);
         return "Symbol('" + getShortIdentifier() + "', at: " + fileName + ":" + pos.getLine() + ":" + pos.getCharacter() + ")@" + System.identityHashCode(this);
     }
 }

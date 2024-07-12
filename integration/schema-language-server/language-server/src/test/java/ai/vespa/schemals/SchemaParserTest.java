@@ -1,6 +1,6 @@
 package ai.vespa.schemals;
 
-import ai.vespa.schemals.common.Utils;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
@@ -85,7 +85,7 @@ public class SchemaParserTest {
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
         String directoryURI = new File(directoryPath).toURI().toString();
-        List<String> schemaFiles = Utils.findSchemaFiles(directoryURI, logger);
+        List<String> schemaFiles = FileUtils.findSchemaFiles(directoryURI, logger);
 
         scheduler.setReparseDescendants(false);
         for (String schemaURI : schemaFiles) {

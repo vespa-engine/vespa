@@ -2,14 +2,12 @@ package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
-import com.yahoo.schema.Schema;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.schemadocument.ParseContext;
@@ -32,9 +30,7 @@ import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
-import ai.vespa.schemals.parser.ast.structFieldElm;
-import ai.vespa.schemals.tree.CSTUtils;
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.parser.rankingexpression.ast.POW;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolDefinition extends Identifier {
@@ -54,9 +50,7 @@ public class IdentifySymbolDefinition extends Identifier {
         put(structDefinitionElm.class, SymbolType.STRUCT);
     }};
 
-    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
-        put(rankProfile.class, SymbolType.RANK_PROFILE);
-    }};
+    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{}};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
@@ -108,8 +102,25 @@ public class IdentifySymbolDefinition extends Identifier {
             }
         }
 
-        if (parent.isASTInstance(functionElm.class)) {
+        // TODO: these cases are quite similar. Generalize?
+        if (parent.isASTInstance(rankProfile.class)) {
             Optional<Symbol> scope = findRankProfileScope(node);
+
+            if (scope.isPresent()) {
+                node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI(), scope.get());
+
+                if (context.schemaIndex().findSymbolWithSchemaScope(context.fileURI(), SymbolType.RANK_PROFILE, node.getSymbol().getShortIdentifier()) == null) {
+                    node.setSymbolStatus(SymbolStatus.DEFINITION);
+                    context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+                }
+            } else {
+                node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI());
+                node.setSymbolStatus(SymbolStatus.INVALID);
+            }
+        }
+
+        if (parent.isASTInstance(functionElm.class)) {
+            Optional<Symbol> scope = findRankProfileFunctionScope(node);
             if (scope.isPresent()) {
                 node.setSymbol(SymbolType.FUNCTION, context.fileURI(), scope.get());
 
@@ -122,6 +133,7 @@ public class IdentifySymbolDefinition extends Identifier {
                 node.setSymbolStatus(SymbolStatus.INVALID);
             }
         }
+
 
         return ret;
     }
@@ -155,6 +167,21 @@ public class IdentifySymbolDefinition extends Identifier {
     }
 
     private Optional<Symbol> findRankProfileScope(SchemaNode innerNode) {
+        while (innerNode != null) {
+            if (innerNode.isASTInstance(rootSchema.class)) break;
+            innerNode = innerNode.getParent();
+        }
+
+        if (innerNode == null || innerNode.size() < 2) return Optional.empty();
+
+        SchemaNode schemaDefinitionNode = innerNode.get(1);
+
+        if (!schemaDefinitionNode.hasSymbol() || schemaDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
+
+        return Optional.of(schemaDefinitionNode.getSymbol());
+    }
+
+    private Optional<Symbol> findRankProfileFunctionScope(SchemaNode innerNode) {
         while (innerNode != null) {
             if (innerNode.isASTInstance(rankProfile.class)) break;
             innerNode = innerNode.getParent();

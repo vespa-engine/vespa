@@ -18,12 +18,10 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
-import ai.vespa.schemals.parser.ast.identifierStr;
 
 public class SchemaNode implements Iterable<SchemaNode> {
 

@@ -14,21 +14,17 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
-import com.google.protobuf.Option;
 import com.yahoo.schema.parser.ParsedType.Variant;
-import com.yahoo.search.cluster.Hasher;
-import com.yahoo.tensor.functions.Diag;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.SubLanguageData;
-import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.dataType;
@@ -164,13 +160,8 @@ public class SchemaDocumentParser {
         return fileURI.substring(0, splitPos + 1);
     }
 
-    public static String fileNameFromPath(String path) {
-        int splitPos = path.lastIndexOf('/');
-        return path.substring(splitPos + 1);
-    }
-
     public String getFileName() {
-        return fileNameFromPath(fileURI);
+        return FileUtils.fileNameFromPath(fileURI);
     }
 
     public Position getPreviousStartOfWord(Position pos) {
@@ -425,12 +416,31 @@ public class SchemaDocumentParser {
             return;
         }
 
-        Symbol parentSymbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.RANK_PROFILE, inheritedIdentifier);
 
-        if (parentSymbol == null) {
+        List<Symbol> parentSymbols = context.schemaIndex().findAllSymbolsWithSchemaScope(context.fileURI(), SymbolType.RANK_PROFILE, inheritedIdentifier);
+
+        if (parentSymbols.isEmpty()) {
             // Handled in resolve symbol ref
             return;
         }
+
+        if (parentSymbols.size() > 1 && !parentSymbols.get(0).getFileURI().equals(context.fileURI())) {
+            String note = "\nNote:";
+
+            for (Symbol symbol : parentSymbols) {
+                note += "\nDefined in " + FileUtils.fileNameFromPath(symbol.getFileURI());
+            }
+
+            diagnostics.add(new Diagnostic(
+                inheritanceNode.getRange(),
+                inheritedIdentifier + " is ambiguous in this context.",
+                DiagnosticSeverity.Warning,
+                note
+            ));
+        }
+
+        // Choose last one, if more than one (undefined behaviour if ambiguous).
+        Symbol parentSymbol = parentSymbols.get(0);
 
         Symbol definitionSymbol = myRankProfileDefinitionNode.getSymbol();
         if (!context.schemaIndex().tryRegisterRankProfileInheritance(definitionSymbol, parentSymbol)) {
@@ -531,6 +541,8 @@ public class SchemaDocumentParser {
                 if (parentFieldDefinition.isPresent()) {
                     referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context);
                 }
+            } else if (referencedType == SymbolType.RANK_PROFILE) {
+                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbolWithSchemaScope(node.getSymbol()));
             } else {
                 referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(node.getSymbol()));
             }
