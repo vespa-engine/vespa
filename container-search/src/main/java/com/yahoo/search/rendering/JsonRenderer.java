@@ -305,7 +305,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             if (message != null) {
                 generator.writeStringField(ERROR_MESSAGE, message);
             }
-            if (cause != null && cause.getStackTrace().length > 0) {
+            if (cause != null && shouldRenderStacktraceOf(cause) && cause.getStackTrace().length > 0) {
                 StringWriter s = new StringWriter();
                 PrintWriter p = new PrintWriter(s);
                 cause.printStackTrace(p);
@@ -315,6 +315,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeEndObject();
         }
         generator.writeEndArray();
+    }
+
+    protected boolean shouldRenderStacktraceOf(Throwable cause) {
+        return  ! (cause instanceof IllegalArgumentException);
     }
 
     protected void renderCoverage() throws IOException {
