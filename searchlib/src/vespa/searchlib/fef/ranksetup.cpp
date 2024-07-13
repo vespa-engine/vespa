@@ -25,6 +25,8 @@ public:
 
 namespace search::fef {
 
+RankSetup::MutateOperation::~MutateOperation() = default;
+
 using namespace indexproperties;
 
 RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &indexEnv)

@@ -33,6 +33,7 @@ public:
             : _attribute(attribute),
               _operation(operation)
         {}
+        ~MutateOperation();
         bool enabled() const noexcept { return !_attribute.empty() && !_operation.empty(); }
         vespalib::string _attribute;
         vespalib::string _operation;
