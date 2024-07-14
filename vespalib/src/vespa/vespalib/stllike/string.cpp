@@ -2,9 +2,10 @@
 
 #include "string.h"
 #include "small_string.hpp"
+#include <algorithm>
+#include <cctype>
 #include <istream>
 #include <ostream>
-#include <algorithm>
 
 namespace vespalib {
 

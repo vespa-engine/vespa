@@ -2,7 +2,7 @@
 
 #include "replace_variable.h"
 #include "asciistream.h"
-#include <ctype.h>
+#include <cctype>
  
 namespace vespalib {
 
@@ -17,7 +17,7 @@ replace_variable(const vespalib::string &input,
     size_t last_word_size = 0;
     for (size_t i = 0; i < input.size(); ++i) {
         char c = input[i];
-        if (isalnum(c) || (c == '_')) {
+        if (std::isalnum(static_cast<unsigned char>(c)) || (c == '_')) {
             if (! is_in_word) {
                 last_word_start = i;
                 last_word_size = 0;
