@@ -553,12 +553,14 @@ abstract class StructuredParser extends AbstractParser {
         var same = new SameElementItem(indexName);
 
         while (tokens.hasNext() && ! tokens.currentIs(RCURLYBRACKET)) {
-            Item item = indexableItem(indexName + ".").getFirst();
-            if (item != null)
-                same.addItem(item);
+            Pair<Item, Boolean> item = indexableItem(indexName + ".");
+            if (item != null && item.getSecond()) // Only if the field has an explicit index
+                same.addItem(item.getFirst());
             else
                 tokens.skip();
         }
+        if (same.getItemCount() == 0)
+            return null;
         return same;
     }
 

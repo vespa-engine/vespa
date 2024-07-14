@@ -2631,4 +2631,10 @@ public class ParseTestCase {
         tester.assertParsed("phraseSegment:\"with precision\"","phraseSegment:with{.}precision", Query.Type.ALL);
     }
 
+    @Test
+    void testLongQuery() {
+        var tester = new ParsingTester("index");
+        tester.assertParsed("WEAKAND(100) index:search index:terms", "{search terms}", Query.Type.WEAKAND);
+    }
+
 }
