@@ -13,6 +13,7 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cctype>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.thread");
@@ -338,7 +339,7 @@ VisitorThread::createVisitor(std::string_view libName,
                               vespalib::asciistream & error)
 {
     vespalib::string str(libName);
-    std::transform(str.begin(), str.end(), str.begin(), tolower);
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
 
     auto it = _visitorFactories.find(str);
     if (it == _visitorFactories.end()) {
