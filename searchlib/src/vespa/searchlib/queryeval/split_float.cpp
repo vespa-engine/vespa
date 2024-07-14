@@ -9,7 +9,7 @@ SplitFloat::SplitFloat(std::string_view input)
 {
     bool seenText = false;
     for (unsigned char c : input) {
-        if (isalnum(c)) {
+        if (std::isalnum(c)) {
             if (!seenText) {
                 _parts.emplace_back();
             }

@@ -33,7 +33,7 @@ bool isFullRange(std::string_view s) noexcept {
 struct IntDecoder {
     static int64_t fromstr(const char * q, const char * qend, const char ** end) noexcept {
         int64_t v(0);
-        for (;q < qend && (isspace(*q) || (*q == '+')); q++);
+        for (;q < qend && (std::isspace(static_cast<unsigned char>(*q)) || (*q == '+')); q++);
         std::from_chars_result err = std::from_chars(q, qend, v, 10);
         if (err.ec == std::errc::result_out_of_range) {
             v = (*q == '-') ? std::numeric_limits<int64_t>::min() : std::numeric_limits<int64_t>::max();
@@ -62,7 +62,7 @@ struct FloatDecoder {
             *end = (tmp_end != nullptr) ? (q + (tmp_end - tmp_cstring)) : nullptr;
         }
 #else
-        for (;q < qend && (isspace(*q) || (*q == '+')); q++);
+        for (;q < qend && (std::isspace(static_cast<unsigned char>(*q)) || (*q == '+')); q++);
         std::from_chars_result err = std::from_chars(q, qend, v);
         if (err.ec == std::errc::result_out_of_range) {
             v = (*q == '-') ? -std::numeric_limits<T>::infinity() : std::numeric_limits<T>::infinity();

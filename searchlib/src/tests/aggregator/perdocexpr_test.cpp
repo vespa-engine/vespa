@@ -13,6 +13,7 @@
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <cctype>
 #include <cmath>
 #include <iostream>
 #include <list>
@@ -589,9 +590,11 @@ getVespaChecksumV2(const std::string& ymumid, int fid, const std::string& flags_
 
     std::list<char> flags_list;
     flags_list.clear();
-    for (unsigned int i = 0; i< flags_str.length();i++)
-      if (isalpha(flags_str[i]))
-        flags_list.push_back(flags_str[i]);
+    for (unsigned int i = 0; i< flags_str.length();i++) {
+        if (std::isalpha(static_cast<unsigned char>(flags_str[i]))) {
+            flags_list.push_back(flags_str[i]);
+        }
+    }
     flags_list.sort();
 
     std::string new_flags_str ="";
