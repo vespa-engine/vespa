@@ -5,6 +5,7 @@
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <cctype>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
@@ -141,9 +142,9 @@ FieldPathEntry::parseKey(std::string_view & key)
     vespalib::string v;
     const char *c = key.data();
     const char *e = c + key.size();
-    for(;(c < e) && isspace(c[0]); c++);
+    for(;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
     if ((c < e) && (c[0] == '{')) {
-        for(c++;(c < e) && isspace(c[0]); c++);
+        for(c++;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
         if ((c < e) && (c[0] == '"')) {
             const char * start = ++c;
             for (; (c < e) && (c[0] != '"'); c++) {
@@ -166,9 +167,9 @@ FieldPathEntry::parseKey(std::string_view & key)
             }
             v.append(start, c-start);
         }
-        for(;(c < e) && isspace(c[0]); c++);
+        for(;(c < e) && std::isspace(static_cast<unsigned char>(c[0])); c++);
         if ((c < e) && (c[0] == '}')) {
-            key = c+1;
+            key = std::string_view(c + 1, e - (c + 1));
         } else {
             throw IllegalArgumentException(make_string("Key '%s' is incomplete. No matching '}'",
                                                        vespalib::string(key).c_str()), VESPA_STRLOC);
