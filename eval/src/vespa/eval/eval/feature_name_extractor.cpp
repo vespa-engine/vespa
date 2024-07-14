@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feature_name_extractor.h"
+#include <cctype>
 
 namespace vespalib::eval {
 
@@ -10,9 +11,9 @@ struct LegalChar {
     bool legal[256];
     LegalChar(std::initializer_list<uint8_t> extra_chars) {
         for (int c = 0; c < 256; ++c) {
-            legal[c] = isalnum(c);
+            legal[c] = std::isalnum(c);
         }
-        for (uint8_t c: extra_chars) {
+        for (uint8_t c : extra_chars) {
             legal[c] = true;
         }
     }

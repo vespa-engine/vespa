@@ -192,7 +192,7 @@ public:
         }
     }
     void skip_spaces() {
-        while (!eos() && isspace(_curr)) {
+        while (!eos() && std::isspace(static_cast<unsigned char>(_curr))) {
             next();
         }
     }
@@ -447,7 +447,7 @@ vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
 size_t get_size_t(ParseContext &ctx) {
     ctx.skip_spaces();
     vespalib::string num;
-    for (; isdigit(ctx.get()); ctx.next()) {
+    for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
         num.push_back(ctx.get());
     }
     if (num.empty()) {
@@ -457,7 +457,7 @@ size_t get_size_t(ParseContext &ctx) {
 }
 
 bool is_label_end(char c) {
-    return (isspace(c) || (c == '\0') ||
+    return (std::isspace(static_cast<unsigned char>(c)) || (c == '\0') ||
             (c == ':') || (c == ',') || (c == '}'));
 }
 
@@ -960,7 +960,7 @@ void parse_value(ParseContext &ctx) {
         parse_string(ctx, '"');
     } else if (ctx.get() == '\'') {
         parse_string(ctx, '\'');
-    } else if (isdigit(ctx.get())) {
+    } else if (std::isdigit(static_cast<unsigned char>(ctx.get()))) {
         parse_number(ctx);
     } else {
         parse_symbol_or_call(ctx);
@@ -1099,22 +1099,22 @@ Function::unwrap(std::string_view input,
                  vespalib::string &error)
 {
     size_t pos = 0;
-    for (; pos < input.size() && isspace(input[pos]); ++pos);
+    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos);
     size_t wrapper_begin = pos;
-    for (; pos < input.size() && isalpha(input[pos]); ++pos);
+    for (; pos < input.size() && std::isalpha(static_cast<unsigned char>(input[pos])); ++pos);
     size_t wrapper_end = pos;
     if (wrapper_end == wrapper_begin) {
         error = "could not extract wrapper name";
         return false;
     }
-    for (; pos < input.size() && isspace(input[pos]); ++pos);
+    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos);
     if (pos == input.size() || input[pos] != '(') {
         error = "could not match opening '('";
         return false;
     }
     size_t body_begin = (pos + 1);
     size_t body_end = (input.size() - 1);
-    for (; body_end > body_begin && isspace(input[body_end]); --body_end);
+    for (; body_end > body_begin && std::isspace(static_cast<unsigned char>(input[body_end])); --body_end);
     if (input[body_end] != ')') {
         error = "could not match closing ')'";
         return false;

@@ -17,6 +17,7 @@
 #include <vespa/eval/eval/test/test_io.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
+#include <cctype>
 
 #include <histedit.h>
 
@@ -246,8 +247,8 @@ void handle_message(Context &ctx, const Inspector &req, Cursor &reply) {
 }
 
 bool is_only_whitespace(const vespalib::string &str) {
-    for (auto c: str) {
-        if (!isspace(c)) {
+    for (auto c : str) {
+        if (!std::isspace(static_cast<unsigned char>(c))) {
             return false;
         }
     }

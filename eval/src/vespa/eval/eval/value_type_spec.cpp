@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
+#include <cctype>
 
 namespace vespalib::eval::value_type {
 
@@ -85,7 +86,7 @@ public:
         }
     }
     void skip_spaces() {
-        while (!eos() && isspace(_curr)) {
+        while (!eos() && std::isspace(static_cast<unsigned char>(_curr))) {
             next();
         }
     }
@@ -114,7 +115,7 @@ vespalib::string parse_ident(ParseContext &ctx) {
 size_t parse_int(ParseContext &ctx) {
     ctx.skip_spaces();
     vespalib::string num;
-    for (; isdigit(ctx.get()); ctx.next()) {
+    for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
         num.push_back(ctx.get());
     }
     if (num.empty()) {
