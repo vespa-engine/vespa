@@ -204,8 +204,8 @@ try_make_direct_id(std::string_view str) noexcept {
         return 0;
     } else {
         uint32_t value = 0;
-        for (char c: str) {
-            if (!isdigit(c)) {
+        for (char c : str) {
+            if (!std::isdigit(static_cast<unsigned char>(c))) {
                 return SharedStringRepo::ID_BIAS;
             } else {
                 value = ((value * 10) + (c - '0'));

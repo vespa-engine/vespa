@@ -3,6 +3,7 @@
 #include "version.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cctype>
 #include <climits>
 
 namespace vespalib {
@@ -55,7 +56,7 @@ Version::verifySanity()
     if (_qualifier != "") {
         for (size_t i = 0; i < _qualifier.length(); i++) {
             unsigned char c = _qualifier[i];
-            if (! isalnum(c)) {
+            if (! std::isalnum(c)) {
                 throw IllegalArgumentException("Error in " + _stringValue + ": Invalid character in qualifier");
             }
         }
@@ -68,7 +69,7 @@ static int parseInteger(std::string_view input)
 {
     const char *s = input.data();
     unsigned char firstDigit = s[0];
-    if (!isdigit(firstDigit))
+    if (!std::isdigit(firstDigit))
         throw IllegalArgumentException("integer must start with a digit");
     char *ep;
     long ret = strtol(s, &ep, 10);

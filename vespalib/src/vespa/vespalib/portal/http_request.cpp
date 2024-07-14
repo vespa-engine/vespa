@@ -3,6 +3,7 @@
 #include "http_request.h"
 
 #include <algorithm>
+#include <cctype>
 #include <vector>
 
 namespace vespalib::portal {
@@ -134,16 +135,16 @@ HttpRequest::handle_header_line(const vespalib::string &line)
         } else {
             _header_name.assign(line, 0, pos++);
             std::transform(_header_name.begin(), _header_name.end(),
-                           _header_name.begin(), ::tolower);
+                           _header_name.begin(), [](unsigned char c) { return std::tolower(c); });
         }
     }
     if (_header_name.empty()) {
         return set_error(); // missing header name
     }
-    while ((pos < end) && (isspace(line[pos]))) {
+    while ((pos < end) && (std::isspace(static_cast<unsigned char>(line[pos])))) {
         ++pos; // strip leading whitespace
     }
-    while ((pos < end) && (isspace(line[end - 1]))) {
+    while ((pos < end) && (std::isspace(static_cast<unsigned char>(line[end - 1])))) {
         --end; // strip trailing whitespace
     }
     auto header_insert_result = _headers.insert(std::make_pair(_header_name, vespalib::string()));

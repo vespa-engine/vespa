@@ -9,6 +9,7 @@
 #include <vespa/fastos/file.h>
 #include <limits>
 #include <cassert>
+#include <cctype>
 #include <charconv>
 #include <vector>
 
@@ -215,7 +216,7 @@ T
 strToInt(T & v, const char *begin, const char *end)
 {
     const char * curr = begin;
-    for (;(curr < end) && std::isspace(*curr); curr++);
+    for (;(curr < end) && std::isspace(static_cast<unsigned char>(*curr)); curr++);
 
     std::from_chars_result err;
     if (((end - curr) > 2) && (curr[0] == '0') && ((curr[1] | 0x20) == 'x')) {
@@ -240,7 +241,7 @@ strToInt(T & v, const char *begin, const char *end)
 asciistream &
 asciistream::operator >> (bool & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = (_rbuf[_rPos++] != '0');
     } else {
@@ -252,7 +253,7 @@ asciistream::operator >> (bool & v)
 asciistream &
 asciistream::operator >> (char & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -264,7 +265,7 @@ asciistream::operator >> (char & v)
 asciistream &
 asciistream::operator >> (signed char & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -276,7 +277,7 @@ asciistream::operator >> (signed char & v)
 asciistream &
 asciistream::operator >> (unsigned char & v)
 {
-    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
     if (_rPos < length()) {
         v = _rbuf[_rPos++];
     } else {
@@ -362,12 +363,12 @@ asciistream::operator >> (float & v)
 void
 asciistream::eatWhite()
 {
-    for (;(_rPos < length()) && isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
 }
 
 void asciistream::eatNonWhite()
 {
-    for (;(_rPos < length()) && !isspace(_rbuf[_rPos]); _rPos++);
+    for (;(_rPos < length()) && !std::isspace(static_cast<unsigned char>(_rbuf[_rPos])); _rPos++);
 }
 
 asciistream &

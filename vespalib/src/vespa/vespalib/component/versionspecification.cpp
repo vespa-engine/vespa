@@ -63,7 +63,7 @@ VersionSpecification::verifySanity()
     if (!_qualifier.empty()) {
         for (size_t i = 0; i < _qualifier.length(); i++) {
             unsigned char c = _qualifier[i];
-            if (! isalnum(c)) {
+            if (! std::isalnum(c)) {
                 throw IllegalArgumentException("Error in " + _stringValue + ": Invalid character in qualifier");
             }
         }
@@ -78,8 +78,9 @@ int parseInteger(std::string_view input) {
     std::string zeroTerm(input);
     const char *s = zeroTerm.c_str();
     unsigned char firstDigit = s[0];
-    if (!isdigit(firstDigit))
+    if (!std::isdigit(firstDigit)) {
         throw IllegalArgumentException("integer must start with a digit");
+    }
     char *ep;
     long ret = strtol(s, &ep, 10);
     if (ret > INT_MAX || ret < 0) {
