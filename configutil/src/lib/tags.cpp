@@ -2,6 +2,7 @@
 
 #include "tags.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <cctype>
 
 namespace configdefinitions {
 
@@ -10,7 +11,7 @@ vespalib::string upcase(const vespalib::string &orig)
     vespalib::string upper(orig);
     for (size_t i = 0; i < orig.size(); ++i) {
         int l = (unsigned char)orig[i];
-        upper[i] = (unsigned char)toupper(l);
+        upper[i] = (unsigned char)std::toupper(l);
     }
     return upper;
 }
