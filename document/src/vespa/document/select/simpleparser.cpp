@@ -2,6 +2,7 @@
 
 #include "simpleparser.h"
 #include "compare.h"
+#include <cctype>
 #include <cerrno>
 
 namespace document::select::simple {
@@ -9,12 +10,12 @@ namespace document::select::simple {
 namespace {
     size_t eatWhite(const char *s, size_t len) {
         size_t pos(0);
-        for (; (pos < len) && isspace(s[pos]); pos++);
+        for (; (pos < len) && std::isspace(static_cast<unsigned char>(s[pos])); pos++);
         return pos;
     }
 
-    bool icmp(char c, char l) {
-        return tolower(c) == l;
+    bool icmp(unsigned char c, unsigned char l) {
+        return std::tolower(c) == l;
     }
 }
 
@@ -37,7 +38,7 @@ bool IdSpecParser::parse(std::string_view s)
                         int widthBits(-1);
                         int divisionBits(-1);
                         size_t startPos(++pos);
-                        for (;(pos < s.size()) && (tolower(s[pos]) >= 'a') && (tolower(s[pos]) <= 'z'); pos++);
+                        for (;(pos < s.size()) && (std::tolower(static_cast<unsigned char>(s[pos])) >= 'a') && (std::tolower(static_cast<unsigned char>(s[pos])) <= 'z'); pos++);
                         size_t len(pos - startPos);
                         if (((len == 4) && (strncasecmp(&s[startPos], "user", 4) == 0 ||
                                             strncasecmp(&s[startPos], "type", 4) == 0)) ||
