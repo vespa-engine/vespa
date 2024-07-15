@@ -45,11 +45,21 @@ public class SchemaIndex {
     /**
      * Searches for the specified symbol in the index.
      *
-     * @param symbol The symbol to find.
+     * @param symbol The symbol to find, should be UNRESOLVED
      * @return An Optional containing the found symbol, or an empty Optional if the symbol is not found.
      */
     public Optional<Symbol> findSymbol(Symbol symbol) {
         return Optional.empty();
+    }
+
+    /**
+     * Searches for symbols in the schema index that match the given symbol.
+     *
+     * @param symbol The symbol to search for, should be UNRESOLVED
+     * @return A list of symbols that match the given symbol.
+     */
+    public List<Symbol> findSymbols(Symbol symbol) {
+        return new ArrayList<>();
     }
 
     /**
