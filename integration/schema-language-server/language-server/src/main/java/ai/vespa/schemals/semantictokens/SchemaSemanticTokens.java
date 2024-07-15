@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -27,6 +26,12 @@ import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 public class SchemaSemanticTokens implements Visitor {
 
+    private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{
+        add("type");
+        add("comment");
+    }};
+
+    // Keyword
     private static final List<SymbolType> userDefinedSymbolTypes = new ArrayList<SymbolType>() {{
         add(SymbolType.SCHEMA);
         add(SymbolType.DOCUMENT);
@@ -40,6 +45,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(SymbolType.TYPE_UNKNOWN);
         add(SymbolType.FIELD_IN_STRUCT);
         add(SymbolType.SUBFIELD);
+        add(SymbolType.PARAMETER);
     }};
 
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
@@ -58,21 +64,130 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.FUNCTION);
         add(TokenType.RANK_PROPERTIES);
         add(TokenType.MATCHFEATURES_SL);
+        add(TokenType.IMPORT);
+        add(TokenType.INPUTS);
+        add(TokenType.DOCUMENT_SUMMARY);
+        add(TokenType.AS);
+        add(TokenType.SUMMARY);
     }};
 
-    private static final ArrayList<String> manuallyRegisteredLSPNames = new ArrayList<String>() {{
-        add("type");
-        add("comment");
-    }};
-
-    private static final Map<TokenType, String> tokenTypeLSPNameMap = new HashMap<TokenType, String>() {{
+    // Other
+    private static final Map<TokenType, String> schemaTokenTypeLSPNameMap = new HashMap<TokenType, String>() {{
         put(TokenType.DOUBLE, "number");
         put(TokenType.INTEGER, "number");
         put(TokenType.LONG, "number");
         put(TokenType.DOUBLEQUOTEDSTRING, "string");
         put(TokenType.SINGLEQUOTEDSTRING, "string");
     }};
-    
+
+
+    // ========= Ranking expressions =========
+    // Keyword
+    private static final ArrayList<ai.vespa.schemals.parser.rankingexpression.Token.TokenType> rankingExpressionKeywordTokens = new ArrayList<>() {{
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IF);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.F);
+
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TRUE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FALSE);
+
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.AVG);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COUNT);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MAX);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MEDIAN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MIN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.PROD);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SUM);
+    }};
+
+    // Operations
+    private static final ArrayList<ai.vespa.schemals.parser.rankingexpression.Token.TokenType> rankingExpressionOperationTokens = new ArrayList<>() {{
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ADD);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SUB);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.DIV);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MUL);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.DOT);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MOD);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.POWOP);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.GREATEREQUAL);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.GREATER);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LESSEQUAL);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LESS);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.APPROX);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.NOTEQUAL);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EQUAL);
+    }};
+
+    // Functions
+    private static final ArrayList<ai.vespa.schemals.parser.rankingexpression.Token.TokenType> rankingExpressioFunctionTokens = new ArrayList<>() {{
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ABS);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ACOS);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ASIN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ATAN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CEIL);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COS);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COSH);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ELU);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EXP);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FABS);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FLOOR);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ISNAN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LOG10);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.RELU);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ROUND);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGMOID);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIGN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SIN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SINH);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQUARE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SQRT);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TAN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TANH);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ERF);
+
+        // Space in the ccc file as well :)
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ATAN2);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FMOD);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.LDEXP);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.POW);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.BIT);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.HAMMING);
+
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MAP);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MAP_SUBSPACES);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.UNPACK_BITS);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.REDUCE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.JOIN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MERGE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.RENAME);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CONCAT);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.TENSOR);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.RANGE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.DIAG);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.RANDOM);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.L1_NORMALIZE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.L2_NORMALIZE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EUCLIDEAN_DISTANCE);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.COSINE_SIMILARITY);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.MATMUL);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.SOFTMAX);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.XW_PLUS_B);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ARGMAX);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ARGMIN);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.CELL_CAST);
+        add(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.EXPAND);
+    }};
+
+    // Other
+    private static final Map<ai.vespa.schemals.parser.rankingexpression.Token.TokenType, String> rankingExpressionTokenTypeLSPNameMap = new HashMap<ai.vespa.schemals.parser.rankingexpression.Token.TokenType, String>() {{
+        put(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.ISNAN, "function");
+        put(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.STRING, "string");
+        put(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.INTEGER, "number");
+        put(ai.vespa.schemals.parser.rankingexpression.Token.TokenType.FLOAT, "number");
+    }};
+
+    private static Map<SymbolType, Integer> identifierTypeMap;
     private static final HashMap<SymbolType, String> identifierTypeLSPNameMap = new HashMap<SymbolType, String>() {{
         put(SymbolType.SCHEMA, "namespace");
         put(SymbolType.DOCUMENT, "class");
@@ -82,12 +197,15 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.STRUCT_FIELD, "variable");
         put(SymbolType.RANK_PROFILE, "variable");
         put(SymbolType.FUNCTION, "function");
+        put(SymbolType.DOCUMENT_SUMMARY, "variable");
+        put(SymbolType.SUMMARY, "variable");
         put(SymbolType.FIELD_IN_STRUCT, "property");
+        put(SymbolType.PARAMETER, "parameter");
     }};
 
     private static ArrayList<String> tokenTypes;
-    private static Map<TokenType, Integer> tokenTypeMap;
-    private static Map<SymbolType, Integer> identifierTypeMap;
+    private static Map<TokenType, Integer> schemaTokenTypeMap;
+    private static Map<ai.vespa.schemals.parser.rankingexpression.Token.TokenType, Integer> rankExpressionTokenTypeMap;
 
     private static int addTokenType(String name) {
         int index = tokenTypes.indexOf(name);
@@ -100,24 +218,51 @@ public class SchemaSemanticTokens implements Visitor {
 
     static {
         tokenTypes = new ArrayList<String>();
-        tokenTypeMap = new HashMap<TokenType, Integer>();
-        identifierTypeMap = new HashMap<SymbolType, Integer>();
 
+        // Manually added semantic tokens
         tokenTypes.addAll(manuallyRegisteredLSPNames);
-
-        for (Map.Entry<TokenType, String> set : tokenTypeLSPNameMap.entrySet()) {
-            int index = addTokenType(set.getValue());
-            tokenTypeMap.put(set.getKey(), index);
-        }
-
         int keywordIndex = addTokenType("keyword");
-        for (TokenType type : keywordTokens) {
-            tokenTypeMap.put(type, keywordIndex);
-        }
+
+        // Add symbol semantic tokens
+        identifierTypeMap = new HashMap<SymbolType, Integer>();
 
         for (Map.Entry<SymbolType, String> set : identifierTypeLSPNameMap.entrySet()) {
             int index = addTokenType(set.getValue());
             identifierTypeMap.put(set.getKey(), index);
+        }
+
+        // Create Map for Schema Tokens
+        schemaTokenTypeMap = new HashMap<TokenType, Integer>();
+
+        for (var set : schemaTokenTypeLSPNameMap.entrySet()) {
+            int index = addTokenType(set.getValue());
+            schemaTokenTypeMap.put(set.getKey(), index);
+        }
+        
+        for (TokenType type : keywordTokens) {
+            schemaTokenTypeMap.put(type, keywordIndex);
+        }
+
+        // Create Map for RankExpression Tokens
+        rankExpressionTokenTypeMap = new HashMap<ai.vespa.schemals.parser.rankingexpression.Token.TokenType, Integer>();
+
+        for (var set : rankingExpressionTokenTypeLSPNameMap.entrySet()) {
+            int index = addTokenType(set.getValue());
+            rankExpressionTokenTypeMap.put(set.getKey(), index);
+        }
+
+        for (var type : rankingExpressionKeywordTokens) {
+            rankExpressionTokenTypeMap.put(type, keywordIndex);
+        }
+
+        int operationIndex = addTokenType("operation");
+        for (var type : rankingExpressionOperationTokens) {
+            rankExpressionTokenTypeMap.put(type, operationIndex);
+        }
+
+        int functionIndex = addTokenType("function");
+        for (var type : rankingExpressioFunctionTokens) {
+            rankExpressionTokenTypeMap.put(type, functionIndex);
         }
 
     }
@@ -188,7 +333,8 @@ public class SchemaSemanticTokens implements Visitor {
     private static ArrayList<SemanticTokenMarker> traverseCST(SchemaNode node, PrintStream logger) {
         ArrayList<SemanticTokenMarker> ret = new ArrayList<SemanticTokenMarker>();
 
-        TokenType type = node.getSchemaType();
+        TokenType schemaType = node.getSchemaType();
+        var rankExpressionType = node.getRankExpressionType();
 
         // TODO: this became a bit ugly with the map stuff
         if (node.isASTInstance(dataType.class) && (!node.hasSymbol() || node.getSymbol().getType() == SymbolType.MAP_KEY || node.getSymbol().getType() == SymbolType.MAP_VALUE)) {
@@ -200,10 +346,14 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
 
-        } 
-
-        if (node.hasSymbol() && 
-                (node.getSymbol().getStatus() == SymbolStatus.REFERENCE || node.getSymbol().getStatus() == SymbolStatus.DEFINITION) && userDefinedSymbolTypes.contains(node.getSymbol().getType())) {
+        } else if (
+            node.hasSymbol() && 
+            (
+                node.getSymbol().getStatus() == SymbolStatus.REFERENCE ||
+                node.getSymbol().getStatus() == SymbolStatus.DEFINITION
+            ) && 
+            userDefinedSymbolTypes.contains(node.getSymbol().getType())
+        ) {
             Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
             
             if (tokenType != null) {
@@ -217,9 +367,16 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }
 
-        } else if (type != null) {
+        } else if (schemaType != null) {
 
-            Integer tokenType = tokenTypeMap.get(type);
+            Integer tokenType = schemaTokenTypeMap.get(schemaType);
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
+        } if (rankExpressionType != null) {
+
+            Integer tokenType = rankExpressionTokenTypeMap.get(rankExpressionType);
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
@@ -13,10 +14,12 @@ import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
+import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 public class IdentifySymbolReferences extends Identifier {
 
@@ -36,14 +39,29 @@ public class IdentifySymbolReferences extends Identifier {
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
-        ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
-        if (node.hasSymbol()) return ret;
+        if (node.hasSymbol()) return new ArrayList<Diagnostic>();
 
-        boolean isIdentifier = node.isASTInstance(identifierStr.class);
-        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
+        if (node.getLanguageType() == LanguageType.SCHEMA || node.getLanguageType() == LanguageType.CUSTOM) {
+            return identifySchemaLanguage(node);
+        }
 
-        if (!isIdentifier && !isIdentifierWithDash) return ret;
+        if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+            return identifyRankExpressionLanguage(node);
+        }
+
+        return new ArrayList<Diagnostic>();
+    }
+
+    private ArrayList<Diagnostic> identifySchemaLanguage(SchemaNode node) {
+        ArrayList<Diagnostic> ret = new ArrayList<>();
+
+        boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isSchemaASTInstance(identifierWithDashStr.class);
+
+        if (!isIdentifier && !isIdentifierWithDash) {
+            return ret;
+        }
 
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
@@ -62,6 +80,41 @@ public class IdentifySymbolReferences extends Identifier {
         return ret;
     }
 
+    private ArrayList<Diagnostic> identifyRankExpressionLanguage(SchemaNode node) {
+        ArrayList<Diagnostic> ret = new ArrayList<>();
+
+        if (node.size() == 0) return ret;
+
+        SchemaNode child = node.get(0);
+        var type = child.getRankExpressionType();
+        boolean isIdentifier = node.isRankExpressionASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class);
+
+        if (!isIdentifier || type != ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IDENTIFIER) {
+            return ret;
+        }
+
+        SchemaNode searchNode = node;
+
+        while (
+            (!searchNode.isASTInstance(rankProfile.class)) &&
+            searchNode != null
+        ) {
+            searchNode = searchNode.getParent();
+        }
+
+        if (searchNode != null && searchNode.size() > 2 && searchNode.get(1).hasSymbol()) {
+            Symbol scope = searchNode.get(1).getSymbol();
+
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope);
+        } else {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+        }
+        
+        node.setSymbolStatus(SymbolStatus.UNRESOLVED);
+
+        return ret;
+    }
+    
     private ArrayList<Diagnostic> handleFields(SchemaNode identifierNode) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 

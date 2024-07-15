@@ -20,7 +20,7 @@ public class IdentifyAnnotationReference extends Identifier {
 	public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        if (!node.isASTInstance(annotationRefDataType.class)) return ret;
+        if (!node.isSchemaASTInstance(annotationRefDataType.class)) return ret;
 
         if (node.size() < 3) return ret;
 

@@ -21,9 +21,9 @@ public class IdentifySchemaInheritance extends Identifier {
 	public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        if (!node.isASTInstance(identifierStr.class)) return ret;
+        if (!node.isSchemaASTInstance(identifierStr.class)) return ret;
         if (node.getParent() == null) return ret;
-        if (!node.getParent().isASTInstance(rootSchema.class)) return ret;
+        if (!node.getParent().isSchemaASTInstance(rootSchema.class)) return ret;
         if (node.getPreviousSibling() == null) return ret;
         if (node.getPreviousSibling().getSchemaType() != TokenType.INHERITS) return ret;
 

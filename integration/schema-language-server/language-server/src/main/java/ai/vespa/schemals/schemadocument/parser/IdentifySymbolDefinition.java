@@ -19,6 +19,7 @@ import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.documentSummary;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
@@ -30,7 +31,7 @@ import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
-import ai.vespa.schemals.parser.rankingexpression.ast.POW;
+import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolDefinition extends Identifier {
@@ -50,7 +51,11 @@ public class IdentifySymbolDefinition extends Identifier {
         put(structDefinitionElm.class, SymbolType.STRUCT);
     }};
 
-    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{}};
+    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(rankProfile.class, SymbolType.RANK_PROFILE);
+        put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
+        put(summaryInDocument.class, SymbolType.SUMMARY);
+    }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
@@ -59,9 +64,9 @@ public class IdentifySymbolDefinition extends Identifier {
             handleDataTypeDefinition(node, ret);
             return ret;
         }
-
-        boolean isIdentifier = node.isASTInstance(identifierStr.class);
-        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
+        
+        boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isSchemaASTInstance(identifierWithDashStr.class);
 
         if (!isIdentifier && !isIdentifierWithDash) return ret;
 
@@ -69,7 +74,14 @@ public class IdentifySymbolDefinition extends Identifier {
         if (parent == null) return ret;
 
         // Prevent inheritance from beeing marked as a definition
-        if (parent.indexOf(node) >= 3) return ret;
+        if (parent.indexOf(node) >= 3) {
+            // Unnless it is a paramenter to a function
+            if (parent.isASTInstance(functionElm.class) && node.isASTInstance(identifierStr.class)) {
+                setAsParameter(node);
+            }
+
+            return ret;
+        }
 
         HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
@@ -224,5 +236,14 @@ public class IdentifySymbolDefinition extends Identifier {
             }
         }
         return Optional.empty();
+    }
+
+    private void setAsParameter(SchemaNode node) {
+        SchemaNode parent = node.getParent();
+        SchemaNode functionDefinition = parent.get(2);
+
+        node.setSymbol(SymbolType.PARAMETER, context.fileURI(), functionDefinition.getSymbol());
+        node.setSymbolStatus(SymbolStatus.DEFINITION);
+        context.schemaIndex().insertSymbolDefinition(node.getSymbol());
     }
 }

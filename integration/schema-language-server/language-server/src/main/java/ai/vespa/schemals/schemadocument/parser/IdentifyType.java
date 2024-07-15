@@ -22,7 +22,7 @@ public class IdentifyType extends Identifier {
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
-        if (!node.isASTInstance(dataType.class)) {
+        if (!node.isSchemaASTInstance(dataType.class)) {
             return ret;
         }
 
@@ -80,7 +80,7 @@ public class IdentifyType extends Identifier {
 
     private static boolean isInsideAnnotationBody(SchemaNode node) {
         while (node != null) {
-            if (node.isASTInstance(annotationBody.class)) return true;
+            if (node.isSchemaASTInstance(annotationBody.class)) return true;
             node = node.getParent();
         }
         return false;

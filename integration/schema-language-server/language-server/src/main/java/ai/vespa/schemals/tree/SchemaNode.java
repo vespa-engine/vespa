@@ -47,11 +47,13 @@ public class SchemaNode implements Iterable<SchemaNode> {
     private ai.vespa.schemals.parser.indexinglanguage.Node originalIndexingNode;
     private ai.vespa.schemals.parser.rankingexpression.Node originalRankExpressionNode;
 
-    // Special properties for node in the CUTOM language
+    // Special properties for node in the CUSTOM language
     private String contentString;
+    private Class<? extends Node> simulatedSchimaClass;
 
     // Special features for nodes in the Schema language
     private TokenType schemaType;
+    private ai.vespa.schemals.parser.rankingexpression.Token.TokenType rankExpressionType;
 
     private SchemaNode(LanguageType language, Range range, String identifierString, boolean isDirty) {
         this.language = language;
@@ -111,6 +113,9 @@ public class SchemaNode implements Iterable<SchemaNode> {
         );
 
         this.originalRankExpressionNode = node;
+        if (node instanceof ai.vespa.schemals.parser.rankingexpression.Token) {
+            this.rankExpressionType = (ai.vespa.schemals.parser.rankingexpression.Token.TokenType) node.getType();
+        }
 
         for (var child : node) {
             SchemaNode newNode = new SchemaNode(child, rangeOffset);
@@ -155,6 +160,10 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public TokenType getSchemaType() {
         
         return schemaType;
+    }
+
+    public ai.vespa.schemals.parser.rankingexpression.Token.TokenType getRankExpressionType() {
+        return rankExpressionType;
     }
 
     // Return token type (if the node is a token), even if the node is dirty
@@ -269,11 +278,33 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return this.originalRankExpressionNode;
     }
 
-    public boolean isASTInstance(Class<? extends Node> astClass) {
+    public void setSimulatedASTClass(Class<? extends Node> astClass) {
+        if (language != LanguageType.CUSTOM) throw new IllegalArgumentException("Cannot set Simulated AST Class on a Schema node of type other than Custom");
+
+        simulatedSchimaClass = astClass;
+    }
+
+    public boolean isASTInstance(Class<?> astClass) {
+        if (language == LanguageType.CUSTOM && astClass.isInstance(simulatedSchimaClass)) return true;
+        if (language == LanguageType.SCHEMA) return astClass.isInstance(originalSchemaNode);
+        if (language == LanguageType.RANK_EXPRESSION) return astClass.isInstance(originalRankExpressionNode);
+        if (language == LanguageType.INDEXING) return astClass.isInstance(originalIndexingNode);
+        return false;
+    }
+
+    public boolean isSchemaASTInstance(Class<? extends Node> astClass) {
+        if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchimaClass);
+        
         return astClass.isInstance(originalSchemaNode);
     }
 
+    public boolean isRankExpressionASTInstance(Class<? extends ai.vespa.schemals.parser.rankingexpression.Node> astClass) {
+        return astClass.isInstance(originalRankExpressionNode);
+    }
+
     public Class<? extends Node> getASTClass() {
+        if (language == LanguageType.CUSTOM) return simulatedSchimaClass;
+
         return originalSchemaNode.getClass();
     }
 

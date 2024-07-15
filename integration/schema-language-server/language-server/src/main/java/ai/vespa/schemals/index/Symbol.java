@@ -1,7 +1,6 @@
 package ai.vespa.schemals.index;
 
 import ai.vespa.schemals.common.FileUtils;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import org.eclipse.lsp4j.Location;
@@ -43,6 +42,8 @@ public class Symbol {
     public SymbolType getType() { return type; }
     public void setStatus(SymbolStatus status) { this.status = status; }
     public SymbolStatus getStatus() { return status; }
+
+    public Symbol getScope() { return scope; }
 
     // TODO: not quite sure if this kind of equality check is good
     public boolean isInScope(Symbol scope) {
@@ -119,11 +120,14 @@ public class Symbol {
         FIELDSET,
         STRUCT_FIELD,
         FUNCTION,
+        DOCUMENT_SUMMARY,
+        SUMMARY,
         TYPE_UNKNOWN,
         FIELD_IN_STRUCT,
         SUBFIELD,
         MAP_KEY,
-        MAP_VALUE
+        MAP_VALUE,
+        PARAMETER
     }
 
     public String toString() {
