@@ -164,7 +164,7 @@ public class SymbolReferenceResolver {
         if (node.getText().equals("value")) {
             // For value there are two cases: either the map value is a primitive value with its own definition
             // or it is a reference to a struct
-            referencedSymbol = context.schemaIndex().findMapValueDefinition(mapValueDefinition);
+            referencedSymbol = findMapValueDefinition(context, mapValueDefinition);
 
             referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
         }
@@ -173,5 +173,9 @@ public class SymbolReferenceResolver {
 
     private static boolean isStructReference(SchemaNode node) {
         return node != null && node.hasSymbol() && node.getSymbol().getType() == SymbolType.STRUCT && node.getSymbol().getStatus() == SymbolStatus.REFERENCE;
+    }
+
+    private static Optional<Symbol> findMapValueDefinition(ParseContext context, Symbol mapValueDefinition) {
+        Symbol rawValueSymbol = context.schemaIndex().findSymbol()
     }
 }

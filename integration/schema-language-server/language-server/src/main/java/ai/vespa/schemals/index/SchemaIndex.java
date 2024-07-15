@@ -91,7 +91,14 @@ public class SchemaIndex {
      * @return An Optional containing the found symbol, or an empty Optional if the symbol is not found.
      */
     public Optional<Symbol> findSymbol(Symbol symbol) {
-        return Optional.empty();
+        return findSymbol(symbol.getScope(), symbol.getType(), symbol.getShortIdentifier());
+    }
+
+    public Optional<Symbol> findSymbol(Symbol scope, SymbolType type, String shortIdentifier) {
+        List<Symbol> results = findSymbols(scope, type, shortIdentifier);
+        if (results.size() == 0) return Optional.empty();
+
+        return Optional.of(results.get(0));
     }
 
     /**
@@ -101,6 +108,10 @@ public class SchemaIndex {
      * @return A list of symbols that match the given symbol.
      */
     public List<Symbol> findSymbols(Symbol symbol) {
+        return findSymbols(symbol.getScope(), symbol.getType(), symbol.getShortIdentifier());
+    }
+
+    public List<Symbol> findSymbols(Symbol scope, SymbolType type, String shortIdentifier) {
         return new ArrayList<>();
     }
 
