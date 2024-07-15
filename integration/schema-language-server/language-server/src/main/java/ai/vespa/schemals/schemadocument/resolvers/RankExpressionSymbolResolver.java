@@ -64,7 +64,6 @@ public class RankExpressionSymbolResolver {
     }
 
     private static void resolveFunctionReference(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
-        context.logger().println("Looking up: " + node.getSymbol().getLongIdentifier());
         Symbol symbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FUNCTION, node.getSymbol().getLongIdentifier());
 
         if (symbol == null) return;

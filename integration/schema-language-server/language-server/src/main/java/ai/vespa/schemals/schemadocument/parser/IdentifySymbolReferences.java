@@ -93,8 +93,6 @@ public class IdentifySymbolReferences extends Identifier {
             return ret;
         }
 
-        context.logger().println("Starting danger loop");
-
         SchemaNode searchNode = node;
 
         while (
@@ -102,9 +100,7 @@ public class IdentifySymbolReferences extends Identifier {
             searchNode != null
         ) {
             searchNode = searchNode.getParent();
-            context.logger().print(".");
         }
-        context.logger().println("\nFINISHED");
 
         if (searchNode != null && searchNode.size() > 2 && searchNode.get(1).hasSymbol()) {
             Symbol scope = searchNode.get(1).getSymbol();
