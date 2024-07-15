@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.DOT;
 
 public class SchemaIndex {
 
@@ -18,8 +19,8 @@ public class SchemaIndex {
     private Map<Symbol, Symbol> definitionOfReference = new HashMap<>();
 
     private InheritanceGraph<String> documentInheritanceGraph;
-    private InheritanceGraph<SymbolInheritanceNode> structInheritanceGraph;
-    private InheritanceGraph<SymbolInheritanceNode> rankProfileInheritanceGraph;
+    private InheritanceGraph<Symbol> structInheritanceGraph;
+    private InheritanceGraph<Symbol> rankProfileInheritanceGraph;
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
@@ -49,17 +50,57 @@ public class SchemaIndex {
      * @return An Optional containing the found symbol, or an empty Optional if the symbol is not found.
      */
     public Optional<Symbol> findSymbol(Symbol symbol) {
-        return Optional.empty();
+        var hits = findSymbols(symbol);
+        if (hits.isEmpty())return Optional.empty();
+        return Optional.of(hits.get(0));
     }
 
     /**
      * Searches for symbols in the schema index that match the given symbol.
      *
-     * @param symbol The symbol to search for, should be UNRESOLVED
+     * @param querySymbol The symbol to search for, should be UNRESOLVED
      * @return A list of symbols that match the given symbol.
      */
-    public List<Symbol> findSymbols(Symbol symbol) {
-        return new ArrayList<>();
+    public List<Symbol> findSymbols(Symbol querySymbol) {
+        List<Symbol> result = new ArrayList<>();
+
+        // First candidates are all symbols with correct type and correct short identifier
+        List<Symbol> candidates = symbolDefinitions.get(querySymbol.getType())
+                                                   .stream()
+                                                   .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(querySymbol.getShortIdentifier()))
+                                                   .toList();
+
+        Symbol scope = querySymbol.getScope();
+
+        while (scope != null) {
+            for (Symbol candidate : candidates) {
+                // Check if candidate is in this scope
+                if (isInScope(candidate, scope))result.add(candidate);
+            }
+
+            if (!result.isEmpty()) return result;
+            scope = scope.getScope();
+        }
+
+        return result;
+    }
+
+    private boolean isInScope(Symbol symbol, Symbol scope) {
+        if (scope.getType() == SymbolType.RANK_PROFILE) {
+            return !rankProfileInheritanceGraph.findFirstMatches(scope, 
+                    rankProfileDefinitionNode -> Boolean.valueOf(rankProfileDefinitionNode.equals(symbol.getScope()))).isEmpty();
+        } else if (scope.getType() == SymbolType.STRUCT) {
+            return !structInheritanceGraph.findFirstMatches(scope, 
+                    structDefinitionNode -> Boolean.valueOf(structDefinitionNode.equals(symbol.getScope()))).isEmpty();
+        } else if (scope.getType() == SymbolType.SCHEMA || scope.getType() == SymbolType.DOCUMENT) {
+            return !documentInheritanceGraph.findFirstMatches(scope.getFileURI(), 
+                ancestorURI -> {
+                    return Boolean.valueOf(symbol.getFileURI().equals(ancestorURI));
+                }
+            ).isEmpty();
+        }
+
+        return scope.equals(symbol.getScope());
     }
 
     /**
@@ -110,7 +151,7 @@ public class SchemaIndex {
      * @return true if the document inheritance was successfully registered, false otherwise
      */
     public boolean tryRegisterDocumentInheritance(String childURI, String parentURI) {
-        return false;
+        return documentInheritanceGraph.addInherits(childURI, parentURI);
     }
 
     /**
@@ -121,7 +162,7 @@ public class SchemaIndex {
      * @return {@code true} if the struct inheritance was successfully registered, {@code false} otherwise.
      */
     public boolean tryRegisterStructInheritance(Symbol childSymbol, Symbol parentSymbol) {
-        return false;
+        return structInheritanceGraph.addInherits(childSymbol, parentSymbol);
     }
 
     /**
@@ -132,7 +173,7 @@ public class SchemaIndex {
      * @return {@code true} if the inheritance relationship was successfully registered, {@code false} otherwise.
      */
     public boolean tryRegisterRankProfileInheritance(Symbol childSymbol, Symbol parentSymbol) {
-        return false;
+        return rankProfileInheritanceGraph.addInherits(childSymbol, parentSymbol);
     }
 
     /**
