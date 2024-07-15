@@ -3,7 +3,6 @@ package ai.vespa.schemals.schemadocument;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -11,8 +10,6 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.parser.Node;
-import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
@@ -186,11 +183,11 @@ public class SchemaRankExpressionParser {
             trailingSplitPos--;
         }
 
-        Position subStringBeginPos = SchemaDocumentParser.PositionAddOffset(context.content(), node.getRange().getStart(), startSearch);
+        Position subStringBeginPos = SchemaDocument.PositionAddOffset(context.content(), node.getRange().getStart(), startSearch);
 
         Range range = new Range(
-            SchemaDocumentParser.PositionAddOffset(context.content(), subStringBeginPos, leadingSplitPos),
-            SchemaDocumentParser.PositionAddOffset(context.content(), subStringBeginPos, trailingSplitPos)
+            SchemaDocument.PositionAddOffset(context.content(), subStringBeginPos, leadingSplitPos),
+            SchemaDocument.PositionAddOffset(context.content(), subStringBeginPos, trailingSplitPos)
         );
 
         String identifierString = TokenType.IDENTIFIER_WITH_DASH.toString().toUpperCase() + " [CUSTOM LANGUAGE]";

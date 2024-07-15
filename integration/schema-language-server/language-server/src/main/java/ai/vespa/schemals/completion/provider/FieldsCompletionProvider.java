@@ -1,5 +1,6 @@
 package ai.vespa.schemals.completion.provider;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,7 @@ public class FieldsCompletionProvider implements CompletionProvider {
         while (last != null && 
                 last.getSchemaType() == TokenType.IDENTIFIER && 
                 (last.getPrevious() != null && last.getPrevious().getSchemaType() == TokenType.COMMA)) {
-            last = last.getPrevious().getPrevious();
+        last = last.getPrevious().getPrevious();
         }
 
         if (last == null)return false;
@@ -44,14 +45,16 @@ public class FieldsCompletionProvider implements CompletionProvider {
         // Has to be on the same line
         if (match != null && match.range().getStart().getLine() == context.position.getLine())return true;
         return (last != null && last.getSchemaType() == TokenType.FIELDS && last.getRange().getStart().getLine() == context.position.getLine());
-	}
+    }
 
-	@Override
-	public List<CompletionItem> getCompletionItems(EventPositionContext context) {
-        List<Symbol> fieldSymbols = context.schemaIndex.findSymbolsWithTypeInDocument(context.document.getFileURI(), SymbolType.FIELD);
+    @Override
+    public List<CompletionItem> getCompletionItems(EventPositionContext context) {
+        return new ArrayList<>();
+        // TODO: Fix this, and generalize this to suggest more than field names
+        // List<Symbol> fieldSymbols = context.schemaIndex.findgetSymbolsInScope(aSchemaSymbol, SymbolType.FIELD);
 
-        return fieldSymbols.stream()
-                           .map(symbol -> CompletionUtils.constructBasic(symbol.getShortIdentifier()))
-                           .collect(Collectors.toList());
+        // return fieldSymbols.stream()
+        //                    .map(symbol -> CompletionUtils.constructBasic(symbol.getShortIdentifier()))
+        //                    .collect(Collectors.toList());
 	}
 }

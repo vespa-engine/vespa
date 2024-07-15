@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.xerces.util.SymbolTable;
-
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
 public class SchemaIndex {

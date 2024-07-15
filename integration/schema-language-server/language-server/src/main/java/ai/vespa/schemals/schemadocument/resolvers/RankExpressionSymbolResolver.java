@@ -8,7 +8,6 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 
-import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;

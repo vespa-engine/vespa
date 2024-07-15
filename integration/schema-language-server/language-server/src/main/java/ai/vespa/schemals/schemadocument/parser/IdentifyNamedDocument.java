@@ -8,7 +8,6 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.context.ParseContext;

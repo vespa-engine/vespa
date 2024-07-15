@@ -18,16 +18,19 @@ public class RankProfileDocument implements DocumentManager {
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
+    private SchemaDocumentScheduler scheduler;
+
     private String fileURI;
     private String content = null;
     private Integer version;
     private boolean isOpen = false;
     private SchemaNode CST = null;
 
-    public RankProfileDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
+    public RankProfileDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler, String fileURI) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
+        this.scheduler = scheduler;
         this.fileURI = fileURI;
     }
 
@@ -44,7 +47,7 @@ public class RankProfileDocument implements DocumentManager {
         // schemaIndex.clearRankProfile(fileURI)
         // schemaIndex.addRankProfile(fileURI, this)
 
-        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex);
+        ParseContext context = new ParseContext(content, logger, fileURI, schemaIndex, scheduler);
         context.useRankProfileIdentifiers();
         var result = parseContent(context);
 

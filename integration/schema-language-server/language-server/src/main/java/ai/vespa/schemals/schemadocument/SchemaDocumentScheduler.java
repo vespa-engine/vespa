@@ -34,9 +34,9 @@ public class SchemaDocumentScheduler {
         boolean isSchemaFile = fileURI.toLowerCase().endsWith(".sd");
         if (!workspaceFiles.containsKey(fileURI)) {
             if (isSchemaFile) {
-                workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, fileURI));
+                workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
             } else {
-                workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, fileURI));
+                workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, this, fileURI));
             }
         }
 
