@@ -6,8 +6,9 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
-#include <ostream>
+#include <cctype>
 #include <charconv>
+#include <ostream>
 
 using namespace vdslib;
 
@@ -119,7 +120,7 @@ void Parameters::print(std::ostream& out, bool verbose, const std::string& inden
         for (const auto & entry : _parameters) {
             bool isPrintable(true);
             for (size_t i(0), m(entry.second.size()); isPrintable && (i < m); i++) {
-                isPrintable = isprint(entry.second[i]);
+                isPrintable = std::isprint(static_cast<unsigned char>(entry.second[i]));
             }
             out << "\n" << indent << "           " << entry.first << " = ";
             if (!entry.second.empty() && isPrintable && (entry.second[entry.second.size()-1] == 0)) {
