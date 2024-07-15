@@ -74,7 +74,14 @@ public class IdentifySymbolDefinition extends Identifier {
         if (parent == null) return ret;
 
         // Prevent inheritance from beeing marked as a definition
-        if (parent.indexOf(node) >= 3) return ret;
+        if (parent.indexOf(node) >= 3) {
+            // Unnless it is a paramenter to a function
+            if (parent.isASTInstance(functionElm.class) && node.isASTInstance(identifierStr.class)) {
+                setAsParameter(node);
+            }
+
+            return ret;
+        }
 
         HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
@@ -218,5 +225,14 @@ public class IdentifySymbolDefinition extends Identifier {
             }
         }
         return Optional.empty();
+    }
+
+    private void setAsParameter(SchemaNode node) {
+        SchemaNode parent = node.getParent();
+        SchemaNode functionDefinition = parent.get(2);
+
+        node.setSymbol(SymbolType.PARAMETER, context.fileURI(), functionDefinition.getSymbol());
+        node.setSymbolStatus(SymbolStatus.DEFINITION);
+        context.schemaIndex().insertSymbolDefinition(node.getSymbol());
     }
 }

@@ -124,7 +124,8 @@ public class Symbol {
         FIELD_IN_STRUCT,
         SUBFIELD,
         MAP_KEY,
-        MAP_VALUE
+        MAP_VALUE,
+        PARAMETER
     }
 
     public String toString() {
