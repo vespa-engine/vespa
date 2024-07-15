@@ -136,6 +136,7 @@ public class InheritanceResolver {
         List<Symbol> parentSymbols = context.schemaIndex().findAllSymbolsWithSchemaScope(context.fileURI(), SymbolType.RANK_PROFILE, inheritedIdentifier);
 
         if (parentSymbols.isEmpty()) {
+            context.logger().println("No parent symbols");
             // Handled in resolve symbol ref
             return;
         }

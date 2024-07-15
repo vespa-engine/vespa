@@ -106,7 +106,6 @@ public class IdentifySymbolReferences extends Identifier {
             Symbol scope = searchNode.get(1).getSymbol();
 
             node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope);
-            context.logger().println("Setting symbol: " + node.getSymbol());
         } else {
             node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
         }
