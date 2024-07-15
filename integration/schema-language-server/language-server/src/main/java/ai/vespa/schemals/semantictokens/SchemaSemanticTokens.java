@@ -51,6 +51,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(TokenType.INPUTS);
         add(TokenType.DOCUMENT_SUMMARY);
         add(TokenType.AS);
+        add(TokenType.SUMMARY);
     }};
 
     // Other
@@ -179,6 +180,8 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.STRUCT_FIELD, "variable");
         put(SymbolType.RANK_PROFILE, "variable");
         put(SymbolType.FUNCTION, "function");
+        put(SymbolType.DOCUMENT_SUMMARY, "variable");
+        put(SymbolType.SUMMARY, "variable");
     }};
 
     private static ArrayList<String> tokenTypes;
@@ -314,7 +317,7 @@ public class SchemaSemanticTokens implements Visitor {
         TokenType schemaType = node.getSchemaType();
         var rankExpressionType = node.getRankExpressionType();
 
-        if (node.isASTInstance(dataType.class) && !node.hasSymbol()) {
+        if (node.isSchemaASTInstance(dataType.class) && !node.hasSymbol()) {
 
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != -1) {

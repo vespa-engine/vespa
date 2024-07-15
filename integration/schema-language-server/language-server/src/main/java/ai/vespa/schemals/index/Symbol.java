@@ -99,6 +99,8 @@ public class Symbol {
         FIELDSET,
         STRUCT_FIELD,
         FUNCTION,
+        DOCUMENT_SUMMARY,
+        SUMMARY,
         TYPE_UNKNOWN
     }
 

@@ -18,7 +18,6 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 import ai.vespa.schemals.parser.ast.expression;
@@ -268,10 +267,14 @@ public class SchemaNode implements Iterable<SchemaNode> {
         simulatedSchimaClass = astClass;
     }
 
-    public boolean isASTInstance(Class<? extends Node> astClass) {
+    public boolean isSchemaASTInstance(Class<? extends Node> astClass) {
         if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchimaClass);
         
         return astClass.isInstance(originalSchemaNode);
+    }
+
+    public boolean isRankExpressionASTInstance(Class<? extends ai.vespa.schemals.parser.rankingexpression.Node> astClass) {
+        return astClass.isInstance(originalRankExpressionNode);
     }
 
     public Class<? extends Node> getASTClass() {

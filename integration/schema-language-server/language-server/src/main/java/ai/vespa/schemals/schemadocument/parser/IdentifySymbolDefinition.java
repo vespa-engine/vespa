@@ -11,6 +11,7 @@ import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.documentSummary;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.functionElm;
@@ -22,6 +23,7 @@ import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.structFieldElm;
+import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.schemadocument.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -47,13 +49,15 @@ public class IdentifySymbolDefinition extends Identifier {
 
     private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
         put(rankProfile.class, SymbolType.RANK_PROFILE);
+        put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
+        put(summaryInDocument.class, SymbolType.SUMMARY);
     }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
 
-        boolean isIdentifier = node.isASTInstance(identifierStr.class);
-        boolean isIdentifierWithDash = node.isASTInstance(identifierWithDashStr.class);
+        boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
+        boolean isIdentifierWithDash = node.isSchemaASTInstance(identifierWithDashStr.class);
 
         if (!isIdentifier && !isIdentifierWithDash) return ret;
 
