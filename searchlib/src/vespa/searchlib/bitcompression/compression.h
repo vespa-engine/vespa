@@ -4,11 +4,11 @@
 
 #include <vespa/searchlib/util/comprfile.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace vespalib {
 
 class GenericHeader;
-template <typename T> class ConstArrayRef;
 
 }
 

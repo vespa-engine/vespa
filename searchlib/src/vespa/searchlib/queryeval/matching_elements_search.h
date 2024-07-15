@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <memory>
 #include <vespa/searchlib/attribute/i_direct_posting_store.h>
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace search { class MatchingElements; }
 namespace search::attribute { class IAttributeVector; }
-namespace vespalib { template <typename> class ConstArrayRef; }
 namespace vespalib::datastore { class EntryRef; }
 
 namespace search::queryeval {
