@@ -45,12 +45,12 @@ struct L2DistCalc {
         return _hw.dotProduct(v1, v2, sz);
     }
     double product(ConstArr v1, ConstArr v2) {
-        const FltType *p1 = v1.begin();
-        const FltType *p2 = v2.begin();
+        const FltType *p1 = v1.data();
+        const FltType *p2 = v2.data();
         return _hw.dotProduct(p1, p2, v1.size());
     }
     double l2sq(ConstArr vector) {
-        const FltType *v = vector.begin();
+        const FltType *v = vector.data();
         return _hw.dotProduct(v, v, vector.size());
     }
     double l2sq_dist(ConstArr v1, ConstArr v2, Arr tmp) {
@@ -60,7 +60,7 @@ struct L2DistCalc {
         return l2sq(tmp);
     }
     double l2sq_dist(ConstArr v1, ConstArr v2) {
-        return hw_l2_sq_dist<FltType, 32>(v1.cbegin(), v2.cbegin(), v1.size());
+        return hw_l2_sq_dist<FltType, 32>(v1.data(), v2.data(), v1.size());
     }
 };
 

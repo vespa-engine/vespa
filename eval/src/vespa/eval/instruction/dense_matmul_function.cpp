@@ -31,10 +31,10 @@ void my_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_uninitialized_array<OCT>(self.lhs_size * self.rhs_size);
-    OCT *dst = dst_cells.begin();
-    const LCT *lhs = lhs_cells.cbegin();
+    OCT *dst = dst_cells.data();
+    const LCT *lhs = lhs_cells.data();
     for (size_t i = 0; i < self.lhs_size; ++i) {
-        const RCT *rhs = rhs_cells.cbegin();
+        const RCT *rhs = rhs_cells.data();
         for (size_t j = 0; j < self.rhs_size; ++j) {
             *dst++ = my_dot_product<LCT,RCT,OCT,lhs_common_inner,rhs_common_inner>(lhs, rhs,
                                                                                    self.lhs_size, self.common_size, self.rhs_size);
@@ -53,9 +53,9 @@ void my_cblas_double_matmul_op(InterpretedFunction::State &state, uint64_t param
     auto dst_cells = state.stash.create_array<double>(self.lhs_size * self.rhs_size);
     cblas_dgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
                 self.lhs_size, self.rhs_size, self.common_size, 1.0,
-                lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
-                rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
-                0.0, dst_cells.begin(), self.rhs_size);
+                lhs_cells.data(), lhs_common_inner ? self.common_size : self.lhs_size,
+                rhs_cells.data(), rhs_common_inner ? self.common_size : self.rhs_size,
+                0.0, dst_cells.data(), self.rhs_size);
     state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 
@@ -67,9 +67,9 @@ void my_cblas_float_matmul_op(InterpretedFunction::State &state, uint64_t param)
     auto dst_cells = state.stash.create_array<float>(self.lhs_size * self.rhs_size);
     cblas_sgemm(CblasRowMajor, lhs_common_inner ? CblasNoTrans : CblasTrans, rhs_common_inner ? CblasTrans : CblasNoTrans,
                 self.lhs_size, self.rhs_size, self.common_size, 1.0,
-                lhs_cells.cbegin(), lhs_common_inner ? self.common_size : self.lhs_size,
-                rhs_cells.cbegin(), rhs_common_inner ? self.common_size : self.rhs_size,
-                0.0, dst_cells.begin(), self.rhs_size);
+                lhs_cells.data(), lhs_common_inner ? self.common_size : self.lhs_size,
+                rhs_cells.data(), rhs_common_inner ? self.common_size : self.rhs_size,
+                0.0, dst_cells.data(), self.rhs_size);
     state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
 }
 

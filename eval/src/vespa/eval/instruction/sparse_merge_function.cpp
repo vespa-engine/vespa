@@ -77,7 +77,7 @@ void my_sparse_merge_op(InterpretedFunction::State &state, uint64_t param_in) {
         auto a_cells = a.cells().typify<CT>();
         auto b_cells = b.cells().typify<CT>();
         const Value &v = my_fast_sparse_merge<CT,single_dim,Fun>(as_fast(a_idx).map, as_fast(b_idx).map,
-                                                                 a_cells.cbegin(), b_cells.cbegin(),
+                                                                 a_cells.data(), b_cells.data(),
                                                                  param, state.stash);
         state.pop_pop_push(v);
     } else {

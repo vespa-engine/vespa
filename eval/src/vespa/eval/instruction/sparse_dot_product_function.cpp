@@ -68,8 +68,8 @@ template <typename CT, bool single_dim>
 void my_sparse_dot_product_op(InterpretedFunction::State &state, uint64_t num_mapped_dims) {
     const auto &lhs_idx = state.peek(1).index();
     const auto &rhs_idx = state.peek(0).index();
-    const CT *lhs_cells = state.peek(1).cells().typify<CT>().cbegin();
-    const CT *rhs_cells = state.peek(0).cells().typify<CT>().cbegin();
+    const CT *lhs_cells = state.peek(1).cells().typify<CT>().data();
+    const CT *rhs_cells = state.peek(0).cells().typify<CT>().data();
     double result = __builtin_expect(are_fast(lhs_idx, rhs_idx), true)
                     ? my_fast_sparse_dot_product<CT,single_dim>(&as_fast(lhs_idx).map, &as_fast(rhs_idx).map, lhs_cells, rhs_cells)
                     : my_sparse_dot_product_fallback<CT>(lhs_idx, rhs_idx, lhs_cells, rhs_cells, num_mapped_dims);
