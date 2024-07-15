@@ -295,7 +295,7 @@ public class SchemaDocumentParser {
 
         
         if (tolerantResult.CST().isPresent()) {
-            RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context, diagnostics);
+            diagnostics.addAll(RankExpressionSymbolResolver.resolveRankExpressionReferences(tolerantResult.CST().get(), context));
 
             diagnostics.addAll(SymbolReferenceResolver.resolveSymbolReferences(context, tolerantResult.CST().get()));
         }

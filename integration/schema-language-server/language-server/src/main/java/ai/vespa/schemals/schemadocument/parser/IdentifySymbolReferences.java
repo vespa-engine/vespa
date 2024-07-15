@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.eclipse.lsp4j.Diagnostic;
 
 import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
@@ -13,6 +14,7 @@ import ai.vespa.schemals.parser.ast.fieldsElm;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
+import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -81,16 +83,38 @@ public class IdentifySymbolReferences extends Identifier {
     private ArrayList<Diagnostic> identifyRankExpressionLanguage(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<>();
 
-        SchemaNode parent = node.getParent();
-        var type = node.getRankExpressionType();
-        if (parent == null || type == null) return ret;
+        if (node.size() == 0) return ret;
 
-        boolean isIdentifier = parent.isRankExpressionASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class);
+        SchemaNode child = node.get(0);
+        var type = child.getRankExpressionType();
+        boolean isIdentifier = node.isRankExpressionASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class);
+
         if (!isIdentifier || type != ai.vespa.schemals.parser.rankingexpression.Token.TokenType.IDENTIFIER) {
             return ret;
         }
 
-        node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+        context.logger().println("Starting danger loop");
+
+        SchemaNode searchNode = node;
+
+        while (
+            (!searchNode.isASTInstance(rankProfile.class)) &&
+            searchNode != null
+        ) {
+            searchNode = searchNode.getParent();
+            context.logger().print(".");
+        }
+        context.logger().println("\nFINISHED");
+
+        if (searchNode != null && searchNode.size() > 2 && searchNode.get(1).hasSymbol()) {
+            Symbol scope = searchNode.get(1).getSymbol();
+
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope);
+            context.logger().println("Setting symbol: " + node.getSymbol());
+        } else {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+        }
+        
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         return ret;

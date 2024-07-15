@@ -1,11 +1,14 @@
 package ai.vespa.schemals.schemadocument.resolvers;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
 
+import ai.vespa.schemals.SchemaMessageHandler;
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.ParseContext;
@@ -16,9 +19,10 @@ public class RankExpressionSymbolResolver {
     
 
     private static final Set<String> rankExpressionBultInFunctions = new HashSet<>() {{
-        add("query");
         add("bm25");
         add("attribute");
+        add("distance");
+
     }};
 
     /**
@@ -26,22 +30,29 @@ public class RankExpressionSymbolResolver {
      *
      * @param node        The schema node to resolve the rank expression references in.
      * @param context     The parse context.
-     * @param diagnostics The list to store any diagnostics encountered during resolution.
      */
-    public static void resolveRankExpressionReferences(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+    public static List<Diagnostic> resolveRankExpressionReferences(SchemaNode node, ParseContext context) {
+        List<Diagnostic> diagnostics = new ArrayList<>();
+
         if (
             node.getLanguageType() == LanguageType.RANK_EXPRESSION &&
-            node.hasSymbol() &&
-            node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED
+            node.hasSymbol()
         ) {
-            resolveRankExpressionBultInFunctions(node, context, diagnostics);
+            if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+                resolveRankExpressionBultInFunctions(node, context, diagnostics);
+            }
 
+            if (node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED) {
+                resolveFunctionReference(node, context, diagnostics);
+            }
 
         }
 
         for (SchemaNode child : node) {
-            resolveRankExpressionReferences(child, context, diagnostics);
+            diagnostics.addAll(resolveRankExpressionReferences(child, context));
         }
+
+        return diagnostics;
     }
 
     private static void resolveRankExpressionBultInFunctions(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
@@ -50,5 +61,16 @@ public class RankExpressionSymbolResolver {
             node.setSymbolType(SymbolType.FUNCTION);
             node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
         }
+    }
+
+    private static void resolveFunctionReference(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+        context.logger().println("Looking up: " + node.getSymbol().getLongIdentifier());
+        Symbol symbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FUNCTION, node.getSymbol().getLongIdentifier());
+
+        if (symbol == null) return;
+
+        node.setSymbolType(SymbolType.FUNCTION);
+        node.setSymbolStatus(SymbolStatus.REFERENCE);
+        context.schemaIndex().insertSymbolReference(symbol, node.getSymbol());
     }
 }
