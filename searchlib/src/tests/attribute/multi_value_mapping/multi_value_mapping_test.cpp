@@ -26,7 +26,7 @@ template <typename ElemT>
 void
 assertArray(const std::vector<ElemT> &exp, vespalib::ConstArrayRef<ElemT> values)
 {
-    EXPECT_EQ(exp, std::vector<ElemT>(values.cbegin(), values.cend()));
+    EXPECT_EQ(exp, std::vector<ElemT>(values.begin(), values.end()));
 }
 
 template <class MvMapping>
@@ -114,7 +114,7 @@ public:
     ArrayRef get_writable(uint32_t docId) { return _mvMapping->get_writable(docId); }
     void assertGet(uint32_t docId, const std::vector<ElemT> &exp) {
         ConstArrayRef act = get(docId);
-        EXPECT_EQ(exp, std::vector<ElemT>(act.cbegin(), act.cend()));
+        EXPECT_EQ(exp, std::vector<ElemT>(act.begin(), act.end()));
     }
     void assign_generation(generation_t current_gen) { _mvMapping->assign_generation(current_gen); }
     void reclaim_memory(generation_t oldest_used_gen) { _mvMapping->reclaim_memory(oldest_used_gen); }

@@ -31,7 +31,7 @@ ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::get_values(u
         *dst = multivalue::ValueBuilder<MultiValueType>::build(src, 1);
         ++dst;
     }
-    return vespalib::ConstArrayRef(_copy.data(), raw.size());
+    return vespalib::ConstArrayRef<MultiValueType>(_copy.data(), raw.size());
 }
 
 template class ExtendableNumericArrayMultiValueReadView<int8_t, int8_t>;

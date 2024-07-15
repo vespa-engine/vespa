@@ -31,6 +31,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");
 
+using namespace std::literals;
+
 namespace search {
 
 namespace {
@@ -907,7 +909,7 @@ TEST_F(SearchContextTest, test_search_iterator)
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         cfg.setFastSearch(true);
         auto ptr = AttributeBuilder("sfs-string", cfg).
-                fill({"three", "two", "three", "two", "three"}).get();
+                fill({"three"s, "two"s, "three"s, "two"s, "three"s}).get();
 
         SearchContextPtr threeHits = getSearch(*ptr.get(), "three");
         SearchContextPtr noHits = getSearch(*ptr.get(), "none");
@@ -1421,7 +1423,7 @@ SearchContextTest::testRegexSearch(const vespalib::string& name, const Config& c
 {
     LOG(info, "testRegexSearch: vector '%s'", name.c_str());
     auto attr = AttributeBuilder(name, cfg).
-            fill({"abc1def", "abc2Def", "abc2def", "abc4def", "abc5def", "abc6def"}).get();
+            fill({"abc1def"s, "abc2Def"s, "abc2def"s, "abc4def"s, "abc5def"s, "abc6def"s}).get();
 
     std::vector<const char *> terms = { "abc", "bc2de", "^abc1def.*bar" };
     std::vector<DocSet> expected;
@@ -1461,7 +1463,7 @@ SearchContextTest::testPrefixSearch(const vespalib::string& name, const Config& 
 {
     LOG(info, "testPrefixSearch: vector '%s'", name.c_str());
     auto attr = AttributeBuilder(name, cfg).
-            fill({"prefixsearch", "PREFIXSEARCH", "PrefixSearch", "precommit", "PRECOMMIT", "PreCommit"}).get();
+            fill({"prefixsearch"s, "PREFIXSEARCH"s, "PrefixSearch"s, "precommit"s, "PRECOMMIT"s, "PreCommit"s}).get();
 
     const char * terms[][3] = {{"pre", "PRE", "Pre"},
                                {"pref", "PREF", "Pref"},
@@ -1522,7 +1524,7 @@ void
 SearchContextTest::testFuzzySearch(const vespalib::string& name, const Config& cfg)
 {
     LOG(info, "testFuzzySearch: vector '%s'", name.c_str());
-    auto attr = AttributeBuilder(name, cfg).fill({"fuzzysearch", "notthis", "FUZZYSEARCH"}).get();
+    auto attr = AttributeBuilder(name, cfg).fill({"fuzzysearch"s, "notthis"s, "FUZZYSEARCH"s}).get();
 
     const char * terms[][2] = {
         {"fuzzysearch", "FUZZYSEARCH"},
