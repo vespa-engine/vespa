@@ -13,9 +13,9 @@ public class SchemaIndex {
 
     private PrintStream logger;
 
-    private Map<SymbolType, List<Symbol>> symbolDefinitions = new HashMap<>();
-    private Map<Symbol, List<Symbol>> symbolReferences = new HashMap<>();
-    private Map<Symbol, Symbol> definitionOfReference = new HashMap<>();
+    private Map<SymbolType, List<Symbol>> symbolDefinitions;
+    private Map<Symbol, List<Symbol>> symbolReferences;
+    private Map<Symbol, Symbol> definitionOfReference;
 
     private InheritanceGraph<String> documentInheritanceGraph;
     private InheritanceGraph<SymbolInheritanceNode> structInheritanceGraph;
@@ -23,9 +23,18 @@ public class SchemaIndex {
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
-        this.documentInheritanceGraph = new InheritanceGraph<>();
-        this.structInheritanceGraph = new InheritanceGraph<>();
+        this.documentInheritanceGraph    = new InheritanceGraph<>();
+        this.structInheritanceGraph      = new InheritanceGraph<>();
         this.rankProfileInheritanceGraph = new InheritanceGraph<>();
+
+        this.symbolDefinitions     = new HashMap<>();
+        this.symbolReferences      = new HashMap<>();
+        this.definitionOfReference = new HashMap<>();
+
+        for (SymbolType type : SymbolType.values()) {
+            this.symbolDefinitions.put(type, new ArrayList<Symbol>());
+        }
+
     }
 
     /**
@@ -40,7 +49,40 @@ public class SchemaIndex {
      *
      * @param fileURI the URI of the document to be cleared
      */
-    public void clearDocument(String fileURI) {}
+    public void clearDocument(String fileURI) {
+        for (var list : symbolDefinitions.values()) {
+            for (int i = list.size() - 1; i >= 0; i--) {
+                if (list.get(i).getFileURI() == fileURI) {
+                    list.remove(i);
+                }
+            }
+        }
+
+        for (var entry : symbolReferences.entrySet()) {
+            Symbol key = entry.getKey();
+            if (key.getFileURI() == fileURI) {
+                symbolReferences.remove(key);
+            } else {
+
+                for (int i = entry.getValue().size() - 1; i >= 0; i--) {
+                    if (entry.getValue().get(i).getFileURI() == fileURI) {
+                        entry.getValue().remove(i);
+                    }
+                }
+
+            }
+        }
+
+        for (var entry : definitionOfReference.entrySet()) {
+
+            if (
+                entry.getKey().getFileURI() == fileURI ||
+                entry.getValue().getFileURI() == fileURI
+            ) {
+                definitionOfReference.remove(entry.getKey());
+            }
+        }
+    }
 
     /**
      * Searches for the specified symbol in the index.
@@ -69,7 +111,11 @@ public class SchemaIndex {
      * @return An Optional containing the definition of the symbol, or an empty Optional if the symbol is not found.
      */
     public Optional<Symbol> getSymbolDefinition(Symbol symbol) {
-        return Optional.empty();
+        Symbol results = definitionOfReference.get(symbol);
+
+        if (results == null) return Optional.empty();
+
+        return Optional.of(results);
     }
 
     /**
@@ -79,7 +125,11 @@ public class SchemaIndex {
      * @return A list of symbol references.
      */
     public List<Symbol> getSymbolReferences(Symbol symbol) {
-        return new ArrayList<>();
+        List<Symbol> results = symbolReferences.get(symbol);
+
+        if (results == null) return new ArrayList<>();
+
+        return results;
     }
 
     /**
@@ -89,6 +139,10 @@ public class SchemaIndex {
      */
     public void insertSymbolDefinition(Symbol symbol) {
 
+        List<Symbol> list = symbolDefinitions.get(symbol.getType());
+        list.add(symbol);
+
+        symbolReferences.put(symbol, new ArrayList<>());
     }
 
     /**
@@ -99,7 +153,13 @@ public class SchemaIndex {
      * @param reference the symbol being referenced
      */
     public void insertSymbolReference(Symbol definition, Symbol reference) {
+        List<Symbol> list = symbolReferences.get(definition);
+        if (list == null) {
+            throw new IllegalArgumentException("Could not insert symbol reference" + reference + " before the definition is inserted");
+        }
 
+        definitionOfReference.put(reference, definition);
+        list.add(reference);
     }
 
     /**
@@ -118,7 +178,7 @@ public class SchemaIndex {
      *
      * @param childSymbol The child symbol representing the struct.
      * @param parentSymbol The parent symbol representing the inherited struct.
-     * @return {@code true} if the struct inheritance was successfully registered, {@code false} otherwise.
+     * @return false if the struct inheritance was successfully registered, false otherwise.
      */
     public boolean tryRegisterStructInheritance(Symbol childSymbol, Symbol parentSymbol) {
         return false;
@@ -129,7 +189,7 @@ public class SchemaIndex {
      *
      * @param childSymbol The symbol representing the child rank profile.
      * @param parentSymbol The symbol representing the parent rank profile.
-     * @return {@code true} if the inheritance relationship was successfully registered, {@code false} otherwise.
+     * @return true if the inheritance relationship was successfully registered, true otherwise.
      */
     public boolean tryRegisterRankProfileInheritance(Symbol childSymbol, Symbol parentSymbol) {
         return false;
@@ -144,5 +204,44 @@ public class SchemaIndex {
      */
     public List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type) {
         return new ArrayList<>();
+    }
+
+    /**
+     * Dumps the index to the console.
+     */
+    public void dumpIndex() {
+
+        logger.println(" === SYMBOL DEFINITIONS === ");
+        for (var entry : symbolDefinitions.entrySet()) {
+            logger.println("TYPE: " + entry.getKey());
+
+            for (var symbol : entry.getValue()) {
+                logger.println("    " + symbol);
+            }
+        }
+
+        logger.println(" === SYMBOL DEFINITION REFERENCES === ");
+        for (var entry : symbolReferences.entrySet()) {
+            logger.println(entry.getKey());
+
+            for (var symbol : entry.getValue()) {
+                logger.println("    " + symbol);
+            }
+        }
+
+        logger.println(" === REFERENCES TO DEFINITIONS ===");
+        for (var entry : definitionOfReference.entrySet()) {
+
+            logger.println(entry.getKey() + " -> " + entry.getValue());
+        }
+
+        logger.println(" === DOCUMENT INHERITANCE === ");
+        documentInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === STRUCT INHERITANCE === ");
+        structInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === RANK PROFILE INHERITANCE === ");
+        rankProfileInheritanceGraph.dumpAllEdges(logger);
     }
 }
