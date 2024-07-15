@@ -267,6 +267,14 @@ public class SchemaNode implements Iterable<SchemaNode> {
         simulatedSchimaClass = astClass;
     }
 
+    public boolean isASTInstance(Class<?> astClass) {
+        if (language == LanguageType.CUSTOM && astClass.isInstance(simulatedSchimaClass)) return true;
+        if (language == LanguageType.SCHEMA) return astClass.isInstance(originalSchemaNode);
+        if (language == LanguageType.RANK_EXPRESSION) return astClass.isInstance(originalRankExpressionNode);
+        if (language == LanguageType.INDEXING) return astClass.isInstance(originalIndexingNode);
+        return false;
+    }
+
     public boolean isSchemaASTInstance(Class<? extends Node> astClass) {
         if (language == LanguageType.CUSTOM) return astClass.equals(simulatedSchimaClass);
         
