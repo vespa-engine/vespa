@@ -43,7 +43,7 @@ public class SchemaDocumentScheduler {
         workspaceFiles.get(fileURI).updateFileContent(content, version);
 
         if (isSchemaFile && reparseDescendants) {
-            for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
+            for (String descendantURI : schemaIndex.getDocumentInheritanceGraph().getAllDescendants(fileURI)) {
                 if (workspaceFiles.containsKey(descendantURI)) {
                     workspaceFiles.get(descendantURI).reparseContent();
                 }
@@ -109,7 +109,7 @@ public class SchemaDocumentScheduler {
     }
 
     public void reparseInInheritanceOrder() {
-        for (String fileURI : schemaIndex.getAllDocumentsInInheritanceOrder()) {
+        for (String fileURI : schemaIndex.getDocumentInheritanceGraph().getTopoOrdering()) {
             if (workspaceFiles.containsKey(fileURI)) {
                 workspaceFiles.get(fileURI).reparseContent();
             }
@@ -118,6 +118,10 @@ public class SchemaDocumentScheduler {
 
     public void setReparseDescendants(boolean reparseDescendants) {
         this.reparseDescendants = reparseDescendants;
+    }
+
+    public boolean fileURIExists(String fileURI) {
+        return workspaceFiles.containsKey(fileURI);
     }
 
 }

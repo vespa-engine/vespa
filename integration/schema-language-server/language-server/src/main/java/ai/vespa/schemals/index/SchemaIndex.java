@@ -1,5 +1,7 @@
 package ai.vespa.schemals.index;
 
+import static ai.vespa.schemals.parser.Token.TokenType.OPERATION;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.ast.DOT;
 
 public class SchemaIndex {
 
@@ -155,11 +156,11 @@ public class SchemaIndex {
     /**
      * Retrieves the definition of a symbol from a map
      *
-     * @param symbol The symbol to retrieve the definition for.
+     * @param reference The reference to retrieve the definition for.
      * @return An Optional containing the definition of the symbol, or an empty Optional if the symbol is not found.
      */
-    public Optional<Symbol> getSymbolDefinition(Symbol symbol) {
-        Symbol results = definitionOfReference.get(symbol);
+    public Optional<Symbol> getSymbolDefinition(Symbol reference) {
+        Symbol results = definitionOfReference.get(reference);
 
         if (results == null) return Optional.empty();
 
@@ -167,17 +168,29 @@ public class SchemaIndex {
     }
 
     /**
-     * Returns a list of symbol references for the given symbol.
+     * Returns a list of symbol references for the given symbol definition.
      *
-     * @param symbol The symbol for which to retrieve the references.
+     * @param definition The symbol for which to retrieve the references.
      * @return A list of symbol references.
      */
-    public List<Symbol> getSymbolReferences(Symbol symbol) {
-        List<Symbol> results = symbolReferences.get(symbol);
+    public List<Symbol> getSymbolReferences(Symbol definition) {
+        List<Symbol> results = symbolReferences.get(definition);
 
         if (results == null) return new ArrayList<>();
 
         return results;
+    }
+
+    public Optional<Symbol> getSymbol(SymbolType type, String shortIdentifier) {
+        List<Symbol> list = symbolDefinitions.get(type);
+
+        for (Symbol symbol : list) {
+            if (symbol.getShortIdentifier().equals(shortIdentifier)) {
+                return Optional.of(symbol);
+            }
+        }
+
+        return Optional.empty();
     }
 
     /**

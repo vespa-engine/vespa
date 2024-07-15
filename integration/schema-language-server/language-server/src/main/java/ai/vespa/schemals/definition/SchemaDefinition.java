@@ -1,6 +1,8 @@
 package ai.vespa.schemals.definition;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Location;
 
@@ -24,18 +26,23 @@ public class SchemaDefinition {
         Symbol search = node.getSymbol();
 
         // Try the faster search first
-        Symbol result = context.schemaIndex.findSymbol(context.document.getFileURI(), search.getType(), search.getLongIdentifier());
+        Optional<Symbol> results = context.schemaIndex.getSymbolDefinition(search);
 
-        if (result == null && search.getType() == SymbolType.DOCUMENT) {
-            result = context.schemaIndex.findSymbol(context.document.getFileURI(), SymbolType.SCHEMA, search.getLongIdentifier()); 
+        if (results.isEmpty() && search.getType() == SymbolType.DOCUMENT) {
+            results = context.schemaIndex.findSymbol(search.getScope(), SymbolType.SCHEMA, search.getShortIdentifier()); 
         }
 
-        if (result == null) {
-            context.schemaIndex.findDefinitionOfReference(search).ifPresent(
-                symbol -> ret.add(symbol.getLocation())
-            );
-        } else {
-            ret.add(result.getLocation());
+        // TODO: refactor
+        // if (result == null) {
+        //     context.schemaIndex.findDefinitionOfReference(search).ifPresent(
+        //         symbol -> ret.add(symbol.getLocation())
+        //     );
+        // } else {
+        //     ret.add(result.getLocation());
+        // }
+
+        if (results.isPresent()) {
+            ret.add(results.get().getLocation());
         }
 
         return ret;

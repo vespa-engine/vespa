@@ -2,6 +2,7 @@ package ai.vespa.schemals.references;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Location;
 
@@ -34,13 +35,14 @@ public class SchemaReferences {
         boolean originalSymbolIsDefinition = originalSymbol.getStatus() == SymbolStatus.DEFINITION;
         if (!originalSymbolIsDefinition) {
 
-            search = context.schemaIndex.findSymbol(originalSymbol);
-            if (search == null) {
+            Optional<Symbol> results = context.schemaIndex.getSymbolDefinition(originalSymbol);
+            if (results.isEmpty()) {
                 return ret;
             }
+            search = results.get();
         }
 
-        List<Symbol> symbols = context.schemaIndex.findSymbolReferences(search);
+        List<Symbol> symbols = context.schemaIndex.getSymbolReferences(search);
 
         if (!originalSymbolIsDefinition) {
             symbols.add(search);

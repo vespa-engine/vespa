@@ -22,20 +22,22 @@ public class SchemaHover {
     private static final String markdownPathRoot = "hover/";
 
     private static Hover getStructHover(SchemaNode node, EventPositionContext context) {
-        Symbol structDefinitionSymbol = context.schemaIndex.findSymbol(node.getSymbol().getFileURI(), SymbolType.STRUCT, node.getSymbol().getLongIdentifier());
-        if (structDefinitionSymbol == null) {
-            Optional<Symbol> res = context.schemaIndex.findDefinitionOfReference(node.getSymbol());
-            if (res.isEmpty()) return null;
-            structDefinitionSymbol = res.get();
-        }
-        List<Symbol> fieldDefs = context.schemaIndex.getAllStructFieldSymbols(structDefinitionSymbol);
 
-        String result = "### struct " + structDefinitionSymbol.getLongIdentifier() + "\n";
+        Optional<Symbol> structDefinitionSymbol = context.schemaIndex.getSymbolDefinition(node.getSymbol());
+        
+        if (structDefinitionSymbol.isEmpty()) {
+            Optional<Symbol> res = context.schemaIndex.getSymbolDefinition(node.getSymbol());
+            if (res.isEmpty()) return null;
+            structDefinitionSymbol = res;
+        }
+        List<Symbol> fieldDefs = context.schemaIndex.findSymbolsInScope(structDefinitionSymbol.get(), SymbolType.FIELD);
+
+        String result = "### struct " + structDefinitionSymbol.get().getLongIdentifier() + "\n";
         for (Symbol fieldDef : fieldDefs) {
             result += "    field " + fieldDef.getShortIdentifier() + " type " +  
                 fieldDef.getNode().getNextSibling().getNextSibling().getText();
 
-            if (!fieldDef.isInScope(structDefinitionSymbol)) {
+            if (!fieldDef.isInScope(structDefinitionSymbol.get())) {
                 result += " (inherited from " + fieldDef.getScopeIdentifier() + ")";
             }
 

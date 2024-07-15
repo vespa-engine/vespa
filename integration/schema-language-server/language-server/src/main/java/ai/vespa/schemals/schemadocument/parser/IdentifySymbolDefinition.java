@@ -3,6 +3,7 @@ package ai.vespa.schemals.schemadocument.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -83,13 +84,13 @@ public class IdentifySymbolDefinition extends Identifier {
             return ret;
         }
 
-        HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
+        Map<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType != null) {
 
             node.setSymbol(symbolType, context.fileURI());
 
-            if (context.schemaIndex().findSymbolInFile(context.fileURI(), symbolType, node.getText()) == null) {
+            if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
                 context.schemaIndex().insertSymbolDefinition(node.getSymbol());
             } else {
@@ -121,7 +122,7 @@ public class IdentifySymbolDefinition extends Identifier {
             if (scope.isPresent()) {
                 node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI(), scope.get());
 
-                if (context.schemaIndex().findSymbolWithSchemaScope(context.fileURI(), SymbolType.RANK_PROFILE, node.getSymbol().getShortIdentifier()) == null) {
+                if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
                     node.setSymbolStatus(SymbolStatus.DEFINITION);
                     context.schemaIndex().insertSymbolDefinition(node.getSymbol());
                 }
