@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/issue.h>
+#include <cctype>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.onnx_feature");
@@ -37,8 +38,8 @@ namespace {
 
 vespalib::string normalize_name(const vespalib::string &name, const char *context) {
     vespalib::string result;
-    for (char c: name) {
-        if (isalnum(c)) {
+    for (char c : name) {
+        if (std::isalnum(static_cast<unsigned char>(c))) {
             result.push_back(c);
         } else {
             result.push_back('_');
