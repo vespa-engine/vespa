@@ -1,6 +1,7 @@
 package ai.vespa.schemals.semantictokens;
 
 import java.io.PrintStream;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +32,21 @@ public class SchemaSemanticTokens implements Visitor {
     }};
 
     // Keyword
+    private static final List<SymbolType> userDefinedSymbolTypes = new ArrayList<SymbolType>() {{
+        add(SymbolType.SCHEMA);
+        add(SymbolType.DOCUMENT);
+        add(SymbolType.FIELD);
+        add(SymbolType.STRUCT);
+        add(SymbolType.ANNOTATION);
+        add(SymbolType.RANK_PROFILE);
+        add(SymbolType.FIELDSET);
+        add(SymbolType.STRUCT_FIELD);
+        add(SymbolType.FUNCTION);
+        add(SymbolType.TYPE_UNKNOWN);
+        add(SymbolType.FIELD_IN_STRUCT);
+        add(SymbolType.SUBFIELD);
+    }};
+
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
         add(TokenType.ANNOTATION);
         add(TokenType.DOCUMENT);
@@ -182,6 +198,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.FUNCTION, "function");
         put(SymbolType.DOCUMENT_SUMMARY, "variable");
         put(SymbolType.SUMMARY, "variable");
+        put(SymbolType.FIELD_IN_STRUCT, "property");
     }};
 
     private static ArrayList<String> tokenTypes;
@@ -317,7 +334,8 @@ public class SchemaSemanticTokens implements Visitor {
         TokenType schemaType = node.getSchemaType();
         var rankExpressionType = node.getRankExpressionType();
 
-        if (node.isSchemaASTInstance(dataType.class) && !node.hasSymbol()) {
+        // TODO: this became a bit ugly with the map stuff
+        if (node.isASTInstance(dataType.class) && (!node.hasSymbol() || node.getSymbol().getType() == SymbolType.MAP_KEY || node.getSymbol().getType() == SymbolType.MAP_VALUE)) {
 
             Integer tokenType = tokenTypes.indexOf("type");
             if (tokenType != -1) {
@@ -326,12 +344,23 @@ public class SchemaSemanticTokens implements Visitor {
                 ret.add(new SemanticTokenMarker(tokenType, markerRange));
             }
 
-        } 
-
-        if (node.hasSymbol() && 
-                (node.getSymbol().getStatus() == SymbolStatus.REFERENCE || node.getSymbol().getStatus() == SymbolStatus.DEFINITION)) {
+        } else if (
+            node.hasSymbol() && 
+            (
+                node.getSymbol().getStatus() == SymbolStatus.REFERENCE ||
+                node.getSymbol().getStatus() == SymbolStatus.DEFINITION
+            ) && 
+            userDefinedSymbolTypes.contains(node.getSymbol().getType())
+        ) {
             Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
             
+            if (tokenType != null) {
+                ret.add(new SemanticTokenMarker(tokenType, node));
+            }
+
+        } else if (node.hasSymbol() && node.getSymbol().getStatus() == SymbolStatus.BUILTIN_REFERENCE) {
+            Integer tokenType = identifierTypeMap.get(node.getSymbol().getType());
+
             if (tokenType != null) {
                 ret.add(new SemanticTokenMarker(tokenType, node));
             }

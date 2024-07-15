@@ -1,10 +1,13 @@
 package ai.vespa.schemals.tree;
 
+import java.util.Optional;
 import java.io.PrintStream;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -28,7 +31,12 @@ public class CSTUtils {
 
     public static Range getNodeRange(Node node) {
         TokenSource tokenSource = node.getTokenSource();
-        return getRangeFromOffsets(tokenSource, node.getBeginOffset(), node.getEndOffset());
+        try {
+            return getRangeFromOffsets(tokenSource, node.getBeginOffset(), node.getEndOffset());
+        } catch(Exception e) {
+            // TODO: something happens when offsets are bad
+        }        
+        return new Range(new Position(0, 0), new Position(0, 0));
     }
 
 
@@ -88,6 +96,19 @@ public class CSTUtils {
 
         return null;
     }
+
+    /**
+     * @param node query node
+     * @return Closest symbol belonging to a parent node
+     */
+    public static Optional<Symbol> findNodeScope(SchemaNode node) {
+        while (node != null) {
+            if (node.hasSymbol()) return Optional.of(node.getSymbol());
+            node = node.getParent();
+        }
+        return Optional.empty();
+    }
+
 
     /*
      * Logger utils

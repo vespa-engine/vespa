@@ -183,7 +183,24 @@ public class SchemaNode implements Iterable<SchemaNode> {
     }
 
     public void setSymbol(SymbolType type, String fileURI) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
         this.symbolAtNode = new Symbol(this, type, fileURI);
+    }
+
+    public void setSymbol(SymbolType type, String fileURI, Symbol scope) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
+        this.symbolAtNode = new Symbol(this, type, fileURI, scope);
+    }
+
+    public void setSymbol(SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
+        if (this.hasSymbol()) {
+            throw new IllegalArgumentException("Cannot set symbol for node: " + this.toString() + ". Already has symbol.");
+        }
+        this.symbolAtNode = new Symbol(this, type, fileURI, scope, shortIdentifier);
     }
 
     public void setSymbolType(SymbolType newType) {
@@ -295,6 +312,24 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return identifierString;
     }
 
+    public void setNewStartCharacter(int startCharacter) {
+        if (this.originalSchemaNode == null) return;
+        int currentOffset = originalSchemaNode.getBeginOffset();
+        int characterDelta = startCharacter - range.getStart().getCharacter();
+
+        originalSchemaNode.setBeginOffset(currentOffset + characterDelta);
+        this.range = CSTUtils.getNodeRange(originalSchemaNode);
+    }
+
+    public void setNewEndCharacter(int endCharacter) {
+        if (originalSchemaNode == null) return;
+        int currentOffset = originalSchemaNode.getEndOffset();
+        int characterDelta = endCharacter - range.getEnd().getCharacter();
+
+        originalSchemaNode.setEndOffset(currentOffset + characterDelta);
+        this.range = CSTUtils.getNodeRange(originalSchemaNode);
+    }
+
     public String getClassLeafIdentifierString() {
         int lastIndex = identifierString.lastIndexOf('.');
         return identifierString.substring(lastIndex + 1);
@@ -318,6 +353,11 @@ public class SchemaNode implements Iterable<SchemaNode> {
 
     public SchemaNode getParent() {
         return getParent(1);
+    }
+
+    public void insertChildAfter(int index, SchemaNode child) {
+        this.children.add(index+1, child);
+        child.setParent(this);
     }
 
     public SchemaNode getPrevious() {

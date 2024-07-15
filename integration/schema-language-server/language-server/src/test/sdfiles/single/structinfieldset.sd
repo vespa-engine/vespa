@@ -1,0 +1,20 @@
+schema structinfieldset {
+    document {
+        struct person {
+            field age type int {}
+            field hmmmm type string {}
+        }
+
+        struct city {
+            field citizens type array<person> {}
+            field house type map<int, array<person>> {}
+        }
+
+        field oslo type city {}
+        field drammen type city {}
+    }
+
+    fieldset myfieldset {
+        fields: oslo.citizens.age, drammen.house.key, drammen.house.value.hmmmm
+   }
+}

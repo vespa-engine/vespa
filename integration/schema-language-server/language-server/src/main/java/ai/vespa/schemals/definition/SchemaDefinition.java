@@ -10,10 +10,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaDefinition {
-
-    public static ArrayList<Location> getDefinition(
-        EventPositionContext context
-    ) {
+    public static ArrayList<Location> getDefinition(EventPositionContext context) {
 
         ArrayList<Location> ret = new ArrayList<Location>();
 
@@ -25,6 +22,7 @@ public class SchemaDefinition {
 
         Symbol search = node.getSymbol();
 
+        // Try the faster search first
         Symbol result = context.schemaIndex.findSymbol(context.document.getFileURI(), search.getType(), search.getLongIdentifier());
 
         if (result == null && search.getType() == SymbolType.DOCUMENT) {
@@ -32,10 +30,13 @@ public class SchemaDefinition {
         }
 
         if (result == null) {
-            return ret;
+            context.schemaIndex.findDefinitionOfReference(search).ifPresent(
+                symbol -> ret.add(symbol.getLocation())
+            );
+        } else {
+            ret.add(result.getLocation());
         }
 
-        ret.add(result.getLocation());
         return ret;
     }
 }

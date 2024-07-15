@@ -37,9 +37,10 @@ public class ParseContext {
             add(new IdentifySymbolReferences(context));
             add(new IdentifyAnnotationReference(context));
 
+            add(new IdentifySchemaInheritance(context));
             add(new IdentifyDocumentInheritance(context));
             add(new IdentifyStructInheritance(context));
-            add(new IdentifySchemaInheritance(context));
+            add(new IdentifyRankProfileInheritance(context));
 
             add(new IdentifyDeprecatedToken(context));
             add(new IdentifyDirtyNodes(context));

@@ -3,12 +3,21 @@ package ai.vespa.schemals.index;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import java.util.Optional;
+import java.util.Set;
+
+import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.index.InheritanceGraph.SearchResult;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
 import ai.vespa.schemals.tree.SchemaNode;
 
@@ -22,14 +31,18 @@ public class SchemaIndex {
     // Map fileURI -> SchemaDocumentParser
     private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
 
-    private DocumentInheritanceGraph documentInheritanceGraph;
+    private InheritanceGraph<String> documentInheritanceGraph;
+    private InheritanceGraph<SymbolInheritanceNode> structInheritanceGraph;
+    private InheritanceGraph<SymbolInheritanceNode> rankProfileInheritanceGraph;
 
     // Schema inheritance. Can only inherit one schema
     private HashMap<String, String> schemaInherits = new HashMap<String, String>();
     
     public SchemaIndex(PrintStream logger) {
         this.logger = logger;
-        this.documentInheritanceGraph = new DocumentInheritanceGraph();
+        this.documentInheritanceGraph = new InheritanceGraph<>();
+        this.structInheritanceGraph = new InheritanceGraph<>();
+        this.rankProfileInheritanceGraph = new InheritanceGraph<>();
     }
     
     public void clearDocument(String fileURI) {
@@ -38,7 +51,18 @@ public class SchemaIndex {
 
         while (iterator.hasNext()) {
             Map.Entry<String, Symbol> entry = iterator.next();
-            if (entry.getValue().getFileURI().equals(fileURI)) {
+            Symbol currentSymbol = entry.getValue();
+            if (currentSymbol.getFileURI().equals(fileURI)) {
+
+                // TODO: it's ugly
+                if (currentSymbol.getType() == SymbolType.STRUCT) {
+                    structInheritanceGraph.clearInheritsList(getSymbolInheritanceKey(currentSymbol));
+                }
+
+                if (currentSymbol.getType() == SymbolType.RANK_PROFILE) {
+                    rankProfileInheritanceGraph.clearInheritsList(getSymbolInheritanceKey(currentSymbol));
+                }
+
                 iterator.remove();
             }
         }
@@ -53,11 +77,12 @@ public class SchemaIndex {
         }
 
         openSchemas.remove(fileURI);
+        schemaInherits.remove(fileURI);
         documentInheritanceGraph.clearInheritsList(fileURI);
     }
 
     private String createDBKey(Symbol symbol) {
-        return createDBKey(symbol.getFileURI(), symbol.getType(), symbol.getShortIdentifier());
+        return createDBKey(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
     }
 
     private String createDBKey(String fileURI, SymbolType type, String identifier) {
@@ -71,14 +96,10 @@ public class SchemaIndex {
 
     /*
     * Searches for the given symbol ONLY in document pointed to by fileURI
+    * Returns null if not found
     */
     public Symbol findSymbolInFile(String fileURI, SymbolType type, String identifier) {
-        Symbol result = symbolDefinitionsDB.get(createDBKey(fileURI, type, identifier));
-
-        if (result == null) {
-            return null;
-        }
-        return result;
+        return symbolDefinitionsDB.get(createDBKey(fileURI, type, identifier));
     }
 
     /*
@@ -86,9 +107,9 @@ public class SchemaIndex {
      */
     public Symbol findSymbol(String fileURI, SymbolType type, String identifier) {
         // TODO: handle name collision (diamond etc.)
-        List<String> inheritanceList = documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+        List<String> inheritanceList = documentInheritanceGraph.getAllAncestors(fileURI);
 
-        for (var parentURI : inheritanceList) {
+        for (String parentURI : inheritanceList) {
             Symbol result = findSymbolInFile(parentURI, type, identifier);
             if (result != null) return result;
         }
@@ -97,6 +118,38 @@ public class SchemaIndex {
 
     public Symbol findSymbol(Symbol symbol) {
         return findSymbol(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
+    }
+
+    /**
+     * Same as above, but we look for symbols with the containing schema as their scope.
+     * @param identifierWithoutSchemaScope symbol identifier without schema prefix. This is to make inheritance work
+     * @return the required symbol definition or null if no symbol was found. 
+     * If multiple definitions exists, choose the one with the highest position in topological ordering. Note that this might be ambiguous.
+     */
+    public Symbol findSymbolWithSchemaScope(String fileURI, SymbolType type, String identifierWithoutSchemaScope) {
+        List<InheritanceGraph<String>.SearchResult<Symbol>> matches = documentInheritanceGraph.findFirstMatches(fileURI, 
+                (parentURI) -> findSymbolInFile(parentURI, type, FileUtils.schemaNameFromPath(parentURI) + "." + identifierWithoutSchemaScope));
+
+        if (matches.isEmpty()) return null;
+
+        return matches.get(0).result;
+    }
+
+    public Symbol findSymbolWithSchemaScope(Symbol symbol) {
+        return findSymbolWithSchemaScope(symbol.getFileURI(), symbol.getType(), symbol.getLongIdentifier());
+    }
+
+    public List<Symbol> findAllSymbolsWithSchemaScope(String fileURI, SymbolType type, String identifierWithoutSchemaScope) {
+        List<Symbol> result = new ArrayList<>();
+
+        List<InheritanceGraph<String>.SearchResult<Symbol>> matches = documentInheritanceGraph.findFirstMatches(fileURI, 
+                (parentURI) -> findSymbolInFile(parentURI, type, FileUtils.schemaNameFromPath(parentURI) + "." + identifierWithoutSchemaScope));
+
+        for (var match : matches) {
+            result.add(match.result);
+        }
+
+        return result;
     }
 
     private ArrayList<Symbol> findSymbolReferences(String dbKey) {
@@ -123,6 +176,18 @@ public class SchemaIndex {
         return findSymbolReferences(createDBKey(schemaSymbol.getFileURI(), SymbolType.DOCUMENT, schemaSymbol.getLongIdentifier()));
     }
 
+    public Optional<Symbol> findDefinitionOfReference(Symbol reference) {
+        for (var entry : symbolReferencesDB.entrySet()) {
+            for (Symbol registeredReference : entry.getValue()) {
+                if (registeredReference.equals(reference)) {
+                    String key = entry.getKey();
+                    return Optional.ofNullable(symbolDefinitionsDB.get(key));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     public List<Symbol> findSymbolsWithTypeInDocument(String fileURI, SymbolType type) {
         List<Symbol> result = new ArrayList<>();
         for (var entry : symbolDefinitionsDB.entrySet()) {
@@ -134,6 +199,58 @@ public class SchemaIndex {
 
         return result;
     }
+
+    public List<Symbol> findSymbolsInScope(Symbol scope) {
+        return symbolDefinitionsDB.values()
+                                  .stream()
+                                  .filter(symbol -> symbol.isInScope(scope))
+                                  .collect(Collectors.toList());
+    }
+
+    public Optional<Symbol> findFieldInStruct(Symbol structDefinitionSymbol, String shortIdentifier) {
+        SymbolInheritanceNode inheritanceNode = getSymbolInheritanceKey(structDefinitionSymbol);
+
+        for (SymbolInheritanceNode node : structInheritanceGraph.getAllAncestors(inheritanceNode)) {
+            Symbol structSymbol = node.getSymbol();
+            Symbol result = findSymbol(structSymbol.getFileURI(), SymbolType.FIELD_IN_STRUCT, structSymbol.getLongIdentifier() + "." + shortIdentifier);
+            if (result != null)return Optional.of(result);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * When someone write something.value, find the definition value points to
+     * @param fieldDefinitionSymbol The symbol having map as a data type
+     * */
+    public Optional<Symbol> findMapValueDefinition(Symbol fieldDefinitionSymbol) {
+        Symbol rawValueSymbol = findSymbol(fieldDefinitionSymbol.getFileURI(), SymbolType.MAP_VALUE, fieldDefinitionSymbol.getLongIdentifier() + ".value");
+        if (rawValueSymbol != null) return Optional.of(rawValueSymbol);
+
+        if (fieldDefinitionSymbol.getType() == SymbolType.FIELD || fieldDefinitionSymbol.getType() == SymbolType.FIELD_IN_STRUCT) {
+            SchemaNode dataTypeNode = fieldDefinitionSymbol.getNode().getNextSibling().getNextSibling();
+            if (dataTypeNode == null || !dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
+            if (dataTypeNode.get(0) == null || !dataTypeNode.get(0).isASTInstance(mapDataType.class)) return Optional.empty();
+
+            SchemaNode valueNode = dataTypeNode.get(0).get(4);
+            if (!valueNode.hasSymbol()) return Optional.empty();
+
+            switch(valueNode.getSymbol().getStatus()) {
+                case DEFINITION:
+                    return Optional.of(valueNode.getSymbol());
+                case REFERENCE:
+                    return findDefinitionOfReference(valueNode.getSymbol());
+                case BUILTIN_REFERENCE:
+                case INVALID:
+                case UNRESOLVED: 
+                    return Optional.empty();
+            }
+        } else {
+            throw new UnsupportedOperationException("findMapValueDefinition unsupported for type " + fieldDefinitionSymbol.getType().toString());
+        }
+
+        return Optional.empty();
+    }
+
 
     public boolean resolveTypeNode(SchemaNode typeNode, String fileURI) {
         // TODO: handle document reference
@@ -194,8 +311,14 @@ public class SchemaIndex {
             logger.println(entry.getKey() + " -> " + references);
         }
 
-        logger.println(" === INHERITANCE === ");
+        logger.println(" === DOCUMENT INHERITANCE === ");
         documentInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === STRUCT INHERITANCE === ");
+        structInheritanceGraph.dumpAllEdges(logger);
+
+        logger.println(" === RANK PROFILE INHERITANCE === ");
+        rankProfileInheritanceGraph.dumpAllEdges(logger);
 
         logger.println(" === TRACKED FILES === ");
         for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
@@ -245,17 +368,17 @@ public class SchemaIndex {
     }
 
     public List<String> getAllDocumentAncestorURIs(String fileURI) {
-        return this.documentInheritanceGraph.getAllDocumentAncestorURIs(fileURI);
+        return this.documentInheritanceGraph.getAllAncestors(fileURI);
     }
 
     public List<String> getAllDocumentDescendants(String fileURI) {
-        List<String> descendants = this.documentInheritanceGraph.getAllDocumentDescendantURIs(fileURI);
+        List<String> descendants = this.documentInheritanceGraph.getAllDescendants(fileURI);
         descendants.remove(fileURI);
         return descendants;
     }
 
     public List<String> getAllDocumentsInInheritanceOrder() {
-        return this.documentInheritanceGraph.getAllDocumentsTopoOrder();
+        return this.documentInheritanceGraph.getTopoOrdering();
     }
 
     public void setSchemaInherits(String childURI, String parentURI) {
@@ -269,6 +392,10 @@ public class SchemaIndex {
     public void insertSymbolDefinition(Symbol symbol) {
         String dbKey = createDBKey(symbol);
         symbolDefinitionsDB.put(dbKey, symbol);
+
+        if (symbol.getType() == SymbolType.STRUCT) {
+            structInheritanceGraph.createNodeIfNotExists(getSymbolInheritanceKey(symbol));
+        }
     }
 
     private void insertSymbolReference(String dbKey, Symbol reference) {
@@ -311,8 +438,101 @@ public class SchemaIndex {
 
         if (referencedSymbol == null && node.getSymbol().getType() == SymbolType.DOCUMENT) {
             insertDocumentSymbolReference(node.getSymbol());
+        } else {
+            insertSymbolReference(referencedSymbol, node.getSymbol());
+        }
+    }
+
+    // TODO: move these things to somewhere else?
+
+    public List<Symbol> getAllStructFieldSymbols(Symbol structSymbol) {
+        if (structSymbol.getStatus() != SymbolStatus.DEFINITION) {
+            structSymbol = findSymbol(structSymbol.getFileURI(), SymbolType.STRUCT, structSymbol.getLongIdentifier());
+        }
+        List<Symbol> result = new ArrayList<>();
+        for (SymbolInheritanceNode structDefinitionNode : structInheritanceGraph.getAllAncestors(getSymbolInheritanceKey(structSymbol))) {
+            Symbol structDefSymbol = structDefinitionNode.getSymbol();
+            
+            List<Symbol> possibleFieldDefinitions = findSymbolsInScope(structDefSymbol);
+
+            for (Symbol fieldDef : possibleFieldDefinitions) {
+                if (fieldDef.getType() == SymbolType.FIELD_IN_STRUCT)result.add(fieldDef);
+            }
+            
+        }
+        return result;
+    }
+
+    public List<Symbol> getAllRankProfileParents(Symbol rankProfileSymbol) {
+        List<Symbol> result = new ArrayList<>();
+        if (rankProfileSymbol.getType() != SymbolType.RANK_PROFILE) return result;
+        if (rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) {
+            rankProfileSymbol = findSymbol(rankProfileSymbol);
         }
 
-        insertSymbolReference(referencedSymbol, node.getSymbol());
+        if (rankProfileSymbol == null || rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) return result;
+
+        return rankProfileInheritanceGraph.getAllParents(getSymbolInheritanceKey(rankProfileSymbol))
+                                          .stream()
+                                          .map(node -> node.getSymbol())
+                                          .collect(Collectors.toList());
+    }
+
+    public List<Symbol> getAllRankProfileAncestorDefinitions(Symbol rankProfileSymbol) {
+        List<Symbol> result = new ArrayList<>();
+        if (rankProfileSymbol.getType() != SymbolType.RANK_PROFILE) return result;
+        if (rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) {
+            rankProfileSymbol = findSymbol(rankProfileSymbol);
+        }
+
+        if (rankProfileSymbol == null || rankProfileSymbol.getStatus() != SymbolStatus.DEFINITION) return result;
+
+        return rankProfileInheritanceGraph.getAllAncestors(getSymbolInheritanceKey(rankProfileSymbol))
+                                          .stream()
+                                          .map(node -> node.getSymbol())
+                                          .collect(Collectors.toList());
+    }
+
+    /*
+     * Search through ancestors and find all function definitions
+     * Only return the closest definitions when there are several candidates
+     */
+    public List<Symbol> getAllRankProfileFunctions(Symbol rankProfileDefinition) {
+        List<Symbol> result = new ArrayList<>();
+        List<Symbol> ancestorList = getAllRankProfileAncestorDefinitions(rankProfileDefinition);
+
+        Set<String> seen = new HashSet<>();
+        for (int i = ancestorList.size() - 1; i >= 0; --i) {
+            for (Map.Entry<String, Symbol> entry : symbolDefinitionsDB.entrySet()) {
+                Symbol symbol = entry.getValue();
+                if (symbol.getType() != SymbolType.FUNCTION) continue;
+                if (seen.contains(symbol.getShortIdentifier())) continue;
+
+                if (symbol.isInScope(ancestorList.get(i))) {
+                    result.add(symbol);
+                    seen.add(symbol.getShortIdentifier());
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public SymbolInheritanceNode getSymbolInheritanceKey(Symbol symbol) {
+        return new SymbolInheritanceNode(symbol);
+    }
+
+    public boolean tryRegisterStructInheritance(Symbol childSymbol, Symbol parentSymbol) {
+        SymbolInheritanceNode childNode = getSymbolInheritanceKey(childSymbol);
+        SymbolInheritanceNode parentNode = getSymbolInheritanceKey(parentSymbol);
+
+        return structInheritanceGraph.addInherits(childNode, parentNode);
+    }
+
+    public boolean tryRegisterRankProfileInheritance(Symbol childSymbol, Symbol parentSymbol) {
+        SymbolInheritanceNode childNode = getSymbolInheritanceKey(childSymbol);
+        SymbolInheritanceNode parentNode = getSymbolInheritanceKey(parentSymbol);
+
+        return rankProfileInheritanceGraph.addInherits(childNode, parentNode);
     }
 }

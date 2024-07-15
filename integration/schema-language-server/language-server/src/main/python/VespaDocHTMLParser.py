@@ -181,7 +181,7 @@ class Node:
             return "## " + self.getContentStr() + "\n"
         
         if (self.tag == "a"):
-            return f"[{self.getContentStr()}]({self.getAttr("href")})"
+            return f"[{self.getContentStr()}]({self.getAttr('href')})"
         
         if (self.tag == "pre"):
             ret += "```"

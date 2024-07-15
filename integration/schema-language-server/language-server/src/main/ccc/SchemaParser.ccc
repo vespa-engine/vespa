@@ -239,6 +239,7 @@ INJECT dataType:
     }
 }
 
+
 INJECT Token :
 {
 
@@ -1980,14 +1981,21 @@ void rankProfile(ParsedSchema schema) :
 {
     String name;
     ParsedRankProfile profile;
+    Token identifierToken = null;
 }
 
     ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDashStr
-    { profile = new ParsedRankProfile(name); }
+    { profile = new ParsedRankProfile(name); identifierToken = lastConsumedToken; }
     [inheritsRankProfile(profile)]
     openLbrace() (rankProfileItem(schema, profile) | <NL>)* <RBRACE>
     {
-        schema.addRankProfile(profile);
+        try {
+            schema.addRankProfile(profile);
+        } catch(IllegalArgumentException ex) {
+            if (identifierToken != null) {
+                identifierToken.addIllegalArugmentException(ex);
+            }
+        }
     }
 ;
 

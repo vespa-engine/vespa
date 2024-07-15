@@ -14,7 +14,24 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Utils {
+public class FileUtils {
+    public static String fileNameFromPath(String path) {
+        int splitPos = path.lastIndexOf('/');
+        return path.substring(splitPos + 1);
+    }
+
+    public static String schemaNameFromPath(String path) {
+        String fileName = fileNameFromPath(path);
+
+        int splitPos = fileName.lastIndexOf('.');
+
+        if (splitPos == -1) return "";
+
+        String res = fileName.substring(0, splitPos);
+        if (res == null) return "";
+        return res;
+    }
+
     public static List<String> findSchemaFiles(String workspaceFolderUri, PrintStream logger) {
         String glob = "glob:**/*.sd";
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(glob);
