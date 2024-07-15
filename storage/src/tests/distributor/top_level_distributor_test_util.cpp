@@ -14,6 +14,7 @@
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <cctype>
 
 using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
@@ -150,7 +151,7 @@ TopLevelDistributorTestUtil::add_nodes_to_stripe_bucket_db(const document::Bucke
         size_t flagsIdx = 3;
 
         // Meta info override? For simplicity, require both meta count and size
-        if (tok3.size() > 4 && (!tok3[3].empty() && isdigit(tok3[3][0]))) {
+        if (tok3.size() > 4 && (!tok3[3].empty() && std::isdigit(static_cast<unsigned char>(tok3[3][0])))) {
             info.setMetaCount(atoi(tok3[3].data()));
             info.setUsedFileSize(atoi(tok3[4].data()));
             flagsIdx = 5;
