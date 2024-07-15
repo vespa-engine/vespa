@@ -13,9 +13,11 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.SymbolTag;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
+import com.yahoo.tensor.functions.Diag;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.FileUtils;
@@ -290,14 +292,19 @@ public class SchemaDocumentParser {
         for (SchemaNode typeNode : context.unresolvedTypeNodes()) {
             context.schemaIndex().resolveTypeNode(typeNode, context.fileURI());
         }
+        
         context.clearUnresolvedTypeNodes();
 
         for (SchemaNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
             context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI());
         }
+
         context.clearUnresolvedAnnotationReferenceNodes();
 
+        
         if (tolerantResult.CST().isPresent()) {
+            resolveRankExpressionReferences(tolerantResult.CST().get(), context, diagnostics);
+
             diagnostics.addAll(resolveSymbolReferences(context, tolerantResult.CST().get()));
         }
 
@@ -512,6 +519,43 @@ public class SchemaDocumentParser {
         List<Diagnostic> diagnostics = new ArrayList<>();
         resolveSymbolReferencesImpl(CST, context, diagnostics);
         return diagnostics;
+    }
+
+    private static final Set<String> rankExpressionBultInFunctions = new HashSet<>() {{
+        add("query");
+        add("bm25");
+        add("attribute");
+    }};
+
+    private static void resolveRankExpressionBultInFunctions(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+        String identifier = node.getSymbol().getShortIdentifier();
+        if (rankExpressionBultInFunctions.contains(identifier)) {
+            node.setSymbolType(SymbolType.FUNCTION);
+            node.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+        }
+    }
+
+    /**
+     * Resolves rank expression references in the tree
+     *
+     * @param node        The schema node to resolve the rank expression references in.
+     * @param context     The parse context.
+     * @param diagnostics The list to store any diagnostics encountered during resolution.
+     */
+    private static void resolveRankExpressionReferences(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
+        if (
+            node.getLanguageType() == LanguageType.RANK_EXPRESSION &&
+            node.hasSymbol() &&
+            node.getSymbol().getStatus() == SymbolStatus.UNRESOLVED
+        ) {
+            resolveRankExpressionBultInFunctions(node, context, diagnostics);
+
+
+        }
+
+        for (SchemaNode child : node) {
+            resolveRankExpressionReferences(child, context, diagnostics);
+        }
     }
 
     /*
