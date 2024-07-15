@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 import org.eclipse.lsp4j.Diagnostic;
 
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;

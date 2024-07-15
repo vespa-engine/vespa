@@ -10,7 +10,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -104,7 +104,7 @@ public class IdentifySymbolDefinition extends Identifier {
 
         // TODO: these cases are quite similar. Generalize?
         if (parent.isASTInstance(rankProfile.class)) {
-            Optional<Symbol> scope = findRankProfileScope(node);
+            Optional<Symbol> scope = findRankProfileScope(node, context.fileURI());
 
             if (scope.isPresent()) {
                 node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI(), scope.get());
@@ -166,7 +166,11 @@ public class IdentifySymbolDefinition extends Identifier {
         }
     }
 
-    private Optional<Symbol> findRankProfileScope(SchemaNode innerNode) {
+    /*
+     * Looks for a containing rootSchema element. However, if the fileURI is a .profile file, use the file URI to determine the correct schema name instead
+     */
+    private Optional<Symbol> findRankProfileScope(SchemaNode innerNode, String fileURI) {
+        if (fileURI.toLowerCase().endsWith(".profile")) return findRankProfileScopeFromURI(fileURI);
         while (innerNode != null) {
             if (innerNode.isASTInstance(rootSchema.class)) break;
             innerNode = innerNode.getParent();
@@ -179,6 +183,13 @@ public class IdentifySymbolDefinition extends Identifier {
         if (!schemaDefinitionNode.hasSymbol() || schemaDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
 
         return Optional.of(schemaDefinitionNode.getSymbol());
+    }
+
+    private Optional<Symbol> findRankProfileScopeFromURI(String fileURI) {
+        String schemaName = context.schemaIndex().getRankProfileSchemaFromURI(fileURI);
+        context.logger().println("Lookup for " + fileURI + " retuned " + schemaName);
+        if (schemaName == null)return Optional.empty();
+        return Optional.ofNullable(context.schemaIndex().findSchemaDefinitionFromName(schemaName));
     }
 
     private Optional<Symbol> findRankProfileFunctionScope(SchemaNode innerNode) {

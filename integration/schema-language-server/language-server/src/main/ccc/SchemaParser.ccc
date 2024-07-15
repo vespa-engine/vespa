@@ -1989,11 +1989,13 @@ void rankProfile(ParsedSchema schema) :
     [inheritsRankProfile(profile)]
     openLbrace() (rankProfileItem(schema, profile) | <NL>)* <RBRACE>
     {
-        try {
-            schema.addRankProfile(profile);
-        } catch(IllegalArgumentException ex) {
-            if (identifierToken != null) {
-                identifierToken.addIllegalArugmentException(ex);
+        if (schema != null) {
+            try {
+                schema.addRankProfile(profile);
+            } catch(IllegalArgumentException ex) {
+                if (identifierToken != null) {
+                    identifierToken.addIllegalArugmentException(ex);
+                }
             }
         }
     }

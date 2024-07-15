@@ -69,11 +69,16 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
         this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler);
+
     }    
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {
         final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
+
+        // TODO: support multiple workspaces?
+        String workspaceRootURI = initializeParams.getWorkspaceFolders().get(0).getUri();
+        this.schemaIndex.setWorkspaceURI(workspaceRootURI);
 
         // Set the capabilities of the LS to inform the client.
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
@@ -88,6 +93,10 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.schemaDocumentScheduler.setReparseDescendants(false);
         for (var folder : initializeParams.getWorkspaceFolders()) {
             for (String fileURI : FileUtils.findSchemaFiles(folder.getUri(), this.logger)) {
+                this.schemaDocumentScheduler.addDocument(fileURI);
+            }
+
+            for (String fileURI : FileUtils.findRankProfileFiles(folder.getUri(), this.logger)) {
                 this.schemaDocumentScheduler.addDocument(fileURI);
             }
         }
@@ -131,6 +140,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.client = languageClient;
         this.schemaDiagnosticsHandler.connectClient(languageClient);
         this.schemaMessageHandler.connectClient(languageClient);
+
     }
 
     void startWatchingFiles() {
@@ -138,6 +148,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         // TODO: watch xml and rank-profiles?
         List<FileSystemWatcher> watchers = new ArrayList<>() {{
             add(new FileSystemWatcher(Either.forLeft("**/*.sd")));
+            add(new FileSystemWatcher(Either.forLeft("**/*/*.profile")));
         }};
 
         DidChangeWatchedFilesRegistrationOptions options = new DidChangeWatchedFilesRegistrationOptions(watchers);

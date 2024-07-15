@@ -2,15 +2,14 @@ package ai.vespa.schemals;
 
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.schemadocument.ParseContext;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser.ParseResult;
+import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.io.IOUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -54,7 +53,8 @@ public class SchemaParserTest {
         SchemaIndex schemaIndex = new SchemaIndex(logger);
         schemaIndex.clearDocument(fileName);
         ParseContext context = new ParseContext(input, logger, fileName, schemaIndex);
-        return SchemaDocumentParser.parseContent(context);
+        context.useDocumentIdentifiers();
+        return SchemaDocument.parseContent(context);
     }
 
     ParseResult parseString(String input) throws Exception {
@@ -79,12 +79,13 @@ public class SchemaParserTest {
     }
 
     void checkDirectoryParses(String directoryPath) throws Exception {
+        String directoryURI = new File(directoryPath).toURI().toString();
         PrintStream logger = System.out;
         SchemaIndex schemaIndex = new SchemaIndex(logger);
+        schemaIndex.setWorkspaceURI(directoryURI);
         List<Diagnostic> diagnostics = new ArrayList<>();
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(logger, diagnostics);
         SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex);
-        String directoryURI = new File(directoryPath).toURI().toString();
         List<String> schemaFiles = FileUtils.findSchemaFiles(directoryURI, logger);
 
         scheduler.setReparseDescendants(false);
@@ -100,7 +101,7 @@ public class SchemaParserTest {
         int numErrors = 0;
         for (String schemaURI : schemaFiles) {
             diagnostics.clear();
-            var documentHandle = scheduler.getDocument(schemaURI);
+            var documentHandle = scheduler.getSchemaDocument(schemaURI);
             documentHandle.reparseContent();
             testMessage += "\n    File: " + schemaURI + constructDiagnosticMessage(diagnostics, 2);
 

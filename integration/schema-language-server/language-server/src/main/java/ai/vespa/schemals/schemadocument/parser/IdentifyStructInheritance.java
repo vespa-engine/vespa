@@ -7,7 +7,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyStructInheritance extends Identifier {

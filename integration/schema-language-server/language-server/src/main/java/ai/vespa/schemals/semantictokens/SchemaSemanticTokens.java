@@ -23,7 +23,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 public class SchemaSemanticTokens implements Visitor {
 
@@ -248,15 +248,15 @@ public class SchemaSemanticTokens implements Visitor {
         return ret;
     }
 
-    private static ArrayList<SemanticTokenMarker> findComments(SchemaDocumentParser document) {
-        TokenSource tokenSource = document.getRootNode().getTokenSource();
+    private static ArrayList<SemanticTokenMarker> findComments(SchemaNode rootNode) {
+        TokenSource tokenSource = rootNode.getTokenSource();
         String source = tokenSource.toString();
         ArrayList<Range> ret = new ArrayList<>();
 
         int index = source.indexOf("#");
         while (index >= 0) {
             Position start = CSTUtils.getPositionFromOffset(tokenSource, index);
-            if (document.getLeafNodeAtPosition(start) != null) {
+            if (CSTUtils.getLeafNodeAtPosition(rootNode, start) != null) {
                 index = source.indexOf("#", index + 1);
                 continue;
             }
@@ -321,7 +321,7 @@ public class SchemaSemanticTokens implements Visitor {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> comments = findComments(context.document);
+        ArrayList<SemanticTokenMarker> comments = findComments(context.document.getRootNode());
 
         ArrayList<SemanticTokenMarker> markers = traverseCST(node, context.logger);
         ArrayList<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(

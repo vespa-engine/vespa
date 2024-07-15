@@ -14,7 +14,9 @@ import ai.vespa.schemals.context.EventContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.schemadocument.DocumentManager;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.workspaceEdit.SchemaTextDocumentEdit;
 import ai.vespa.schemals.workspaceEdit.SchemaWorkspaceEdit;
@@ -27,7 +29,8 @@ public class SchemaRename {
         for (Symbol symbol : symbols) {
 
             if (!documentEdits.containsKey(symbol.getFileURI())) {
-                SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
+                SchemaDocument document = context.scheduler.getSchemaDocument(symbol.getFileURI());
+                if (document == null) return new ArrayList<>();
                 SchemaTextDocumentEdit documentEdit = new SchemaTextDocumentEdit(document.getVersionedTextDocumentIdentifier());
                 documentEdits.put(documentEdit.getFileURI(), documentEdit);
             }
@@ -41,7 +44,7 @@ public class SchemaRename {
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
 
-        SchemaNode node = context.document.getSymbolAtPosition(context.position);
+        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (node == null || !node.hasSymbol()) {
             return null;
         }
@@ -65,7 +68,7 @@ public class SchemaRename {
             symbol = result.get();
         }
 
-        SchemaDocumentParser document = context.scheduler.getDocument(symbol.getFileURI());
+        SchemaDocument document = context.scheduler.getSchemaDocument(symbol.getFileURI());
         if (document == null) {
             context.logger.println("Symbol has a fileURI to a file not in index!");
             return null;
@@ -90,7 +93,7 @@ public class SchemaRename {
         return workspaceEdits.exportEdits();
     }
 
-    private static WorkspaceEdit renameSchema(EventContext context, SchemaDocumentParser document, Symbol symbol, ArrayList<Symbol> symbolOccurances, String oldName, String newName) {
+    private static WorkspaceEdit renameSchema(EventContext context, SchemaDocument document, Symbol symbol, ArrayList<Symbol> symbolOccurances, String oldName, String newName) {
         SchemaWorkspaceEdit workspaceEdits = new SchemaWorkspaceEdit();
 
         Symbol documentSymbol = context.schemaIndex.findSymbol(symbol.getFileURI(), SymbolType.DOCUMENT, oldName);
@@ -108,8 +111,8 @@ public class SchemaRename {
         String newFileURI = document.getFilePath() + newName + ".sd";
 
         // Check for name collision
-        SchemaDocumentParser nameCollistionDocument = context.schemaIndex.findSchemaDocumentWithFileURI(newFileURI);
-        if (nameCollistionDocument != null) {
+        SchemaDocument nameCollitionDocument = context.schemaIndex.findSchemaDocumentWithFileURI(newFileURI);
+        if (nameCollitionDocument != null) {
             context.messageHandler.sendMessage(MessageType.Error, "Cannot rename schema to '" + newName + "' since the name is already taken.");
 
             return null;

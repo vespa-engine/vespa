@@ -19,7 +19,8 @@
           "Vespa Schema"
         ],
         "extensions": [
-          ".sd"
+          ".sd",
+          ".profile"
         ],
         "configuration": "./language-configuration.json"
       }

@@ -11,6 +11,7 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocumentLexer.LexicalToken;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -38,7 +39,7 @@ public class FieldsCompletionProvider implements CompletionProvider {
 
         searchPos = last.getRange().getStart();
 
-        LexicalToken match = context.document.lexer.matchBackwards(searchPos, 0, false, TokenType.FIELDS, TokenType.COLON, TokenType.IDENTIFIER);
+        LexicalToken match = ((SchemaDocument)context.document).lexer.matchBackwards(searchPos, 0, false, TokenType.FIELDS, TokenType.COLON, TokenType.IDENTIFIER);
 
         // Has to be on the same line
         if (match != null && match.range().getStart().getLine() == context.position.getLine())return true;

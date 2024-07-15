@@ -1,7 +1,7 @@
 package ai.vespa.schemals.index;
 
 /**
- * {@link SymbolInheritanceNode}
+ * SymbolInheritanceNode
  * Its purpose is to provide a weaker check on equality and hashcode to consider two nodes equal when they reference
  * the same underlying symbol in the CST.
  */

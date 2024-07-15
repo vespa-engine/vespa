@@ -18,7 +18,10 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.common.FileUtils;
+
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -29,6 +32,7 @@ import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.dataType;
 
+
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.tree.CSTUtils;
@@ -36,7 +40,7 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 
-public class SchemaDocumentParser {
+public class SchemaDocument implements DocumentManager {
     public record ParseResult(ArrayList<Diagnostic> diagnostics, Optional<SchemaNode> CST) {
         public static ParseResult parsingFailed(ArrayList<Diagnostic> diagnostics) {
             return new ParseResult(diagnostics, Optional.empty());
@@ -57,41 +61,33 @@ public class SchemaDocumentParser {
 
     public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
-    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
+    public SchemaDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
         this.fileURI = fileURI;
     }
     
-    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content) {
-        this(logger, diagnosticsHandler, schemaIndex, fileURI);
-
-        if (content != null) {
-            updateFileContent(content);
-        };
-    }
-
-    public SchemaDocumentParser(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI, String content, Integer version) {
-        this(logger, diagnosticsHandler, schemaIndex, fileURI, content);
-        this.version = version;
-    }
-
     public ParseContext getParseContext(String content) {
-        return new ParseContext(content, this.logger, this.fileURI, this.schemaIndex);
+        ParseContext context = new ParseContext(content, this.logger, this.fileURI, this.schemaIndex);
+        context.useDocumentIdentifiers();
+        return context;
     }
 
+    @Override
     public void reparseContent() {
         if (this.content != null) {
             updateFileContent(this.content, this.version);
         }
     }
 
+    @Override
     public void updateFileContent(String content, Integer version) {
         this.version = version;
         updateFileContent(content);
     }
 
+    @Override
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
@@ -126,14 +122,17 @@ public class SchemaDocumentParser {
         logger.println("Parsing: " + fileURI);
 
         logger.println("======== CST for file: " + fileURI + " ========");
+ 
         CSTUtils.printTree(logger, CST);
 
         schemaIndex.dumpIndex(logger);
 
     }
 
+    @Override
     public boolean getIsOpen() { return isOpen; }
 
+    @Override
     public boolean setIsOpen(boolean value) {
         isOpen = value;
         return isOpen;
@@ -194,48 +193,6 @@ public class SchemaDocumentParser {
         return CST;
     }
 
-    public SchemaNode getNodeAtOrBeforePosition(Position pos) {
-        return getNodeAtPosition(CST, pos, false, true);
-    }
-
-    public SchemaNode getLeafNodeAtPosition(Position pos) {
-        return getNodeAtPosition(CST, pos, true, false);
-    }
-
-    public SchemaNode getNodeAtPosition(Position pos) {
-        return getNodeAtPosition(CST, pos, false, false);
-    }
-
-    public SchemaNode getSymbolAtPosition(Position pos) {
-        SchemaNode node = getNodeAtPosition(pos);
-
-        while (node != null && !node.hasSymbol()) {
-            node = node.getParent();
-        }
-
-        return node;
-    }
-
-    private SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
-        if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
-            return node;
-        }
-
-        if (!CSTUtils.positionInRange(node.getRange(), pos)) {
-            if (findNearest && !onlyLeaf)return node;
-            return null;
-        }
-
-        for (SchemaNode child : node) {
-            if (CSTUtils.positionInRange(child.getRange(), pos)) {
-                return getNodeAtPosition(child, pos, onlyLeaf, findNearest);
-            }
-        }
-
-        if (onlyLeaf)return null;
-
-        return node;
-    }
 
     public static ParseResult parseContent(ParseContext context) {
         CharSequence sequence = context.content();
@@ -246,7 +203,6 @@ public class SchemaDocumentParser {
         ArrayList<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
 
         try {
-
             parserStrict.Root();
         } catch (ParseException e) {
 
@@ -335,7 +291,7 @@ public class SchemaDocumentParser {
 
         if (context.inheritsSchemaNode() != null) {
             String inheritsSchemaName = context.inheritsSchemaNode().getText();
-            SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
+            SchemaDocument parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
             if (parent != null) {
                 if (!documentInheritanceURIs.contains(parent.getFileURI())) {
                     // TODO: quickfix
@@ -486,7 +442,7 @@ public class SchemaDocumentParser {
 
     private static Optional<String> resolveDocumentInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
         String schemaDocumentName = inheritanceNode.getText();
-        SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
+        SchemaDocument parent = context.schemaIndex().findSchemaDocumentWithName(schemaDocumentName);
         if (parent == null) {
             // Handled in resolve symbol references
             return Optional.empty();
@@ -700,7 +656,7 @@ public class SchemaDocumentParser {
         return ret;
     }
 
-    private static ParseResult parseCST(Node node, ParseContext context) {
+    public static ParseResult parseCST(Node node, ParseContext context) {
         if (node == null) {
             return ParseResult.parsingFailed(new ArrayList<>());
         }

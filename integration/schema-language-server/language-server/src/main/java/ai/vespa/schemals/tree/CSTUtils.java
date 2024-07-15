@@ -84,6 +84,7 @@ public class CSTUtils {
 
     /* Returns the last non-dirty node before the supplied position */
     public static SchemaNode getLastCleanNode(SchemaNode node, Position pos) {
+        if (node == null) return null;
         for (int i = node.size() - 1; i >= 0; i--) {
             SchemaNode result = getLastCleanNode(node.get(i), pos);
             if (result != null)return result;
@@ -109,6 +110,48 @@ public class CSTUtils {
         return Optional.empty();
     }
 
+    public static SchemaNode getNodeAtOrBeforePosition(SchemaNode CST, Position pos) {
+        return getNodeAtPosition(CST, pos, false, true);
+    }
+
+    public static SchemaNode getLeafNodeAtPosition(SchemaNode CST, Position pos) {
+        return getNodeAtPosition(CST, pos, true, false);
+    }
+
+    public static SchemaNode getNodeAtPosition(SchemaNode CST, Position pos) {
+        return getNodeAtPosition(CST, pos, false, false);
+    }
+
+    public static SchemaNode getSymbolAtPosition(SchemaNode CST, Position pos) {
+        SchemaNode node = getNodeAtPosition(CST, pos);
+
+        while (node != null && !node.hasSymbol()) {
+            node = node.getParent();
+        }
+
+        return node;
+    }
+
+    private static SchemaNode getNodeAtPosition(SchemaNode node, Position pos, boolean onlyLeaf, boolean findNearest) {
+        if (node.isLeaf() && CSTUtils.positionInRange(node.getRange(), pos)) {
+            return node;
+        }
+
+        if (!CSTUtils.positionInRange(node.getRange(), pos)) {
+            if (findNearest && !onlyLeaf)return node;
+            return null;
+        }
+
+        for (SchemaNode child : node) {
+            if (CSTUtils.positionInRange(child.getRange(), pos)) {
+                return getNodeAtPosition(child, pos, onlyLeaf, findNearest);
+            }
+        }
+
+        if (onlyLeaf)return null;
+
+        return node;
+    }
 
     /*
      * Logger utils

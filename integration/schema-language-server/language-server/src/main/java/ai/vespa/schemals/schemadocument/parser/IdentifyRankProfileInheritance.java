@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.tree.SchemaNode;

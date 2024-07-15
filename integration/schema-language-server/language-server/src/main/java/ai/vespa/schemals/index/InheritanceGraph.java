@@ -19,8 +19,8 @@ import javax.naming.directory.SearchResult;
 
 
 /*
- * This class is responsible for managing inheritance relationships among documents
- * Each node is identified by a file URI
+ * This class is responsible for managing inheritance relationships among generic constructs.
+ * Each node is identified by a NodeType which should implement a good hashCode and .equals.
  *
  * @author Mangern
  */
@@ -149,6 +149,7 @@ public class InheritanceGraph<NodeType> {
     /*
      * Searches upwards for nodes where predicate(node) returns non null.
      * If a match is found, parents of that node are not checked (unless they are reachable by some other path without matches).
+     * Return values store both the node and the result of running predicate on them
      */
     public <T> List<SearchResult<T>> findFirstMatches(NodeType node, Function<NodeType, T> predicate) {
         createNodeIfNotExists(node);

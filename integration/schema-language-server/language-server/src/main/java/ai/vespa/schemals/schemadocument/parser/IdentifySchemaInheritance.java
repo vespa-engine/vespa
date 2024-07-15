@@ -8,7 +8,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.identifierStr;
 import ai.vespa.schemals.parser.ast.rootSchema;
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySchemaInheritance extends Identifier {

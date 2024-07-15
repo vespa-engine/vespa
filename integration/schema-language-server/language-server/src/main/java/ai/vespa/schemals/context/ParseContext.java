@@ -1,4 +1,4 @@
-package ai.vespa.schemals.schemadocument;
+package ai.vespa.schemals.context;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -28,8 +28,15 @@ public class ParseContext {
         this.unresolvedInheritanceNodes = new ArrayList<>();
         this.unresolvedTypeNodes = new ArrayList<>();
         this.unresolvedAnnotationReferenceNodes = new ArrayList<>();
-        ParseContext context = this;
         this.inheritsSchemaNode = null;
+        this.identifiers = new ArrayList<>();
+    }
+
+    /*
+     * Identifiers used when parsing a .sd file
+     */
+    public void useDocumentIdentifiers() {
+        ParseContext context = this;
         this.identifiers = new ArrayList<>() {{
             add(new IdentifyType(context));
 
@@ -46,6 +53,20 @@ public class ParseContext {
             add(new IdentifyDirtyNodes(context));
             add(new IdentifyDocumentlessSchema(context));
             add(new IdentifyNamedDocument(context));
+        }};
+    }
+
+    /*
+     * Identifiers used when parsing a .profile file
+     */
+    public void useRankProfileIdentifiers() {
+        ParseContext context = this;
+
+        this.identifiers = new ArrayList<>() {{
+            add(new IdentifySymbolDefinition(context));
+            add(new IdentifySymbolReferences(context));
+            add(new IdentifyRankProfileInheritance(context));
+            add(new IdentifyDirtyNodes(context));
         }};
     }
 

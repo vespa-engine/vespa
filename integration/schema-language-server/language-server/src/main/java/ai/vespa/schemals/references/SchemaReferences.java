@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Location;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaReferences {
@@ -17,7 +18,7 @@ public class SchemaReferences {
 
         ArrayList<Location> ret = new ArrayList<>();
 
-        SchemaNode node = context.document.getSymbolAtPosition(context.position);
+        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
         if (node == null) {
             return ret;

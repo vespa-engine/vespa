@@ -15,6 +15,7 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaHover {
@@ -61,12 +62,12 @@ public class SchemaHover {
     }
 
     public static Hover getHover(EventPositionContext context) {
-        SchemaNode node = context.document.getSymbolAtPosition(context.position);
+        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (node != null) {
             return getSymbolHover(node, context);
         }
 
-        node = context.document.getLeafNodeAtPosition(context.position);
+        node = CSTUtils.getLeafNodeAtPosition(context.document.getRootNode(), context.position);
         if (node == null) return null;
 
 

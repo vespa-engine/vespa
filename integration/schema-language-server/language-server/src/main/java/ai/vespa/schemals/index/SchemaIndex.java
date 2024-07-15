@@ -18,18 +18,24 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.mapDataType;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SchemaIndex {
 
     private PrintStream logger;
-    
+    private String workspaceRootURI;
+
+    private Map<Symbol.SymbolType, List<Symbol>> symbolDefinitions = new HashMap<>();
+    private Map<Symbol, List<Symbol>> symbolReferences = new HashMap<>();
+    private Map<Symbol, Symbol> definitionOfReference = new HashMap<>();
+
+
     private HashMap<String, Symbol> symbolDefinitionsDB = new HashMap<String, Symbol>();
     private HashMap<String, ArrayList<Symbol>> symbolReferencesDB = new HashMap<>();
 
-    // Map fileURI -> SchemaDocumentParser
-    private HashMap<String, SchemaDocumentParser> openSchemas = new HashMap<String, SchemaDocumentParser>();
+    // Map fileURI -> SchemaDocument
+    private HashMap<String, SchemaDocument> openSchemas = new HashMap<String, SchemaDocument>();
 
     private InheritanceGraph<String> documentInheritanceGraph;
     private InheritanceGraph<SymbolInheritanceNode> structInheritanceGraph;
@@ -89,7 +95,7 @@ public class SchemaIndex {
         return fileURI + ":" + type.name().toLowerCase() + ":" + identifier.toLowerCase(); // identifiers in SD are not sensitive to casing
     }
 
-    public void registerSchema(String fileURI, SchemaDocumentParser schemaDocumentParser) {
+    public void registerSchema(String fileURI, SchemaDocument schemaDocumentParser) {
         openSchemas.put(fileURI, schemaDocumentParser);
         documentInheritanceGraph.createNodeIfNotExists(fileURI);
     }
@@ -321,14 +327,45 @@ public class SchemaIndex {
         rankProfileInheritanceGraph.dumpAllEdges(logger);
 
         logger.println(" === TRACKED FILES === ");
-        for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
-            SchemaDocumentParser document = entry.getValue();
+        for (Map.Entry<String, SchemaDocument> entry : openSchemas.entrySet()) {
+            SchemaDocument document = entry.getValue();
             logger.println(document.toString());
         }
     }
 
+    public void setWorkspaceURI(String workspaceRootURI) {
+        this.workspaceRootURI = workspaceRootURI;
+    }
+
+    public String getWorkspaceURI() {
+        return this.workspaceRootURI;
+    }
+
+    public String getRankProfileSchemaFromURI(String rankProfileURI) {
+        logger.println("WORKSPACE: " + this.workspaceRootURI + ", profile: " + rankProfileURI);
+        if (!rankProfileURI.startsWith(this.workspaceRootURI)) return null;
+        rankProfileURI = rankProfileURI.substring(this.workspaceRootURI.length());
+        if (rankProfileURI.startsWith("/"))rankProfileURI = rankProfileURI.substring(1);
+        logger.println("REMAINING: " + rankProfileURI);
+        String[] components = rankProfileURI.split("/");
+        if (components.length == 0) return null;
+        return components[0];
+    }
+
     public void dumpIndex() {
         dumpIndex(logger);
+    }
+
+    public Symbol findSchemaDefinitionFromName(String schemaName) {
+        for (Map.Entry<String, Symbol> entry : symbolDefinitionsDB.entrySet()) {
+            Symbol symbol = entry.getValue();
+
+            if (symbol.getStatus() != SymbolStatus.DEFINITION) continue;
+            if (symbol.getType() != SymbolType.SCHEMA && symbol.getType() != SymbolType.DOCUMENT) continue;
+
+            if (symbol.getLongIdentifier().toLowerCase().equals(schemaName.toLowerCase())) return symbol;
+        }
+        return null;
     }
 
     public Symbol findSchemaIdentifierSymbol(String fileURI) {
@@ -348,9 +385,9 @@ public class SchemaIndex {
         return null;
     }
 
-    public SchemaDocumentParser findSchemaDocumentWithName(String name) {
-        for (Map.Entry<String, SchemaDocumentParser> entry : openSchemas.entrySet()) {
-            SchemaDocumentParser schemaDocumentParser = entry.getValue();
+    public SchemaDocument findSchemaDocumentWithName(String name) {
+        for (Map.Entry<String, SchemaDocument> entry : openSchemas.entrySet()) {
+            SchemaDocument schemaDocumentParser = entry.getValue();
             String schemaIdentifier = schemaDocumentParser.getSchemaIdentifier();
             if (schemaIdentifier != null && schemaIdentifier.equalsIgnoreCase(name)) {
                 return schemaDocumentParser;
@@ -359,7 +396,7 @@ public class SchemaIndex {
         return null;
     }
 
-    public SchemaDocumentParser findSchemaDocumentWithFileURI(String fileURI) {
+    public SchemaDocument findSchemaDocumentWithFileURI(String fileURI) {
         return openSchemas.get(fileURI);
     }
 

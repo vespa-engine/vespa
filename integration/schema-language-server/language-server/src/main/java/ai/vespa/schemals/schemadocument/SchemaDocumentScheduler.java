@@ -1,7 +1,6 @@
 package ai.vespa.schemals.schemadocument;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
@@ -9,9 +8,8 @@ import java.util.HashMap;
 
 import org.eclipse.lsp4j.TextDocumentItem;
 
-import com.yahoo.io.IOUtils;
-
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.SchemaIndex;
 
 public class SchemaDocumentScheduler {
@@ -19,7 +17,7 @@ public class SchemaDocumentScheduler {
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
-    private HashMap<String, SchemaDocumentParser> workspaceDocuments = new HashMap<String, SchemaDocumentParser>();
+    private HashMap<String, DocumentManager> workspaceFiles = new HashMap<>();
     private boolean reparseDescendants = true;
 
     public SchemaDocumentScheduler(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex) {
@@ -33,16 +31,21 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content, Integer version) {
-        if (!workspaceDocuments.containsKey(fileURI)) {
-            workspaceDocuments.put(fileURI, new SchemaDocumentParser(logger, diagnosticsHandler, schemaIndex, fileURI, content, version));
-        } else {
-            workspaceDocuments.get(fileURI).updateFileContent(content, version);
+        boolean isSchemaFile = fileURI.toLowerCase().endsWith(".sd");
+        if (!workspaceFiles.containsKey(fileURI)) {
+            if (isSchemaFile) {
+                workspaceFiles.put(fileURI, new SchemaDocument(logger, diagnosticsHandler, schemaIndex, fileURI));
+            } else {
+                workspaceFiles.put(fileURI, new RankProfileDocument(logger, diagnosticsHandler, schemaIndex, fileURI));
+            }
         }
 
-        if (reparseDescendants) {
+        workspaceFiles.get(fileURI).updateFileContent(content, version);
+
+        if (isSchemaFile && reparseDescendants) {
             for (String descendantURI : schemaIndex.getAllDocumentDescendants(fileURI)) {
-                if (workspaceDocuments.containsKey(descendantURI)) {
-                    workspaceDocuments.get(descendantURI).reparseContent();
+                if (workspaceFiles.containsKey(descendantURI)) {
+                    workspaceFiles.get(descendantURI).reparseContent();
                 }
             }
         }
@@ -50,9 +53,9 @@ public class SchemaDocumentScheduler {
 
     public void openDocument(TextDocumentItem document) {
         logger.println("Opening document: " + document.getUri());
-        
+
         updateFile(document.getUri(), document.getText(), document.getVersion());
-        workspaceDocuments.get(document.getUri()).setIsOpen(true);
+        workspaceFiles.get(document.getUri()).setIsOpen(true);
     }
 
     /*
@@ -60,21 +63,20 @@ public class SchemaDocumentScheduler {
      * Does nothing if the document is already open (and thus managed by the client)
      */
     public void addDocument(String fileURI) {
-        if (workspaceDocuments.containsKey(fileURI)) return;
+        if (workspaceFiles.containsKey(fileURI)) return;
 
         try {
             logger.println("Adding document: " + fileURI);
-            String content = readFromURI(fileURI);
+            String content = FileUtils.readFromURI(fileURI);
             updateFile(fileURI, content);
         } catch(IOException ex) {
             this.logger.println("Failed to read file: " + fileURI);
         }
-
     }
 
     public void closeDocument(String fileURI) {
         logger.println("Closing document: " + fileURI);
-        workspaceDocuments.get(fileURI).setIsOpen(false);
+        workspaceFiles.get(fileURI).setIsOpen(false);
 
         File file = new File(URI.create(fileURI));
         if (!file.exists()) {
@@ -86,24 +88,30 @@ public class SchemaDocumentScheduler {
         logger.println("Removing document: "+ fileURI);
 
         schemaIndex.clearDocument(fileURI);
-        workspaceDocuments.remove(fileURI);
+        workspaceFiles.remove(fileURI);
     }
 
     public boolean removeDocument(String fileURI) {
-        boolean wasOpen = workspaceDocuments.get(fileURI).getIsOpen();
+        boolean wasOpen = workspaceFiles.get(fileURI).getIsOpen();
         closeDocument(fileURI);
         cleanUpDocument(fileURI);
         return wasOpen;
     }
 
-    public SchemaDocumentParser getDocument(String fileURI) {
-        return workspaceDocuments.get(fileURI);
+    public SchemaDocument getSchemaDocument(String fileURI) {
+        DocumentManager genericDocument = getDocument(fileURI);
+        if (!(genericDocument instanceof SchemaDocument)) return null;
+        return (SchemaDocument)genericDocument;
+    }
+
+    public DocumentManager getDocument(String fileURI) {
+        return workspaceFiles.get(fileURI);
     }
 
     public void reparseInInheritanceOrder() {
         for (String fileURI : schemaIndex.getAllDocumentsInInheritanceOrder()) {
-            if (workspaceDocuments.containsKey(fileURI)) {
-                workspaceDocuments.get(fileURI).reparseContent();
+            if (workspaceFiles.containsKey(fileURI)) {
+                workspaceFiles.get(fileURI).reparseContent();
             }
         }
     }
@@ -112,8 +120,4 @@ public class SchemaDocumentScheduler {
         this.reparseDescendants = reparseDescendants;
     }
 
-    private String readFromURI(String fileURI) throws IOException {
-        File file = new File(URI.create(fileURI));
-        return IOUtils.readAll(new FileReader(file));
-    }
 }

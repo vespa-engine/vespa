@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.Token;
 import ai.vespa.schemals.parser.Token.TokenType;
@@ -139,8 +140,8 @@ public class SchemaRankExpressionParser {
 
     private static SchemaNode tokenFromRawText(ParseContext context, SchemaNode node, TokenType type, String text, int start, int end) {
 
-        Position startPos = SchemaDocumentParser.PositionAddOffset(context.content(), node.getRange().getStart(), start);
-        Position endPos = SchemaDocumentParser.PositionAddOffset(context.content(), node.getRange().getStart(), end);
+        Position startPos = SchemaDocument.PositionAddOffset(context.content(), node.getRange().getStart(), start);
+        Position endPos = SchemaDocument.PositionAddOffset(context.content(), node.getRange().getStart(), end);
 
         Range range = new Range(startPos, endPos);
         

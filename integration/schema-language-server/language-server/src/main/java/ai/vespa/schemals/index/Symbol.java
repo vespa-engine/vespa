@@ -1,7 +1,7 @@
 package ai.vespa.schemals.index;
 
 import ai.vespa.schemals.common.FileUtils;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import org.eclipse.lsp4j.Location;
