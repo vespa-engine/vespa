@@ -18,6 +18,7 @@ import ai.vespa.schemals.common.FileUtils;
 
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ParseException;
@@ -26,9 +27,11 @@ import ai.vespa.schemals.parser.Node;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
+import ai.vespa.schemals.schemadocument.resolvers.AnnotationReferenceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.InheritanceResolver;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
+import ai.vespa.schemals.schemadocument.resolvers.TypeNodeResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -44,6 +47,7 @@ public class SchemaDocument implements DocumentManager {
     private PrintStream logger;
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
+    private SchemaDocumentScheduler scheduler;
 
     private String fileURI = "";
     private Integer version;
@@ -55,7 +59,7 @@ public class SchemaDocument implements DocumentManager {
 
     public SchemaDocumentLexer lexer = new SchemaDocumentLexer();
 
-    public SchemaDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, String fileURI) {
+    public SchemaDocument(PrintStream logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler, String fileURI) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
@@ -63,7 +67,7 @@ public class SchemaDocument implements DocumentManager {
     }
     
     public ParseContext getParseContext(String content) {
-        ParseContext context = new ParseContext(content, this.logger, this.fileURI, this.schemaIndex);
+        ParseContext context = new ParseContext(content, this.logger, this.fileURI, this.schemaIndex, this.scheduler);
         context.useDocumentIdentifiers();
         return context;
     }
@@ -85,26 +89,13 @@ public class SchemaDocument implements DocumentManager {
     public void updateFileContent(String content) {
         this.content = content;
         schemaIndex.clearDocument(fileURI);
-        schemaIndex.registerSchema(fileURI, this);
+        // TODO: ask @Mangern what this function did
+        // schemaIndex.registerSchema(fileURI, this);
 
         ParseContext context = getParseContext(content);
         var parsingResult = parseContent(context);
 
-        Symbol schemaIdentifier = schemaIndex.findSchemaIdentifierSymbol(fileURI);
-
-        if (schemaIdentifier != null) {
-            schemaDocumentIdentifier = schemaIdentifier.getShortIdentifier();
-
-            if (!getFileName().equals(schemaDocumentIdentifier + ".sd")) {
-                // TODO: quickfix
-                parsingResult.diagnostics().add(new Diagnostic(
-                    schemaIdentifier.getNode().getRange(),
-                    "Schema " + schemaDocumentIdentifier + " should be defined in a file with the name: " + schemaDocumentIdentifier + ".sd. File name is: " + getFileName(),
-                    DiagnosticSeverity.Error,
-                    ""
-                ));
-            }
-        }
+        parsingResult.diagnostics().addAll(verifyFileName());
 
         diagnosticsHandler.publishDiagnostics(fileURI, parsingResult.diagnostics());
 
@@ -121,6 +112,37 @@ public class SchemaDocument implements DocumentManager {
 
         //schemaIndex.dumpIndex(logger);
 
+    }
+
+    private List<Diagnostic> verifyFileName() {
+        List<Diagnostic> ret = new ArrayList<>();
+
+        List<Symbol> schemaSymbols = schemaIndex.getSymbolsByType(SymbolType.SCHEMA);
+
+        Symbol schemaIdentifier = null;
+
+        for (Symbol symbol : schemaSymbols) {
+            if (symbol.getFileURI() == fileURI) {
+                schemaIdentifier = symbol;
+                break;
+            }
+        }
+
+        if (schemaIdentifier != null) {
+            schemaDocumentIdentifier = schemaIdentifier.getShortIdentifier();
+
+            if (!getFileName().equals(schemaDocumentIdentifier + ".sd")) {
+                // TODO: quickfix
+                ret.add(new Diagnostic(
+                    schemaIdentifier.getNode().getRange(),
+                    "Schema " + schemaDocumentIdentifier + " should be defined in a file with the name: " + schemaDocumentIdentifier + ".sd. File name is: " + getFileName(),
+                    DiagnosticSeverity.Error,
+                    ""
+                ));
+            }
+        }
+
+        return ret;
     }
 
     @Override
@@ -238,13 +260,13 @@ public class SchemaDocument implements DocumentManager {
         diagnostics.addAll(InheritanceResolver.resolveInheritances(context));
 
         for (SchemaNode typeNode : context.unresolvedTypeNodes()) {
-            context.schemaIndex().resolveTypeNode(typeNode, context.fileURI());
+            TypeNodeResolver.resolveType(context, typeNode.getSymbol());
         }
         
         context.clearUnresolvedTypeNodes();
 
         for (SchemaNode annotationReferenceNode : context.unresolvedAnnotationReferenceNodes()) {
-            context.schemaIndex().resolveAnnotationReferenceNode(annotationReferenceNode, context.fileURI());
+            AnnotationReferenceResolver.resolveAnnotationReference(context, annotationReferenceNode.getSymbol());
         }
 
         context.clearUnresolvedAnnotationReferenceNodes();

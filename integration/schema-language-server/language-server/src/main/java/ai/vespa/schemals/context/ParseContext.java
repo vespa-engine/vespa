@@ -7,7 +7,21 @@ import java.util.ArrayList;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.schemadocument.parser.*;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
+
+import ai.vespa.schemals.schemadocument.parser.Identifier;
+import ai.vespa.schemals.schemadocument.parser.IdentifyType;
+import ai.vespa.schemals.schemadocument.parser.IdentifySymbolDefinition;
+import ai.vespa.schemals.schemadocument.parser.IdentifySymbolReferences;
+import ai.vespa.schemals.schemadocument.parser.IdentifyAnnotationReference;
+import ai.vespa.schemals.schemadocument.parser.IdentifySchemaInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyStructInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyRankProfileInheritance;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDeprecatedToken;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
+import ai.vespa.schemals.schemadocument.parser.IdentifyDocumentlessSchema;
+import ai.vespa.schemals.schemadocument.parser.IdentifyNamedDocument;
 
 public class ParseContext { 
     private String content;
@@ -19,8 +33,9 @@ public class ParseContext {
     private List<SchemaNode> unresolvedAnnotationReferenceNodes;
     private SchemaIndex schemaIndex;
     private SchemaNode inheritsSchemaNode;
+    private SchemaDocumentScheduler scheduler;
 
-    public ParseContext(String content, PrintStream logger, String fileURI, SchemaIndex schemaIndex) {
+    public ParseContext(String content, PrintStream logger, String fileURI, SchemaIndex schemaIndex, SchemaDocumentScheduler scheduler) {
         this.content = content;
         this.logger = logger;
         this.fileURI = fileURI;
@@ -30,6 +45,7 @@ public class ParseContext {
         this.unresolvedAnnotationReferenceNodes = new ArrayList<>();
         this.inheritsSchemaNode = null;
         this.identifiers = new ArrayList<>();
+        this.scheduler = scheduler;
     }
 
     /*
@@ -100,6 +116,10 @@ public class ParseContext {
 
     public SchemaIndex schemaIndex() {
         return this.schemaIndex;
+    }
+
+    public SchemaDocumentScheduler scheduler() {
+        return this.scheduler;
     }
 
     public void addIdentifier(Identifier identifier) {

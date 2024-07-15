@@ -22,7 +22,6 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
 
 public class SchemaSemanticTokens implements Visitor {
 
@@ -43,7 +42,6 @@ public class SchemaSemanticTokens implements Visitor {
         add(SymbolType.STRUCT_FIELD);
         add(SymbolType.FUNCTION);
         add(SymbolType.TYPE_UNKNOWN);
-        add(SymbolType.FIELD_IN_STRUCT);
         add(SymbolType.SUBFIELD);
         add(SymbolType.PARAMETER);
     }};
@@ -199,7 +197,6 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.FUNCTION, "function");
         put(SymbolType.DOCUMENT_SUMMARY, "variable");
         put(SymbolType.SUMMARY, "variable");
-        put(SymbolType.FIELD_IN_STRUCT, "property");
         put(SymbolType.PARAMETER, "parameter");
     }};
 

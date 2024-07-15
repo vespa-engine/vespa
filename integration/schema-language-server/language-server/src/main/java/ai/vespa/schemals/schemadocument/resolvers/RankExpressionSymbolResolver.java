@@ -3,6 +3,7 @@ package ai.vespa.schemals.schemadocument.resolvers;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -11,7 +12,7 @@ import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
@@ -68,12 +69,12 @@ public class RankExpressionSymbolResolver {
     }
 
     private static void resolveFunctionReference(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
-        Symbol symbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FUNCTION, node.getSymbol().getLongIdentifier());
+        Optional<Symbol> symbol = context.schemaIndex().findSymbol(node.getSymbol().getScope(), SymbolType.FUNCTION, node.getSymbol().getShortIdentifier());
 
-        if (symbol == null) return;
+        if (symbol.isEmpty()) return;
 
         node.setSymbolType(SymbolType.FUNCTION);
         node.setSymbolStatus(SymbolStatus.REFERENCE);
-        context.schemaIndex().insertSymbolReference(symbol, node.getSymbol());
+        context.schemaIndex().insertSymbolReference(symbol.get(), node.getSymbol());
     }
 }

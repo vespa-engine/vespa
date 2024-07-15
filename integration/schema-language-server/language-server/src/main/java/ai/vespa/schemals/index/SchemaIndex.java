@@ -1,13 +1,13 @@
 package ai.vespa.schemals.index;
 
-import static ai.vespa.schemals.parser.Token.TokenType.OPERATION;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.apache.xerces.util.SymbolTable;
 
 import ai.vespa.schemals.index.Symbol.SymbolType;
 
@@ -195,6 +195,14 @@ public class SchemaIndex {
         return results;
     }
 
+    /**
+     * Retrieves a symbol definition of the specified type and short identifier.
+     * Basicly only used with finding schemas
+     *
+     * @param type            the type of symbol to retrieve
+     * @param shortIdentifier the short identifier of the symbol to retrieve
+     * @return an Optional containing the symbol if found, or an empty Optional if not found
+     */
     public Optional<Symbol> getSymbol(SymbolType type, String shortIdentifier) {
         List<Symbol> list = symbolDefinitions.get(type);
 
@@ -205,6 +213,16 @@ public class SchemaIndex {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Retrieves a list of symbols of the specified type from the schema index.
+     *
+     * @param type The type of symbols to retrieve.
+     * @return A list of symbols of the specified type, or an empty list if no symbols are found.
+     */
+    public List<Symbol> getSymbolsByType(SymbolType type) {
+        return symbolDefinitions.get(type);
     }
 
     /**

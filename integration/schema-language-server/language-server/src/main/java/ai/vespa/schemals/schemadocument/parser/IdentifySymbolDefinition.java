@@ -33,6 +33,7 @@ import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolDefinition extends Identifier {
@@ -50,6 +51,8 @@ public class IdentifySymbolDefinition extends Identifier {
         put(fieldElm.class, SymbolType.FIELD);
         put(fieldSetElm.class, SymbolType.FIELDSET);
         put(structDefinitionElm.class, SymbolType.STRUCT);
+        put(structFieldDefinition.class, SymbolType.FIELD);
+        put(functionElm.class, SymbolType.FUNCTION);
     }};
 
     private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
@@ -78,7 +81,7 @@ public class IdentifySymbolDefinition extends Identifier {
         if (parent.indexOf(node) >= 3) {
             // Unnless it is a paramenter to a function
             if (parent.isASTInstance(functionElm.class) && node.isASTInstance(identifierStr.class)) {
-                setAsParameter(node);
+                createSymbol(node, SymbolType.PARAMETER);
             }
 
             return ret;
@@ -88,7 +91,10 @@ public class IdentifySymbolDefinition extends Identifier {
         SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType != null) {
 
-            node.setSymbol(symbolType, context.fileURI());
+            Optional<Symbol> scope = findScope(node);
+            if (scope.isEmpty()) return ret;
+
+            node.setSymbol(symbolType, context.fileURI(), scope.get());
 
             if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
                 node.setSymbolStatus(SymbolStatus.DEFINITION);
@@ -100,52 +106,52 @@ public class IdentifySymbolDefinition extends Identifier {
             return ret;
         }
 
-        if (parent.isASTInstance(structFieldDefinition.class) && parent.getParent() != null) {
-            // Custom logic to find the scope
+        // if (parent.isASTInstance(structFieldDefinition.class) && parent.getParent() != null) {
+        //     // Custom logic to find the scope
 
-            SchemaNode parentDefinitionNode = parent.getParent().get(1);
+        //     SchemaNode parentDefinitionNode = parent.getParent().get(1);
 
-            if (parentDefinitionNode.hasSymbol() && parentDefinitionNode.getSymbol().getType() == SymbolType.STRUCT) {
-                Symbol scope = parentDefinitionNode.getSymbol();
-                node.setSymbol(SymbolType.FIELD_IN_STRUCT, context.fileURI(), scope);
-                node.setSymbolStatus(SymbolStatus.DEFINITION);
-                context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-            } else {
-                ret.add(new Diagnostic(node.getRange(), "Invalid field definition in struct", DiagnosticSeverity.Warning, ""));
-            }
-        }
+        //     if (parentDefinitionNode.hasSymbol() && parentDefinitionNode.getSymbol().getType() == SymbolType.STRUCT) {
+        //         Symbol scope = parentDefinitionNode.getSymbol();
+        //         node.setSymbol(SymbolType.FIELD_IN_STRUCT, context.fileURI(), scope);
+        //         node.setSymbolStatus(SymbolStatus.DEFINITION);
+        //         context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+        //     } else {
+        //         ret.add(new Diagnostic(node.getRange(), "Invalid field definition in struct", DiagnosticSeverity.Warning, ""));
+        //     }
+        // }
 
-        // TODO: these cases are quite similar. Generalize?
-        if (parent.isASTInstance(rankProfile.class)) {
-            Optional<Symbol> scope = findRankProfileScope(node, context.fileURI());
+        // // TODO: these cases are quite similar. Generalize?
+        // if (parent.isASTInstance(rankProfile.class)) {
+        //     Optional<Symbol> scope = findRankProfileScope(node, context.fileURI());
 
-            if (scope.isPresent()) {
-                node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI(), scope.get());
+        //     if (scope.isPresent()) {
+        //         node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI(), scope.get());
 
-                if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
-                    node.setSymbolStatus(SymbolStatus.DEFINITION);
-                    context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-                }
-            } else {
-                node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI());
-                node.setSymbolStatus(SymbolStatus.INVALID);
-            }
-        }
+        //         if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
+        //             node.setSymbolStatus(SymbolStatus.DEFINITION);
+        //             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+        //         }
+        //     } else {
+        //         node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI());
+        //         node.setSymbolStatus(SymbolStatus.INVALID);
+        //     }
+        // }
 
-        if (parent.isASTInstance(functionElm.class)) {
-            Optional<Symbol> scope = findRankProfileFunctionScope(node);
-            if (scope.isPresent()) {
-                node.setSymbol(SymbolType.FUNCTION, context.fileURI(), scope.get());
+        // if (parent.isASTInstance(functionElm.class)) {
+        //     Optional<Symbol> scope = findRankProfileFunctionScope(node);
+        //     if (scope.isPresent()) {
+        //         node.setSymbol(SymbolType.FUNCTION, context.fileURI(), scope.get());
 
-                if (context.schemaIndex().findSymbol(node.getSymbol()) == null) {
-                    node.setSymbolStatus(SymbolStatus.DEFINITION);
-                    context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-                }
-            } else {
-                node.setSymbol(SymbolType.FUNCTION, context.fileURI());
-                node.setSymbolStatus(SymbolStatus.INVALID);
-            }
-        }
+        //         if (context.schemaIndex().findSymbol(node.getSymbol()) == null) {
+        //             node.setSymbolStatus(SymbolStatus.DEFINITION);
+        //             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+        //         }
+        //     } else {
+        //         node.setSymbol(SymbolType.FUNCTION, context.fileURI());
+        //         node.setSymbolStatus(SymbolStatus.INVALID);
+        //     }
+        // }
 
 
         return ret;
@@ -179,47 +185,6 @@ public class IdentifySymbolDefinition extends Identifier {
         }
     }
 
-    /*
-     * Looks for a containing rootSchema element. However, if the fileURI is a .profile file, use the file URI to determine the correct schema name instead
-     */
-    private Optional<Symbol> findRankProfileScope(SchemaNode innerNode, String fileURI) {
-        if (fileURI.toLowerCase().endsWith(".profile")) return findRankProfileScopeFromURI(fileURI);
-        while (innerNode != null) {
-            if (innerNode.isASTInstance(rootSchema.class)) break;
-            innerNode = innerNode.getParent();
-        }
-
-        if (innerNode == null || innerNode.size() < 2) return Optional.empty();
-
-        SchemaNode schemaDefinitionNode = innerNode.get(1);
-
-        if (!schemaDefinitionNode.hasSymbol() || schemaDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
-
-        return Optional.of(schemaDefinitionNode.getSymbol());
-    }
-
-    private Optional<Symbol> findRankProfileScopeFromURI(String fileURI) {
-        String schemaName = context.schemaIndex().getRankProfileSchemaFromURI(fileURI);
-        context.logger().println("Lookup for " + fileURI + " retuned " + schemaName);
-        if (schemaName == null)return Optional.empty();
-        return Optional.ofNullable(context.schemaIndex().findSchemaDefinitionFromName(schemaName));
-    }
-
-    private Optional<Symbol> findRankProfileFunctionScope(SchemaNode innerNode) {
-        while (innerNode != null) {
-            if (innerNode.isASTInstance(rankProfile.class)) break;
-            innerNode = innerNode.getParent();
-        }
-
-        if (innerNode == null || innerNode.size() < 2) return Optional.empty();
-
-        SchemaNode rankProfileDefinitionNode = innerNode.get(1);
-
-        if (!rankProfileDefinitionNode.hasSymbol() || rankProfileDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
-
-        return Optional.of(rankProfileDefinitionNode.getSymbol());
-    }
-
     private Optional<Symbol> findMapScope(SchemaNode mapDataTypeNode) {
         while (mapDataTypeNode != null) {
             mapDataTypeNode = mapDataTypeNode.getParent();
@@ -239,12 +204,60 @@ public class IdentifySymbolDefinition extends Identifier {
         return Optional.empty();
     }
 
-    private void setAsParameter(SchemaNode node) {
-        SchemaNode parent = node.getParent();
-        SchemaNode functionDefinition = parent.get(2);
+    private void createSymbol(SchemaNode node, SymbolType type) {
 
-        node.setSymbol(SymbolType.PARAMETER, context.fileURI(), functionDefinition.getSymbol());
+        Optional<Symbol> scope = findScope(node);
+
+        if (scope.isPresent()) {
+            node.setSymbol(type, context.fileURI(), scope.get());
+        } else {
+            node.setSymbol(type, context.fileURI());
+        }
+
         node.setSymbolStatus(SymbolStatus.DEFINITION);
         context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+    }
+
+    private Optional<Symbol> findScope(SchemaNode node) {
+        if (
+            context.fileURI().toLowerCase().endsWith(".profile") &&
+            node.getParent().isASTInstance(rankProfile.class)
+        ) return findRankProfileScopeFromURI(context.fileURI());
+
+        SchemaNode currentNode = node;
+
+        while (
+            currentNode != null
+        ) {
+            if (
+                identifierTypeMap.keySet().contains(currentNode.getASTClass()) ||
+                identifierWithDashTypeMap.keySet().contains(currentNode.getASTClass())
+            ) {
+                // Find the symbol definition
+                // TODO: Recaftor in a more general way
+                int indexGuess = 1;
+
+                if (currentNode.isASTInstance(functionElm.class)) {
+                    indexGuess = 2;
+                }
+
+                if (currentNode.size() >= indexGuess + 1) {
+                    SchemaNode potentialDefinition = currentNode.get(indexGuess);
+                    if (potentialDefinition.hasSymbol() && potentialDefinition.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
+                        return Optional.of(potentialDefinition.getSymbol());
+                    }
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<Symbol> findRankProfileScopeFromURI(String fileURI) {
+        SchemaDocument document = context.scheduler().getSchemaDocument(fileURI);
+        String schemaName = document.getSchemaIdentifier();
+        context.logger().println("Lookup for " + fileURI + " retuned " + schemaName);
+        if (schemaName == null) return Optional.empty();
+        return context.schemaIndex().getSymbol(SymbolType.SCHEMA, schemaName);
     }
 }

@@ -6,7 +6,6 @@ import ai.vespa.schemals.schemadocument.DocumentManager;
 
 import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.index.SchemaIndex;
-import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class EventContext {

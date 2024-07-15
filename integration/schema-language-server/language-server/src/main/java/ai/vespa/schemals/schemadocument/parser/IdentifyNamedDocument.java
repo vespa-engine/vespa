@@ -1,10 +1,12 @@
 package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.documentElm;
@@ -30,8 +32,8 @@ public class IdentifyNamedDocument extends Identifier {
 
         Range identifierRange = node.get(1).getRange();
         String documentName = node.get(1).getText();
-
-        if (context.schemaIndex().findSymbolInFile(context.fileURI(), SymbolType.SCHEMA, documentName) == null) {
+        Optional<Symbol> schemaSymbol = context.schemaIndex().getSymbol(SymbolType.SCHEMA, documentName);
+        if (schemaSymbol.isEmpty() || schemaSymbol.get().getFileURI() != context.fileURI()) {
             // TODO: Quickfix
             ret.add(new Diagnostic(identifierRange, "Invalid document name \"" + documentName + "\". The document name must match the containing schema's name."));
         }

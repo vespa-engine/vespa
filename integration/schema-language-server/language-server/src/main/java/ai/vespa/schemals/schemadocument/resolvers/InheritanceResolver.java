@@ -15,18 +15,18 @@ import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.schemadocument.ParseContext;
-import ai.vespa.schemals.schemadocument.SchemaDocumentParser;
+import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class InheritanceResolver {
     
 
-    /*
+    /**
      * Assuming first parsing step is done, use the list of unresolved inheritance
      * declarations to register the inheritance at index.
      * @return List of diagnostic found during inheritance handling
-     * */
+     */
     public static List<Diagnostic> resolveInheritances(ParseContext context) {
         List<Diagnostic> diagnostics = new ArrayList<>();
         Set<String> documentInheritanceURIs = new HashSet<>();
@@ -51,19 +51,26 @@ public class InheritanceResolver {
 
         if (context.inheritsSchemaNode() != null) {
             String inheritsSchemaName = context.inheritsSchemaNode().getText();
-            SchemaDocumentParser parent = context.schemaIndex().findSchemaDocumentWithName(inheritsSchemaName);
-            if (parent != null) {
-                if (!documentInheritanceURIs.contains(parent.getFileURI())) {
-                    // TODO: quickfix
-                    diagnostics.add(new Diagnostic(
-                        context.inheritsSchemaNode().getRange(),
-                        "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
-                        DiagnosticSeverity.Error,
-                        ""
-                    ));
-                    context.schemaIndex().setSchemaInherits(context.fileURI(), parent.getFileURI());
+
+            Optional<Symbol> schemaSymbol = context.schemaIndex().getSymbol(SymbolType.SCHEMA, inheritsSchemaName);
+
+            if (schemaSymbol.isPresent()) {
+                SchemaDocument parent = context.scheduler().getSchemaDocument(schemaSymbol.get().getFileURI());
+
+                if (parent != null) {
+                    if (!documentInheritanceURIs.contains(parent.getFileURI())) {
+                        // TODO: quickfix
+                        diagnostics.add(new Diagnostic(
+                            context.inheritsSchemaNode().getRange(),
+                            "The schema document must explicitly inherit from " + inheritsSchemaName + " because the containing schema does so.",
+                            DiagnosticSeverity.Error,
+                            ""
+                        ));
+                        context.schemaIndex().getDocumentInheritanceGraph().addInherits(context.fileURI(), parent.getFileURI());
+                    }
+
+                    context.schemaIndex().insertSymbolReference(schemaSymbol.get(), context.inheritsSchemaNode().getSymbol());
                 }
-                context.schemaIndex().insertSymbolReference(context.fileURI(), context.inheritsSchemaNode());
             }
         }
 
@@ -74,7 +81,6 @@ public class InheritanceResolver {
 
     private static void resolveStructInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
         SchemaNode myStructDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
-        String inheritedIdentifier = inheritanceNode.getText();
 
         if (myStructDefinitionNode == null) {
             return;
@@ -84,17 +90,17 @@ public class InheritanceResolver {
             return;
         }
 
-        Symbol parentSymbol = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, inheritedIdentifier);
-        if (parentSymbol == null) {
+        Optional<Symbol> parentSymbol = context.schemaIndex().findSymbol(inheritanceNode.getSymbol());
+        if (parentSymbol.isEmpty()) {
             // Handled elsewhere
             return;
         }
 
-        if (!context.schemaIndex().tryRegisterStructInheritance(myStructDefinitionNode.getSymbol(), parentSymbol)) {
+        if (!context.schemaIndex().tryRegisterStructInheritance(myStructDefinitionNode.getSymbol(), parentSymbol.get())) {
             // TODO: get the chain?
             diagnostics.add(new Diagnostic(
                 inheritanceNode.getRange(), 
-                "Cannot inherit from " + parentSymbol.getShortIdentifier() + " because " + parentSymbol.getShortIdentifier() + " inherits from this struct.",
+                "Cannot inherit from " + parentSymbol.get().getShortIdentifier() + " because " + parentSymbol.get().getShortIdentifier() + " inherits from this struct.",
                 DiagnosticSeverity.Error, 
                 ""
             ));
@@ -104,12 +110,12 @@ public class InheritanceResolver {
         // Look for redeclarations
         Set<String> fieldsSeen = new HashSet<>();
 
-        for (Symbol fieldSymbol : context.schemaIndex().getAllStructFieldSymbols(myStructDefinitionNode.getSymbol())) {
+        for (Symbol fieldSymbol : context.schemaIndex().findSymbolsInScope(myStructDefinitionNode.getSymbol(), SymbolType.FIELD)) {
             if (fieldsSeen.contains(fieldSymbol.getShortIdentifier())) {
                 // TODO: quickfix
                 diagnostics.add(new Diagnostic(
                     fieldSymbol.getNode().getRange(),
-                    "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
+                    "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
                     DiagnosticSeverity.Error,
                     ""
                 ));
