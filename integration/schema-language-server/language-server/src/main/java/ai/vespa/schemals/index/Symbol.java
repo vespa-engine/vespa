@@ -123,7 +123,6 @@ public class Symbol {
         DOCUMENT_SUMMARY,
         SUMMARY,
         TYPE_UNKNOWN,
-        FIELD_IN_STRUCT,
         SUBFIELD,
         MAP_KEY,
         MAP_VALUE,
