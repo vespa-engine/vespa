@@ -14,6 +14,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 public class SchemaIndex {
 
     private PrintStream logger;
+    private String workspaceRootURI;
 
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
     private Map<Symbol, List<Symbol>> symbolReferences;
@@ -37,6 +38,15 @@ public class SchemaIndex {
             this.symbolDefinitions.put(type, new ArrayList<Symbol>());
         }
 
+    }
+
+    public void setWorkspaceURI(String workspaceRootURI) {
+        this.workspaceRootURI = workspaceRootURI;
+    }
+
+
+    public String getWorkspaceURI() {
+        return this.workspaceRootURI;
     }
 
     /**
@@ -121,6 +131,10 @@ public class SchemaIndex {
                                                    .stream()
                                                    .filter(symbolDefinition -> symbolDefinition.getShortIdentifier().equals(shortIdentifier))
                                                    .toList();
+
+        if (type == SymbolType.SCHEMA || type == SymbolType.DOCUMENT) {
+            return candidates;
+        }
 
         while (scope != null) {
             for (Symbol candidate : candidates) {

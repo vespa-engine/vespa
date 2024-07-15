@@ -13,7 +13,8 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.schemadocument.ParseContext;
+import ai.vespa.schemals.parser.ast.mapDataType;
+import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class SymbolReferenceResolver {
@@ -34,24 +35,16 @@ public class SymbolReferenceResolver {
                 Optional<Symbol> parentFieldDefinition = Optional.empty();
 
                 // Two cases for where the parent field is defined. Either inside a struct or "global". 
-                if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                    parentFieldDefinition = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD, parentField.getText()));
 
-                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.FIELD_IN_STRUCT && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                    parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
-                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.MAP_VALUE && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                    parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
-                } else if (parentField.hasSymbol() && parentField.getSymbol().getType() == SymbolType.STRUCT && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
-                    parentFieldDefinition = context.schemaIndex().findDefinitionOfReference(parentField.getSymbol());
+                if (parentField.hasSymbol() && parentField.getSymbol().getStatus() == SymbolStatus.REFERENCE) {
+                    parentFieldDefinition = context.schemaIndex().getSymbolDefinition(parentField.getSymbol());
                 }
 
                 if (parentFieldDefinition.isPresent()) {
                     referencedSymbol = resolveSubFieldReference(node, parentFieldDefinition.get(), context);
                 }
-            } else if (referencedType == SymbolType.RANK_PROFILE) {
-                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbolWithSchemaScope(node.getSymbol()));
             } else {
-                referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(node.getSymbol()));
+                referencedSymbol = context.schemaIndex().findSymbol(node.getSymbol());
             }
 
             if (referencedSymbol.isPresent()) {
@@ -94,7 +87,6 @@ public class SymbolReferenceResolver {
      */
     private static Optional<Symbol> resolveSubFieldReference(SchemaNode node, Symbol fieldDefinition, ParseContext context) {
         if (fieldDefinition.getType() != SymbolType.FIELD 
-            && fieldDefinition.getType() != SymbolType.FIELD_IN_STRUCT 
             && fieldDefinition.getType() != SymbolType.MAP_VALUE
             && fieldDefinition.getType() != SymbolType.STRUCT) return Optional.empty();
         if (fieldDefinition.getStatus() != SymbolStatus.DEFINITION) return Optional.empty();
@@ -107,7 +99,7 @@ public class SymbolReferenceResolver {
         Optional<Symbol> referencedSymbol = Optional.empty();
         if (fieldDefinition.getType() == SymbolType.MAP_VALUE) {
             dataTypeNode = fieldDefinition.getNode();
-        } else if (fieldDefinition.getType() == SymbolType.FIELD || fieldDefinition.getType() == SymbolType.FIELD_IN_STRUCT) {
+        } else if (fieldDefinition.getType() == SymbolType.FIELD) {
             dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
             if (!dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
 
@@ -117,7 +109,7 @@ public class SymbolReferenceResolver {
                 if (!isStructReference(dataTypeNode)) return Optional.empty();
 
                 Symbol structReference = dataTypeNode.getSymbol();
-                Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.getLongIdentifier());
+                Symbol structDefinition = context.schemaIndex().getSymbolDefinition(structReference).get();
                 return resolveFieldInStructReference(node, structDefinition, context);
             }
         } else {
@@ -135,9 +127,7 @@ public class SymbolReferenceResolver {
             if (!isStructReference(innerType)) return Optional.empty();
 
             Symbol structReference = innerType.getSymbol();
-            Symbol structDefinition = context.schemaIndex().findSymbol(context.fileURI(), SymbolType.STRUCT, structReference.getLongIdentifier());
-
-            if (structDefinition == null) return Optional.empty();
+            Symbol structDefinition = context.schemaIndex().getSymbolDefinition(structReference).get();
 
             return resolveFieldInStructReference(node, structDefinition, context);
         }
@@ -145,8 +135,8 @@ public class SymbolReferenceResolver {
     }
 
     private static Optional<Symbol> resolveFieldInStructReference(SchemaNode node, Symbol structDefinition, ParseContext context) {
-        Optional<Symbol> referencedSymbol = Optional.empty();
-        referencedSymbol = context.schemaIndex().findFieldInStruct(structDefinition, node.getText());
+        Optional<Symbol> referencedSymbol = context.schemaIndex().findSymbol(structDefinition, SymbolType.FIELD, node.getText().toLowerCase());
+
         //referencedSymbol = Optional.ofNullable(context.schemaIndex().findSymbol(context.fileURI(), SymbolType.FIELD_IN_STRUCT, structDefinition.getLongIdentifier() + "." + node.getText()));
         referencedSymbol.ifPresent(symbol -> node.setSymbolType(symbol.getType()));
         return referencedSymbol;
@@ -155,9 +145,7 @@ public class SymbolReferenceResolver {
     private static Optional<Symbol> resolveMapValueReference(SchemaNode node, Symbol mapValueDefinition, ParseContext context) {
         Optional<Symbol> referencedSymbol = Optional.empty();
         if (node.getText().equals("key")) {
-            referencedSymbol = Optional.ofNullable(
-                context.schemaIndex().findSymbol(context.fileURI(), SymbolType.MAP_KEY, mapValueDefinition.getLongIdentifier() + ".key")
-            );
+            referencedSymbol = context.schemaIndex().findSymbol(mapValueDefinition, SymbolType.MAP_KEY, "key");
 
             referencedSymbol.ifPresent(symbol -> node.setSymbolType(SymbolType.MAP_KEY));
         }
@@ -175,7 +163,28 @@ public class SymbolReferenceResolver {
         return node != null && node.hasSymbol() && node.getSymbol().getType() == SymbolType.STRUCT && node.getSymbol().getStatus() == SymbolStatus.REFERENCE;
     }
 
-    private static Optional<Symbol> findMapValueDefinition(ParseContext context, Symbol mapValueDefinition) {
-        Symbol rawValueSymbol = context.schemaIndex().findSymbol()
+    private static Optional<Symbol> findMapValueDefinition(ParseContext context, Symbol fieldDefinition) {
+        if (fieldDefinition.getType() != SymbolType.FIELD) return Optional.empty();
+        SchemaNode dataTypeNode = fieldDefinition.getNode().getNextSibling().getNextSibling();
+
+        if (dataTypeNode == null || !dataTypeNode.isASTInstance(dataType.class)) return Optional.empty();
+
+        if (dataTypeNode.size() == 0 || !dataTypeNode.get(0).isASTInstance(mapDataType.class)) return Optional.empty();
+
+        SchemaNode valueNode = dataTypeNode.get(0).get(4);
+
+        if (!valueNode.hasSymbol()) return Optional.empty();
+
+        switch(valueNode.getSymbol().getStatus()) {
+            case DEFINITION:
+                return Optional.of(valueNode.getSymbol());
+			case REFERENCE:
+                return context.schemaIndex().getSymbolDefinition(valueNode.getSymbol());
+            case BUILTIN_REFERENCE:
+            case INVALID:
+			case UNRESOLVED:
+            default:
+                return Optional.empty();
+        }
     }
 }
