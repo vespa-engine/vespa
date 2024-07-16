@@ -17,6 +17,7 @@ import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -110,19 +111,28 @@ public class InheritanceResolver {
 
 
         // Look for redeclarations
-        Set<String> fieldsSeen = new HashSet<>();
+        SchemaNode structDefinitionElmNode = myStructDefinitionNode.getParent();
 
-        for (Symbol fieldSymbol : context.schemaIndex().findSymbolsInScope(myStructDefinitionNode.getSymbol(), SymbolType.FIELD)) {
-            if (fieldsSeen.contains(fieldSymbol.getShortIdentifier())) {
+        for (SchemaNode child : structDefinitionElmNode) {
+            if (!child.isSchemaASTInstance(structFieldDefinition.class)) continue;
+            if (child.size() < 2) continue;
+
+            SchemaNode fieldIdentifierDef = child.get(1);
+
+            if (!fieldIdentifierDef.hasSymbol() || fieldIdentifierDef.getSymbol().getStatus() != SymbolStatus.INVALID) continue;
+
+            // It is marked as INVALID because it is a duplicate. Check if it belongs to the parent struct to display the appropriate error message
+            String fieldIdentifier = fieldIdentifierDef.getSymbol().getShortIdentifier();
+
+            if (context.schemaIndex().findSymbol(parentSymbol.get(), SymbolType.FIELD, fieldIdentifier).isPresent()) {
                 // TODO: quickfix
                 diagnostics.add(new Diagnostic(
-                    fieldSymbol.getNode().getRange(),
-                    "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldSymbol.getShortIdentifier(),
+                    fieldIdentifierDef.getRange(),
+                    "struct " + myStructDefinitionNode.getText() + " cannot inherit from " + parentSymbol.get().getShortIdentifier() + " and redeclare field " + fieldIdentifier,
                     DiagnosticSeverity.Error,
                     ""
                 ));
             }
-            fieldsSeen.add(fieldSymbol.getShortIdentifier().toLowerCase());
         }
     }
 

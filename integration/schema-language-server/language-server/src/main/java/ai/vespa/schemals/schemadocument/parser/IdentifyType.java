@@ -1,5 +1,6 @@
 package ai.vespa.schemals.schemadocument.parser;
 
+import java.util.Optional;
 import java.util.ArrayList;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -8,10 +9,12 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import com.yahoo.schema.parser.ParsedType;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
+import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifyType extends Identifier {
@@ -72,7 +75,12 @@ public class IdentifyType extends Identifier {
             return ret;
         }
 
-        node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+        Optional<Symbol> scope = CSTUtils.findScope(node);
+        if (scope.isPresent()) {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope.get());
+        } else {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+        }
 
         this.context.addUnresolvedTypeNode(node);
         return ret;

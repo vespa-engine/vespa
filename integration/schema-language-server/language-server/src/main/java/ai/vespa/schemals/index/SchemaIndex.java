@@ -341,7 +341,10 @@ public class SchemaIndex {
      * @return A list of symbols found in the specified scope and of the given type.
      */
     public List<Symbol> findSymbolsInScope(Symbol scope, SymbolType type) {
-        return new ArrayList<>();
+        return symbolDefinitions.get(type)
+                                .stream()
+                                .filter(symbol -> isInScope(symbol, scope))
+                                .toList();
     }
 
     /**
