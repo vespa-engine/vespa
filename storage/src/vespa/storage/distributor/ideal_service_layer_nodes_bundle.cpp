@@ -25,11 +25,11 @@ IdealServiceLayerNodesBundle::set_nodes(ConstNodesRef nodes,
 {
     _nodes.clear();
     _nodes.reserve(nodes.size() + nonretired_nodes.size() + nonretired_or_maintenance_nodes.size());
-    std::for_each(nodes.cbegin(), nodes.cend(), [this](uint16_t n) { _nodes.emplace_back(n); });
+    std::for_each(nodes.begin(), nodes.end(), [this](uint16_t n) { _nodes.emplace_back(n); });
     _available_sz = nodes.size();
-    std::for_each(nonretired_nodes.cbegin(), nonretired_nodes.cend(), [this](uint16_t n) { _nodes.emplace_back(n); });
+    std::for_each(nonretired_nodes.begin(), nonretired_nodes.end(), [this](uint16_t n) { _nodes.emplace_back(n); });
     _nonretired_sz = nonretired_nodes.size();
-    std::for_each(nonretired_or_maintenance_nodes.cbegin(), nonretired_or_maintenance_nodes.cend(), [this](uint16_t n) { _nodes.emplace_back(n); });
+    std::for_each(nonretired_or_maintenance_nodes.begin(), nonretired_or_maintenance_nodes.end(), [this](uint16_t n) { _nodes.emplace_back(n); });
 
     if (nonretired_or_maintenance_nodes.size() > BUILD_HASH_LIMIT) {
         _nonretired_or_maintenance_node_2_index = std::make_unique<LookupMap>(nonretired_or_maintenance_nodes.size());

@@ -160,7 +160,7 @@ equalNodeSet(ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
     }
     // Note: no assumptions are made on the ordering of the elements in
     // either vector.
-    return std::all_of(idealState.cbegin(), idealState.cend(),
+    return std::all_of(idealState.begin(), idealState.end(),
                        [&dbEntry](uint16_t node) { return dbEntry->getNode(node); });
 }
 
