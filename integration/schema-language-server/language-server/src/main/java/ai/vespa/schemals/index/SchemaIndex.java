@@ -118,7 +118,6 @@ public class SchemaIndex {
     /**
      * Searches for symbols in the schema index that match the given symbol.
      *
-     * @param querySymbol The symbol to search for, should be UNRESOLVED
      * @return A list of symbols that match the given symbol.
      */
     public List<Symbol> findSymbols(Symbol scope, SymbolType type, String shortIdentifier) {
@@ -135,6 +134,7 @@ public class SchemaIndex {
         }
 
         while (scope != null) {
+            logger.println("LOOKING FOR " + shortIdentifier + " in scope " + scope.getLongIdentifier());
             for (Symbol candidate : candidates) {
                 // Check if candidate is in this scope
                 if (isInScope(candidate, scope))result.add(candidate);
@@ -194,10 +194,8 @@ public class SchemaIndex {
     }
 
     /**
-     * Retrieves a symbol definition of the specified type and short identifier.
-     * Basicly only used with finding schemas
+     * Retrieves the symbol definition of the specified schema name.
      *
-     * @param type            the type of symbol to retrieve
      * @param shortIdentifier the short identifier of the symbol to retrieve
      * @return an Optional containing the symbol if found, or an empty Optional if not found
      */

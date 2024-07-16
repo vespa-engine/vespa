@@ -92,6 +92,7 @@ public class SchemaDocument implements DocumentManager {
         // TODO: ask @Mangern what this function did
         // schemaIndex.registerSchema(fileURI, this);
 
+        logger.println("Parsing: " + fileURI);
         ParseContext context = getParseContext(content);
         var parsingResult = parseContent(context);
 
@@ -104,7 +105,6 @@ public class SchemaDocument implements DocumentManager {
             lexer.setCST(CST);
         }
 
-        logger.println("Parsing: " + fileURI);
 
         logger.println("======== CST for file: " + fileURI + " ========");
  
@@ -305,6 +305,7 @@ public class SchemaDocument implements DocumentManager {
         }
 
         for (Identifier identifier : context.identifiers()) {
+            context.logger().println("IDENTIFIER " + identifier.getClass().getName());
             ret.addAll(identifier.identify(node));
         }
 

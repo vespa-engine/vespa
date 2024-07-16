@@ -221,7 +221,9 @@ public class IdentifySymbolDefinition extends Identifier {
         if (
             context.fileURI().toLowerCase().endsWith(".profile") &&
             node.getParent().isASTInstance(rankProfile.class)
-        ) return findRankProfileScopeFromURI(context.fileURI());
+        ) {
+            return findRankProfileScopeFromURI(context.fileURI());
+        }
 
         SchemaNode currentNode = node;
 
@@ -247,6 +249,7 @@ public class IdentifySymbolDefinition extends Identifier {
                     }
                 }
             }
+            currentNode = currentNode.getParent();
         }
 
         return Optional.empty();
@@ -254,6 +257,7 @@ public class IdentifySymbolDefinition extends Identifier {
 
     private Optional<Symbol> findRankProfileScopeFromURI(String fileURI) {
         SchemaDocument document = context.scheduler().getSchemaDocument(fileURI);
+        if (document == null) return Optional.empty();
         String schemaName = document.getSchemaIdentifier();
         context.logger().println("Lookup for " + fileURI + " retuned " + schemaName);
         if (schemaName == null) return Optional.empty();
