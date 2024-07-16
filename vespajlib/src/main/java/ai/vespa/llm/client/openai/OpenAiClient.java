@@ -21,6 +21,7 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,10 +69,11 @@ public class OpenAiClient implements LanguageModel {
                                                                     Consumer<Completion> consumer) {
         try {
             var request = toRequest(prompt, options, true);
-            var futureResponse = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines());
+            var futureResponse = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
+                                           .orTimeout(10, TimeUnit.SECONDS);
             var completionFuture = new CompletableFuture<Completion.FinishReason>();
 
-            futureResponse.thenAcceptAsync(response -> {
+            futureResponse.thenAccept(response -> {
                 try {
                     int responseCode = response.statusCode();
                     if (responseCode != 200) {
@@ -92,6 +94,9 @@ public class OpenAiClient implements LanguageModel {
                 } catch (Exception e) {
                     completionFuture.completeExceptionally(e);
                 }
+            }).exceptionally(e -> {
+                completionFuture.completeExceptionally(e);
+                return null;
             });
             return completionFuture;
 
