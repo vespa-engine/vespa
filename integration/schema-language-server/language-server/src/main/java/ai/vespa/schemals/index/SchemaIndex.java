@@ -8,8 +8,44 @@ import java.util.Map;
 import java.util.Optional;
 
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.Node;
+import ai.vespa.schemals.parser.ast.annotationElm;
+import ai.vespa.schemals.parser.ast.annotationOutside;
+import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.documentSummary;
+import ai.vespa.schemals.parser.ast.fieldElm;
+import ai.vespa.schemals.parser.ast.fieldSetElm;
+import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.identifierStr;
+import ai.vespa.schemals.parser.ast.identifierWithDashStr;
+import ai.vespa.schemals.parser.ast.mapDataType;
+import ai.vespa.schemals.parser.ast.namedDocument;
+import ai.vespa.schemals.parser.ast.rankProfile;
+import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.structDefinitionElm;
+import ai.vespa.schemals.parser.ast.structFieldDefinition;
+import ai.vespa.schemals.parser.ast.summaryInDocument;
 
 public class SchemaIndex {
+    public static final HashMap<Class<? extends Node>, SymbolType> IDENTIFIER_TYPE_MAP = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(annotationElm.class, SymbolType.ANNOTATION);
+        put(annotationOutside.class, SymbolType.ANNOTATION);
+        put(rootSchema.class, SymbolType.SCHEMA);
+        put(documentElm.class, SymbolType.DOCUMENT);
+        put(namedDocument.class, SymbolType.DOCUMENT);
+        put(fieldElm.class, SymbolType.FIELD);
+        put(fieldSetElm.class, SymbolType.FIELDSET);
+        put(structDefinitionElm.class, SymbolType.STRUCT);
+        put(structFieldDefinition.class, SymbolType.FIELD);
+        put(functionElm.class, SymbolType.FUNCTION);
+    }};
+
+    public static final HashMap<Class<? extends Node>, SymbolType> IDENTIFIER_WITH_DASH_TYPE_MAP = new HashMap<Class<? extends Node>, SymbolType>() {{
+        put(rankProfile.class, SymbolType.RANK_PROFILE);
+        put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
+        put(summaryInDocument.class, SymbolType.SUMMARY);
+    }};
 
     private PrintStream logger;
     private String workspaceRootURI;
@@ -133,8 +169,12 @@ public class SchemaIndex {
             return candidates;
         }
 
+        logger.println("LOOKING FOR " + shortIdentifier + " in scope " + (scope == null ? "null" : scope.getLongIdentifier()));
+        for (var sym : candidates) {
+            logger.println("    Cand: " + sym.getLongIdentifier());
+        }
+
         while (scope != null) {
-            logger.println("LOOKING FOR " + shortIdentifier + " in scope " + scope.getLongIdentifier());
             for (Symbol candidate : candidates) {
                 // Check if candidate is in this scope
                 if (isInScope(candidate, scope))result.add(candidate);

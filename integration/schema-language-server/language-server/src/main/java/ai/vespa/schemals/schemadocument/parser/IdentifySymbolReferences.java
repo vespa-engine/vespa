@@ -2,8 +2,10 @@ package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
+
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
@@ -18,6 +20,7 @@ import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
@@ -74,7 +77,12 @@ public class IdentifySymbolReferences extends Identifier {
             return handleFields(node);
         }
 
-        node.setSymbol(symbolType, context.fileURI());
+        Optional<Symbol> scope = CSTUtils.findScope(node);
+        if (scope.isPresent()) {
+            node.setSymbol(symbolType, context.fileURI(), scope.get());
+        } else {
+            node.setSymbol(symbolType, context.fileURI());
+        }
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         return ret;

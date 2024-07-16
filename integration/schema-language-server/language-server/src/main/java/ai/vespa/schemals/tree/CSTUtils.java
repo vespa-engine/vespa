@@ -6,10 +6,12 @@ import java.io.PrintStream;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-
+import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.ast.functionElm;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -151,6 +153,37 @@ public class CSTUtils {
         if (onlyLeaf)return null;
 
         return node;
+    }
+
+    public static Optional<Symbol> findScope(SchemaNode node) {
+        SchemaNode currentNode = node;
+
+        while (
+            currentNode != null
+        ) {
+            if (
+                SchemaIndex.IDENTIFIER_TYPE_MAP.containsKey(currentNode.getASTClass()) ||
+                SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP.containsKey(currentNode.getASTClass())
+            ) {
+                // Find the symbol definition
+                // TODO: Refactor in a more general way
+                int indexGuess = 1;
+
+                if (currentNode.isASTInstance(functionElm.class)) {
+                    indexGuess = 2;
+                }
+
+                if (indexGuess < currentNode.size()) {
+                    SchemaNode potentialDefinition = currentNode.get(indexGuess);
+                    if (potentialDefinition.hasSymbol() && potentialDefinition.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
+                        return Optional.of(potentialDefinition.getSymbol());
+                    }
+                }
+            }
+            currentNode = currentNode.getParent();
+        }
+
+        return Optional.empty();
     }
 
     /*
