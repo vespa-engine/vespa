@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.annotationElm;
@@ -274,6 +275,7 @@ public class SchemaIndex {
      * @return An Optional containing the definition of the symbol, or an empty Optional if the symbol is not found.
      */
     public Optional<Symbol> getSymbolDefinition(Symbol reference) {
+        if (reference.getStatus() == SymbolStatus.DEFINITION) return Optional.of(reference);
         Symbol results = definitionOfReference.get(reference);
 
         if (results == null) return Optional.empty();

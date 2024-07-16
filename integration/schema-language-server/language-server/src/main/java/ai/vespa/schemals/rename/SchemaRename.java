@@ -45,8 +45,11 @@ public class SchemaRename {
 
         SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (node == null || !node.hasSymbol()) {
+            context.logger.println("NO SYMBOL AT POSITION");
             return null;
         }
+
+        context.logger.println("Renaming symbol: " + node.getSymbol().getLongIdentifier());
 
         // CASES: rename schema / document, field, struct, funciton
         Optional<Symbol> symbol = Optional.empty();
