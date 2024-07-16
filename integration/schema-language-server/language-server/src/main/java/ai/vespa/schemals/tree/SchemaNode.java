@@ -305,6 +305,8 @@ public class SchemaNode implements Iterable<SchemaNode> {
     public Class<? extends Node> getASTClass() {
         if (language == LanguageType.CUSTOM) return simulatedSchimaClass;
 
+        if (originalSchemaNode == null) return null;
+
         return originalSchemaNode.getClass();
     }
 

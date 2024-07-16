@@ -102,19 +102,10 @@ public class IdentifySymbolReferences extends Identifier {
             return ret;
         }
 
-        SchemaNode searchNode = node;
+        Optional<Symbol> scope = CSTUtils.findScope(node);
 
-        while (
-            (!searchNode.isASTInstance(rankProfile.class)) &&
-            searchNode != null
-        ) {
-            searchNode = searchNode.getParent();
-        }
-
-        if (searchNode != null && searchNode.size() > 2 && searchNode.get(1).hasSymbol()) {
-            Symbol scope = searchNode.get(1).getSymbol();
-
-            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope);
+        if (scope.isPresent()) {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope.get());
         } else {
             node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
         }
