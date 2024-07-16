@@ -24,8 +24,10 @@ public class DefaultZpe implements Zpe {
     // Disable log spam from ZPE library
     private static final Logger fpksLogger =
             Logger.getLogger(com.yahoo.athenz.zpe.pkey.file.FilePublicKeyStore.class.getName());
+    private static final Logger atLogger = Logger.getLogger(AccessToken.class.getName());
     static {
         fpksLogger.setLevel(Level.SEVERE);
+        atLogger.setLevel(Level.SEVERE);
     }
 
     public DefaultZpe() {
