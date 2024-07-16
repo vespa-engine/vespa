@@ -7,10 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
-import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.ast.annotationElm;
 import ai.vespa.schemals.parser.ast.annotationOutside;
 import ai.vespa.schemals.parser.ast.documentElm;
@@ -127,9 +125,11 @@ public class SchemaIndex {
             }
         }
 
-        documentInheritanceGraph.clearInheritsList(fileURI);
-        // Add the node back:)
-        documentInheritanceGraph.createNodeIfNotExists(fileURI);
+        if (fileURI.endsWith(".sd")) {
+            documentInheritanceGraph.clearInheritsList(fileURI);
+            // Add the node back:)
+            documentInheritanceGraph.createNodeIfNotExists(fileURI);
+        }
     }
 
     /**
@@ -218,10 +218,10 @@ public class SchemaIndex {
 
                 List<Symbol> match = symbolDefinitions.get(type)
                     .stream()
-                    .filter(symbolDefinition -> symbolDefinition.getFileURI().equals(ancestorURI) 
-                            && symbolDefinition.getScope() != null
+                    .filter(symbolDefinition -> symbolDefinition.getScope() != null
                             && (symbolDefinition.getScope().getType() == SymbolType.SCHEMA || symbolDefinition.getScope().getType() == SymbolType.DOCUMENT)
-                            && symbolDefinition.getShortIdentifier().equals(shortIdentifier))
+                            && symbolDefinition.getShortIdentifier().equals(shortIdentifier)
+                            && symbolDefinition.getScope().getFileURI().equals(ancestorURI))
                     .toList();
 
                 if (match.isEmpty()) return null;

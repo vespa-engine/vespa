@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import com.yahoo.schema.parser.ParsedType.Variant;
 
@@ -82,7 +83,33 @@ public class IdentifySymbolDefinition extends Identifier {
             }
 
             Optional<Symbol> scope = CSTUtils.findScope(node);
-            if (scope.isEmpty()) return ret;
+            if (scope.isEmpty()) {
+                if (symbolType == SymbolType.RANK_PROFILE && parent.getParent() == null) {
+                    // we are in a rank-profile file (.profile)
+                    String workspaceRootURI = context.schemaIndex().getWorkspaceURI();
+                    String currentURI = context.fileURI();
+
+                    if (!currentURI.startsWith(workspaceRootURI)) return ret; // some invalid situation
+
+                    String suffix = currentURI.substring(workspaceRootURI.length());
+                    if (suffix.startsWith("/"))suffix = suffix.substring(1);
+
+                    String[] components = suffix.split("/");
+
+                    if (components.length == 0) return ret;
+                    String schemaName = components[0];
+
+                    Optional<Symbol> schemaSymbol = context.schemaIndex().getSchemaDefinition(schemaName);
+
+                    if (schemaSymbol.isEmpty()) return ret;
+
+                    // TODO: rank-profile belonging to namedDocument??
+                    node.setSymbol(symbolType, context.fileURI(), schemaSymbol.get());
+                    node.setSymbolStatus(SymbolStatus.DEFINITION);
+                    context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+                }
+                return ret;
+            }
 
             node.setSymbol(symbolType, context.fileURI(), scope.get());
 
