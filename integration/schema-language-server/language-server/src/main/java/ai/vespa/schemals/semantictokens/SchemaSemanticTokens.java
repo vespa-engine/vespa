@@ -45,6 +45,7 @@ public class SchemaSemanticTokens implements Visitor {
         add(SymbolType.SUBFIELD);
         add(SymbolType.PARAMETER);
         add(SymbolType.LABEL);
+        add(SymbolType.QUERY_INPUT);
     }};
 
     private static final ArrayList<TokenType> keywordTokens = new ArrayList<TokenType>() {{
@@ -77,6 +78,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(TokenType.LONG, "number");
         put(TokenType.DOUBLEQUOTEDSTRING, "string");
         put(TokenType.SINGLEQUOTEDSTRING, "string");
+        put(TokenType.QUERY, "function");
     }};
 
 
@@ -200,6 +202,7 @@ public class SchemaSemanticTokens implements Visitor {
         put(SymbolType.SUMMARY, "variable");
         put(SymbolType.PARAMETER, "parameter");
         put(SymbolType.LABEL, "variable");
+        put(SymbolType.QUERY_INPUT, "variable");
     }};
 
     private static ArrayList<String> tokenTypes;
