@@ -11,6 +11,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.context.ParseContext;
+import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
@@ -33,6 +34,7 @@ import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 
 public class IdentifySymbolDefinition extends Identifier {
@@ -41,24 +43,6 @@ public class IdentifySymbolDefinition extends Identifier {
 		super(context);
 	}
 
-    private static final HashMap<Class<? extends Node>, SymbolType> identifierTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
-        put(annotationElm.class, SymbolType.ANNOTATION);
-        put(annotationOutside.class, SymbolType.ANNOTATION);
-        put(rootSchema.class, SymbolType.SCHEMA);
-        put(documentElm.class, SymbolType.DOCUMENT);
-        put(namedDocument.class, SymbolType.DOCUMENT);
-        put(fieldElm.class, SymbolType.FIELD);
-        put(fieldSetElm.class, SymbolType.FIELDSET);
-        put(structDefinitionElm.class, SymbolType.STRUCT);
-        put(structFieldDefinition.class, SymbolType.FIELD);
-        put(functionElm.class, SymbolType.FUNCTION);
-    }};
-
-    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
-        put(rankProfile.class, SymbolType.RANK_PROFILE);
-        put(documentSummary.class, SymbolType.DOCUMENT_SUMMARY);
-        put(summaryInDocument.class, SymbolType.SUMMARY);
-    }};
 
     public ArrayList<Diagnostic> identify(SchemaNode node) {
         ArrayList<Diagnostic> ret = new ArrayList<Diagnostic>();
@@ -86,7 +70,7 @@ public class IdentifySymbolDefinition extends Identifier {
             return ret;
         }
 
-        Map<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
+        Map<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? SchemaIndex.IDENTIFIER_TYPE_MAP : SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType != null) {
 
@@ -97,7 +81,7 @@ public class IdentifySymbolDefinition extends Identifier {
                 return ret;
             }
 
-            Optional<Symbol> scope = findScope(node);
+            Optional<Symbol> scope = CSTUtils.findScope(node);
             if (scope.isEmpty()) return ret;
 
             node.setSymbol(symbolType, context.fileURI(), scope.get());
@@ -212,7 +196,7 @@ public class IdentifySymbolDefinition extends Identifier {
 
     private void createSymbol(SchemaNode node, SymbolType type) {
 
-        Optional<Symbol> scope = findScope(node);
+        Optional<Symbol> scope = CSTUtils.findScope(node);
 
         if (scope.isPresent()) {
             node.setSymbol(type, context.fileURI(), scope.get());
@@ -224,43 +208,6 @@ public class IdentifySymbolDefinition extends Identifier {
         context.schemaIndex().insertSymbolDefinition(node.getSymbol());
     }
 
-    private Optional<Symbol> findScope(SchemaNode node) {
-        if (
-            context.fileURI().toLowerCase().endsWith(".profile") &&
-            node.getParent().isASTInstance(rankProfile.class)
-        ) {
-            return findRankProfileScopeFromURI(context.fileURI());
-        }
-
-        SchemaNode currentNode = node;
-
-        while (
-            currentNode != null
-        ) {
-            if (
-                identifierTypeMap.keySet().contains(currentNode.getASTClass()) ||
-                identifierWithDashTypeMap.keySet().contains(currentNode.getASTClass())
-            ) {
-                // Find the symbol definition
-                // TODO: Recaftor in a more general way
-                int indexGuess = 1;
-
-                if (currentNode.isASTInstance(functionElm.class)) {
-                    indexGuess = 2;
-                }
-
-                if (currentNode.size() >= indexGuess + 1) {
-                    SchemaNode potentialDefinition = currentNode.get(indexGuess);
-                    if (potentialDefinition.hasSymbol() && potentialDefinition.getSymbol().getStatus() == SymbolStatus.DEFINITION) {
-                        return Optional.of(potentialDefinition.getSymbol());
-                    }
-                }
-            }
-            currentNode = currentNode.getParent();
-        }
-
-        return Optional.empty();
-    }
 
     private Optional<Symbol> findRankProfileScopeFromURI(String fileURI) {
         SchemaDocument document = context.scheduler().getSchemaDocument(fileURI);

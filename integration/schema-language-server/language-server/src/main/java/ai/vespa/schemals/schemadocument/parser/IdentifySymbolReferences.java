@@ -2,8 +2,11 @@ package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
+
+import com.google.protobuf.Option;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
@@ -18,6 +21,7 @@ import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
@@ -74,7 +78,12 @@ public class IdentifySymbolReferences extends Identifier {
             return handleFields(node);
         }
 
-        node.setSymbol(symbolType, context.fileURI());
+        Optional<Symbol> scope = CSTUtils.findScope(node);
+        if (scope.isPresent()) {
+            node.setSymbol(symbolType, context.fileURI(), scope.get());
+        } else {
+            node.setSymbol(symbolType, context.fileURI());
+        }
         node.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         return ret;
@@ -135,7 +144,12 @@ public class IdentifySymbolReferences extends Identifier {
             identifierNode.get(0).setNewEndCharacter(newEnd);
         }
 
-        identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
+        Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
+        if (scope.isPresent()) {
+            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI(), scope.get());
+        } else {
+            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
+        }
         identifierNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         int myIndex = parent.indexOf(identifierNode);
@@ -151,11 +165,16 @@ public class IdentifySymbolReferences extends Identifier {
             SchemaNode newNode = new SchemaNode(newASTNode);
             newNode.setNewStartCharacter(newStart);
             newNode.setNewEndCharacter(newEnd);
-
-            newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI());
-            newNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
-
             parent.insertChildAfter(myIndex, newNode);
+
+            scope = CSTUtils.findScope(newNode);
+
+            if (scope.isPresent()) {
+                newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI(), scope.get());
+            } else {
+                newNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
+            }
+
             myIndex++;
         }
 
