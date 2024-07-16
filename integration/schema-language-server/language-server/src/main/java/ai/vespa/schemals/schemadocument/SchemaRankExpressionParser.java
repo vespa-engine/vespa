@@ -133,6 +133,23 @@ public class SchemaRankExpressionParser {
             diagnostics.add(new Diagnostic(node.getRange(), ex.getMessage(), DiagnosticSeverity.Error, ""));
         }
 
+        RankingExpressionParser tolerantParser = new RankingExpressionParser(context.logger(), context.fileURI(), sequence);
+        tolerantParser.setParserTolerant(true);
+
+        try {
+            if (node.containsExpressionData()) {
+                tolerantParser.expression();
+            } else {
+                tolerantParser.featureList();
+            }
+
+            return new SchemaNode(tolerantParser.rootNode(), expressionStart);
+        } catch (ai.vespa.schemals.parser.rankingexpression.ParseException pe) {
+            // Ignore
+        } catch (IllegalArgumentException ex) {
+            // Ignore
+        }
+
         return null;
     }
 

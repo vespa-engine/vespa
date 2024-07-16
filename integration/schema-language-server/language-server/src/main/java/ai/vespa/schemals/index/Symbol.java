@@ -128,7 +128,8 @@ public class Symbol {
         MAP_VALUE,
         PARAMETER,
         QUERY_INPUT,
-        LABEL
+        LABEL,
+        LAMBDA_FUNCTION
     }
 
     public String toString() {

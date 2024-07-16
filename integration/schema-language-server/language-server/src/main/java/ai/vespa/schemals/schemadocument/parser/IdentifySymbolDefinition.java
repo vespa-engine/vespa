@@ -33,9 +33,11 @@ import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
+import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 
 public class IdentifySymbolDefinition extends Identifier {
 
@@ -50,6 +52,10 @@ public class IdentifySymbolDefinition extends Identifier {
         if (node.isASTInstance(dataType.class)) {
             handleDataTypeDefinition(node, ret);
             return ret;
+        }
+
+        if (node.getLanguageType() == LanguageType.RANK_EXPRESSION) {
+            return identifyDefinitionInRankExpression(node);
         }
         
         boolean isIdentifier = node.isSchemaASTInstance(identifierStr.class);
@@ -95,54 +101,6 @@ public class IdentifySymbolDefinition extends Identifier {
 
             return ret;
         }
-
-        // if (parent.isASTInstance(structFieldDefinition.class) && parent.getParent() != null) {
-        //     // Custom logic to find the scope
-
-        //     SchemaNode parentDefinitionNode = parent.getParent().get(1);
-
-        //     if (parentDefinitionNode.hasSymbol() && parentDefinitionNode.getSymbol().getType() == SymbolType.STRUCT) {
-        //         Symbol scope = parentDefinitionNode.getSymbol();
-        //         node.setSymbol(SymbolType.FIELD_IN_STRUCT, context.fileURI(), scope);
-        //         node.setSymbolStatus(SymbolStatus.DEFINITION);
-        //         context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-        //     } else {
-        //         ret.add(new Diagnostic(node.getRange(), "Invalid field definition in struct", DiagnosticSeverity.Warning, ""));
-        //     }
-        // }
-
-        // // TODO: these cases are quite similar. Generalize?
-        // if (parent.isASTInstance(rankProfile.class)) {
-        //     Optional<Symbol> scope = findRankProfileScope(node, context.fileURI());
-
-        //     if (scope.isPresent()) {
-        //         node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI(), scope.get());
-
-        //         if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
-        //             node.setSymbolStatus(SymbolStatus.DEFINITION);
-        //             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-        //         }
-        //     } else {
-        //         node.setSymbol(SymbolType.RANK_PROFILE, context.fileURI());
-        //         node.setSymbolStatus(SymbolStatus.INVALID);
-        //     }
-        // }
-
-        // if (parent.isASTInstance(functionElm.class)) {
-        //     Optional<Symbol> scope = findRankProfileFunctionScope(node);
-        //     if (scope.isPresent()) {
-        //         node.setSymbol(SymbolType.FUNCTION, context.fileURI(), scope.get());
-
-        //         if (context.schemaIndex().findSymbol(node.getSymbol()) == null) {
-        //             node.setSymbolStatus(SymbolStatus.DEFINITION);
-        //             context.schemaIndex().insertSymbolDefinition(node.getSymbol());
-        //         }
-        //     } else {
-        //         node.setSymbol(SymbolType.FUNCTION, context.fileURI());
-        //         node.setSymbolStatus(SymbolStatus.INVALID);
-        //     }
-        // }
-
 
         return ret;
     }
@@ -208,13 +166,43 @@ public class IdentifySymbolDefinition extends Identifier {
         context.schemaIndex().insertSymbolDefinition(node.getSymbol());
     }
 
+    private ArrayList<Diagnostic> identifyDefinitionInRankExpression(SchemaNode node) {
+        ArrayList<Diagnostic> ret = new ArrayList<>();
 
-    private Optional<Symbol> findRankProfileScopeFromURI(String fileURI) {
-        SchemaDocument document = context.scheduler().getSchemaDocument(fileURI);
-        if (document == null) return Optional.empty();
-        String schemaName = document.getSchemaIdentifier();
-        context.logger().println("Lookup for " + fileURI + " retuned " + schemaName);
-        if (schemaName == null) return Optional.empty();
-        return context.schemaIndex().getSchemaDefinition(schemaName);
+        if (!node.isASTInstance(ai.vespa.schemals.parser.rankingexpression.ast.identifierStr.class)) {
+            return ret;
+        }
+
+        SchemaNode grandParent = node.getParent(2);
+        if (grandParent == null || !grandParent.isASTInstance(lambdaFunction.class) || grandParent.size() < 1) {
+            return ret;
+        }
+
+        SchemaNode parent = grandParent.get(0);
+
+        if (!parent.hasSymbol()) {
+
+            Optional<Symbol> parentScope = CSTUtils.findScope(parent);
+    
+            if (parentScope.isEmpty()) {
+                return ret;
+            }
+    
+            parent.setSymbol(SymbolType.LAMBDA_FUNCTION, context.fileURI(), parentScope.get(), "lambda_" + node.hashCode());
+            parent.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(parent.getSymbol());
+        }
+
+        
+        node.setSymbol(SymbolType.PARAMETER, context.fileURI(), parent.getSymbol());
+
+        if (context.schemaIndex().findSymbol(node.getSymbol()).isEmpty()) {
+            node.setSymbolStatus(SymbolStatus.DEFINITION);
+            context.schemaIndex().insertSymbolDefinition(node.getSymbol());
+        } else {
+            node.setSymbolStatus(SymbolStatus.INVALID);
+        }
+
+        return ret;
     }
 }

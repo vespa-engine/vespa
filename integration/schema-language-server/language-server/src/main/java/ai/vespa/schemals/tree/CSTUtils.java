@@ -12,6 +12,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.parser.Node;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -165,7 +166,8 @@ public class CSTUtils {
 
             if (astClass != null && (
                 SchemaIndex.IDENTIFIER_TYPE_MAP.containsKey(astClass) ||
-                SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP.containsKey(astClass)
+                SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP.containsKey(astClass) ||
+                astClass.equals(lambdaFunction.class)
             )) {
 
                 // Find the symbol definition
@@ -174,6 +176,10 @@ public class CSTUtils {
 
                 if (currentNode.isASTInstance(functionElm.class)) {
                     indexGuess = 2;
+                }
+
+                if (currentNode.isASTInstance(lambdaFunction.class)) {
+                    indexGuess = 0;
                 }
 
                 if (indexGuess < currentNode.size()) {
