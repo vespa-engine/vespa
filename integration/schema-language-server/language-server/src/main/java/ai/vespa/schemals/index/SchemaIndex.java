@@ -127,6 +127,8 @@ public class SchemaIndex {
 
                     structInheritanceGraph.clearInheritsList(symbol);
                     rankProfileInheritanceGraph.clearInheritsList(symbol);
+                    documentSummaryInheritanceGraph.clearInheritsList(symbol);
+                    documentReferenceGraph.clearInheritsList(symbol);
 
                     list.remove(i);
                 }
