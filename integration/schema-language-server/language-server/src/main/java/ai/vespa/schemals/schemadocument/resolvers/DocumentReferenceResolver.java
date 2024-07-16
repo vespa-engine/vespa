@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
+import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -21,11 +22,14 @@ public class DocumentReferenceResolver {
 
         List<Diagnostic> diagnostics = new ArrayList<>();
 
-        Optional<Symbol> myDocumentDefinition = context.schemaIndex().getSchemaDefinition(context.scheduler().getSchemaDocument(context.fileURI()).getSchemaIdentifier());
+        SchemaDocument document = context.scheduler().getSchemaDocument(context.fileURI());
+        // TODO: better way to find document definition
+        if (document == null) return diagnostics;
+        Optional<Symbol> myDocumentDefinition = context.schemaIndex().getSchemaDefinition(document.getSchemaIdentifier());
 
         if (myDocumentDefinition.isEmpty()) return diagnostics;
 
-        // TODO: check for fields with attribute indexing
+        // TODO: check for fields which are attributes (need at least one)
 
         for (SchemaNode documentReferenceNode : context.unresolvedDocumentReferenceNodes()) {
             // If it has not been resolved as a reference, we don't bother
@@ -36,9 +40,11 @@ public class DocumentReferenceResolver {
             if (referencedDocument.isEmpty()) continue;
 
             if (!context.schemaIndex().tryRegisterDocumentReference(myDocumentDefinition.get(), referencedDocument.get())) {
+                String message = " because cyclic references are not allowed";
+                if (myDocumentDefinition.get().equals(referencedDocument.get())) message = " because self-references are not allowed";
                 diagnostics.add(new Diagnostic(
                     documentReferenceNode.getRange(),
-                    "Cannot reference document " + documentReferenceNode.getText() + " because cyclic references are not allowed",
+                    "Cannot reference document " + documentReferenceNode.getText() + message,
                     DiagnosticSeverity.Error,
                     ""
                 ));
