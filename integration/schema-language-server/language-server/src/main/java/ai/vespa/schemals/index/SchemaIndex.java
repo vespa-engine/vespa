@@ -96,38 +96,40 @@ public class SchemaIndex {
      * @param fileURI the URI of the document to be cleared
      */
     public void clearDocument(String fileURI) {
+
+        // First: remove symbols listed as a reference for a definition
+        // At the same time, remove the reference from the reference -> definition lookup table
+        for (Map.Entry<Symbol, List<Symbol>> entry : symbolReferences.entrySet()) {
+            List<Symbol> references = entry.getValue();
+
+            List<Symbol> replacedReferences = new ArrayList<>();
+            for (Symbol symbol : references) {
+                if (symbol.getFileURI().equals(fileURI)) {
+                    definitionOfReference.remove(symbol);
+                } else {
+                    replacedReferences.add(symbol);
+                }
+            }
+
+            entry.setValue(replacedReferences);
+        }
+
+        // For each definition: remove their list of references and then remove the definition itself.
         for (var list : symbolDefinitions.values()) {
             for (int i = list.size() - 1; i >= 0; i--) {
-                if (list.get(i).getFileURI() == fileURI) {
+                Symbol symbol = list.get(i);
+                if (symbol.getFileURI().equals(fileURI)) {
+                    symbolReferences.remove(symbol);
+
+                    structInheritanceGraph.clearInheritsList(symbol);
+                    rankProfileInheritanceGraph.clearInheritsList(symbol);
+
                     list.remove(i);
                 }
             }
         }
 
-        for (var entry : symbolReferences.entrySet()) {
-            Symbol key = entry.getKey();
-            if (key.getFileURI() == fileURI) {
-                symbolReferences.remove(key);
-            } else {
-
-                for (int i = entry.getValue().size() - 1; i >= 0; i--) {
-                    if (entry.getValue().get(i).getFileURI() == fileURI) {
-                        entry.getValue().remove(i);
-                    }
-                }
-
-            }
-        }
-
-        for (var entry : definitionOfReference.entrySet()) {
-
-            if (
-                entry.getKey().getFileURI() == fileURI ||
-                entry.getValue().getFileURI() == fileURI
-            ) {
-                definitionOfReference.remove(entry.getKey());
-            }
-        }
+        documentInheritanceGraph.clearInheritsList(fileURI);
     }
 
     /**

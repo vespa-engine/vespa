@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 
+import com.google.protobuf.Option;
 
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
@@ -143,7 +144,12 @@ public class IdentifySymbolReferences extends Identifier {
             identifierNode.get(0).setNewEndCharacter(newEnd);
         }
 
-        identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
+        Optional<Symbol> scope = CSTUtils.findScope(identifierNode);
+        if (scope.isPresent()) {
+            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI(), scope.get());
+        } else {
+            identifierNode.setSymbol(SymbolType.FIELD, context.fileURI());
+        }
         identifierNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
 
         int myIndex = parent.indexOf(identifierNode);
@@ -159,11 +165,16 @@ public class IdentifySymbolReferences extends Identifier {
             SchemaNode newNode = new SchemaNode(newASTNode);
             newNode.setNewStartCharacter(newStart);
             newNode.setNewEndCharacter(newEnd);
-
-            newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI());
-            newNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
-
             parent.insertChildAfter(myIndex, newNode);
+
+            scope = CSTUtils.findScope(newNode);
+
+            if (scope.isPresent()) {
+                newNode.setSymbol(SymbolType.SUBFIELD, context.fileURI(), scope.get());
+            } else {
+                newNode.setSymbolStatus(SymbolStatus.UNRESOLVED);
+            }
+
             myIndex++;
         }
 

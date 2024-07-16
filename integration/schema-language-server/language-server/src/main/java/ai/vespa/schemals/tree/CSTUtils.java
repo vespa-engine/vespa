@@ -288,7 +288,7 @@ public class CSTUtils {
         }
 
         if (node.hasSymbol()) {
-            ret += " [SYMBOL " + node.getSymbol().getType().toString() + " " + node.getSymbol().getStatus().toString() + "]";
+            ret += " [SYMBOL " + node.getSymbol().getType().toString() + " " + node.getSymbol().getStatus().toString() + ": " + node.getSymbol().getLongIdentifier() +  "]";
         }
 
         Range range = node.getRange();
