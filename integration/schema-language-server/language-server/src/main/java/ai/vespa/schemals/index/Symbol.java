@@ -126,7 +126,8 @@ public class Symbol {
         SUBFIELD,
         MAP_KEY,
         MAP_VALUE,
-        PARAMETER
+        PARAMETER,
+        QUERY_INPUT
     }
 
     public String toString() {

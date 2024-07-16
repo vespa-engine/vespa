@@ -2,6 +2,8 @@ package ai.vespa.schemals.schemadocument.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -21,6 +23,9 @@ import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.rankingexpression.ast.args;
+import ai.vespa.schemals.parser.rankingexpression.ast.expression;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpressionSymbolResolver;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.SchemaNode.LanguageType;
@@ -104,13 +109,23 @@ public class IdentifySymbolReferences extends Identifier {
 
         Optional<Symbol> scope = CSTUtils.findScope(node);
 
+        SymbolType newSymbolType = SymbolType.TYPE_UNKNOWN;
+        SymbolStatus newSymbolStatus = SymbolStatus.UNRESOLVED;
+
+        SymbolType isBuiltInFunction = RankExpressionSymbolResolver.rankExpressionBultInFunctions.get(node.getText().toLowerCase());
+
+        if (isBuiltInFunction != null) {
+            newSymbolType = SymbolType.FUNCTION;
+            newSymbolStatus = SymbolStatus.BUILTIN_REFERENCE;
+        }
+
         if (scope.isPresent()) {
-            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope.get());
+            node.setSymbol(newSymbolType, context.fileURI(), scope.get());
         } else {
-            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
+            node.setSymbol(newSymbolType, context.fileURI());
         }
         
-        node.setSymbolStatus(SymbolStatus.UNRESOLVED);
+        node.setSymbolStatus(newSymbolStatus);
 
         return ret;
     }
