@@ -302,10 +302,22 @@ public class SchemaNode implements Iterable<SchemaNode> {
         return astClass.isInstance(originalRankExpressionNode);
     }
 
-    public Class<? extends Node> getASTClass() {
+    public Class<?> getASTClass() {
         if (language == LanguageType.CUSTOM) return simulatedSchimaClass;
 
-        return originalSchemaNode.getClass();
+        if (language == LanguageType.SCHEMA && originalSchemaNode != null) {
+            return originalSchemaNode.getClass();
+        }
+
+        if (language == LanguageType.RANK_EXPRESSION && originalRankExpressionNode != null) {
+            return originalRankExpressionNode.getClass();
+        }
+
+        if (language == LanguageType.INDEXING && originalIndexingNode != null) {
+            return originalIndexingNode.getClass();
+        }
+
+        return null;
     }
 
     public String getIdentifierString() {

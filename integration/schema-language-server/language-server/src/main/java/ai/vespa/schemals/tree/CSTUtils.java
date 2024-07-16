@@ -161,10 +161,13 @@ public class CSTUtils {
         while (
             currentNode != null
         ) {
-            if (
-                SchemaIndex.IDENTIFIER_TYPE_MAP.containsKey(currentNode.getASTClass()) ||
-                SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP.containsKey(currentNode.getASTClass())
-            ) {
+            Class<?> astClass = currentNode.getASTClass();
+
+            if (astClass != null && (
+                SchemaIndex.IDENTIFIER_TYPE_MAP.containsKey(astClass) ||
+                SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP.containsKey(astClass)
+            )) {
+
                 // Find the symbol definition
                 // TODO: Refactor in a more general way
                 int indexGuess = 1;

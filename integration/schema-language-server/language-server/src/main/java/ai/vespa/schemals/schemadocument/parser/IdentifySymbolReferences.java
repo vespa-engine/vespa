@@ -31,14 +31,14 @@ public class IdentifySymbolReferences extends Identifier {
 		super(context);
 	}
 
-    private static final HashMap<Class<? extends Node>, SymbolType> identifierTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+    private static final HashMap<Class<?>, SymbolType> identifierTypeMap = new HashMap<Class<?>, SymbolType>() {{
         put(inheritsDocument.class, SymbolType.DOCUMENT);
         put(fieldsElm.class, SymbolType.FIELD);
         put(rootSchema.class, SymbolType.SCHEMA);
         put(inheritsStruct.class, SymbolType.STRUCT);
     }};
 
-    private static final HashMap<Class<? extends Node>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<? extends Node>, SymbolType>() {{
+    private static final HashMap<Class<?>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<?>, SymbolType>() {{
         put(inheritsRankProfile.class, SymbolType.RANK_PROFILE);
     }};
 
@@ -70,7 +70,7 @@ public class IdentifySymbolReferences extends Identifier {
         SchemaNode parent = node.getParent();
         if (parent == null) return ret;
 
-        HashMap<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
+        HashMap<Class<?>, SymbolType> searchMap = isIdentifier ? identifierTypeMap : identifierWithDashTypeMap;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType == null) return ret;
 
@@ -102,19 +102,10 @@ public class IdentifySymbolReferences extends Identifier {
             return ret;
         }
 
-        SchemaNode searchNode = node;
+        Optional<Symbol> scope = CSTUtils.findScope(node);
 
-        while (
-            (!searchNode.isASTInstance(rankProfile.class)) &&
-            searchNode != null
-        ) {
-            searchNode = searchNode.getParent();
-        }
-
-        if (searchNode != null && searchNode.size() > 2 && searchNode.get(1).hasSymbol()) {
-            Symbol scope = searchNode.get(1).getSymbol();
-
-            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope);
+        if (scope.isPresent()) {
+            node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI(), scope.get());
         } else {
             node.setSymbol(SymbolType.TYPE_UNKNOWN, context.fileURI());
         }

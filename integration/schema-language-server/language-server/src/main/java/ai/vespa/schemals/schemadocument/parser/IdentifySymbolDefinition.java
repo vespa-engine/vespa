@@ -70,7 +70,7 @@ public class IdentifySymbolDefinition extends Identifier {
             return ret;
         }
 
-        Map<Class<? extends Node>, SymbolType> searchMap = isIdentifier ? SchemaIndex.IDENTIFIER_TYPE_MAP : SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP;
+        Map<Class<?>, SymbolType> searchMap = isIdentifier ? SchemaIndex.IDENTIFIER_TYPE_MAP : SchemaIndex.IDENTIFIER_WITH_DASH_TYPE_MAP;
         SymbolType symbolType = searchMap.get(parent.getASTClass());
         if (symbolType != null) {
 
